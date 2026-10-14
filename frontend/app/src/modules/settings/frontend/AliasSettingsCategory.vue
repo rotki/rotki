@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
+import Explorers from '@/modules/settings/explorers/Explorers.vue';
 import AddressNamePrioritySetting from '@/modules/settings/frontend/AddressNamePrioritySetting.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
@@ -8,14 +10,17 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <SettingCategory>
     <template #title>
-      {{ t('frontend_settings.subtitle.blockchain_address_aliases') }}
+      {{ t('frontend_settings.sections.addresses') }}
     </template>
-    <RuiAlert
-      type="info"
-      class="my-4"
-    >
-      {{ t('frontend_settings.alias_names.title') }}
-    </RuiAlert>
-    <AddressNamePrioritySetting />
+    <SettingsItem>
+      <template #title>
+        {{ t('frontend_settings.alias_names.row_title') }}
+      </template>
+      <template #subtitle>
+        {{ t('frontend_settings.alias_names.title') }}
+      </template>
+      <AddressNamePrioritySetting />
+    </SettingsItem>
+    <Explorers />
   </SettingCategory>
 </template>

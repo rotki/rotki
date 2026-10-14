@@ -29,7 +29,7 @@ const limitMessage = computed<string>(() => {
 <template>
   <RuiAlert
     v-if="showsWaitingTime"
-    class="mt-4"
+    class="mt-2"
     type="info"
   >
     {{ t('exchange_keys_form.waiting_time_warning') }}
@@ -37,7 +37,7 @@ const limitMessage = computed<string>(() => {
 
   <RuiAlert
     v-if="limitMessage"
-    class="mt-4"
+    class="mt-2"
     type="warning"
   >
     {{ limitMessage }}
@@ -46,7 +46,7 @@ const limitMessage = computed<string>(() => {
   <RuiAlert
     v-if="experimental"
     type="info"
-    class="mt-4"
+    class="mt-2"
   >
     {{ t('exchange_settings.inputs.experimental') }}
   </RuiAlert>

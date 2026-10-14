@@ -105,6 +105,7 @@ watch(frequencyWriteError, (message) => {
         />
         <SettingResetConfirmButton
           :compact="compact"
+          labelled
           data-testid="internal-tx-batch-size-reset"
           @confirm="resetBatchSize()"
         />
@@ -140,6 +141,7 @@ watch(frequencyWriteError, (message) => {
         />
         <SettingResetConfirmButton
           :compact="compact"
+          labelled
           data-testid="internal-tx-frequency-reset"
           @confirm="resetFrequency()"
         />

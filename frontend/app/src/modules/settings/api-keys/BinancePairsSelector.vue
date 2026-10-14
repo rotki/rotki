@@ -181,7 +181,7 @@ onMounted(() => {
       >
         <template #activator>
           <RuiButton
-            class="mt-1"
+            class="mt-6"
             variant="text"
             icon
             color="primary"

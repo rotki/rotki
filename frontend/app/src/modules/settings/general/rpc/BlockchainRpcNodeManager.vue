@@ -64,8 +64,10 @@ defineExpose({
     <thead>
       <tr>
         <th>{{ t('evm_rpc_node_manager.node') }}</th>
-        <th>{{ t('evm_rpc_node_manager.node_weight') }}</th>
-        <th>
+        <th class="whitespace-nowrap text-right">
+          {{ t('evm_rpc_node_manager.node_weight') }}
+        </th>
+        <th class="whitespace-nowrap">
           <div class="flex items-center gap-2">
             <div class="w-6">
               <RpcReconnectButton
@@ -89,60 +91,44 @@ defineExpose({
         class="border-b border-default"
         data-testid="ethereum-node"
       >
-        <td>
-          <div class="flex gap-3 items-center">
+        <td class="max-w-0 w-full">
+          <div class="flex gap-3 items-center min-w-0">
             <RuiTooltip
-              v-if="!item.owned"
               :options="{ placement: 'top' }"
               :open-delay="400"
+              class="shrink-0"
             >
               <template #activator>
                 <RuiIcon
-                  name="lu-earth"
+                  :name="item.owned ? 'lu-user' : 'lu-earth'"
+                  size="18"
                   class="text-rui-text-secondary"
                 />
               </template>
-              <span>{{ t('evm_rpc_node_manager.public_node') }}</span>
+              <span>{{ item.owned ? t('evm_rpc_node_manager.private_node') : t('evm_rpc_node_manager.public_node') }}</span>
             </RuiTooltip>
-            <RuiTooltip
-              v-else
-              :options="{ placement: 'top' }"
-              :open-delay="400"
-            >
-              <template #activator>
-                <RuiIcon
-                  name="lu-user"
-                  class="text-rui-text-secondary"
-                />
-              </template>
-              <span>{{ t('evm_rpc_node_manager.private_node') }}</span>
-            </RuiTooltip>
-            <div>
+            <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <span class="font-medium">
+                <span class="font-medium truncate">
                   {{ item.name }}
                 </span>
+                <span
+                  v-if="item.isArchive"
+                  class="shrink-0 rounded-sm bg-rui-primary/10 px-1.5 text-caption-2 font-medium leading-4 tracking-normal text-rui-primary"
+                >
+                  {{ t('evm_rpc_node_manager.archive_node') }}
+                </span>
               </div>
-              <div class="text-rui-text-secondary text-sm">
+              <div
+                class="text-rui-text-secondary text-xs truncate min-h-4"
+                :title="isEtherscan(item) ? undefined : item.endpoint"
+              >
                 {{ !isEtherscan(item) ? item.endpoint : t('evm_rpc_node_manager.etherscan') }}
               </div>
-              <RuiChip
-                v-if="item.isArchive"
-                size="sm"
-                color="primary"
-                class="p-0.5! mt-2"
-                :class-names="{ content: 'flex items-center gap-1 font-medium' }"
-              >
-                <RuiIcon
-                  name="lu-check"
-                  size="14"
-                />
-                {{ t('evm_rpc_node_manager.archive_node') }}
-              </RuiChip>
             </div>
           </div>
         </td>
-        <td>
+        <td class="whitespace-nowrap text-right tabular-nums">
           <span v-if="!item.owned">
             {{
               t('evm_rpc_node_manager.weight', {
@@ -151,7 +137,7 @@ defineExpose({
             }}
           </span>
         </td>
-        <td>
+        <td class="whitespace-nowrap">
           <RpcNodeStatusCell
             :status="getNodeStatus(item)"
             :active="item.active"
@@ -160,18 +146,19 @@ defineExpose({
             @reconnect="reConnect(item.identifier)"
           />
         </td>
-        <td>
+        <td class="w-px">
           <div class="flex items-center gap-2 justify-end">
             <RuiSwitch
               color="primary"
               hide-details
-              class="mr-4"
+              class="mr-2"
               :model-value="item.active"
               :disabled="isEtherscan(item)"
               data-testid="node-active"
               @update:model-value="onActiveChange($event, item)"
             />
             <RowActions
+              class="transition-opacity [tr:not(:hover)_&:not(:focus-within)]:opacity-0 motion-reduce:transition-none"
               :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"
               :delete-disabled="isEtherscan(item)"
               :edit-tooltip="t('evm_rpc_node_manager.edit_tooltip')"

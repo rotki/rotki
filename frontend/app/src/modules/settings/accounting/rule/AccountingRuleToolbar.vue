@@ -15,8 +15,13 @@ const filter = defineModel<Filters>('filter', { required: true });
  * The fields come from the table rather than being built here: the table reads the url shape of
  * its filter bag off them, so both halves have to be looking at the same list.
  */
-const { fields } = defineProps<{
+const { fields, loading = false } = defineProps<{
   fields: FieldDef[];
+  loading?: boolean;
+}>();
+
+const emit = defineEmits<{
+  refresh: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -25,11 +30,11 @@ const pillLabels = usePillBarLabels();
 </script>
 
 <template>
-  <div class="flex flex-wrap gap-x-4 gap-y-2 items-center justify-between">
+  <div class="flex flex-1 flex-wrap gap-3 items-center">
     <RuiTabs
       v-model="customRuleHandling"
+      variant="segmented"
       color="primary"
-      class="border border-default rounded-sm bg-white dark:bg-rui-grey-900 flex max-w-min"
     >
       <RuiTab
         :value="CustomRuleHandling.EXCLUDE"
@@ -51,5 +56,25 @@ const pillLabels = usePillBarLabels();
       :fields="fields"
       :labels="pillLabels"
     />
+
+    <RuiTooltip :open-delay="400">
+      <template #activator>
+        <RuiButton
+          variant="text"
+          icon
+          size="sm"
+          :loading="loading"
+          :aria-label="t('accounting_settings.rule.refresh_tooltip')"
+          data-testid="accounting-rule-refresh"
+          @click="emit('refresh')"
+        >
+          <RuiIcon
+            name="lu-refresh-ccw"
+            size="18"
+          />
+        </RuiButton>
+      </template>
+      {{ t('accounting_settings.rule.refresh_tooltip') }}
+    </RuiTooltip>
   </div>
 </template>

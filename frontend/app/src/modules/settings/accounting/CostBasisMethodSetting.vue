@@ -38,7 +38,7 @@ watch(writeError, (message) => {
 <template>
   <CostBasisMethodSettings
     v-model="model"
-    class="pt-4"
+    label-placement="hidden"
     :success-messages="success ? [success] : []"
     :error-messages="error ? [error] : []"
     :label="t('accounting_settings.trade.labels.cost_basis_method')"

@@ -113,8 +113,7 @@
         "include_gas_costs": "Tener en cuenta los costos de gas de Ethereum",
         "tax_free": "¿Hay un periodo libre de impuestos?",
         "taxfree_after_period": "Libre de impuestos después de cuántos días"
-      },
-      "title": "Configuraciones de intercambios"
+      }
     }
   },
   "actions": {
@@ -318,7 +317,6 @@
     "keep_remote": "Mantener todo lo remoto",
     "keep_remote_tooltip": "Actualice todos los activos. No es necesaria ninguna otra acción.",
     "manage": "Gestionar conflictos",
-    "resolve_all_hint": "Todos los conflictos se resolverán utilizando datos de {source}.",
     "subtitle": "{conflicts} las entradas de activos no pueden actualizarse automáticamente. {remaining} entradas restantes requieren la intervención del usuario.",
     "title": "Conflictos detectados"
   },
@@ -417,8 +415,7 @@
       "select_cache": "Seleccionar datos del protocolo para actualizar",
       "subtitle": "Permite actualizar datos del protocolo en rotki",
       "success": "Los datos del protocolo se borraron correctamente",
-      "title": "Actualizar datos del protocolo",
-      "tooltip": "Actualizar datos del protocolo para la fuente seleccionada"
+      "title": "Actualizar datos del protocolo"
     }
   },
   "data_table": {
@@ -456,8 +453,7 @@
         "location_before": "Antes",
         "resulting_format": "Formato final:",
         "thousand_separator": "Separador de miles"
-      },
-      "title": "Ajustes de cantidades"
+      }
     },
     "external_service_setting": {
       "label": {
@@ -492,7 +488,6 @@
           "only_allow_whitelisted": "Permitir sólo imágenes de dominios de la lista blanca"
         },
         "whitelist_domains": "Lista blanca de dominios",
-        "whitelisted_domain_entries": "ninguna entrada | {count} entrada única | {count} entradas únicas",
         "whitelisted_domains": "Dominios de la lista blanca",
         "whitelisted_domains_hint": "Introduzca uno o varios dominios separados por comas. Pulse el botón de la derecha para guardar los cambios."
       },
@@ -501,7 +496,6 @@
         "success": "Dominios permitidos para la representación de imágenes de NFT guardados correctamente"
       }
     },
-    "title": "Ajustes generales",
     "validation": {
       "chains_to_skip_detection": {
         "error": "Error al configurar las cadenas EVM para omitir la detección de actividad de cuentas entre cadenas",
@@ -640,10 +634,7 @@
       "disable_all": "Desactivar todo",
       "enable_all": "Activar todo"
     },
-    "filter": "Módulos de búsqueda",
-    "table": {
-      "enabled": "Activado"
-    }
+    "filter": "Módulos de búsqueda"
   },
   "navigation_menu": {
     "balances_sub": {
@@ -675,12 +666,8 @@
   "overall_balances": {
     "loading": "Cargando"
   },
-  "price_oracle_selection": {
-    "hint": "* Al desactivar todos los oráculos será imposible consultar los precios de los activos. Es posible que tengas que hacer clic en 'Actualizar precios' para aplicar los cambios."
-  },
   "price_oracle_settings": {
-    "data_name": "oráculo de precios",
-    "latest_prices_update": "Últimos precios de pedidos actualizados. Es posible que tengas que hacer clic en el botón 'Actualizar precios' para aplicar los cambios."
+    "data_name": "oráculo de precios"
   },
   "price_refresh": {
     "button": "Refrescar precios"

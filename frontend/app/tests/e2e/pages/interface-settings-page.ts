@@ -19,16 +19,13 @@ export class InterfaceSettingsPage {
       await expect(this.page.locator(`#${id}`)).toBeVisible();
   }
 
-  /**
-   * The explorer field. Its save button is a sibling of the field rather than a child, so it is
-   * reached relative to the field instead of carrying a test id of its own.
-   */
+  /** The explorer field. Its save action sits inside it and shows only once the url changes. */
   private explorer(field: ExplorerField) {
     const input = this.page.locator(`[data-testid=explorer-${field}-input]`);
     return {
       input,
       messages: input.locator('.details'),
-      save: input.locator('xpath=following-sibling::button'),
+      save: input.locator('[data-testid=explorer-save]'),
       textbox: input.locator('input'),
     };
   }

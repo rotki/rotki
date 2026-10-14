@@ -6,7 +6,6 @@ import BackupManager from '@/modules/settings/data-security/backups/BackupManage
 import DataManagement from '@/modules/settings/data-security/data-management/DataManagement.vue';
 import AssetDatabaseCategory from '@/modules/settings/database/AssetDatabaseCategory.vue';
 import DatabaseInformationCategory from '@/modules/settings/database/DatabaseInformationCategory.vue';
-import ImportExportCategory from '@/modules/settings/database/ImportExportCategory.vue';
 import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 
 definePage({
@@ -21,9 +20,8 @@ const { t } = useI18n({ useScope: 'global' });
 const navigation = computed<{ id: string; label: string }[]>(() => [
   { id: SettingsCategoryIds.DATABASE_INFO, label: t('database_settings.database_info.title') },
   { id: SettingsCategoryIds.USER_BACKUPS, label: t('database_settings.user_backups.title') },
-  { id: SettingsCategoryIds.MANAGE_DATA, label: t('database_settings.manage_data.title') },
-  { id: SettingsCategoryIds.IMPORT_EXPORT, label: t('database_settings.import_export.title') },
   { id: SettingsCategoryIds.ASSET_DATABASE, label: t('database_settings.asset_database.title') },
+  { id: SettingsCategoryIds.MANAGE_DATA, label: t('database_settings.manage_data.title') },
 ]);
 </script>
 
@@ -34,8 +32,7 @@ const navigation = computed<{ id: string; label: string }[]>(() => [
   >
     <DatabaseInformationCategory :id="SettingsCategoryIds.DATABASE_INFO" />
     <BackupManager :id="SettingsCategoryIds.USER_BACKUPS" />
-    <DataManagement :id="SettingsCategoryIds.MANAGE_DATA" />
-    <ImportExportCategory :id="SettingsCategoryIds.IMPORT_EXPORT" />
     <AssetDatabaseCategory :id="SettingsCategoryIds.ASSET_DATABASE" />
+    <DataManagement :id="SettingsCategoryIds.MANAGE_DATA" />
   </SettingsPage>
 </template>

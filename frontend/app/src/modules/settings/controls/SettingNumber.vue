@@ -132,6 +132,7 @@ async function reset(): Promise<void> {
 
     <SettingResetConfirmButton
       v-if="hasDefault"
+      :labelled="!!label"
       @confirm="reset()"
     />
   </div>

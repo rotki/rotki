@@ -19,28 +19,29 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <template v-if="count > 0">
+  <div
+    v-if="count > 0"
+    class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-rui-control border border-rui-warning/40 bg-rui-warning/10 pl-3 pr-1 py-1 text-sm text-rui-text"
+    data-testid="accounting-rule-conflicts-banner"
+  >
+    <RuiIcon
+      name="lu-triangle-alert"
+      size="16"
+      class="text-rui-warning shrink-0"
+    />
+    <span class="flex-1">
+      {{ t('accounting_settings.rule.conflicts.banner', { count }, count) }}
+    </span>
     <RuiButton
+      variant="text"
       color="warning"
-      class="mb-4"
+      size="sm"
       data-testid="accounting-rule-conflicts"
       @click="open = true"
     >
-      <template #prepend>
-        <RuiIcon name="lu-circle-alert" />
-      </template>
-      {{ t('accounting_settings.rule.conflicts.title') }}
-      <template #append>
-        <RuiChip
-          size="sm"
-          class="p-0! bg-rui-warning-darker!"
-          color="warning"
-        >
-          {{ count }}
-        </RuiChip>
-      </template>
+      {{ t('accounting_settings.rule.conflicts.resolve') }}
     </RuiButton>
-  </template>
+  </div>
   <AccountingRuleConflictsDialog
     v-if="open"
     @close="open = false"

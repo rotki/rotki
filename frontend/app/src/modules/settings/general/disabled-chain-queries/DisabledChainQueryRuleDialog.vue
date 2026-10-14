@@ -5,6 +5,7 @@ import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useRuleEditorForm } from '@/modules/settings/general/disabled-chain-queries/use-rule-editor-form';
+import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 
 const open = defineModel<boolean>('open', { required: true });
@@ -69,14 +70,14 @@ watch(open, (value) => {
       </template>
 
       <div class="flex flex-col gap-4">
-        <div>
-          <div class="text-rui-text-secondary text-caption mb-2">
+        <div class="flex flex-col gap-1.5">
+          <div class="text-sm font-medium text-rui-text">
             {{ t('general_settings.disabled_chain_queries.dialog.kind_label') }}
           </div>
           <RuiButtonGroup
             v-model="modelKind"
-            color="primary"
-            variant="outlined"
+            variant="segmented"
+            class="self-start"
             required
             data-testid="rule-kind-toggle"
           >
@@ -145,14 +146,14 @@ watch(open, (value) => {
             </template>
           </RuiAutoComplete>
 
-          <div>
-            <div class="text-rui-text-secondary text-caption mb-2">
+          <div class="flex flex-col gap-1.5">
+            <div class="text-sm font-medium text-rui-text">
               {{ t('general_settings.disabled_chain_queries.dialog.scope_label') }}
             </div>
             <RuiButtonGroup
               v-model="modelScope"
-              color="primary"
-              variant="outlined"
+              variant="segmented"
+              class="self-start"
               required
               data-testid="rule-scope-toggle"
             >
@@ -178,11 +179,14 @@ watch(open, (value) => {
             data-testid="rule-chains-picker"
             @update:model-value="modelSelectedChainIds = $event"
           >
-            <template #selection="{ item }">
-              <ChainDisplay
-                dense
+            <template #selection.prepend="{ item }">
+              <ChainIcon
                 :chain="item.id"
+                size="24px"
               />
+            </template>
+            <template #selection="{ item }">
+              {{ item.name }}
             </template>
             <template #item="{ item }">
               <ChainDisplay

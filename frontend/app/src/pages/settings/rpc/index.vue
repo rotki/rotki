@@ -13,7 +13,7 @@ definePage({
 </script>
 
 <template>
-  <SettingsPage>
+  <SettingsPage fills-height>
     <RpcSettings />
   </SettingsPage>
 </template>

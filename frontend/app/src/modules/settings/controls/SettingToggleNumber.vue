@@ -131,7 +131,7 @@ async function updateField(value: string): Promise<void> {
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col gap-1">
     <RuiSwitch
       v-model="enabled"
       :data-testid="switchTestId"
@@ -145,7 +145,6 @@ async function updateField(value: string): Promise<void> {
       v-model="form.state.value"
       color="primary"
       :data-testid="fieldTestId"
-      class="pt-4"
       type="number"
       :min="min"
       :max="max"

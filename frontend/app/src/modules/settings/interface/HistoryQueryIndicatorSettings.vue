@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useHistorySyncStatus } from '@/modules/history/sync-status/use-history-sync-status';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import SettingCategory from '@/modules/settings/SettingCategory.vue';
 import HistoryQueryIndicatorMinOutOfSyncPeriodSetting from './HistoryQueryIndicatorMinOutOfSyncPeriodSetting.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -32,10 +31,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <SettingCategory class="mt-6">
-    <template #title>
-      {{ t('frontend_settings.history_query_indicator.title') }}
-    </template>
+  <div>
     <SettingsItem setting-key="evmQueryIndicatorMinOutOfSyncPeriod">
       <template #subtitle>
         {{ t('frontend_settings.history_query_indicator.min_out_of_sync_period.subtitle') }}
@@ -53,7 +49,8 @@ onUnmounted(() => {
         <div class="flex items-start flex-col gap-1">
           <RuiButton
             variant="outlined"
-            color="secondary"
+            color="primary"
+            size="sm"
             :disabled="showSuccess"
             data-testid="history-query-indicator-reset"
             @click="handleReset()"
@@ -70,5 +67,5 @@ onUnmounted(() => {
         </div>
       </SettingsItem>
     </div>
-  </SettingCategory>
+  </div>
 </template>

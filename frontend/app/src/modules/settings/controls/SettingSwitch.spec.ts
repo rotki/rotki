@@ -11,10 +11,14 @@ const RuiSwitchStub = {
   emits: ['update:model-value'],
   template: `<div>
     <span class="model">{{ modelValue }}</span>
-    <span class="success">{{ successMessages }}</span>
-    <span class="error">{{ errorMessages }}</span>
+    <span class="status">{{ errorMessages || successMessages }}</span>
   </div>`,
 };
+
+/** The saved or error message the switch shows in its details line, empty when neither shows. */
+function status(wrapper: VueWrapper): string {
+  return wrapper.find('.status').text();
+}
 
 const RuiCheckboxStub = {
   props: ['modelValue', 'label'],
@@ -48,10 +52,10 @@ describe('settingSwitch', () => {
 
   it('should show a saved message after a successful write', async () => {
     const wrapper = createWrapper();
-    expect(wrapper.find('.success').text()).toBe('');
+    expect(status(wrapper)).toBe('');
     set(success, true);
     await nextTick();
-    expect(wrapper.find('.success').text()).not.toBe('');
+    expect(status(wrapper)).not.toBe('');
   });
 
   it('should derive the success message from the persisted value when given a callback', async () => {
@@ -60,14 +64,14 @@ describe('settingSwitch', () => {
     const wrapper = createWrapper({ successMessage });
     set(success, true);
     await nextTick();
-    expect(wrapper.find('.success').text()).toContain('turned on');
+    expect(status(wrapper)).toContain('turned on');
   });
 
   it('should surface the write error message', async () => {
     const wrapper = createWrapper();
     set(error, 'boom');
     await nextTick();
-    expect(wrapper.find('.error').text()).toContain('boom');
+    expect(status(wrapper)).toContain('boom');
   });
 
   it('should clear messages when the draft changes again', async () => {
@@ -76,7 +80,7 @@ describe('settingSwitch', () => {
     await nextTick();
     set(model, true);
     await nextTick();
-    expect(wrapper.find('.error').text()).toBe('');
+    expect(status(wrapper)).toBe('');
   });
 
   it('should emit updated with the persisted value after a successful write', async () => {
@@ -101,7 +105,7 @@ describe('settingSwitch', () => {
     const wrapper = createWrapper({ setting: 'includeFeesInCostBasis', successMessage });
     set(success, true);
     await nextTick();
-    expect(wrapper.find('.success').text()).toContain('turned off');
+    expect(status(wrapper)).toContain('turned off');
   });
 
   it('should display the negated value when inverted', () => {

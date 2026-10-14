@@ -17,7 +17,7 @@ import { CostBasisMethod } from '@/modules/settings/types/user-settings';
  * cleanly-importable enum qualify (see the fold plan); everything else keeps its hand-written keywords.
  */
 const anchorKeywordDomains: Partial<Record<SettingsHighlightId, readonly string[]>> = {
-  [SettingsHighlightIds.ACCOUNTING_TRADE]: Object.values(CostBasisMethod),
+  [SettingsHighlightIds.COST_BASIS_METHOD]: Object.values(CostBasisMethod),
   [SettingsHighlightIds.CURRENCY_LOCATION]: Object.values(CurrencyLocation),
   [SettingsHighlightIds.TIMEFRAME]: Object.values(TimeFramePeriod),
 };
@@ -38,7 +38,6 @@ interface UseSettingsSearchReturn {
 interface DerivedRow {
   readonly category?: SettingsCategoryId;
   readonly tab?: RouteName;
-  readonly group?: MessageKey;
   readonly titleKey: MessageKey;
   readonly keywords?: readonly MessageKey[];
   readonly highlightId?: SettingsHighlightId;
@@ -63,17 +62,12 @@ function collectRows(): DerivedRow[] {
   for (const [, entry] of registryEntries()) {
     const { anchor, search } = entry;
     if (search)
-      rows.push({ category: search.category, group: search.group, highlightId: anchor, keywords: search.keywords, tab: search.tab, titleKey: search.titleKey });
+      rows.push({ category: search.category, highlightId: anchor, keywords: search.keywords, tab: search.tab, titleKey: search.titleKey });
   }
   for (const [, action] of actionEntries()) {
-    rows.push({ category: action.category, group: action.group, highlightId: action.anchor, keywords: action.keywords, tab: action.tab, titleKey: action.titleKey });
+    rows.push({ category: action.category, highlightId: action.anchor, keywords: action.keywords, tab: action.tab, titleKey: action.titleKey });
   }
   return rows;
-}
-
-/** A row's optional group heading, as the zero or one text segment it contributes. */
-function rowGroup(row: DerivedRow, t: T): string[] {
-  return row.group ? [t(row.group)] : [];
 }
 
 /**
@@ -81,7 +75,8 @@ function rowGroup(row: DerivedRow, t: T): string[] {
  *
  * @remarks
  * Each `SEARCH_CATEGORIES` entry emits a header row plus its member rows, and a categoryless row
- * sits directly on its tab. A row's breadcrumb is `tab > [category unless flat] > [group] > title`.
+ * sits directly on its tab. A row's breadcrumb is `tab > category > title`, or `tab > title` without
+ * a category.
  */
 function derivedSearchEntries(tabInfo: (name: RouteName) => TabInfo | undefined, t: T): SettingsSearchEntry[] {
   const rows = collectRows();
@@ -98,12 +93,7 @@ function derivedSearchEntries(tabInfo: (name: RouteName) => TabInfo | undefined,
     texts,
   });
 
-  /**
-   * Builds the searchable entries for one category, led by an entry for the header itself.
-   *
-   * @remarks
-   * A flat category has no header text, so its rows carry no category prefix in their match text.
-   */
+  /** Builds the searchable entries for one category, led by an entry for the header itself. */
   const categoryEntries = (category: SearchCategory, info: TabInfo): SettingsSearchEntry[] => {
     const categoryTitle = t(category.titleKey);
     const header: SettingsSearchEntry = {
@@ -114,9 +104,8 @@ function derivedSearchEntries(tabInfo: (name: RouteName) => TabInfo | undefined,
       texts: [info.text, categoryTitle],
     };
 
-    const prefix = category.flat ? [] : [categoryTitle];
     const rows = (byCategory[category.id] ?? []).map(row =>
-      toEntry(info, row, [info.text, ...prefix, ...rowGroup(row, t), t(row.titleKey)]),
+      toEntry(info, row, [info.text, categoryTitle, t(row.titleKey)]),
     );
 
     return [header, ...rows];
@@ -134,7 +123,7 @@ function derivedSearchEntries(tabInfo: (name: RouteName) => TabInfo | undefined,
   for (const row of looseRows) {
     const info = row.tab ? tabInfo(row.tab) : undefined;
     if (info)
-      entries.push(toEntry(info, row, [info.text, ...rowGroup(row, t), t(row.titleKey)]));
+      entries.push(toEntry(info, row, [info.text, t(row.titleKey)]));
   }
 
   return entries;

@@ -91,13 +91,6 @@ async function exportZip(): Promise<void> {
 </script>
 
 <template>
-  <RuiAlert
-    type="info"
-    class="mt-4"
-  >
-    {{ t('manage_user_assets.warning') }}
-  </RuiAlert>
-
   <SettingsItem>
     <template #title>
       {{ t('manage_user_assets.export.title') }}
@@ -105,15 +98,21 @@ async function exportZip(): Promise<void> {
     <template #subtitle>
       {{ t('manage_user_assets.export.subtitle') }}
     </template>
-    <div class="flex flex-col gap-4 items-end">
-      <RuiButton
-        color="primary"
-        :loading="exporting"
-        @click="exportZip()"
-      >
-        {{ t('manage_user_assets.export.button') }}
-      </RuiButton>
-    </div>
+    <RuiButton
+      variant="outlined"
+      color="primary"
+      :loading="exporting"
+      data-testid="user-assets-export"
+      @click="exportZip()"
+    >
+      <template #prepend>
+        <RuiIcon
+          name="lu-download"
+          size="16"
+        />
+      </template>
+      {{ t('manage_user_assets.export.button') }}
+    </RuiButton>
   </SettingsItem>
   <SettingsItem>
     <template #title>
@@ -122,28 +121,36 @@ async function exportZip(): Promise<void> {
     <template #subtitle>
       {{ t('manage_user_assets.import.subtitle') }}
     </template>
-    <RuiFileUpload
-      ref="uploader"
-      v-model="zip"
-      accept=".zip"
-      class="bg-white dark:bg-transparent"
-      :uploaded="uploaded"
-      :error-messages="importError"
-      :hint="uploaded ? t('file_upload.import_complete') : undefined"
-      :upload-text="t('file_upload.dropzone.prefix')"
-      :click-to-upload-text="t('file_upload.dropzone.choose')"
-      :replace-text="t('file_upload.dropzone.replace')"
-      @update:model-value="onFileChange($event)"
-    />
-    <div class="flex justify-end">
+    <div class="flex flex-col gap-3">
+      <RuiFileUpload
+        ref="uploader"
+        v-model="zip"
+        accept=".zip"
+        :loading="uploading"
+        :uploaded="uploaded"
+        :error-messages="importError ? [importError] : []"
+        :hint="uploaded ? t('file_upload.import_complete') : t('manage_user_assets.warning')"
+        :upload-text="t('file_upload.dropzone.prefix')"
+        :click-to-upload-text="t('file_upload.dropzone.choose')"
+        :replace-text="t('file_upload.dropzone.replace')"
+        data-testid="user-assets-import-file"
+        @update:model-value="onFileChange($event)"
+        @error="importError = $event"
+      />
       <RuiButton
         color="primary"
-        class="mt-4"
+        class="self-start"
         :disabled="importDisabled"
         :loading="uploading"
         data-testid="user-assets-import"
         @click="importZip()"
       >
+        <template #prepend>
+          <RuiIcon
+            name="lu-upload"
+            size="16"
+          />
+        </template>
         {{ t('common.actions.import') }}
       </RuiButton>
     </div>

@@ -13,11 +13,6 @@ const { t } = useI18n({ useScope: 'global' });
     <template #subtitle>
       {{ t('asset_update.restore.subtitle') }}
     </template>
-    <div class="flex flex-col gap-4">
-      <RuiAlert type="warning">
-        {{ t('asset_update.restore.warning') }}
-      </RuiAlert>
-      <RestoreAssetDbButton />
-    </div>
+    <RestoreAssetDbButton />
   </SettingsItem>
 </template>

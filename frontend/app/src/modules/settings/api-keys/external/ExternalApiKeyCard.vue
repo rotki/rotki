@@ -4,7 +4,7 @@ import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { useServiceKeyHandler } from '@/modules/settings/api-keys/external/use-service-key-handler';
 import ServiceKey from '@/modules/settings/api-keys/ServiceKey.vue';
-import ServiceKeyCard from '@/modules/settings/api-keys/ServiceKeyCard.vue';
+import ServiceKeyCard, { type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const { service } = defineProps<{
@@ -18,6 +18,9 @@ const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof 
 
 const key = useApiKey(() => service.name);
 const status = actionStatus(() => service.name);
+
+// a computed rather than an inline object, so the card only re-renders when saving becomes possible
+const action = computed<ServiceKeyAction>(() => ({ disabled: !get(serviceKeyRef)?.currentValue }));
 </script>
 
 <template>
@@ -29,7 +32,7 @@ const status = actionStatus(() => service.name);
     :subtitle="t(service.description)"
     :image-src="getPublicServiceImagePath(service.image)"
     :rounded-icon="service.roundedIcon"
-    :action="{ disabled: !serviceKeyRef?.currentValue }"
+    :action="action"
     @confirm="saveHandler()"
   >
     <template #left-buttons>
@@ -61,22 +64,18 @@ const status = actionStatus(() => service.name);
       :status="status"
       @save="save($event)"
     >
-      <i18n-t
+      <ExternalLink
         v-if="service.link"
-        scope="global"
-        tag="div"
-        class="text-rui-text-secondary text-body-2"
-        keypath="external_services.get_api_key"
+        color="primary"
+        class="inline-flex items-center gap-1 self-start text-sm"
+        :url="service.link"
       >
-        <template #link>
-          <ExternalLink
-            color="primary"
-            :url="service.link"
-          >
-            {{ t('common.here') }}
-          </ExternalLink>
-        </template>
-      </i18n-t>
+        {{ t('external_services.get_key_from', { service: t(service.title) }) }}
+        <RuiIcon
+          name="lu-external-link"
+          size="14"
+        />
+      </ExternalLink>
     </ServiceKey>
   </ServiceKeyCard>
 </template>

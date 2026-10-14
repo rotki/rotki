@@ -11,10 +11,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <SettingCategory>
     <template #title>
-      {{ t('frontend_settings.subtitle.graph_settings') }}
-    </template>
-    <template #subtitle>
-      {{ t('frontend_settings.subtitle.graph_settings_hint') }}
+      {{ t('frontend_settings.sections.graphs') }}
     </template>
     <TimeFrameSetting />
     <SettingsItem setting-key="graphZeroBased">

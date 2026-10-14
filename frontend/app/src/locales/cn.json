@@ -139,11 +139,19 @@
       }
     },
     "csv_export_settings": {
+      "descriptions": {
+        "export_csv_formulas": "单元格保留表格公式，编辑文件时合计会重新计算。",
+        "have_csv_summary": "在全部事件 CSV 中添加一组合计。"
+      },
       "labels": {
         "export_csv_formulas": "是否在盈亏 CSV 中导出公式？",
         "have_csv_summary": "是否在全部事件 CSV 导出中包含所有事件的汇总？"
       },
-      "title": "盈亏 CSV 导出"
+      "title": "盈亏 CSV 导出",
+      "titles": {
+        "export_csv_formulas": "公式",
+        "have_csv_summary": "汇总"
+      }
     },
     "messages": {
       "cost_basis": {
@@ -214,6 +222,9 @@
     "wallet": "钱包"
   },
   "accounting_settings": {
+    "cost_basis": {
+      "title": "成本基础"
+    },
     "rule": {
       "action_dialog": {
         "add_event_specific": "仅为此事件添加规则",
@@ -237,6 +248,7 @@
       "confirm_delete": "确定要删除此自定义会计规则吗？",
       "confirm_reset": "确定要将所有会计规则重置为 rotki 默认值吗？这将移除所有自定义和已编辑的规则，且无法撤销。",
       "conflicts": {
+        "banner": "{count} 条规则与最新的 rotki 更新冲突。 | {count} 条规则与最新的 rotki 更新冲突。",
         "error": {
           "description": "解决会计规则冲突时出错：{error}",
           "title": "解决会计规则冲突"
@@ -244,9 +256,25 @@
         "labels": {
           "choose_version": "选择版本"
         },
+        "matching": "两个版本一致，已隐藏：{properties}。",
+        "resolve": "解决",
+        "save": {
+          "all": "全部保存（{total}）",
+          "choices": "保存 {count} 个选择 | 保存 {count} 个选择"
+        },
+        "strategy": {
+          "keep_local": "全部保留本地",
+          "keep_remote": "全部采用远程",
+          "per_rule": "逐条选择"
+        },
+        "subtitle": "本地是你编辑过的规则，远程是最新 rotki 更新中的版本。",
+        "summary": {
+          "all_local": "所有规则都保留你的本地版本。",
+          "all_remote": "所有规则都采用远程版本。",
+          "remaining": "{total} 条规则中还有 {remaining} 条需要选择。"
+        },
         "title": "解决会计规则冲突"
       },
-      "current_setting_value": "当前设置值：",
       "custom_events_info": "正在为选中的 {count} 个事件创建自定义会计规则",
       "delete": "删除会计规则",
       "delete_error": "无法删除会计规则：{message}",
@@ -266,6 +294,7 @@
         "event_type": "类型"
       },
       "import": "导入会计规则",
+      "import_hint": "从 rotki 导出的规则 JSON 文件",
       "labels": {
         "accounting_treatment": "会计处理方式",
         "accounting_treatment_basis_transfer": "成本基础转移",
@@ -275,9 +304,8 @@
         "count_cost_basis_pnl_subtitle": "是否计算该资产相对于获得时可能产生的盈亏。",
         "count_entire_amount_spend": "全额计为支出",
         "count_entire_amount_spend_subtitle": "是否将全部数量计为支出，即一项费用（负盈亏）",
+        "event": "事件",
         "event_ids": "事件 ID",
-        "event_subtype": "事件子类型",
-        "event_type": "事件类型",
         "taxable": "应税",
         "taxable_subtitle": "该事件是否被视为应税"
       },
@@ -285,7 +313,9 @@
       "overwrite_by_setting": "由其他会计设置的值覆盖",
       "refresh_tooltip": "刷新会计规则",
       "reset": "重置为默认值",
-      "subtitle": "管理和查看你的事件会计规则",
+      "sections": {
+        "accounting": "会计"
+      },
       "tabs": {
         "custom": "特定事件的专属规则",
         "regular": "常规规则"
@@ -294,7 +324,20 @@
       "value_overwritten": "跟随此会计设置",
       "view_events": "查看匹配此规则的事件"
     },
+    "taxes": {
+      "title": "税务"
+    },
     "trade": {
+      "descriptions": {
+        "calculate_past_cost_basis": "同时处理报告期之前的事件，这样期内卖出的早先买入资产也有成本基础。",
+        "cost_basis_method": "决定卖出时与哪些早先的买入相匹配，这会改变已实现盈亏。",
+        "eth_staking_taxable_after_withdrawal_enabled": "在上海升级开放提款之前的质押事件不计入报告。",
+        "include_crypto2crypto": "将两种加密资产之间的兑换计为应税交易。若只有兑换为法币才征税，请关闭。",
+        "include_fees_in_cost_basis": "交易支付的手续费计入资产的成本基础，而不是单独计为支出。",
+        "include_gas_costs": "将以太坊交易手续费计为盈亏中的支出。",
+        "tax_free": "持有超过此期限的资产卖出时不征税，部分司法管辖区如此规定。",
+        "use_asset_collections_in_cost_basis": "rotki 归入同一集合的资产（例如代币及其跨链版本）共享一个成本基础。"
+      },
       "labels": {
         "calculate_past_cost_basis": "创建报告时计算历史成本基础",
         "cost_basis_method": "成本基础方法",
@@ -306,7 +349,16 @@
         "taxfree_after_period": "多少天后免税",
         "use_asset_collections_in_cost_basis": "同一集合内的资产共享成本基础"
       },
-      "title": "交易设置"
+      "titles": {
+        "calculate_past_cost_basis": "历史成本基础",
+        "cost_basis_method": "成本基础方法",
+        "eth_staking_taxable_after_withdrawal_enabled": "ETH 质押",
+        "include_crypto2crypto": "加密货币间交易",
+        "include_fees_in_cost_basis": "成本基础中的手续费",
+        "include_gas_costs": "Gas 费用",
+        "tax_free": "免税期",
+        "use_asset_collections_in_cost_basis": "资产集合"
+      }
     }
   },
   "action_center": {
@@ -902,12 +954,10 @@
     }
   },
   "active_modules": {
-    "activate": "激活 {name} 模块",
     "enable": {
       "description": "你想启用 {name} 模块吗？",
       "title": "启用模块"
-    },
-    "view_addresses": "查看 {name} 的查询地址"
+    }
   },
   "address_book": {
     "actions": {
@@ -1993,7 +2043,6 @@
   },
   "chain_settings": {
     "chain_queries": {
-      "subtitle": "两项独立控制：rotki 查询数据时包含哪些链和地址，以及检测地址活跃位置时检查哪些链。",
       "title": "链"
     }
   },
@@ -2128,15 +2177,12 @@
       "bottom": "你还可以逐个处理冲突。",
       "top": "检测到本地更改。你有两个选择："
     },
-    "all_buttons_description": "对所有冲突应用此选择",
     "duplicate_warn": "标识符为 {identifiers} 的资产在冲突数据中多次出现，说明存在问题。如果冲突解决失败，请联系团队。",
-    "hint": "{conflicts} 个资产条目无法自动更新，其余 {remaining} 个条目需要你手动处理。",
     "keep_local": "全部保留本地",
     "keep_local_tooltip": "不会更新任何受影响的资产。可能需要手动更新。",
     "keep_remote": "全部保留远程",
     "keep_remote_tooltip": "更新所有资产，无需其他操作。",
     "manage": "管理冲突",
-    "resolve_all_hint": "所有冲突都将使用 {source} 数据解决。",
     "subtitle": "{conflicts} 个资产条目无法自动更新，其余 {remaining} 个条目需要你手动处理。",
     "table": {
       "headers": {
@@ -2826,8 +2872,7 @@
       "select_cache": "选择要刷新的协议数据",
       "subtitle": "刷新 rotki 中的协议数据",
       "success": "协议数据已成功清除",
-      "title": "刷新协议数据",
-      "tooltip": "刷新所选来源的协议数据"
+      "title": "刷新协议数据"
     },
     "title": "管理数据"
   },
@@ -2874,7 +2919,6 @@
   },
   "database_settings": {
     "asset_database": {
-      "subtitle": "管理资产数据库",
       "title": "资产数据库"
     },
     "database_info": {
@@ -2887,21 +2931,14 @@
         "userdb_size": "磁盘占用：",
         "userdb_version": "数据库版本："
       },
-      "subtitle": "查看数据库信息",
       "title": "数据库信息"
     },
-    "import_export": {
-      "subtitle": "导出或导入你的用户资产",
-      "title": "导出/导入用户资产"
-    },
     "manage_data": {
-      "subtitle": "管理你的数据",
       "title": "管理数据"
     },
     "user_backups": {
       "backup_button": "创建新备份",
       "delete_selected": "删除所选备份",
-      "subtitle": "查看你的数据库备份",
       "title": "用户数据库备份"
     }
   },
@@ -3083,11 +3120,11 @@
   "evm_settings": {
     "general": {
       "chains_to_skip_detection": {
+        "label": "跳过的链",
         "search_keywords": "跳过账户检测, 跨链检测, 链上活动, skip account detection, cross-chain detection, chain activity",
         "subtitle": "检查已追踪地址在其他 EVM 链上的活动时，排除这些链，地址不会被添加到这些链上。这不会停止查询你已追踪的链。",
         "title": "跳过账户活动检测"
       },
-      "title": "EVM",
       "treat_eth2_as_eth": {
         "subtitle": "启用后，质押的 ETH（ETH2）将作为普通 ETH 显示和计算。",
         "title": "将 ETH2 视为 ETH"
@@ -3095,6 +3132,7 @@
     },
     "indexer": {
       "add_chain": "添加特定链设置",
+      "add_indexer": "添加索引器",
       "api_key_missing_alert": "{indexer} 是你的首选索引器，但你尚未配置 API Key。查询可能变慢或失败，建议添加 API Key 以获得更好的性能。",
       "chain_order": "{chain} 索引器顺序",
       "chain_updated": "{chain} 索引器顺序已更新",
@@ -3112,7 +3150,6 @@
       "subtitle": "索引器用于查询历史事件。为每条 EVM 链配置索引器的优先级顺序。如果第一个索引器失败，将依次尝试下一个。",
       "suppressed_no_indexer_chains": {
         "error": "更新已屏蔽的链失败。",
-        "hint": "选择在没有索引器可用时不需要提示的链。移除某条链即可恢复提示。",
         "label": "已屏蔽的链",
         "subtitle": "管理在没有索引器可用时，操作中心不予提示的链。",
         "success": "已屏蔽的链已更新",
@@ -3214,16 +3251,12 @@
   },
   "explorers": {
     "address": "地址",
-    "address_url": "地址将在 {addressUrl} 打开",
     "block": "区块",
-    "block_url": "区块将在 {blockUrl} 打开",
     "chain_selector": "区块链",
     "subtitle": "设置地址和交易使用的外部区块浏览器链接",
     "title": "区块浏览器",
     "token": "代币",
-    "token_url": "代币将在 {tokenUrl} 打开",
-    "tx": "交易",
-    "tx_url": "交易将在 {txUrl} 打开"
+    "tx": "交易"
   },
   "external_services": {
     "actions": {
@@ -3294,7 +3327,6 @@
       "hint": "输入你的 Etherscan API Key",
       "title": "Etherscan"
     },
-    "get_api_key": "你可以在{link}申请 API Key",
     "gnosispay": {
       "delete_confirmation": {
         "message": "确定要移除 Gnosis Pay 的认证吗？",
@@ -3550,12 +3582,6 @@
         "error": "设置数据混淆模式出错：{message}"
       }
     },
-    "subtitle": {
-      "alias_names": "地址别名",
-      "blockchain_address_aliases": "区块链地址别名",
-      "graph_settings": "图表设置",
-      "graph_settings_hint": "管理你的图表设置。"
-    },
     "title": "仅界面设置",
     "validation": {
       "timeframe": {
@@ -3584,9 +3610,10 @@
         "floating_precision": "小数精度",
         "main_currency": "主货币",
         "main_currency_subtitle": "设为主货币"
-      },
-      "subtitle": "管理数值显示设置。",
-      "title": "数值设置"
+      }
+    },
+    "application": {
+      "title": "应用"
     },
     "auto_detect_tokens": {
       "label": "通过定期检查历史事件，自动检测代币并刷新余额。",
@@ -3688,7 +3715,6 @@
         "read_timeout": "读取超时",
         "read_timeout_hint": "与外部服务建立连接后，等待第一个字节的秒数。"
       },
-      "subtitle": "管理你的外部服务设置。",
       "suppress_missing_key": {
         "clear_all": "全部清除",
         "error": "更新已屏蔽服务出错",
@@ -3713,6 +3739,9 @@
           "non_empty": "请输入读取超时"
         }
       }
+    },
+    "formats": {
+      "title": "格式"
     },
     "history_event": {
       "auto_create_profit_events": {
@@ -3741,7 +3770,6 @@
         "subtitle": "查看和管理已跳过的外部事件",
         "title": "已跳过的外部事件"
       },
-      "subtitle": "管理你的历史事件设置。",
       "title": "历史事件"
     },
     "labels": {
@@ -3764,9 +3792,11 @@
       }
     },
     "nft_setting": {
+      "add": "添加",
       "allow_all_confirmation": {
-        "message": "每张 NFT 图片都会从其托管服务器加载，该服务器可以看到你的 IP 地址。",
-        "title": "允许所有域名的图片"
+        "cancel": "保留白名单",
+        "confirm": "允许所有图片",
+        "message": "每张 NFT 图片都会从其托管服务器加载，该服务器可以看到你的 IP 地址。"
       },
       "label": {
         "include_nfts": "在图表和总净资产中包含 NFT",
@@ -3777,7 +3807,8 @@
           "only_allow_whitelisted": "只允许来自白名单域名的图片"
         },
         "whitelist_domains": "域名",
-        "whitelisted_domain_entries": "无条目 | {count} 个唯一条目 | {count} 个唯一条目",
+        "whitelist_domains_placeholder": "rarible.com, opensea.com",
+        "whitelist_empty": "暂无域名，添加域名前 NFT 图片将保持隐藏。",
         "whitelisted_domains": "白名单域名",
         "whitelisted_domains_hint": "多个域名请用逗号分隔"
       },
@@ -3786,12 +3817,12 @@
         "success": "NFT 图片允许加载的域名已保存"
       },
       "subtitle": {
-        "include_nfts": "管理你的 NFT 设置",
         "nft_images_rendering_setting": "NFT 图片渲染设置",
         "nft_images_rendering_setting_hint": "从恶意服务器获取 NFT 图片可能导致隐私泄露，了解更多 {link}"
       },
       "title": "NFT 设置",
       "update_whitelist_confirmation": {
+        "confirm": "允许",
         "message": "确定要允许加载来自这些域名的 NFT 图片吗？ | 确定要允许加载来自域名 {domain} 的 NFT 图片吗？",
         "title": "更新白名单域名"
       }
@@ -3822,7 +3853,6 @@
         "title": "删除节点"
       }
     },
-    "subtitle": "管理你的通用设置。",
     "thousand_separator": {
       "validation": {
         "cannot_be_numeric_character": "千位分隔符不能为数字字符",
@@ -3831,7 +3861,9 @@
         "single_character": "千位分隔符必须为单个字符"
       }
     },
-    "title": "通用设置",
+    "tokens_balances": {
+      "title": "代币与余额"
+    },
     "usage_analytics": {
       "label": "提交匿名使用分析数据以帮助改进 rotki，你的隐私将受到保护。",
       "title": "使用分析",
@@ -4691,7 +4723,6 @@
     "select_accounts_hint": "为每个子模块选择要获取数据的账户。如果未选择地址，将为所有可用地址获取数据",
     "some_accounts": "{number} 个地址",
     "table": {
-      "enabled": "已启用",
       "select_accounts": "选择账户"
     },
     "tasks": {
@@ -4700,7 +4731,6 @@
   },
   "module_settings": {
     "coverage_note": "这些模块仅控制少数特定协议的余额查询，并非 rotki 支持的完整列表。无论这些设置如何，交易解码都会自动覆盖 100+ 个 DeFi 协议。完整的支持链、交易所和协议列表请见 {link}。",
-    "hint": "只会查询所选模块的数据。如果未选择任何模块，将禁用对所有支持模块的查询。另外请注意，启用模块后需要退出并重新登录才能生效",
     "integrations_link_label": "rotki.com/integrations",
     "subtitle": "管理和查看余额查询模块设置。",
     "title": "模块设置"
@@ -4962,7 +4992,11 @@
         "oracle_penalty_threshold_count": "预言机惩罚阈值次数"
       },
       "subtitle": "运行时异常预言机的惩罚设置。",
-      "title": "预言机惩罚设置"
+      "title": "预言机惩罚设置",
+      "units": {
+        "failures": "失败次数",
+        "seconds": "秒"
+      }
     }
   },
   "oracle_prices": {
@@ -5079,6 +5113,7 @@
     "enable_label": "启用定期密码确认",
     "hint": "请输入 1 到 14 天之间的值",
     "label": "密码确认间隔（天）",
+    "saved": "密码确认设置已保存",
     "subtitle": "设置使用自动登录时需要多久确认一次密码，以帮助你记住密码。",
     "title": "密码确认",
     "validation": {
@@ -5413,14 +5448,16 @@
     },
     "to_asset": "目标资产"
   },
-  "price_oracle_selection": {
-    "hint": "* 禁用所有预言机将无法查询资产价格。你可能需要点击“刷新价格”以应用更改。"
-  },
   "price_oracle_settings": {
     "data_name": "价格预言机",
+    "empty_warning": "没有预言机：rotki 无法用此列表为资产定价。",
     "historic_prices": "历史价格",
     "latest_prices": "最新价格",
-    "latest_prices_update": "最新价格的预言机顺序已更新。你可能需要点击“刷新价格”按钮以应用更改。",
+    "status": {
+      "cache_cleared": "已保存。已清除缓存的历史价格。",
+      "refresh_now": "立即刷新",
+      "saved_refresh": "已保存。价格仍按旧顺序获取。"
+    },
     "subtitle": "管理使用哪些价格预言机及其顺序。",
     "title": "价格预言机设置"
   },
@@ -5659,11 +5696,13 @@
     "active": "启用",
     "active_hint": "只会查询已启用的节点",
     "endpoint": "端点",
+    "endpoint_placeholder": "https://",
     "owned": "自有",
     "owned_hint": "如果此节点是用户自有的私有节点，请启用",
     "owned_hint_provider": "此密钥添加到的每条链都会将其作为权重为 0 的自有节点，因此会被优先尝试，而你现有节点之间的相对权重保持不变。",
     "weight": "权重",
     "weight_hint": "节点权重 {weight}/100（调整公共节点权重时，其他节点会相应调整）",
+    "weight_owned_hint": "自有节点会被优先查询，因此权重只适用于公共节点。",
     "weight_per_hundred": "/100"
   },
   "rpc_provider_setup": {
@@ -5738,7 +5777,6 @@
       "placeholder": "搜索设置..."
     },
     "security_settings": {
-      "subtitle": "管理你的账户安全",
       "title": "安全"
     },
     "validation": {
@@ -6682,7 +6720,6 @@
           "hint": "[可选] 为该操作保存的附加备注"
         },
         "resulting_combination": {
-          "label": "最终组合",
           "unknown": "最终组合未知，此事件将无法被正确处理。"
         },
         "sequence_index": {

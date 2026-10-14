@@ -89,8 +89,8 @@ function rule(overrides: Partial<AccountingRule> = {}): AccountingRule {
   };
 }
 
-function conflict(remote: Partial<AccountingRule> = {}): AccountingRuleConflict {
-  return { localData: rule(), localId: 1, remoteData: rule(remote) };
+function conflict(remote: Partial<AccountingRule> = {}, localId = 1): AccountingRuleConflict {
+  return { localData: rule(), localId, remoteData: rule(remote) };
 }
 
 function createWrapper(): VueWrapper<any> {
@@ -99,23 +99,37 @@ function createWrapper(): VueWrapper<any> {
       plugins: [createRuiPlugin({})],
       stubs: {
         BigDialog: BigDialogStub,
-        // Globally stubbed to `true`, which would swallow the hint the dialog is choosing between.
-        I18nT: { props: ['keypath'], template: '<span>{{ keypath }}<slot name="source" /></span>' },
       },
     },
   });
 }
 
-/** The table renders no column key onto the cell, so the columns are addressed by their order. */
-const COLUMN_INDEX: Record<string, number> = {
-  accountingTreatment: 6,
-  countCostBasisPnl: 5,
-  countEntireAmountSpend: 4,
-  taxable: 3,
+/** The header label of each property column, which the test i18n renders as its key. */
+const COLUMN_LABEL: Record<string, string> = {
+  accountingTreatment: 'accounting_settings.rule.labels.accounting_treatment',
+  countCostBasisPnl: 'accounting_settings.rule.labels.count_cost_basis_pnl',
+  countEntireAmountSpend: 'accounting_settings.rule.labels.count_entire_amount_spend',
+  taxable: 'accounting_settings.rule.labels.taxable',
 };
 
-function cell(wrapper: VueWrapper<any>, key: string): DOMWrapper<Element> {
-  return wrapper.findAll('tbody td')[COLUMN_INDEX[key]].find('div.w-full');
+function headerTexts(wrapper: VueWrapper<any>): string[] {
+  return wrapper.findAll('thead th').map(th => th.text());
+}
+
+/** The bulk choice is the first button group; the per-row ones follow in the table. */
+function strategyGroup(wrapper: VueWrapper<any>): VueWrapper<any> {
+  return wrapper.findComponent({ name: 'RuiButtonGroup' });
+}
+
+function summary(wrapper: VueWrapper<any>): string {
+  return wrapper.find('[data-testid=accounting-rule-conflicts-summary]').text();
+}
+
+/** Columns come and go with the data, so a property's cell is found through its header. */
+function cell(wrapper: VueWrapper<any>, key: string, row = 0): DOMWrapper<Element> {
+  const index = headerTexts(wrapper).findIndex(text => text.includes(COLUMN_LABEL[key]));
+  expect(index, `no column for ${key}`).toBeGreaterThanOrEqual(0);
+  return wrapper.findAll('tbody tr')[row].findAll('td')[index].find('div.w-full');
 }
 
 describe('accountingRuleConflictsDialog', () => {
@@ -188,19 +202,25 @@ describe('accountingRuleConflictsDialog', () => {
   });
 
   describe('resolving everything at once', () => {
-    it('should keep the local rules when the bulk choice is ticked', async () => {
+    it('should start out choosing per rule', () => {
       const wrapper = createWrapper();
 
-      await wrapper.findComponent({ name: 'RuiCheckbox' }).vm.$emit('update:modelValue', true);
+      expect(strategyGroup(wrapper).props('modelValue')).toBe('per_rule');
+    });
+
+    it('should keep every local rule once that is chosen', async () => {
+      const wrapper = createWrapper();
+
+      await strategyGroup(wrapper).vm.$emit('update:modelValue', 'local');
 
       expect(get(modelSolveAllUsing)).toBe('local');
     });
 
-    it('should return to per-conflict choices when it is unticked', async () => {
+    it('should return to per-rule choices', async () => {
       set(modelSolveAllUsing, 'remote');
       const wrapper = createWrapper();
 
-      await wrapper.findComponent({ name: 'RuiCheckbox' }).vm.$emit('update:modelValue', false);
+      await strategyGroup(wrapper).vm.$emit('update:modelValue', 'per_rule');
 
       expect(get(modelSolveAllUsing)).toBeUndefined();
     });
@@ -208,17 +228,35 @@ describe('accountingRuleConflictsDialog', () => {
     it('should count what is left to answer while choosing one at a time', () => {
       set(collection, { data: [conflict()], found: 1, limit: 10, total: 3 });
 
-      const hint = createWrapper().find('.text-caption');
-
-      expect(hint.text()).toContain('conflict_dialog.hint');
+      expect(summary(createWrapper())).toContain('accounting_settings.rule.conflicts.summary.remaining');
     });
 
     it('should say which side it is taking once the bulk choice is made', () => {
       set(modelSolveAllUsing, 'remote');
 
-      const hint = createWrapper().find('.text-caption');
+      expect(summary(createWrapper())).toContain('accounting_settings.rule.conflicts.summary.all_remote');
+    });
+  });
 
-      expect(hint.text()).toContain('conflict_dialog.resolve_all_hint');
+  describe('showing the outcome', () => {
+    it('should fade the version a row will not keep', async () => {
+      set(collection, { data: [conflict({ taxable: property(false) })], found: 1, limit: 10, total: 1 });
+      const wrapper = createWrapper();
+
+      set(modelResolution, { 1: 'remote' });
+      await nextTick();
+
+      const [local, remote] = cell(wrapper, 'taxable').findAll(':scope > div');
+      expect(local.classes()).toContain('opacity-40');
+      expect(remote.classes()).not.toContain('opacity-40');
+    });
+
+    it('should fade nothing before a version is chosen', () => {
+      set(collection, { data: [conflict({ taxable: property(false) })], found: 1, limit: 10, total: 1 });
+
+      const rows = cell(createWrapper(), 'taxable').findAll(':scope > div');
+
+      expect(rows.every(row => !row.classes().includes('opacity-40'))).toBe(true);
     });
   });
 
@@ -227,60 +265,98 @@ describe('accountingRuleConflictsDialog', () => {
    * update would change without reading every row.
    */
   describe('highlighting the differences', () => {
-    const highlight = 'bg-rui-error-lighter/10';
+    const highlight = 'bg-rui-warning/10';
 
-    beforeEach(() => {
-      set(modelSolveAllUsing, 'local');
-    });
-
-    it('should highlight nothing when the two versions agree', () => {
-      set(collection, { data: [conflict()], found: 1, limit: 10, total: 1 });
+    it('should tint a cell only on the row that disagrees there', () => {
+      set(collection, {
+        data: [conflict({ taxable: property(false) }, 1), conflict({ countEntireAmountSpend: property(false) }, 2)],
+        found: 2,
+        limit: 10,
+        total: 2,
+      });
 
       const wrapper = createWrapper();
 
-      expect(cell(wrapper, 'taxable').classes()).not.toContain(highlight);
-      expect(cell(wrapper, 'countEntireAmountSpend').classes()).not.toContain(highlight);
-      expect(cell(wrapper, 'countCostBasisPnl').classes()).not.toContain(highlight);
+      expect(cell(wrapper, 'taxable', 0).classes()).toContain(highlight);
+      expect(cell(wrapper, 'taxable', 1).classes()).not.toContain(highlight);
+      expect(cell(wrapper, 'countEntireAmountSpend', 0).classes()).not.toContain(highlight);
+      expect(cell(wrapper, 'countEntireAmountSpend', 1).classes()).toContain(highlight);
     });
 
-    it('should highlight the taxable column when only it differs', () => {
+    it('should tint the treatment when only it differs', () => {
+      set(collection, { data: [conflict({ accountingTreatment: AccountingTreatment.SWAP })], found: 1, limit: 10, total: 1 });
+
+      expect(cell(createWrapper(), 'accountingTreatment').classes()).toContain(highlight);
+    });
+  });
+
+  /** A property no conflict disagrees on cannot be what the choice is about, so its column steps aside. */
+  describe('leaving out what agrees', () => {
+    it('should show only the properties some conflict disagrees on', () => {
       set(collection, { data: [conflict({ taxable: property(false) })], found: 1, limit: 10, total: 1 });
 
-      const wrapper = createWrapper();
+      const headers = headerTexts(createWrapper()).join(' ');
 
-      expect(cell(wrapper, 'taxable').classes()).toContain(highlight);
-      expect(cell(wrapper, 'countEntireAmountSpend').classes()).not.toContain(highlight);
+      expect(headers).toContain(COLUMN_LABEL.taxable);
+      expect(headers).not.toContain(COLUMN_LABEL.countEntireAmountSpend);
+      expect(headers).not.toContain(COLUMN_LABEL.countCostBasisPnl);
+      expect(headers).not.toContain(COLUMN_LABEL.accountingTreatment);
     });
 
-    it('should highlight the spend column when only it differs', () => {
+    it('should name the left-out properties under the table', () => {
+      set(collection, { data: [conflict({ taxable: property(false) })], found: 1, limit: 10, total: 1 });
+
+      const note = createWrapper().find('[data-testid=accounting-rule-conflicts-matching]');
+
+      expect(note.exists()).toBe(true);
+      expect(note.text()).toContain('accounting_settings.rule.conflicts.matching');
+    });
+
+    it('should keep a column whose versions follow different settings', () => {
       set(collection, {
-        data: [conflict({ countEntireAmountSpend: property(false) })],
+        data: [conflict({ taxable: { linkedSetting: 'include_gas_costs', value: true } })],
         found: 1,
         limit: 10,
         total: 1,
       });
 
-      const wrapper = createWrapper();
-
-      expect(cell(wrapper, 'countEntireAmountSpend').classes()).toContain(highlight);
-      expect(cell(wrapper, 'taxable').classes()).not.toContain(highlight);
+      expect(headerTexts(createWrapper()).join(' ')).toContain(COLUMN_LABEL.taxable);
     });
 
-    it('should highlight the cost basis column when only it differs', () => {
-      set(collection, { data: [conflict({ countCostBasisPnl: property(false) })], found: 1, limit: 10, total: 1 });
-
+    it('should show every column and no note while nothing is loaded', () => {
       const wrapper = createWrapper();
+      const headers = headerTexts(wrapper).join(' ');
 
-      expect(cell(wrapper, 'countCostBasisPnl').classes()).toContain(highlight);
-      expect(cell(wrapper, 'taxable').classes()).not.toContain(highlight);
+      for (const label of Object.values(COLUMN_LABEL))
+        expect(headers).toContain(label);
+      expect(wrapper.find('[data-testid=accounting-rule-conflicts-matching]').exists()).toBe(false);
+    });
+  });
+
+  describe('the choices', () => {
+    it('should drop the per-rule buttons once a bulk choice decides every row', () => {
+      set(collection, { data: [conflict({ taxable: property(false) })], found: 1, limit: 10, total: 1 });
+      set(modelSolveAllUsing, 'remote');
+
+      const headers = headerTexts(createWrapper()).join(' ');
+
+      expect(headers).not.toContain('accounting_settings.rule.conflicts.labels.choose_version');
     });
 
-    it('should highlight the treatment column when only it differs', () => {
-      set(collection, { data: [conflict({ accountingTreatment: AccountingTreatment.SWAP })], found: 1, limit: 10, total: 1 });
+    it('should say Save writes only the choices made so far', () => {
+      set(modelResolution, { 1: 'local' });
 
-      const wrapper = createWrapper();
+      const action = createWrapper().findComponent(BigDialogStub).props('action');
 
-      expect(cell(wrapper, 'accountingTreatment').classes()).toContain(highlight);
+      expect(action.primary).toContain('accounting_settings.rule.conflicts.save.choices');
+    });
+
+    it('should say Save settles every conflict under a bulk choice', () => {
+      set(modelSolveAllUsing, 'local');
+
+      const action = createWrapper().findComponent(BigDialogStub).props('action');
+
+      expect(action.primary).toContain('accounting_settings.rule.conflicts.save.all');
     });
   });
 });

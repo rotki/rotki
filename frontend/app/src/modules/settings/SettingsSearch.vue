@@ -71,8 +71,11 @@ watchDebounced(search, (keyword: string) => {
     key-attr="value"
     dense
     auto-select-first
+    prepend-icon="lu-search"
+    label-placement="hidden"
     :label="t('settings.search.placeholder')"
-    class="max-w-[400px] w-full"
+    :placeholder="t('settings.search.placeholder')"
+    class="max-w-80 w-full"
     data-testid="settings-search"
     @update:model-value="onSelect($event)"
   >

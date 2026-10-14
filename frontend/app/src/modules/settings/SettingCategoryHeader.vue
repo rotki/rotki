@@ -1,11 +1,11 @@
 <template>
-  <div class="border-default">
-    <h6 class="text-h6 font-semibold">
+  <div class="flex flex-col gap-1 min-w-0 border-rui-divider">
+    <h3 class="text-base font-semibold text-rui-text">
       <slot name="title" />
-    </h6>
+    </h3>
     <div
       v-if="$slots.subtitle"
-      class="text-rui-text-secondary text-sm"
+      class="text-sm text-rui-text-secondary"
     >
       <slot name="subtitle" />
     </div>

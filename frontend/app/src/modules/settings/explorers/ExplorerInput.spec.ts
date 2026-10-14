@@ -20,13 +20,10 @@ describe('settings/explorers/ExplorerInput.vue', () => {
     });
   }
 
-  /**
-   * The save button carries no test id: the e2e page object reaches it as the field's sibling, and it
-   * is the last button in the component (the clear button sits inside the text field).
-   */
+  /** The save action sits inside the field and only shows once the url differs from the saved one. */
   function saveButton(): DOMWrapper<HTMLButtonElement> {
-    const button = wrapper.findAll<HTMLButtonElement>('button').at(-1);
-    assert(button, 'the save button is missing');
+    const button = wrapper.find<HTMLButtonElement>('[data-testid=explorer-save]');
+    assert(button.exists(), 'the save button is missing');
     return button;
   }
 
@@ -34,10 +31,28 @@ describe('settings/explorers/ExplorerInput.vue', () => {
     return wrapper.find('.details .text-rui-error').text();
   }
 
-  it('should allow saving an empty url, which clears the override', () => {
-    wrapper = createWrapper();
+  it('should offer no save while the url is unchanged', () => {
+    wrapper = createWrapper('https://example.com/address/');
+
+    expect(wrapper.find('[data-testid=explorer-save]').exists()).toBe(false);
+  });
+
+  it('should allow saving an emptied url, which clears the override', async () => {
+    wrapper = createWrapper('https://example.com/address/');
+
+    await wrapper.find('input').setValue('');
 
     expect(saveButton().attributes('disabled')).toBeUndefined();
+  });
+
+  it('should save on enter and drop the save action once saved', async () => {
+    wrapper = createWrapper();
+
+    await wrapper.find('input').setValue('https://example.com/address/');
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' });
+
+    expect(wrapper.emitted('save-data')).toEqual([['https://example.com/address/']]);
+    expect(wrapper.find('[data-testid=explorer-save]').exists()).toBe(false);
   });
 
   it('should allow saving a valid https url', async () => {

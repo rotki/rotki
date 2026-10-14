@@ -21,8 +21,6 @@ const { getChainName } = useSupportedChains();
     class="flex items-center gap-2 py-0.5"
     data-testid="provider-candidate"
   >
-    <!-- The chain rides inside the checkbox's own label, so it is both the accessible name and part
-         of the hit target. -->
     <RuiCheckbox
       :model-value="selected"
       :disabled="!!candidate.existing"

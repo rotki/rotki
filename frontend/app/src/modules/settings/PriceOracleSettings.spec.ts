@@ -14,7 +14,10 @@ const { held, spies } = vi.hoisted(() => {
   const held: { models: Map<string, SettingModelState> } = { models: new Map() };
   return {
     held,
-    spies: { reset: vi.fn<() => void>() },
+    spies: {
+      refresh: vi.fn<(ignoreCache?: boolean) => Promise<void>>(async () => {}),
+      reset: vi.fn<() => void>(),
+    },
   };
 });
 
@@ -24,6 +27,10 @@ vi.mock('@/modules/settings/use-setting-model', () => ({
 
 vi.mock('@/modules/assets/prices/use-historic-price-cache', () => ({
   useHistoricPriceCache: (): object => ({ reset: spies.reset }),
+}));
+
+vi.mock('@/modules/assets/prices/use-price-refresh', () => ({
+  usePriceRefresh: (): object => ({ refreshPrices: spies.refresh, refreshing: ref<boolean>(false) }),
 }));
 
 function settingModel(value: string[]): SettingModelState {
@@ -43,10 +50,9 @@ describe('priceOracleSettings', () => {
           PrioritizedList: {
             emits: ['update:modelValue'],
             name: 'PrioritizedList',
-            props: ['modelValue', 'status'],
-            template: '<div />',
+            props: ['modelValue', 'status', 'emptyWarning'],
+            template: '<div><slot name="status" /></div>',
           },
-          RuiAlert: true,
           SettingCategoryHeader: true,
         },
       },
@@ -91,7 +97,7 @@ describe('priceOracleSettings', () => {
       await nextTick();
 
       expect(spies.reset).toHaveBeenCalledOnce();
-      expect(status(1).success).toBe('settings.saved');
+      expect(status(1).success).toBe('price_oracle_settings.status.cache_cleared');
     });
 
     it('should keep only real oracles when the order changes', async () => {
@@ -114,14 +120,38 @@ describe('priceOracleSettings', () => {
   });
 
   describe('current oracles', () => {
-    it('should confirm a saved order without touching the historical cache', async () => {
+    it('should say a saved order needs a refresh, without touching the historical cache', async () => {
       wrapper = createWrapper();
 
       set(current.success, true);
       await nextTick();
 
-      expect(status(0).success).toBe('settings.saved: price_oracle_settings.latest_prices_update');
+      expect(status(0).success).toBe('price_oracle_settings.status.saved_refresh');
+      expect(wrapper.find('[data-testid=oracle-refresh-now]').exists()).toBe(true);
       expect(spies.reset).not.toHaveBeenCalled();
+    });
+
+    it('should refresh the prices from the status and then stop asking', async () => {
+      wrapper = createWrapper();
+      set(current.success, true);
+      await nextTick();
+
+      await wrapper.find('[data-testid=oracle-refresh-now]').trigger('click');
+
+      expect(spies.refresh).toHaveBeenCalledExactlyOnceWith(true);
+      expect(spies.reset).toHaveBeenCalledOnce();
+      expect(status(0).success).toBe('');
+    });
+
+    it('should stop asking for a refresh once the order changes again', async () => {
+      wrapper = createWrapper();
+      set(current.success, true);
+      await nextTick();
+
+      list(0).vm.$emit('update:modelValue', [PriceOracle.COINGECKO]);
+      await nextTick();
+
+      expect(status(0).success).toBe('');
     });
 
     it('should keep only real oracles when the order changes', async () => {
@@ -144,23 +174,15 @@ describe('priceOracleSettings', () => {
     });
   });
 
-  describe('empty list warning', () => {
-    it('should not warn while both lists have an oracle', () => {
-      wrapper = createWrapper();
+  it('should give both lists the warning they show when emptied', () => {
+    wrapper = createWrapper();
 
-      expect(wrapper.findComponent({ name: 'RuiAlert' }).exists()).toBe(false);
-    });
+    const warningOf = (index: 0 | 1): unknown => {
+      const props: Record<string, unknown> = list(index).props();
+      return props.emptyWarning;
+    };
 
-    it.each([
-      ['current', (): void => set(current.model, [])],
-      ['historical', (): void => set(historic.model, [])],
-    ])('should warn once the %s list is empty', async (_name, empty) => {
-      wrapper = createWrapper();
-
-      empty();
-      await nextTick();
-
-      expect(wrapper.findComponent({ name: 'RuiAlert' }).exists()).toBe(true);
-    });
+    expect(warningOf(0)).toBe('price_oracle_settings.empty_warning');
+    expect(warningOf(1)).toBe('price_oracle_settings.empty_warning');
   });
 });

@@ -2,15 +2,18 @@
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
 
 defineSlots<{
-  title: () => any;
-  subtitle: () => any;
+  title?: () => any;
+  subtitle?: () => any;
   default: () => any;
 }>();
 </script>
 
 <template>
   <div>
-    <SettingCategoryHeader class="border-b pb-5">
+    <SettingCategoryHeader
+      v-if="$slots.title"
+      class="border-b pb-4"
+    >
       <template #title>
         <slot name="title" />
       </template>

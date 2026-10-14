@@ -106,6 +106,7 @@ async function save(): Promise<boolean> {
     :display="!!modelValue"
     :title="dialogTitle"
     :action="{ disabled: loading, primary: t('common.actions.save') }"
+    :layout="{ maxWidth: '640px', autoHeight: true }"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
     @confirm="save()"

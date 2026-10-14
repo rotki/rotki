@@ -67,73 +67,86 @@ const linkedPropertyValue = computed<boolean | null>(() => {
   return get(item.state);
 });
 
-const elemID = computed(() => `${identifier}-switch`);
+/** A linked rule takes its value from the setting, so the disabled switch shows that value rather than the rule's own. */
+const shownValue = computed<boolean>(() => {
+  if (!state.linked)
+    return state.value;
+  return get(linkedPropertyValue) ?? false;
+});
+
+const elemID = computed<string>(() => `${identifier}-switch`);
 </script>
 
 <template>
-  <div class="flex gap-4 py-4">
-    <RuiSwitch
-      :id="elemID"
-      v-model="state.value"
-      color="primary"
-      :disabled="state.linked"
-    />
-    <div class="w-full">
+  <div class="flex flex-col gap-1 px-4 py-3">
+    <div class="flex items-start gap-4">
       <label
         :for="elemID"
-        class="cursor-pointer"
+        class="flex-1 cursor-pointer"
       >
-        <div class="text-body-1 text-rui-text">
+        <span class="block text-sm font-medium text-rui-text">
           {{ label }}
-        </div>
-        <div class="text-rui-text-secondary text-body-2">
+        </span>
+        <span class="block text-xs text-rui-text-secondary mt-0.5">
           {{ hint }}
           <ExternalLink
             v-if="learnMoreUrl"
             :url="learnMoreUrl"
             color="primary"
-            class="inline-flex items-center gap-1 text-body-2"
+            class="text-xs"
+            :text="t('accounting_settings.rule.learn_more')"
             @click.stop
-          >
-            <RuiIcon
-              name="lu-book-open"
-              size="14"
-            />
-            {{ t('accounting_settings.rule.learn_more') }}
-          </ExternalLink>
-        </div>
+          />
+        </span>
       </label>
-      <RuiCheckbox
-        v-model="linked"
-        size="sm"
+      <RuiSwitch
+        :id="elemID"
+        :model-value="shownValue"
         color="primary"
         hide-details
-      >
-        <span class="text-caption">
-          {{ t('accounting_settings.rule.overwrite_by_setting') }}
-        </span>
-      </RuiCheckbox>
-      <div
-        v-if="state.linked"
-        class="ml-7 mt-1 md:w-1/2"
-      >
-        <RuiMenuSelect
-          v-model="state.linkedSetting"
-          variant="outlined"
-          hide-details
-          dense
-          key-attr="identifier"
-          text-attr="label"
-          :options="linkableSettingOptions"
-        />
-        <div
-          v-if="linkedPropertyValue !== null"
-          class="flex items-center mt-2 gap-2"
-        >
-          {{ t('accounting_settings.rule.current_setting_value') }}
-          <SuccessDisplay :success="linkedPropertyValue" />
-        </div>
-      </div>
+        :disabled="state.linked"
+        @update:model-value="state.value = $event"
+      />
     </div>
+    <RuiCheckbox
+      v-model="linked"
+      size="sm"
+      color="primary"
+      hide-details
+    >
+      <span class="text-xs text-rui-text-secondary">
+        {{ t('accounting_settings.rule.overwrite_by_setting') }}
+      </span>
+    </RuiCheckbox>
+    <RuiMenuSelect
+      v-if="state.linked"
+      v-model="state.linkedSetting"
+      class="pl-7"
+      :label="t('accounting_settings.rule.overwrite_by_setting')"
+      label-placement="hidden"
+      hide-details
+      key-attr="identifier"
+      text-attr="label"
+      :options="linkableSettingOptions"
+    >
+      <template #selection="{ item }">
+        <span class="flex items-center gap-2 text-sm">
+          <SuccessDisplay
+            :success="item.state"
+            size="16"
+          />
+          {{ item.label }}
+        </span>
+      </template>
+      <template #item="{ item }">
+        <span class="flex items-center gap-2 leading-4 font-normal">
+          <SuccessDisplay
+            :success="item.state"
+            size="16"
+          />
+          {{ item.label }}
+        </span>
+      </template>
+    </RuiMenuSelect>
   </div>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { isChainTab, type RpcSettingTab } from '@/modules/settings/general/rpc/use-rpc-settings-tabs';
-import AppImage from '@/modules/shell/components/AppImage.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
 const { tab, groupLabel } = defineProps<{
   tab: RpcSettingTab;
@@ -25,12 +25,10 @@ const { tab, groupLabel } = defineProps<{
         horizontal
         size="20px"
       />
-      <AppImage
+      <IconMark
         v-else
         :src="tab.image"
         size="20px"
-        fit="contain"
-        class="icon-bg"
       />
       <span
         v-if="!isChainTab(tab)"

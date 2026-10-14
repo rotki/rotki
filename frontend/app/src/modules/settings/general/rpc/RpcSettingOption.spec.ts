@@ -12,14 +12,6 @@ vi.mock('@/modules/history/LocationDisplay.vue', () => ({
   },
 }));
 
-vi.mock('@/modules/shell/components/AppImage.vue', () => ({
-  default: {
-    name: 'AppImage',
-    props: ['src', 'size', 'fit'],
-    template: '<img data-testid="app-image" :src="src" />',
-  },
-}));
-
 function mountOption(props: InstanceType<typeof RpcSettingOption>['$props']): VueWrapper {
   return mount(RpcSettingOption, { props });
 }
@@ -30,10 +22,10 @@ describe('rpcSettingOption', () => {
     const display = wrapper.find('[data-testid=location-display]');
     expect(display.exists()).toBe(true);
     expect(display.text()).toBe(Blockchain.ETH);
-    expect(wrapper.find('[data-testid=app-image]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=icon-mark]').exists()).toBe(false);
   });
 
-  it('should render AppImage and name for custom tabs', () => {
+  it('should render the logo and name for custom tabs', () => {
     const wrapper = mountOption({
       tab: {
         id: 'eth_consensus_layer',
@@ -42,7 +34,7 @@ describe('rpcSettingOption', () => {
         setting: RpcSettingKey.BEACON,
       },
     });
-    const image = wrapper.find('[data-testid=app-image]');
+    const image = wrapper.find('[data-testid=icon-mark] img');
     expect(image.exists()).toBe(true);
     expect(image.attributes('src')).toBe('/img/beacon.svg');
     expect(wrapper.text()).toContain('ETH Beacon Node');

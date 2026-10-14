@@ -91,7 +91,6 @@ function failureMessage(row: RpcSetupRow): string {
         class="flex items-center gap-2"
         data-testid="provider-progress"
       >
-        <!-- Kept even between two chains, so the label does not shift when the icon goes. -->
         <div class="w-[18px] shrink-0">
           <ChainIcon
             v-if="runningChain"

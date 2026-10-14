@@ -20,8 +20,6 @@ interface SettingSearch {
   readonly category?: SettingsCategoryId;
   /** The tab a categoryless row sits directly on; used instead of `category` for a flat, headerless tab. */
   readonly tab?: RouteName;
-  /** An intermediate breadcrumb segment for a sub-group within the category (e.g. a settings panel). */
-  readonly group?: MessageKey;
   /** Extra i18n terms the search matches (subtitles, hints). */
   readonly keywords?: readonly MessageKey[];
 }

@@ -29,23 +29,19 @@ const { t } = useI18n({ useScope: 'global' });
       </template>
       <template #subtitle>
         {{ t('module_settings.subtitle') }}
+        <i18n-t
+          keypath="module_settings.coverage_note"
+          tag="span"
+        >
+          <template #link>
+            <ExternalLink
+              :url="externalLinks.integrations"
+              :text="t('module_settings.integrations_link_label')"
+            />
+          </template>
+        </i18n-t>
       </template>
-      <div class="flex flex-col gap-4 pt-4">
-        <RuiAlert type="info">
-          {{ t('module_settings.hint') }}
-          <i18n-t
-            keypath="module_settings.coverage_note"
-            tag="div"
-            class="mt-2"
-          >
-            <template #link>
-              <ExternalLink
-                :url="externalLinks.integrations"
-                :text="t('module_settings.integrations_link_label')"
-              />
-            </template>
-          </i18n-t>
-        </RuiAlert>
+      <div class="pt-4">
         <ModuleSelector />
       </div>
     </SettingCategory>

@@ -14,9 +14,6 @@ const { t } = useI18n({ useScope: 'global' });
     <template #title>
       {{ t('general_settings.external_service_setting.title') }}
     </template>
-    <template #subtitle>
-      {{ t('general_settings.external_service_setting.subtitle') }}
-    </template>
     <QueryRetryLimitSetting />
     <ConnectTimeoutSetting />
     <ReadTimeoutSetting />

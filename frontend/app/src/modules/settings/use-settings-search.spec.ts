@@ -137,27 +137,18 @@ describe('useSettingsSearch', () => {
     const rowFor = (id: SettingsHighlightId): SettingsSearchEntry | undefined =>
       allEntries.find(entry => entry.highlightId === id);
 
-    it('should drop the category segment for a flat category, leaving tab then setting', () => {
-      expect(rowFor(SettingsHighlightIds.LANGUAGE)?.texts).toEqual([
-        'Interface',
-        'general_settings.language.title',
-      ]);
-    });
-
-    it('should insert the group segment for a sub-group setting, still without a category', () => {
-      expect(rowFor(SettingsHighlightIds.MIN_OUT_OF_SYNC_PERIOD)?.texts).toEqual([
-        'Interface',
-        'frontend_settings.history_query_indicator.title',
+    it.each([
+      [SettingsHighlightIds.LANGUAGE, 'frontend_settings.sections.display', 'general_settings.language.title'],
+      [SettingsHighlightIds.SCRAMBLE, 'frontend_settings.sections.privacy', 'frontend_settings.scramble.title'],
+      [
+        SettingsHighlightIds.MIN_OUT_OF_SYNC_PERIOD,
+        'frontend_settings.sections.refresh',
         'frontend_settings.history_query_indicator.min_out_of_sync_period.title',
-      ]);
-    });
-
-    it('should keep the category segment for a non-flat category, giving tab then category then setting', () => {
-      expect(rowFor(SettingsHighlightIds.GRAPH_BASIS)?.texts).toEqual([
-        'Interface',
-        'frontend_settings.subtitle.graph_settings',
-        'frontend_settings.graph_basis.title',
-      ]);
+      ],
+      [SettingsHighlightIds.GRAPH_BASIS, 'frontend_settings.sections.graphs', 'frontend_settings.graph_basis.title'],
+      [SettingsHighlightIds.EXPLORERS, 'frontend_settings.sections.addresses', 'explorers.title'],
+    ])('should place %s under its interface section, giving tab then category then setting', (id, category, title) => {
+      expect(rowFor(id)?.texts).toEqual(['Interface', category, title]);
     });
 
     it('should build a two-level breadcrumb for categoryless action rows', () => {
@@ -173,8 +164,8 @@ describe('useSettingsSearch', () => {
     it('should find settings by their derived enum-value keywords', () => {
       const anchorOf = (keyword: string): (string | undefined)[] =>
         filterEntries(allEntries, keyword).map(entry => entry.highlightId);
-      expect(anchorOf('fifo')).toContain(SettingsHighlightIds.ACCOUNTING_TRADE);
-      expect(anchorOf('hifo')).toContain(SettingsHighlightIds.ACCOUNTING_TRADE);
+      expect(anchorOf('fifo')).toContain(SettingsHighlightIds.COST_BASIS_METHOD);
+      expect(anchorOf('hifo')).toContain(SettingsHighlightIds.COST_BASIS_METHOD);
       expect(anchorOf('6m')).toContain(SettingsHighlightIds.TIMEFRAME);
       expect(anchorOf('before')).toContain(SettingsHighlightIds.CURRENCY_LOCATION);
     });

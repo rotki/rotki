@@ -20,7 +20,7 @@ vi.mock('@/modules/settings/use-settings-highlight', () => ({
 const FOO = SettingsHighlightIds.ABBREVIATION;
 const BAR = SettingsHighlightIds.AMOUNT_FORMAT;
 const CATEGORY = SettingsCategoryIds.AMOUNT;
-const MISSING = SettingsHighlightIds.CSV_EXPORT;
+const MISSING = SettingsHighlightIds.DATE_FORMAT;
 
 function addTarget(id: string): { element: HTMLElement; animation: Animation; animateSpy: Mock; cancelSpy: Mock } {
   const element = document.createElement('div');

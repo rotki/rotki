@@ -16,9 +16,6 @@ const { t } = useI18n({ useScope: 'global' });
     <template #title>
       {{ t('general_settings.history_event.title') }}
     </template>
-    <template #subtitle>
-      {{ t('general_settings.history_event.subtitle') }}
-    </template>
     <SettingsItem setting-key="autoCreateProfitEvents">
       <AutoCreateProfitEventsSetting />
     </SettingsItem>

@@ -32,7 +32,10 @@ export class ModulesSettingsPage {
     await expect(this.moduleCheckbox(identifier)).toBeChecked({ checked: enabled });
   }
 
+  /** The button is disabled while every module is already on, which leaves nothing to do. */
   async enableAll(): Promise<void> {
-    await this.page.locator('[data-testid=modules_enable_all]').click();
+    const button = this.page.locator('[data-testid=modules_enable_all]');
+    if (await button.isEnabled())
+      await button.click();
   }
 }

@@ -139,8 +139,6 @@ defineExpose({
         :label="t('data_table.no_data')"
       >
         <template #description>
-          <!-- The header "Add node" button is hidden for single-value
-               endpoints, so this is the only way to set an empty one. -->
           <RuiButton
             color="primary"
             class="mt-2"

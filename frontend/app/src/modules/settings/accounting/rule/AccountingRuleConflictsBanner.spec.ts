@@ -20,7 +20,8 @@ describe('accountingRuleConflictsBanner', () => {
   it('should offer the conflicts when there are some', () => {
     const wrapper = createWrapper({ count: 3, open: false });
 
-    expect(wrapper.find('[data-testid=accounting-rule-conflicts]').text()).toContain('3');
+    expect(wrapper.find('[data-testid=accounting-rule-conflicts-banner]').text()).toContain('3');
+    expect(wrapper.find('[data-testid=accounting-rule-conflicts]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=conflicts-dialog]').exists()).toBe(false);
   });
 

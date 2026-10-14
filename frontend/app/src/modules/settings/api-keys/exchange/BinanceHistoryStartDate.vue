@@ -33,7 +33,6 @@ onMounted(() => {
 <template>
   <DateTimePicker
     v-model="modelValue"
-    class="mt-4"
     data-testid="binance-history-start"
     :disabled="loading"
     :error-messages="errorMessages"

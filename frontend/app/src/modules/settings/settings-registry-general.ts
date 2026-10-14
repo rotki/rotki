@@ -22,16 +22,16 @@ export const generalRegistry = {
   autoDeleteCalendarEntries: general('autoDeleteCalendarEntries'),
   autoDetectTokens: general('autoDetectTokens', {
     anchor: SettingsHighlightIds.AUTO_DETECT_TOKENS,
-    search: { category: SettingsCategoryIds.GENERAL, titleKey: msg.$t('general_settings.auto_detect_tokens.title') },
+    search: { category: SettingsCategoryIds.TOKENS_BALANCES, titleKey: msg.$t('general_settings.auto_detect_tokens.title') },
   }),
   balanceSaveFrequency: general('balanceSaveFrequency', {
     anchor: SettingsHighlightIds.BALANCE_SAVE_FREQUENCY,
-    search: { category: SettingsCategoryIds.GENERAL, titleKey: msg.$t('general_settings.balance_frequency.title') },
+    search: { category: SettingsCategoryIds.TOKENS_BALANCES, titleKey: msg.$t('general_settings.balance_frequency.title') },
   }),
   beaconRpcEndpoint: general('beaconRpcEndpoint'),
   btcDerivationGapLimit: general('btcDerivationGapLimit', {
     anchor: SettingsHighlightIds.BTC_DERIVATION_GAP,
-    search: { category: SettingsCategoryIds.GENERAL, titleKey: msg.$t('general_settings.labels.btc_derivation_gap') },
+    search: { category: SettingsCategoryIds.TOKENS_BALANCES, titleKey: msg.$t('general_settings.labels.btc_derivation_gap') },
   }),
   btcMempoolApi: general('btcMempoolApi'),
   connectTimeout: general('connectTimeout', {
@@ -42,7 +42,8 @@ export const generalRegistry = {
       titleKey: msg.$t('general_settings.external_service_setting.label.connect_timeout'),
     },
   }),
-  csvExportDelimiter: general('csvExportDelimiter', { anchor: SettingsHighlightIds.CSV_EXPORT }),
+  // shares the CSV export row with displayDateInLocaltime, which carries its search entry
+  csvExportDelimiter: general('csvExportDelimiter', { anchor: SettingsHighlightIds.DISPLAY_DATE_IN_LOCALTIME }),
   currency: general('mainCurrency', {
     anchor: SettingsHighlightIds.AMOUNT_FORMAT,
     encode: value => value.tickerSymbol,
@@ -52,7 +53,7 @@ export const generalRegistry = {
   currentPriceOracles: general('currentPriceOracles'),
   dateDisplayFormat: general('dateDisplayFormat', {
     anchor: SettingsHighlightIds.DATE_FORMAT,
-    search: { category: SettingsCategoryIds.GENERAL, titleKey: msg.$t('date_format_help.title') },
+    search: { category: SettingsCategoryIds.AMOUNT, titleKey: msg.$t('date_format_help.title') },
   }),
   defaultEvmIndexerOrder: general('defaultEvmIndexerOrder'),
   disabledChainQueries: general('disabledChainQueries', {
@@ -65,7 +66,11 @@ export const generalRegistry = {
   }),
   displayDateInLocaltime: general('displayDateInLocaltime', {
     anchor: SettingsHighlightIds.DISPLAY_DATE_IN_LOCALTIME,
-    search: { category: SettingsCategoryIds.GENERAL, titleKey: msg.$t('general_settings.display_date_in_localtime.title') },
+    search: {
+      category: SettingsCategoryIds.AMOUNT,
+      keywords: [msg.$t('general_settings.labels.csv_delimiter')],
+      titleKey: msg.$t('general_settings.display_date_in_localtime.title'),
+    },
   }),
   dotRpcEndpoint: general('dotRpcEndpoint'),
   evmIndexersOrder: general('evmIndexersOrder'),
@@ -131,7 +136,7 @@ export const generalRegistry = {
   treatEth2AsEth: general('treatEth2AsEth', {
     anchor: SettingsHighlightIds.TREAT_ETH2_AS_ETH,
     search: {
-      category: SettingsCategoryIds.CHAINS,
+      category: SettingsCategoryIds.CHAIN_QUERIES,
       keywords: [msg.$t('evm_settings.general.treat_eth2_as_eth.subtitle')],
       titleKey: msg.$t('evm_settings.general.treat_eth2_as_eth.title'),
     },

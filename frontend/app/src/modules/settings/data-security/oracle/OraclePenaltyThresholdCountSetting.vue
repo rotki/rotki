@@ -7,7 +7,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <SettingNumber
     setting="oraclePenaltyThresholdCount"
-    :label="t('oracle_cache_management.penalty.labels.oracle_penalty_threshold_count')"
+    :label="t('oracle_cache_management.penalty.units.failures')"
     :min="1"
   />
 </template>

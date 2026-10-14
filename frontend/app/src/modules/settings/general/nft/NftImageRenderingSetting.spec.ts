@@ -4,8 +4,6 @@ import NftImageRenderingSetting from '@/modules/settings/general/nft/NftImageRen
 import { createRuiPlugin } from '@/plugins/rui';
 
 const {
-  confirm,
-  confirmVisible,
   renderAllModel,
   renderWriteError,
   renderWriteSuccess,
@@ -14,12 +12,8 @@ const {
   whitelistWriteSuccess,
 } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
-  /** Holds what the confirmation store was handed, so a test can accept or dismiss the prompt. */
-  const confirm: { accept?: () => void; reject?: () => void } = {};
 
   return {
-    confirm,
-    confirmVisible: ref<boolean>(false),
     renderAllModel: ref<boolean>(false),
     renderWriteError: ref<string>(''),
     renderWriteSuccess: ref<boolean>(false),
@@ -28,16 +22,6 @@ const {
     whitelistWriteSuccess: ref<boolean>(false),
   };
 });
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({
-    show: (_message: unknown, accept: () => void, reject?: () => void): void => {
-      confirm.accept = accept;
-      confirm.reject = reject;
-    },
-    visible: confirmVisible,
-  }),
-}));
 
 vi.mock('@/modules/settings/use-setting-model', () => ({
   useSettingModel: (key: string): Record<string, unknown> =>
@@ -50,18 +34,6 @@ function createWrapper(): VueWrapper<any> {
   return mount(NftImageRenderingSetting, {
     global: {
       plugins: [createRuiPlugin({})],
-      stubs: {
-        ConfirmDialog: {
-          emits: ['confirm', 'cancel'],
-          name: 'ConfirmDialog',
-          props: ['display', 'title', 'message', 'maxWidth'],
-          template: `<div>
-            <slot />
-            <button data-testid="stub-confirm" @click="$emit('confirm')" />
-            <button data-testid="stub-cancel" @click="$emit('cancel')" />
-          </div>`,
-        },
-      },
     },
   });
 }
@@ -79,9 +51,6 @@ async function chooseMode(wrapper: VueWrapper<any>, mode: 'all' | 'whitelisted')
 describe('nftImageRenderingSetting', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    confirm.accept = undefined;
-    confirm.reject = undefined;
-    set(confirmVisible, false);
     set(renderAllModel, false);
     set(renderWriteError, '');
     set(renderWriteSuccess, false);
@@ -113,12 +82,12 @@ describe('nftImageRenderingSetting', () => {
       await chooseMode(wrapper, 'whitelisted');
 
       expect(get(renderAllModel)).toBe(false);
-      expect(confirm.accept).toBeUndefined();
+      expect(wrapper.find('[data-testid=nft-allow-all-confirmation]').exists()).toBe(false);
     });
   });
 
   /**
-   * Rendering every NFT image fetches from arbitrary domains, so it is confirmed rather than
+   * Rendering every NFT image fetches from arbitrary domains, so it is confirmed inline rather than
    * applied on the click.
    */
   describe('allowing every domain', () => {
@@ -128,17 +97,17 @@ describe('nftImageRenderingSetting', () => {
       await chooseMode(wrapper, 'all');
 
       expect(get(renderAllModel)).toBe(false);
-      expect(confirm.accept).toBeDefined();
+      expect(wrapper.find('[data-testid=nft-allow-all-confirmation]').exists()).toBe(true);
     });
 
     it('should apply it once confirmed', async () => {
       const wrapper = createWrapper();
       await chooseMode(wrapper, 'all');
 
-      confirm.accept?.();
-      await nextTick();
+      await wrapper.find('[data-testid=nft-allow-all-confirm]').trigger('click');
 
       expect(get(renderAllModel)).toBe(true);
+      expect(wrapper.find('[data-testid=nft-allow-all-confirmation]').exists()).toBe(false);
     });
 
     /** Leaving the radio on `all` after a refusal would misreport what is persisted. */
@@ -146,8 +115,7 @@ describe('nftImageRenderingSetting', () => {
       const wrapper = createWrapper();
       await chooseMode(wrapper, 'all');
 
-      confirm.reject?.();
-      await nextTick();
+      await wrapper.find('[data-testid=nft-allow-all-cancel]').trigger('click');
 
       expect(radio(wrapper).props('modelValue')).toBe('whitelisted');
       expect(get(renderAllModel)).toBe(false);
@@ -176,32 +144,46 @@ describe('nftImageRenderingSetting', () => {
       expect(saveButton(wrapper).attributes('disabled')).toBeUndefined();
     });
 
-    it('should add the entered domains to the stored list', async () => {
+    it('should name only the new domains before adding them', async () => {
+      set(whitelistModel, ['existing.com']);
+      const wrapper = createWrapper();
+      await type(wrapper, 'existing.com,rotki.com');
+
+      await saveButton(wrapper).trigger('click');
+
+      const confirmation = wrapper.find('[data-testid=nft-whitelist-confirmation]');
+      expect(confirmation.text()).toContain('rotki.com');
+      expect(confirmation.text()).not.toContain('existing.com');
+      expect(get(whitelistModel)).toEqual(['existing.com']);
+    });
+
+    it('should add the entered domains to the stored list once confirmed', async () => {
       set(whitelistModel, ['existing.com']);
       const wrapper = createWrapper();
       await type(wrapper, 'rotki.com');
+      await saveButton(wrapper).trigger('click');
 
-      await wrapper.find('[data-testid=stub-confirm]').trigger('click');
+      await wrapper.find('[data-testid=nft-whitelist-confirm]').trigger('click');
 
       expect(get(whitelistModel)).toEqual(['existing.com', 'rotki.com']);
     });
 
-    it('should keep the list untouched when the save is dismissed', async () => {
+    it('should keep the list untouched when the add is cancelled', async () => {
       set(whitelistModel, ['existing.com']);
       const wrapper = createWrapper();
       await type(wrapper, 'rotki.com');
+      await saveButton(wrapper).trigger('click');
 
-      await wrapper.find('[data-testid=stub-cancel]').trigger('click');
+      await wrapper.find('[data-testid=nft-whitelist-cancel]').trigger('click');
 
       expect(get(whitelistModel)).toEqual(['existing.com']);
+      expect(wrapper.find('[data-testid=nft-whitelist-confirmation]').exists()).toBe(false);
     });
 
-    it('should count what was entered', async () => {
+    it('should say when no domain is whitelisted yet', () => {
       const wrapper = createWrapper();
 
-      await type(wrapper, 'rotki.com,example.com');
-
-      expect(wrapper.text()).toContain('whitelisted_domain_entries::2');
+      expect(wrapper.find('[data-testid=nft-whitelist-empty]').exists()).toBe(true);
     });
 
     it('should drop a domain the user removes', async () => {
@@ -214,15 +196,15 @@ describe('nftImageRenderingSetting', () => {
       expect(get(whitelistModel)).toEqual(['keep.com']);
     });
 
-    /** The whitelist has no effect while every domain is allowed, so it is not offered. */
-    it('should be closed for editing while every domain is allowed', async () => {
+    /** The whitelist has no effect while every domain is allowed, so it is not shown. */
+    it('should be hidden while every domain is allowed', async () => {
       set(whitelistModel, ['keep.com']);
       set(renderAllModel, true);
       const wrapper = createWrapper();
       await nextTick();
 
-      expect(wrapper.findComponent({ name: 'RuiTextField' }).props('disabled')).toBe(true);
-      expect(wrapper.findComponent({ name: 'RuiChip' }).props('closeable')).toBe(false);
+      expect(wrapper.find('[data-testid=nft-whitelist]').exists()).toBe(false);
+      expect(wrapper.findComponent({ name: 'RuiTextField' }).exists()).toBe(false);
     });
   });
 
@@ -259,39 +241,6 @@ describe('nftImageRenderingSetting', () => {
 
       expect(wrapper.findComponent({ name: 'RuiTextField' }).props('errorMessages'))
         .toContain('general_settings.nft_setting.messages.error: the backend said no');
-    });
-  });
-
-  /** The page above dims while either prompt is up, so it needs telling. */
-  describe('telling the page a dialog is open', () => {
-    it('should report the save confirmation opening', async () => {
-      const wrapper = createWrapper();
-      await wrapper.findComponent({ name: 'RuiTextField' }).vm.$emit('update:modelValue', 'rotki.com');
-      await nextTick();
-
-      await wrapper.find('[data-testid=nft-whitelist-save]').trigger('click');
-
-      expect(wrapper.emitted<[boolean]>('dialog-open')?.at(-1)?.[0]).toBe(true);
-    });
-
-    it('should report the mode confirmation opening', async () => {
-      const wrapper = createWrapper();
-
-      set(confirmVisible, true);
-      await nextTick();
-
-      expect(wrapper.emitted<[boolean]>('dialog-open')?.at(-1)?.[0]).toBe(true);
-    });
-
-    it('should report both closing again', async () => {
-      const wrapper = createWrapper();
-      set(confirmVisible, true);
-      await nextTick();
-
-      set(confirmVisible, false);
-      await nextTick();
-
-      expect(wrapper.emitted<[boolean]>('dialog-open')?.at(-1)?.[0]).toBe(false);
     });
   });
 });

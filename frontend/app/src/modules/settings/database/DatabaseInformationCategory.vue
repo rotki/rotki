@@ -10,9 +10,6 @@ const { t } = useI18n({ useScope: 'global' });
     <template #title>
       {{ t('database_settings.database_info.title') }}
     </template>
-    <template #subtitle>
-      {{ t('database_settings.database_info.subtitle') }}
-    </template>
     <DatabaseInformation />
   </SettingCategory>
 </template>

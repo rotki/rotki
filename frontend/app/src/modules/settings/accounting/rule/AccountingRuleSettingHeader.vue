@@ -2,14 +2,12 @@
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
 
 defineProps<{
-  loading: boolean;
   exportLoading: boolean;
   importLoading: boolean;
   resetLoading: boolean;
 }>();
 
 const emit = defineEmits<{
-  refresh: [];
   add: [];
   export: [];
   import: [];
@@ -20,38 +18,24 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div class="pb-5 border-b border-default flex flex-wrap gap-2 items-center justify-between">
+  <div class="pb-3 border-b border-rui-divider flex flex-wrap gap-2 items-center justify-between">
     <SettingCategoryHeader>
       <template #title>
         {{ t('accounting_settings.rule.title') }}
       </template>
-      <template #subtitle>
-        {{ t('accounting_settings.rule.subtitle') }}
-      </template>
     </SettingCategoryHeader>
-    <div class="flex items-center justify-end gap-2">
-      <RuiTooltip :open-delay="400">
-        <template #activator>
-          <RuiButton
-            variant="outlined"
-            color="primary"
-            :loading="loading"
-            @click="emit('refresh')"
-          >
-            <template #prepend>
-              <RuiIcon name="lu-refresh-ccw" />
-            </template>
-            {{ t('common.refresh') }}
-          </RuiButton>
-        </template>
-        {{ t('accounting_settings.rule.refresh_tooltip') }}
-      </RuiTooltip>
+    <div class="flex items-center gap-1">
       <RuiButton
         color="primary"
+        size="sm"
+        data-testid="accounting-rule-add"
         @click="emit('add')"
       >
         <template #prepend>
-          <RuiIcon name="lu-plus" />
+          <RuiIcon
+            name="lu-plus"
+            size="16"
+          />
         </template>
         {{ t('accounting_settings.rule.add') }}
       </RuiButton>
@@ -64,12 +48,12 @@ const { t } = useI18n({ useScope: 'global' });
             variant="text"
             icon
             size="sm"
-            class="p-2!"
+            :aria-label="t('common.actions_text')"
             v-bind="attrs"
           >
             <RuiIcon
               name="lu-ellipsis-vertical"
-              size="20"
+              size="18"
             />
           </RuiButton>
         </template>

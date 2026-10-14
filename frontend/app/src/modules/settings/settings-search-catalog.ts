@@ -14,12 +14,6 @@ export interface SearchCategory {
   readonly tab: RouteName;
   readonly titleKey: MessageKey;
   readonly keywords?: readonly MessageKey[];
-  /**
-   * When set, the category's member rows omit the category title from their breadcrumb, leaving just
-   * tab and row. The header row still shows. Matches a flat settings page, such as the interface tab,
-   * whose settings are not visually nested under a category heading.
-   */
-  readonly flat?: boolean;
 }
 
 /**
@@ -30,21 +24,24 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = [
   // account
   {
     id: SettingsCategoryIds.SECURITY,
-    keywords: [msg.$t('settings.security_settings.subtitle')],
     tab: '/settings/account/',
     titleKey: msg.$t('settings.security_settings.title'),
   },
   {
     id: SettingsCategoryIds.GENERAL,
-    keywords: [msg.$t('general_settings.subtitle')],
+    keywords: [msg.$t('backend_settings.title')],
     tab: '/settings/general/',
-    titleKey: msg.$t('general_settings.title'),
+    titleKey: msg.$t('general_settings.application.title'),
+  },
+  {
+    id: SettingsCategoryIds.TOKENS_BALANCES,
+    tab: '/settings/general/',
+    titleKey: msg.$t('general_settings.tokens_balances.title'),
   },
   {
     id: SettingsCategoryIds.AMOUNT,
-    keywords: [msg.$t('general_settings.amount.subtitle')],
     tab: '/settings/general/',
-    titleKey: msg.$t('general_settings.amount.title'),
+    titleKey: msg.$t('general_settings.formats.title'),
   },
   {
     id: SettingsCategoryIds.NFT,
@@ -53,67 +50,59 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = [
   },
   {
     id: SettingsCategoryIds.HISTORY_EVENT,
-    keywords: [msg.$t('general_settings.history_event.subtitle')],
     tab: '/settings/general/',
     titleKey: msg.$t('general_settings.history_event.title'),
   },
   {
     id: SettingsCategoryIds.EXTERNAL_SERVICE,
-    keywords: [msg.$t('general_settings.external_service_setting.subtitle')],
     tab: '/settings/general/',
     titleKey: msg.$t('general_settings.external_service_setting.title'),
   },
   {
-    id: SettingsCategoryIds.BACKEND,
-    keywords: [msg.$t('backend_settings.subtitle')],
-    tab: '/settings/general/',
-    titleKey: msg.$t('backend_settings.title'),
-  },
-  {
     id: SettingsCategoryIds.DATABASE_INFO,
-    keywords: [msg.$t('database_settings.database_info.subtitle')],
     tab: '/settings/database/',
     titleKey: msg.$t('database_settings.database_info.title'),
   },
   {
     id: SettingsCategoryIds.USER_BACKUPS,
-    keywords: [msg.$t('database_settings.user_backups.subtitle')],
     tab: '/settings/database/',
     titleKey: msg.$t('database_settings.user_backups.title'),
   },
   {
+    id: SettingsCategoryIds.ASSET_DATABASE,
+    keywords: [msg.$t('manage_user_assets.export.title'), msg.$t('common.actions.import')],
+    tab: '/settings/database/',
+    titleKey: msg.$t('database_settings.asset_database.title'),
+  },
+  {
     id: SettingsCategoryIds.MANAGE_DATA,
-    keywords: [msg.$t('database_settings.manage_data.subtitle')],
     tab: '/settings/database/',
     titleKey: msg.$t('database_settings.manage_data.title'),
   },
+  // accounting
   {
-    id: SettingsCategoryIds.IMPORT_EXPORT,
-    keywords: [msg.$t('database_settings.import_export.subtitle')],
-    tab: '/settings/database/',
-    titleKey: msg.$t('database_settings.import_export.title'),
+    id: SettingsCategoryIds.COST_BASIS,
+    tab: '/settings/accounting/',
+    titleKey: msg.$t('accounting_settings.cost_basis.title'),
   },
   {
-    id: SettingsCategoryIds.ASSET_DATABASE,
-    keywords: [msg.$t('database_settings.asset_database.subtitle')],
-    tab: '/settings/database/',
-    titleKey: msg.$t('database_settings.asset_database.title'),
+    id: SettingsCategoryIds.TAXES,
+    tab: '/settings/accounting/',
+    titleKey: msg.$t('accounting_settings.taxes.title'),
+  },
+  {
+    id: SettingsCategoryIds.PNL_CSV,
+    tab: '/settings/accounting/',
+    titleKey: msg.$t('account_settings.csv_export_settings.title'),
   },
   // chains
   {
     id: SettingsCategoryIds.CHAIN_QUERIES,
-    keywords: [msg.$t('chain_settings.chain_queries.subtitle')],
     tab: '/settings/chains/',
     titleKey: msg.$t('chain_settings.chain_queries.title'),
   },
   {
-    id: SettingsCategoryIds.CHAINS,
-    tab: '/settings/chains/',
-    titleKey: msg.$t('evm_settings.general.title'),
-  },
-  {
     id: SettingsCategoryIds.INDEXER,
-    keywords: [msg.$t('evm_settings.indexer.subtitle')],
     tab: '/settings/chains/',
     titleKey: msg.$t('evm_settings.indexer.title'),
   },
@@ -129,26 +118,30 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = [
     tab: '/settings/oracle/',
     titleKey: msg.$t('oracle_cache_management.penalty.title'),
   },
-  /**
-   * A flat page: its top-level settings sit directly under the tab with no category segment, while
-   * the graph and newly-detected-tokens panels still nest theirs under a header as usual.
-   */
   {
-    flat: true,
     id: SettingsCategoryIds.INTERFACE_ONLY,
     tab: '/settings/interface/',
-    titleKey: msg.$t('frontend_settings.title'),
+    titleKey: msg.$t('frontend_settings.sections.display'),
+  },
+  {
+    id: SettingsCategoryIds.PRIVACY,
+    tab: '/settings/interface/',
+    titleKey: msg.$t('frontend_settings.sections.privacy'),
+  },
+  {
+    id: SettingsCategoryIds.REFRESH,
+    tab: '/settings/interface/',
+    titleKey: msg.$t('frontend_settings.sections.refresh'),
   },
   {
     id: SettingsCategoryIds.GRAPH,
-    keywords: [msg.$t('frontend_settings.subtitle.graph_settings_hint')],
     tab: '/settings/interface/',
-    titleKey: msg.$t('frontend_settings.subtitle.graph_settings'),
+    titleKey: msg.$t('frontend_settings.sections.graphs'),
   },
   {
     id: SettingsCategoryIds.ALIAS,
     tab: '/settings/interface/',
-    titleKey: msg.$t('frontend_settings.subtitle.alias_names'),
+    titleKey: msg.$t('frontend_settings.sections.addresses'),
   },
   {
     id: SettingsCategoryIds.NEWLY_DETECTED_TOKENS,

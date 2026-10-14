@@ -127,4 +127,55 @@ describe('useSettingsScrollSpy', () => {
       await expect(scrollToElement('missing-id')).resolves.toBeUndefined();
     });
   });
+
+  /** Sections placed on the page with their tops at the given offsets from the scroller's top. */
+  function placeSections(tops: Record<string, number>): () => void {
+    const elements = Object.entries(tops).map(([id, top]) => {
+      const element = document.createElement('div');
+      element.id = id;
+      element.getBoundingClientRect = (): DOMRect => new DOMRect(0, top, 100, 50);
+      document.body.append(element);
+      return element;
+    });
+    return () => elements.forEach(element => element.remove());
+  }
+
+  describe('the section being read', () => {
+    it('should pick the section whose top passed the line 300px down a 1000px scroller, not one with pixels left on screen', () => {
+      const cleanup = placeSections({ a: -400, b: 120, c: 700 });
+      const scroller = makeScroller({ clientHeight: 1000, rect: new DOMRect(0, 0, 100, 1000), scrollHeight: 3000, scrollTop: 500 });
+
+      const { currentId } = setup(scrollerRef(scroller));
+
+      expect(get(currentId)).toBe('b');
+      cleanup();
+    });
+
+    it('should keep the previous section until the next one reaches the line', () => {
+      const cleanup = placeSections({ a: -400, b: 450, c: 900 });
+      const scroller = makeScroller({ clientHeight: 1000, rect: new DOMRect(0, 0, 100, 1000), scrollHeight: 3000, scrollTop: 500 });
+
+      const { currentId } = setup(scrollerRef(scroller));
+
+      expect(get(currentId)).toBe('a');
+      cleanup();
+    });
+
+    it('should select a clicked section at once and keep it through the scroll, even near the bottom', async () => {
+      const cleanup = placeSections({ a: -900, b: -200, c: 400 });
+      const scroller = makeScroller({ clientHeight: 1000, rect: new DOMRect(0, 0, 100, 1000), scrollHeight: 2000, scrollTop: 900 });
+      const { currentId, scrollToElement } = setup(scrollerRef(scroller));
+
+      const done = scrollToElement('c');
+      expect(get(currentId)).toBe('c');
+
+      // the scroll stops short of c's top, where the reading line would still pick b
+      scroller.dispatchEvent(new Event('scroll'));
+      scroller.dispatchEvent(new Event('scrollend'));
+      await done;
+
+      expect(get(currentId)).toBe('c');
+      cleanup();
+    });
+  });
 });

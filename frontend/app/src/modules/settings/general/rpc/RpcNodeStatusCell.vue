@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import { NODE_STATUS, type NodeStatus } from '@/modules/settings/general/rpc/rpc-node-status';
 import RpcReconnectButton from '@/modules/settings/general/rpc/RpcReconnectButton.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -16,82 +15,47 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+/** A dot colour and a label per status, read at a glance instead of a filled badge per row. */
+const display = computed<{ dot: string; label: string }>(() => {
+  switch (status) {
+    case NODE_STATUS.CONNECTED:
+      return { dot: 'bg-rui-success', label: t('evm_rpc_node_manager.connected.true') };
+    case NODE_STATUS.COOLING_DOWN:
+      return { dot: 'bg-rui-warning', label: t('evm_rpc_node_manager.connected.cooling_down') };
+    case NODE_STATUS.FAILED:
+      return { dot: 'bg-rui-error', label: t('evm_rpc_node_manager.connected.failure') };
+    default:
+      return { dot: 'bg-rui-grey-400', label: t('evm_rpc_node_manager.connected.false') };
+  }
+});
 </script>
 
 <template>
   <div class="flex items-center gap-2">
-    <div class="w-6">
-      <RpcReconnectButton
-        v-if="status === NODE_STATUS.FAILED && active"
-        :disabled="reconnecting"
-        :tooltip="t('evm_rpc_node_manager.reconnect.single')"
-        @reconnect="emit('reconnect')"
-      />
-    </div>
-    <BadgeDisplay
-      v-if="status === NODE_STATUS.CONNECTED"
-      color="green"
-      class="items-center gap-2 leading-6!"
-    >
-      <RuiIcon
-        color="success"
-        size="16"
-        name="lu-wifi"
-      />
-      <span>
-        {{ t('evm_rpc_node_manager.connected.true') }}
-      </span>
-    </BadgeDisplay>
     <RuiTooltip
-      v-else-if="status === NODE_STATUS.COOLING_DOWN"
+      :disabled="status !== NODE_STATUS.COOLING_DOWN || !cooldownUntil"
       :open-delay="400"
     >
       <template #activator>
-        <BadgeDisplay
-          color="orange"
-          class="items-center gap-2 leading-6!"
-        >
-          <RuiIcon
-            size="16"
-            name="lu-clock"
+        <span class="inline-flex items-center gap-1.5 text-sm text-rui-text whitespace-nowrap">
+          <span
+            class="size-2 shrink-0 rounded-full"
+            :class="display.dot"
           />
-          <span>
-            {{ t('evm_rpc_node_manager.connected.cooling_down') }}
-          </span>
-        </BadgeDisplay>
+          {{ display.label }}
+        </span>
       </template>
       <span v-if="cooldownUntil">
         {{ t('evm_rpc_node_manager.cooldown_until') }}
         <DateDisplay :timestamp="cooldownUntil" />
       </span>
     </RuiTooltip>
-    <BadgeDisplay
-      v-else-if="status === NODE_STATUS.FAILED"
-      color="red"
-      class="items-center gap-2 leading-6!"
-    >
-      <RuiIcon
-        color="error"
-        size="16"
-        name="lu-wifi-off"
-      />
-      <span>
-        {{ t('evm_rpc_node_manager.connected.failure') }}
-      </span>
-    </BadgeDisplay>
-    <BadgeDisplay
-      v-else
-      color="grey"
-      class="items-center gap-2 leading-6!"
-    >
-      <RuiIcon
-        color="info"
-        size="16"
-        name="lu-wifi"
-      />
-      <span>
-        {{ t('evm_rpc_node_manager.connected.false') }}
-      </span>
-    </BadgeDisplay>
+    <RpcReconnectButton
+      v-if="status === NODE_STATUS.FAILED && active"
+      :disabled="reconnecting"
+      :tooltip="t('evm_rpc_node_manager.reconnect.single')"
+      @reconnect="emit('reconnect')"
+    />
   </div>
 </template>

@@ -43,7 +43,6 @@ describe('accountingRuleWithLinkedSetting', () => {
             template: '<div />',
           },
           RuiSwitch: { emits: ['update:modelValue'], name: 'RuiSwitch', props: ['modelValue', 'disabled'], template: '<div />' },
-          SuccessDisplay: true,
         },
       },
       props: { hint: 'hint', identifier: 'taxable', label: 'label', modelValue },
@@ -79,6 +78,13 @@ describe('accountingRuleWithLinkedSetting', () => {
 
     // The linked setting decides the value, so editing it by hand would be a lie.
     expect(control('RuiSwitch').props('disabled')).toBe(true);
+  });
+
+  it('should show the linked setting\'s value on the disabled switch', () => {
+    set(options, [{ identifier: 'includeGasCosts', label: 'Gas', state: true }]);
+    wrapper = createWrapper({ linkedSetting: 'includeGasCosts', value: false });
+
+    expect(control('RuiSwitch').props('modelValue')).toBe(true);
   });
 
   it('should carry an edited value into the model', async () => {

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import {
   hasWhitelistChanges,
   mergeWhitelist,
@@ -7,17 +6,10 @@ import {
 } from '@/modules/settings/general/nft/nft-whitelist';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
-import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 
 type RenderOption = 'all' | 'whitelisted';
 
-const emit = defineEmits<{ 'dialog-open': [value: boolean] }>();
-
 const { t } = useI18n({ useScope: 'global' });
-
-const confirmStore = useConfirmStore();
-const { visible } = storeToRefs(confirmStore);
-const { show } = confirmStore;
 
 const { error: renderWriteError, model: renderAllModel, success: renderWriteSuccess } = useSettingModel('renderAllNftImages', { debounce: 0 });
 const { error: whitelistWriteError, model: whitelistModel, success: whitelistWriteSuccess } = useSettingModel('whitelistedDomainsForNftImages', { debounce: 0 });
@@ -25,14 +17,23 @@ const { clearAll: clearRenderMessages, error: renderError, setError: setRenderEr
 const { error: whitelistError, success: whitelistSuccess, setError: setWhitelistError, setSuccess: setWhitelistSuccess } = useClearableMessages();
 
 const renderAllNftImages = ref<RenderOption>(get(renderAllModel) ? 'all' : 'whitelisted');
-const whitelistedDomains = ref('');
-const showUpdateWhitelistConfirmation = ref(false);
+const whitelistedDomains = ref<string>('');
+/** Allowing every domain waits on an inline confirmation; the radio shows the pick meanwhile. */
+const confirmingAllowAll = ref<boolean>(false);
+/** Adding domains waits on an inline confirmation that lists them. */
+const confirmingDomains = ref<boolean>(false);
 
 const decodedDomains = computed<string[]>(() => parseWhitelistInput(get(whitelistedDomains)));
 
 const whitelistedDomainsForNftImages = computed<string[]>(() =>
   mergeWhitelist(get(whitelistModel), get(decodedDomains)),
 );
+
+/** What the confirmation names: only the domains that are not on the list already. */
+const domainsToAdd = computed<string[]>(() => {
+  const saved = get(whitelistModel);
+  return get(whitelistedDomainsForNftImages).filter(domain => !saved.includes(domain));
+});
 
 const changed = computed<boolean>(() =>
   hasWhitelistChanges(get(whitelistModel), get(whitelistedDomainsForNftImages)),
@@ -41,31 +42,32 @@ const changed = computed<boolean>(() =>
 function updateRenderingSetting(value: RenderOption | undefined): void {
   clearRenderMessages();
   if (value === 'whitelisted') {
+    set(confirmingAllowAll, false);
     set(renderAllModel, false);
     return;
   }
-
-  show(
-    {
-      message: t('general_settings.nft_setting.allow_all_confirmation.message'),
-      title: t('general_settings.nft_setting.allow_all_confirmation.title'),
-      type: 'info',
-    },
-    () => {
-      set(renderAllModel, value === 'all');
-    },
-    () => {
-      set(renderAllNftImages, 'whitelisted');
-    },
-  );
+  set(confirmingAllowAll, true);
 }
 
-watch([showUpdateWhitelistConfirmation, visible], ([isSaveOpen, isSwitchOpen]) => {
-  emit('dialog-open', isSaveOpen || isSwitchOpen);
-});
+function confirmAllowAll(): void {
+  set(confirmingAllowAll, false);
+  set(renderAllModel, true);
+}
+
+/** Leaving the radio on `all` after a refusal would misreport what is persisted. */
+function cancelAllowAll(): void {
+  set(confirmingAllowAll, false);
+  set(renderAllNftImages, 'whitelisted');
+}
+
+function requestDomainsAdd(): void {
+  if (get(changed))
+    set(confirmingDomains, true);
+}
 
 watch(renderAllModel, (value) => {
-  set(renderAllNftImages, value ? 'all' : 'whitelisted');
+  if (!get(confirmingAllowAll))
+    set(renderAllNftImages, value ? 'all' : 'whitelisted');
 });
 
 watch(renderWriteSuccess, (saved) => {
@@ -84,7 +86,7 @@ function removeDomain(item: string): void {
 
 function confirmWhitelistUpdate(): void {
   set(whitelistModel, get(whitelistedDomainsForNftImages));
-  set(showUpdateWhitelistConfirmation, false);
+  set(confirmingDomains, false);
 }
 
 watch(whitelistWriteSuccess, (saved) => {
@@ -97,6 +99,11 @@ watch(whitelistWriteSuccess, (saved) => {
 watch(whitelistWriteError, (message) => {
   if (message)
     setWhitelistError(`${t('general_settings.nft_setting.messages.error')}: ${message}`, true);
+});
+
+// typing again replaces what was being confirmed
+watch(whitelistedDomains, () => {
+  set(confirmingDomains, false);
 });
 </script>
 
@@ -117,80 +124,132 @@ watch(whitelistWriteError, (message) => {
         {{ t('general_settings.nft_setting.label.render_setting.only_allow_whitelisted') }}
       </RuiRadio>
     </RuiRadioGroup>
+
+    <div
+      v-if="confirmingAllowAll"
+      role="alert"
+      class="mt-2 rounded-rui-panel border border-rui-warning-border bg-rui-warning-subtle p-3 flex flex-col gap-2"
+      data-testid="nft-allow-all-confirmation"
+    >
+      <p class="text-body-2 m-0">
+        {{ t('general_settings.nft_setting.allow_all_confirmation.message') }}
+      </p>
+      <div class="flex gap-2">
+        <RuiButton
+          size="sm"
+          color="warning"
+          data-testid="nft-allow-all-confirm"
+          @click="confirmAllowAll()"
+        >
+          {{ t('general_settings.nft_setting.allow_all_confirmation.confirm') }}
+        </RuiButton>
+        <RuiButton
+          size="sm"
+          variant="text"
+          data-testid="nft-allow-all-cancel"
+          @click="cancelAllowAll()"
+        >
+          {{ t('general_settings.nft_setting.allow_all_confirmation.cancel') }}
+        </RuiButton>
+      </div>
+    </div>
   </div>
 
-  <div>
-    <div class="flex gap-3.5 items-start">
+  <div
+    v-if="renderAllNftImages === 'whitelisted'"
+    class="mt-2"
+    data-testid="nft-whitelist"
+  >
+    <div class="flex gap-2 items-start">
       <RuiTextField
         v-model.trim="whitelistedDomains"
         color="primary"
         :label="t('general_settings.nft_setting.label.whitelist_domains')"
+        :placeholder="t('general_settings.nft_setting.label.whitelist_domains_placeholder')"
         :hint="t('general_settings.nft_setting.label.whitelisted_domains_hint')"
         :success-messages="whitelistSuccess"
         :error-messages="whitelistError"
-        :disabled="renderAllNftImages === 'all'"
         class="flex-1"
         clearable
         data-testid="nft-whitelist-input"
+        @keydown.enter="requestDomainsAdd()"
       />
       <RuiButton
-        :disabled="!changed"
-        class="mt-1"
-        variant="text"
+        :disabled="!changed || confirmingDomains"
+        class="mt-6"
+        variant="outlined"
         color="primary"
-        icon
         data-testid="nft-whitelist-save"
-        @click="showUpdateWhitelistConfirmation = true"
+        @click="requestDomainsAdd()"
       >
-        <RuiIcon name="lu-save" />
+        {{ t('general_settings.nft_setting.add') }}
       </RuiButton>
     </div>
 
-    <p class="text-caption text-rui-text mt-1 mb-0 px-3">
-      {{ t('general_settings.nft_setting.label.whitelisted_domain_entries', { count: decodedDomains.length }) }}
-    </p>
+    <div
+      v-if="confirmingDomains"
+      class="mt-2 rounded-rui-panel border border-rui-warning-border bg-rui-warning-subtle p-3 flex flex-col gap-2"
+      data-testid="nft-whitelist-confirmation"
+    >
+      <p class="text-body-2 m-0">
+        {{ t('general_settings.nft_setting.update_whitelist_confirmation.message', 1) }}
+      </p>
+      <div class="flex flex-wrap gap-1">
+        <RuiChip
+          v-for="domain in domainsToAdd"
+          :key="domain"
+          size="sm"
+          color="warning"
+          variant="tonal"
+        >
+          {{ domain }}
+        </RuiChip>
+      </div>
+      <div class="flex gap-2">
+        <RuiButton
+          size="sm"
+          color="primary"
+          data-testid="nft-whitelist-confirm"
+          @click="confirmWhitelistUpdate()"
+        >
+          {{ t('general_settings.nft_setting.update_whitelist_confirmation.confirm') }}
+        </RuiButton>
+        <RuiButton
+          size="sm"
+          variant="text"
+          data-testid="nft-whitelist-cancel"
+          @click="confirmingDomains = false"
+        >
+          {{ t('common.actions.cancel') }}
+        </RuiButton>
+      </div>
+    </div>
 
-    <template v-if="whitelistModel.length > 0">
-      <h5 class="mt-4 mb-2 font-medium">
+    <div
+      v-if="whitelistModel.length > 0"
+      class="mt-2"
+    >
+      <h5 class="text-caption text-rui-text-secondary mb-2">
         {{ t('general_settings.nft_setting.label.whitelisted_domains') }}
       </h5>
-
       <div class="flex flex-wrap gap-2">
         <RuiChip
           v-for="(item, i) in whitelistModel"
           :key="i"
-          :disabled="renderAllNftImages !== 'whitelisted'"
-          :closeable="renderAllNftImages === 'whitelisted'"
+          closeable
           size="sm"
           @click:close="removeDomain(item)"
         >
           {{ item }}
         </RuiChip>
       </div>
-    </template>
-
-    <ConfirmDialog
-      :display="showUpdateWhitelistConfirmation"
-      :title="t('general_settings.nft_setting.update_whitelist_confirmation.title')"
-      :message="t('general_settings.nft_setting.update_whitelist_confirmation.message', 1)"
-      max-width="700"
-      @cancel="showUpdateWhitelistConfirmation = false"
-      @confirm="confirmWhitelistUpdate()"
+    </div>
+    <p
+      v-else
+      class="text-caption text-rui-text-secondary m-0 mt-2"
+      data-testid="nft-whitelist-empty"
     >
-      <RuiCard
-        outlined
-        class="mt-4 h-auto"
-      >
-        <ul class="list-disc pl-5">
-          <li
-            v-for="domain in whitelistedDomainsForNftImages"
-            :key="domain"
-            class="text-rui-warning font-bold"
-          >
-            {{ domain }}
-          </li>
-        </ul>
-      </RuiCard>
-    </ConfirmDialog>
+      {{ t('general_settings.nft_setting.label.whitelist_empty') }}
+    </p>
   </div>
 </template>

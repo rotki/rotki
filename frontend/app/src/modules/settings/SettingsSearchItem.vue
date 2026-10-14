@@ -14,16 +14,16 @@ const lastIndex = computed<number>(() => texts.length - 1);
 
 <template>
   <div
-    class="flex items-center text-body-2 w-full"
+    class="flex items-center gap-3 text-sm w-full min-w-0"
     data-testid="settings-search-item"
   >
     <RuiIcon
       :name="icon"
-      size="20"
-      class="text-rui-text-secondary min-w-5"
+      size="18"
+      class="text-rui-text-secondary shrink-0"
     />
     <div
-      class="ml-3 overflow-hidden py-2"
+      class="overflow-hidden py-2"
       @mouseenter="onMarqueeEnter($event)"
       @mouseleave="onMarqueeLeave($event)"
     >
@@ -33,7 +33,10 @@ const lastIndex = computed<number>(() => texts.length - 1);
           :key="i"
           class="flex items-center shrink-0"
         >
-          <div v-if="i === lastIndex">
+          <div
+            v-if="i === lastIndex"
+            class="font-medium text-rui-text"
+          >
             {{ text }}
           </div>
           <div
@@ -42,7 +45,7 @@ const lastIndex = computed<number>(() => texts.length - 1);
           >
             {{ text }}
             <RuiIcon
-              class="mx-1"
+              class="mx-1 text-rui-text-disabled"
               size="14"
               name="lu-chevron-right"
             />

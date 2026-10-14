@@ -47,17 +47,27 @@ export class ChainsSettingsPage {
     await this.page.locator(`[data-testid=chain-menu-item][data-key="${chainId}"]`).click();
   }
 
+  /** Adding a chain opens its order editor; close it so the list behind is usable again. */
   async addChain(chainId: string): Promise<void> {
     await this.clickAddChainButton();
     await this.selectChainFromMenu(chainId);
+    await this.closeIndexerEditor();
   }
 
   async removeChain(chainId: string): Promise<void> {
     await this.page.locator(`[data-testid=remove-chain][data-key="${chainId}"]`).click();
   }
 
+  async closeIndexerEditor(): Promise<void> {
+    const done = this.page.locator('[data-testid=indexer-editor-done]');
+    await done.click();
+    await done.waitFor({ state: 'detached' });
+  }
+
+  /** Opens a scope's order editor and closes it again, which is what selecting a tab used to do. */
   async selectTab(tabId: string): Promise<void> {
-    await this.page.locator(`[data-testid=indexer-tab][data-key="${tabId}"]`).click();
+    await this.page.locator(`[data-testid=edit-indexer-order][data-key="${tabId}"]`).click();
+    await this.closeIndexerEditor();
   }
 
   async verifyTabExists(tabId: string): Promise<void> {

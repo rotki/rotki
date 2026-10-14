@@ -103,6 +103,7 @@ watch(writeError, (message) => {
       </RuiTextField>
       <SettingResetConfirmButton
         :tooltip="t('general_settings.date_display_tooltip')"
+        labelled
         @confirm="reset()"
       />
     </div>

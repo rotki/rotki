@@ -110,10 +110,11 @@ const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>
         :status="status"
       />
 
-      <div class="flex justify-end">
+      <div class="flex">
         <RuiButton
           :disabled="!source || pending"
           :loading="pending"
+          variant="outlined"
           color="error"
           data-testid="purge-images-cache-button"
           @click="showConfirmation(source)"

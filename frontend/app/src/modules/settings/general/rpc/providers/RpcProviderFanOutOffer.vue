@@ -96,8 +96,6 @@ const count = computed<number>(() => selected.length);
               </div>
             </RuiAccordion>
           </RuiAccordions>
-          <!-- Outside the accordion: its height is a measured pixel value with the overflow hidden,
-               so a line added to it after the measurement is clipped in half. -->
           <p
             v-if="unsupported"
             class="text-xs text-rui-text-secondary"

@@ -312,8 +312,6 @@ onBeforeMount(() => {
       {{ t('backend_settings.settings.mcp_server.hint') }}
     </template>
 
-    <!-- the environment check comes first: where there is no server to reach, the answer is
-         "not here", not "buy premium". Offering premium there would be selling nothing. -->
     <RuiAlert
       v-if="!available && !loading"
       type="info"
@@ -396,8 +394,6 @@ onBeforeMount(() => {
             <h6 class="text-h6 font-semibold">
               {{ t('backend_settings.settings.mcp_server.privacy_mode.label') }}
             </h6>
-            <!-- Beside the heading rather than under the last option: the group's own detail slot
-                 renders below Raw, where a confirmation reads as if it belonged to Raw. -->
             <span
               v-if="savedVisible"
               class="text-sm text-rui-success"
