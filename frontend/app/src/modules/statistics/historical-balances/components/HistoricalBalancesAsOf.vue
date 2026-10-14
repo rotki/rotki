@@ -46,7 +46,7 @@ const presets = computed<PresetOption[]>(() => {
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-3">
+  <div class="flex flex-wrap items-end gap-3">
     <RuiDateTimePicker
       v-model="pickerValue"
       class="w-56"
@@ -54,23 +54,23 @@ const presets = computed<PresetOption[]>(() => {
       max-date="now"
       partial-time="end"
       :label="t('historical_balances.as_of.label')"
-      variant="outlined"
-      dense
       hide-details
       data-testid="historical-balances-as-of-picker"
     />
-    <div class="flex flex-wrap gap-2">
+    <RuiButtonGroup
+      v-model="day"
+      variant="segmented"
+      required
+      data-testid="historical-balances-presets"
+    >
       <RuiButton
         v-for="option in presets"
         :key="option.preset"
-        size="sm"
-        :variant="day === option.day ? 'default' : 'outlined'"
-        :color="day === option.day ? 'primary' : undefined"
+        :model-value="option.day"
         :data-testid="`historical-balances-preset-${option.preset}`"
-        @click="day = option.day"
       >
         {{ option.label }}
       </RuiButton>
-    </div>
+    </RuiButtonGroup>
   </div>
 </template>

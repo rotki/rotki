@@ -1,13 +1,14 @@
+import type { Message } from '@rotki/common';
 import type { TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { LocationQuery } from '@/modules/core/table/route';
-import { type BigNumber, type Message, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { applyPaginationDefaults, parseQueryPagination } from '@/modules/core/table/pagination-filter-utils';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
+import { useSnapshotExport } from '@/modules/dashboard/snapshots/composables/use-snapshot-export';
 import { type SnapshotListFilters, type SnapshotListRow, useSnapshotList } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import { useSnapshotApi } from '@/modules/settings/api/use-snapshot-api';
@@ -15,26 +16,30 @@ import { parseSnapshotFilters, toSnapshotQuery } from '@/pages/statistics/snapsh
 
 type SnapshotActions = ReturnType<typeof useSnapshotActions>;
 
+type SnapshotExport = ReturnType<typeof useSnapshotExport>;
+
 interface UseSnapshotsPageReturn {
   confirmDelete: (timestamp: number) => void;
-  confirmTakeSnapshot: () => void;
   emptyDescription: ComputedRef<string>;
+  exportSnapshot: SnapshotExport['exportSnapshot'];
+  exporting: SnapshotExport['exporting'];
   forceSaving: SnapshotActions['forceSaving'];
   importSnapshot: SnapshotActions['importSnapshot'];
   importing: SnapshotActions['importing'];
   loading: Readonly<Ref<boolean>>;
   modelBalanceFile: SnapshotActions['modelBalanceFile'];
-  modelExportDialog: Ref<boolean>;
   modelFilters: Ref<SnapshotListFilters>;
   modelImportDialog: Ref<boolean>;
   modelLocationFile: SnapshotActions['modelLocationFile'];
   modelPagination: Ref<TablePaginationData>;
   open: (timestamp: number) => void;
-  openExport: (timestamp: number) => void;
   refresh: () => Promise<void>;
   rows: Readonly<Ref<SnapshotListRow[]>>;
-  selectedBalance: ComputedRef<BigNumber>;
-  selectedTimestamp: Readonly<Ref<number>>;
+  /**
+   * Forces a new snapshot. It refetches every balance, slow and prone to provider rate limits, so
+   * the page asks first, in a popover on the button.
+   */
+  takeSnapshot: SnapshotActions['forceSave'];
 }
 
 export function useSnapshotsPage(): UseSnapshotsPageReturn {
@@ -43,9 +48,7 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
   const route = useRoute();
   const itemsPerPage = useItemsPerPage();
 
-  const modelExportDialog = shallowRef<boolean>(false);
   const modelImportDialog = shallowRef<boolean>(false);
-  const selectedTimestamp = shallowRef<number>(0);
 
   // View state lives in the URL query, so a reload or a back navigation restores it.
   const modelFilters = ref<SnapshotListFilters>({});
@@ -56,6 +59,7 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
   const { setMessage } = useMessageStore();
   const { show } = useConfirmStore();
   const { forceSave, forceSaving, importing, importSnapshot, modelBalanceFile, modelLocationFile } = useSnapshotActions();
+  const { exporting, exportSnapshot } = useSnapshotExport();
 
   function readQuery(query: LocationQuery): void {
     set(modelFilters, parseSnapshotFilters(query));
@@ -83,16 +87,6 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
 
   function open(timestamp: number): void {
     startPromise(router.push(`/statistics/snapshots/${timestamp}`));
-  }
-
-  // The stored USD net worth: the export dialog converts it at the historic rate itself, lazily.
-  const selectedRow = computed<SnapshotListRow | undefined>(() =>
-    get(rows).find(item => item.timestamp === get(selectedTimestamp)));
-  const selectedBalance = computed<BigNumber>(() => get(selectedRow)?.usdValue ?? Zero);
-
-  function openExport(timestamp: number): void {
-    set(selectedTimestamp, timestamp);
-    set(modelExportDialog, true);
   }
 
   async function performDelete(timestamp: number): Promise<void> {
@@ -129,42 +123,23 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
     );
   }
 
-  /**
-   * Asks for confirmation, then forces a new snapshot to be taken.
-   *
-   * @remarks
-   * The save refetches every balance, which is slow and prone to provider rate limits, so it is
-   * never started straight off a click.
-   */
-  function confirmTakeSnapshot(): void {
-    show(
-      {
-        message: t('dashboard.snapshot.list.take_snapshot_confirm.message'),
-        title: t('dashboard.snapshot.list.take_snapshot_confirm.title'),
-      },
-      async () => forceSave(),
-    );
-  }
-
   return {
     confirmDelete,
-    confirmTakeSnapshot,
     emptyDescription,
+    exporting,
+    exportSnapshot,
     forceSaving,
     importing,
     importSnapshot,
     loading,
     modelBalanceFile,
-    modelExportDialog,
     modelFilters,
     modelImportDialog,
     modelLocationFile,
     modelPagination,
     open,
-    openExport,
     refresh,
     rows,
-    selectedBalance,
-    selectedTimestamp: readonly(selectedTimestamp),
+    takeSnapshot: forceSave,
   };
 }

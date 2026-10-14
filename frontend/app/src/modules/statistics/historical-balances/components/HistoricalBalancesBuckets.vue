@@ -32,7 +32,7 @@ const cols = computed<DataTableColumn<BucketRow>[]>(() => [
   { cellClass: 'py-1', class: 'w-full', key: 'locationLabel', label: t('common.account') },
   { cellClass: 'py-1', key: 'protocol', label: t('common.protocol') },
   { align: 'end', cellClass: 'py-1', key: 'amount', label: t('common.amount') },
-  { align: 'end', cellClass: 'py-1', key: 'value', label: t('common.value') },
+  { align: 'end', cellClass: 'py-1 font-medium', key: 'value', label: t('common.value') },
 ]);
 
 const hidePagination = computed<boolean>(() => fitsEveryLimit(buckets.length));

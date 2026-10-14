@@ -18,25 +18,28 @@ const chainItems = computed<Array<[string, BigNumber]>>(() => {
     return [];
   return Object.entries(transactionsPerChain).sort((a, b) => sortDesc(a[1], b[1]));
 });
+
+function weight(item: [string, BigNumber]): number {
+  return item[1].toNumber();
+}
 </script>
 
 <template>
   <WrappedCard
     v-if="chainItems.length > 0"
     :items="chainItems"
+    :weight="weight"
   >
     <template #header-icon>
       <RuiIcon
         name="lu-git-branch"
-        class="text-rui-primary"
-        size="12"
+        size="16"
       />
     </template>
     <template #header>
       {{ t('wrapped.transactions_by_chain') }}
     </template>
-    <template #label="{ item, index }">
-      <span>{{ index + 1 }}.</span>
+    <template #label="{ item }">
       <ChainDisplay
         dense
         class="[&>div:first-child]:w-auto!"
@@ -48,7 +51,7 @@ const chainItems = computed<Array<[string, BigNumber]>>(() => {
         :value="item[1]"
         :format="{ integer: true }"
       />
-      {{ t('explorers.tx') }}
+      <span class="font-normal text-rui-text-secondary">{{ t('wrapped.unit.transactions', item[1].toNumber()) }}</span>
     </template>
   </WrappedCard>
 </template>

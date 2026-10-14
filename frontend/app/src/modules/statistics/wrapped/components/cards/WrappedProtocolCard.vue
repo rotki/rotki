@@ -21,25 +21,28 @@ const sortedProtocols = computed<ProtocolActivity[]>(() => {
     return [];
   return [...transactionsPerProtocol].sort((a, b) => sortDesc(a.transactions, b.transactions));
 });
+
+function weight(activity: ProtocolActivity): number {
+  return activity.transactions.toNumber();
+}
 </script>
 
 <template>
   <WrappedCard
     v-if="sortedProtocols.length > 0"
     :items="sortedProtocols"
+    :weight="weight"
   >
     <template #header-icon>
       <RuiIcon
         name="lu-blockchain"
-        class="text-rui-primary"
-        size="12"
+        size="16"
       />
     </template>
     <template #header>
       {{ t('wrapped.protocol_activity') }}
     </template>
-    <template #label="{ item, index }">
-      <span>{{ index + 1 }}.</span>
+    <template #label="{ item }">
       <CounterpartyDisplay :counterparty="item.protocol" />
     </template>
     <template #value="{ item }">
@@ -47,7 +50,7 @@ const sortedProtocols = computed<ProtocolActivity[]>(() => {
         :value="item.transactions"
         :format="{ integer: true }"
       />
-      {{ t('explorers.tx') }}
+      <span class="font-normal text-rui-text-secondary">{{ t('wrapped.unit.transactions', item.transactions.toNumber()) }}</span>
     </template>
   </WrappedCard>
 </template>

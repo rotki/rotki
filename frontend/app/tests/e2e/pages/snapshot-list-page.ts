@@ -42,8 +42,20 @@ export class SnapshotListPage {
     await expect(this.row(timestamp)).toHaveCount(0);
   }
 
+  /**
+   * Presses a row action from the keyboard. The task dock rises above a pagination bar resting near
+   * the view's bottom, so until the page scrolls to its end, where the shell keeps room below the
+   * content, it can cover the last row's actions; a click scrolls the row only into view, not clear
+   * of the dock.
+   */
+  private async pressRowAction(timestamp: number, action: 'snapshot-open' | 'snapshot-delete'): Promise<void> {
+    const button = this.row(timestamp).locator(`[data-testid=${action}]`);
+    await button.focus();
+    await this.page.keyboard.press('Enter');
+  }
+
   async openEditor(timestamp: number): Promise<SnapshotEditorPage> {
-    await this.row(timestamp).locator('[data-testid=snapshot-open]').click();
+    await this.pressRowAction(timestamp, 'snapshot-open');
     await this.page.waitForURL(/\/statistics\/snapshots\/\d+/);
     const editor = new SnapshotEditorPage(this.page);
     await editor.waitForLoaded();
@@ -51,7 +63,7 @@ export class SnapshotListPage {
   }
 
   async deleteSnapshot(timestamp: number): Promise<void> {
-    await this.row(timestamp).locator('[data-testid=snapshot-delete]').click();
+    await this.pressRowAction(timestamp, 'snapshot-delete');
     await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=button-confirm]').click();
     await this.row(timestamp).waitFor({ state: 'hidden' });

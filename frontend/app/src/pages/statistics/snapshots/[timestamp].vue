@@ -300,7 +300,7 @@ useEventListener(window, 'beforeunload', warnBeforeUnload);
 
   <div
     v-else-if="draft"
-    class="container py-4"
+    class="container"
   >
     <div class="flex flex-col gap-4">
       <SnapshotEditorToolbar

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
-import ExportSnapshotDialog from '@/modules/dashboard/ExportSnapshotDialog.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import SnapshotImportDialog from '@/modules/dashboard/SnapshotImportDialog.vue';
 import SnapshotListFilter from '@/modules/dashboard/snapshots/components/SnapshotListFilter.vue';
 import SnapshotListTable from '@/modules/dashboard/snapshots/components/SnapshotListTable.vue';
@@ -17,31 +17,36 @@ definePage({
 
 const { t } = useI18n({ useScope: 'global' });
 
+const confirmOpen = ref<boolean>(false);
+
 const {
   confirmDelete,
-  confirmTakeSnapshot,
   emptyDescription,
+  exporting,
+  exportSnapshot,
   forceSaving,
   importing,
   importSnapshot,
   loading,
   modelBalanceFile,
-  modelExportDialog,
   modelFilters,
   modelImportDialog,
   modelLocationFile,
   modelPagination,
   open,
-  openExport,
   refresh,
   rows,
-  selectedBalance,
-  selectedTimestamp,
+  takeSnapshot,
 } = useSnapshotsPage();
+
+async function confirmTakeSnapshot(): Promise<void> {
+  set(confirmOpen, false);
+  await takeSnapshot();
+}
 </script>
 
 <template>
-  <TablePageLayout :title="[t('dashboard.snapshot.list.title')]">
+  <TablePageLayout :title="[t('navigation_menu.statistics'), t('dashboard.snapshot.list.title')]">
     <template #buttons>
       <RuiButton
         variant="outlined"
@@ -64,16 +69,18 @@ const {
         @import="importSnapshot()"
       />
 
-      <RuiTooltip
-        :open-delay="400"
-        :class-names="{ tooltip: 'max-w-64' }"
+      <RuiMenu
+        v-model="confirmOpen"
+        role="dialog"
+        :class-names="{ menu: 'w-80' }"
+        :options="{ placement: 'bottom-end' }"
       >
-        <template #activator>
+        <template #activator="{ attrs }">
           <RuiButton
+            v-bind="attrs"
             color="primary"
             :loading="forceSaving"
             data-testid="take-snapshot"
-            @click="confirmTakeSnapshot()"
           >
             <template #prepend>
               <RuiIcon name="lu-camera" />
@@ -81,31 +88,54 @@ const {
             {{ t('dashboard.snapshot.list.take_snapshot') }}
           </RuiButton>
         </template>
-        {{ t('snapshot_action_button.snapshot_tooltip') }}
-      </RuiTooltip>
+        <div
+          class="flex flex-col gap-3 p-4"
+          data-testid="take-snapshot-confirm"
+        >
+          <p class="text-sm text-rui-text-secondary">
+            {{ t('dashboard.snapshot.list.take_snapshot_confirm.message') }}
+          </p>
+          <div class="flex justify-end gap-2">
+            <RuiButton
+              variant="text"
+              color="primary"
+              size="sm"
+              data-testid="take-snapshot-cancel"
+              @click="confirmOpen = false"
+            >
+              {{ t('common.actions.cancel') }}
+            </RuiButton>
+            <RuiButton
+              color="primary"
+              size="sm"
+              data-testid="take-snapshot-confirm-button"
+              @click="confirmTakeSnapshot()"
+            >
+              {{ t('dashboard.snapshot.list.take_snapshot') }}
+            </RuiButton>
+          </div>
+        </div>
+      </RuiMenu>
     </template>
 
-    <RuiCard>
-      <SnapshotListFilter
-        v-model="modelFilters"
-        class="mb-4"
-      />
+    <TableFrame>
+      <template #toolbar>
+        <SnapshotListFilter
+          v-model="modelFilters"
+          class="flex-1 min-w-64"
+        />
+      </template>
 
       <SnapshotListTable
         v-model:pagination="modelPagination"
         :rows="rows"
         :loading="loading"
         :empty-description="emptyDescription"
+        :exporting="exporting"
         @open="open($event)"
-        @export="openExport($event)"
+        @export="exportSnapshot($event)"
         @delete="confirmDelete($event)"
       />
-    </RuiCard>
-
-    <ExportSnapshotDialog
-      v-model="modelExportDialog"
-      :timestamp="selectedTimestamp"
-      :balance="selectedBalance"
-    />
+    </TableFrame>
   </TablePageLayout>
 </template>

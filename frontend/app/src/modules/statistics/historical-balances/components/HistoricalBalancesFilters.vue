@@ -41,10 +41,9 @@ const modes = computed<{ value: HistoricalBalancesMode; label: string; icon: Rui
     />
     <RuiButtonGroup
       v-model="mode"
-      variant="outlined"
-      color="primary"
-      active-color="primary"
+      variant="segmented"
       required
+      class="shrink-0"
       data-testid="historical-balances-mode"
     >
       <RuiButton

@@ -87,8 +87,8 @@ export class SnapshotEditorPage {
     await dialog.waitFor({ state: 'visible' });
     await selectAsset(this.page, '[data-testid=asset]', asset, assetId);
     await dialog.locator('[data-testid=amount] input').fill(amount);
-    // Validation needs the USD value, derived from the seeded price once the fetch settles.
-    await expect(dialog.locator('[data-testid=secondary] input')).not.toHaveValue('');
+    // Validation needs the USD value, derived from the seeded price once the fetch settles; it shows as the price field's hint.
+    await expect(dialog.locator('[data-testid=primary] .details')).toContainText(/\d/);
     await this.page.locator('[data-testid=confirm]').click();
     await dialog.waitFor({ state: 'hidden' });
   }

@@ -22,33 +22,41 @@ const sortedDays = computed<TopDay[]>(() => {
     return [];
   return [...topDaysByNumberOfTransactions].sort((a, b) => sortDesc(a.amount, b.amount));
 });
+
+function weight(day: TopDay): number {
+  return day.amount.toNumber();
+}
 </script>
 
 <template>
   <WrappedCard
     v-if="sortedDays.length > 0"
     :items="sortedDays"
+    :weight="weight"
   >
     <template #header-icon>
       <RuiIcon
         name="lu-calendar-days"
-        class="text-rui-primary"
-        size="12"
+        size="16"
       />
     </template>
     <template #header>
       {{ t('wrapped.top_days') }}
     </template>
-    <template #label="{ item, index }">
-      <span>{{ index + 1 }}.</span>
-      {{ formatDate(item.timestamp) }}
+    <template #label="{ item }">
+      <span
+        class="truncate"
+        :title="formatDate(item.timestamp)"
+      >
+        {{ formatDate(item.timestamp) }}
+      </span>
     </template>
     <template #value="{ item }">
       <ValueDisplay
         :value="item.amount"
         :format="{ integer: true }"
       />
-      {{ t('explorers.tx') }}
+      <span class="font-normal text-rui-text-secondary">{{ t('wrapped.unit.transactions', item.amount.toNumber()) }}</span>
     </template>
   </WrappedCard>
 </template>

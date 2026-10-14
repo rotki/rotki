@@ -26,12 +26,13 @@ const { calculateFontSize } = useWrappedFormatters();
   <WrappedCard
     v-if="showGnosisData && gnosisPayResult.length > 0"
     :items="gnosisPayResult"
+    :ranked="false"
   >
     <template #header-icon>
       <AppImage
         :src="getPublicServiceImagePath('gnosispay.png')"
-        width="24px"
-        height="24px"
+        width="16px"
+        height="16px"
         fit="contain"
       />
     </template>
@@ -39,19 +40,21 @@ const { calculateFontSize } = useWrappedFormatters();
       {{ t('wrapped.gnosis_payments') }}
     </template>
     <template #label="{ item }">
-      <div
-        class="flex items-center justify-center gap-2 size-6 rounded-full bg-rui-grey-300 dark:bg-rui-grey-800"
+      <span
+        class="flex items-center justify-center size-6 shrink-0 rounded-full bg-rui-grey-200 dark:bg-rui-grey-800 font-medium"
         :style="{ fontSize: calculateFontSize(item.symbol) }"
       >
         {{ item.symbol }}
-      </div>
-      <div>
-        {{ item.code }} - {{ item.name }}
-      </div>
+      </span>
+      <span class="truncate">{{ item.code }} - {{ item.name }}</span>
     </template>
     <template #value="{ item }">
-      <FiatDisplay :value="item.amount" />
-      {{ item.symbol }}
+      <FiatDisplay
+        :value="item.amount"
+        :currency="item.code"
+        symbol="none"
+      />
+      <span class="font-normal text-rui-text-secondary">{{ item.symbol }}</span>
     </template>
   </WrappedCard>
 </template>

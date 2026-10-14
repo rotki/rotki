@@ -1,6 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
-import { bigNumberify } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,6 +10,7 @@ const ITEMS_PER_PAGE = 10;
 const {
   confirmCallbacks,
   deleteSnapshot,
+  exportSnapshot,
   forceSave,
   hasSnapshotsState,
   pushMock,
@@ -29,6 +29,7 @@ const {
   return {
     confirmCallbacks,
     deleteSnapshot: vi.fn(async (): Promise<boolean> => true),
+    exportSnapshot: vi.fn(async (): Promise<boolean> => true),
     forceSave: vi.fn(async (): Promise<void> => {}),
     hasSnapshotsState,
     pushMock: vi.fn(async (): Promise<void> => {}),
@@ -82,6 +83,13 @@ vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-actions', async 
   };
 });
 
+vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-export', async () => {
+  const { shallowRef } = await import('vue');
+  return {
+    useSnapshotExport: (): Record<string, unknown> => ({ exporting: shallowRef(undefined), exportSnapshot }),
+  };
+});
+
 vi.mock('@/modules/settings/api/use-snapshot-api', () => ({
   useSnapshotApi: (): { deleteSnapshot: typeof deleteSnapshot } => ({ deleteSnapshot }),
 }));
@@ -93,10 +101,6 @@ vi.mock('@/modules/core/common/use-message-store', () => ({
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
   useConfirmStore: (): { show: typeof show } => ({ show }),
 }));
-
-function row(timestamp: number, usdValue: number): SnapshotListRow {
-  return { timestamp, usdValue: bigNumberify(usdValue) };
-}
 
 describe('pages/statistics/snapshots/useSnapshotsPage', () => {
   function setup(): ReturnType<typeof useSnapshotsPage> {
@@ -180,30 +184,14 @@ describe('pages/statistics/snapshots/useSnapshotsPage', () => {
     });
   });
 
-  describe('the export dialog', () => {
-    it('should open on the chosen snapshot and carry its stored value', async () => {
-      rowsState.current = [row(100, 500), row(200, 900)];
+  it('should export a row straight away, without a dialog in between', async () => {
+    const { exportSnapshot: exportRow } = setup();
+    await flushPromises();
 
-      const { modelExportDialog, openExport, selectedBalance, selectedTimestamp } = setup();
-      await flushPromises();
+    await exportRow(200);
 
-      openExport(200);
-
-      expect(get(modelExportDialog)).toBe(true);
-      expect(get(selectedTimestamp)).toBe(200);
-      expect(get(selectedBalance).toNumber()).toBe(900);
-    });
-
-    it('should fall back to zero when the chosen snapshot is not in the current page', async () => {
-      rowsState.current = [row(100, 500)];
-
-      const { openExport, selectedBalance } = setup();
-      await flushPromises();
-
-      openExport(999);
-
-      expect(get(selectedBalance).toNumber()).toBe(0);
-    });
+    expect(exportSnapshot).toHaveBeenCalledWith(200);
+    expect(show).not.toHaveBeenCalled();
   });
 
   it('should open a snapshot detail page', async () => {
@@ -266,25 +254,14 @@ describe('pages/statistics/snapshots/useSnapshotsPage', () => {
     });
   });
 
-  describe('taking a snapshot', () => {
-    it('should ask first, because a force-save refetches every balance', async () => {
-      const { confirmTakeSnapshot } = setup();
-      await flushPromises();
+  // the page asks in a popover on the button, so taking one no longer goes through the confirm dialog
+  it('should force-save when asked to take a snapshot', async () => {
+    const { takeSnapshot } = setup();
+    await flushPromises();
 
-      confirmTakeSnapshot();
+    await takeSnapshot();
 
-      expect(show).toHaveBeenCalledTimes(1);
-      expect(forceSave).not.toHaveBeenCalled();
-    });
-
-    it('should force-save once confirmed', async () => {
-      const { confirmTakeSnapshot } = setup();
-      await flushPromises();
-
-      confirmTakeSnapshot();
-      await confirmCallbacks[0]();
-
-      expect(forceSave).toHaveBeenCalledTimes(1);
-    });
+    expect(forceSave).toHaveBeenCalledTimes(1);
+    expect(show).not.toHaveBeenCalled();
   });
 });

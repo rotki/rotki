@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { get } from '@vueuse/shared';
+import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useWrappedDateRange } from '../use-wrapped-date-range';
 import { useWrappedGnosisPay } from '../use-wrapped-gnosis-pay';
@@ -13,20 +13,16 @@ import WrappedTopDaysCard from './cards/WrappedTopDaysCard.vue';
 import WrappedTransactionsCard from './cards/WrappedTransactionsCard.vue';
 import WrappedAlerts from './WrappedAlerts.vue';
 import WrappedDateFilter from './WrappedDateFilter.vue';
-import WrappedHeader from './WrappedHeader.vue';
+import WrappedHighlights from './WrappedHighlights.vue';
 import WrappedSkeletonCards from './WrappedSkeletonCards.vue';
-
-const { highlightedYear } = defineProps<{
-  highlightedYear?: number;
-}>();
 
 const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 
 const {
   end,
-  getYearRange,
   initializeEndDate,
+  invalidRange,
   start,
 } = useWrappedDateRange();
 
@@ -45,30 +41,43 @@ const {
   showGnosisData,
 } = useWrappedGnosisPay(summary);
 
-const isHighlightedYear = computed<boolean>(() => {
-  if (!isDefined(highlightedYear))
-    return false;
-
-  const range = getYearRange(highlightedYear);
-  return get(start) === range.start && get(end) === range.end;
-});
-
 onBeforeMount(async () => {
   initializeEndDate();
   await fetchData();
 });
 
-defineExpose({
-  isHighlightedYear,
-  loading,
+// a new range applies once it settles; a history refresh refetches when it ends, so none is needed during it
+watchDebounced([start, end], async () => {
+  if (get(invalidRange) || get(refreshing))
+    return;
+  await fetchData();
+}, { debounce: 400 });
+
+/**
+ * Whether a fetch has run long enough to say so. Most take well under half a second, and dimming
+ * the figures for that long reads as a flicker; they swap in place instead.
+ */
+const slowFetch = ref<boolean>(false);
+
+const { start: startSlowTimer, stop: stopSlowTimer } = useTimeoutFn(() => {
+  set(slowFetch, true);
+}, 500, { immediate: false });
+
+watch(loading, (isLoading) => {
+  if (isLoading) {
+    startSlowTimer();
+    return;
+  }
+  stopSlowTimer();
+  set(slowFetch, false);
 });
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 py-4 px-2">
-    <WrappedHeader
-      :highlighted-year="highlightedYear"
-      :is-highlighted-year="isHighlightedYear"
+  <div class="flex flex-col gap-4">
+    <WrappedDateFilter
+      v-model:start="start"
+      v-model:end="end"
     />
 
     <WrappedAlerts
@@ -76,49 +85,38 @@ defineExpose({
       :premium="premium"
     />
 
-    <WrappedDateFilter
-      v-model:start="start"
-      v-model:end="end"
-      :loading="loading"
-      :refreshing="refreshing"
-      @fetch="fetchData()"
-    />
-
-    <template v-if="loading">
-      <WrappedSkeletonCards />
-    </template>
+    <WrappedSkeletonCards v-if="loading && summary === undefined" />
+    <RuiCard v-else-if="!summary">
+      <TableEmptyNotice
+        icon="lu-chart-no-axes-column"
+        :title="t('wrapped.empty.title')"
+        :description="t('wrapped.empty.description')"
+      />
+    </RuiCard>
     <div
-      v-else-if="!summary"
-      class="p-4 text-center"
+      v-else
+      class="flex flex-col gap-4 transition-opacity"
+      :class="{ 'opacity-60': slowFetch }"
+      :aria-busy="loading"
     >
-      {{ t('data_table.no_data') }}
-    </div>
-    <template v-else>
-      <WrappedGasCard
+      <WrappedHighlights
         :eth-on-gas="summary.ethOnGas"
-        :eth-on-gas-per-address="summary.ethOnGasPerAddress"
+        :transactions="summary.transactionsPerChain"
+        :trades="summary.tradesByExchange"
+        :top-days="summary.topDaysByNumberOfTransactions"
       />
 
-      <WrappedExchangeCard
-        :trades-by-exchange="summary.tradesByExchange"
-      />
-
-      <WrappedTransactionsCard
-        :transactions-per-chain="summary.transactionsPerChain"
-      />
-
-      <WrappedGnosisPayCard
-        :gnosis-pay-result="gnosisPayResult"
-        :show-gnosis-data="showGnosisData"
-      />
-
-      <WrappedTopDaysCard
-        :top-days-by-number-of-transactions="summary.topDaysByNumberOfTransactions"
-      />
-
-      <WrappedProtocolCard
-        :transactions-per-protocol="summary.transactionsPerProtocol"
-      />
-    </template>
+      <div class="grid gap-4 lg:grid-cols-2">
+        <WrappedTransactionsCard :transactions-per-chain="summary.transactionsPerChain" />
+        <WrappedProtocolCard :transactions-per-protocol="summary.transactionsPerProtocol" />
+        <WrappedGasCard :eth-on-gas-per-address="summary.ethOnGasPerAddress" />
+        <WrappedTopDaysCard :top-days-by-number-of-transactions="summary.topDaysByNumberOfTransactions" />
+        <WrappedExchangeCard :trades-by-exchange="summary.tradesByExchange" />
+        <WrappedGnosisPayCard
+          :gnosis-pay-result="gnosisPayResult"
+          :show-gnosis-data="showGnosisData"
+        />
+      </div>
+    </div>
   </div>
 </template>
