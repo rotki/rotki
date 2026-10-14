@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The date format help now says that ``%I`` shows the 12-hour clock hour with a leading zero and ``%-I`` without one. Before, the two descriptions were swapped.
 * :feature:`-` Bonds, ETFs and Collectibles are now available as locations, for manual balances, balance snapshots and manually added history events.
 * :bug:`13345` ZKSync Lite transaction history is now fully fetched for every tracked address. Before, an address could be skipped when another tracked address had a newer transaction, leaving its older transactions and events missing.
 * :bug:`13295` NFTs that the NFT module does not report now show up in balances and snapshots when another NFT of the same collection is reported.
