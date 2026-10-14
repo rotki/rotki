@@ -101,7 +101,9 @@ describe('historyEventsVirtualTable', () => {
     it('should ask its owner to fetch again from the retry', async () => {
       const wrapper = mountUnder(ref(RequestFailed({ cause: undefined, message: 'backend is down' })));
 
-      await wrapper.find('button').trigger('click');
+      // The alert carrying the retry is stubbed in unit tests, so its action is raised directly.
+      wrapper.findComponent({ name: 'RuiTableErrorState' }).vm.$emit('action');
+      await nextTick();
 
       expect(wrapper.findComponent(HistoryEventsVirtualTable).emitted('refetch')).toHaveLength(1);
     });

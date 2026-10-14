@@ -3,7 +3,7 @@ const { hideDivider = false } = defineProps<{ hideDivider?: boolean }>();
 
 defineSlots<{
   default: () => any;
-  filter: () => any;
+  filter?: () => any;
 }>();
 </script>
 

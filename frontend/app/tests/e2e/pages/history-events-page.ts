@@ -320,7 +320,8 @@ export class HistoryEventsPage {
   async deleteSubEvent(index: number): Promise<void> {
     const row = this.page.locator('[data-testid=history-event-row]').nth(index);
     await row.hover();
-    await row.locator('[data-testid=row-delete]').click();
+    await row.locator('[data-testid=row-actions-menu]').click();
+    await this.page.getByRole('menu').locator('[data-testid=row-delete]').click();
     const dialog = this.page.locator('[data-testid=confirm-dialog]');
     await dialog.locator('[data-testid=button-confirm]').click();
     await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });

@@ -18,6 +18,7 @@ const {
 
 const emit = defineEmits<{
   refresh: [payload?: HistoryRefreshEventData];
+  repull: [];
 }>();
 
 const open = ref<boolean>(false);
@@ -55,6 +56,12 @@ function refresh(): void {
   set(open, false);
 }
 
+function repull(): void {
+  emit('repull');
+  reset();
+  set(open, false);
+}
+
 function toggleSelectAll(): void {
   const tabs: Record<HistoryRefreshTab, { toggleSelectAll: () => void } | null> = {
     [HistoryRefreshTab.BANKS]: get(banks),
@@ -78,13 +85,16 @@ function toggleSelectAll(): void {
       <RuiButton
         variant="outlined"
         color="primary"
-        size="lg"
-        class="px-3 rounded-l-none outline-hidden!"
+        class="h-9 px-2.5 rounded-l-none outline-hidden!"
         :disabled="disabled"
+        :aria-label="t('common.actions.more')"
         data-testid="refresh-selection-toggle"
         v-bind="attrs"
       >
-        <RuiIcon name="lu-chevrons-up-down" />
+        <RuiIcon
+          name="lu-chevron-down"
+          size="16"
+        />
       </RuiButton>
     </template>
 
@@ -204,6 +214,25 @@ function toggleSelectAll(): void {
             {{ t('history_refresh_selection.refresh', { total: totalSelected, type: typeText }) }}
           </RuiButton>
         </div>
+      </div>
+
+      <div class="px-4 py-2 border-t border-default">
+        <RuiButton
+          variant="text"
+          size="sm"
+          class="w-full justify-start!"
+          :disabled="processing"
+          data-testid="refresh-selection-repull"
+          @click="repull()"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-clock-arrow-up"
+              size="16"
+            />
+          </template>
+          {{ t('history_refresh_selection.repull') }}
+        </RuiButton>
       </div>
     </div>
   </RuiMenu>

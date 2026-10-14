@@ -17,8 +17,6 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <!-- the row being matched, as a card: at pinned width the summary table wrapped its
-       own headers onto two lines and left the asset squeezed against the actions -->
   <div
     class="flex flex-col gap-1 rounded-sm border border-rui-warning/40 bg-rui-warning/10 p-2"
     data-testid="potential-match-subject"

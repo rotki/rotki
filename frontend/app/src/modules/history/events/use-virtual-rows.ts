@@ -15,16 +15,19 @@ export const ROW_HEIGHTS = {
   'load-more': 36,
 } as const;
 
-/** Row heights for the mobile card layout, which stacks the same rows taller than the table does. */
+/**
+ * Row heights for the mobile card layout, which stacks the same rows taller than the table does.
+ * Each card fixes its own height to the value here, since the virtual list positions rows by it.
+ */
 const CARD_HEIGHTS = {
   'group-header': 72,
-  'event-row': 140,
-  'event-placeholder': 140,
-  'swap-row': 160,
-  'matched-movement-row': 160,
-  'swap-collapse': 40,
-  'matched-movement-collapse': 40,
-  'load-more': 40,
+  'event-row': 136,
+  'event-placeholder': 136,
+  'swap-row': 184,
+  'matched-movement-row': 136,
+  'swap-collapse': 36,
+  'matched-movement-collapse': 36,
+  'load-more': 36,
 } as const;
 
 const INITIAL_EVENTS_LIMIT = 6;

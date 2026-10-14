@@ -68,8 +68,9 @@ function reset() {
   set(search, '');
 }
 
+/** Redecodes the picked chains; every chain is the full run, which asks for confirmation before it starts. */
 function redecode() {
-  emit('redecode', { chains: get(selection), type: 'chains' });
+  emit('redecode', get(selected) ? { type: 'all' } : { chains: get(selection), type: 'chains' });
   reset();
 }
 </script>
@@ -78,19 +79,28 @@ function redecode() {
   <RuiMenu
     v-model="open"
     class="border-0!"
-    :options="{ offset: { crossAxis: 35 }, placement: 'bottom' }"
+    :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">
       <RuiButton
+        variant="outlined"
         color="primary"
-        class="px-3 py-3 rounded-l-none -ml-px border-l border-rui-primary-darker disabled:border-rui-grey-200 dark:disabled:border-rui-grey-800"
+        class="[&>span]:hidden! lg:[&>span]:inline!"
         :disabled="disabled"
+        :aria-label="t('transactions.events_decoding.redecode')"
+        data-testid="history-redecode"
         v-bind="attrs"
       >
-        <RuiIcon
-          name="lu-chevrons-up-down"
-          class="size-4"
-        />
+        <template #prepend>
+          <RuiIcon name="lu-refresh-cw" />
+        </template>
+        {{ t('transactions.events_decoding.redecode') }}
+        <template #append>
+          <RuiIcon
+            name="lu-chevron-down"
+            size="16"
+          />
+        </template>
       </RuiButton>
     </template>
 

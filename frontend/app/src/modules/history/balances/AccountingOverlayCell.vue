@@ -111,8 +111,6 @@ const placeholder = computed<string | undefined>(() => {
       {{ t('accounting_overlay.error') }}
     </RuiTooltip>
 
-    <!-- No balance: a dash where the amount would be, with the info anchor on the right — both
-         align vertically with the populated rows. -->
     <div
       v-else-if="placeholder"
       class="flex items-center justify-end gap-1.5"
@@ -160,8 +158,6 @@ const placeholder = computed<string | undefined>(() => {
           />
         </span>
       </div>
-      <!-- Hover to peek, click to pin: a RuiMenu (not a tooltip) so the breakdown stays open for
-           reading/touch and the trigger is a focusable, keyboard-operable button. -->
       <RuiMenu
         v-model="modelBreakdownOpen"
         open-on-hover
@@ -185,7 +181,7 @@ const placeholder = computed<string | undefined>(() => {
             />
           </RuiButton>
         </template>
-        <div class="p-3 flex flex-col gap-2">
+        <div class="p-4 flex flex-col gap-4">
           <AccountingOverlaySparkline
             v-if="modelBreakdownOpen"
             :event="event"

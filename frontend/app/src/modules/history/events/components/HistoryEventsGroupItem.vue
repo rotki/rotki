@@ -6,6 +6,7 @@ import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vu
 import HistoryEventsAction from '@/modules/history/events/HistoryEventsAction.vue';
 import HistoryEventsIdentifier from '@/modules/history/events/HistoryEventsIdentifier.vue';
 import { useEventRedecodeStatus } from '@/modules/history/events/use-event-redecode-status';
+import { injectHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
 import IgnoredInAccountingIcon from '@/modules/history/IgnoredInAccountingIcon.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
@@ -49,22 +50,25 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const selection = injectHistoryEventsSelection();
+
+const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
+
 const showingIgnoredAssets = computed<boolean>(() => ignoredAssets === 'showing');
 
 const isCard = computed<boolean>(() => variant === 'card');
 
-const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
+/** Selection mode widens every row's gutter for the event checkboxes; the header follows so it stays lined up. */
+const selecting = computed<boolean>(() => !!selection && get(selection.isSelectionMode));
 </script>
 
 <template>
-  <!-- Card Layout -->
   <div
     v-if="isCard"
     data-testid="history-event-group"
-    class="pt-1 pb-2 px-3 border-b border-rui-grey-200 dark:border-rui-grey-800 bg-rui-grey-100 dark:bg-dark-elevated"
+    class="h-18 flex flex-col justify-center overflow-hidden px-3 border-b border-rui-grey-200 dark:border-rui-grey-800 bg-rui-grey-100 dark:bg-dark-elevated"
     :class="getHighlightClass(highlightType)"
   >
-    <!-- Top row: Location + Identifier + Actions -->
     <div class="flex items-center justify-between gap-2 mb-0.5">
       <div class="flex items-center gap-2 min-w-0 flex-1">
         <IgnoredInAccountingIcon
@@ -139,7 +143,6 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
       />
     </div>
 
-    <!-- Bottom row: Account + Timestamp -->
     <div class="flex items-center justify-between gap-2">
       <HistoryEventAccount
         v-if="group.locationLabel"
@@ -156,61 +159,58 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
     </div>
   </div>
 
-  <!-- Row Layout -->
   <div
     v-else
     data-testid="history-event-group"
-    class="h-12 flex items-center gap-2.5 border-b border-default border-t-rui-grey-400! dark:border-t-rui-grey-600! pl-2 pr-4 bg-white dark:bg-dark-elevated contain-content"
-    :class="getHighlightClass(highlightType)"
+    class="group/row h-12 flex items-center gap-3 border-b border-default border-t-rui-grey-400! dark:border-t-rui-grey-600! pr-4 bg-white dark:bg-dark-elevated contain-content"
+    :class="[selecting ? 'pl-16' : 'pl-6', getHighlightClass(highlightType)]"
   >
-    <IgnoredInAccountingIcon
-      v-if="group.ignoredInAccounting"
-      class="shrink-0"
-    />
-    <div
-      v-else
-      class=" shrink-0"
-    />
-
-    <RuiTooltip
-      v-if="ignoredAssets"
-      :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
-      :open-delay="400"
-      :class-names="{ tooltip: 'max-w-60' }"
-    >
-      <template #activator>
-        <button
-          type="button"
-          class="p-0.5 rounded-sm hover:bg-rui-grey-300 dark:hover:bg-rui-grey-700 transition-colors"
-          @click="emit('toggle-show-ignored-assets')"
-        >
-          <RuiIcon
-            :name="showingIgnoredAssets ? 'lu-eye' : 'lu-eye-off'"
-            class="text-rui-warning shrink-0"
-            size="16"
-          />
-        </button>
-      </template>
-      {{
-        showingIgnoredAssets
-          ? t('transactions.events.showing_ignored_assets')
-          : t('transactions.events.hidden_ignored_assets_warning')
-      }}
-    </RuiTooltip>
-
-    <LocationIcon
-      icon
-      :item="group.location"
-      size="20px"
-      class="shrink-0"
-    />
+    <div class="w-10 shrink-0 flex justify-center">
+      <LocationIcon
+        icon
+        :item="group.location"
+        size="20px"
+      />
+    </div>
 
     <div class="flex items-center gap-2.5 min-w-0 flex-1">
       <HistoryEventsIdentifier
         :event="group"
         :group-events="groupEvents"
+        reveal-actions
         class="min-w-0"
       />
+
+      <IgnoredInAccountingIcon
+        v-if="group.ignoredInAccounting"
+        class="shrink-0"
+      />
+
+      <RuiTooltip
+        v-if="ignoredAssets"
+        :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
+        :open-delay="400"
+        :class-names="{ tooltip: 'max-w-60' }"
+      >
+        <template #activator>
+          <button
+            type="button"
+            class="p-0.5 rounded-sm hover:bg-rui-grey-300 dark:hover:bg-rui-grey-700 transition-colors"
+            @click="emit('toggle-show-ignored-assets')"
+          >
+            <RuiIcon
+              :name="showingIgnoredAssets ? 'lu-eye' : 'lu-eye-off'"
+              class="text-rui-warning shrink-0"
+              size="16"
+            />
+          </button>
+        </template>
+        {{
+          showingIgnoredAssets
+            ? t('transactions.events.showing_ignored_assets')
+            : t('transactions.events.hidden_ignored_assets_warning')
+        }}
+      </RuiTooltip>
 
       <span
         v-if="redecoding"
@@ -222,10 +222,11 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
 
       <template v-if="group.locationLabel">
         <!-- eslint-disable-next-line @intlify/vue-i18n/no-raw-text -->
-        <span class="text-[10px] text-rui-text-secondary shrink-0">●</span>
+        <span class="text-rui-text-disabled shrink-0">·</span>
         <HistoryEventAccount
           :location="group.location"
           :location-label="group.locationLabel"
+          reveal-actions
           class="text-sm min-w-0"
         />
       </template>

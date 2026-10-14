@@ -67,6 +67,7 @@ async function save() {
     :display="!!modelValue"
     :title="t('transactions.dialog.add_tx')"
     :action="{ disabled: loading, primary: t('common.actions.save') }"
+    :layout="{ autoHeight: true, maxWidth: '640px' }"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
     @confirm="save()"

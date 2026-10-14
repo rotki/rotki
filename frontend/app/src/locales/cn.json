@@ -2726,11 +2726,12 @@
       "comparison_unavailable": "该事件对比不可用。只有最近一次检查会保留交易详情；请重试以生成新的对比。",
       "detected": "检测时间",
       "event_date": "受影响的事件：",
+      "match_in_history": "在历史中匹配",
       "no_attempts": "尚未进行任何自动检查或修复。",
+      "open_event": "打开事件 #{id}",
       "redecoding_failed": "rotki 无法将自定义交易与当前解码器进行比较。你已保存的事件未被修改。",
       "redecoding_would_change_balance": "当前解码结果与你为该账户和资产保存的事件不同。已保存的事件未被修改。尚未验证这些差异能否消除负余额。",
       "redecoding_would_not_change_balance": "当前解码结果对该账户和资产余额的影响与你保存的事件相同。已保存的事件未被修改。",
-      "related_event": "相关历史事件：#{id}",
       "remediation_history": "自动检查与修复",
       "resolution_note": "解决备注",
       "title": "问题详情",
@@ -2839,7 +2840,11 @@
   },
   "data_table": {
     "fetch_failed": "无法加载数据",
+    "first_page": "第一页",
+    "last_page": "最后一页",
+    "next_page": "下一页",
     "no_data": "无数据",
+    "previous_page": "上一页",
     "rows_per_page": "每页行数"
   },
   "database_backups": {
@@ -4126,6 +4131,9 @@
     "bridge_description": "将 {fromChain} 上的 {spendAmount} {spendAsset} 跨链为 {toChain} 上的 {receiveAmount} {receiveAsset}",
     "bridge_expanded": "关联的跨链 · {count} 个事件",
     "bridge_label": "跨链桥",
+    "collapse_events": "收起 {count} 个事件",
+    "event_count": "{count} 个事件",
+    "expand_events": "显示 {count} 个事件",
     "fee_description": "{notes}，手续费：{feeText}",
     "movement_expanded": "关联的资产转移 · {count} 个事件",
     "swap_description": "用 {spendAmount} {spendAsset} 兑换 {receiveAmount} {receiveAsset}",
@@ -4148,6 +4156,7 @@
     "non_syncing_hint": "{count} 个交易所未参与同步 | {count} 个交易所未参与同步",
     "refresh": "刷新 {total} 个{type}",
     "refresh_disabled": "无法刷新 {service}，因为未配置所需的 API Key",
+    "repull": "重新拉取某个时间范围…",
     "search_address": "按地址搜索",
     "search_banks": "按银行搜索",
     "search_chain": "按链搜索",
@@ -6494,7 +6503,9 @@
       "clear_filters": "清除筛选",
       "no_data_with_filters": "没有符合当前筛选条件的事件",
       "no_events": "未找到事件",
-      "syncing": "正在查询并解码你的历史记录"
+      "no_events_hint": "连接交易所或追踪区块链地址以同步你的历史，也可以手动添加事件。",
+      "syncing": "正在查询并解码你的历史记录",
+      "syncing_hint": "事件处理完成后会显示在这里。首次同步可能需要较长时间。"
     },
     "events": {
       "accounting_rule": {
@@ -6737,7 +6748,6 @@
         "eth_block_event": "已出块 {blockNumber}",
         "eth_deposit_event": "存入事件 {txRef}",
         "eth_withdrawal_event": "验证者 {validatorIndex} 的提款",
-        "event_identifier": "事件信息",
         "evm_event": "交易 {txRef}",
         "evm_swap_event": "EVM 兑换事件",
         "history_event": "{location} 事件",
@@ -6759,6 +6769,7 @@
       },
       "redecoding": "重新解码中",
       "selection_mode": {
+        "accounting_rule": "会计规则",
         "all_matching_selected": "已选中 {count} 个分组中的全部事件",
         "create_rule": "设置自定义会计规则",
         "delete_selected": "删除所选事件",
@@ -6766,7 +6777,6 @@
         "no_events": "没有可选择的事件",
         "select_all_matching": "选择所有匹配的事件",
         "select_all_page": "选择本页全部",
-        "selected_count": "已选 {count} 个",
         "tooltip": "选择多个事件",
         "unignore": "计入会计（盈亏）"
       },

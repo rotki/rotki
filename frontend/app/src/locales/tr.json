@@ -2750,11 +2750,12 @@
       "divergence_no_mismatch": "Sorunun nedeni muhtemelen bu cüzdandaki eksik veya yanlış bir olay değil. Yok sayılmış bir olayı ya da başka bir hesap veya protokol altında kaydedilmiş bir olayı arayın.",
       "divergence_scope": "Takip edilen cüzdan bakiyesini {date} tarihine kadar zincir üstü bakiyeyle karşılaştırır.",
       "event_date": "Etkilenen olay:",
+      "match_in_history": "Geçmişte eşleştir",
       "no_attempts": "Henüz hiçbir otomatik kontrol veya düzeltme denenmedi.",
+      "open_event": "#{id} olayını aç",
       "redecoding_failed": "rotki, özelleştirilmiş işlemleri mevcut çözümleyiciyle karşılaştıramadı. Kaydedilen olaylarınız değiştirilmedi.",
       "redecoding_would_change_balance": "Mevcut çözümleme, bu hesap ve varlık için kaydedilen olaylarınızdan farklı. Kaydedilen olaylarınız değiştirilmedi. Bu farkların negatif bakiyeyi çözüp çözmediği doğrulanmadı.",
       "redecoding_would_not_change_balance": "Mevcut çözümleme, bu hesap ve varlık bakiyesi üzerinde kaydedilen olaylarınızla aynı etkiye sahip. Kaydedilen olaylarınız değiştirilmedi.",
-      "related_event": "İlgili geçmiş olayı: #{id}",
       "remediation_history": "Otomatik kontroller ve düzeltmeler",
       "resolution_note": "Çözüm notu",
       "title": "Sorun ayrıntıları",
@@ -2863,7 +2864,11 @@
   },
   "data_table": {
     "fetch_failed": "Veriler yüklenemedi",
+    "first_page": "İlk sayfa",
+    "last_page": "Son sayfa",
+    "next_page": "Sonraki sayfa",
     "no_data": "Veri yok",
+    "previous_page": "Önceki sayfa",
     "rows_per_page": "Sayfa başına satır"
   },
   "database_backups": {
@@ -4205,6 +4210,9 @@
     "bridge_description": "{fromChain} zincirindeki {spendAmount} {spendAsset}, {toChain} zincirinde {receiveAmount} {receiveAsset} olarak köprülendi",
     "bridge_expanded": "Bağlantılı köprü · {count} olay",
     "bridge_label": "Köprü",
+    "collapse_events": "{count} olayı daralt",
+    "event_count": "{count} olay",
+    "expand_events": "{count} olayı göster",
     "fee_description": "{notes}, ücret: {feeText}",
     "movement_expanded": "Bağlantılı hareket · {count} olay",
     "swap_description": "{spendAmount} {spendAsset}, {receiveAmount} {receiveAsset} karşılığında takas edildi",
@@ -4227,6 +4235,7 @@
     "non_syncing_hint": "{count} borsa senkronizasyonun dışında tutuluyor | {count} borsa senkronizasyonun dışında tutuluyor",
     "refresh": "{total} {type} yenile",
     "refresh_disabled": "Gerekli API anahtarı yapılandırılmadığından {service} için yenileme devre dışı",
+    "repull": "Bir zaman aralığını yeniden çek…",
     "search_address": "Adrese göre ara",
     "search_banks": "Bankaya göre ara",
     "search_chain": "Zincire göre ara",
@@ -6632,7 +6641,9 @@
       "clear_filters": "Filtreleri temizle",
       "no_data_with_filters": "Mevcut filtrelerle eşleşen olay yok",
       "no_events": "Olay bulunamadı",
-      "syncing": "Geçmişiniz sorgulanıyor ve çözümleniyor"
+      "no_events_hint": "Geçmişinizi senkronize etmek için bir borsa bağlayın veya bir blokzincir adresini takip edin ya da manuel olarak bir olay ekleyin.",
+      "syncing": "Geçmişiniz sorgulanıyor ve çözümleniyor",
+      "syncing_hint": "Olaylar işlendikçe burada görünecek. İlk senkronizasyon biraz zaman alabilir."
     },
     "events": {
       "accounting_rule": {
@@ -6875,7 +6886,6 @@
         "eth_block_event": "{blockNumber} numaralı blok üretildi",
         "eth_deposit_event": "Yatırma olayları {txRef}",
         "eth_withdrawal_event": "{validatorIndex} numaralı doğrulayıcı için çekme",
-        "event_identifier": "Olay bilgileri",
         "evm_event": "İşlem {txRef}",
         "evm_swap_event": "EVM takas olayı",
         "history_event": "{location} olayı",
@@ -6897,6 +6907,7 @@
       },
       "redecoding": "Yeniden çözümleniyor",
       "selection_mode": {
+        "accounting_rule": "Muhasebe kuralı",
         "all_matching_selected": "{count} gruptaki tüm olaylar seçildi",
         "create_rule": "Özel muhasebe kuralı belirle",
         "delete_selected": "Seçili olayları sil",
@@ -6904,7 +6915,6 @@
         "no_events": "Seçilecek olay yok",
         "select_all_matching": "Eşleşen tüm olayları seç",
         "select_all_page": "Bu sayfadakilerin tümünü seç",
-        "selected_count": "{count} seçili",
         "tooltip": "Birden çok olay seç",
         "unignore": "Muhasebeye dahil et (PnL)"
       },

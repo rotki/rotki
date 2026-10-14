@@ -92,6 +92,19 @@ describe('historyRedecodeSelection', () => {
     expect(wrapper.emitted('redecode')).toStrictEqual([[{ chains: ['btc', 'bch'], type: 'chains' }]]);
   });
 
+  it('should emit the full run, not a chain list, when every chain is picked', async () => {
+    set(allTxChainsInfo, [evmChain('ethereum', 'Ethereum'), nonEvmChain('polkadot', 'Polkadot')]);
+
+    const wrapper = createWrapper();
+    await nextTick();
+
+    await wrapper.find('[data-testid=select-all]').trigger('click');
+    await nextTick();
+    await wrapper.find('[data-testid=history-redecode-selection-confirm]').trigger('click');
+
+    expect(wrapper.emitted('redecode')).toStrictEqual([[{ type: 'all' }]]);
+  });
+
   it('should match a chain on its evm name as well as its display name', async () => {
     set(allTxChainsInfo, [evmChain('polygon_pos', 'Polygon PoS'), nonEvmChain('polkadot', 'Polkadot')]);
 

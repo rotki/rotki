@@ -195,9 +195,6 @@ defineExpose({
       </RuiTab>
     </RuiTabs>
 
-    <!-- Compact never puts the bar beside the selection actions: the pinned rail is narrow while
-         the viewport is not, so a `md:` row read the screen and squeezed the bar into a column of
-         its own, one control per line. -->
     <div
       class="flex flex-col gap-2 pt-4 pb-2 shrink-0"
       :class="compact ? 'px-3' : 'px-4 md:flex-row md:items-center'"

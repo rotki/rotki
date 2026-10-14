@@ -13,8 +13,6 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <!-- info, not amber: the confirm strip asks before reversible work, this one reports work
-       that already happened and keeps its undo within reach of the list it changed -->
   <div
     class="flex items-center gap-2 rounded-sm px-2 py-1 bg-rui-info/10 border border-rui-info/40"
     data-testid="unmatched-resolution-strip"

@@ -104,7 +104,7 @@ watchImmediate(pendingPriceIntent, (intent) => {
         :error-messages="errorMessages.amount"
         @blur="emit('blur', 'amount')"
       />
-      <div class="flex">
+      <div class="relative min-w-0">
         <AssetSelect
           v-model="asset"
           :disabled="disabled || disableAsset"
@@ -116,27 +116,29 @@ watchImmediate(pendingPriceIntent, (intent) => {
           :error-messages="disableAsset ? [''] : errorMessages.asset ?? []"
           @blur="emit('blur', 'asset')"
         />
-        <ToggleLocationLink
-          v-model="chain"
-          class="ml-3"
-          :disabled="disableAsset || disabled"
-          :location="location"
-        />
-        <div
-          v-if="hidePriceFields && !noPriceFields"
-          class="pt-1"
-        >
-          <RuiTooltip :open-delay="400">
+        <div class="absolute right-0 -top-1.5 flex items-center">
+          <ToggleLocationLink
+            v-model="chain"
+            :disabled="disableAsset || disabled"
+            :location="location"
+          />
+          <RuiTooltip
+            v-if="hidePriceFields && !noPriceFields"
+            :open-delay="400"
+          >
             <template #activator>
               <RuiButton
                 icon
+                size="sm"
                 variant="text"
+                :aria-label="t('profit_loss_events.edit_historic_price')"
                 @click="showPriceFields = !showPriceFields"
               >
                 <RuiIcon
                   class="transition-all"
                   :class="{ '-rotate-180': showPriceFields }"
                   name="lu-chevron-down"
+                  size="16"
                 />
               </RuiButton>
             </template>
@@ -149,6 +151,7 @@ watchImmediate(pendingPriceIntent, (intent) => {
       v-if="showPriceFields && !noPriceFields"
       v-model:primary-value="modelAssetToFiatPrice"
       v-model:secondary-value="modelFiatValue"
+      v-model:reversed="modelFiatValueFocused"
       class="mb-4"
       :loading="fetching"
       :disabled="fetching || disabled"
@@ -160,7 +163,6 @@ watchImmediate(pendingPriceIntent, (intent) => {
           symbol: currencySymbol,
         }),
       }"
-      @update:reversed="modelFiatValueFocused = $event"
     />
   </div>
 </template>

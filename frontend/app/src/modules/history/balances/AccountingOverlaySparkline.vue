@@ -69,7 +69,7 @@ const option = computed<EChartsOption>(() => {
     class="flex flex-col gap-1"
     data-testid="overlay-sparkline"
   >
-    <div class="text-xs font-medium uppercase tracking-wide opacity-60">
+    <div class="text-xs font-medium text-rui-text-secondary">
       {{ t('accounting_overlay.over_time') }}
     </div>
     <RuiSkeletonLoader

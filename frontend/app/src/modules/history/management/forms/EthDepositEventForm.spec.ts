@@ -113,7 +113,6 @@ describe('form/EthDepositEventForm.vue', () => {
         "data-testid=group-identifier",
         "data-testid=grouped-amount-input-swap",
         "data-testid=primary",
-        "data-testid=secondary",
         "data-testid=sequence-index",
         "data-testid=tx-ref",
         "data-testid=validator-index",

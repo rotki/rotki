@@ -100,7 +100,6 @@ watchImmediate(show, (value) => {
         {{ t('transactions.actions.redecode_events') }}
       </template>
 
-      <!-- Custom events warning - only show when there are custom events -->
       <RuiAlert
         v-if="hasCustomEvents"
         type="warning"
@@ -109,7 +108,6 @@ watchImmediate(show, (value) => {
         {{ t('transactions.events.confirmation.reset.custom_events_warning') }}
       </RuiAlert>
 
-      <!-- Indexer order section for EVM events (only when showIndexerOptions is true) -->
       <SettingsItem
         v-if="showIndexerOptions && isEvmEvent"
         class="py-0! border-0!"

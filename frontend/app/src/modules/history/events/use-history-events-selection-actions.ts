@@ -162,6 +162,9 @@ export function useHistoryEventsSelectionActions(
       case 'toggle-mode':
         selectionMode.actions.toggle();
         break;
+      case 'clear':
+        selectionMode.actions.clear();
+        break;
       case 'exit':
         selectionMode.actions.exit();
         break;

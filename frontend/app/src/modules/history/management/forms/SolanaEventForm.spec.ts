@@ -137,7 +137,6 @@ describe('forms/SolanaEventForm.vue', () => {
         "data-testid=location",
         "data-testid=notes",
         "data-testid=primary",
-        "data-testid=secondary",
         "data-testid=sequence-index",
         "data-testid=solana-event-form-advance",
         "data-testid=tx-ref",

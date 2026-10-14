@@ -118,7 +118,6 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
         "data-testid=grouped-amount-input-swap",
         "data-testid=is-exit",
         "data-testid=primary",
-        "data-testid=secondary",
         "data-testid=validator-index",
         "data-testid=withdrawal-address",
       ]

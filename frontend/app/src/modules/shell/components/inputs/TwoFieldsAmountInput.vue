@@ -25,19 +25,25 @@ const {
   disabled?: boolean;
 }>();
 
-const primaryInput = useTemplateRef<InstanceType<typeof AmountInput>>('primaryInput');
-const secondaryInput = useTemplateRef<InstanceType<typeof AmountInput>>('secondaryInput');
+const { t } = useI18n({ useScope: 'global' });
 
-function reverse(): void {
-  const newReversed = !get(reversed);
-  set(reversed, newReversed);
+const input = useTemplateRef<InstanceType<typeof AmountInput>>('input');
 
-  nextTick(() => {
-    if (!newReversed)
-      get(primaryInput)?.focus();
-    else get(secondaryInput)?.focus();
-  });
-}
+const entered = computed<string>({
+  get: () => (get(reversed) ? get(secondaryValue) : get(primaryValue)),
+  set: (value: string) => {
+    if (get(reversed))
+      set(secondaryValue, value);
+    else
+      set(primaryValue, value);
+  },
+});
+
+const derived = computed<string>(() => (get(reversed) ? get(primaryValue) : get(secondaryValue)));
+
+const derivedLabel = computed<string | undefined>(() => (get(reversed) ? label.primary : label.secondary));
+
+const enteredLabel = computed<string | undefined>(() => (get(reversed) ? label.secondary : label.primary));
 
 const aggregatedErrorMessages = computed<string[]>(() => {
   const primary = errorMessages?.primary || [];
@@ -46,95 +52,73 @@ const aggregatedErrorMessages = computed<string[]>(() => {
   return [...arrayify(primary), ...arrayify(secondary)];
 });
 
-const hasError = computed<boolean>(() => get(aggregatedErrorMessages).length > 0);
+type EnteredFigure = 'price' | 'value';
 
-const focused = ref<boolean>(false);
+/**
+ * The toggle's own values are strings: a bare `model-value` attribute on a button reaches its
+ * generic prop as an empty string rather than `true`, which left the Value button doing nothing.
+ */
+const enteredFigure = computed<EnteredFigure>(() => (get(reversed) ? 'value' : 'price'));
 
-const uiClasses = {
-  disabledInput: `
-    [&_label]:border-t-0!
-    [&_label]:border
-    [&_label]:border-[#0000006b]
-    [&_label]:rounded-b
-    [&_label]:rounded-t-none!
-    [&_label]:bg-rui-grey-300/40!
-    dark:[&_label]:border-white/42
-    dark:[&_label]:bg-rui-grey-800/40!
-    [&_input]:pt-6!
-    [&_input]:pb-2!
-  `,
-  enabledInput: `
-    [&_label]:border
-    [&_label]:rounded-t
-    [&_label]:rounded-b-none!
-    [&_label]:bg-transparent!
-    [&_input]:pt-6!
-    [&_input]:pb-2!
-  `,
-} as const;
+/**
+ * Switches between entering the price and entering the value, then focuses the field.
+ *
+ * @param figure - which figure is entered; a required group only ever emits a single value
+ */
+function choose(figure: EnteredFigure | EnteredFigure[] | undefined): void {
+  if (figure !== 'price' && figure !== 'value')
+    return;
+  set(reversed, figure === 'value');
+  nextTick(() => get(input)?.focus());
+}
 </script>
 
 <template>
-  <div
-    class="relative flex *:-my-px! [&_input:focus+label]:leading-7! [&_input:not(:placeholder-shown)+label]:leading-7!"
-    :class="{
-      'flex-col-reverse': reversed,
-      'flex-col': !reversed,
-      '[&_label]:border-dotted [&_label]:border-rui-grey-400! dark:[&_label]:border-rui-grey-700!': disabled,
-      '[&_label]:border-rui-primary! [&_label]:border-2!': focused,
-      '[&_label]:border-rui-error! [&_label]:border-2!': hasError,
-    }"
-    v-bind="$attrs"
-  >
-    <AmountInput
-      ref="primaryInput"
-      v-model="primaryValue"
-      :disabled="reversed || disabled"
-      :hide-details="!reversed"
-      variant="filled"
-      persistent-hint
-      data-testid="primary"
-      :class="reversed ? uiClasses.disabledInput : uiClasses.enabledInput"
-      :label="label.primary"
-      :error-messages="aggregatedErrorMessages"
-      @focus="focused = true"
-      @blur="focused = false"
-    />
-
-    <RuiProgress
-      class="relative z-1"
-      :class="{ 'opacity-0': !loading }"
-      variant="indeterminate"
-      thickness="4"
-      color="primary"
-    />
-
-    <AmountInput
-      ref="secondaryInput"
-      v-model="secondaryValue"
-      :disabled="!reversed || disabled"
-      :hide-details="reversed"
-      variant="filled"
-      persistent-hint
-      data-testid="secondary"
-      :class="reversed ? uiClasses.enabledInput : uiClasses.disabledInput"
-      :label="label.secondary"
-      :error-messages="aggregatedErrorMessages"
-      @focus="focused = true"
-      @blur="focused = false"
-    />
-
-    <RuiButton
-      icon
-      class="absolute right-5 top-14 transform -translate-y-1/2 z-1 p-2!"
-      color="primary"
-      data-testid="grouped-amount-input-swap"
-      @click="reverse()"
-    >
-      <RuiIcon
-        size="16"
-        name="lu-arrow-up-down"
-      />
-    </RuiButton>
+  <div v-bind="$attrs">
+    <div class="mb-1 text-sm font-medium text-rui-text">
+      {{ enteredLabel }}
+    </div>
+    <div class="flex items-start gap-2">
+      <AmountInput
+        ref="input"
+        v-model="entered"
+        class="min-w-0 flex-1"
+        :label="enteredLabel"
+        label-placement="hidden"
+        :disabled="disabled"
+        :error-messages="aggregatedErrorMessages"
+        :hint="derived ? `${derivedLabel}: ${derived}` : undefined"
+        :data-testid="reversed ? 'secondary' : 'primary'"
+      >
+        <template
+          v-if="loading"
+          #append
+        >
+          <RuiProgress
+            circular
+            variant="indeterminate"
+            size="16"
+            thickness="2"
+            color="primary"
+          />
+        </template>
+      </AmountInput>
+      <RuiButtonGroup
+        :model-value="enteredFigure"
+        variant="segmented"
+        class="shrink-0"
+        required
+        :disabled="disabled"
+        data-testid="grouped-amount-input-swap"
+        @update:model-value="choose($event)"
+      >
+        <RuiButton model-value="price">
+          {{ t('common.price') }}
+        </RuiButton>
+        <RuiButton model-value="value">
+          {{ t('common.value') }}
+        </RuiButton>
+      </RuiButtonGroup>
+    </div>
   </div>
 </template>

@@ -4280,7 +4280,6 @@
         "eth_block_event": "Блок {blockNumber} создан",
         "eth_deposit_event": "События депозита {txRef}",
         "eth_withdrawal_event": "Вывод для валидатора {validatorIndex}",
-        "event_identifier": "Информация о событии",
         "evm_event": "Транзакция {txRef}",
         "history_event": "Событие {location}",
         "swap_event": "Обмен на {location}"
@@ -4301,7 +4300,6 @@
         "delete_selected": "Удалить выбранные события",
         "ignore": "Исключить из учета (PnL)",
         "no_events": "Нет событий для выбора",
-        "selected_count": "Выбрано {count}",
         "tooltip": "Выбрать несколько событий",
         "unignore": "Включить в учет (PnL)"
       },

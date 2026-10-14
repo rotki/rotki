@@ -4,9 +4,11 @@ import { Blockchain, toSentenceCase } from '@rotki/common';
 import { useHistoryEventsIdentifier } from '@/modules/history/events/use-history-events-identifier';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
-const { event, groupEvents } = defineProps<{
+const { event, groupEvents, revealActions = false } = defineProps<{
   event: HistoryEventEntry;
   groupEvents?: HistoryEventEntry[];
+  /** Hides the links' copy and explorer buttons until the link or its `group/row` is hovered or focused. */
+  revealActions?: boolean;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -44,9 +46,9 @@ const {
       #blockNumber
     >
       <HashLink
-        class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 pl-2 rounded-full m-0.5"
         :text="blockEvent.blockNumber.toString()"
         type="block"
+        :reveal-actions="revealActions"
       />
     </template>
 
@@ -55,9 +57,9 @@ const {
       #validatorIndex
     >
       <HashLink
-        class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 pl-2 rounded-full m-0.5"
         :text="withdrawEvent.validatorIndex.toString()"
         :location="Blockchain.ETH2"
+        :reveal-actions="revealActions"
       />
     </template>
 
@@ -65,14 +67,13 @@ const {
       v-if="eventWithTxRef || assetMovementTransactionId || allTxRefs.length > 0"
       #txRef
     >
-      <!-- Asset movement: show all tx hashes with location icon -->
       <template v-if="assetMovementEvent && allTxRefs.length > 0">
         <HashLink
-          class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 pl-2 rounded-full m-0.5"
           :text="allTxRefs[0].txRef"
           type="transaction"
           :location="allTxRefs[0].location"
           :truncate-length="truncateLength"
+          :reveal-actions="revealActions"
           show-location-icon
         />
         <RuiMenu
@@ -83,8 +84,9 @@ const {
           <template #activator="{ attrs }">
             <RuiButton
               size="sm"
+              variant="text"
               icon
-              class="-ml-1 h-6! px-2! text-xs bg-rui-grey-300! hover:bg-rui-grey-400! dark:bg-rui-grey-800! dark:hover:bg-rui-grey-700! dark:text-white!"
+              class="h-6! px-1.5! text-xs"
               v-bind="attrs"
             >
               {{ extraHashCount }}+
@@ -105,26 +107,24 @@ const {
         </RuiMenu>
       </template>
 
-      <!-- Asset movement fallback: transactionId from extraData -->
       <HashLink
         v-else-if="assetMovementEvent && assetMovementTransactionId"
-        class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 pl-2 rounded-full m-0.5"
         :text="assetMovementTransactionId"
         type="transaction"
         :location="assetMovementEvent?.extraData?.blockchain || undefined"
         :truncate-length="truncateLength"
         :display-mode="assetMovementEvent?.extraData?.blockchain ? 'default' : 'copy'"
+        :reveal-actions="revealActions"
         show-location-icon
       />
 
-      <!-- Non-asset-movement: show single hash as before -->
       <HashLink
         v-else-if="eventWithTxRef"
-        class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 pl-2 rounded-full m-0.5"
         :text="eventWithTxRef.txRef"
         type="transaction"
         :location="eventWithTxRef.location"
         :truncate-length="truncateLength"
+        :reveal-actions="revealActions"
       />
     </template>
 

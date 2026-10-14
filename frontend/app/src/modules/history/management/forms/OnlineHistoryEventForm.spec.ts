@@ -129,7 +129,6 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
         "data-testid=location-label",
         "data-testid=notes",
         "data-testid=primary",
-        "data-testid=secondary",
         "data-testid=sequence-index",
       ]
     `);

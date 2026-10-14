@@ -175,7 +175,7 @@ defineExpose({
       @blur="form.touch('amount')"
     />
 
-    <RuiDivider class="mb-6" />
+    <RuiDivider class="mb-6 mt-2" />
 
     <div class="grid md:grid-cols-2 gap-4">
       <AutoCompleteWithSearchSync

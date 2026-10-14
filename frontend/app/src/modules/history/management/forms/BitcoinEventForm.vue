@@ -154,7 +154,6 @@ defineExpose({
 
     <RuiTextArea
       v-model="state.notes"
-      prepend-icon="lu-sticky-note"
       data-testid="notes"
       color="primary"
       max-rows="5"

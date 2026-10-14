@@ -50,6 +50,7 @@ const {
     }"
     :loading="submitting || taskRunning"
     :prompt-on-close="stateUpdated"
+    :layout="{ autoHeight: true, maxWidth: '640px' }"
     @confirm="submit()"
     @cancel="modelValue = false"
   >

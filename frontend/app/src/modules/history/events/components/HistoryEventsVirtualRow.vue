@@ -26,7 +26,6 @@ function unlinkBridge(payload?: HistoryEventBridgeUnlinkPayload): void {
 </script>
 
 <template>
-  <!-- Group Header -->
   <HistoryEventsGroupItem
     v-if="row.type === 'group-header'"
     :group="row.data"
@@ -48,13 +47,11 @@ function unlinkBridge(payload?: HistoryEventBridgeUnlinkPayload): void {
     @ignore-duplicate="actions.refresh()"
   />
 
-  <!-- Event Placeholder -->
   <HistoryEventsRowPlaceholder
     v-else-if="row.type === 'event-placeholder'"
     :variant="variant"
   />
 
-  <!-- Event Detail -->
   <HistoryEventsDetailItem
     v-else-if="row.type === 'event-row'"
     :event="row.data"
@@ -71,7 +68,6 @@ function unlinkBridge(payload?: HistoryEventBridgeUnlinkPayload): void {
     @refresh="actions.refresh()"
   />
 
-  <!-- Swap -->
   <HistoryEventsSwapItem
     v-else-if="row.type === 'swap-row'"
     :events="row.events"
@@ -89,7 +85,6 @@ function unlinkBridge(payload?: HistoryEventBridgeUnlinkPayload): void {
     @toggle-expand="actions.toggleSwapExpanded(row.swapKey)"
   />
 
-  <!-- Swap Collapse -->
   <HistoryEventsSwapCollapseRow
     v-else-if="row.type === 'swap-collapse'"
     :event-count="row.eventCount"
@@ -100,7 +95,6 @@ function unlinkBridge(payload?: HistoryEventBridgeUnlinkPayload): void {
     @collapse="actions.toggleSwapExpanded(row.swapKey)"
   />
 
-  <!-- Matched Movement -->
   <HistoryEventsMatchedMovementItem
     v-else-if="row.type === 'matched-movement-row'"
     :events="row.events"
@@ -118,7 +112,6 @@ function unlinkBridge(payload?: HistoryEventBridgeUnlinkPayload): void {
     @toggle-expand="actions.toggleMovementExpanded(row.movementKey)"
   />
 
-  <!-- Matched Movement Collapse -->
   <HistoryEventsSwapCollapseRow
     v-else-if="row.type === 'matched-movement-collapse'"
     :event-count="row.eventCount"
@@ -128,7 +121,6 @@ function unlinkBridge(payload?: HistoryEventBridgeUnlinkPayload): void {
     @collapse="actions.toggleMovementExpanded(row.movementKey)"
   />
 
-  <!-- Load More -->
   <HistoryEventsLoadMoreRow
     v-else-if="row.type === 'load-more'"
     :hidden-count="row.hiddenCount"

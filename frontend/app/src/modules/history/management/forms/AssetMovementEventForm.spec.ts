@@ -153,8 +153,6 @@ describe('forms/AssetMovementEventForm.vue', () => {
         "data-testid=blockchain-id",
         "data-testid=datetime",
         "data-testid=event-subtype",
-        "data-testid=fee-amount",
-        "data-testid=fee-asset",
         "data-testid=group-identifier",
         "data-testid=grouped-amount-input-swap",
         "data-testid=has-fee",
@@ -162,7 +160,6 @@ describe('forms/AssetMovementEventForm.vue', () => {
         "data-testid=location-label",
         "data-testid=notes",
         "data-testid=primary",
-        "data-testid=secondary",
         "data-testid=tx-ref",
         "data-testid=unique-id",
       ]

@@ -5,6 +5,8 @@ import type { HistoryEventNoteContext } from '@/modules/history/events/use-histo
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
+import HistoryEventsExpandButton from '@/modules/history/events/components/HistoryEventsExpandButton.vue';
+import HistoryEventsGroupToggle from '@/modules/history/events/components/HistoryEventsGroupToggle.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/modules/history/events/HistoryEventsListItemAction.vue';
@@ -93,19 +95,17 @@ function unlink(): void {
 </script>
 
 <template>
-  <!-- Card Layout -->
   <div
     v-if="isCard"
     data-testid="history-event-swap"
     :data-event-id="eventsProp[0]?.identifier"
-    class="p-3 border-b border-default bg-white dark:bg-dark-surface contain-content transition-all"
+    class="h-46 p-3 flex flex-col gap-2 overflow-hidden border-b border-default bg-white dark:bg-dark-surface contain-content transition-all"
     :class="[
       { 'opacity-50': primaryEvent.ignoredInAccounting },
       highlight && getHighlightClass(highlightType),
     ]"
   >
-    <!-- Top row: Checkbox, Location, Swap badge, Event count, Timestamp -->
-    <div class="flex items-center justify-between gap-2 mb-2">
+    <div class="h-10 shrink-0 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 min-w-0">
         <RuiCheckbox
           v-if="showCheckbox"
@@ -123,28 +123,19 @@ function unlink(): void {
           :highlight="highlight"
           :label="typeLabel"
           class="min-w-0 flex-1"
-        />
-
-        <RuiButton
-          data-testid="swap-expand"
-          size="sm"
-          icon
-          color="primary"
-          class="size-5"
-          @click="emit('toggle-expand')"
         >
-          <RuiIcon
-            class="hidden group-hover:block"
-            name="lu-unfold-vertical"
-            size="14"
-          />
-          <span class="group-hover:hidden text-xs">{{ events.length }}</span>
-        </RuiButton>
+          <template #append>
+            <HistoryEventsExpandButton
+              data-testid="swap-expand"
+              :count="events.length"
+              @expand="emit('toggle-expand')"
+            />
+          </template>
+        </HistoryEventType>
       </div>
     </div>
 
-    <!-- Middle row: Spend → Receive -->
-    <div class="flex items-center gap-2 mb-2">
+    <div class="h-14 shrink-0 flex items-center gap-2">
       <div
         class="relative flex-1 min-w-0"
         :class="{ 'opacity-50': isSpendHidden }"
@@ -188,8 +179,7 @@ function unlink(): void {
       </div>
     </div>
 
-    <!-- Bottom row: Notes + Actions -->
-    <div class="flex items-start justify-between gap-2">
+    <div class="flex-1 min-h-0 flex items-start justify-between gap-2">
       <HistoryEventNote
         :notes="compactNotes"
         :chain="chain"
@@ -212,13 +202,13 @@ function unlink(): void {
     </div>
   </div>
 
-  <!-- Row Layout -->
   <div
     v-else
     data-testid="history-event-swap"
     :data-event-id="eventsProp[0]?.identifier"
-    class="h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6 group/row relative contain-content"
+    class="h-[72px] flex items-center gap-4 border-b border-default px-4 group/row relative contain-content transition-colors hover:bg-rui-grey-100 dark:hover:bg-white/5"
     :class="[
+      showCheckbox ? 'pl-16' : 'pl-6',
       { 'opacity-50': primaryEvent.ignoredInAccounting },
       highlight && getHighlightClass(highlightType),
     ]"
@@ -229,37 +219,32 @@ function unlink(): void {
       color="primary"
       hide-details
       :disabled="isCheckboxDisabled"
-      class="shrink-0 -ml-2"
+      class="absolute left-4 top-1/2 -translate-y-1/2"
     />
 
-    <div class="relative -top-2">
-      <RuiButton
-        data-testid="swap-expand"
-        size="sm"
-        icon
-        color="primary"
-        class="size-5 relative top-3 -left-2 z-6"
-        @click="emit('toggle-expand')"
-      >
-        <RuiIcon
-          class="hidden group-hover/row:block"
-          name="lu-unfold-vertical"
-          size="14"
-        />
-        <span class="group-hover/row:hidden text-xs">{{ events.length }}</span>
-      </RuiButton>
+    <HistoryEventsGroupToggle
+      data-testid="swap-expand"
+      :count="events.length"
+      :selecting="showCheckbox"
+      @toggle="emit('toggle-expand')"
+    />
 
-      <HistoryEventType
-        :event="primaryEvent"
-        :chain="chain"
-        :group-location-label="groupLocationLabel"
-        :highlight="highlight"
-        :label="typeLabel"
-        icon="lu-arrow-right-left"
-        hide-state-chips
-        class="w-56 shrink-0 self-center"
-      />
-    </div>
+    <HistoryEventType
+      :event="primaryEvent"
+      :chain="chain"
+      :group-location-label="groupLocationLabel"
+      :highlight="highlight"
+      :label="typeLabel"
+      icon="lu-arrow-right-left"
+      hide-state-chips
+      class="w-56 shrink-0"
+    >
+      <template #append>
+        <span class="text-xs text-rui-text-secondary whitespace-nowrap">
+          {{ t('history_events_list_swap.event_count', { count: events.length }) }}
+        </span>
+      </template>
+    </HistoryEventType>
 
     <div
       class="flex justify-between items-center relative shrink-0 gap-1.5"
@@ -313,7 +298,6 @@ function unlink(): void {
       />
     </div>
 
-    <!-- Balance overlay keys off the received asset — the balance the user holds after the swap. -->
     <AccountingOverlayCell
       v-if="receiveEvent"
       :event="receiveEvent"

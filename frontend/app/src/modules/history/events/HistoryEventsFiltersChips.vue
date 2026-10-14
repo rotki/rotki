@@ -35,14 +35,18 @@ const {
   groupIdentifiers: () => groupIdentifiers,
   onRefresh: () => emit('refresh'),
 });
+
+/** Renders nothing without a chip, so the strip it sits in can collapse. */
+const anyChip = computed<boolean>(() =>
+  get(showMissingAcquisition) || get(showNegativeBalance) || get(showAccountingEvent) || get(showDuplicates));
 </script>
 
 <template>
-  <div>
-    <div
-      v-if="showMissingAcquisition"
-      class="pb-4"
-    >
+  <div
+    v-if="anyChip"
+    class="flex flex-wrap items-start gap-2"
+  >
+    <div v-if="showMissingAcquisition">
       <RuiChip
         closeable
         color="primary"
@@ -57,7 +61,6 @@ const {
 
     <RuiTooltip
       v-if="showNegativeBalance"
-      class="pb-4"
       :options="{ placement: 'bottom' }"
       :open-delay="400"
       :class-names="{ tooltip: 'max-w-80' }"
@@ -79,7 +82,6 @@ const {
 
     <RuiTooltip
       v-if="showAccountingEvent"
-      class="pb-4"
       :options="{ placement: 'bottom' }"
       :open-delay="400"
       :class-names="{ tooltip: 'max-w-80' }"
@@ -99,10 +101,7 @@ const {
       {{ t('transactions.events.show_accounting_divergence_tooltip') }}
     </RuiTooltip>
 
-    <div
-      v-if="showDuplicates"
-      class="pb-4"
-    >
+    <div v-if="showDuplicates">
       <RuiChip
         closeable
         color="warning"

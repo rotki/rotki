@@ -41,7 +41,6 @@ function feeLabel(index: number): string {
       <div class="py-2">
         <RuiTextArea
           v-model="spendNotes"
-          prepend-icon="lu-sticky-note"
           data-testid="spend-notes"
           color="primary"
           max-rows="5"
@@ -53,7 +52,6 @@ function feeLabel(index: number): string {
         />
         <RuiTextArea
           v-model="receiveNotes"
-          prepend-icon="lu-sticky-note"
           data-testid="receive-notes"
           color="primary"
           max-rows="5"
@@ -67,7 +65,6 @@ function feeLabel(index: number): string {
           v-for="(fee, index) in fees"
           :key="index"
           v-model="fee.userNotes"
-          prepend-icon="lu-sticky-note"
           data-testid="fee-notes"
           :data-index="index + 1"
           color="primary"

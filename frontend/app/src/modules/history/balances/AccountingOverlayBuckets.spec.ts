@@ -1,8 +1,14 @@
 import type { AccountingOverlayBucket } from './use-accounting-overlay';
 import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import AccountingOverlayBuckets from './AccountingOverlayBuckets.vue';
+
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
+  useSupportedChains: (): Record<string, unknown> => ({
+    getChainName: (location: string): string => `chain:${location}`,
+  }),
+}));
 
 const stubs = {
   AccountingOverlayBucketIcon: { template: '<i class="bucket-icon" />' },
@@ -95,9 +101,16 @@ describe('accountingOverlayBuckets.vue', () => {
     expect(wrapper.findAll('.ring-rui-primary\\/20')).toHaveLength(1);
   });
 
-  it('should fall back to the wallet label when no account is provided', () => {
+  it('should name a protocol-less bucket as the wallet on its chain, with no account when none is provided', () => {
     const wrapper = mountBuckets([bucket(null, '5')]);
     expect(wrapper.find('.ens-avatar').exists()).toBe(false);
-    expect(wrapper.find('.icon').exists()).toBe(true);
+    expect(wrapper.text()).toContain('chain:ethereum');
+    expect(wrapper.text()).toContain('accounting_overlay.wallet');
+  });
+
+  it('should show an empty position as a plain zero that keeps its value line, so rows stay even', () => {
+    const wrapper = mountBuckets([bucket(null, '0'), bucket('aave-v3', '1.2345')], 150_000);
+    expect(wrapper.findAll('.amount').at(0)?.attributes('data-decimals')).toBe('0');
+    expect(wrapper.findAll('.value')).toHaveLength(3); // both buckets and the total
   });
 });

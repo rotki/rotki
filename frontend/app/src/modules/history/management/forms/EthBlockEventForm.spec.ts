@@ -126,7 +126,6 @@ describe('forms/EthBlockEventForm.vue', () => {
         "data-testid=grouped-amount-input-swap",
         "data-testid=is-mev-reward",
         "data-testid=primary",
-        "data-testid=secondary",
         "data-testid=validator-index",
       ]
     `);

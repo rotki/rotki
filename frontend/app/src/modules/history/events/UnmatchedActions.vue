@@ -88,7 +88,6 @@ function accept(): void {
     @confirm="accept()"
   />
 
-  <!-- card: one labelled primary, then the rest of the line as icons -->
   <div
     v-else-if="isCard"
     class="flex items-center gap-1"
@@ -104,8 +103,6 @@ function accept(): void {
       >
         {{ spec.labels.restore }}
       </RuiButton>
-      <!-- An ignored row is only kept out of automatic matching, so matching it by hand
-           stays available and clears the ignore on its own. -->
       <RuiButton
         size="sm"
         variant="outlined"
@@ -156,7 +153,6 @@ function accept(): void {
     </template>
 
     <div class="ml-auto flex items-center gap-1">
-      <!-- the jump to history stays on the line: it is how a row gets inspected, not a rare action -->
       <RuiTooltip
         :open-delay="400"
         :options="{ placement: 'top' }"
@@ -290,7 +286,6 @@ function accept(): void {
     </div>
   </div>
 
-  <!-- row: dialog width, so every action can carry its label -->
   <div
     v-else
     class="flex items-center gap-2"
@@ -340,8 +335,6 @@ function accept(): void {
         </template>
         {{ spec.labels.restoreTooltip }}
       </RuiTooltip>
-      <!-- An ignored row is only kept out of automatic matching, so matching it by hand
-           stays available and clears the ignore on its own. -->
       <RuiButton
         size="sm"
         variant="outlined"

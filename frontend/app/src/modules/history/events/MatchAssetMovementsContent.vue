@@ -121,9 +121,6 @@ onBeforeMount(async () => {
     @dismiss="dismissResolution()"
   />
 
-  <!-- Pinned bypasses RuiTabItems: it sizes itself from its content and hides the overflow, so
-       in a bounded column the bottom of the panel - the pager - is silently cut off. Rendering
-       the active list straight into a flex column lets it size to the space it actually has. -->
   <div
     v-if="isPinned"
     class="flex-1 min-h-0 flex flex-col px-3 my-4"

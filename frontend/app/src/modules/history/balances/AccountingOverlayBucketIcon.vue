@@ -9,7 +9,11 @@ import AppImage from '@/modules/shell/components/AppImage.vue';
  * Its own component so the breakdown can render one per bucket row: `useProtocolData` has to run in
  * a component's setup and so cannot be called in a loop.
  */
-const { protocol } = defineProps<{ protocol: string }>();
+const { protocol, size = '16' } = defineProps<{
+  protocol: string;
+  /** Edge length in pixels. */
+  size?: string;
+}>();
 
 const { protocolData } = useProtocolData(() => protocol);
 </script>
@@ -18,18 +22,20 @@ const { protocolData } = useProtocolData(() => protocol);
   <RuiIcon
     v-if="protocolData?.type === 'icon'"
     :name="protocolData.icon"
-    size="16"
+    :size="size"
+    class="shrink-0"
   />
   <AppImage
     v-else-if="protocolData?.type === 'image'"
     :src="protocolData.image"
-    size="16px"
+    :size="`${size}px`"
     fit="contain"
-    class="rounded-full overflow-hidden"
+    class="shrink-0 rounded-full overflow-hidden"
   />
   <RuiIcon
     v-else
     name="lu-blocks"
-    size="16"
+    :size="size"
+    class="shrink-0"
   />
 </template>

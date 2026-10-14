@@ -106,7 +106,7 @@ defineExpose({
       @blur="form.touch('amount')"
     />
 
-    <RuiDivider class="mb-6" />
+    <RuiDivider class="mb-6 mt-2" />
 
     <AutoCompleteWithSearchSync
       v-model="state.feeRecipient"

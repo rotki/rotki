@@ -7,6 +7,8 @@ const { location } = defineProps<{
   location: string;
   locationLabel: string;
   dense?: boolean;
+  /** Hides the copy and explorer buttons until the link or its `group/row` is hovered or focused. */
+  revealActions?: boolean;
 }>();
 
 const { matchChain } = useSupportedChains();
@@ -28,6 +30,7 @@ const isExchangeLocation = computed<boolean>(() => !matchChain(location));
       :text="locationLabel"
       :location="location"
       :no-scramble="isExchangeLocation"
+      :reveal-actions="revealActions"
       class="min-w-0"
       :class="{ 'text-[10px]!': dense }"
     />

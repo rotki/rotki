@@ -38,14 +38,14 @@ describe('dataIssueSummaryBar', () => {
   it('should mark a card active only when it is the single selected state', () => {
     const wrapper = createWrapper({ activeStates: [IssueState.OPEN], counts: counts() });
 
-    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.OPEN}"]`).classes()).toContain('border-rui-primary!');
-    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.UNRESOLVED}"]`).classes()).not.toContain('border-rui-primary!');
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.OPEN}"]`).attributes('aria-pressed')).toBe('true');
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.UNRESOLVED}"]`).attributes('aria-pressed')).toBe('false');
   });
 
   it('should not mark any card active when several states are selected', () => {
     const wrapper = createWrapper({ activeStates: [IssueState.OPEN, IssueState.UNRESOLVED], counts: counts() });
 
-    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.OPEN}"]`).classes()).not.toContain('!border-rui-primary');
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.OPEN}"]`).attributes('aria-pressed')).toBe('false');
   });
 
   it('should emit the state when a card is clicked', async () => {

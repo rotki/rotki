@@ -15,7 +15,6 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <!-- amber, not red: this is guidance about reversible work, not a destructive warning -->
   <div
     class="flex items-center gap-2 rounded-sm px-2 py-1 bg-rui-warning/10 border border-rui-warning/40"
     data-testid="unmatched-confirm-strip"

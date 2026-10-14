@@ -51,7 +51,7 @@ watchImmediate(() => location, () => {
 </script>
 
 <template>
-  <div class="pt-1">
+  <div>
     <RuiTooltip
       :disabled="disabled"
       :options="{ placement: 'top-end' }"
@@ -60,10 +60,15 @@ watchImmediate(() => location, () => {
         <RuiButton
           variant="text"
           icon
+          size="sm"
           :disabled="isDisabled"
+          :aria-label="tooltipText"
           @click="locationLimited = !locationLimited"
         >
-          <RuiIcon :name="locationLimited ? 'lu-link-2' : 'lu-link-2-off'" />
+          <RuiIcon
+            :name="locationLimited ? 'lu-link-2' : 'lu-link-2-off'"
+            size="16"
+          />
         </RuiButton>
       </template>
       {{ tooltipText }}

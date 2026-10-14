@@ -15,7 +15,6 @@ const overlayAvailable = ref<boolean>(false);
 const duplicateHandlingStatus = ref<string | undefined>();
 const groupIdentifiers = ref<string[] | undefined>();
 const ignoreStatus = ref<{ ignoredCount: number; notIgnoredCount: number } | undefined>();
-const includes = ref({ evmEvents: true });
 
 const clearFilters = vi.fn();
 const onActionChanged = vi.fn();
@@ -70,7 +69,6 @@ vi.mock('@/modules/history/events/composables', () => ({
     highlightedIdentifiers: ref(),
     highlightTypes: ref(),
     identifiers: ref(),
-    includes,
     locationLabels: ref([]),
     onActionChanged,
     onLocationLabelsChanged,
@@ -125,11 +123,11 @@ function stub(name: string, emits: string[] = [], props: string[] = []): DefineC
   });
 }
 
-const ViewButtonsStub = stub('HistoryEventsViewButtons', ['refresh', 'show:dialog'], ['loading', 'processing']);
-const TableActionsStub = stub('HistoryEventsTableActions', ['redecode', 'selection:action', 'update:action', 'update:locationLabels'], ['fields', 'hideRedecodeButtons', 'ignoreStatus', 'processing', 'selection']);
+const ViewButtonsStub = stub('HistoryEventsViewButtons', ['redecode', 'refresh', 'show:dialog'], ['loading', 'processing']);
+const TableActionsStub = stub('HistoryEventsTableActions', ['selection:action', 'update:action', 'update:locationLabels'], ['fields', 'ignoreStatus', 'selection']);
 const FiltersChipsStub = stub('HistoryEventsFiltersChips', ['refresh'], ['duplicateHandlingStatus', 'groupIdentifiers']);
 const VirtualTableStub = stub('HistoryEventsVirtualTable', ['clear-filters', 'refresh', 'refresh:block-event', 'set-page', 'show:dialog', 'update-event-ids'], ['duplicateHandlingStatus', 'hasActiveFilters', 'highlight', 'processing', 'source']);
-const DialogContainerStub = stub('HistoryEventsDialogContainer', ['accounting-rule-refresh', 'bridge-matched', 'movement-matched'], ['eventHandlers', 'loading', 'refreshing', 'sectionLoading', 'selectedEventIds']);
+const DialogContainerStub = stub('HistoryEventsDialogContainer', ['accounting-rule-refresh', 'bridge-matched', 'movement-matched'], ['eventHandlers', 'loading', 'sectionLoading', 'selectedEventIds']);
 const TablePageLayoutStub = stub('TablePageLayout', [], ['child', 'hideHeader', 'title']);
 const OverlayToggleStub = stub('AccountingOverlayToggle');
 
@@ -192,18 +190,6 @@ describe('modules/history/events/HistoryEventsView', () => {
     expect(layout.props('child')).toBe(true);
     expect(layout.props('hideHeader')).toBe(true);
     expect(view.find('sync-progress-panel-stub').exists()).toBe(false);
-  });
-
-  it('should keep the redecode buttons off a child page', () => {
-    const view = mountView();
-
-    expect(view.findComponent(TableActionsStub).props('hideRedecodeButtons')).toBe(true);
-  });
-
-  it('should offer them on the main page', () => {
-    const view = mountView({ mainPage: true });
-
-    expect(view.findComponent(TableActionsStub).props('hideRedecodeButtons')).toBe(false);
   });
 
   describe('what the table is asked to load', () => {
@@ -313,15 +299,6 @@ describe('modules/history/events/HistoryEventsView', () => {
       expect(onLocationLabelsChanged).toHaveBeenCalledWith(['kraken']);
     });
 
-    it('should redecode by the scope it was given', async () => {
-      const view = mountView();
-
-      view.findComponent(TableActionsStub).vm.$emit('redecode', 'all');
-      await nextTick();
-
-      expect(redecodeBy).toHaveBeenCalledWith('all');
-    });
-
     it('should hand it the ignore counts the selection worked out', async () => {
       const view = mountView();
 
@@ -388,6 +365,25 @@ describe('modules/history/events/HistoryEventsView', () => {
       await nextTick();
 
       expect(refreshAll).toHaveBeenCalledWith(true, true);
+    });
+
+    it('should redecode by the scope it was given', async () => {
+      const view = mountView({ mainPage: true });
+
+      view.findComponent(ViewButtonsStub).vm.$emit('redecode', 'all');
+      await nextTick();
+
+      expect(redecodeBy).toHaveBeenCalledWith('all');
+    });
+
+    it('should be told whether the page is processing', async () => {
+      const view = mountView({ mainPage: true });
+      expect(view.findComponent(ViewButtonsStub).props('processing')).toBe(false);
+
+      set(processing, true);
+      await nextTick();
+
+      expect(view.findComponent(ViewButtonsStub).props('processing')).toBe(true);
     });
   });
 });

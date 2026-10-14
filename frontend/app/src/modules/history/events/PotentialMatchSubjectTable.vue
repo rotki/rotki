@@ -20,7 +20,6 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <!-- the row being matched, as a summary table; `PotentialMatchSubjectCard` is the pinned-width half -->
   <RuiTable data-testid="potential-match-subject">
     <thead>
       <tr>

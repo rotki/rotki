@@ -8,7 +8,7 @@ import DataIssueDescription from '@/modules/history/data-issues/components/DataI
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
 import DataIssueRemediationTimeline from '@/modules/history/data-issues/components/DataIssueRemediationTimeline.vue';
 import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
-import { canDismiss, canResolveManually, canRetry, IssueState } from '@/modules/history/data-issues/constants';
+import { canDismiss, canResolveManually, canRetry, IssueKind, IssueState } from '@/modules/history/data-issues/constants';
 import { describeIssue, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
 import { dataIssueDivergenceKey } from '@/modules/history/data-issues/use-data-issue-divergence-store';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
@@ -43,6 +43,13 @@ const description = computed<IssueDescription | undefined>(() => issue ? describ
 const relatedEventLink = computed<RouteLocationRaw | undefined>(() =>
   issue ? relatedEventRoute(issue.kind, get(description)?.eventIdentifier, issue.groupIdentifier, issue.asset) : undefined);
 
+/** An unmatched bridge's link opens the matching dialog, so it says what it will do. */
+const relatedEventLabel = computed<string>(() => {
+  if (issue?.kind === IssueKind.UNMATCHED_BRIDGE)
+    return t('data_issues.detail.match_in_history');
+  return t('data_issues.detail.open_event', { id: get(description)?.eventIdentifier ?? '' });
+});
+
 async function goToRelatedEvent(): Promise<void> {
   const link = get(relatedEventLink);
   if (!link)
@@ -68,40 +75,45 @@ const resolutionNote = computed<string | undefined>(() => {
     v-if="issue"
     class="flex flex-col h-full"
   >
-    <div class="flex items-start justify-between gap-2 p-4 border-b border-default">
-      <div class="flex flex-col gap-2">
-        <h5 class="text-h6">
+    <div class="flex flex-col gap-2 py-2 pl-4 pr-2 border-b border-rui-divider">
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="text-base font-semibold text-rui-text">
           {{ t('data_issues.detail.title') }}
-        </h5>
-        <div class="flex items-center gap-2 flex-wrap">
-          <DataIssueKindChip :kind="issue.kind" />
-          <DataIssueStateChip :state="issue.state" />
-        </div>
+        </h2>
+        <RuiButton
+          variant="text"
+          icon
+          class="text-rui-text-secondary!"
+          :aria-label="t('common.actions.close')"
+          @click="emit('close')"
+        >
+          <RuiIcon name="lu-x" />
+        </RuiButton>
       </div>
-      <RuiButton
-        variant="text"
-        icon
-        size="sm"
-        @click="emit('close')"
-      >
-        <RuiIcon name="lu-x" />
-      </RuiButton>
+      <div class="flex flex-wrap items-center gap-2 pb-2 text-xs text-rui-text-secondary">
+        <DataIssueKindChip :kind="issue.kind" />
+        <DataIssueStateChip :state="issue.state" />
+        <span class="ml-1">
+          {{ t('data_issues.detail.detected') }}
+          <TimeAgoDisplay :timestamp="issue.createdAt" />
+        </span>
+      </div>
     </div>
 
-    <div class="flex flex-col gap-6 p-4 overflow-y-auto grow">
-      <section>
-        <div class="text-overline text-rui-text-secondary mb-1">
+    <div class="flex flex-col p-4 overflow-y-auto grow between:border-t between:border-rui-divider between:mt-5 between:pt-5">
+      <section class="flex flex-col gap-2">
+        <h3 class="text-xs font-medium text-rui-text-secondary">
           {{ t('data_issues.detail.whats_wrong') }}
-        </div>
+        </h3>
         <DataIssueDescription
           v-if="description"
           :description="description"
           tag="p"
-          class="text-body-1"
+          class="text-sm text-rui-text"
         />
         <div
           v-if="description?.eventIdentifier !== undefined"
-          class="text-body-2 mt-2"
+          class="text-xs text-rui-text-secondary"
           data-testid="data-issue-event-date"
         >
           {{ t('data_issues.detail.event_date') }}
@@ -112,26 +124,26 @@ const resolutionNote = computed<string | undefined>(() => {
         </div>
         <RuiButton
           v-if="description?.eventIdentifier !== undefined && relatedEventLink"
-          variant="text"
+          variant="outlined"
           color="primary"
           size="sm"
-          class="mt-1 px-0!"
+          class="self-start mt-1"
           data-testid="data-issue-related-event"
           @click="goToRelatedEvent()"
         >
+          {{ relatedEventLabel }}
           <template #append>
             <RuiIcon
-              name="lu-arrow-up-right"
+              name="lu-arrow-right"
               size="16"
             />
           </template>
-          {{ t('data_issues.detail.related_event', { id: description.eventIdentifier }) }}
         </RuiButton>
       </section>
 
-      <section class="grid grid-cols-2 gap-x-4 gap-y-5">
+      <section class="grid grid-cols-2 gap-x-4 gap-y-3">
         <div class="flex flex-col gap-1">
-          <div class="text-overline text-rui-text-secondary">
+          <div class="text-xs font-medium text-rui-text-secondary">
             {{ t('common.account') }}
           </div>
           <div class="flex items-center grow min-h-8">
@@ -149,14 +161,15 @@ const resolutionNote = computed<string | undefined>(() => {
           </div>
         </div>
         <div class="flex flex-col gap-1">
-          <div class="text-overline text-rui-text-secondary">
+          <div class="text-xs font-medium text-rui-text-secondary">
             {{ t('common.location') }}
           </div>
           <div class="flex items-center grow min-h-8">
             <LocationDisplay
               :identifier="issue.location"
               horizontal
-              class="w-fit"
+              size="20px"
+              class="w-fit text-sm"
             />
           </div>
         </div>
@@ -164,30 +177,25 @@ const resolutionNote = computed<string | undefined>(() => {
           v-if="issue.asset"
           class="flex flex-col gap-1"
         >
-          <div class="text-overline text-rui-text-secondary">
+          <div class="text-xs font-medium text-rui-text-secondary">
             {{ t('common.asset') }}
           </div>
           <div class="flex items-center grow min-h-8">
-            <AssetDetails :asset="issue.asset" />
+            <AssetDetails
+              :asset="issue.asset"
+              :display="{ dense: true, inline: true, size: '20px' }"
+            />
           </div>
         </div>
         <div
           v-if="issue.protocol"
           class="flex flex-col gap-1"
         >
-          <div class="text-overline text-rui-text-secondary">
+          <div class="text-xs font-medium text-rui-text-secondary">
             {{ t('common.protocol') }}
           </div>
           <div class="flex items-center grow min-h-8">
             <CounterpartyDisplay :counterparty="issue.protocol" />
-          </div>
-        </div>
-        <div class="flex flex-col gap-1">
-          <div class="text-overline text-rui-text-secondary">
-            {{ t('data_issues.detail.detected') }}
-          </div>
-          <div class="flex items-center grow min-h-8">
-            <TimeAgoDisplay :timestamp="issue.createdAt" />
           </div>
         </div>
       </section>
@@ -199,27 +207,30 @@ const resolutionNote = computed<string | undefined>(() => {
         @navigate="emit('close')"
       />
 
-      <section>
-        <div class="text-overline text-rui-text-secondary mb-2">
+      <section class="flex flex-col gap-2">
+        <h3 class="text-xs font-medium text-rui-text-secondary">
           {{ t('data_issues.detail.remediation_history') }}
-        </div>
+        </h3>
         <DataIssueRemediationTimeline
           :items="timeline"
           @review="emit('review', $event)"
         />
       </section>
 
-      <section v-if="resolutionNote">
-        <div class="text-overline text-rui-text-secondary mb-1">
+      <section
+        v-if="resolutionNote"
+        class="flex flex-col gap-2"
+      >
+        <h3 class="text-xs font-medium text-rui-text-secondary">
           {{ t('data_issues.detail.resolution_note') }}
-        </div>
-        <p class="text-body-2">
+        </h3>
+        <p class="text-sm">
           {{ resolutionNote }}
         </p>
       </section>
     </div>
 
-    <div class="flex items-center justify-end gap-2 p-4 border-t border-default">
+    <div class="flex items-center justify-end gap-2 p-4 border-t border-rui-divider">
       <RuiButton
         variant="outlined"
         :disabled="busy || !canDismiss(issue.state)"
