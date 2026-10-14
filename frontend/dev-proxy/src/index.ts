@@ -112,7 +112,7 @@ function canRewrite(req: IncomingMessage, proxyRes: IncomingMessage): boolean {
   if (proxyRes.headers['content-encoding'])
     return false;
 
-  if (engine.isMocked(request))
+  if (engine.isMocked(request) || engine.ownsTask(request))
     return true;
 
   const status = proxyRes.statusCode ?? 200;
