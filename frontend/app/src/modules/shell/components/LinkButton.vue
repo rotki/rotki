@@ -22,7 +22,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <RuiTooltip
-
     :options="{ placement: 'top' }"
     :open-delay="600"
   >
@@ -31,9 +30,10 @@ const { t } = useI18n({ useScope: 'global' });
         tag="a"
         icon
         variant="text"
-        class="bg-rui-grey-200! dark:bg-rui-grey-900! hover:bg-rui-grey-100! dark:hover:bg-rui-grey-800!"
+        class="text-rui-text-secondary! hover:text-rui-primary! hover:bg-rui-grey-100! dark:hover:bg-rui-grey-800!"
         size="sm"
         color="primary"
+        :aria-label="t('hash_link.open_link')"
         :href="href"
         target="_blank"
         @click="onLinkClick()"

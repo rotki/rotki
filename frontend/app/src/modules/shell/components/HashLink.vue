@@ -164,6 +164,9 @@ const displayText = computed<string>(() => {
     : scrambleAddress(text);
 });
 
+/** A resolved name (address book or ENS) reads in the regular font; hashes and raw addresses stay monospace. */
+const showsName = computed<boolean>(() => truncateLength !== 0 && isDefined(aliasName));
+
 const finalDisplayText = computed<string>(() => {
   if (truncateLength === 0) {
     return get(displayText);
@@ -211,14 +214,13 @@ const tags = useAccountTags(() => text);
 </script>
 
 <template>
-  <div class="group/hash-link flex shrink items-center gap-1.5 text-xs **:font-mono **:leading-6 min-h-[22px] min-w-0">
+  <div class="group/hash-link flex shrink items-center gap-1.5 text-xs **:leading-6 min-h-[22px] min-w-0">
     <LocationIcon
       v-if="showLocationIcon && location"
       icon
       :item="location"
-      image-class="size-4!"
       size="20px"
-      class="min-w-5 bg-white rounded-full! overflow-hidden -ml-1.5"
+      class="min-w-5 -ml-1.5"
     />
 
     <EnsAvatar
@@ -236,13 +238,13 @@ const tags = useAccountTags(() => text);
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'top' }"
       :open-delay="400"
       :disabled="truncateLength === 0"
-      :class-names="{ tooltip: '**:font-mono' }"
       persist-on-tooltip-hover
     >
       <template #activator>
         <div
           class="truncate"
-          :class="{ blur: !shouldShowAmount }"
+          :class="[showsName ? 'text-sm' : 'font-mono', { blur: !shouldShowAmount }]"
+          :data-testid="showsName ? 'hash-link-name' : 'hash-link-hash'"
         >
           {{ finalDisplayText }}
         </div>
@@ -257,7 +259,7 @@ const tags = useAccountTags(() => text);
 
       <div class="flex items-center gap-1">
         <div class="flex flex-col gap-1">
-          {{ displayText }}
+          <span class="font-mono">{{ displayText }}</span>
           <div
             v-if="aliasName"
             class="font-bold"
@@ -286,7 +288,7 @@ const tags = useAccountTags(() => text);
     <div
       v-if="showLink || showCopy"
       class="flex items-center gap-1 shrink-0"
-      :class="{ 'opacity-0 transition-opacity group-hover/hash-link:opacity-100 group-focus-within/hash-link:opacity-100': revealActions }"
+      :class="{ 'opacity-0 transition-opacity group-hover/hash-link:opacity-100 group-focus-within/hash-link:opacity-100 group-hover/row:opacity-100 group-focus-within/row:opacity-100': revealActions }"
       data-testid="hash-link-actions"
     >
       <InlineCopyButton

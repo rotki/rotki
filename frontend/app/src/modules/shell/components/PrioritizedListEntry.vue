@@ -5,7 +5,7 @@ import { toSentenceCase } from '@rotki/common';
 import { AddressNamePriority } from '@/modules/accounts/address-book/types/address-name-priorities';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import AppImage from '@/modules/shell/components/AppImage.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
 const { data, size = '32px' } = defineProps<{
   data: PrioritizedListItemData<PrioritizedListId>;
@@ -45,12 +45,10 @@ const labels: { [keys in PrioritizedListId]: string } = {
 
 <template>
   <div class="flex items-center gap-3">
-    <AppImage
+    <IconMark
       v-if="data.icon"
       :size="size"
-      fit="contain"
       :src="data.icon"
-      class="icon-bg"
     />
     <div v-if="labels[data.identifier]">
       {{ labels[data.identifier] }}

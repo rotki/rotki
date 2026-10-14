@@ -8,9 +8,9 @@ import CreateAccountCredentials
 import CreateAccountIntroduction
   from '@/modules/auth/create-account/introduction/CreateAccountIntroduction.vue';
 import CreateAccountPremium from '@/modules/auth/create-account/premium/CreateAccountPremium.vue';
+import { useCreateAccountSteps } from '@/modules/auth/create-account/use-create-account-steps';
 import { useCreateAccountWizard } from '@/modules/auth/create-account/use-create-account-wizard';
 import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
-import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 
 const step = defineModel<number>('step', { required: true });
 const mode = defineModel<CreateAccountMode | undefined>('mode', { default: undefined });
@@ -46,10 +46,18 @@ const {
 } = useCreateAccountWizard(step, mode);
 
 const { hasProfiles, loadProfiles } = useSavedProfiles();
+const { steps } = useCreateAccountSteps(mode);
 
-const wizardTitle = computed<string>(() =>
-  get(isRestoreMode) ? t('create_account.title_restore') : t('create_account.title'),
-);
+/**
+ * Names the step on screen, since the side stepper that also names it is hidden on small screens.
+ * The first step is where the flow starts, so it carries the flow's own title instead.
+ */
+const heading = computed<string>(() => {
+  const current = get(step);
+  if (current > 1)
+    return get(steps)[current - 1]?.title ?? '';
+  return get(isRestoreMode) ? t('create_account.title_restore') : t('create_account.title');
+});
 
 const cancel = (): void => emit('cancel');
 const errorClear = (): void => emit('clear-error');
@@ -74,17 +82,19 @@ onBeforeMount(loadProfiles);
     enter-from-class="translate-y-5 opacity-0"
     enter-to-class="translate-y-0 opacity-1"
     enter-active-class="transform duration-300"
-    leave-from-class="-translate-y-0 opacity-1"
+    leave-from-class="translate-y-0 opacity-1"
     leave-to-class="-translate-y-5 opacity-0"
     leave-active-class="transform duration-100"
   >
     <div>
-      <div class="max-w-[22.5rem] mx-auto">
-        <div class="flex flex-col items-center">
-          <RotkiLogo unique-key="1b" />
-          <h4 class="text-h4 mb-3 mt-8">
-            {{ wizardTitle }}
-          </h4>
+      <div class="max-w-110 mx-auto">
+        <div class="flex flex-col">
+          <div class="text-caption uppercase tracking-wide text-rui-text-secondary mb-1">
+            {{ t('create_account.step_progress', { current: step, total: steps.length }) }}
+          </div>
+          <h1 class="text-h4 mb-2">
+            {{ heading }}
+          </h1>
           <div class="w-full">
             <RuiTabItems
               class="overflow-visible!"
@@ -128,7 +138,7 @@ onBeforeMount(loadProfiles);
           </div>
           <div
             v-if="hasProfiles"
-            class="flex items-center py-6 text-rui-text-secondary"
+            class="flex flex-wrap gap-1 sm:gap-0 items-center justify-center py-6 text-rui-text-secondary"
           >
             <span>{{ t('create_account.have_account.description') }}</span>
             <RuiButton

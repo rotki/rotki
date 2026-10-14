@@ -2,7 +2,9 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { ImportSource } from '@/modules/core/common/upload-types';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
-import AppImage from '@/modules/shell/components/AppImage.vue';
+import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 const route = useRoute();
@@ -125,50 +127,77 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
 </script>
 
 <template>
-  <RuiCard :class-names="{ content: 'p-4' }">
+  <TablePageLayout :title="[t('import_data.title')]">
     <DefineDisplay #default="{ logo, icon, label }">
       <div class="flex items-center gap-3">
-        <AppImage
+        <IconMark
           v-if="logo"
           :src="logo"
           size="1.5rem"
-          fit="contain"
-          class="icon-bg"
         />
         <RuiIcon
           v-else-if="icon"
           size="28"
-          class="text-rui-light-text-secondary icon-bg p-1!"
+          class="text-rui-light-text-secondary"
           :name="icon"
         />
         {{ label }}
       </div>
     </DefineDisplay>
-    <RuiAutoComplete
-      v-model="selectedSource"
-      :label="t('import_data.select_source.title')"
-      :append-width="1.75"
-      :options="sources"
-      text-attr="label"
-      hide-details
-      return-object
-      auto-select-first
-      variant="outlined"
-      key-attr="key"
-      data-testid="import-source-select"
-    >
-      <template #selection="{ item }">
-        <ReuseDisplay v-bind="item" />
-      </template>
-      <template #item="{ item }">
-        <ReuseDisplay v-bind="item" />
-      </template>
-    </RuiAutoComplete>
-    <div
+    <template #buttons>
+      <div class="w-full sm:w-72">
+        <RuiAutoComplete
+          v-model="selectedSource"
+          :label="t('import_data.select_source.title')"
+          label-placement="hidden"
+          :placeholder="t('import_data.select_source.title')"
+          :append-width="1.75"
+          :options="sources"
+          text-attr="label"
+          dense
+          hide-details
+          return-object
+          auto-select-first
+          key-attr="key"
+          data-testid="import-source-select"
+        >
+          <template #selection="{ item }">
+            <ReuseDisplay v-bind="item" />
+          </template>
+          <template #item="{ item }">
+            <ReuseDisplay v-bind="item" />
+          </template>
+        </RuiAutoComplete>
+      </div>
+      <HintMenuIcon :options="{ placement: 'left-start' }">
+        {{ t('import_data.description') }}
+      </HintMenuIcon>
+    </template>
+
+    <Component
+      :is="selectedSource.form"
       v-if="selectedSource"
-      class="mt-8"
+    />
+    <section
+      v-else
+      class="flex flex-col gap-3 rounded-rui-card border border-rui-divider bg-rui-surface p-4"
     >
-      <Component :is="selectedSource.form" />
-    </div>
-  </RuiCard>
+      <div class="text-sm text-rui-text-secondary">
+        {{ t('import_data.select_source.hint') }}
+      </div>
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+        <button
+          v-for="source in sources"
+          :key="source.key"
+          type="button"
+          class="flex items-center gap-3 rounded-rui-control border border-rui-divider px-3 py-3 text-left text-sm font-medium text-rui-text transition-colors hover:border-rui-primary-border hover:bg-rui-primary-subtle focus-visible:outline-2 focus-visible:outline-rui-primary motion-reduce:transition-none"
+          data-testid="import-source-tile"
+          :data-key="source.key"
+          @click="selectedSource = source"
+        >
+          <ReuseDisplay v-bind="source" />
+        </button>
+      </div>
+    </section>
+  </TablePageLayout>
 </template>

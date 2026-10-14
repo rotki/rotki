@@ -10,7 +10,6 @@ import { hasAssetMetadata } from '@/modules/core/common/display/assets';
 import { useCopy } from '@/modules/core/common/use-clipboard';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';
-import AppImage from '@/modules/shell/components/AppImage.vue';
 import {
   assetChain,
   assetTooltip,
@@ -22,6 +21,7 @@ import {
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
 import GeneratedIcon from '@/modules/shell/components/GeneratedIcon.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
 interface AssetIconProps {
   identifier: string;
@@ -142,8 +142,9 @@ const tooltipOptions = computed(() => ({
   placement: 'top' as const,
 }));
 
-const usedChainIconSize = computed<string>(() => badgeSize(chainIconSize, size, 50));
-const usedProtocolIconSize = computed<string>(() => badgeSize(chainIconSize, size, 40));
+/** Both badges share one size, so a chain and a protocol read as the same kind of mark. */
+const usedChainIconSize = computed<string>(() => badgeSize(chainIconSize, size, 45));
+const usedProtocolIconSize = computed<string>(() => get(usedChainIconSize));
 
 const chainIconMargin = computed(() => `-${get(usedChainIconSize)}`);
 
@@ -198,7 +199,7 @@ const { copied, copy } = useCopy(() => identifier);
       >
         <div
           v-if="showChain && chain"
-          class="rounded-full! overflow-hidden! bg-white z-1 absolute flex items-center justify-center shadow-xs -bottom-1 -right-1 border border-rui-grey-300 dark:border-rui-grey-900"
+          class="rounded-full! overflow-hidden! bg-white z-1 absolute flex items-center justify-center -bottom-1 -right-1 ring-2 ring-rui-surface"
           :style="{ marginTop: chainIconMargin, marginLeft: chainIconMargin }"
         >
           <EvmChainIcon
@@ -209,7 +210,7 @@ const { copied, copy } = useCopy(() => identifier);
 
         <div
           v-if="protocol && !hideProtocol"
-          class="z-1 absolute -top-1 -left-1 border border-rui-grey-300 dark:border-rui-grey-900 rounded-md bg-white"
+          class="z-1 absolute flex items-center justify-center -top-1 -left-1 rounded-full overflow-hidden bg-white ring-2 ring-rui-surface"
           :class="{ blur: !shouldShowAmount }"
         >
           <CounterpartyDisplay
@@ -220,16 +221,13 @@ const { copied, copy } = useCopy(() => identifier);
         </div>
 
         <div
-          class="flex items-center justify-center cursor-pointer h-full w-full icon-bg"
+          class="flex items-center justify-center cursor-pointer h-full w-full"
           :class="{
             'rounded-full! overflow-hidden!': circle,
             'blur': !shouldShowAmount,
           }"
+          :style="{ padding }"
         >
-          <!-- An asset with no symbol and no name has no icon worth waiting on either: its
-               blockie IS the identity, so it renders instead of the image rather than only when
-               the image fails. Otherwise a placeholder served by the icon endpoint would keep the
-               fallback from ever running. -->
           <GeneratedIcon
             v-if="blockie"
             :blockie="blockie"
@@ -242,6 +240,7 @@ const { copied, copy } = useCopy(() => identifier);
             class="absolute"
             :custom-asset="isCustomAsset"
             :asset="displayAsset"
+            :identifier="mappedIdentifier"
             :size="size"
             :flat="flat"
           />
@@ -250,18 +249,16 @@ const { copied, copy } = useCopy(() => identifier);
             v-else-if="currency || error"
             :custom-asset="isCustomAsset"
             :asset="displayAsset"
+            :identifier="mappedIdentifier"
             :size="size"
             :flat="flat"
           />
 
-          <AppImage
+          <IconMark
             v-else
             v-show="!pending && !error"
-            :class="{ 'rounded-full overflow-hidden': flat }"
-            fit="contain"
             :alt="displayAsset"
             :src="url"
-            :loading="pending"
             :size="size"
             @loadstart="pending = true"
             @load="pending = false"
@@ -277,10 +274,13 @@ const { copied, copy } = useCopy(() => identifier);
     <div v-if="hasTooltipText">
       {{ t('asset_icon.tooltip', { ...tooltip }) }}
     </div>
+    <div
+      v-else-if="!isEvmIdentifier(identifier) && !chain && !protocol"
+      class="font-mono"
+    >
+      {{ identifier }}
+    </div>
 
-    <!-- Chain and protocol otherwise live only in the corner badges, a few pixels across. For an
-         asset with no symbol and no name they are the only context the tooltip can offer beyond
-         the address. -->
     <div
       v-if="chain || protocol"
       class="flex items-center gap-3"
@@ -295,8 +295,6 @@ const { copied, copy } = useCopy(() => identifier);
         />
         {{ getChainName(chain) }}
       </span>
-      <!-- It hardcodes `text-rui-text`, the light-background colour, which is unreadable on the
-           tooltip's dark surface. Same specificity, so the override needs `!`. -->
       <CounterpartyDisplay
         v-if="protocol"
         :counterparty="protocol"

@@ -10,25 +10,20 @@ const { t } = useI18n({ useScope: 'global' });
     <template #hint>
       {{ t('import_data.cointracking.preferred') }}
     </template>
-    <i18n-t
-      scope="global"
-      tag="span"
-      keypath="import_data.note"
-    >
-      <strong>{{ t('import_data.cointracking.name') }}</strong>
-    </i18n-t>
-    <ul class="list-disc">
+    <ul>
       <li>{{ t('import_data.cointracking.line_one') }}</li>
       <li>{{ t('import_data.cointracking.line_two') }}</li>
-      <i18n-t
-        scope="global"
-        keypath="import_data.cointracking.line_three"
-        tag="span"
-      >
-        <InternalLink :to="{ name: '/accounts/' }">
-          {{ t('navigation_menu.accounts') }}
-        </InternalLink>
-      </i18n-t>
+      <li>
+        <i18n-t
+          scope="global"
+          keypath="import_data.cointracking.line_three"
+          tag="span"
+        >
+          <InternalLink :to="{ name: '/accounts/' }">
+            {{ t('navigation_menu.accounts') }}
+          </InternalLink>
+        </i18n-t>
+      </li>
     </ul>
   </ImportSource>
 </template>

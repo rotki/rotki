@@ -186,9 +186,6 @@ watch([open, list], ([isOpen, element]: [boolean, HTMLDivElement | null]): void 
     :options="{ placement: 'bottom-start' }"
     disable-auto-focus
   >
-    <!-- An icon rather than a labelled button: it sits inside the bar, where the pills are what
-         should be read, and the same reasoning as the match-exact toggle applies. The tooltip
-         carries the name. -->
     <template #activator="{ attrs }">
       <RuiTooltip
         :open-delay="400"
@@ -246,9 +243,6 @@ watch([open, list], ([isOpen, element]: [boolean, HTMLDivElement | null]): void 
             >
               {{ view.name }}
             </span>
-            <!-- Two lines and the full text on hover: a view worth saving is usually one with
-                 several filters, which is exactly the summary that a single truncated line cuts
-                 off, leaving the saved views indistinguishable from one another. -->
             <span
               v-if="summaries[index]"
               class="text-xs text-rui-text-secondary line-clamp-2 max-w-full"
@@ -285,8 +279,6 @@ watch([open, list], ([isOpen, element]: [boolean, HTMLDivElement | null]): void 
       </div>
 
       <div class="flex flex-col gap-1.5 p-1.5 border-t border-rui-grey-200 dark:border-rui-grey-700">
-        <!-- A visible border, not a transparent one that only appears on focus: this is the only
-             place in the menu you can type, and without an outline it reads as a label. -->
         <div class="flex items-center gap-1.5 rounded-md border transition-colors border-rui-grey-300 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary">
           <input
             v-model="name"
@@ -312,8 +304,6 @@ watch([open, list], ([isOpen, element]: [boolean, HTMLDivElement | null]): void 
           </RuiButton>
         </div>
 
-        <!-- Says why saving is unavailable rather than leaving a dead input: there is nothing to
-             save until something is filtered. -->
         <div
           v-if="!hasFilters"
           class="text-xs text-rui-text-secondary px-1.5"

@@ -2,7 +2,7 @@
 import { toCapitalCase } from '@rotki/common';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { useSetting } from '@/modules/settings/use-setting';
-import AppImage from '@/modules/shell/components/AppImage.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
 interface Props {
   size?: string;
@@ -31,7 +31,7 @@ const chainData = computed(() => ({
     :open-delay="400"
   >
     <template #activator>
-      <AppImage
+      <IconMark
         :size="size"
         :src="chainData.image"
         :alt="chainData.label"

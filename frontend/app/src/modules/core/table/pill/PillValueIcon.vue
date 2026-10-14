@@ -26,7 +26,11 @@ const { display, value, valueDisplay, icon, swatch, size = '16px' } = defineProp
   valueDisplay?: ValueDisplay;
   /** A field-resolved plain icon (`FieldDef.resolveIcon`), for values that are neither identities nor a display kind. */
   icon?: ValueIcon;
-  /** A field-resolved colour pair (`FieldDef.resolveSwatch`), for a value that is itself a colour (a tag). */
+  /**
+   * A field-resolved colour pair (`FieldDef.resolveSwatch`), for a value that is itself a colour (a
+   * tag). A tag is recognised by its own two colours, so the swatch carries both: the border is the
+   * tag's foreground, which is what keeps a light tag visible on a light pill.
+   */
   swatch?: ValueSwatch;
   size?: string;
 }>();
@@ -79,8 +83,6 @@ const iconValue = computed<string>(() => valueDisplay?.source ?? value);
     :color="icon.color"
     :size="iconSize"
   />
-  <!-- A tag is recognised by its own two colours, so the swatch carries both: the border is the
-       tag's foreground, which is what keeps a light tag visible on a light pill. -->
   <span
     v-else-if="swatch"
     class="rounded-xs border shrink-0"

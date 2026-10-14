@@ -32,7 +32,6 @@ watch(search, (search) => {
     :options="items"
     custom-value
   >
-    <!-- Pass on all named slots -->
     <template
       v-for="(_, name, index) in ($slots as {})"
       #[name]="scope"

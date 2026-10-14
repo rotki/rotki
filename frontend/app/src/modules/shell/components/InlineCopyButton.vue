@@ -14,9 +14,10 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiButton
       variant="text"
       icon
-      class="bg-rui-grey-200! dark:bg-rui-grey-900! hover:bg-rui-grey-100! dark:hover:bg-rui-grey-800!"
+      class="text-rui-text-secondary! hover:text-rui-primary! hover:bg-rui-grey-100! dark:hover:bg-rui-grey-800!"
       size="sm"
       color="primary"
+      :aria-label="t('common.actions.copy_to_clipboard')"
     >
       <RuiIcon
         name="lu-copy"

@@ -103,9 +103,6 @@ function onKeydown(event: KeyboardEvent): void {
 
 <template>
   <div class="flex flex-col min-w-64 max-w-80">
-    <!-- The focus ring lives on this row rather than the input: the input is borderless by design,
-         so `outline-hidden` there needs a replacement somewhere, and the row is what reads as the
-         field. Same pattern as the bar's container. -->
     <div class="flex items-center gap-2 px-3 border-b transition-colors border-rui-grey-200 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary">
       <RuiIcon
         name="lu-search"

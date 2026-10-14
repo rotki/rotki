@@ -54,8 +54,6 @@ function proceed(): void {
           color="warning"
         />
 
-        <!-- The backend cannot see an upstream proxy, so a correctly protected
-             deployment still lands here. Say so rather than calling it unprotected. -->
         <p>{{ t('docker_warning.proxy_note') }}</p>
 
         <div>
@@ -66,8 +64,6 @@ function proceed(): void {
           >
             {{ t('docker_warning.accept') }}
           </RuiButton>
-          <!-- The variable stays out of an i18n-t slot: those slots do not render in unit
-               tests, and this is the only place the new variable is named. -->
           <p class="mt-2 text-caption">
             {{ t('docker_warning.accept_hint') }}
             <code class="font-mono">{{ ACCEPT_VARIABLE }}</code>

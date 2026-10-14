@@ -10,10 +10,13 @@ const {
   asset = '',
   blockie,
   customAsset,
+  identifier,
   size,
 } = defineProps<{
   size: string;
   asset?: string;
+  /** Seeds the colour, so two assets sharing a symbol still tell apart; the text when absent. */
+  identifier?: string;
   customAsset?: boolean;
   /**
    * Blockie data URI to render instead of the text mark. Used when there is no symbol or name to
@@ -40,12 +43,27 @@ const wrapperStyle = computed<Style>(() => ({
   width: size,
 }));
 
-const text = computed<string>(() => {
-  if (asset.length > 3)
-    return asset.slice(0, 3);
+/** Small icons fit two letters without clipping; larger ones keep three. */
+const SMALL_ICON = 26;
 
-  return asset;
+const text = computed<string>(() => {
+  const letters = get(dimensions).value <= SMALL_ICON ? 2 : 3;
+  return asset.slice(0, letters);
 });
+
+/**
+ * A hue taken from the identifier, so one asset always gets the same colour, neighbours in a stack
+ * tell apart at a glance, and a token bridged to another chain gets its own.
+ */
+const hue = computed<number>(() => {
+  let hash = 0;
+  for (const char of (identifier ?? asset).toUpperCase())
+    hash = (hash * 31 + char.charCodeAt(0)) % 360;
+  return hash;
+});
+
+/** Only the lettered mark is tinted; the custom-asset pencil and the blockie stay neutral. */
+const tinted = computed<boolean>(() => !customAsset && !blockie && asset.length > 0);
 
 const textStyle = computed<Style>(() => {
   const length = get(text).length;
@@ -67,8 +85,12 @@ const customIconSize = computed(() => {
 
 <template>
   <span
-    :style="{ ...wrapperStyle, ...textStyle }"
-    class="flex items-center justify-center rounded-full whitespace-nowrap tracking-normal font-semibold bg-rui-grey-200 dark:bg-rui-grey-300 text-rui-grey-600 dark:text-rui-grey-700 border border-rui-grey-300 dark:border-rui-grey-400 uppercase"
+    :style="{ ...wrapperStyle, ...textStyle, '--generated-hue': hue }"
+    class="flex items-center justify-center rounded-full whitespace-nowrap tracking-normal font-semibold uppercase"
+    :class="tinted
+      ? 'bg-[hsl(var(--generated-hue)_65%_91%)] text-[hsl(var(--generated-hue)_55%_32%)] dark:bg-[hsl(var(--generated-hue)_35%_26%)] dark:text-[hsl(var(--generated-hue)_70%_82%)]'
+      : 'bg-rui-grey-200 dark:bg-rui-grey-300 text-rui-grey-600 dark:text-rui-grey-700 border border-rui-grey-300 dark:border-rui-grey-400'"
+    data-testid="generated-icon"
   >
     <RuiIcon
       v-if="customAsset"

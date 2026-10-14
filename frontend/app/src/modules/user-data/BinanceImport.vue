@@ -8,14 +8,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <ImportSource source="binance">
-    <i18n-t
-      scope="global"
-      tag="span"
-      keypath="import_data.note"
-    >
-      <strong>{{ t('import_data.binance.name') }}</strong>
-    </i18n-t>
-    <ul class="list-disc">
+    <ul>
       <li>{{ t('import_data.binance.api_history_note') }}</li>
       <li>{{ t('import_data.binance.line_one') }}</li>
       <li>

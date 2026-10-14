@@ -78,7 +78,6 @@ onBeforeMount(() => {
 
 <template>
   <div class="overflow-auto w-full text-rui-text">
-    <!-- Full-screen takeover message -->
     <div
       v-if="showTakeoverMessage"
       class="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50"
@@ -100,7 +99,6 @@ onBeforeMount(() => {
 
     <ProviderSelectionNotification />
 
-    <!-- Tab active alert -->
     <div class="container max-w-lg! pt-6">
       <RuiAlert
         type="warning"
@@ -115,7 +113,6 @@ onBeforeMount(() => {
       </RuiAlert>
     </div>
 
-    <!-- Main content -->
     <div class="container max-w-lg! pb-6 min-h-screen">
       <h4 class="text-h4 mb-4">
         {{ t('trade.bridge.title') }}

@@ -8,7 +8,15 @@ import { usePendingJobs } from '@/modules/task-center/use-pending-jobs';
 import { useTaskController } from '@/modules/task-center/use-task-controller';
 import { useTaskDock } from '@/modules/task-center/use-task-dock';
 
+/**
+ * The height of the pill, the part of the dock that stays on screen. The expanded panel is left out:
+ * it overlays the page while open, so reserving room for it would stretch every page's scroll.
+ */
+const barHeight = defineModel<number>('barHeight', { default: 0 });
+
 const { t } = useI18n({ useScope: 'global' });
+
+const pill = useTemplateRef<HTMLDivElement>('pill');
 
 /** Whether the footer is asking to confirm Stop all; it asks in place and gives up once there is nothing left to stop. */
 const confirmingStopAll = ref<boolean>(false);
@@ -19,6 +27,8 @@ const { canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary
 const { cancel, rerun } = useTaskController();
 
 const now = useTimestamp({ interval: 1000 });
+
+const { height: pillHeight } = useElementSize(pill, undefined, { box: 'border-box' });
 
 /** The panel needs a row to list; queued-only work keeps the pill but has nothing to expand into. */
 const showPanel = computed<boolean>(() => get(modelExpanded) && get(roots).length > 0);
@@ -55,6 +65,8 @@ watch(canStopAll, (canStop) => {
   if (!canStop)
     set(confirmingStopAll, false);
 });
+
+syncRefs(pillHeight, barHeight);
 </script>
 
 <template>
@@ -164,12 +176,17 @@ watch(canStopAll, (canStop) => {
       </div>
     </RuiCard>
 
-    <DockPill
-      :jobs="jobs"
-      :children="children"
-      :listed="roots"
-      :expanded="showPanel"
-      @toggle="toggle()"
-    />
+    <div
+      ref="pill"
+      class="max-w-full"
+    >
+      <DockPill
+        :jobs="jobs"
+        :children="children"
+        :listed="roots"
+        :expanded="showPanel"
+        @toggle="toggle()"
+      />
+    </div>
   </div>
 </template>

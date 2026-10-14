@@ -123,6 +123,14 @@ describe('hash-link', () => {
       expect(wrapper.text()).toContain('0x1234...5678');
     });
 
+    it('should set a raw address in monospace', () => {
+      wrapper = createWrapper({ text: '0x1234567890abcdef1234567890abcdef12345678' });
+
+      const text = wrapper.find('[data-testid=hash-link-hash]');
+      expect(text.exists()).toBe(true);
+      expect(text.classes()).toContain('font-mono');
+    });
+
     it('should display full address when truncateLength is 0', () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678';
       wrapper = createWrapper({ text: address, truncateLength: 0 });

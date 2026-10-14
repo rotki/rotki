@@ -61,9 +61,7 @@ const multipleUpgrades = computed<boolean>(() => {
             {{ warning }}
           </div>
           <RuiDivider class="my-3" />
-          <!-- the two lines below keep their height even while empty, so the block never jumps -->
           <div class="flex flex-col gap-1">
-            <!-- hide the progress message when the reset signal is received from the backend -->
             <div
               class="text-body-2 text-rui-text-secondary leading-5 min-h-5 break-words"
               :class="{ invisible: updateProgress.totalSteps === 0 }"

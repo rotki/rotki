@@ -15,14 +15,13 @@ const { isPackaged } = useInterop();
 </script>
 
 <template>
-  <div>
+  <div v-if="isDocker || isPackaged">
     <RuiCheckbox
       v-if="isDocker"
       v-model="rememberUsername"
       :disabled="disabled || rememberPassword"
       color="primary"
       hide-details
-      class="-ml-2"
     >
       {{ t('login.remember_username') }}
     </RuiCheckbox>
@@ -36,7 +35,6 @@ const { isPackaged } = useInterop();
           :disabled="disabled"
           color="primary"
           hide-details
-          class="-ml-2"
         >
           {{ t('login.remember_password') }}
         </RuiCheckbox>

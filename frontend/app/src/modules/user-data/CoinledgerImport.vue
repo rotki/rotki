@@ -6,14 +6,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <ImportSource source="coinledger">
-    <i18n-t
-      scope="global"
-      tag="span"
-      keypath="import_data.note"
-    >
-      <strong>{{ t('import_data.coinledger.name') }}</strong>
-    </i18n-t>
-    <ul class="list-disc">
+    <ul>
       <li>{{ t('import_data.coinledger.line_one') }}</li>
     </ul>
   </ImportSource>

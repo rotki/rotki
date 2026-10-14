@@ -230,7 +230,6 @@ watch(cancellable, (canCancel) => {
       {{ outcomeText }}
     </RuiTooltip>
 
-    <!-- The subject icon has a column of its own, so every line of the row starts where the label does. -->
     <div class="flex flex-1 min-w-0 gap-1.5">
       <div
         v-if="iconColumn"
@@ -338,7 +337,7 @@ watch(cancellable, (canCancel) => {
         <slot name="details" />
         <div
           v-if="confirmingStop && cancellable"
-          class="flex items-center gap-1 mt-1 pl-2 rounded bg-rui-warning/10"
+          class="flex items-center gap-1 mt-1 pl-2 rounded-sm bg-rui-warning/10"
           data-testid="activity-stop-confirm"
         >
           <span class="flex-1 min-w-0 text-xs leading-4">{{ t('task_dock.panel.stop_confirm') }}</span>

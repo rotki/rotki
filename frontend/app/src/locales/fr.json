@@ -995,7 +995,6 @@
   "create_account": {
     "credentials": {
       "description": "Souviens-toi que l'utilisateur que tu créés ici est {highlight}, indépendamment du compte créé sur le web.",
-      "highlight": "seulement activé dans l'application",
       "label_password": "Mot de passe",
       "label_password_backup_reminder": "rotki enregistre toutes les données utilisateur localement. Je comprends que si je perds mon mot de passe, je perds l'accès à mes données. J'ai créé une sauvegarde du mot de passe.",
       "label_password_repeat": "Répéter le mot de passe",
@@ -1013,10 +1012,6 @@
     "have_account": {
       "description": "Vous avez déjà un compte?",
       "log_in": "Déverrouiller votre compte"
-    },
-    "introduction": {
-      "description": "rotki est une application locale qui respecte votre vie privée.\n\nLes comptes rotki sont cryptés à l'aide de votre mot de passe et {highlight}.\n\nLe compte que vous créez ici n'est utile que pour l'app, sur le web nous utilisons une base de données différente.",
-      "highlight": "enregistré dans votre dossier de fichiers"
     },
     "premium": {
       "button_premium_approve": "Oui, activer premium",
@@ -1776,8 +1771,7 @@
     "blockfi": {
       "import": "Importer {0} à partir de BlockFi",
       "import_trade": "opérations de change",
-      "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence.",
-      "line_two": "BlockFi vous permet d'exporter deux fichiers différents. Les opérations de change seront importées à partir du fichier qui ne contient que les opérations de change."
+      "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence."
     },
     "cointracking": {
       "line_one": "Les opérations/dépôts/retraits de CoinTracking ne comprennent pas les frais.",
@@ -1791,7 +1785,6 @@
       "line_one_link": "faites-le nous savoir",
       "line_three": "Les opérations de change/dépôts/retraits de crypto.com ne comprennent pas les détails des frais. Ils sont soit abandonnés au moment de l'écriture (août 2020) ou gérés dans le montant échangé.",
       "line_two": "{0} Si vous souhaitez connecter votre compte Crypto.com Exchange, veuillez attendre que nous le prenions en charge et vous connecter via cet échange.",
-      "line_two_warning": "Cela ne concerne que l'application Crypto.com.",
       "source_name": "l'application mobile Crypto.com"
     },
     "custom": {
@@ -1809,7 +1802,6 @@
       "import": "Importer {0} à partir de Nexo",
       "line_one": "[Expérimental] Si vous rencontrez un problème avec les données importées, informez-nous afin que nous puissions adapter le code en conséquence."
     },
-    "note": "Notes importantes pour l'importation de données à partir des exports CSV de {0}.",
     "notice": "Ces plates-formes peuvent modifier leur format de manière incompatible de manière rétroactive assez souvent. Par conséquent, cet import peut cesser de fonctionner. Si cela se produit, {link} et nous verrons ce que nous pouvons faire.",
     "notice_link": "ouvrez un problème avec rotki",
     "select_source": {
@@ -1928,11 +1920,6 @@
         "non_empty": "L'URL du backend personnalisé ne peut pas être vide",
         "url": "L'entrée insérée n'est pas dans un format URL valide"
       }
-    },
-    "description": {
-      "more_details": "{documentation} vous montre plus de détails sur l'application locale et l'utilisateur.",
-      "our_docs": "Nos documentations",
-      "welcome": "Bienvenue ! Veuillez entrer vos informations."
     },
     "incomplete_upgrade_error": {
       "abort": "Abandon",
@@ -2175,7 +2162,6 @@
       "add_title": "Ajouter une note",
       "edit_title": "Modifier la note"
     },
-    "empty_notes": "Aucune note trouvée/enregistrée",
     "labels": {
       "content": "Prendre une note...",
       "title": "Titre"
@@ -2219,8 +2205,7 @@
     "confirmation": {
       "message": "Cette action va supprimer toutes les notifications actives. Souhaitez-vous continuer ?",
       "title": "Supprimer les notifications actives"
-    },
-    "no_messages": "Aucun message !"
+    }
   },
   "overall_balances": {
     "loading": "CHARGMENT",

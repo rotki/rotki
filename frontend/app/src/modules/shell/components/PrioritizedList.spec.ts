@@ -100,4 +100,50 @@ describe('prioritized-list', () => {
 
     expect(emittedInputEventItems()).toStrictEqual([AddressNamePriority.BLOCKCHAIN_ACCOUNT, AddressNamePriority.ETHEREUM_TOKENS]);
   });
+
+  it('should show the save outcome in place', () => {
+    const status = wrapper.find('[data-testid=prioritized-list-status]');
+
+    // the error wins, since it is the one that needs acting on
+    expect(status.text()).toContain('error message');
+  });
+
+  it('should warn inside the list once it is empty', async () => {
+    await wrapper.setProps({ emptyWarning: 'nothing to price with', modelValue: [] });
+
+    expect(wrapper.find('[data-testid=prioritized-list-empty-warning]').text()).toContain('nothing to price with');
+  });
+
+  it('should keep the plain empty state when there is no warning to give', async () => {
+    await wrapper.setProps({ modelValue: [] });
+
+    expect(wrapper.find('[data-testid=prioritized-list-empty-warning]').exists()).toBe(false);
+  });
+
+  describe('dismissing an error', () => {
+    const error = (): ReturnType<typeof wrapper.find> => wrapper.find('[role=alert][data-testid=prioritized-list-status]');
+
+    it('should hide the error once closed', async () => {
+      await wrapper.find('[data-testid=prioritized-list-dismiss]').trigger('click');
+
+      expect(error().exists()).toBe(false);
+    });
+
+    it('should show a different error that arrives after one was closed', async () => {
+      await wrapper.find('[data-testid=prioritized-list-dismiss]').trigger('click');
+
+      await wrapper.setProps({ status: { error: 'another failure', success: '' } });
+
+      expect(error().text()).toContain('another failure');
+    });
+
+    it('should show the same error again after a new attempt cleared the last one', async () => {
+      await wrapper.find('[data-testid=prioritized-list-dismiss]').trigger('click');
+      await wrapper.setProps({ status: { error: '', success: '' } });
+
+      await wrapper.setProps({ status: { error: 'error message', success: '' } });
+
+      expect(error().text()).toContain('error message');
+    });
+  });
 });

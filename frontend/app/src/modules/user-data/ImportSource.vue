@@ -14,13 +14,18 @@ import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import ImportNotes from '@/modules/user-data/ImportNotes.vue';
 import { useImportDataApi } from '@/modules/user-data/use-import-data-api';
 
-const { source } = defineProps<{ source: ImportSourceType }>();
+const { source, notes = true } = defineProps<{
+  source: ImportSourceType;
+  /** Off for a source that splits into several uploads and shows its notes once, beside all of them. */
+  notes?: boolean;
+}>();
 
 defineSlots<{
-  'default': () => any;
-  'hint': () => any;
+  'default'?: () => any;
+  'hint'?: () => any;
   'upload-title': () => any;
 }>();
 
@@ -30,6 +35,8 @@ interface ImportState {
 
 const uploader = useTemplateRef<InstanceType<typeof RuiFileUpload>>('uploader');
 const useCustomTimezone = ref<boolean>(false);
+const optionsOpen = ref<boolean>(false);
+const optionsId = useId();
 const timezone = ref<string>();
 const uploaded = ref(false);
 const errorMessage = ref('');
@@ -196,116 +203,108 @@ function toggleCustomTimezone(enabled: boolean): void {
 }
 
 const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'));
+
+// every third-party source carries the caveat that its format may change, even with no notes of its own
+const showNotes = computed<boolean>(() => notes && !get(isRotkiCustomImport));
+
+// counted on the collapsed toggle, so an option still in effect is never out of sight
+const activeOptions = computed<number>(() =>
+  (form.state.dateInputFormat === undefined ? 0 : 1) + (get(useCustomTimezone) ? 1 : 0),
+);
 </script>
 
 <template>
   <div
     data-testid="import-source"
     :data-key="source"
+    class="grid items-start gap-4"
+    :class="{ 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]': showNotes }"
   >
-    <div class="mb-2">
-      <slot name="upload-title" />
-    </div>
     <form
       novalidate
+      class="flex flex-col gap-4 rounded-rui-card border border-rui-divider bg-rui-surface p-4"
       @submit.stop.prevent="form.submit()"
     >
-      <RuiFileUpload
-        ref="uploader"
-        v-model="file"
-        accept=".csv"
-        :loading="loading"
-        :uploaded="uploaded"
-        :error-messages="errorMessage"
-        :upload-text="t('file_upload.dropzone.prefix')"
-        :click-to-upload-text="t('file_upload.dropzone.choose')"
-        :replace-text="t('file_upload.dropzone.replace')"
-        @update:model-value="onFileChange($event)"
-      />
       <div
-        v-if="uploaded"
-        class="text-body-2 text-rui-success"
-        data-testid="import-complete"
+        v-if="$slots['upload-title']"
+        class="text-sm text-rui-text"
       >
-        {{ t('file_upload.import_complete') }}
+        <slot name="upload-title" />
       </div>
-      <RuiSwitch
-        v-if="!isRotkiCustomImport"
-        color="primary"
-        class="mt-4"
-        :model-value="form.state.dateInputFormat !== undefined"
-        data-testid="import-date-format-switch"
-        @update:model-value="changeShouldCustomDateFormat()"
-      >
-        {{ t('file_upload.date_input_format.switch_label') }}
-      </RuiSwitch>
-      <RuiTextField
-        v-if="form.state.dateInputFormat !== undefined"
-        v-model="form.state.dateInputFormat"
-        class="mt-2"
-        variant="outlined"
-        color="primary"
-        :error-messages="form.errors('dateInputFormat')"
-        data-testid="import-date-format"
-        :label="t('file_upload.date_input_format.placeholder')"
-        :hint="
-          t('file_upload.date_input_format.hint', {
-            format: dateInputFormatExample,
-          })
-        "
-        @update:model-value="form.touch('dateInputFormat')"
-      >
-        <template #append>
-          <RuiButton
-            variant="text"
-            icon
-            class="p-2!"
-            @click="formatHelp = true"
-          >
-            <RuiIcon name="lu-info" />
-          </RuiButton>
-        </template>
-      </RuiTextField>
-
-      <div
-        v-if="!isRotkiCustomImport"
-        data-testid="import-timezone-switch"
-      >
-        <RuiSwitch
-          color="primary"
-          class="mt-4"
-          :model-value="useCustomTimezone"
-          @update:model-value="toggleCustomTimezone($event)"
+      <div class="flex flex-col gap-1">
+        <RuiFileUpload
+          ref="uploader"
+          v-model="file"
+          accept=".csv"
+          hide-details
+          :loading="loading"
+          :uploaded="uploaded"
+          :error-messages="errorMessage ? [errorMessage] : []"
+          :upload-text="t('file_upload.dropzone.prefix')"
+          :click-to-upload-text="t('file_upload.dropzone.choose')"
+          :replace-text="t('file_upload.dropzone.replace')"
+          data-testid="import-file-upload"
+          @error="errorMessage = $event"
+          @update:model-value="onFileChange($event)"
+        />
+        <div
+          v-if="errorMessage"
+          class="min-h-5 text-sm text-rui-error"
+          data-testid="import-error"
         >
-          {{ t('file_upload.timezone.switch_label') }}
-        </RuiSwitch>
-      </div>
-      <div
-        v-if="useCustomTimezone"
-        data-testid="import-timezone-select"
-        class="mt-2"
-      >
-        <RuiTimezoneSelect
-          v-model="timezone"
-          variant="outlined"
-          clearable
-          :label="t('file_upload.timezone.label')"
-          :hint="t('file_upload.timezone.hint')"
+          {{ errorMessage }}
+        </div>
+        <div
+          v-else-if="uploaded"
+          class="flex min-h-5 items-center gap-1.5 text-sm text-rui-success"
+          data-testid="import-complete"
+        >
+          <RuiIcon
+            name="lu-circle-check"
+            size="14"
+          />
+          {{ t('file_upload.import_complete') }}
+        </div>
+        <div
+          v-else
+          class="min-h-5"
         />
       </div>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <RuiButton
+          v-if="!isRotkiCustomImport"
+          variant="text"
+          size="sm"
+          class="-ml-1.5"
+          :color="activeOptions > 0 ? 'primary' : undefined"
+          :aria-expanded="optionsOpen"
+          :aria-controls="optionsId"
+          data-testid="import-options-toggle"
+          @click="optionsOpen = !optionsOpen"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-settings-2"
+              size="16"
+            />
+          </template>
+          {{
+            activeOptions > 0 && !optionsOpen
+              ? t('import_data.parsing_options_active', { count: activeOptions })
+              : t('import_data.parsing_options')
+          }}
+          <template #append>
+            <RuiIcon
+              :name="optionsOpen ? 'lu-chevron-up' : 'lu-chevron-down'"
+              size="16"
+            />
+          </template>
+        </RuiButton>
 
-      <div class="mt-4 text-sm leading-7 text-rui-text-secondary">
-        <slot />
-        <div v-if="$slots.hint">
-          <slot name="hint" />
-        </div>
-      </div>
-      <div class="mt-6">
         <RuiButton
           color="primary"
-          class="w-full"
+          class="ml-auto"
           data-testid="button-import"
-          size="lg"
           type="submit"
           :disabled="!valid || !file || loading"
         >
@@ -317,8 +316,89 @@ const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'))
           </template>
           {{ t('common.actions.import') }}
         </RuiButton>
+
+        <div
+          v-if="!isRotkiCustomImport && optionsOpen"
+          :id="optionsId"
+          class="flex basis-full flex-col gap-3"
+        >
+          <RuiSwitch
+            color="primary"
+            hide-details
+            :model-value="form.state.dateInputFormat !== undefined"
+            data-testid="import-date-format-switch"
+            @update:model-value="changeShouldCustomDateFormat()"
+          >
+            {{ t('file_upload.date_input_format.switch_label') }}
+          </RuiSwitch>
+          <RuiTextField
+            v-if="form.state.dateInputFormat !== undefined"
+            v-model="form.state.dateInputFormat"
+            color="primary"
+            :error-messages="form.errors('dateInputFormat')"
+            data-testid="import-date-format"
+            :label="t('file_upload.date_input_format.placeholder')"
+            :hint="
+              t('file_upload.date_input_format.hint', {
+                format: dateInputFormatExample,
+              })
+            "
+            @update:model-value="form.touch('dateInputFormat')"
+          >
+            <template #append>
+              <RuiButton
+                variant="text"
+                icon
+                class="p-2!"
+                @click="formatHelp = true"
+              >
+                <RuiIcon name="lu-info" />
+              </RuiButton>
+            </template>
+          </RuiTextField>
+
+          <div data-testid="import-timezone-switch">
+            <RuiSwitch
+              color="primary"
+              hide-details
+              :model-value="useCustomTimezone"
+              @update:model-value="toggleCustomTimezone($event)"
+            >
+              {{ t('file_upload.timezone.switch_label') }}
+            </RuiSwitch>
+          </div>
+          <div
+            v-if="useCustomTimezone"
+            data-testid="import-timezone-select"
+          >
+            <RuiTimezoneSelect
+              v-model="timezone"
+              clearable
+              :label="t('file_upload.timezone.label')"
+              :hint="t('file_upload.timezone.hint')"
+            />
+          </div>
+        </div>
       </div>
     </form>
-    <DateFormatHelp v-model="formatHelp" />
+
+    <ImportNotes v-if="showNotes">
+      <template
+        v-if="$slots.default || $slots.hint"
+        #default
+      >
+        <slot />
+        <div
+          v-if="$slots.hint"
+          class="mt-2"
+        >
+          <slot name="hint" />
+        </div>
+      </template>
+    </ImportNotes>
+    <DateFormatHelp
+      v-model="formatHelp"
+      class="hidden"
+    />
   </div>
 </template>

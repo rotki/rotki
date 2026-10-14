@@ -26,7 +26,7 @@ const lastModified = computed(() => {
   <Transition name="bounce">
     <LoginActionAlert
       v-if="syncConflict"
-      icon="lu-cloud-download-fill"
+      icon="lu-cloud-download"
       @cancel="emit('proceed', 'no')"
       @confirm="emit('proceed', 'yes')"
     >

@@ -47,6 +47,12 @@ declare module 'vue-router' {
     readonly noteLocation?: NoteLocation;
     readonly canNavigateBack?: boolean;
     readonly keepScrollPosition?: boolean;
+    /**
+     * The page fits the viewport and scrolls inside its own container, so the shell adds no room for
+     * the task dock below it; that would only make the window scroll. The page clears the dock
+     * itself through `--rotki-dock-inset`.
+     */
+    readonly scrollsItself?: boolean;
     readonly nav?: RouteNavMeta;
   }
 }

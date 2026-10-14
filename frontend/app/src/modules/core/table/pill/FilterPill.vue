@@ -62,14 +62,6 @@ function valueLabel(value: string): string {
     :data-field="field.key"
     @click="!disabled && emit('edit')"
   >
-    <!-- The height is pinned here rather than left to the contents: a pill carrying an icon or a
-         caption came out taller than a bare text one, so a bar holding a mix looked ragged. Each
-         segment centres within it instead of adding its own vertical padding.
-
-         Everything but the remove control is one button, so the pill can be reached by Tab and
-         reopened with Enter or Space. It cannot be the root element: the remove control is a
-         button too, and a button inside a button is invalid. The click bubbles to the root, which
-         carries the menu activator, so opening works the same by keyboard as by mouse. -->
     <button
       type="button"
       class="flex items-stretch text-left"

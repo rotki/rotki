@@ -163,8 +163,6 @@ function onKeydown(event: KeyboardEvent): void {
 
 <template>
   <div class="flex flex-col w-80">
-    <!-- Only for multi-select: a scrolled long list needs the selections summarised. A single-select
-      field would just echo its one checked row (and the bar pill), reading as a confusing mini-pill. -->
     <div
       v-if="multiple && selectedChips.length > 0"
       class="flex flex-wrap gap-1 p-2 border-b border-rui-grey-200 dark:border-rui-grey-700"
@@ -187,8 +185,6 @@ function onKeydown(event: KeyboardEvent): void {
       </button>
     </div>
 
-    <!-- The focus ring lives on this row, not the input: the input is borderless by design, so its
-         `outline-hidden` needs a replacement somewhere, and the row is what reads as the field. -->
     <div class="flex items-center gap-2 px-3 border-b transition-colors border-rui-grey-200 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary">
       <RuiIcon
         name="lu-search"
@@ -241,8 +237,6 @@ function onKeydown(event: KeyboardEvent): void {
           @mousemove="onPointerMove($event, item.index)"
           @click="toggle(item.data.value)"
         >
-          <!-- aria-checked on the row already states selection, so the indicator is decorative to
-               assistive tech and would otherwise be read twice. -->
           <RuiIcon
             class="shrink-0"
             :class="selectedSet.has(item.data.value) ? 'text-rui-primary' : 'text-rui-text-secondary opacity-40'"
@@ -274,8 +268,6 @@ function onKeydown(event: KeyboardEvent): void {
         </button>
       </div>
     </div>
-    <!-- Announced: the rows arrive from a remote search, so without a live region a screen reader
-         is told nothing between typing and results appearing. -->
     <div
       v-else-if="loading"
       class="flex items-center justify-center px-2.5 py-4"

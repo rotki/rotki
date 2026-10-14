@@ -13,7 +13,7 @@ const searchOptions = vi.fn<(options: SearchOptions) => void>();
 
 const { visibleAssets } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
-  return { visibleAssets: ref<{ assetType?: string; identifier: string; symbol?: string }[]>([]) };
+  return { visibleAssets: ref<{ assetType?: string; identifier: string; name?: string; symbol?: string }[]>([]) };
 });
 
 vi.mock('@/modules/shell/components/inputs/use-asset-search', async (importOriginal) => {
@@ -173,23 +173,28 @@ describe('assetSelect', () => {
     set(visibleAssets, [{ identifier: 'ETH', symbol: 'ETH' }, { identifier: 'DAI', symbol: 'DAI' }]);
     const wrapper = createWrapper({ modelValue: 'ETH' });
 
-    expect(wrapper.find('.selection').findComponent(AssetDetailsBase).exists()).toBe(true);
+    expect(wrapper.find('.selection').findComponent(AssetIcon).exists()).toBe(true);
+    expect(wrapper.find('.selection').text()).toContain('ETH');
     expect(wrapper.findAll('.option')).toHaveLength(2);
 
     wrapper.unmount();
   });
 
-  it('should draw a dense selection without AssetDetailsBase, whose stacked lines grow the field back', () => {
-    set(visibleAssets, [{ identifier: 'ETH', symbol: 'ETH' }]);
+  it('should draw the selection on one line at every size, without AssetDetailsBase, whose stacked lines grow the field', () => {
+    set(visibleAssets, [{ identifier: 'ETH', name: 'Ether', symbol: 'ETH' }]);
 
     const dense = createWrapper({ dense: true, modelValue: 'ETH' });
     expect(dense.get('.rui-auto-complete').attributes('data-dense')).toBe('true');
     expect(dense.find('.selection').findComponent(AssetDetailsBase).exists()).toBe(false);
     expect(dense.find('.selection').findComponent(AssetIcon).props('size')).toBe('20px');
+    expect(dense.find('.selection').text()).not.toContain('Ether');
     dense.unmount();
 
     const roomy = createWrapper({ modelValue: 'ETH' });
-    expect(roomy.find('.selection').findComponent(AssetDetailsBase).exists()).toBe(true);
+    expect(roomy.find('.selection').findComponent(AssetDetailsBase).exists()).toBe(false);
+    // the same 20px icon as dense, or the picked field grows taller than the inputs beside it
+    expect(roomy.find('.selection').findComponent(AssetIcon).props('size')).toBe('20px');
+    expect(roomy.find('.selection').text()).toContain('Ether');
     roomy.unmount();
   });
 });

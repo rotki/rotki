@@ -34,8 +34,16 @@ export class ImportPage {
     await fileInput.setInputFiles(filePath);
   }
 
+  /** Unfolds a source's parsing options, which start folded, unless they are already open. */
+  async openParsingOptions(sourceKey: string): Promise<void> {
+    const toggle = this.page.locator(`[data-testid=import-source][data-key="${sourceKey}"]`).getByTestId('import-options-toggle');
+    if (await toggle.getAttribute('aria-expanded') !== 'true')
+      await toggle.click();
+  }
+
   async selectTimezone(sourceKey: string, timezone: string): Promise<void> {
     const container = this.page.locator(`[data-testid=import-source][data-key="${sourceKey}"]`);
+    await this.openParsingOptions(sourceKey);
     await container.getByTestId('import-timezone-switch').locator('input').click();
     const select = container.getByTestId('import-timezone-select');
     await select.waitFor({ state: 'visible' });

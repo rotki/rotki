@@ -47,7 +47,6 @@ const secondaryText = computed<string>(() => secondaryAction || t('common.action
 </script>
 
 <template>
-  <!-- one step over other dialogs (it may confirm for one), still under the menu layer its pickers open in -->
   <RuiDialog
     :model-value="display"
     persistent
