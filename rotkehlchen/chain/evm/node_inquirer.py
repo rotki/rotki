@@ -1435,11 +1435,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             address: ChecksumEvmAddress,
             ignore_failure_cooldown: bool = False,
     ) -> list[tuple[bool, bytes]]:
-        """Query the given properties of a token contract.
-
-        After a failure the address is not queried again until TOKEN_QUERY_FAILURE_COOLDOWN
-        passes, to not hit the nodes once per token event while they are failing. Queries
-        requested by the user should ignore the cooldown, since the nodes may be back.
+        """Query the given properties of a token contract. After a failure the address is not
+        queried again until TOKEN_QUERY_FAILURE_COOLDOWN passes, unless ignore_failure_cooldown.
 
         May raise:
         - TokenQueryFailed if the nodes could not be reached now or in the cooldown period
@@ -1495,11 +1492,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             address: ChecksumEvmAddress,
             ignore_failure_cooldown: bool = False,
     ) -> tuple[dict[str, Any], frozenset[str]]:
-        """Same as get_erc20_contract_info but also returns which of the ERC20_PROPERTIES
-        the contract did not return, since their values in the info are only defaults.
-
-        A failure to reach the nodes raises TokenQueryFailed and is not cached.
-        """
+        """Same as get_erc20_contract_info but also returns which of the ERC20_PROPERTIES the
+        contract did not return, since their values in the info are only defaults."""
         if (cache := self.contract_info_erc20_cache.get(address)) is not None:
             return cache
 
@@ -1522,11 +1516,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             output: tuple[bool, bytes],
             address: ChecksumEvmAddress,
     ) -> Any:
-        """Decode a single property of the output of an erc20 contract query on its own, so
-        that one that can't be decoded does not take the others with it.
-
+        """Decode a single property of an erc20 contract query output on its own.
         Returns the value or None if the call failed, returned nothing or can't be decoded."""
-        if len(_missing_properties(properties=(prop,), output=(output,))) != 0:
+        if output[0] is False or len(output[1]) == 0:
             return None
 
         for abi in (self.contracts.erc20_abi, self.contracts.univ1lp_abi):  # the latter has bytes name and symbol  # noqa: E501
@@ -1550,11 +1542,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         """Query decimals, symbol and name of many erc20 contracts in a single multicall.
 
         The result has, for each address, only the properties that were returned and could be
-        decoded, so a value in it is never a default. A property is missing if its call
-        failed, returned nothing or can't be decoded, and doesn't affect the others. Addresses
-        with no property are not in the result. Unlike get_erc20_contract_info this does not
-        read the contract info cache, it drops the entries of the queried addresses since they
-        may have the details from before they were fixed, and a failed query is raised.
+        decoded, so a value in it is never a default. Addresses with no property are not in it.
+        Unlike get_erc20_contract_info this does not read the contract info cache, it drops the
+        entries of the queried addresses since they may be stale, and a failed query is raised.
 
         May raise:
         - RemoteError if the multicall could not be executed

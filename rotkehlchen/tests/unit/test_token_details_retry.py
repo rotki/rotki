@@ -148,6 +148,37 @@ def _marks() -> dict[ChecksumEvmAddress, tuple[int, Any]]:
     }
 
 
+def _token(address: ChecksumEvmAddress) -> EvmToken:
+    return EvmToken(evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM))
+
+
+def _see_token(
+        database: DBHandler,
+        inquirer: EthereumInquirer,
+        address: ChecksumEvmAddress,
+        multicall: dict[str, Any] | None = None,
+        raises: type[Exception] | None = TokenQueryFailed,
+        **given: Any,
+) -> EvmToken | None:
+    """Make the decoding see a token while the multicall fails, or answers as given"""
+    inquirer.token_query_failures.remove(address)
+    inquirer.contract_info_erc20_cache.remove(address)
+    token = None
+    with (
+        patch.object(inquirer, 'multicall_2', **(multicall or {'side_effect': RemoteError('down')})),  # noqa: E501
+        pytest.raises(raises) if raises is not None else nullcontext(),
+    ):
+        token = get_or_create_evm_token(
+            userdb=database,
+            evm_address=address,
+            chain_id=ChainID.ETHEREUM,
+            evm_inquirer=inquirer,
+            **given,
+        )
+
+    return token  # noqa: RET504  # a return inside the with is unreachable when it raises
+
+
 def _details(token: EvmToken) -> tuple[str, str | None, int | None]:
     return (token := EvmToken(token.identifier)).name, token.symbol, token.decimals
 
@@ -196,7 +227,7 @@ def test_marking_at_creation(
 
     with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output()):
         retry_missing_token_details(chains_aggregator)
-    token = EvmToken(evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM))
+    token = _token(address)
     assert _details(token) == ('Token', 'TKN', 6)
     assert _marks() == {}
 
@@ -296,7 +327,7 @@ def test_which_tokens_are_retried(database: DBHandler) -> None:
     assert [x.kwargs for x in redecode.call_args_list] == [
         {'database': database, 'chain_id': ChainID.ETHEREUM, 'addresses': [added]},
     ]
-    assert _details(EvmToken(evm_address_to_identifier(address=added, chain_id=ChainID.ETHEREUM))) == ('Added', 'ADD', 6)  # noqa: E501
+    assert _details(_token(added)) == ('Added', 'ADD', 6)
     assert _details(found) == _details(null_name) == ('Found', 'SYM', 6)
     assert _details(not_found) == (not_found.identifier, '', 18)
     assert _details(other_chain)[0] == other_chain.identifier
@@ -322,16 +353,8 @@ def test_token_changed_while_querying_keeps_the_changes(
     details it did not change are filled, so a name it kept, which is the placeholder or
     fallback one, still gets the queried one."""
     if marked:  # created with fallbacks after a failed query
-        with patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')):
-            token = get_or_create_evm_token(
-                userdb=database,
-                evm_address=_address(1),
-                chain_id=ChainID.ETHEREUM,
-                evm_inquirer=ethereum_inquirer,
-                fallback_name='Fallback',
-                fallback_symbol='FB',
-                fallback_decimals=18,
-            )
+        token = _see_token(database, ethereum_inquirer, _address(1), raises=None, **FALLBACKS)
+        assert token is not None
         assert _marks() == {token.evm_address: (0, ('Fallback', 'FB', 18))}
     else:
         token = _create_placeholder(database, 1)
@@ -520,6 +543,36 @@ def test_transfer_is_redecoded_with_found_details(
     assert _marks() == {}
 
 
+@pytest.mark.parametrize(('error', 'raises'), [
+    (RemoteError('nodes down'), None),
+    (ValueError('unexpected'), ValueError),
+])
+def test_progress_is_saved_when_the_query_fails(
+        database: DBHandler,
+        error: Exception,
+        raises: type[Exception] | None,
+) -> None:
+    """When the nodes are down, or the query fails unexpectedly, the placeholders are left as
+    they are, but the cursor moves past them and the last run is saved before querying, so a
+    chunk that always fails can't block the tokens after it nor repeat forever."""
+    tokens = [_create_placeholder(database, i) for i in (1, 2, 3)]
+    chains_aggregator, _ = _chains_aggregator(database=database, infos=error)
+
+    with (
+        patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_BATCH_SIZE', 3),
+        pytest.raises(raises) if raises is not None else nullcontext(),
+    ):
+        retry_missing_token_details(chains_aggregator)
+
+    assert all(EvmToken(x.identifier).name == x.identifier for x in tokens)
+    assert _get_cursor(database) == max(x.identifier for x in tokens)
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
+        ) is not None
+
+
 def test_cursor_advances_and_wraps(database: DBHandler) -> None:
     tokens = sorted((_create_placeholder(database, i) for i in (1, 2, 3)), key=lambda x: x.identifier)  # noqa: E501
     queried: list[list[ChecksumEvmAddress]] = []
@@ -549,45 +602,6 @@ def test_cursor_advances_and_wraps(database: DBHandler) -> None:
     }
 
 
-def test_failed_chunk_does_not_block_following_tokens(database: DBHandler) -> None:
-    """A chunk of placeholders that fails after an earlier chunk worked is queried one by
-    one. The nodes answered in this run, so the failures don't stop it and the chunks after
-    it are still queried."""
-    tokens = sorted((_create_placeholder(database, i) for i in range(1, 7)), key=lambda x: x.identifier)  # noqa: E501
-    failing = {tokens[2].evm_address, tokens[3].evm_address}
-    calls = []
-
-    def infos(addresses: list[ChecksumEvmAddress]) -> dict[str, Any]:
-        calls.append(addresses)
-        if failing.intersection(addresses):
-            raise RemoteError('out of gas')
-        return {address: _info('Found') for address in addresses}
-
-    chains_aggregator, _ = _chains_aggregator(database=database, infos=infos)
-    with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_CHUNK_SIZE', 2):
-        retry_missing_token_details(chains_aggregator)
-
-    assert calls == [[x.evm_address for x in chunk] for chunk in (
-        tokens[:2], tokens[2:4], tokens[2:3], tokens[3:4], tokens[4:],
-    )]
-    assert [EvmToken(x.identifier).name for x in tokens] == [
-        'Found', 'Found', tokens[2].identifier, tokens[3].identifier, 'Found', 'Found',
-    ]
-
-
-def test_remote_error_is_retried_in_the_next_cycle(database: DBHandler) -> None:
-    """When the nodes are down the placeholders are left as they are, and the cursor still
-    moves past them so a chunk that always fails can't block the tokens after it"""
-    tokens = [_create_placeholder(database, i) for i in (1, 2, 3)]
-    chains_aggregator, _ = _chains_aggregator(database=database, infos=RemoteError('nodes down'))
-
-    with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_BATCH_SIZE', 3):
-        retry_missing_token_details(chains_aggregator)
-
-    assert all(EvmToken(x.identifier).name == x.identifier for x in tokens)
-    assert _get_cursor(database) == max(x.identifier for x in tokens)
-
-
 def test_token_failing_its_chunk_does_not_block_the_marks(database: DBHandler) -> None:
     """A token that makes the query of its whole chunk fail while the nodes work is isolated:
     the rest of its chunk is still found and it counts attempts until it is given up, instead
@@ -606,7 +620,7 @@ def test_token_failing_its_chunk_does_not_block_the_marks(database: DBHandler) -
 
     assert _marks() == {poison: (1, None)}
     for address in others:
-        token = EvmToken(evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM))
+        token = _token(address)
         assert _details(token) == ('Found', 'SYM', 6)
 
     for idx in range(TOKEN_DETAILS_RETRY_MAX_ATTEMPTS - 1):
@@ -665,12 +679,16 @@ def test_outage_in_the_middle_of_a_run_counts_no_attempts(database: DBHandler) -
     }
 
 
-def test_tokens_failing_on_their_own_do_not_look_like_an_outage(database: DBHandler) -> None:
-    """Tokens that each break their own query, next to each other, reach the limit of failures
-    in a row. A token that answered in the run is queried again: as it answers the nodes are up,
-    so those tokens count an attempt, they can be given up, and the run goes on to the rest."""
-    healthy, *poison, last_a, last_b = (addresses := [_address(i) for i in range(1, 7)])
-    poison = poison[:3]
+@pytest.mark.parametrize('poison_range', [slice(2, 4), slice(1, 4)])
+def test_tokens_failing_on_their_own_do_not_look_like_an_outage(
+        database: DBHandler,
+        poison_range: slice,
+) -> None:
+    """Tokens that each break their own query count an attempt and the rest is still found. Next
+    to each other, enough of them reach the limit of failures in a row: a token that answered
+    in the run is then queried again, and as it answers the nodes are up and the run goes on."""
+    addresses = [_address(i) for i in range(1, 7)]
+    poison = addresses[poison_range]
     for address in addresses:
         mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=address, saved=None)
 
@@ -679,14 +697,18 @@ def test_tokens_failing_on_their_own_do_not_look_like_an_outage(database: DBHand
             raise RemoteError('out of gas')
         return {address: _info('Found') for address in queried}
 
-    chains_aggregator, _ = _chains_aggregator(database=database, infos=infos)
+    chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=infos)
     with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_CHUNK_SIZE', 2):
         retry_missing_token_details(chains_aggregator)
 
     assert _marks() == dict.fromkeys(poison, (1, None))  # counted, and the rest was found
-    for address in (healthy, last_a, last_b):
-        token = EvmToken(evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM))
-        assert _details(token) == ('Found', 'SYM', 6)
+    for address in set(addresses) - set(poison):
+        assert _details(_token(address)) == ('Found', 'SYM', 6)
+
+    if len(poison) == 2:  # below the limit: no probe, and the chunks after them are queried
+        assert [x.args[0] for x in node_inquirer.get_multiple_erc20_contracts_info.call_args_list] == [  # noqa: E501
+            addresses[:2], addresses[2:4], addresses[2:3], addresses[3:4], addresses[4:],
+        ]
 
 
 def test_decoder_edit_does_not_stop_missing_details_from_being_fixed(
@@ -698,14 +720,11 @@ def test_decoder_edit_does_not_stop_missing_details_from_being_fixed(
     giving it a name later does not count as an edit of the decimals, so the retry still fixes
     them and keeps the decoder's name. The stale info cached when the token was first seen is
     dropped by the retry query."""
-    with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output(decimals=None)):
-        token = get_or_create_evm_token(
-            userdb=database,
-            evm_address=(address := _address(1)),
-            chain_id=ChainID.ETHEREUM,
-            symbol='GIV',
-            evm_inquirer=ethereum_inquirer,
-        )
+    token = _see_token(
+        database, ethereum_inquirer, address := _address(1),
+        multicall={'return_value': _output(decimals=None)}, raises=None, symbol='GIV',
+    )
+    assert token is not None
     assert _details(token) == ('Token', 'GIV', 18)
     assert [x.missing for x in get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10)] == [frozenset({'decimals'})]  # noqa: E501
 
@@ -742,21 +761,16 @@ def test_seeing_a_marked_token_again_keeps_its_place(database: DBHandler) -> Non
 def test_nft_is_created_when_the_nodes_fail(
         database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
-        given: dict[str, str],
+        given: dict[str, Any],
 ) -> None:
     """Every collectible id is a new token, so an nft seen while the nodes fail is created
     with empty details, or the given ones, instead of dropping its events. It is not marked."""
-    with patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')):
-        token = get_or_create_evm_token(
-            userdb=database,
-            evm_address=_address(1),
-            chain_id=ChainID.ETHEREUM,
-            token_kind=TokenKind.ERC721,
-            collectible_id='1',
-            evm_inquirer=ethereum_inquirer,
-            **given,  # type: ignore[arg-type]  # only name and symbol are given
-        )
+    token = _see_token(
+        database, ethereum_inquirer, _address(1), raises=None,
+        token_kind=TokenKind.ERC721, collectible_id='1', **given,
+    )
 
+    assert token is not None
     assert _details(token) == (given.get('name', ''), given.get('symbol', ''), 0)
     assert _marks() == {}
 
@@ -770,22 +784,16 @@ def test_unrelated_failing_property_does_not_block_the_needed_ones(
     only the symbol as missing, instead of losing the decimals. A run that made progress does
     not count an attempt, a later one that did not does."""
     chains_aggregator, _ = _chains_aggregator(database=database, node_inquirer=ethereum_inquirer)
-    with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output(decimals=None)):
-        decimals_only = get_or_create_evm_token(
-            userdb=database,
-            evm_address=_address(1),
-            chain_id=ChainID.ETHEREUM,
-            symbol='GIV',
-            evm_inquirer=ethereum_inquirer,
-        )
-    with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output(decimals=None, symbol=None)):  # noqa: E501
-        both = get_or_create_evm_token(
-            userdb=database,
-            evm_address=_address(2),
-            chain_id=ChainID.ETHEREUM,
-            evm_inquirer=ethereum_inquirer,
-            **FALLBACKS,
-        )
+    decimals_only = _see_token(
+        database, ethereum_inquirer, _address(1),
+        multicall={'return_value': _output(decimals=None)}, raises=None, symbol='GIV',
+    )
+    both = _see_token(
+        database, ethereum_inquirer, _address(2),
+        multicall={'return_value': _output(decimals=None, symbol=None)}, raises=None, **FALLBACKS,
+    )
+    assert decimals_only is not None
+    assert both is not None
     assert {x.address: x.missing for x in get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10)} == {  # noqa: E501
         decimals_only.evm_address: frozenset({'decimals'}),
         both.evm_address: frozenset({'decimals', 'symbol'}),
@@ -890,13 +898,16 @@ def test_decoder_with_an_older_token_cannot_overwrite_the_found_details(
 
 
 @pytest.mark.parametrize('marked', [False, True])
+@pytest.mark.parametrize('nodes_answer', [True, False])
 def test_interrupted_redecode_is_done_in_the_next_run(
         database: DBHandler,
         marked: bool,
+        nodes_answer: bool,
 ) -> None:
     """The mark is only removed once the transactions of a token whose details changed are
     redecoded, and an unmarked token gets one with its old details for that, so that a stop
-    in between does not leave events calculated with the old decimals for good."""
+    in between does not leave events calculated with the old decimals for good. It is done
+    however the nodes answer the next runs, or the token would run out of attempts."""
     token = _create_placeholder(database, 1)
     if marked:
         mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=(token.identifier, None, 18))  # noqa: E501
@@ -910,12 +921,17 @@ def test_interrupted_redecode_is_done_in_the_next_run(
     assert _details(token) == ('Found', 'SYM', 6)  # written already
     assert _marks() == {token.evm_address: (0, (token.identifier, None, 18))}  # pending
 
+    if not nodes_answer:
+        chains_aggregator, _ = _chains_aggregator(database=database, infos=lambda _: {})
+
     with patch('rotkehlchen.assets.details_retry.redecode_token_txs') as redecode:
-        retry_missing_token_details(chains_aggregator)
+        for _ in range(1 if nodes_answer else TOKEN_DETAILS_RETRY_MAX_ATTEMPTS):
+            retry_missing_token_details(chains_aggregator)
 
     assert [x.kwargs['address'] for x in redecode.call_args_list] == [token.evm_address]
     assert _details(token) == ('Found', 'SYM', 6)
-    assert _marks() == {}
+    if nodes_answer:
+        assert _marks() == {}
 
 
 def test_created_tokens_are_redecoded_in_a_single_scan(
@@ -958,7 +974,7 @@ def test_created_tokens_are_redecoded_in_a_single_scan(
     ]
     assert _marks() == {}
     assert details_retry.get_given_up_tokens_added_since(ChainID.ETHEREUM) == []
-    assert _details(EvmToken(evm_address_to_identifier(address=created, chain_id=ChainID.ETHEREUM))) == ('Chain', 'SYM', 6)  # noqa: E501
+    assert _details(_token(created)) == ('Chain', 'SYM', 6)
 
 
 @pytest.mark.parametrize('remove', ['delete', 'replace', 'hard_reset'])
@@ -1008,72 +1024,32 @@ def test_deleting_a_token_clears_its_retry_bookkeeping(
     assert set(_marks()) == {token.evm_address, marked_only}
 
 
+@pytest.mark.parametrize(('sightings', 'given', 'missing', 'details'), [
+    ([{'name': 'Given Name', 'decimals': 2}], {'name': 'Given Name', 'decimals': 2}, {'symbol'}, ('Given Name', 'ONCHAIN', 2)),  # noqa: E501
+    # a later sighting that gives nothing, as a plain transfer decoder, keeps what was given
+    ([{'name': 'Given Name'}, {}, {'symbol': 'GIV'}], {'name': 'Given Name', 'symbol': 'GIV'}, {'decimals'}, ('Given Name', 'GIV', 6)),  # noqa: E501
+])
 def test_given_details_are_kept_when_creation_is_deferred(
         database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
+        sightings: list[dict[str, Any]],
+        given: dict[str, Any],
+        missing: set[str],
+        details: tuple[str, str, int],
 ) -> None:
-    """The details supplied by the caller of a token that can't be created because the query
-    failed are kept in its mark and win over the on chain ones when it is created. Only the ones
-    that were not supplied are queried."""
-    with (
-        patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')),
-        pytest.raises(TokenQueryFailed),
-    ):
-        get_or_create_evm_token(
-            userdb=database,
-            evm_address=(address := _address(1)),
-            chain_id=ChainID.ETHEREUM,
-            name='Given Name',
-            decimals=2,
-            evm_inquirer=ethereum_inquirer,
-        )
+    """The details supplied by the callers of a token that can't be created because the query
+    failed are kept in its mark, across sightings, and win over the on chain ones when it is
+    created. Only the ones that were not supplied are queried."""
+    for sighting in sightings:
+        _see_token(database, ethereum_inquirer, address := _address(1), **sighting)
 
     [mark] = get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10)
-    assert (mark.saved, mark.given, mark.missing) == (None, {'name': 'Given Name', 'decimals': 2}, frozenset({'symbol'}))  # noqa: E501
+    assert (mark.saved, mark.given, mark.missing) == (None, given, frozenset(missing))
     chains_aggregator, _ = _chains_aggregator(database=database, node_inquirer=ethereum_inquirer)
     with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output(decimals=6, symbol='ONCHAIN', name='On Chain')):  # noqa: E501
         retry_missing_token_details(chains_aggregator)
 
-    token = EvmToken(evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM))
-    assert _details(token) == ('Given Name', 'ONCHAIN', 2)
-    assert _marks() == {}
-
-
-def test_later_sightings_keep_the_given_details(
-        database: DBHandler,
-        ethereum_inquirer: EthereumInquirer,
-) -> None:
-    """A protocol decoder gives a name when it sees a token that can't be created, and a plain
-    transfer decoder seeing it later gives nothing. The mark keeps what was given."""
-    def see_token(**given: Any) -> None:
-        ethereum_inquirer.token_query_failures.remove(address)
-        with (
-            patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')),
-            pytest.raises(TokenQueryFailed),
-        ):
-            get_or_create_evm_token(
-                userdb=database,
-                evm_address=address,
-                chain_id=ChainID.ETHEREUM,
-                evm_inquirer=ethereum_inquirer,
-                **given,
-            )
-
-    address = _address(1)
-    see_token(name='Given Name')
-    see_token()
-    [mark] = get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10)
-    assert (mark.given, mark.missing) == ({'name': 'Given Name'}, frozenset({'symbol', 'decimals'}))  # noqa: E501
-    see_token(symbol='GIV')  # more is given later
-    [mark] = get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10)
-    assert (mark.given, mark.missing) == ({'name': 'Given Name', 'symbol': 'GIV'}, frozenset({'decimals'}))  # noqa: E501
-
-    chains_aggregator, _ = _chains_aggregator(database=database, node_inquirer=ethereum_inquirer)
-    with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output(decimals=6, symbol='ONCHAIN', name='On Chain')):  # noqa: E501
-        retry_missing_token_details(chains_aggregator)
-
-    token = EvmToken(evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM))
-    assert _details(token) == ('Given Name', 'GIV', 6)
+    assert _details(_token(address)) == details
     assert _marks() == {}
 
 
@@ -1100,45 +1076,6 @@ def test_get_multiple_erc20_contracts_info(ethereum_inquirer: EthereumInquirer) 
         for selector in ('0x313ce567', '0x95d89b41', '0x06fdde03')
     ]
     assert multicall.call_args.kwargs['require_success'] is False
-
-
-def test_user_requested_query_ignores_failure_cooldown(ethereum_inquirer: EthereumInquirer) -> None:  # noqa: E501
-    """After a failure the address is not queried again for a while, unless the user asks"""
-    with (
-        patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')),
-        pytest.raises(TokenQueryFailed),
-    ):
-        ethereum_inquirer.get_erc20_contract_info(address := _address(1))
-
-    with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output()) as multicall:
-        with pytest.raises(TokenQueryFailed):  # in the cooldown
-            ethereum_inquirer.get_erc20_contract_info(address)
-        assert multicall.call_count == 0
-
-        assert ethereum_inquirer.get_erc20_contract_info(
-            address=address,
-            ignore_failure_cooldown=True,
-        ) == {'decimals': 6, 'symbol': 'TKN', 'name': 'Token'}
-        # the success cleared the failure, so the next query reaches the nodes again
-        ethereum_inquirer.contract_info_erc20_cache.remove(address)
-        assert ethereum_inquirer.get_erc20_contract_info(address)['name'] == 'Token'
-        assert multicall.call_count == 2
-
-
-def test_unexpected_error_still_saves_progress(database: DBHandler) -> None:
-    """The cursor and last run are saved before querying so a failure can't repeat forever"""
-    token = _create_placeholder(database, 1)
-    chains_aggregator, _ = _chains_aggregator(database=database, infos=ValueError('unexpected'))
-
-    with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_BATCH_SIZE', 1), pytest.raises(ValueError):  # noqa: E501
-        retry_missing_token_details(chains_aggregator)
-
-    assert _get_cursor(database) == token.identifier
-    with database.conn.read_ctx() as cursor:
-        assert database.get_static_cache(
-            cursor=cursor,
-            name=DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
-        ) is not None
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
@@ -1181,75 +1118,26 @@ def test_cleanup_of_a_deleted_given_up_token_does_not_recreate_its_bookkeeping(
     assert is_token_details_retry_given_up(chain_id=ChainID.ETHEREUM, address=token.evm_address) is False  # noqa: E501
 
 
-def test_details_given_while_querying_are_used_when_creating(
+@pytest.mark.parametrize(('decoder_given', 'raises', 'details', 'marks'), [
+    ({'name': 'Decoder Name', 'decimals': 2}, TokenQueryFailed, ('Decoder Name', 'ONCHAIN', 2), {}),  # noqa: E501
+    # created with fallbacks: its new mark tracks the details only they gave, so it must stay
+    (FALLBACKS, None, ('Fallback', 'FB', 18), {_address(1): (0, ('Fallback', 'FB', 18))}),
+])
+def test_token_seen_by_a_decoder_while_querying(
         database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
+        decoder_given: dict[str, Any],
+        raises: type[Exception] | None,
+        details: tuple[str, str, int],
+        marks: dict[ChecksumEvmAddress, tuple[int, Any]],
 ) -> None:
-    """A decoder can supply details of a token that can't be created while the retry is
-    querying the chain. The mark is read again right before creating, so they win."""
-    with (
-        patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')),
-        pytest.raises(TokenQueryFailed),
-    ):
-        get_or_create_evm_token(userdb=database, evm_address=(address := _address(1)), chain_id=ChainID.ETHEREUM, evm_inquirer=ethereum_inquirer)  # noqa: E501
+    """A decoder can see a token that could not be created while the retry is querying it. The
+    mark is read again right before creating, so what it gave wins, and the transactions that
+    skipped the token are redecoded either way without losing the mark it may have created."""
+    _see_token(database, ethereum_inquirer, address := _address(1))
 
     def query(*args: Any, **kwargs: Any) -> list[tuple[bool, bytes]]:
-        ethereum_inquirer.token_query_failures.remove(address)
-        with (
-            patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')),
-            pytest.raises(TokenQueryFailed),
-        ):  # a decoder sees the token while its details are being queried
-            get_or_create_evm_token(userdb=database, evm_address=address, chain_id=ChainID.ETHEREUM, evm_inquirer=ethereum_inquirer, name='Decoder Name', decimals=2)  # noqa: E501
-        return _output(decimals=6, symbol='ONCHAIN', name='On Chain')
-
-    chains_aggregator, _ = _chains_aggregator(database=database, node_inquirer=ethereum_inquirer)
-    with patch.object(ethereum_inquirer, 'multicall_2', side_effect=query):
-        retry_missing_token_details(chains_aggregator)
-
-    token = EvmToken(evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM))
-    assert _details(token) == ('Decoder Name', 'ONCHAIN', 2)
-    assert _marks() == {}
-
-
-def test_pending_redecode_is_done_even_if_the_nodes_return_nothing(database: DBHandler) -> None:
-    """If a run stops after writing the details and before redecoding, the next ones must
-    redecode however the nodes answer, or the token runs out of attempts with its events
-    calculated with the old details."""
-    token = _create_placeholder(database, 1)
-    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=(token.identifier, None, 18))  # noqa: E501
-    with (
-        patch('rotkehlchen.tasks.assets.redecode_token_txs', side_effect=RemoteError('interrupted')),  # noqa: E501
-        pytest.raises(RemoteError),
-    ):
-        retry_missing_token_details(_chains_aggregator(database=database, infos=lambda _: {token.evm_address: _info('Found')})[0])  # noqa: E501
-
-    assert _details(token) == ('Found', 'SYM', 6)  # written, redecoding pending
-    chains_aggregator, _ = _chains_aggregator(database=database, infos=lambda _: {})
-    with patch('rotkehlchen.assets.details_retry.redecode_token_txs') as redecode:
-        for _ in range(TOKEN_DETAILS_RETRY_MAX_ATTEMPTS):
-            retry_missing_token_details(chains_aggregator)
-
-    assert [x.kwargs['address'] for x in redecode.call_args_list] == [token.evm_address]
-    assert _details(token) == ('Found', 'SYM', 6)
-
-
-def test_token_created_by_a_decoder_while_querying_is_redecoded_and_stays_marked(
-        database: DBHandler,
-        ethereum_inquirer: EthereumInquirer,
-) -> None:
-    """If a decoder creates, with fallbacks, a token that could not be created while the retry
-    is querying it, the transactions that skipped it still have to be redecoded, and its new
-    mark, which tracks the details only the fallbacks gave, must survive the cleanup."""
-    with (
-        patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')),
-        pytest.raises(TokenQueryFailed),
-    ):
-        get_or_create_evm_token(userdb=database, evm_address=(address := _address(1)), chain_id=ChainID.ETHEREUM, evm_inquirer=ethereum_inquirer)  # noqa: E501
-
-    def query(*args: Any, **kwargs: Any) -> list[tuple[bool, bytes]]:
-        ethereum_inquirer.token_query_failures.remove(address)
-        with patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('down')):
-            get_or_create_evm_token(userdb=database, evm_address=address, chain_id=ChainID.ETHEREUM, evm_inquirer=ethereum_inquirer, **FALLBACKS)  # noqa: E501
+        _see_token(database, ethereum_inquirer, address, raises=raises, **decoder_given)
         return _output(decimals=6, symbol='ONCHAIN', name='On Chain')
 
     chains_aggregator, _ = _chains_aggregator(database=database, node_inquirer=ethereum_inquirer)
@@ -1260,7 +1148,8 @@ def test_token_created_by_a_decoder_while_querying_is_redecoded_and_stays_marked
         retry_missing_token_details(chains_aggregator)
 
     assert [x.kwargs['addresses'] for x in redecode.call_args_list] == [[address]]
-    assert _marks() == {address: (0, ('Fallback', 'FB', 18))}
+    assert _details(_token(address)) == details
+    assert _marks() == marks
 
 
 def test_stale_cleanup_keeps_the_mark_of_a_token_deleted_and_seen_again(

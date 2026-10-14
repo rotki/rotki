@@ -99,9 +99,8 @@ def _query_or_get_given_token_info(
 ) -> tuple[str | None, str | None, int | None, EVM_TOKEN_KINDS_TYPE | SOLANA_TOKEN_KINDS_TYPE | None, frozenset[str]]:  # noqa: E501
     """Query basic token information for the given address.
     If unable to get the values from onchain data then the values given as arguments are used.
-    Returns the name, symbol, decimals and token kind in a tuple, together with the
-    properties that the contract did not return. Their values are only defaults. An erc721
-    contract whose query failed is returned with empty details and all properties missing.
+    Returns the name, symbol, decimals and token kind in a tuple, together with the properties
+    that the contract did not return, whose values are only defaults.
 
     May raise:
     - TokenQueryFailed if the nodes could not be reached to query an erc20 token
@@ -124,9 +123,8 @@ def _query_or_get_given_token_info(
             try:
                 info = chain_inquirer.get_erc721_contract_info(address)  # type: ignore
             except TokenQueryFailed as e:
-                # Every collectible id is a new token, so dropping their events while the
-                # nodes fail would lose most nft transfers. They are created with empty
-                # details as before, and they are not retried.
+                # every collectible id is a new token, so dropping them would lose most nft
+                # transfers. They are created with empty details and not retried.
                 log.warning('Could not query the details of nft %s due to %s', address, e)
                 info, missing = {'symbol': None, 'name': None}, frozenset(ERC721_PROPERTIES)
             except NotERC721Conformant:
@@ -183,8 +181,7 @@ def edit_token_and_clean_cache(
         object.__setattr__(token, 'name', name)
         updated_fields = True
     elif token.name == token.identifier and chain_inquirer is not None:
-        # query the chain for available information. Only complete details are saved, since
-        # the defaults of a failed or partial query would replace what the token has.
+        # query the chain. Only complete details are saved, not the defaults of a failed query
         try:
             *on_chain_details, _, missing = _query_or_get_given_token_info(
                 chain_inquirer=chain_inquirer,
@@ -608,9 +605,8 @@ def _get_or_create_token(
                 log.warning('Could not query the details of token %s due to %s', address, e)
                 query_failed, missing = True, frozenset(ERC20_PROPERTIES)
 
-            # Retry later the tokens whose query failed or that returned only some of the
-            # details. Contracts that have none of the methods are not erc20 tokens, and spam
-            # tokens are not worth querying again. Details given by the caller are kept.
+            # retry the tokens whose query failed or returned only some details. Contracts
+            # with none of the methods and spam tokens are not retried
             retry_missing = missing - given
             retry_details = (
                 token_kind == TokenKind.ERC20 and
@@ -619,7 +615,7 @@ def _get_or_create_token(
                 len(retry_missing) != 0
             )
             if None not in (fallback_name, fallback_symbol, fallback_decimals):
-                # fallbacks only replace the details that the chain did not return
+                # fallbacks only replace what the chain did not return
                 name = fallback_name if name is None else name
                 symbol = fallback_symbol if symbol is None else symbol
                 if decimals is None or ('decimals' in missing and 'decimals' not in given):
@@ -631,8 +627,7 @@ def _get_or_create_token(
                         chain_id=chain_id,  # type: ignore[arg-type]  # erc20 tokens have it
                         address=address,  # type: ignore[arg-type]  # erc20 tokens are evm
                         saved=None,
-                        # all the queried ones are needed to create it. The given ones are kept
-                        # since they win over the queried ones when it is created.
+                        # the given ones win over the queried ones when it is created
                         missing=frozenset(ERC20_PROPERTIES) - given,
                         given=given_values,
                     )
@@ -757,10 +752,8 @@ def create_evm_token_if_missing(
         symbol: str,
         decimals: int,
 ) -> bool:
-    """Create an erc20 token with the given details only if it is not in the DB. Unlike
-    get_or_create_evm_token an existing token is left untouched. Has to be called holding
-    get_or_create_token_lock, so that the caller can read what it creates it with under it.
-
+    """Create an erc20 token only if it is not in the DB, unlike get_or_create_evm_token which
+    edits an existing one. Has to be called holding get_or_create_token_lock.
     Returns whether the token was created.
     """
     token = EvmToken.initialize(

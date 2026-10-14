@@ -461,7 +461,7 @@ def test_failed_contract_info_query_is_not_cached(ethereum_inquirer: EthereumInq
         with patch.object(
             ethereum_inquirer,
             'multicall_2',
-            side_effect=[RemoteError('down'), output],
+            side_effect=[RemoteError('down'), output, output],
         ) as multicall:
             with patch('rotkehlchen.chain.evm.node_inquirer.ts_now', return_value=now):
                 for _ in range(2):  # the second time is in the cooldown and does not query
@@ -469,13 +469,20 @@ def test_failed_contract_info_query_is_not_cached(ethereum_inquirer: EthereumInq
                         getter(address)
                 assert multicall.call_count == 1
 
+            if is_erc20 := getter == ethereum_inquirer.get_erc20_contract_info:
+                # the query of the user ignores the cooldown, and its success clears the failure
+                assert getter(address, ignore_failure_cooldown=True)['name'] == 'Token'
+                ethereum_inquirer.contract_info_erc20_cache.remove(address)
+                assert getter(address)['name'] == 'Token'
+                assert multicall.call_count == 3
+
             with patch(
                 'rotkehlchen.chain.evm.node_inquirer.ts_now',
                 return_value=now + TOKEN_QUERY_FAILURE_COOLDOWN,
             ):
                 assert getter(address)['name'] in {'Token', 'Nft'}
                 assert getter(address)['name'] in {'Token', 'Nft'}  # cached now
-            assert multicall.call_count == 2
+            assert multicall.call_count == (3 if is_erc20 else 2)
 
 
 def test_contract_info_without_methods_is_cached(ethereum_inquirer: EthereumInquirer) -> None:

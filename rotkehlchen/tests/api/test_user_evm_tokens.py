@@ -829,9 +829,10 @@ def test_editing_token_stops_details_retry(
             address=token.evm_address,
             saved=(token.identifier, '', 18),
         )
-    assert _get_tokens_missing_details(chain_ids=[ChainID.ETHEREUM], after_identifier='') == [
-        (token.identifier, ChainID.ETHEREUM, token.evm_address, (token.identifier, None, 18)),
-    ]
+    assert [(identifier, mark.address, mark.saved) for identifier, mark in _get_tokens_missing_details(  # noqa: E501
+        chain_ids=[ChainID.ETHEREUM],
+        after_identifier='',
+    )] == [(token.identifier, token.evm_address, (token.identifier, None, 18))]
 
     edited: dict[str, Any] = token.to_dict()
     del edited['identifier']
