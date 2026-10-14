@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { logger } from '@/modules/core/common/logging/logging';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import ServiceKeyCard, { type FeatureGate, type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
-import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 import { useUnifiedProviders } from '@/modules/wallet/providers/use-unified-providers';
 import ProviderSelectionDialog from '@/modules/wallet/ProviderSelectionDialog.vue';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
@@ -17,6 +13,9 @@ import { useGnosisPaySigning } from '../use-gnosis-pay-signing';
 import { useGnosisPayWallet } from '../use-gnosis-pay-wallet';
 import GnosisPayAddressValidation from './GnosisPayAddressValidation.vue';
 import GnosisPayAuthStep from './GnosisPayAuthStep.vue';
+import GnosisPayConnected from './GnosisPayConnected.vue';
+import GnosisPayNoSafe from './GnosisPayNoSafe.vue';
+import GnosisPaySafeMigrationNotice from './GnosisPaySafeMigrationNotice.vue';
 import GnosisPaySignMessage from './GnosisPaySignMessage.vue';
 import GnosisPayWalletConnection from './GnosisPayWalletConnection.vue';
 
@@ -43,12 +42,13 @@ const cardAction = computed<ServiceKeyAction>(() => ({
   addText: t('external_services.actions.authenticate'),
   editText: t('external_services.actions.reauthenticate'),
   hidden: true,
+  statusText: t('external_services.status.connected'),
 }));
 
 const serviceKeyCard = useTemplateRef<InstanceType<typeof ServiceKeyCard>>('serviceKeyCard');
 
-// Message store for showing success notifications
-const { setMessage } = useMessageStore();
+/** With a session already in place the dialog shows it; this runs the steps again on request. */
+const signingInAgain = ref<boolean>(false);
 
 const authState = useGnosisPayAuthState();
 const {
@@ -69,6 +69,12 @@ const {
   validatingAddress,
 } = authState;
 
+/** The Safes the session covers: those the signing wallet controls, else every tracked one. */
+const connectedSafes = computed<string[]>(() => {
+  const controlled = get(controlledSafeAddresses);
+  return controlled.length > 0 ? controlled : Object.keys(get(gnosisPayAdminsMapping));
+});
+
 const wallet = useGnosisPayWallet({
   checkingRegisteredAccounts,
   clearError,
@@ -88,6 +94,8 @@ const {
   disconnect,
   handleProviderSelection,
   isWalletConnected,
+  switchingNetwork,
+  switchToChain,
   validateAddress,
 } = wallet;
 
@@ -115,10 +123,8 @@ const { currentStep, isStepComplete, isStepCurrent } = useGnosisPayAuthSteps(
 
 const walletStore = useWalletStore();
 const { connectedChainId, isDisconnecting, isWalletConnect, preparing } = storeToRefs(walletStore);
-const { switchNetwork } = walletStore;
 
 const isOnGnosisChain = computed<boolean>(() => get(connectedChainId) === GNOSIS_CHAIN_ID);
-const switchingNetwork = ref<boolean>(false);
 
 const unifiedProviders = useUnifiedProviders();
 const { availableProviders, isDetecting: detectingProviders, showProviderSelection } = unifiedProviders;
@@ -170,17 +176,7 @@ const validationErrorMessage = computed<string>(() => {
 const primaryActionDisabled = logicOr(signingInProgress, logicNot(connectedAddress), logicNot(isOnGnosisChain));
 
 async function switchToGnosis(): Promise<void> {
-  try {
-    set(switchingNetwork, true);
-    await switchNetwork(BigInt(GNOSIS_CHAIN_ID));
-  }
-  catch (error: unknown) {
-    logger.error('Failed to switch to Gnosis network:', error);
-    setError(GnosisPayError.CONNECTION_FAILED, { message: getErrorMessage(error) });
-  }
-  finally {
-    set(switchingNetwork, false);
-  }
+  await switchToChain(GNOSIS_CHAIN_ID);
 }
 
 function cancelSigning(): void {
@@ -220,6 +216,7 @@ watch(() => get(serviceKeyCard)?.openDialog, async (isOpen) => {
   }
 
   set(signInSuccess, false);
+  set(signingInAgain, false);
   await checkRegisteredAccounts();
   const address = get(connectedAddress);
 
@@ -245,17 +242,10 @@ watchImmediate(key, async (apiKey) => {
     set(untrackedSafe, undefined);
 });
 
-// When authentication is complete, close dialog and show success message
+// A completed sign-in goes back to the connected state, which names the Safe, instead of closing.
 watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
-  if (!complete) {
-    return;
-  }
-
-  get(serviceKeyCard)?.setOpen(false);
-  setMessage({
-    description: t('external_services.gnosispay.siwe.success_message'),
-    success: true,
-  });
+  if (complete)
+    set(signingInAgain, false);
 });
 </script>
 
@@ -276,42 +266,12 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
         v-if="key && hasUntrackedSafe"
         #banner
       >
-        <RuiAlert
-          type="warning"
-          :title="t('external_services.gnosispay.safe_migration.title')"
-        >
-          <div class="flex flex-col items-start gap-2">
-            <i18n-t
-              v-if="untrackedAccount"
-              scope="global"
-              tag="div"
-              class="text-body-2 break-words"
-              :keypath="safeMigrationKeypath"
-            >
-              <template #address>
-                <AccountDisplay
-                  class="inline-flex align-middle max-w-full"
-                  hide-chain-icon
-                  :account="untrackedAccount"
-                />
-              </template>
-            </i18n-t>
-            <RuiButton
-              size="sm"
-              color="primary"
-              :loading="adding"
-              @click="addMissingSafe()"
-            >
-              <template #prepend>
-                <RuiIcon
-                  name="lu-plus"
-                  size="16"
-                />
-              </template>
-              {{ t('external_services.gnosispay.safe_migration.add_action') }}
-            </RuiButton>
-          </div>
-        </RuiAlert>
+        <GnosisPaySafeMigrationNotice
+          :account="untrackedAccount"
+          :keypath="safeMigrationKeypath"
+          :adding="adding"
+          @add="addMissingSafe()"
+        />
       </template>
 
       <template
@@ -334,32 +294,32 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
         </RuiButton>
       </template>
 
-      <!-- Top Alerts -->
-      <div class="mb-6 space-y-4">
-        <!-- Info alert -->
-        <RuiAlert type="info">
-          {{ t('external_services.gnosispay.siwe.explanation') }}
-        </RuiAlert>
+      <GnosisPayConnected
+        v-if="key && !signingInAgain"
+        :safes="connectedSafes"
+        @sign-in-again="signingInAgain = true"
+      />
 
-        <!-- NO_REGISTERED_ACCOUNTS error -->
-        <RuiAlert
-          v-if="showNoRegisteredAccountsError"
-          type="error"
-        >
-          {{ t('external_services.gnosispay.errors.no_registered_accounts') }}
-        </RuiAlert>
+      <GnosisPayNoSafe v-else-if="showNoRegisteredAccountsError" />
 
-        <!-- Info/Loading alert -->
-        <RuiAlert
-          v-if="checkingRegisteredAccounts"
-          type="info"
-        >
-          {{ t('external_services.gnosispay.siwe.checking_accounts') }}
-        </RuiAlert>
+      <div
+        v-else-if="checkingRegisteredAccounts"
+        class="flex items-center gap-3 py-6 text-sm text-rui-text-secondary"
+      >
+        <RuiProgress
+          variant="indeterminate"
+          circular
+          size="20"
+          thickness="2"
+          color="primary"
+        />
+        {{ t('external_services.gnosispay.siwe.checking_accounts') }}
       </div>
 
-      <template v-if="!showNoRegisteredAccountsError && !checkingRegisteredAccounts">
-        <!-- Step 1: Select Wallet Mode & Connect -->
+      <template v-else>
+        <p class="m-0 mb-5 text-sm text-rui-text-secondary">
+          {{ t('external_services.gnosispay.siwe.explanation') }}
+        </p>
         <GnosisPayAuthStep
           :step-number="AuthStep.CONNECT_WALLET"
           :title="t('external_services.gnosispay.siwe.step1_title')"
@@ -381,7 +341,6 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
           />
         </GnosisPayAuthStep>
 
-        <!-- Step 2: Checking connected address eligibility -->
         <GnosisPayAuthStep
           :step-number="AuthStep.VALIDATE_ADDRESS"
           :title="t('external_services.gnosispay.siwe.step2_title')"
@@ -402,7 +361,6 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
           />
         </GnosisPayAuthStep>
 
-        <!-- Step 3: Sign Message -->
         <GnosisPayAuthStep
           :step-number="AuthStep.SIGN_MESSAGE"
           :title="t('external_services.gnosispay.siwe.step3_title')"

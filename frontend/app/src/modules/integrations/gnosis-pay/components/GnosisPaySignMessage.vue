@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
+
 interface Props {
   signingInProgress: boolean;
   primaryActionDisabled: boolean;
@@ -26,21 +28,27 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div class="space-y-4">
-    <div class="text-rui-text-secondary text-sm">
+  <div class="flex flex-col gap-3">
+    <div class="text-sm text-rui-text-secondary">
       {{ t('external_services.gnosispay.siwe.sign_explanation') }}
     </div>
 
-    <!-- Wallets compare the message domain against the requesting origin, which no injected path can satisfy -->
-    <RuiAlert
+    <div
       v-if="isInjectedWallet"
-      type="info"
+      class="flex items-center gap-1 text-sm text-rui-text-secondary"
       data-testid="siwe-domain-notice"
     >
-      {{ t('external_services.gnosispay.siwe.domain_notice') }}
-    </RuiAlert>
+      <RuiIcon
+        name="lu-info"
+        size="14"
+        class="shrink-0 text-rui-info"
+      />
+      <span class="ml-1">{{ t('external_services.gnosispay.siwe.domain_notice_short') }}</span>
+      <HintMenuIcon :title="t('external_services.gnosispay.siwe.domain_notice_title')">
+        {{ t('external_services.gnosispay.siwe.domain_notice') }}
+      </HintMenuIcon>
+    </div>
 
-    <!-- Warning when not on Gnosis chain -->
     <RuiAlert
       v-if="isWalletConnected && !isOnGnosisChain"
       type="warning"
@@ -49,11 +57,11 @@ const { t } = useI18n({ useScope: 'global' });
     </RuiAlert>
 
     <div class="flex gap-2 items-center">
-      <!-- Switch to Gnosis button when not on correct chain -->
       <RuiButton
         v-if="isWalletConnected && !isOnGnosisChain"
         :loading="switchingNetwork"
         color="primary"
+        data-testid="gnosis-pay-switch-chain"
         @click="emit('switch-to-gnosis')"
       >
         <template #prepend>
@@ -65,12 +73,12 @@ const { t } = useI18n({ useScope: 'global' });
         {{ t('external_services.gnosispay.siwe.switch_to_gnosis') }}
       </RuiButton>
 
-      <!-- Sign button -->
       <RuiButton
         v-else
         :disabled="primaryActionDisabled"
         :loading="signingInProgress"
         color="primary"
+        data-testid="gnosis-pay-sign"
         @click="emit('sign-in')"
       >
         <template #prepend>
@@ -82,7 +90,6 @@ const { t } = useI18n({ useScope: 'global' });
         {{ t('external_services.gnosispay.siwe.sign_message') }}
       </RuiButton>
 
-      <!-- Cancel button when signing is in progress -->
       <RuiButton
         v-if="signingInProgress"
         variant="outlined"

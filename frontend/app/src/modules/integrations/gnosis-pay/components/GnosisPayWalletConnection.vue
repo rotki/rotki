@@ -27,10 +27,12 @@ const { isWalletConnect, waitingForWalletConfirmation, walletMode } = storeToRef
 </script>
 
 <template>
-  <div class="space-y-4">
-    <!-- Wallet mode selection (only show if not connected) -->
-    <div v-if="!isWalletConnected">
-      <div class="text-rui-text-secondary text-caption uppercase mb-2">
+  <div class="flex flex-col items-start gap-3">
+    <div
+      v-if="!isWalletConnected"
+      class="flex flex-col gap-1.5"
+    >
+      <div class="text-sm font-medium text-rui-text-secondary">
         {{ t('trade.wallet_mode.label') }}
       </div>
       <RuiButtonGroup
@@ -47,12 +49,20 @@ const { isWalletConnect, waitingForWalletConfirmation, walletMode } = storeToRef
           {{ t('trade.wallet_mode.wallet_connect') }}
         </RuiButton>
       </RuiButtonGroup>
+      <div
+        class="text-xs text-rui-text-secondary"
+        data-testid="gnosis-pay-wallet-mode-hint"
+      >
+        {{ walletMode === WALLET_MODES.WALLET_CONNECT
+          ? t('external_services.gnosispay.siwe.mode_hint.wallet_connect')
+          : t('external_services.gnosispay.siwe.mode_hint.local_bridge') }}
+      </div>
     </div>
 
-    <!-- Waiting for wallet confirmation -->
     <RuiAlert
       v-if="waitingForWalletConfirmation"
       type="info"
+      class="w-full"
     >
       {{
         isWalletConnect
@@ -61,7 +71,6 @@ const { isWalletConnect, waitingForWalletConfirmation, walletMode } = storeToRef
       }}
     </RuiAlert>
 
-    <!-- Connect button -->
     <WalletConnectionButton
       v-if="!isWalletConnected || isDisconnecting"
       :connected="isWalletConnected"
@@ -69,11 +78,11 @@ const { isWalletConnect, waitingForWalletConfirmation, walletMode } = storeToRef
       @click="emit('connect-click')"
     />
 
-    <!-- Connection errors -->
     <RuiAlert
       v-if="connectionErrorMessage"
       type="error"
       variant="default"
+      class="w-full"
       closeable
       @close="emit('clear-error')"
     >
@@ -82,39 +91,37 @@ const { isWalletConnect, waitingForWalletConfirmation, walletMode } = storeToRef
       </div>
     </RuiAlert>
 
-    <!-- Connected address display -->
     <div
       v-if="isWalletConnected"
-      class="flex flex-col items-start"
+      class="flex w-full flex-col gap-1.5"
     >
-      <div class="text-caption text-rui-text-secondary mb-2">
+      <div class="text-sm font-medium text-rui-text-secondary">
         {{ t('external_services.gnosispay.siwe.connected_address') }}
       </div>
-      <div
-        class="border border-default rounded-md px-3 py-1 flex items-center gap-2 font-mono text-sm font-medium mb-3"
-      >
-        <div class="p-0.5 rounded-full size-3 border border-rui-success-lighter/40">
-          <div class="size-full rounded-full bg-rui-success-lighter" />
-        </div>
-        <HashLink
-          :truncate-length="0"
-          :text="connectedAddress!"
-          location="gnosis"
-        />
-      </div>
-      <RuiButton
-        color="primary"
-        variant="outlined"
-        @click="emit('disconnect')"
-      >
-        <template #prepend>
-          <RuiIcon
-            name="lu-unplug"
-            size="16"
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex min-w-0 items-center gap-2 rounded-rui-control border border-rui-divider px-3 py-1.5 font-mono text-sm">
+          <span class="size-2 shrink-0 rounded-full bg-rui-success" />
+          <HashLink
+            :truncate-length="0"
+            :text="connectedAddress!"
+            location="gnosis"
           />
-        </template>
-        {{ t('external_services.gnosispay.siwe.disconnect') }}
-      </RuiButton>
+        </div>
+        <RuiButton
+          color="primary"
+          variant="text"
+          size="sm"
+          @click="emit('disconnect')"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-unplug"
+              size="14"
+            />
+          </template>
+          {{ t('external_services.gnosispay.siwe.disconnect') }}
+        </RuiButton>
+      </div>
     </div>
   </div>
 </template>

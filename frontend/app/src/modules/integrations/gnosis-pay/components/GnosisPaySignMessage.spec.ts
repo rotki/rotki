@@ -38,14 +38,14 @@ describe('gnosisPaySignMessage', () => {
 
   it('should emit sign-in when the sign button is clicked', async () => {
     const wrapper = mountComponent();
-    await wrapper.find('button').trigger('click');
+    await wrapper.find('[data-testid=gnosis-pay-sign]').trigger('click');
 
     expect(wrapper.emitted('sign-in')).toHaveLength(1);
   });
 
   it('should offer the chain switch instead of signing when on the wrong chain', async () => {
     const wrapper = mountComponent({ isOnGnosisChain: false });
-    await wrapper.find('button').trigger('click');
+    await wrapper.find('[data-testid=gnosis-pay-switch-chain]').trigger('click');
 
     expect(wrapper.emitted('switch-to-gnosis')).toHaveLength(1);
     expect(wrapper.emitted('sign-in')).toBeUndefined();

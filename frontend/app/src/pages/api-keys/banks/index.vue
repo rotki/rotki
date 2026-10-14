@@ -10,10 +10,11 @@ import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionF
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
-import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
+import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
@@ -41,8 +42,7 @@ const router = useRouter();
 const route = useRoute('/api-keys/banks/');
 
 const cols = computed<DataTableColumn<BankConnection>[]>(() => [{
-  align: 'center',
-  cellClass: 'py-0 w-32',
+  cellClass: 'w-48',
   key: 'location',
   label: t('common.location'),
   sortable: true,
@@ -74,8 +74,8 @@ function isSyncing(row: BankConnection): boolean {
   return get(syncing).includes(rowKey(row)) || row.syncStatus.running;
 }
 
-function createNewBank(): BankFormData {
-  const location = get(manifests)[0]?.location ?? '';
+function createNewBank(requested?: string): BankFormData {
+  const location = (requested && manifestFor(requested)) ? requested : get(manifests)[0]?.location ?? '';
   return {
     credentials: emptyCredentials(manifestFor(location)),
     location,
@@ -85,8 +85,8 @@ function createNewBank(): BankFormData {
   };
 }
 
-function addBank(): void {
-  set(bank, createNewBank());
+function addBank(location?: string): void {
+  set(bank, createNewBank(location));
 }
 
 function editBank(row: BankConnection): void {
@@ -150,7 +150,10 @@ onBeforeMount(() => {
 watch(route, async (route) => {
   const { query } = route;
   if (query.add) {
-    addBank();
+    // a link can land before the supported banks have loaded; the form needs them to preselect a bank
+    if (get(manifests).length === 0)
+      await refreshSupportedBanks();
+    addBank(typeof query.location === 'string' ? query.location : undefined);
     await router.replace({ query: {} });
   }
   else if (typeof query.authenticate === 'string' && typeof query.location === 'string') {
@@ -173,7 +176,6 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
     <template #buttons>
       <RuiButton
         color="primary"
-        size="lg"
         data-testid="add-bank"
         :disabled="manifests.length === 0"
         @click="addBank()"
@@ -185,13 +187,14 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
       </RuiButton>
     </template>
 
-    <RuiCard>
-      <div class="text-sm text-rui-text-secondary mb-4">
-        {{ t('bank_settings.subtitle') }}
-      </div>
+    <TableFrame>
+      <template #toolbar>
+        <p class="text-sm text-rui-text-secondary m-0">
+          {{ t('bank_settings.subtitle') }}
+        </p>
+      </template>
       <RuiDataTable
         v-model:sort="sort"
-        outlined
         row-attr="name"
         data-testid="bank-table"
         :rows="rows"
@@ -200,11 +203,18 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
         :empty="{ description: t('bank_settings.empty') }"
       >
         <template #item.location="{ row }">
-          <LocationDisplay :identifier="row.location" />
+          <div class="flex items-center gap-2">
+            <LocationIcon
+              :item="row.location"
+              icon
+              size="20px"
+            />
+            <span>{{ row.displayName }}</span>
+          </div>
         </template>
         <template #item.syncStatus="{ row }">
-          <div class="flex flex-col gap-1">
-            <DateDisplay
+          <div class="flex flex-col items-start gap-1">
+            <TimeAgoDisplay
               v-if="row.syncStatus.lastSyncTs"
               :timestamp="row.syncStatus.lastSyncTs"
             />
@@ -215,22 +225,30 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
               {{ t('bank_settings.sync.never') }}
             </span>
             <RuiChip
-              v-if="row.syncStatus.lastError"
-              color="error"
-              size="sm"
-              data-testid="bank-sync-error"
-              :title="row.syncStatus.lastError"
-            >
-              {{ t('bank_settings.sync.failed') }}
-            </RuiChip>
-            <RuiChip
               v-if="row.syncStatus.authChallenge"
               color="warning"
+              variant="tonal"
               size="sm"
               data-testid="bank-auth-required"
             >
               {{ t('bank_settings.sync.authentication_required') }}
             </RuiChip>
+            <template v-else-if="row.syncStatus.lastError">
+              <RuiChip
+                color="error"
+                variant="tonal"
+                size="sm"
+                data-testid="bank-sync-error"
+              >
+                {{ t('bank_settings.sync.failed') }}
+              </RuiChip>
+              <span
+                class="text-caption text-rui-text-secondary whitespace-normal"
+                data-testid="bank-sync-error-message"
+              >
+                {{ row.syncStatus.lastError }}
+              </span>
+            </template>
           </div>
         </template>
         <template #item.actions="{ row }">
@@ -244,7 +262,7 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
           />
         </template>
       </RuiDataTable>
-    </RuiCard>
+    </TableFrame>
 
     <BankConnectionFormDialog
       v-model="bank"

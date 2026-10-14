@@ -3342,6 +3342,7 @@
       "authenticate": "Authenticate",
       "delete_key": "Delete key",
       "enter_api_key": "Enter API key",
+      "manage": "Manage",
       "reauthenticate": "Re-Authenticate",
       "remove_authentication": "Remove Authentication",
       "replace_key": "Replace key",
@@ -3408,20 +3409,30 @@
     },
     "get_api_key": "You can apply for an API key {link}",
     "gnosispay": {
+      "connected": {
+        "description": "rotki can read your Gnosis Pay transactions.",
+        "safes": "Gnosis Pay Safe",
+        "sign_in_again": "Sign in again"
+      },
       "delete_confirmation": {
         "message": "Are you sure you want to remove authentication for Gnosis Pay?",
         "title": "Remove Authentication"
       },
       "description": "Authenticate with Gnosis Pay using your Ethereum wallet to access your transaction data.",
       "errors": {
-        "allowed_admin_addresses": "Allowed admin addresses:",
         "connection_failed": "Failed to connect wallet",
+        "hide_owners": "Hide the Safe owners",
         "invalid_address": "This wallet is not an owner on record of your Safe. You can still try to sign in, as Gnosis Pay may accept owners that are not visible on-chain.",
-        "no_registered_accounts": "No Gnosis Pay safe accounts are registered in rotki. Please add a Gnosis Pay safe account first before attempting to authenticate.",
         "no_wallet_connected": "No wallet connected",
         "safe_wallet": "Safe Wallet:",
+        "show_owners": "Show the Safe owners",
         "signature_rejected": "Signature request was rejected by user",
         "unknown": "An unknown error occurred"
+      },
+      "no_safe": {
+        "action": "Add the Safe on Gnosis Chain",
+        "description": "Gnosis Pay signs you in through the Safe behind your card. Add that Safe as a Gnosis Chain account, then come back here.",
+        "title": "Add your Gnosis Pay Safe first"
       },
       "safe_migration": {
         "account_label": "Gnosis Pay Safe",
@@ -3438,14 +3449,19 @@
         "controlled_safe": "Controlled Gnosis Pay Safe account(s):",
         "disconnect": "Disconnect Wallet",
         "domain_notice": "Your wallet may warn that the site does not match the domain in the message. This is expected: the page asking for the signature is not served from rotki.com, but Gnosis Pay only accepts rotki.com in the message. Before approving, check that the message names Gnosis Pay and the address is yours.",
+        "domain_notice_short": "Your wallet may flag the site; that is expected.",
+        "domain_notice_title": "Why your wallet may warn",
         "explanation": "To authenticate with Gnosis Pay, you need to sign a message with an Ethereum wallet that is a controller of the Gnosis Pay Safe.",
         "failed": "Failed to authenticate Gnosis Pay",
+        "mode_hint": {
+          "local_bridge": "Uses the wallet extension in your browser.",
+          "wallet_connect": "Connect a mobile or desktop wallet by scanning a QR code."
+        },
         "sign_explanation": "Sign a message with your wallet to authenticate and generate a session token.",
         "sign_message": "Sign Message to Authenticate",
         "step1_title": "Connect your wallet",
         "step2_title": "Check the wallet controls your Safe",
         "step3_title": "Sign in",
-        "success_message": "Successfully authenticated with Gnosis Pay",
         "switch_to_gnosis": "Switch to Gnosis",
         "validating_address": "Validating address...",
         "wrong_chain": "You are not connected to the Gnosis network. Please switch to continue."
@@ -3475,6 +3491,12 @@
       "title": "Google Calendar",
       "token_required": "Please enter a valid access token"
     },
+    "groups": {
+      "blockchain": "Blockchain data",
+      "integrations": "Integrations",
+      "prices": "Prices",
+      "staking": "Staking and NFTs"
+    },
     "helius": {
       "api_key_message": "Helius API key is needed to query historical Solana transactions.",
       "description": "Recommended for Solana to query transaction data without the heavy rate limits of public RPCs.",
@@ -3486,20 +3508,30 @@
       "auth_failed": "Failed to authorize with Monerium",
       "authorizing": "Authorizing with Monerium",
       "connect": "Connect Monerium",
-      "connected_as": "Connected as {email}",
       "description": "Used to augment Monerium EVM transactions with banking information.",
       "disconnect": "Disconnect",
       "disconnected": "Disconnected from Monerium.",
       "error": "Monerium OAuth",
-      "instructions": "Connect with Monerium to keep your rotki data in sync with your account.",
       "opening_browser": "Opening browser to complete Monerium authorization...",
+      "paste_tokens": "Approve access on the page that opened, then paste the two tokens it shows you.",
+      "privacy": "The tokens stay on this device and are only used to read your account.",
       "refresh_token": "Refresh token",
+      "reopen": "Open the page again",
+      "start_over": "Start over",
+      "steps": {
+        "approve": "Sign in to Monerium on rotki.com and approve read-only access.",
+        "return_app": "rotki picks up the connection by itself once you approve.",
+        "return_web": "Paste the access and refresh tokens shown there back here."
+      },
       "submit_token": "Submit tokens",
       "success": "Monerium OAuth",
       "title": "Monerium",
       "token_required": "Both access and refresh tokens are required.",
       "unknown_email": "unknown email",
-      "warning": "Authorize Monerium to allow rotki to enrich your transactions with banking context. Tokens are stored locally and used read-only.",
+      "waiting": {
+        "description": "Approve access in the browser window that opened; this dialog updates when you are done.",
+        "title": "Waiting for your approval"
+      },
       "website_url_missing": "Monerium OAuth website URL is not configured."
     },
     "moralis": {
@@ -3523,6 +3555,11 @@
       "success": {
         "message": "Successfully updated the key for {serviceName}"
       }
+    },
+    "set_up_count": "{count} of {total} set up",
+    "set_up_only": "Set up only",
+    "status": {
+      "connected": "Connected"
     },
     "subtitle": "rotki queries these services for prices and blockchain data. Many work without a key, where one mainly lifts rate limits; others need a key before rotki can use them at all.",
     "thegraph": {
@@ -5560,6 +5597,8 @@
     }
   },
   "premium_devices": {
+    "at_limit": "Every device slot is in use. Remove a device to sign in on a new one.",
+    "count": "{current} of {limit}",
     "delete": {
       "error": {
         "title": "Delete Failed"
@@ -5567,6 +5606,7 @@
       "message": "Are you sure you want to delete the device \"{device}\"?",
       "title": "Delete Device"
     },
+    "description": "Devices signed in with this subscription.",
     "fetch": {
       "error": {
         "title": "Failed to Load Devices"
@@ -5588,24 +5628,22 @@
       "info": {
         "last_seen": "Last Seen",
         "platform": "Platform",
-        "title": "Device Information",
         "user": "User"
       }
     },
-    "limit": "Limit ({current}/{limit})",
     "refresh": "Refresh devices",
     "table": {
       "actions": {
+        "delete_current_tooltip": "This is the device you are using, so it cannot be removed here",
         "delete_tooltip": "Delete device",
         "edit_tooltip": "Rename device"
       },
       "current_device": "This device",
       "headers": {
-        "device_name": "Device Name",
-        "last_seen": "Last Seen",
-        "platform": "Platform",
-        "user": "User"
-      }
+        "device": "Device",
+        "last_seen": "Last Seen"
+      },
+      "user_platform": "{user} on {platform}"
     },
     "title": "Devices"
   },
@@ -5627,7 +5665,6 @@
     "actions": {
       "delete": "Remove key",
       "replace": "Replace key",
-      "setup": "Setup",
       "setup_premium_key": "Setup Premium Key",
       "sync": "Allow data sync with rotki Server",
       "sync_hint": "Your data is encrypted before being synced to the rotki server and cannot be read by anyone except you."
@@ -5639,7 +5676,6 @@
     },
     "cloud_backup_unavailable": "Cloud backup is not available for your current plan. {link} to enable cloud sync.",
     "cloud_backup_upgrade_link": "Upgrade your subscription",
-    "current_plan_label": "Current plan:",
     "delete_confirmation": {
       "message": "This removes the rotki Premium key from this account, and the premium features stop working here. Your subscription stays active, and you can enter the key again at any time.",
       "title": "Remove the rotki Premium key?"
@@ -5657,14 +5693,67 @@
       "api_secret": "API Secret"
     },
     "get": "Get premium",
+    "limits": {
+      "backup": "Cloud backup",
+      "backup_value": "{size} MB",
+      "devices": "Devices",
+      "eth_staked": "Staked ETH tracked",
+      "eth_staked_value": "{amount} ETH",
+      "history_events": "History events",
+      "pnl_events": "PnL report events",
+      "reports": "Saved reports"
+    },
     "manage_or_upgrade": "Manage or upgrade subscription",
-    "premium_active": "@:premium_settings.title is active",
-    "subtitle": "@:premium_settings.title is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
+    "status": {
+      "active": "Active"
+    },
+    "subscription": {
+      "credentials_saved": "API credentials are saved on this device.",
+      "replace_hint": "Enter the new key and secret. The current key stays in use until the new one is verified.",
+      "title": "Subscription"
+    },
     "sync": {
+      "description": "Keep an encrypted copy of your data on the rotki server.",
       "last_upload": "Last upload",
+      "never": "Never",
       "title": "Data sync"
     },
     "title": "rotki Premium",
+    "upsell": {
+      "activate": "Activate",
+      "description": "See how your portfolio grows over time, understand where your money goes, and keep your data safely backed up on every device, all while it stays private and on your machine.",
+      "features": {
+        "graphs": {
+          "description": "Track your net value and every asset over time.",
+          "title": "Graphs and statistics"
+        },
+        "limits": {
+          "description": "Bigger PnL reports and more history events.",
+          "title": "Higher limits"
+        },
+        "matching": {
+          "description": "Match deposits and withdrawals across exchanges and wallets.",
+          "title": "Movement matching"
+        },
+        "mcp": {
+          "description": "Let AI assistants query your rotki data, and choose how much of it is masked.",
+          "title": "AI assistants (MCP)"
+        },
+        "staking": {
+          "description": "Follow your validators, rewards and withdrawals.",
+          "title": "ETH staking"
+        },
+        "sync": {
+          "description": "Encrypted backups, and the same data on every device.",
+          "title": "Backup and sync"
+        }
+      },
+      "see_plans": "See plans and pricing",
+      "subscribed_description": "Enter the API key and secret from your account on rotki.com.",
+      "subscribed_title": "Already subscribed?",
+      "supports": "Every subscription funds rotki's open-source development",
+      "title": "Unlock the full power of rotki"
+    },
     "validation": {
       "api_key": {
         "non_empty": "The API key cannot be empty"

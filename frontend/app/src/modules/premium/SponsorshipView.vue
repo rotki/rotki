@@ -29,13 +29,13 @@ const data: Sponsor = {
       <AppImage
         fit="cover"
         class="rounded-md overflow-hidden"
-        :class="drawer ? 'size-20 min-w-20' : 'size-24 min-w-24'"
+        :class="drawer ? 'size-16 min-w-16' : 'size-24 min-w-24'"
         :alt="data.name"
         :src="data.image"
       />
       <div
-        class="flex flex-col justify-between flex-1 gap-2"
-        :class="{ 'px-4': !drawer }"
+        class="flex flex-col justify-between flex-1"
+        :class="drawer ? 'gap-2' : 'gap-2 px-4'"
       >
         <div class="flex flex-col">
           <div
@@ -44,8 +44,11 @@ const data: Sponsor = {
               drawer ? 'text-xs' : 'text-sm',
             ]"
           >
-            <div class="font-bold">
-              {{ drawer ? version : t('sponsorship.version', { version }) }}
+            <div
+              v-if="!drawer"
+              class="font-medium"
+            >
+              {{ t('sponsorship.version', { version }) }}
             </div>
             <div class="text-rui-text-secondary">
               {{ t('sponsorship.sponsored_by') }}
@@ -53,18 +56,21 @@ const data: Sponsor = {
           </div>
         </div>
         <div
-          class="flex flex-col items-center flex-1 w-full font-black text-center rounded-xs px-1.5 py-0.5 relative mb-2"
+          class="flex flex-col items-center flex-1 w-full font-bold text-center rounded-xs px-1.5 pt-0.5 pb-2.5 relative"
           :class="[
             drawer ? 'text-sm' : 'leading-6',
           ]"
         >
           <img
             src="/assets/images/ribbon.png"
-            class="w-full h-[125%] absolute top-0 left-0 object-fill"
+            class="w-full h-full absolute top-0 left-0 object-fill"
             alt=""
           />
 
-          <div class="relative text-yellow-900 max-w-[80%] px-0.5 text-center">
+          <div
+            class="relative text-yellow-900 max-w-[70%] px-0.5 text-center truncate"
+            :title="data.name"
+          >
             {{ data.name }}
           </div>
         </div>
@@ -76,6 +82,13 @@ const data: Sponsor = {
           >
             {{ t('sponsorship.sponsor') }}
           </ExternalLink>
+        </div>
+        <div
+          v-if="drawer"
+          class="pt-1.5 text-center text-xs text-rui-text-disabled tabular-nums"
+          data-testid="sponsorship-version"
+        >
+          {{ t('sponsorship.version', { version }) }}
         </div>
       </div>
     </div>

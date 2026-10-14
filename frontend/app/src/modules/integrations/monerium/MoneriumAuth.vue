@@ -28,6 +28,8 @@ const websiteUrl = import.meta.env.VITE_ROTKI_WEBSITE_URL;
 
 const isAuthorizing = ref<boolean>(false);
 const showTokenInput = ref<boolean>(false);
+/** The desktop app opened the browser and waits for the approval to come back through its callback. */
+const awaitingApproval = ref<boolean>(false);
 const manualAccessToken = ref<string>('');
 const manualRefreshToken = ref<string>('');
 
@@ -38,13 +40,39 @@ const { authenticated, completeOAuth, disconnect: disconnectOAuth, status } = us
 
 const connectedEmail = computed<string>(() => get(status)?.userEmail ?? '');
 
+/** How connecting works; the desktop app picks the result up itself, the web asks for the tokens. */
+const steps = computed<string[]>(() => [
+  t('external_services.monerium.steps.approve'),
+  isPackaged ? t('external_services.monerium.steps.return_app') : t('external_services.monerium.steps.return_web'),
+]);
+
+/**
+ * The dialog's one action follows the flow: connect; then on the web submit the pasted tokens, and in
+ * the app reopen the approval page while waiting for it to come back.
+ */
+const primaryText = computed<string>(() => {
+  if (get(showTokenInput))
+    return t('external_services.monerium.submit_token');
+  if (get(awaitingApproval))
+    return t('external_services.monerium.reopen');
+  return t('external_services.monerium.connect');
+});
+
 const cardAction = computed<ServiceKeyAction>(() => ({
   addText: t('external_services.actions.authenticate'),
   disabled: get(isAuthorizing),
-  editText: t('external_services.actions.reauthenticate'),
+  editText: t('external_services.actions.manage'),
   hidden: get(authenticated),
-  primary: t('external_services.monerium.connect'),
+  primary: get(primaryText),
+  statusText: t('external_services.status.connected'),
 }));
+
+async function confirm(): Promise<void> {
+  if (get(showTokenInput))
+    await submitManualToken();
+  else
+    await connect();
+}
 
 /**
  * Every notification raised here is a step of the same connection flow - opening the browser,
@@ -84,6 +112,8 @@ async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
   if (oAuthResult.service !== name)
     return;
 
+  // whatever came back, the wait for the browser is over
+  set(awaitingApproval, false);
   try {
     if (!oAuthResult.success) {
       notifyOAuthError(oAuthResult.error);
@@ -129,6 +159,7 @@ async function connect(): Promise<void> {
 
     if (isPackaged) {
       await openUrl(oauthUrl);
+      set(awaitingApproval, true);
     }
     else {
       window.open(oauthUrl, '_blank');
@@ -187,6 +218,7 @@ async function submitManualToken(): Promise<void> {
 
 function cancelTokenInput(): void {
   set(showTokenInput, false);
+  set(awaitingApproval, false);
   set(manualAccessToken, '');
   set(manualRefreshToken, '');
 }
@@ -209,16 +241,18 @@ onUnmounted(() => {
     :subtitle="t('external_services.monerium.description')"
     :image-src="getPublicServiceImagePath('monerium.png')"
     :action="cardAction"
-    @confirm="connect()"
+    @confirm="confirm()"
   >
     <template
-      v-if="authenticated"
+      v-if="authenticated || showTokenInput || awaitingApproval"
       #left-buttons
     >
       <RuiButton
+        v-if="authenticated"
         :disabled="isAuthorizing"
         color="error"
         variant="text"
+        data-testid="monerium-disconnect"
         @click="disconnect()"
       >
         <template #prepend>
@@ -229,61 +263,100 @@ onUnmounted(() => {
         </template>
         {{ t('external_services.monerium.disconnect') }}
       </RuiButton>
-    </template>
-    <RuiAlert
-      type="info"
-      class="mb-4"
-    >
-      {{ t('external_services.monerium.warning') }}
-    </RuiAlert>
-
-    <div class="flex flex-col gap-4">
-      <div v-if="authenticated">
-        <RuiAlert type="success">
-          {{ t('external_services.monerium.connected_as', { email: connectedEmail || t('external_services.monerium.unknown_email') }) }}
-        </RuiAlert>
-      </div>
-
-      <div v-else>
-        <p class="text-sm text-rui-text-secondary">
-          {{ t('external_services.monerium.instructions') }}
-        </p>
-      </div>
-
-      <div
-        v-if="showTokenInput"
-        class="flex flex-col gap-3"
+      <RuiButton
+        v-else
+        :disabled="isAuthorizing"
+        variant="text"
+        color="primary"
+        data-testid="monerium-start-over"
+        @click="cancelTokenInput()"
       >
-        <RuiTextField
-          v-model.trim="manualAccessToken"
-          :label="t('external_services.monerium.access_token')"
-          variant="outlined"
-          color="primary"
+        {{ t('external_services.monerium.start_over') }}
+      </RuiButton>
+    </template>
+
+    <div
+      v-if="authenticated"
+      class="flex items-center gap-3 rounded-rui-control border border-rui-divider px-4 py-3"
+      data-testid="monerium-connected"
+    >
+      <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-rui-success/10 text-rui-success">
+        <RuiIcon
+          name="lu-circle-check"
+          size="20"
         />
-        <RuiTextField
-          v-model.trim="manualRefreshToken"
-          :label="t('external_services.monerium.refresh_token')"
-          variant="outlined"
-          color="primary"
-        />
-        <div class="flex gap-2">
-          <RuiButton
-            color="primary"
-            :loading="isAuthorizing"
-            @click="submitManualToken()"
-          >
-            {{ t('external_services.monerium.submit_token') }}
-          </RuiButton>
-          <RuiButton
-            variant="text"
-            color="secondary"
-            :disabled="isAuthorizing"
-            @click="cancelTokenInput()"
-          >
-            {{ t('common.actions.cancel') }}
-          </RuiButton>
-        </div>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <span class="text-sm font-semibold text-rui-text">{{ t('external_services.status.connected') }}</span>
+        <span class="text-sm text-rui-text-secondary truncate">{{ connectedEmail || t('external_services.monerium.unknown_email') }}</span>
       </div>
     </div>
+
+    <div
+      v-else-if="awaitingApproval"
+      class="flex items-center gap-3 rounded-rui-control border border-rui-divider px-4 py-3"
+      data-testid="monerium-waiting"
+    >
+      <RuiProgress
+        variant="indeterminate"
+        circular
+        size="20"
+        thickness="2"
+        color="primary"
+      />
+      <div class="flex flex-col min-w-0">
+        <span class="text-sm font-semibold text-rui-text">{{ t('external_services.monerium.waiting.title') }}</span>
+        <span class="text-sm text-rui-text-secondary">{{ t('external_services.monerium.waiting.description') }}</span>
+      </div>
+    </div>
+
+    <div
+      v-else-if="showTokenInput"
+      class="flex flex-col gap-2"
+    >
+      <p class="m-0 mb-2 text-sm text-rui-text-secondary">
+        {{ t('external_services.monerium.paste_tokens') }}
+      </p>
+      <RuiTextField
+        v-model.trim="manualAccessToken"
+        :label="t('external_services.monerium.access_token')"
+        color="primary"
+        :disabled="isAuthorizing"
+      />
+      <RuiTextField
+        v-model.trim="manualRefreshToken"
+        :label="t('external_services.monerium.refresh_token')"
+        color="primary"
+        :disabled="isAuthorizing"
+      />
+    </div>
+
+    <ol
+      v-else
+      class="m-0 p-0 list-none flex flex-col gap-3"
+      data-testid="monerium-steps"
+    >
+      <li
+        v-for="(step, index) in steps"
+        :key="step"
+        class="flex items-start gap-3"
+      >
+        <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-rui-primary/10 text-xs font-semibold text-rui-primary">
+          {{ index + 1 }}
+        </span>
+        <span class="pt-0.5 text-sm text-rui-text">{{ step }}</span>
+      </li>
+    </ol>
+
+    <p
+      v-if="!authenticated"
+      class="m-0 mt-4 flex items-center gap-2 text-xs text-rui-text-secondary"
+    >
+      <RuiIcon
+        name="lu-lock-keyhole"
+        size="14"
+      />
+      {{ t('external_services.monerium.privacy') }}
+    </p>
   </ServiceKeyCard>
 </template>

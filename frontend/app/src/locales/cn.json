@@ -3302,10 +3302,8 @@
       },
       "description": "使用你的以太坊钱包对 Gnosis Pay 进行认证，以访问你的交易数据。",
       "errors": {
-        "allowed_admin_addresses": "允许的管理员地址：",
         "connection_failed": "连接钱包失败",
         "invalid_address": "该地址未在任何 Gnosis Pay 账户中注册为链上管理员。你仍可继续登录，因为可能存在链上不可见的其他授权地址。已注册的管理员地址列在下方供参考。",
-        "no_registered_accounts": "rotki 中尚未添加 Gnosis Pay Safe 账户。请先添加 Gnosis Pay Safe 账户再进行认证。",
         "no_wallet_connected": "未连接钱包",
         "safe_wallet": "Safe 钱包：",
         "signature_rejected": "用户拒绝了签名请求",
@@ -3333,7 +3331,6 @@
         "step1_title": "选择钱包模式并连接",
         "step2_title": "正在检查已连接地址的资格",
         "step3_title": "签署认证消息",
-        "success_message": "Gnosis Pay 认证成功",
         "switch_to_gnosis": "切换到 Gnosis",
         "validating_address": "正在验证地址...",
         "wrong_chain": "你未连接到 Gnosis 网络，请切换后继续。"
@@ -3374,12 +3371,10 @@
       "auth_failed": "Monerium 授权失败",
       "authorizing": "正在向 Monerium 授权",
       "connect": "获取访问令牌",
-      "connected_as": "已连接为 {email}",
       "description": "用于为 Monerium 的 EVM 交易补充银行信息。",
       "disconnect": "断开连接",
       "disconnected": "已断开与 Monerium 的连接。",
       "error": "Monerium OAuth",
-      "instructions": "连接 Monerium，使你的 rotki 数据与账户保持同步。",
       "opening_browser": "正在打开浏览器以完成 Monerium 授权...",
       "refresh_token": "刷新令牌",
       "submit_token": "提交令牌",
@@ -3387,7 +3382,6 @@
       "title": "Monerium",
       "token_required": "访问令牌和刷新令牌均为必填。",
       "unknown_email": "未知邮箱",
-      "warning": "授权 Monerium 后，rotki 可为你的交易补充银行相关信息。令牌仅保存在本地，且以只读方式使用。",
       "website_url_missing": "未配置 Monerium OAuth 网站 URL。"
     },
     "moralis": {
@@ -5302,11 +5296,9 @@
       "info": {
         "last_seen": "最后在线",
         "platform": "平台",
-        "title": "设备信息",
         "user": "用户"
       }
     },
-    "limit": "上限（{current}/{limit}）",
     "refresh": "刷新设备",
     "table": {
       "actions": {
@@ -5315,10 +5307,7 @@
       },
       "current_device": "本设备",
       "headers": {
-        "device_name": "设备名称",
-        "last_seen": "最后在线",
-        "platform": "平台",
-        "user": "用户"
+        "last_seen": "最后在线"
       }
     },
     "title": "高级版设备"
@@ -5341,7 +5330,6 @@
     "actions": {
       "delete": "删除密钥",
       "replace": "替换密钥",
-      "setup": "设置",
       "setup_premium_key": "设置高级版密钥",
       "sync": "允许与 rotki 服务器同步数据",
       "sync_hint": "你的数据在同步到 rotki 服务器之前会被加密，除你之外任何人都无法读取。"
@@ -5353,7 +5341,6 @@
     },
     "cloud_backup_unavailable": "你当前的套餐不支持云备份。{link}以启用云同步。",
     "cloud_backup_upgrade_link": "升级订阅",
-    "current_plan_label": "当前套餐：",
     "delete_confirmation": {
       "message": "确定要删除你账户的 rotki 高级版密钥吗？如果要重新启用高级版，需要再次输入密钥。",
       "title": "删除 rotki 高级版密钥？"
@@ -5372,8 +5359,6 @@
     },
     "get": "获取高级版",
     "manage_or_upgrade": "管理或升级订阅",
-    "premium_active": "@:premium_settings.title 已激活",
-    "subtitle": "@:premium_settings.title 是一项可选的订阅服务，可使用分析、图表等功能并解锁更多额外功能。有关详情，请访问 {0} 网站。",
     "title": "rotki 高级版",
     "validation": {
       "api_key": {

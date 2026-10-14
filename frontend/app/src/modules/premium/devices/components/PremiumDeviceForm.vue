@@ -49,7 +49,36 @@ defineExpose({
 </script>
 
 <template>
-  <div class="mt-4">
+  <div class="flex flex-col gap-2">
+    <dl
+      class="grid grid-cols-3 gap-4 m-0 mb-4 rounded-rui-control border border-rui-divider px-4 py-3"
+      data-testid="premium-device-summary"
+    >
+      <div class="flex flex-col gap-1 min-w-0">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('premium_devices.form.info.user') }}
+        </dt>
+        <dd class="m-0 font-medium text-rui-text truncate">
+          {{ device.user }}
+        </dd>
+      </div>
+      <div class="flex flex-col gap-1 min-w-0">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('premium_devices.form.info.platform') }}
+        </dt>
+        <dd class="m-0 font-medium text-rui-text truncate">
+          {{ device.platform }}
+        </dd>
+      </div>
+      <div class="flex flex-col gap-1">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('premium_devices.form.info.last_seen') }}
+        </dt>
+        <dd class="m-0 text-rui-text">
+          <DateDisplay :timestamp="device.lastSeenAt" />
+        </dd>
+      </div>
+    </dl>
     <RuiTextField
       v-model="form.state.deviceName"
       color="primary"
@@ -59,50 +88,5 @@ defineExpose({
       data-testid="premium-device-name"
       @blur="form.touch('deviceName')"
     />
-
-    <div>
-      <div class="font-bold my-4">
-        {{ t('premium_devices.form.info.title') }}
-      </div>
-
-      <RuiCard
-        outlined
-        no-padding
-      >
-        <div class="mx-4 py-4 border-b border-default">
-          <div class="flex gap-4 items-center">
-            <span class="font-medium w-36">
-              {{ t('premium_devices.form.info.user') }}
-            </span>
-            <span class="flex-1 text-rui-text-secondary overflow-hidden flex items-center gap-2">
-              {{ device.user }}
-            </span>
-          </div>
-        </div>
-        <div class="mx-4 py-4 border-b border-default">
-          <div class="flex gap-4 items-center">
-            <span class="font-medium w-36">
-              {{ t('premium_devices.form.info.platform') }}
-            </span>
-            <span class="flex-1 text-rui-text-secondary overflow-hidden flex items-center gap-2">
-              {{ device.platform }}
-            </span>
-          </div>
-        </div>
-        <div class="mx-4 py-4">
-          <div class="flex gap-4 items-center">
-            <span class="font-medium w-36">
-              {{ t('premium_devices.form.info.last_seen') }}
-            </span>
-            <span class="flex-1 text-rui-text-secondary overflow-hidden flex items-center gap-2">
-              <DateDisplay
-                :timestamp="device.lastSeenAt"
-                class="font-medium"
-              />
-            </span>
-          </div>
-        </div>
-      </RuiCard>
-    </div>
   </div>
 </template>

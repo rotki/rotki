@@ -3326,10 +3326,8 @@
       },
       "description": "İşlem verilerinize erişmek için Ethereum cüzdanınızı kullanarak Gnosis Pay ile kimlik doğrulaması yapın.",
       "errors": {
-        "allowed_admin_addresses": "İzin verilen yönetici adresleri:",
         "connection_failed": "Cüzdan bağlanamadı",
         "invalid_address": "Bu adres, hiçbir Gnosis Pay hesabı için zincir üstünde yönetici olarak kayıtlı değil. Zincir üstünde görünmeyen başka yetkili adresler olabileceğinden yine de girişe devam edebilirsiniz. Kayıtlı yönetici adresleri bilgi amacıyla aşağıda listelenmiştir.",
-        "no_registered_accounts": "rotki'de kayıtlı Gnosis Pay Safe hesabı yok. Kimlik doğrulamayı denemeden önce lütfen bir Gnosis Pay Safe hesabı ekleyin.",
         "no_wallet_connected": "Bağlı cüzdan yok",
         "safe_wallet": "Safe cüzdanı:",
         "signature_rejected": "İmza isteği kullanıcı tarafından reddedildi",
@@ -3357,7 +3355,6 @@
         "step1_title": "Cüzdan modunu seç ve bağlan",
         "step2_title": "Bağlı adresin uygunluğu kontrol ediliyor",
         "step3_title": "Kimlik doğrulama mesajını imzala",
-        "success_message": "Gnosis Pay ile kimlik doğrulaması başarıyla yapıldı",
         "switch_to_gnosis": "Gnosis ağına geç",
         "validating_address": "Adres doğrulanıyor...",
         "wrong_chain": "Gnosis ağına bağlı değilsiniz. Devam etmek için lütfen Gnosis ağına geçin."
@@ -3398,12 +3395,10 @@
       "auth_failed": "Monerium ile yetkilendirme yapılamadı",
       "authorizing": "Monerium ile yetkilendiriliyor",
       "connect": "Erişim belirteci al",
-      "connected_as": "{email} olarak bağlı",
       "description": "Monerium EVM işlemlerini bankacılık bilgileriyle zenginleştirmek için kullanılır.",
       "disconnect": "Bağlantıyı kes",
       "disconnected": "Monerium bağlantısı kesildi.",
       "error": "Monerium OAuth",
-      "instructions": "rotki verilerinizi hesabınızla senkronize tutmak için Monerium'a bağlanın.",
       "opening_browser": "Monerium yetkilendirmesini tamamlamak için tarayıcı açılıyor...",
       "refresh_token": "Yenileme belirteci",
       "submit_token": "Belirteçleri gönder",
@@ -3411,7 +3406,6 @@
       "title": "Monerium",
       "token_required": "Hem erişim hem de yenileme belirteci gereklidir.",
       "unknown_email": "bilinmeyen e-posta",
-      "warning": "rotki'nin işlemlerinizi bankacılık bilgileriyle zenginleştirebilmesi için Monerium'u yetkilendirin. Belirteçler yerel olarak saklanır ve salt okunur şekilde kullanılır.",
       "website_url_missing": "Monerium OAuth web sitesi URL'si yapılandırılmamış."
     },
     "moralis": {
@@ -5440,11 +5434,9 @@
       "info": {
         "last_seen": "Son görülme",
         "platform": "Platform",
-        "title": "Cihaz bilgileri",
         "user": "Kullanıcı"
       }
     },
-    "limit": "Limit ({current}/{limit})",
     "refresh": "Cihazları yenile",
     "table": {
       "actions": {
@@ -5453,10 +5445,7 @@
       },
       "current_device": "Bu cihaz",
       "headers": {
-        "device_name": "Cihaz adı",
-        "last_seen": "Son görülme",
-        "platform": "Platform",
-        "user": "Kullanıcı"
+        "last_seen": "Son görülme"
       }
     },
     "title": "Premium cihazlar"
@@ -5479,7 +5468,6 @@
     "actions": {
       "delete": "Anahtarı sil",
       "replace": "Anahtarı değiştir",
-      "setup": "Ayarla",
       "setup_premium_key": "Premium anahtarını ayarla",
       "sync": "rotki sunucusuyla veri senkronizasyonuna izin ver",
       "sync_hint": "Verileriniz rotki sunucusuyla senkronize edilmeden önce şifrelenir ve sizden başka hiç kimse tarafından okunamaz."
@@ -5491,7 +5479,6 @@
     },
     "cloud_backup_unavailable": "Bulut yedekleme mevcut planınızda kullanılamıyor. {link} ve bulut senkronizasyonunu etkinleştirin.",
     "cloud_backup_upgrade_link": "Aboneliğinizi yükseltin",
-    "current_plan_label": "Mevcut plan:",
     "delete_confirmation": {
       "message": "Hesabınızın rotki Premium anahtarlarını silmek istediğinizden emin misiniz? Premium'u yeniden etkinleştirmek isterseniz anahtarlarınızı tekrar girmeniz gerekir.",
       "title": "rotki Premium anahtarları silinsin mi?"
@@ -5510,8 +5497,6 @@
     },
     "get": "Premium'a geç",
     "manage_or_upgrade": "Aboneliği yönet veya yükselt",
-    "premium_active": "@:premium_settings.title etkin",
-    "subtitle": "@:premium_settings.title analizlere ve grafiklere erişim sağlayan ve birçok ek özelliğin kilidini açan isteğe bağlı bir abonelik hizmetidir. Neler sunulduğu hakkında daha fazla bilgi için {0} web sitesini ziyaret edin.",
     "title": "rotki Premium",
     "validation": {
       "api_key": {

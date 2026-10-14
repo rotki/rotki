@@ -35,6 +35,10 @@ interface UseGnosisPayWalletReturn {
   disconnect: () => Promise<void>;
   handleProviderSelection: (provider: EnhancedProviderDetail) => Promise<void>;
   isWalletConnected: ComputedRef<boolean>;
+  /** True while the wallet is asked to move to another chain. */
+  switchingNetwork: Readonly<Ref<boolean>>;
+  /** Asks the wallet to move to a chain, reporting a refusal as a connection error. */
+  switchToChain: (chainId: number) => Promise<void>;
   validateAddress: () => Promise<void>;
 }
 
@@ -158,6 +162,22 @@ export function useGnosisPayWallet(options: UseGnosisPayWalletOptions): UseGnosi
     }
   }
 
+  const switchingNetwork = shallowRef<boolean>(false);
+
+  async function switchToChain(chainId: number): Promise<void> {
+    try {
+      set(switchingNetwork, true);
+      await walletStore.switchNetwork(BigInt(chainId));
+    }
+    catch (error: unknown) {
+      logger.error('Failed to switch network:', error);
+      setError(GnosisPayError.CONNECTION_FAILED, { message: getErrorMessage(error) });
+    }
+    finally {
+      set(switchingNetwork, false);
+    }
+  }
+
   return {
     checkRegisteredAccounts,
     connect,
@@ -165,6 +185,8 @@ export function useGnosisPayWallet(options: UseGnosisPayWalletOptions): UseGnosi
     disconnect,
     handleProviderSelection,
     isWalletConnected,
+    switchingNetwork: readonly(switchingNetwork),
+    switchToChain,
     validateAddress,
   };
 }

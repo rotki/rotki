@@ -11,6 +11,7 @@ import {
   RuiDialog,
   RuiDivider,
   RuiIcon,
+  RuiMenu,
   RuiProgress,
   RuiTextField,
   RuiTooltip,
@@ -44,6 +45,7 @@ function ruiRegister(app: App): void {
   app.component('RuiDivider', RuiDivider);
   app.component('RuiChip', RuiChip);
   app.component('RuiDialog', RuiDialog);
+  app.component('RuiMenu', RuiMenu);
   app.component('RuiColorPicker', RuiColorPicker);
   app.component('RuiProgress', RuiProgress);
   app.component('RuiDateTimePicker', RuiDateTimePicker);
