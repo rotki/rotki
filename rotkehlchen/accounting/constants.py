@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Final, Literal
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -7,6 +7,7 @@ from rotkehlchen.history.events.structures.types import (
     EventCategoryDetails,
     EventCategoryGroup,
     EventCategoryGroupDetails,
+    EventDirection,
     HistoryEventSubType,
     HistoryEventType,
 )
@@ -187,9 +188,8 @@ EVENT_GROUPING_ORDER = {  # Determines how to group events when serializing for 
     },
 }
 
-# possible color values
-# success=green, error=red, warning=yellow/orangish, info=blue,
-# primary=our primary blue color, secondary=somewhat gray
+# Colors follow the category's direction (see EVENT_DIRECTION_COLORS below), so leave `color`
+# out unless a category must read differently from its direction.
 # Icons are taken from here: https://lucide.dev/icons/
 # IMPORTANT: All icons added here need to also be packaged in the frontend.
 # Run `pnpm run --filter rotki generate:backend-icons` to regenerate
@@ -201,35 +201,30 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.RECEIVE: {DEFAULT: EventCategoryDetails(
         label='receive',
         icon='lu-arrow-down',
-        color='success',
     )}, EventCategory.SWAP_OUT: {DEFAULT: EventCategoryDetails(
         label='swap',
         icon='lu-redo-2',
     )}, EventCategory.SWAP_IN: {DEFAULT: EventCategoryDetails(
         label='swap',
         icon='lu-undo-2',
-        color='success',
     )}, EventCategory.MIGRATE_OUT: {DEFAULT: EventCategoryDetails(
         label='migrate',
         icon='lu-redo-2',
     )}, EventCategory.MIGRATE_IN: {DEFAULT: EventCategoryDetails(
         label='migrate',
         icon='lu-undo-2',
-        color='success',
     )}, EventCategory.APPROVAL: {DEFAULT: EventCategoryDetails(
         label='approval',
         icon='lu-lock-keyhole-open',
     )}, EventCategory.DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='deposit',
         icon='lu-upload',
-        color='success',
     )}, EventCategory.WITHDRAW: {DEFAULT: EventCategoryDetails(
         label='withdraw',
         icon='lu-download',
     )}, EventCategory.CEX_DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='exchange deposit',
         icon='lu-upload',
-        color='success',
     )}, EventCategory.CEX_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
         label='exchange withdraw',
         icon='lu-download',
@@ -251,19 +246,15 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.BRIDGE_DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='bridge out',
         icon='lu-upload',
-        color='error',
     )}, EventCategory.BRIDGE_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
         label='bridge in',
         icon='lu-download',
-        color='success',
     )}, EventCategory.BRIDGE_SPEND: {DEFAULT: EventCategoryDetails(
         label='bridge send',
         icon='lu-upload',
-        color='error',
     )}, EventCategory.BRIDGE_RECEIVE: {DEFAULT: EventCategoryDetails(
         label='bridge receive',
         icon='lu-download',
-        color='success',
     )}, EventCategory.GOVERNANCE: {DEFAULT: EventCategoryDetails(
         label='governance',
         icon='lu-scale',
@@ -300,7 +291,6 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.CANCEL_ORDER: {DEFAULT: EventCategoryDetails(
         label='cancel order',
         icon='lu-file-x',
-        color='error',
     )}, EventCategory.REFUND: {DEFAULT: EventCategoryDetails(
         label='refund',
         icon='lu-refund',
@@ -310,7 +300,6 @@ EVENT_CATEGORY_DETAILS = {
     }, EventCategory.FAIL: {DEFAULT: EventCategoryDetails(
         label='failed',
         icon='lu-circle-x',
-        color='error',
     )}, EventCategory.MEV_REWARD: {DEFAULT: EventCategoryDetails(
         label='mev',
         icon='lu-medal',
@@ -386,7 +375,6 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.ACCOUNT_DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='account deposit',
         icon='lu-upload',
-        color='success',
     )}, EventCategory.ACCOUNT_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
         label='account withdraw',
         icon='lu-download',
@@ -405,9 +393,26 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.SPAM: {DEFAULT: EventCategoryDetails(
         label='spam',
         icon='lu-shield-alert',
-        color='error',
+        color='error',  # comes in, but is junk rather than a gain
     )},
 }
+
+# The history table colors a category's icon like the event picker colors its direction: green for
+# what comes in, red for what goes out, nothing for neutral moves.
+EVENT_DIRECTION_COLORS: Final[dict[EventDirection, Literal['success', 'error']]] = {
+    EventDirection.IN: 'success',
+    EventDirection.OUT: 'error',
+}
+# A cancelled order returns funds, but it is not a gain, so it stays uncolored.
+UNCOLORED_EVENT_CATEGORIES: Final = {EventCategory.CANCEL_ORDER}
+for _category, _entries in EVENT_CATEGORY_DETAILS.items():
+    if _category in UNCOLORED_EVENT_CATEGORIES:
+        continue
+    for _key, _details in _entries.items():
+        if _details.color is None:
+            _entries[_key] = _details._replace(
+                color=EVENT_DIRECTION_COLORS.get(_category.direction),
+            )
 
 EVENT_CATEGORY_GROUP_DETAILS: Final = {  # user-facing group metadata for the action picker. Labels live in the frontend i18n catalogue keyed by group identifier.  # noqa: E501
     EventCategoryGroup.TRADE: EventCategoryGroupDetails(icon='lu-arrow-left-right', order=10),
