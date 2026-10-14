@@ -2,14 +2,13 @@
 import type { ActionDataEntry } from '@/modules/core/common/action';
 import type { BaseAccountingSettings, CostBasisMethod } from '@/modules/settings/types/user-settings';
 import { useCostBasisMethod } from '@/modules/reports/use-reports';
-import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
 
 const { accountingSettings } = defineProps<{ accountingSettings: BaseAccountingSettings }>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { costBasisMethodData } = useCostBasisMethod();
 
-function taxFreePeriod(period: number) {
+function taxFreePeriod(period: number): string {
   const days = period / 86400;
   return t('account_settings_display.days', { days });
 }
@@ -29,7 +28,26 @@ interface Item {
 
 const items = computed<Item[]>(() => {
   const settings = accountingSettings;
-  const items = [
+  const items: Item[] = [
+    {
+      data: settings.profitCurrency || '',
+      label: t('account_settings_display.profit_currency'),
+    },
+  ];
+
+  const costBasis = get(costBasisMethodItem);
+  if (costBasis) {
+    items.push({
+      data: `${costBasis.identifier.toUpperCase()} (${costBasis.label})`,
+      label: t('account_settings_display.cost_basis_method'),
+    });
+  }
+
+  items.push(
+    {
+      data: settings.taxfreeAfterPeriod ? taxFreePeriod(settings.taxfreeAfterPeriod) : false,
+      label: t('account_settings_display.tax_free_period'),
+    },
     {
       data: settings.calculatePastCostBasis,
       label: t('account_settings_display.past_cost_basis'),
@@ -46,15 +64,7 @@ const items = computed<Item[]>(() => {
       data: settings.includeGasCosts,
       label: t('account_settings_display.gas_costs'),
     },
-    {
-      data: settings.profitCurrency || '',
-      label: t('account_settings_display.profit_currency'),
-    },
-    {
-      data: settings.taxfreeAfterPeriod ? taxFreePeriod(settings.taxfreeAfterPeriod) : false,
-      label: t('account_settings_display.tax_free_period'),
-    },
-  ];
+  );
 
   if (settings.ethStakingTaxableAfterWithdrawalEnabled !== undefined) {
     items.push({
@@ -63,47 +73,52 @@ const items = computed<Item[]>(() => {
     });
   }
 
-  const costBasis = get(costBasisMethodItem);
-
-  if (costBasis) {
-    items.push({
-      data: `${costBasis.identifier.toUpperCase()} (${costBasis.label})`,
-      label: t('account_settings_display.cost_basis_method'),
-    });
-  }
-
   return items;
 });
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
-      {{ t('account_settings_display.title') }}
-    </template>
-    <template #subheader>
-      {{ t('account_settings_display.subtitle') }}
-    </template>
-    <div class="grid md:grid-cols-2 gap-x-6 gap-y-4 text-body-1">
+  <section
+    class="@container flex flex-col gap-3"
+    data-testid="report-accounting-settings-display"
+  >
+    <div class="flex flex-col gap-0.5">
+      <h2 class="text-base font-semibold text-rui-text">
+        {{ t('account_settings_display.title') }}
+      </h2>
+      <p class="text-sm text-rui-text-secondary">
+        {{ t('account_settings_display.subtitle') }}
+      </p>
+    </div>
+    <dl class="grid grid-cols-2 @3xl:grid-cols-4 gap-x-6 gap-y-4 p-4 rounded-rui-card border border-rui-divider bg-rui-surface">
       <div
         v-for="item in items"
         :key="item.label"
+        class="flex flex-col gap-1 min-w-0"
       >
-        <span class="mr-1 text-rui-text">
+        <dt class="text-xs text-rui-text-secondary">
           {{ item.label }}
-        </span>
-        <SuccessDisplay
+        </dt>
+        <dd
           v-if="typeof item.data === 'boolean'"
-          class="inline -mt-0.5"
-          :success="item.data"
-        />
-        <span
+          class="flex items-center gap-1.5 text-sm text-rui-text"
+        >
+          <RuiIcon
+            :name="item.data ? 'lu-circle-check' : 'lu-circle-minus'"
+            :color="item.data ? 'success' : undefined"
+            :class="{ 'text-rui-text-secondary': !item.data }"
+            size="16"
+          />
+          {{ item.data ? t('account_settings_display.yes') : t('account_settings_display.no') }}
+        </dd>
+        <dd
           v-else
-          class="text-rui-text-secondary"
+          class="text-sm text-rui-text truncate"
+          :title="item.data"
         >
           {{ item.data }}
-        </span>
+        </dd>
       </div>
-    </div>
-  </RuiCard>
+    </dl>
+  </section>
 </template>

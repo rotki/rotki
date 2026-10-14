@@ -5532,7 +5532,6 @@
           "found_amount": "已找到数量",
           "missing_acquisitions": "缺失的获得记录",
           "missing_amount": "缺失数量",
-          "quick_action": "快捷操作",
           "total_missing": "缺失数量"
         },
         "hint": "部分资产缺少获得记录。你需要查明这些资产是在哪里买入的，然后导入或手动创建相应的获得事件",
@@ -5580,14 +5579,11 @@
     "out_of_sync_alert": "你的历史事件数据未同步。请在生成报告前更新历史事件。",
     "processing_alert": "历史事件正在处理中（{percentage}%）。请等待处理完成。",
     "report_period": "报告期间：{start} 至 {end}",
-    "settings_tooltip": "打开会计设置",
     "sync_history": "立即同步历史"
   },
   "profit_loss_reports": {
     "columns": {
       "created": "创建日期",
-      "end": "结束时间",
-      "start": "开始时间",
       "taxable_profit_loss": "应税盈亏",
       "taxfree_profit_loss": "免税盈亏"
     },

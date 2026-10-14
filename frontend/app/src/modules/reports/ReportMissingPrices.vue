@@ -3,6 +3,7 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { EditableMissingPrice, MissingPrice } from '@/modules/reports/report-types';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useEditableMissingPrices } from '@/modules/assets/prices/use-editable-missing-prices';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import MissingPriceRefreshButton from '@/modules/reports/MissingPriceRefreshButton.vue';
@@ -21,6 +22,8 @@ defineSlots<{
 const { t } = useI18n({ useScope: 'global' });
 
 const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
+
+const { getAssetField } = useAssetInfoRetrieval();
 
 const {
   clearError,
@@ -64,7 +67,8 @@ const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => {
       : []),
     {
       align: 'end',
-      cellClass: `pb-1 ${pinned ? '' : ''}`,
+      cellClass: 'py-2',
+      class: 'w-60',
       key: 'price',
       label: t('common.price'),
     },
@@ -86,20 +90,29 @@ onMounted(async () => {
       :rows="formattedItems"
       :dense="isPinned"
       row-attr="fromAsset"
+      sticky-header
     >
       <template #item.fromAsset="{ row }">
         <template v-if="isPinned">
-          <div class="text-xs text-rui-text-secondary -mb-1">
-            {{ t('dashboard.snapshot.edit.dialog.balances.preview.from') }}
-          </div>
-          <AssetDetails :asset="row.fromAsset" />
-          <div class="text-xs text-rui-text-secondary -my-1">
-            {{ t('dashboard.snapshot.edit.dialog.balances.preview.to') }}
-          </div>
           <AssetDetails
-            v-if="isPinned"
-            :asset="row.toAsset"
+            :asset="row.fromAsset"
+            class="max-w-44!"
           />
+          <div class="flex flex-wrap items-center gap-x-1.5 text-xs text-rui-text-secondary">
+            <RuiIcon
+              name="lu-arrow-right"
+              size="12"
+            />
+            <span class="font-medium text-rui-text">{{ getAssetField(row.toAsset, 'symbol') || row.toAsset }}</span>
+            <span
+              aria-hidden="true"
+              class="size-0.5 rounded-full bg-current"
+            />
+            <DateDisplay
+              class="whitespace-nowrap"
+              :timestamp="row.time"
+            />
+          </div>
         </template>
         <AssetDetails
           v-else
@@ -107,31 +120,27 @@ onMounted(async () => {
         />
       </template>
       <template #item.toAsset="{ row }">
-        <AssetDetails :asset="row.toAsset" />
+        <AssetDetails
+          :asset="row.toAsset"
+          :display="{ inline: true, size: '20px' }"
+        />
       </template>
       <template #item.time="{ row }">
-        <DateDisplay :timestamp="row.time" />
+        <DateDisplay
+          class="whitespace-nowrap"
+          :timestamp="row.time"
+        />
       </template>
       <template #item.price="{ row }">
-        <div
-          v-if="isPinned"
-          class="flex items-center gap-1.5 text-rui-text-secondary my-1 mb-2 text-xs"
-        >
-          <RuiIcon
-            name="lu-clock"
-            size="14"
-          />
-          <DateDisplay
-            :timestamp="row.time"
-          />
-        </div>
         <AmountInput
           v-model="row.price"
           class="text-left min-w-[120px]"
           dense
           :disabled="row.useRefreshedHistoricalPrice"
           :label="t('profit_loss_report.actionable.missing_prices.input_price')"
-          variant="outlined"
+          label-placement="hidden"
+          :placeholder="t('profit_loss_report.actionable.missing_prices.input_price')"
+          :hide-details="!row.saved && !errorMessages[createKey(row)]?.length"
           :success-messages="row.saved ? [t('profit_loss_report.actionable.missing_prices.price_is_saved')] : []"
           :error-messages="errorMessages[createKey(row)]"
           data-testid="missing-price-input"

@@ -9,7 +9,7 @@ import { useTransactionStatusCheck } from '@/modules/history/sync-status/use-tra
 import RangeSelector from '@/modules/reports/RangeSelector.vue';
 import ReportDebugMenu from '@/modules/reports/ReportDebugMenu.vue';
 import { useBinanceMarketCheck } from '@/modules/reports/use-binance-market-check';
-import CardTitle from '@/modules/shell/components/CardTitle.vue';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const emit = defineEmits<{
   'generate': [data: ProfitLossReportPeriod];
@@ -56,7 +56,6 @@ function importReportData(): void {
   emit('import-data');
 }
 
-const accountSettingsRoute: RouteLocationRaw = { name: '/settings/accounting/' };
 const exchangeSettingsRoute: RouteLocationRaw = { name: '/api-keys/exchanges/' };
 
 onMounted(async () => {
@@ -66,29 +65,10 @@ onMounted(async () => {
 
 <template>
   <RuiCard :class-names="{ content: 'pt-0!' }">
-    <template #custom-header>
-      <div class="flex justify-between px-4 py-2">
-        <CardTitle>
-          {{ t('common.actions.generate') }}
-        </CardTitle>
-        <RuiTooltip
-          :options="{ placement: 'top' }"
-          :open-delay="400"
-        >
-          <template #activator>
-            <RouterLink :to="accountSettingsRoute">
-              <RuiButton
-                variant="text"
-                icon
-                color="primary"
-              >
-                <RuiIcon name="lu-settings" />
-              </RuiButton>
-            </RouterLink>
-          </template>
-          <span>{{ t('profit_loss_report.settings_tooltip') }}</span>
-        </RuiTooltip>
-      </div>
+    <template #header>
+      <span class="text-base font-semibold">
+        {{ t('profit_loss_report.generate_title') }}
+      </span>
     </template>
     <RangeSelector
       v-model="range"
@@ -97,7 +77,7 @@ onMounted(async () => {
     <RuiAlert
       v-if="isOutOfSync || processing"
       type="warning"
-      class="mt-6"
+      class="mt-4"
     >
       <div class="flex flex-col items-start gap-2">
         <div>
@@ -119,7 +99,7 @@ onMounted(async () => {
     <RuiAlert
       v-if="hasBinanceWithoutMarkets"
       type="warning"
-      class="mt-6"
+      class="mt-4"
     >
       <div class="flex flex-col items-start gap-2">
         <div class="whitespace-break-spaces">
@@ -137,13 +117,44 @@ onMounted(async () => {
       </div>
     </RuiAlert>
     <template #footer>
-      <div class="flex gap-4 w-full">
-        <div class="grow">
+      <div class="flex items-center justify-between gap-2 w-full">
+        <ReportDebugMenu
+          @export-data="exportReportData()"
+          @import-data="importReportData()"
+        />
+        <div class="flex items-center gap-4 min-w-0">
+          <span
+            v-if="range.start !== undefined && range.end > 0"
+            class="text-sm text-rui-text-secondary truncate"
+            data-testid="report-range-summary"
+          >
+            <template v-if="range.start === 0">
+              {{ t('generate.summary_all_time') }}
+            </template>
+            <i18n-t
+              v-else
+              scope="global"
+              keypath="profit_loss_report.report_period"
+            >
+              <template #start>
+                <DateDisplay
+                  no-time
+                  :timestamp="range.start"
+                />
+              </template>
+              <template #end>
+                <DateDisplay
+                  no-time
+                  :timestamp="range.end"
+                />
+              </template>
+            </i18n-t>
+          </span>
           <RuiButton
-            class="w-full"
             color="primary"
-            size="xl"
+            class="shrink-0"
             :disabled="!canGenerate"
+            data-testid="generate-report"
             @click="generate()"
           >
             <template #prepend>
@@ -151,12 +162,6 @@ onMounted(async () => {
             </template>
             {{ t('common.actions.generate') }}
           </RuiButton>
-        </div>
-        <div>
-          <ReportDebugMenu
-            @export-data="exportReportData()"
-            @import-data="importReportData()"
-          />
         </div>
       </div>
     </template>

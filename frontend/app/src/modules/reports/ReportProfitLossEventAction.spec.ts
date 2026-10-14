@@ -74,8 +74,8 @@ describe('reportProfitLossEventAction', () => {
       global: {
         stubs: {
           AmountInput: inputStub('AmountInput'),
-          AssetSelect: inputStub('AssetSelect'),
-          DateTimePicker: inputStub('DateTimePicker'),
+          AssetDetails: { props: ['asset', 'display', 'actions'], template: '<span>{{ asset }}</span>' },
+          DateDisplay: { props: ['timestamp'], template: '<span>{{ timestamp }}</span>' },
           RuiCard: { name: 'RuiCard', template: '<div><slot name="header" /><slot /><slot name="footer" /></div>' },
           // Rendered eagerly, so the dialog contents are reachable without driving the popper.
           RuiDialog: {
@@ -83,9 +83,9 @@ describe('reportProfitLossEventAction', () => {
             props: ['modelValue'],
             template: '<div><slot v-if="modelValue" /></div>',
           },
-          RuiMenu: {
-            name: 'RuiMenu',
-            template: '<div><slot name="activator" :attrs="{}" /><slot /></div>',
+          RuiTooltip: {
+            name: 'RuiTooltip',
+            template: '<div><slot name="activator" /></div>',
           },
         },
       },

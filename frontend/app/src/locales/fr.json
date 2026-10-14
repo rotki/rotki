@@ -2428,8 +2428,7 @@
         "headers": {
           "found_amount": "Montant trouvé",
           "missing_acquisitions": "Acquisitions manquantes",
-          "missing_amount": "Montant manquant",
-          "quick_action": "Action rapide"
+          "missing_amount": "Montant manquant"
         },
         "hint": "Certaines acquisitions d'actifs sont manquantes. Vous devrez déterminer où vous les avez achetées et les importer ou les créer manuellement dans les événements pertinents.",
         "title": "Acquisitions manquantes ({total})",
@@ -2464,14 +2463,11 @@
     "loading": "Attendez que votre rapport de bénéfice/perte se charge",
     "loading_hint": "La génération de votre rapport peut prendre un certain temps en fonction du nombre d'opérations et d'actions que vous avez effectués pendant la période sélectionnée.",
     "loading_message": "Patientez pendant la génération du rapport...",
-    "report_period": "Rapport à partir du {start} au {end}",
-    "settings_tooltip": "Ouvrir les paramètres de comptabilité"
+    "report_period": "Rapport à partir du {start} au {end}"
   },
   "profit_loss_reports": {
     "columns": {
       "created": "Date de création",
-      "end": "Fin de la période",
-      "start": "Début de la période",
       "taxable_profit_loss": "Bénéfice/Perte imposable",
       "taxfree_profit_loss": "Bénéfice/Perte non imposable"
     },

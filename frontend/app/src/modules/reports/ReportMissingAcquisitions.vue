@@ -55,7 +55,7 @@ const headers = computed<DataTableColumn<GroupedMissingAcquisition>[]>(() => [{
   ? []
   : [
     {
-      cellClass: 'py-2',
+      cellClass: 'py-2 whitespace-nowrap',
       key: 'startDate',
       label: t('common.datetime'),
       sortable: true,
@@ -71,9 +71,11 @@ const headers = computed<DataTableColumn<GroupedMissingAcquisition>[]>(() => [{
   key: 'total_amount_missing',
   label: t('profit_loss_report.actionable.missing_acquisitions.headers.total_missing'),
 }, {
-  cellClass: 'py-0',
+  align: 'end',
+  cellClass: isPinned ? 'py-0 px-1!' : 'py-0',
+  class: isPinned ? 'w-px px-1!' : 'w-px',
   key: 'action',
-  label: t('profit_loss_report.actionable.missing_acquisitions.headers.quick_action'),
+  label: '',
 }]);
 
 const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [{
@@ -91,9 +93,9 @@ const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [{
   label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_amount'),
   sortable: true,
 }, {
+  align: 'end',
   key: 'actions',
-  label: t('common.actions_text'),
-  sortable: true,
+  label: '',
 }]);
 
 useRememberTableSorting<GroupedMissingAcquisition>(TableId.REPORT_MISSING_ACQUISITIONS, sort, headers);
@@ -117,13 +119,16 @@ async function showInHistoryEvent(identifier: number) {
 
 <template>
   <CreateDate #default="{ row }">
-    <DateDisplay :timestamp="row.startDate" />
+    <DateDisplay
+      no-time
+      :timestamp="row.startDate"
+    />
     <template v-if="row.startDate !== row.endDate">
-      <span class="ml-0.5">
-        {{ t('profit_loss_report.actionable.missing_acquisitions.to') }}
-        <br />
-      </span>
-      <DateDisplay :timestamp="row.endDate" />
+      <span class="mx-1">{{ t('profit_loss_report.actionable.missing_acquisitions.to') }}</span>
+      <DateDisplay
+        no-time
+        :timestamp="row.endDate"
+      />
     </template>
   </CreateDate>
   <ScrollableDialogContent fill>
@@ -135,13 +140,19 @@ async function showInHistoryEvent(identifier: number) {
       row-attr="asset"
       single-expand
       :dense="isPinned"
+      sticky-header
     >
       <template #item.asset="{ row }">
-        <AssetDetails :asset="row.asset" />
-        <ReuseDate
-          v-if="isPinned"
-          :row="row"
+        <AssetDetails
+          :asset="row.asset"
+          :class="{ 'max-w-44!': isPinned }"
         />
+        <div
+          v-if="isPinned"
+          class="text-xs text-rui-text-secondary whitespace-normal"
+        >
+          <ReuseDate :row="row" />
+        </div>
       </template>
       <template #item.startDate="{ row }">
         <ReuseDate :row="row" />
@@ -156,34 +167,7 @@ async function showInHistoryEvent(identifier: number) {
         />
       </template>
       <template #item.action="{ row }">
-        <div class="flex items-center gap-1">
-          <RuiMenu
-            :options="{ placement: 'bottom-end' }"
-            close-on-content-click
-          >
-            <template #activator="{ attrs }">
-              <RuiButton
-                variant="text"
-                icon
-                v-bind="attrs"
-              >
-                <RuiIcon
-                  size="20"
-                  name="lu-ellipsis-vertical"
-                />
-              </RuiButton>
-            </template>
-            <RuiButton
-              variant="list"
-              @click="ignoreAsset(row.asset)"
-            >
-              <template #prepend>
-                <RuiIcon name="lu-eye-off" />
-                {{ t('assets.action.ignore') }}
-              </template>
-            </RuiButton>
-          </RuiMenu>
-
+        <div class="flex items-center justify-end">
           <RuiTooltip
             v-if="isIgnored(row.asset)"
             :open-delay="400"
@@ -201,6 +185,28 @@ async function showInHistoryEvent(identifier: number) {
             </template>
             {{ t('profit_loss_report.actionable.missing_acquisitions.asset_is_ignored') }}
           </RuiTooltip>
+          <RuiTooltip
+            v-else
+            :open-delay="400"
+          >
+            <template #activator>
+              <RuiButton
+                variant="text"
+                icon
+                size="sm"
+                class="text-rui-text-secondary"
+                :aria-label="t('assets.action.ignore')"
+                data-testid="missing-acquisition-ignore"
+                @click="ignoreAsset(row.asset)"
+              >
+                <RuiIcon
+                  size="18"
+                  name="lu-eye-off"
+                />
+              </RuiButton>
+            </template>
+            {{ t('assets.action.ignore') }}
+          </RuiTooltip>
         </div>
       </template>
       <template #expanded-item="{ row }">
@@ -208,13 +214,10 @@ async function showInHistoryEvent(identifier: number) {
           v-model:sort="childSort"
           :cols="childHeaders"
           :rows="row.acquisitions"
-          class="bg-white dark:bg-rui-grey-900"
           :class="{ 'my-2': isPinned }"
           outlined
-          hide-default-footer
-          hide-default-header
+          dense
           row-attr="asset"
-          single-expand
         >
           <template #item.time="{ row: childItem }">
             <DateDisplay :timestamp="childItem.time" />

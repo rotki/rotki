@@ -3,6 +3,7 @@ import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-t
 import type { ProfitLossEvent } from '@/modules/reports/report-types';
 import { z, type ZodType } from 'zod';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
+import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -10,9 +11,8 @@ import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { requiredField } from '@/modules/core/form/fields';
 import { useForm } from '@/modules/core/form/use-form';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
-import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
-import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
 interface PriceState {
   price: string;
@@ -89,28 +89,28 @@ async function updatePrice(): Promise<void> {
 
 <template>
   <div class="flex justify-end">
-    <RuiMenu :options="{ placement: 'bottom-end' }">
-      <template #activator="{ attrs }">
+    <RuiTooltip
+      :options="{ placement: 'top' }"
+      :open-delay="400"
+    >
+      <template #activator>
         <RuiButton
           variant="text"
-          class="p-2!"
           icon
-          v-bind="attrs"
+          size="sm"
+          class="text-rui-text-secondary"
+          :aria-label="t('profit_loss_events.edit_historic_price')"
+          data-testid="edit-historic-price-open"
+          @click="openEditHistoricPriceDialog()"
         >
-          <RuiIcon name="lu-ellipsis-vertical" />
+          <RuiIcon
+            name="lu-pencil-line"
+            size="16"
+          />
         </RuiButton>
       </template>
-      <RuiButton
-        variant="list"
-        data-testid="edit-historic-price-open"
-        @click="openEditHistoricPriceDialog()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-pencil-line" />
-        </template>
-        {{ t('profit_loss_events.edit_historic_price') }}
-      </RuiButton>
-    </RuiMenu>
+      {{ t('profit_loss_events.edit_historic_price') }}
+    </RuiTooltip>
 
     <RuiDialog
       v-model="showDialog"
@@ -126,41 +126,47 @@ async function updatePrice(): Promise<void> {
           </template>
 
           <div class="flex flex-col gap-4">
-            <AssetSelect
-              :model-value="event.assetIdentifier"
-              :label="t('price_form.from_asset')"
-              hide-details
-              disabled
-              variant="outlined"
-            />
-            <AssetSelect
-              :model-value="currency"
-              :label="t('price_form.to_asset')"
-              hide-details
-              disabled
-              variant="outlined"
-            />
-            <DateTimePicker
-              :model-value="event.timestamp"
-              disabled
-              type="epoch"
-              variant="outlined"
-              hide-details
-              :label="t('common.datetime')"
-            />
+            <dl
+              class="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 text-sm rounded-rui-control bg-rui-grey-50 dark:bg-rui-grey-900 px-3 py-2.5"
+              data-testid="edit-historic-price-summary"
+            >
+              <dt class="text-rui-text-secondary">
+                {{ t('common.asset') }}
+              </dt>
+              <dd class="min-w-0">
+                <AssetDetails
+                  :asset="event.assetIdentifier"
+                  :display="{ inline: true, size: '20px' }"
+                  :actions="{ hideMenu: true }"
+                />
+              </dd>
+              <dt class="text-rui-text-secondary">
+                {{ t('price_form.to_asset') }}
+              </dt>
+              <dd class="min-w-0">
+                <AssetDetails
+                  :asset="currency"
+                  :display="{ inline: true, size: '20px' }"
+                  :actions="{ hideMenu: true }"
+                />
+              </dd>
+              <dt class="text-rui-text-secondary">
+                {{ t('common.datetime') }}
+              </dt>
+              <dd>
+                <DateDisplay :timestamp="event.timestamp" />
+              </dd>
+            </dl>
             <AmountInput
               v-model="form.state.price"
               :loading="fetchingPrice"
               :disabled="fetchingPrice"
               :label="t('common.price')"
+              :hint="t('profit_loss_events.edit_price_warning')"
               :error-messages="form.errors('price')"
               data-testid="edit-historic-price-value"
               @blur="form.touch('price')"
             />
-          </div>
-
-          <div class="text-body-2 text-rui-text-secondary">
-            {{ t('profit_loss_events.edit_price_warning') }}
           </div>
 
           <template #footer>

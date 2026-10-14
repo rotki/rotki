@@ -81,6 +81,7 @@ export function useReportsPage(): UseReportsPageReturn {
   async function handleImportComplete(): Promise<void> {
     await importData();
     set(modelImportDataDialog, false);
+    // the uploader shows the model, so clearing it clears the uploader
     set(modelReportDebugData, undefined);
   }
 

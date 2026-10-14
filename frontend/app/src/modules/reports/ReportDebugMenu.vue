@@ -14,9 +14,9 @@ const { t } = useI18n({ useScope: 'global' });
   >
     <template #activator="{ attrs }">
       <RuiButton
-        variant="outlined"
-        size="xl"
+        variant="text"
         v-bind="attrs"
+        data-testid="report-debug-menu"
       >
         <template #prepend>
           <RuiIcon name="lu-bug" />

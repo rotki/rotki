@@ -1,7 +1,6 @@
 <script setup lang="ts">
-const { isPinned, hint, step, totalSteps, isMissingAcquisitions } = defineProps<{
+const { isPinned, step, totalSteps, isMissingAcquisitions } = defineProps<{
   isPinned: boolean;
-  hint: string;
   step: number;
   totalSteps: number;
   isMissingAcquisitions: boolean;
@@ -19,16 +18,9 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <div
-    class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-2 flex items-center justify-between gap-4"
-    :class="isPinned ? 'py-2' : 'p-4'"
+    class="border-t border-rui-divider relative z-2 flex items-center justify-end gap-4"
+    :class="isPinned ? 'py-2' : 'px-4 py-3'"
   >
-    <div
-      v-if="hint"
-      class="text-caption"
-    >
-      {{ hint }}
-    </div>
-
     <div class="flex gap-2">
       <RuiButton
         v-if="step > 1"
