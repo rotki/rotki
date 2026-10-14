@@ -2,6 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { MoneriumOAuthResult, MoneriumStatus } from './types';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { logger } from '@/modules/core/common/logging/logging';
+import { useIntegrationSignInReminder } from '@/modules/integrations/use-integration-sign-in-reminder';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useMoneriumOAuthApi } from './use-monerium-api';
 
@@ -22,6 +23,7 @@ interface UseMoneriumOAuthReturn {
 export const useMoneriumOAuth = createSharedComposable((): UseMoneriumOAuthReturn => {
   const loading = ref<boolean>(false);
   const api = useMoneriumOAuthApi();
+  const { forgetSignInReminder } = useIntegrationSignInReminder();
 
   const { logged } = storeToRefs(useSessionAuthStore());
   const { allowed } = useFeatureAccess(PremiumFeature.MONERIUM);
@@ -72,6 +74,7 @@ export const useMoneriumOAuth = createSharedComposable((): UseMoneriumOAuthRetur
     try {
       const result = await api.completeOAuth(accessToken, refreshToken, expiresIn);
 
+      forgetSignInReminder('monerium');
       setStatus({
         authenticated: true,
         defaultProfileId: result.defaultProfileId,

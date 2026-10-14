@@ -119,6 +119,16 @@ describe('useNotificationCooldown', () => {
     expect(cooldown.shouldSuppress(scheduled)).toBe(true);
   });
 
+  it('should nag about an integration the user never connected on the schedule', () => {
+    // A redecode asks a signed out user to connect each time it finds events to enrich, so
+    // without the schedule every redecode would interrupt them.
+    const notConnected = `${NotificationGroup.INTEGRATION_SIGN_IN_REMINDER}:monerium`;
+    cooldown.recordDisplay(notConnected);
+
+    vi.setSystemTime(START + DAY - 1000);
+    expect(cooldown.shouldSuppress(notConnected)).toBe(true);
+  });
+
   it('should persist the display count so it survives a new session', async () => {
     cooldown.recordDisplay(scheduled);
     await flush();

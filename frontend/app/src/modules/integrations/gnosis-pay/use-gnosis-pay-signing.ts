@@ -4,6 +4,7 @@ import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { useIntegrationSignInReminder } from '@/modules/integrations/use-integration-sign-in-reminder';
 import { activityLabel } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
@@ -63,6 +64,7 @@ export function useGnosisPaySigning(options: UseGnosisPaySigningOptions): UseGno
   const { removeMatching, showErrorMessage } = useNotifications();
   const { submitTask } = useNativeTask();
   const { fetchNonce, verifySiweSignature } = useGnosisPaySiweApi();
+  const { forgetSignInReminder } = useIntegrationSignInReminder();
 
   const { walletMode } = storeToRefs(useWalletStore());
   const injectedWallet = useInjectedWallet();
@@ -184,6 +186,7 @@ Issued At: ${issuedAt}`;
       if (verified) {
         set(signInSuccess, true);
         clearSessionExpiredWarning();
+        forgetSignInReminder('gnosis_pay');
         if (onSignInComplete)
           await onSignInComplete();
       }

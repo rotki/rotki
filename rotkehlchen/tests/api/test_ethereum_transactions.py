@@ -25,7 +25,7 @@ from rotkehlchen.concurrency import wait
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
-from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.constants import HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
@@ -37,6 +37,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.internal_tx_conflicts import INTERNAL_TX_CONFLICT_ACTION_REPULL
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -2075,35 +2076,38 @@ def test_notify_reauthentication_on_redecode(
         rotkehlchen_api_server: APIServer,
         websocket_connection: WebsocketReader,
 ) -> None:
-    """Check that a reauthentication notification is sent if Gnosis Pay or Monerium events
-    are manually redecoded without having the credentials in the db.
+    """Check that redecoding Gnosis Pay or Monerium events asks the user to sign in only
+    when the redecode leaves events that the service's API would enrich, the user was
+    already signed out before decoding, and with wording for never connected vs expired.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    for counterparty, message_type, error in [
-        (
-            CPT_GNOSIS_PAY,
-            'gnosispay_sessionkey_expired',
-            'Please sign in with GnosisPay again to refresh your data',
-        ),
-        (
-            CPT_MONERIUM,
-            'monerium_sessionkey_expired',
-            'Please sign in with Monerium again to refresh your data',
-        ),
-    ]:
-        websocket_connection.messages.clear()
-        capability_name = GNOSIS_PAY_CAPABILITY if counterparty == CPT_GNOSIS_PAY else MONERIUM_CAPABILITY  # noqa: E501
+    assert rotki.monerium is not None
+    authenticated = {'monerium': False}
+
+    def redecode(
+            counterparty: str,
+            event_subtype: HistoryEventSubType,
+            notes: str,
+            decode_side_effect: Any = None,
+    ) -> None:
         event = EvmEvent(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(1610000000),
             location=Location.GNOSIS,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.NONE,
+            event_type=HistoryEventType.RECEIVE if event_subtype == HistoryEventSubType.CASHBACK else HistoryEventType.SPEND,  # noqa: E501
+            event_subtype=event_subtype,
             asset=A_EUR,
             amount=ONE,
+            notes=notes,
             counterparty=counterparty,
         )
+
+        def decode(*args: Any, **kwargs: Any) -> list[EvmEvent]:
+            if decode_side_effect is not None:
+                decode_side_effect()
+            return [event]
+
         with (
             patch.object(
                 rotki.chains_aggregator.gnosis.node_inquirer,
@@ -2133,11 +2137,16 @@ def test_notify_reauthentication_on_redecode(
             patch.object(
                 target=rotki.chains_aggregator.gnosis.transactions_decoder,
                 attribute='decode_and_get_transaction_hashes',
-                return_value=[event],
+                side_effect=decode,
+            ),
+            patch.object(
+                target=rotki.monerium.oauth_client,  # type: ignore[union-attr]  # checked above
+                attribute='is_authenticated',
+                side_effect=lambda: authenticated['monerium'],
             ),
             patch(
                 'rotkehlchen.api.services.transactions.has_premium_capability',
-                side_effect=lambda premium, capability, capability_name=capability_name: capability == capability_name,  # noqa: E501
+                side_effect=lambda premium, capability: capability in {GNOSIS_PAY_CAPABILITY, MONERIUM_CAPABILITY},  # noqa: E501
             ),
         ):
             assert_proper_response(requests.put(
@@ -2145,8 +2154,79 @@ def test_notify_reauthentication_on_redecode(
                 json={'chain': 'gnosis', 'tx_refs': [str(event.tx_ref)]},
             ))
 
-        websocket_connection.wait_until_messages_num(num=1, timeout=5)
-        assert websocket_connection.messages[0] == {
-            'type': message_type,
-            'data': {'error': error},
-        }
+    def lose_monerium_session() -> None:
+        """What a rejected refresh token does while decoding: sign out and notify once"""
+        authenticated['monerium'] = False
+        notify_reauthentication_required(msg_aggregator=rotki.msg_aggregator, service='monerium')
+
+    with patch(
+        'rotkehlchen.api.services.transactions.notify_reauthentication_required',
+        wraps=notify_reauthentication_required,
+    ) as notify_mock:
+        for counterparty, event_subtype, notes, decode_side_effect, expected_call in (
+            # Gnosis Pay payment without credentials can only be enriched by connecting
+            (CPT_GNOSIS_PAY, HistoryEventSubType.PAYMENT, 'Spend 1 EURe via Gnosis Pay', None, ('gnosispay', 'not_connected')),  # noqa: E501
+            # cashback is never enriched from the API, so there is nothing to sign in for
+            (CPT_GNOSIS_PAY, HistoryEventSubType.CASHBACK, 'Receive cashback of 1 GNO from Gnosis Pay', None, None),  # noqa: E501
+            # Monerium event without the orders data, never connected
+            (CPT_MONERIUM, HistoryEventSubType.NONE, 'Mint 1 EURe', None, ('monerium', 'not_connected')),  # noqa: E501
+            # Monerium event that already has the orders data
+            (CPT_MONERIUM, HistoryEventSubType.NONE, 'Receive 1 EURe via bank transfer', None, None),  # noqa: E501
+        ):
+            notify_mock.reset_mock()
+            redecode(counterparty, event_subtype, notes, decode_side_effect)
+            if expected_call is None:
+                assert notify_mock.call_count == 0
+            else:
+                assert notify_mock.call_count == 1
+                assert notify_mock.call_args.kwargs['service'] == expected_call[0]
+                assert notify_mock.call_args.kwargs['reason'] == expected_call[1]
+                assert notify_mock.call_args.kwargs['reminder'] is True
+
+        # once the orders were queried the user had connected, so the session expired
+        with rotki.data.db.conn.write_ctx() as write_cursor:
+            rotki.data.db.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.LAST_MONERIUM_QUERY_TS,
+                value=Timestamp(1),
+            )
+        notify_mock.reset_mock()
+        redecode(CPT_MONERIUM, HistoryEventSubType.NONE, 'Mint 1 EURe')
+        assert notify_mock.call_count == 1
+        assert notify_mock.call_args.kwargs['reason'] == 'expired'
+        assert notify_mock.call_args.kwargs['reminder'] is True
+
+        # signed in going into the redecode and the session was lost while decoding. The
+        # refresh already notified the user, so the redecode must not notify again.
+        authenticated['monerium'] = True
+        notify_mock.reset_mock()
+        websocket_connection.messages.clear()
+        redecode(CPT_MONERIUM, HistoryEventSubType.NONE, 'Mint 1 EURe', lose_monerium_session)
+        assert notify_mock.call_count == 0
+
+    websocket_connection.wait_until_messages_num(num=1, timeout=5)
+    assert websocket_connection.pop_message() == {
+        'type': 'monerium_sessionkey_expired',
+        'data': {
+            'error': 'Please sign in with Monerium again to refresh your data',
+            'reason': 'expired',
+            'reminder': False,  # sent by the refresh when it finds the session expired
+        },
+    }
+
+    websocket_connection.messages.clear()
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name=?',
+            (DBCacheStatic.LAST_MONERIUM_QUERY_TS.value,),
+        )
+    redecode(CPT_MONERIUM, HistoryEventSubType.NONE, 'Mint 1 EURe')
+    websocket_connection.wait_until_messages_num(num=1, timeout=5)
+    assert websocket_connection.pop_message() == {
+        'type': 'monerium_sessionkey_expired',
+        'data': {
+            'error': 'Sign in with Monerium to add bank transfer details to your Monerium events',
+            'reason': 'not_connected',
+            'reminder': True,
+        },
+    }

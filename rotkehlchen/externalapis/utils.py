@@ -18,8 +18,10 @@ if TYPE_CHECKING:
 
 DEFAULT_API = 'etherscan'
 REAUTHENTICATION_MESSAGES: Final = {
-    'gnosispay': 'Please sign in with GnosisPay again to refresh your data',
-    'monerium': 'Please sign in with Monerium again to refresh your data',
+    ('gnosispay', 'expired'): 'Please sign in with GnosisPay again to refresh your data',
+    ('gnosispay', 'not_connected'): 'Sign in with Gnosis Pay to add merchant details to your Gnosis Pay events',  # noqa: E501
+    ('monerium', 'expired'): 'Please sign in with Monerium again to refresh your data',
+    ('monerium', 'not_connected'): 'Sign in with Monerium to add bank transfer details to your Monerium events',  # noqa: E501
 }
 REAUTHENTICATION_MESSAGE_TYPES: Final = {
     'gnosispay': WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED,
@@ -28,6 +30,7 @@ REAUTHENTICATION_MESSAGE_TYPES: Final = {
 
 
 ReauthService = Literal['gnosispay', 'monerium']
+ReauthReason = Literal['expired', 'not_connected']
 
 
 def read_hash(data: dict[str, Any], key: str, api: str = DEFAULT_API) -> bytes:
@@ -96,8 +99,23 @@ def get_earliest_ts(chain_id: SUPPORTED_CHAIN_IDS) -> Timestamp:
 def notify_reauthentication_required(
         msg_aggregator: MessagesAggregator,
         service: ReauthService,
+        reason: ReauthReason = 'expired',
+        reminder: bool = False,
 ) -> None:
+    """Ask the user to sign in to the service.
+
+    `expired` is for a user whose session stopped working and `not_connected` for
+    one who has never signed in, so the frontend can word the notification accordingly.
+
+    `reminder` marks a repeat of a condition the user may already know about, as opposed
+    to the moment the session is found to be expired. The frontend shows reminders on a
+    backed off schedule instead of each time one is sent.
+    """
     msg_aggregator.add_message(
         message_type=REAUTHENTICATION_MESSAGE_TYPES[service],
-        data={'error': REAUTHENTICATION_MESSAGES[service]},
+        data={
+            'error': REAUTHENTICATION_MESSAGES[service, reason],
+            'reason': reason,
+            'reminder': reminder,
+        },
     )

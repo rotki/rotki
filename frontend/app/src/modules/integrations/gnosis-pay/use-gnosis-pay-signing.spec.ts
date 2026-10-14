@@ -38,6 +38,12 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
   })),
 }));
 
+const forgetSignInReminder = vi.fn<(integration: 'gnosis_pay' | 'monerium') => void>();
+
+vi.mock('@/modules/integrations/use-integration-sign-in-reminder', () => ({
+  useIntegrationSignInReminder: vi.fn().mockImplementation(() => ({ forgetSignInReminder })),
+}));
+
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn().mockImplementation(() => ({ removeMatching, showErrorMessage })),
 }));
@@ -107,6 +113,7 @@ describe('useGnosisPaySigning', () => {
     submitTask.mockClear();
     showErrorMessage.mockReset();
     removeMatching.mockReset();
+    forgetSignInReminder.mockReset();
     signMessage.mockReset().mockResolvedValue('0xSignature');
     const fakeClient = { signMessage };
     injectedGetWalletClient.mockReset().mockReturnValue(fakeClient);
@@ -188,6 +195,17 @@ describe('useGnosisPaySigning', () => {
     expect(predicate(createMock<NotificationData>({ group: NotificationGroup.MISSING_API_KEY }))).toBe(false);
   });
 
+  it('should forget the sign-in reminder once the signature is verified', async () => {
+    const harness = makeHarness();
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
+    runTaskResult.mockImplementationOnce(async () => makeSuccess(true));
+
+    const { signInWithEthereum } = useGnosisPaySigning(harness);
+    await signInWithEthereum();
+
+    expect(forgetSignInReminder).toHaveBeenCalledExactlyOnceWith('gnosis_pay');
+  });
+
   it('should keep the session-expired warning when verification returns false', async () => {
     const harness = makeHarness();
     runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
@@ -197,6 +215,7 @@ describe('useGnosisPaySigning', () => {
     await signInWithEthereum();
 
     expect(removeMatching).not.toHaveBeenCalled();
+    expect(forgetSignInReminder).not.toHaveBeenCalled();
   });
 
   it('should put a bare authority on line 1 and the full url in URI', async () => {

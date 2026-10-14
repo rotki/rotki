@@ -7,6 +7,7 @@ import requests
 
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.externalapis.helius import HELIUS_RPC_URL
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -15,7 +16,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_sync_response_with_result,
 )
-from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -411,3 +412,28 @@ def test_remove_external_services_errors(rotkehlchen_api_server: APIServer) -> N
         contained_in_msg='Failed to deserialize ExternalService value unknown',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_disconnect_monerium_forgets_previous_connection(
+        rotkehlchen_api_server: APIServer,
+        start_with_valid_premium: bool,  # pylint: disable=unused-argument
+) -> None:
+    """Disconnecting must also forget the last orders query, which is what tells a user
+    whose session expired apart from one who never connected."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.user_write() as write_cursor:
+        for name, value in (
+            (DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS, '{"access_token": "a", "refresh_token": "b", "expires_at": 1}'),  # noqa: E501
+            (DBCacheStatic.LAST_MONERIUM_QUERY_TS, Timestamp(1)),
+        ):
+            db.set_static_cache(write_cursor=write_cursor, name=name, value=value)
+
+    with patch('rotkehlchen.api.v1.resources.has_premium_capability', return_value=True):
+        assert_proper_response(requests.delete(
+            api_url_for(rotkehlchen_api_server, 'moneriumoauthresource'),
+        ))
+
+    with db.conn.read_ctx() as cursor:
+        for name in (DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS, DBCacheStatic.LAST_MONERIUM_QUERY_TS):  # noqa: E501
+            assert db.get_static_cache(cursor=cursor, name=name) is None

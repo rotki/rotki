@@ -20,10 +20,12 @@ const NAG_INTERVALS: number[] = [0, DAY, 2 * DAY, 7 * DAY];
 
 /**
  * Groups whose condition persists across logins and so is re-announced every session: a missing
- * API key is still missing tomorrow. Everything else keeps the burst cooldown alone, since a
- * multi-day schedule would silence notifications that are meant to fire once per event.
+ * API key is still missing tomorrow, and an integration the user never connected is still not
+ * connected. Everything else keeps the burst cooldown alone, since a multi-day schedule would
+ * silence notifications that are meant to fire once per event.
  */
 const SCHEDULED_GROUPS: Set<NotificationGroup> = new Set([
+  NotificationGroup.INTEGRATION_SIGN_IN_REMINDER,
   NotificationGroup.MISSING_API_KEY,
   NotificationGroup.NO_AVAILABLE_INDEXERS,
 ]);

@@ -3,6 +3,7 @@ import type { MoneriumSessionKeyExpiredData } from '@/modules/core/messaging/typ
 import { NotificationCategory, NotificationGroup, Severity } from '@rotki/common';
 import { createNotificationHandler } from '@/modules/core/messaging/utils';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
+import { signInReminderGroup } from '@/modules/integrations/use-integration-sign-in-reminder';
 
 export function createMoneriumSessionHandler(
   t: ReturnType<typeof useI18n>['t'],
@@ -11,9 +12,13 @@ export function createMoneriumSessionHandler(
   const { refreshStatus, setStatus } = useMoneriumOAuth();
 
   return createNotificationHandler<MoneriumSessionKeyExpiredData>(async (data) => {
-    // Backend may have cleared credentials (invalid_grant); update UI state immediately.
-    setStatus({ authenticated: false });
-    await refreshStatus();
+    const notConnected = data.reason === 'not_connected';
+    if (!data.reminder) {
+      // Backend may have cleared credentials (invalid_grant); update UI state immediately.
+      // A reminder is sent while already signed out, so there is no state to update.
+      setStatus({ authenticated: false });
+      await refreshStatus();
+    }
 
     return {
       action: {
@@ -22,15 +27,19 @@ export function createMoneriumSessionHandler(
           query: { service: 'monerium' },
         }),
         icon: 'lu-arrow-right',
-        label: t('external_services.actions.reauthenticate'),
+        label: notConnected ? t('external_services.actions.authenticate') : t('external_services.actions.reauthenticate'),
         persist: true,
       },
       category: NotificationCategory.DEFAULT,
       display: true,
-      group: NotificationGroup.MONERIUM_AUTH,
+      // A reminder repeats on every redecode that finds events to enrich, so it is nagged on a
+      // schedule. The expiry itself is a change the user should hear about at once.
+      group: data.reminder ? signInReminderGroup('monerium') : NotificationGroup.MONERIUM_AUTH,
       message: data.error,
       severity: Severity.WARNING,
-      title: t('notification_messages.monerium_session_key_expired.title'),
+      title: notConnected
+        ? t('notification_messages.monerium_not_connected.title')
+        : t('notification_messages.monerium_session_key_expired.title'),
     };
   });
 }

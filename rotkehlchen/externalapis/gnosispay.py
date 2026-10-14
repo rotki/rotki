@@ -125,6 +125,17 @@ class GnosisPay:
         set_user_agent(self.session)
         self.session.headers = {'Authorization': f'Bearer {self.session_token}'}
 
+    @staticmethod
+    def is_gnosis_pay_event_unenriched(event_notes: str | None) -> bool:
+        """Check if an event is a payment that still has the notes the decoder gives it,
+        which the merchant data from the API replaces. Other Gnosis Pay events, like
+        cashback or refunds, are never enriched from the API."""
+        return (
+            event_notes is not None and
+            event_notes.startswith('Spend') and
+            event_notes.endswith('via Gnosis Pay')
+        )
+
     def _query(
             self,
             endpoint: Literal['cards/transactions', 'safe/migration'],
