@@ -31,8 +31,7 @@
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Dernière détection : {time}",
-        "redetect": "Redétecter les tokens",
-        "redetect_all": "Redétecter les tokens pour toutes les adresses"
+        "redetect": "Redétecter les tokens"
       }
     },
     "edit_tooltip": "Modifier le compte",
@@ -855,8 +854,7 @@
   "blockchain_balances": {
     "add_account": "Ajouter un compte",
     "evm_detection": {
-      "title": "Détecter les comptes EVM",
-      "tooltip": "Détecter les activités de tous les comptes EVM enregistrés dans d'autres chaînes EVM, et les enregistrer."
+      "title": "Détecter les comptes EVM"
     },
     "form_dialog": {
       "add_title": "Ajouter un compte blockchain",
@@ -2015,10 +2013,7 @@
       "title": "Supprimer le solde manuel"
     },
     "delete_tooltip": "Supprimer le solde",
-    "edit_tooltip": "Modifier le solde",
-    "refresh": {
-      "tooltip": "Rafraîchir les soldes manuels"
-    }
+    "edit_tooltip": "Modifier le solde"
   },
   "merge_dialog": {
     "done": "La fusion de l'actif est terminée. L'ancien actif apparaîtra toujours dans l'interface utilisateur. Pour vous assurer que le nouvel actif est affiché partout, redémarrez l'application ou actualisez manuellement les soldes à chaque endroit où l'ancien actif apparaît.",

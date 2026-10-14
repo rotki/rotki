@@ -56,8 +56,7 @@
       "tooltip": {
         "disabled": "已在 设置 → 链 中跳过，rotki 不会查询该链",
         "last_detected": "上次检测：{time}",
-        "redetect": "重新检测代币",
-        "redetect_all": "重新检测所有地址的代币"
+        "redetect": "重新检测代币"
       }
     },
     "detected": {
@@ -66,7 +65,6 @@
     },
     "edit_tooltip": "编辑账户",
     "enter_selection_mode": "在展开的账户中选择资产，以忽略它们或标记为垃圾资产",
-    "exit_selection_mode": "退出选择模式",
     "filter_field_labels": {
       "account": "账户",
       "chain": "链"
@@ -1815,8 +1813,7 @@
     "evm_detection": {
       "found": "已在 {count} 条链上添加 | 已在 {count} 条链上添加",
       "none": "未发现新链",
-      "title": "检测 EVM 账户",
-      "tooltip": "检测所有已登记 EVM 账户在其他 EVM 链上的活动，并进行登记。"
+      "title": "检测 EVM 账户"
     },
     "export_blockchain_accounts": "导出区块链账户",
     "filter": {
@@ -1843,8 +1840,7 @@
     "validator_index_label": "以太坊验证者 No. {index}",
     "validators": {
       "auto_detection_info": "验证者会根据 ETH 质押存入自动检测。请将存入地址添加为以太坊账户，解码其历史事件，然后点击刷新以更新列表。",
-      "consolidated": "已合并至：",
-      "selected": "已选择 {count} 个验证者"
+      "consolidated": "已合并至："
     }
   },
   "bridge_matching": {
@@ -3248,7 +3244,8 @@
     "api_key_menu": {
       "consensus_rpc_title": "质押数据源",
       "dismiss": "不再显示",
-      "optional": "可选 API Key"
+      "optional": "可选 API Key",
+      "stop_reminding": "不再提醒"
     },
     "beaconchain": {
       "api_key_message": "如果你有 Beaconcha.in API Key，可在此添加以获取出块历史和更完善的质押分析。添加验证者并不需要它。",
@@ -4588,6 +4585,11 @@
         "subtitle": "修改余额数量、位置和标签",
         "title": "编辑手动余额"
       }
+    },
+    "refresh_menu": {
+      "label": "更多刷新选项",
+      "prices": "仅刷新价格",
+      "prices_description": "获取你手动追踪的资产的最新价格"
     }
   },
   "manual_balances_form": {
@@ -4619,12 +4621,19 @@
     },
     "delete_tooltip": "删除余额",
     "edit_tooltip": "编辑余额",
+    "empty": {
+      "add_liability": "添加负债",
+      "balances_description": "追踪 rotki 无法自动读取的资产，例如现金、储蓄账户或不受支持的交易所。",
+      "balances_title": "暂无手动余额",
+      "clear_filters": "清除筛选",
+      "filtered_description": "更改或清除筛选条件以查看其他条目。",
+      "filtered_title": "没有符合这些筛选条件的条目",
+      "liabilities_description": "记录你的负债，例如贷款或房贷，让净资产将其计算在内。",
+      "liabilities_title": "暂无负债"
+    },
     "missing_asset": {
       "title": "资产缺失",
       "tooltip": "你使用的 GlobalDB 中缺少此资产。请编辑该条目以设置其他资产，或删除此条目。"
-    },
-    "refresh": {
-      "tooltip": "刷新手动余额"
     }
   },
   "merge_dialog": {

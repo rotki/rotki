@@ -22,9 +22,12 @@
   },
   "account_balances": {
     "aggregated_assets": "Aggregated assets",
+    "asset_count": "{count} asset | {count} assets",
     "chain_filter": {
       "add": "Add \"{chain}\" to filter",
       "clear": "Enable all chains",
+      "excluded": "excluded",
+      "more": "{count} more chains",
       "remove": "Remove \"{chain}\" from filter"
     },
     "confirm_delete": {
@@ -47,6 +50,12 @@
         "message": "Scans every EVM address on every chain, which can take a while.",
         "title": "Re-detect tokens for all chains"
       },
+      "menu": {
+        "all_description": "Scan every EVM address for the tokens it holds",
+        "chains_description": "Pick the chains to scan",
+        "chains_title": "Re-detect tokens on specific chains",
+        "section": "Detect"
+      },
       "selection": {
         "redetect": "Re-detect",
         "redetect_selected": " Re-detect {length} selected chain(s)",
@@ -55,10 +64,10 @@
         "type": "Type the chain"
       },
       "tooltip": {
+        "detected": "{count} tokens detected",
         "disabled": "Skipped in Settings → Chains, so rotki does not query it",
         "last_detected": "Last detected: {time}",
-        "redetect": "Re-detect tokens",
-        "redetect_all": "Re-detect tokens for all addresses"
+        "redetect": "Re-detect tokens"
       }
     },
     "detected": {
@@ -66,14 +75,21 @@
       "tooltip": "Account detection added this address on {chains}. Click to dismiss."
     },
     "edit_tooltip": "Edit account",
+    "empty": {
+      "clear_filters": "Clear filters",
+      "description": "Add an address to start tracking its balances.",
+      "filtered_description": "Try other filters, or clear them to see every account.",
+      "filtered_title": "No accounts match the filters",
+      "title": "No accounts yet"
+    },
     "enter_selection_mode": "Select assets in an expanded account to ignore them or mark them as spam",
-    "exit_selection_mode": "Exit selection mode",
     "filter_field_labels": {
       "account": "Account",
       "chain": "Chain"
     },
     "per_chain": "Per chain",
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries",
+    "row_menu": "More actions for this account",
     "skip_queries": {
       "chain_marker": "rotki does not query this account on {chain}",
       "chain_skipped": "skipped",
@@ -84,7 +100,8 @@
       "resume": "Query this account again on {chains}",
       "resume_all": "Query this chain again | Query all {count} chains again",
       "skip": "Skip balance and history queries for this account on {chains}",
-      "skip_all": "Skip queries on this chain | Skip all {count} chains"
+      "skip_all": "Skip queries on this chain | Skip all {count} chains",
+      "title": "Skip queries"
     }
   },
   "account_form": {
@@ -948,6 +965,12 @@
       "add_title": "Add address book entry",
       "edit_title": "Edit address book entry"
     },
+    "empty": {
+      "filtered": "No matching entries",
+      "filtered_description": "Nothing in this address book matches the filter.",
+      "private": "Your private address book is empty",
+      "private_description": "Name an address with \"Add address book entry\", or import a CSV file."
+    },
     "filter_field_labels": {
       "address": "Address",
       "chain": "Chain",
@@ -982,6 +1005,7 @@
       "private_description": "address book is saved only for this account."
     },
     "import": {
+      "description": "Add names from a CSV file with \"address\" and \"name\" columns, and optionally \"blockchain\" and \"location\" (global or private). Rows without a location go into your private address book.",
       "import_error": {
         "invalid_format": "Invalid CSV format. Must contain \"address\" and \"name\" columns.",
         "message": "Error importing address book names: {error}"
@@ -991,6 +1015,7 @@
       },
       "title": "Import Address Book Entries"
     },
+    "no_name": "—",
     "strict_blockchain_filter": {
       "hint": "If true, results are limited to an exact match with the 'blockchain filter.' If false, results include all blockchains from the same chain family that accept the address format (e.g., all EVM-based chains if the filter is set to an EVM chain).",
       "label": "Strict blockchain filter"
@@ -1835,10 +1860,10 @@
     "eth_staking_limit_error": "Adding this validator would put you over your {currentTier} plan's ETH staking limit of {limit} ETH. {link}, or contact us for a custom plan, to raise your limit.",
     "eth_staking_no_access": "Your {currentTier} plan doesn't include ETH staking. {link}, or contact us for a custom plan, to get access.",
     "evm_detection": {
+      "description": "Find your addresses' activity on other EVM chains and add them there",
       "found": "Added on {count} chain | Added on {count} chains",
       "none": "No new chains found",
-      "title": "Detect EVM accounts",
-      "tooltip": "Detect activities of all registered EVM accounts in other EVM chains, and register them."
+      "title": "Detect EVM accounts"
     },
     "export_blockchain_accounts": "Export blockchain accounts",
     "filter": {
@@ -1865,8 +1890,7 @@
     "validator_index_label": "Ethereum validator No. {index}",
     "validators": {
       "auto_detection_info": "Validators are auto-detected from ETH deposits. Add the depositor address as an Ethereum account, decode its history events, then click refresh to update the list.",
-      "consolidated": "Consolidated into:",
-      "selected": "{count} validator(s) selected"
+      "consolidated": "Consolidated into:"
     }
   },
   "bridge_matching": {
@@ -2069,6 +2093,7 @@
       "retry": "Retry",
       "save": "Save",
       "search": "Search",
+      "select": "Select",
       "select_all": "Select All",
       "show_less": "Show less",
       "show_more_num": "Show {count} more",
@@ -3279,7 +3304,8 @@
     "api_key_menu": {
       "consensus_rpc_title": "Staking data source",
       "dismiss": "Don't show again",
-      "optional": "Optional API key"
+      "optional": "Optional API key",
+      "stop_reminding": "Stop reminding me"
     },
     "beaconchain": {
       "api_key_message": "If you have a Beaconcha.in API key, you can add it here to retrieve block production history and improved staking analytics. It is not required to add a validator.",
@@ -4704,6 +4730,11 @@
         "subtitle": "Modify balance amount, location, and tags",
         "title": "Edit manual balance"
       }
+    },
+    "refresh_menu": {
+      "label": "More refresh options",
+      "prices": "Refresh prices only",
+      "prices_description": "Fetch the latest prices of the assets you track by hand"
     }
   },
   "manual_balances_form": {
@@ -4735,12 +4766,19 @@
     },
     "delete_tooltip": "Delete balance",
     "edit_tooltip": "Edit balance",
+    "empty": {
+      "add_liability": "Add liability",
+      "balances_description": "Track what rotki cannot read on its own, like cash, a savings account or an exchange it does not support.",
+      "balances_title": "No manual balances yet",
+      "clear_filters": "Clear filters",
+      "filtered_description": "Change or clear the filters to see the other entries.",
+      "filtered_title": "Nothing matches these filters",
+      "liabilities_description": "Record what you owe, like a loan or a mortgage, so your net worth accounts for it.",
+      "liabilities_title": "No liabilities yet"
+    },
     "missing_asset": {
       "title": "Asset is Missing",
       "tooltip": "You are using a GlobalDB where this asset is missing. Edit the event to set a different asset, or delete this entry."
-    },
-    "refresh": {
-      "tooltip": "Refresh manual balances"
     }
   },
   "merge_dialog": {
@@ -5803,7 +5841,8 @@
     "all_address_queried": "Every Ethereum address is queried for {module}. Add addresses to query only those.",
     "remove_tooltip": "Remove the address from the queried addresses",
     "subtitle": "Choose which Ethereum addresses rotki queries for {module}",
-    "title": "Queried addresses"
+    "title": "Queried addresses",
+    "untracked": "No longer a tracked account"
   },
   "reports_table": {
     "delete": "Delete report",

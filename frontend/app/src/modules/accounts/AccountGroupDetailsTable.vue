@@ -85,7 +85,6 @@ defineExpose({
     v-model:pagination="pagination"
     v-model:sort="sort"
     v-model:expanded-ids="expanded"
-    class="bg-white dark:bg-dark-elevated"
     :accounts="accounts"
     :category="category"
     @edit="emit('edit', $event)"

@@ -58,6 +58,8 @@ interface UseAccountBalancesPaginationOptions {
 interface UseAccountBalancesPaginationReturn {
   accounts: Ref<Collection<BlockchainAccountGroupWithBalance>>;
   fetchData: () => Promise<void>;
+  /** A page fetch is in flight; before the first one lands, an empty list means "not loaded yet". */
+  isLoading: Ref<boolean>;
   pagination: WritableComputedRef<TablePaginationData>;
   sort: WritableComputedRef<DataTableSortData<BlockchainAccountGroupWithBalance>>;
 }
@@ -128,6 +130,7 @@ export function useAccountBalancesPagination(
 
   const {
     collection: accounts,
+    isLoading,
     pagination,
     refetch: fetchData,
     sort,
@@ -153,6 +156,7 @@ export function useAccountBalancesPagination(
   return {
     accounts,
     fetchData,
+    isLoading,
     pagination,
     sort,
   };

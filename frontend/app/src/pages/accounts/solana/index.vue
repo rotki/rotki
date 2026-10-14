@@ -4,7 +4,7 @@ import AccountBalancesDefaultPage from '@/modules/accounts/AccountBalancesDefaul
 
 definePage({
   meta: {
-    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.solana'), icon: 'lu-solana-accounts-fill', parent: '/accounts/', order: 30, drawer: 'accounts-solana' },
+    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.solana'), icon: 'lu-solana-accounts', parent: '/accounts/', order: 30, drawer: 'accounts-solana' },
   },
 });
 

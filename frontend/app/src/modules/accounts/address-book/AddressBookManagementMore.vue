@@ -43,48 +43,43 @@ async function doImport() {
 
 <template>
   <div>
-    <RuiMenu
-      :options="{ placement: 'bottom-end' }"
-      :class-names="{ menu: 'max-w-96' }"
-      close-on-content-click
-    >
-      <template #activator="{ attrs }">
+    <RuiTooltip :open-delay="400">
+      <template #activator>
         <RuiButton
-          variant="text"
-          icon
-          size="lg"
-          v-bind="attrs"
+          variant="outlined"
+          color="primary"
+          data-testid="address-book-import"
+          @click="importDialogOpen = true"
         >
-          <RuiIcon name="lu-ellipsis-vertical" />
+          <template #prepend>
+            <RuiIcon name="lu-file-up" />
+          </template>
+          {{ t('common.actions.import') }}
         </RuiButton>
       </template>
-      <RuiButton
-        variant="list"
-        data-testid="address-book-import"
-        @click="importDialogOpen = true;"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-file-up" />
-        </template>
-        {{ t('address_book.import.title') }}
-      </RuiButton>
-    </RuiMenu>
+      {{ t('address_book.import.title') }}
+    </RuiTooltip>
     <RuiDialog
       v-model="importDialogOpen"
-      max-width="600"
+      max-width="560"
     >
       <RuiCard>
         <template #header>
           {{ t('address_book.import.title') }}
         </template>
+        <template #subheader>
+          {{ t('address_book.import.description') }}
+        </template>
         <RuiFileUpload
           v-model="importFile"
           accept=".csv"
+          :disabled="loading"
           :upload-text="t('file_upload.dropzone.prefix')"
           :click-to-upload-text="t('file_upload.dropzone.choose')"
           :replace-text="t('file_upload.dropzone.replace')"
+          data-testid="address-book-import-file"
         />
-        <div class="mt-2 text-caption text-rui-text-secondary">
+        <div class="mt-2 text-sm text-rui-text-secondary">
           <i18n-t
             scope="global"
             keypath="blockchain_balances.import_csv_example"
@@ -102,7 +97,7 @@ async function doImport() {
         <template #footer>
           <div class="grow" />
           <RuiButton
-            variant="text"
+            variant="outlined"
             color="primary"
             data-testid="address-book-import-cancel"
             @click="importDialogOpen = false"

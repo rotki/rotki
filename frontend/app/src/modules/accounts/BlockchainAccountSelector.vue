@@ -175,7 +175,7 @@ function getAccount(account: AddressAccount): Account {
             :hide-chain-icon="hideChainIcon"
           />
           <TagDisplay
-            :class="hideChainIcon ? 'pl-8' : 'pl-15'"
+            class="pl-10"
             :tags="item.tags"
             small
           />

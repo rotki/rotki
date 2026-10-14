@@ -6,6 +6,7 @@ import type { SelectOptions } from '@/modules/core/common/common-types';
 import { Blockchain } from '@rotki/common';
 import { addressBookEntrySchema } from '@/modules/accounts/address-book/address-book-form';
 import { useAddressSuggestions } from '@/modules/accounts/address-book/use-address-suggestions';
+import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import { useBlockie } from '@/modules/accounts/use-blockie';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -53,6 +54,8 @@ const addressSuggestions = useAddressSuggestions(() => state.blockchain, {
 
 const { getBlockie } = useBlockie();
 
+const locationLabel = computed<string>(() => get(locations).find(item => item.key === state.location)?.label ?? state.location);
+
 const chainOptions = computed<string[]>(() => [
   'all',
   ...get(supportedChains).map(item => item.id).filter(item => item !== Blockchain.ETH2),
@@ -75,62 +78,98 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
-    <RuiMenuSelect
-      v-model="state.location"
-      :label="t('common.location')"
-      :options="locations"
-      :disabled="editMode"
-      key-attr="key"
-      text-attr="label"
-      variant="outlined"
-      data-testid="address-book-form-location"
-    />
-    <ChainSelect
-      v-model="blockchainModel"
-      :disabled="editMode"
-      :items="chainOptions"
-      :error-messages="fieldErrors('blockchain')"
-      data-testid="address-book-form-chain"
-    />
-    <div class="flex gap-2">
-      <div class="m-3 rounded-full overflow-hidden w-8 h-8 bg-rui-grey-300 dark:bg-rui-grey-600">
-        <AppImage
-          v-if="modelValue.address"
-          :src="getBlockie(modelValue.address)"
-          size="2rem"
+  <div class="flex flex-col gap-2">
+    <dl
+      v-if="editMode"
+      class="grid grid-cols-[auto_auto_1fr] gap-4 m-0 mb-4 rounded-rui-control border border-rui-divider px-4 py-3"
+      data-testid="address-book-form-summary"
+    >
+      <div class="flex flex-col gap-1">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('common.location') }}
+        </dt>
+        <dd class="m-0 font-medium text-rui-text">
+          {{ locationLabel }}
+        </dd>
+      </div>
+      <div class="flex flex-col gap-1">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('common.blockchain') }}
+        </dt>
+        <dd class="m-0 text-rui-text">
+          <ChainDisplay
+            :chain="state.blockchain ?? 'all'"
+            dense
+          />
+        </dd>
+      </div>
+      <div class="flex flex-col gap-1 min-w-0">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('address_book.form.labels.address') }}
+        </dt>
+        <dd class="m-0 flex items-center gap-2 min-w-0 text-rui-text">
+          <AppImage
+            class="rounded-full overflow-hidden shrink-0"
+            :src="getBlockie(state.address)"
+            size="1.25rem"
+          />
+          <span class="font-mono text-sm truncate">{{ state.address }}</span>
+        </dd>
+      </div>
+    </dl>
+    <template v-else>
+      <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+        <RuiMenuSelect
+          v-model="state.location"
+          :label="t('common.location')"
+          :options="locations"
+          key-attr="key"
+          text-attr="label"
+          data-testid="address-book-form-location"
+        />
+        <ChainSelect
+          v-model="blockchainModel"
+          :items="chainOptions"
+          :error-messages="fieldErrors('blockchain')"
+          data-testid="address-book-form-chain"
         />
       </div>
-      <AutoCompleteWithSearchSync
-        v-model.trim="state.address"
-        class="flex-1"
-        :label="t('address_book.form.labels.address')"
-        :items="addressSuggestions"
-        :no-data-text="t('address_book.form.no_suggestions_available')"
-        :disabled="editMode"
-        :error-messages="fieldErrors('address')"
-        clearable
-        data-testid="address-book-form-address"
-        @update:model-value="touch('address')"
-      >
-        <template #item.prepend="{ item }">
-          <div
-            v-if="item"
-            class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
-          >
-            <AppImage
+      <div class="flex items-start gap-3">
+        <div class="mt-[1.625rem] shrink-0 rounded-full overflow-hidden size-8 bg-rui-grey-300 dark:bg-rui-grey-600">
+          <AppImage
+            v-if="modelValue.address"
+            :src="getBlockie(modelValue.address)"
+            size="2rem"
+          />
+        </div>
+        <AutoCompleteWithSearchSync
+          v-model.trim="state.address"
+          class="flex-1 min-w-0"
+          :label="t('address_book.form.labels.address')"
+          :items="addressSuggestions"
+          :no-data-text="t('address_book.form.no_suggestions_available')"
+          :error-messages="fieldErrors('address')"
+          clearable
+          data-testid="address-book-form-address"
+          @update:model-value="touch('address')"
+        >
+          <template #item.prepend="{ item }">
+            <div
               v-if="item"
-              :src="getBlockie(item)"
-              size="1.5rem"
-            />
-          </div>
-        </template>
-      </AutoCompleteWithSearchSync>
-    </div>
+              class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
+            >
+              <AppImage
+                v-if="item"
+                :src="getBlockie(item)"
+                size="1.5rem"
+              />
+            </div>
+          </template>
+        </AutoCompleteWithSearchSync>
+      </div>
+    </template>
     <RuiTextField
       v-model="state.name"
-      class="mt-2"
-      variant="outlined"
       color="primary"
       :label="t('common.name')"
       :error-messages="fieldErrors('name')"

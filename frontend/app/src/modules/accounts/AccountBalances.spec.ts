@@ -7,6 +7,7 @@ import flushPromises from 'flush-promises';
 import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
@@ -30,6 +31,17 @@ vi.mock('vue-router', () => ({
   })),
   createWebHashHistory: vi.fn(),
 }));
+
+// the supported chains never load here, so the category gets its one chain directly
+vi.mock('@/modules/accounts/use-account-category-helper', async () => {
+  const vue = await import('vue');
+  return {
+    useAccountCategoryHelper: vi.fn(() => ({
+      chainIds: vue.computed<string[]>(() => ['eth']),
+      isEvm: vue.computed<boolean>(() => true),
+    })),
+  };
+});
 
 describe('account-balances', () => {
   let wrapper: VueWrapper<InstanceType<typeof AccountBalances>>;
@@ -75,9 +87,21 @@ describe('account-balances', () => {
 
     remove(1);
     orchestrator.markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH);
-    await nextTick();
+    useBlockchainAccountsStore().updateAccounts(Blockchain.ETH, []);
+    await flushPromises();
 
     expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBe(false);
-    expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');
+    expect(wrapper.find('[data-testid=table-empty-notice]').text()).toContain('account_balances.empty.title');
+    expect(wrapper.find('[data-testid=accounts-empty-add]').exists()).toBe(true);
+  });
+
+  it('should keep loading until a chain of the category has settled', async () => {
+    await flushPromises();
+    expect(wrapper.find('[data-testid=table-empty-notice]').exists()).toBe(false);
+
+    useBlockchainAccountsStore().markFetchFailed(Blockchain.ETH);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=table-empty-notice]').exists()).toBe(true);
   });
 });

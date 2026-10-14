@@ -23,6 +23,10 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 interface UseAccountDeleteReturn {
   showConfirmation: (params: ShowConfirmationParams, onComplete?: () => void) => void;
+  /** What deleting would remove, for a confirmation the caller shows itself, such as an inline one. */
+  describeDeletion: (params: ShowConfirmationParams) => string;
+  /** Deletes at once, for a caller that has already confirmed with the user. */
+  deleteConfirmed: (params: ShowConfirmationParams, onComplete?: () => void) => Promise<void>;
 }
 
 export function useAccountDelete(): UseAccountDeleteReturn {
@@ -113,7 +117,18 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     });
   }
 
+  function describeDeletion(params: ShowConfirmationParams): string {
+    return describe(planDeletion(params));
+  }
+
+  async function deleteConfirmed(params: ShowConfirmationParams, onComplete?: () => void): Promise<void> {
+    pipe(await execute(planDeletion(params)), tapOption(prune));
+    onComplete?.();
+  }
+
   return {
+    deleteConfirmed,
+    describeDeletion,
     showConfirmation,
   };
 }
