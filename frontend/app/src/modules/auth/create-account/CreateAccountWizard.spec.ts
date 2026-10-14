@@ -80,13 +80,26 @@ describe('createAccountWizard', () => {
 
   describe('the heading', () => {
     it('should offer to create an account by default', () => {
-      expect(createWrapper().find('h4').text()).toBe('create_account.title');
+      expect(createWrapper().find('h1').text()).toBe('create_account.title');
     });
 
     it('should offer to restore one once that mode is chosen', () => {
       const wrapper = createWrapper({ mode: 'restore' });
 
-      expect(wrapper.find('h4').text()).toBe('create_account.title_restore');
+      expect(wrapper.find('h1').text()).toBe('create_account.title_restore');
+    });
+
+    /** The side stepper naming the step is hidden on small screens, so the heading takes over. */
+    it('should name the current step past the first', () => {
+      const wrapper = createWrapper({ mode: 'create', step: 2 });
+
+      expect(wrapper.find('h1').text()).toBe('create_account.steps.step_2.title');
+    });
+
+    it('should word the step for the chosen mode', () => {
+      const wrapper = createWrapper({ mode: 'restore', step: 3 });
+
+      expect(wrapper.find('h1').text()).toBe('create_account.steps.step_3.restore_title');
     });
   });
 

@@ -253,10 +253,6 @@ watch(() => isTerminalStatus(activity.status), () => set(toggled, false));
       </template>
     </DockActivityRow>
 
-    <!--
-      16px of indent per level, not 24. The panel is 400px and a history refresh nests three deep,
-      so the wider step spent a fifth of the width on guide lines and truncated the labels instead.
-    -->
     <div
       v-if="shownEntries.length > 0"
       class="flex flex-col ml-2 pl-2 border-l border-default"
@@ -300,7 +296,6 @@ watch(() => isTerminalStatus(activity.status), () => set(toggled, false));
       >
         {{ t('task_dock.panel.show_all', { count: entries.length - NESTED_LIMIT }, entries.length - NESTED_LIMIT) }}
       </RuiButton>
-      <!-- The same spacer a row has for its icon, so the button's text lines up with the labels above it. -->
       <div
         v-if="!expanded && hiddenCount > 0"
         class="flex items-center gap-2.5 px-1"

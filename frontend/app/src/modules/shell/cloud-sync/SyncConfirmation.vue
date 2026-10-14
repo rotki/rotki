@@ -27,7 +27,7 @@ const choice = computed<number>(() => (download ? 2 : 1));
 
 <template>
   <div
-    class="flex flex-col gap-3 rounded-md border border-rui-error/40 bg-rui-error/5 p-3"
+    class="flex flex-col gap-3 rounded-rui-control border border-rui-error/40 bg-rui-error/5 p-3"
     data-testid="sync-confirmation"
   >
     <div class="flex gap-2">

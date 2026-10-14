@@ -80,11 +80,11 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/address-book-manager/': RouteRecordInfo<
-      '/address-book-manager/',
-      '/address-book-manager',
-      Record<never, never>,
-      Record<never, never>,
+    '/address-book-manager/[[tab]]': RouteRecordInfo<
+      '/address-book-manager/[[tab]]',
+      '/address-book-manager/:tab(global|private)?',
+      { tab?: ParamValueZeroOrOne<true> },
+      { tab?: ParamValueZeroOrOne<false> },
       | never
     >,
     '/airdrops/': RouteRecordInfo<
@@ -155,11 +155,19 @@ declare module 'vue-router/auto-routes' {
       '/asset-manager/more',
       Record<never, never>,
       Record<never, never>,
+      | '/asset-manager/more/'
       | '/asset-manager/more/cex-mapping/'
       | '/asset-manager/more/counterparty-mapping/'
       | '/asset-manager/more/missing-mappings/'
       | '/asset-manager/more/newly-detected/'
       | '/asset-manager/more/solana-token-migration/'
+    >,
+    '/asset-manager/more/': RouteRecordInfo<
+      '/asset-manager/more/',
+      '/asset-manager/more',
+      Record<never, never>,
+      Record<never, never>,
+      | never
     >,
     '/asset-manager/more/cex-mapping/': RouteRecordInfo<
       '/asset-manager/more/cex-mapping/',
@@ -343,11 +351,11 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/price-manager/oracle/': RouteRecordInfo<
-      '/price-manager/oracle/',
-      '/price-manager/oracle',
-      Record<never, never>,
-      Record<never, never>,
+    '/price-manager/oracle/[[tab]]': RouteRecordInfo<
+      '/price-manager/oracle/[[tab]]',
+      '/price-manager/oracle/:tab(prices|caches)?',
+      { tab?: ParamValueZeroOrOne<true> },
+      { tab?: ParamValueZeroOrOne<false> },
       | never
     >,
     '/reports/': RouteRecordInfo<
@@ -610,13 +618,13 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/address-book-manager/index.vue': {
+    'src/pages/address-book-manager/[[tab]].vue': {
       routes:
-        | '/address-book-manager/'
+        | '/address-book-manager/[[tab]]'
       views:
         | never
       pathParamNames:
-        | never
+        | 'tab'
     }
     'src/pages/airdrops/index.vue': {
       routes:
@@ -693,6 +701,7 @@ declare module 'vue-router/auto-routes' {
     'src/pages/asset-manager/more.vue': {
       routes:
         | '/asset-manager/more'
+        | '/asset-manager/more/'
         | '/asset-manager/more/cex-mapping/'
         | '/asset-manager/more/counterparty-mapping/'
         | '/asset-manager/more/missing-mappings/'
@@ -700,6 +709,14 @@ declare module 'vue-router/auto-routes' {
         | '/asset-manager/more/solana-token-migration/'
       views:
         | 'default'
+      pathParamNames:
+        | never
+    }
+    'src/pages/asset-manager/more/index.vue': {
+      routes:
+        | '/asset-manager/more/'
+      views:
+        | never
       pathParamNames:
         | never
     }
@@ -911,13 +928,13 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/price-manager/oracle/index.vue': {
+    'src/pages/price-manager/oracle/[[tab]].vue': {
       routes:
-        | '/price-manager/oracle/'
+        | '/price-manager/oracle/[[tab]]'
       views:
         | never
       pathParamNames:
-        | never
+        | 'tab'
     }
     'src/pages/reports/index.vue': {
       routes:

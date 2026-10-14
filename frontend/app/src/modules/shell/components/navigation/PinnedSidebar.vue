@@ -48,7 +48,6 @@ function collapse(): void {
 </script>
 
 <template>
-  <!-- Collapsed state: a thin vertical strip of tool icons on the right edge. -->
   <div
     v-if="showMiniBar"
     class="fixed right-0 top-1/2 -translate-y-1/2 z-rui-floating flex flex-col gap-1 p-1.5 bg-white dark:bg-rui-grey-900 border border-r-0 border-rui-grey-300 dark:border-rui-grey-800 rounded-l-lg shadow-md"
@@ -114,9 +113,7 @@ function collapse(): void {
         </div>
       </div>
 
-      <div class="h-full flex flex-col">
-        <!-- Tab strip: the single title + close + collapse bar for the rail (always shown while pinned).
-             Tabs scroll horizontally; the actions + collapse cluster stays pinned to the right. -->
+      <div class="h-full flex flex-col pb-(--rotki-dock-inset)">
         <div
           v-if="tabs.length > 0"
           class="flex items-stretch shrink-0 bg-rui-grey-100 dark:bg-rui-grey-900 border-b border-default"
@@ -169,8 +166,6 @@ function collapse(): void {
           </div>
         </div>
 
-        <!-- Active panel, kept alive so backgrounded panels retain their state.
-             PinnedPanelBody enforces the shared height/scroll contract for every panel. -->
         <PinnedPanelBody>
           <KeepAlive :max="PINNED_CAP">
             <Component

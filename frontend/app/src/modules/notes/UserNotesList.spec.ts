@@ -116,7 +116,9 @@ describe('modules/notes/UserNotesList.vue', () => {
   it('should say so when there are no notes', async () => {
     const wrapper = await createWrapper();
 
-    expect(wrapper.text()).toContain('notes_menu.empty_notes');
+    const empty = wrapper.find('[data-testid=notes-empty]');
+    expect(empty.text()).toContain('notes_menu.empty.title');
+    expect(empty.find('[data-testid=notes-empty-add]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=notes-fetch-error]').exists()).toBe(false);
   });
 
@@ -127,7 +129,7 @@ describe('modules/notes/UserNotesList.vue', () => {
       const wrapper = await createWrapper([], failure);
 
       expect(wrapper.find('[data-testid=notes-fetch-error]').text()).toContain('backend is down');
-      expect(wrapper.text()).not.toContain('notes_menu.empty_notes');
+      expect(wrapper.find('[data-testid=notes-empty]').exists()).toBe(false);
     });
 
     it('should keep the notes it already shows beside the failure', async () => {

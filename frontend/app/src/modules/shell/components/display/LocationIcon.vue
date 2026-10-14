@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSetting } from '@/modules/settings/use-setting';
-import AppImage from '@/modules/shell/components/AppImage.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
-const { item, horizontal, icon, size = '24px', imageClass } = defineProps<{
+const { item, horizontal, icon, size = '24px' } = defineProps<{
   item: string;
   horizontal?: boolean;
   icon?: boolean;
   size?: string;
-  imageClass?: string;
 }>();
 
 const emit = defineEmits<{
@@ -23,11 +22,11 @@ const location = useLocationData(() => item);
 
 <template>
   <div
-    class="flex items-center justify-center"
+    class="flex items-center"
     data-testid="location-icon"
     :class="{
       'flex-row gap-2': horizontal,
-      'flex-col gap-1': !horizontal,
+      'flex-col justify-center gap-1': !horizontal,
       'skeleton': !location,
       'blur': !shouldShowAmount,
     }"
@@ -35,33 +34,23 @@ const location = useLocationData(() => item);
     @click="emit('click', item)"
   >
     <template v-if="location">
-      <AppImage
+      <IconMark
         v-if="location.image"
         :src="location.image"
         :alt="location.name"
-        fit="contain"
-        :image-class="imageClass"
         :size="size"
-        class="icon-bg"
       />
-      <div
-        v-else
-        class="icon-bg"
-      >
-        <RuiIcon
-          v-if="location.icon"
-          color="secondary"
-          :size="size"
-          :name="location.icon"
-        />
-      </div>
+      <RuiIcon
+        v-else-if="location.icon"
+        color="secondary"
+        :size="size"
+        :name="location.icon"
+      />
 
       <span
         v-if="!icon"
-        class="capitalize text-rui-text-secondary"
-        :class="{
-          '-mb-1 text-center': !horizontal,
-        }"
+        class="capitalize"
+        :class="horizontal ? 'text-rui-text truncate' : '-mb-1 text-center text-rui-text-secondary'"
       >
         {{ location.name }}
       </span>

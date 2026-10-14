@@ -111,7 +111,8 @@ function onUpdateModelValue(value: string): void {
     v-model:search-input="modelSearch"
     :disabled="disabled"
     :options="visibleAssets"
-    class="asset-select w-full [&_.group]:py-1.5"
+    class="asset-select w-full"
+    :class="{ '[&_.group]:py-1.5': !dense }"
     :class-names="{ menu: 'min-w-full!' }"
     :hint="hint"
     :label="fieldLabel"
@@ -139,11 +140,8 @@ function onUpdateModelValue(value: string): void {
           :size="dense ? '24px' : '36px'"
           class="overflow-hidden text-sm -my-2"
         />
-        <!-- A dense field draws its own compact selection: `AssetDetailsBase` stacks the symbol over
-             the asset name, and those two lines are 40px however small the field is told to be, so
-             the field grew back to 52px the moment something was picked. -->
         <div
-          v-else-if="dense"
+          v-else
           class="flex items-center gap-2 min-w-0 pl-1"
         >
           <AssetIcon
@@ -154,14 +152,14 @@ function onUpdateModelValue(value: string): void {
           />
           <span class="truncate text-sm text-rui-text">
             {{ item.isCustomAsset ? item.name : item.symbol }}
+            <span
+              v-if="!dense && !item.isCustomAsset && item.name"
+              class="text-rui-text-secondary"
+            >
+              {{ item.name }}
+            </span>
           </span>
         </div>
-        <AssetDetailsBase
-          v-else
-          class="py-0! pl-1"
-          :asset="item"
-          :actions="noMenu"
-        />
       </template>
     </template>
     <template #item="{ item }">
@@ -171,8 +169,6 @@ function onUpdateModelValue(value: string): void {
         :size="dense ? '28px' : '36px'"
         class="overflow-hidden text-sm -my-2"
       />
-      <!-- Dense keeps both lines — the name is how one DAI is told from another — but drops the
-           negative margin the roomy variant uses, or the rows sit flush against each other. -->
       <AssetDetailsBase
         v-else
         :id="`asset-${getValidSelectorFromEvmAddress(item.identifier.toLocaleLowerCase())}`"

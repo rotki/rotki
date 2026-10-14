@@ -18,6 +18,8 @@ import { CollectionCommonFields } from '@/modules/core/common/collection';
 /** How the asset is drawn. */
 export interface AssetDisplay {
   dense?: boolean;
+  /** Symbol and name on one line, for nested tables that keep rows a single line tall. */
+  inline?: boolean;
   iconOnly?: boolean;
   size?: string;
   optimizeForVirtualScroll?: boolean;

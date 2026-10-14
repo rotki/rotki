@@ -48,6 +48,10 @@ const busyMessage = computed<string>(() =>
   get(logged) ? t('connection_loading.restarting') : t('connection_loading.logging_out'),
 );
 
+const route = useRoute();
+
+/** The height of the dock's pill; the expanded panel overlays the page and reserves no room. */
+const dockHeight = ref<number>(0);
 const { updateTray } = useInterop();
 const { scrollToTop, shouldShowScrollToTopButton } = useCoreScroll();
 
@@ -60,6 +64,30 @@ const pinnedPadding = computed<string | undefined>(() => {
     return `calc(${get(pinnedWidth)}px - 100vw + 100%)`;
 
   return undefined;
+});
+
+/**
+ * Room below the page content while the task dock shows, its height plus its 1rem offset and a 1rem
+ * gap, so the end of a page that just fits, such as a table's last row and its actions, can scroll
+ * clear of the dock instead of sitting under it.
+ */
+const dockPadding = computed<string | undefined>(() => {
+  if (route.meta.scrollsItself)
+    return undefined;
+  const height = get(dockHeight);
+  return height > 0 ? `calc(${height}px + 2rem)` : undefined;
+});
+
+/**
+ * The same room for panels docked on the right, such as the pinned rail, whose bottom the dock
+ * covers: its height, its 1rem offset and a gap, plus however far it rises above a stuck table bar.
+ */
+watchImmediate(dockHeight, (height) => {
+  const style = document.documentElement.style;
+  if (height > 0)
+    style.setProperty('--rotki-dock-inset', `calc(${height}px + 1.5rem + var(--rui-sticky-bottom, 0px))`);
+  else
+    style.removeProperty('--rotki-dock-inset');
 });
 
 watch(overall, (overall) => {
@@ -109,7 +137,7 @@ onBeforeMount(() => {
         'pl-14': isMini,
         'pl-[300px]': expanded,
       }"
-      :style="{ paddingRight: pinnedPadding }"
+      :style="{ paddingRight: pinnedPadding, paddingBottom: dockPadding }"
     >
       <main>
         <RouterView #default="{ Component }">
@@ -148,8 +176,6 @@ onBeforeMount(() => {
         </RouterView>
       </main>
 
-      <!-- one stack in the corner: the scroll-to-top button sits on whatever height the dock has, and the
-           stack rises above a stuck table pagination bar -->
       <div class="fixed right-4 bottom-[calc(1rem+var(--rui-sticky-bottom))] z-rui-floating flex flex-col items-end gap-3 max-w-[calc(100vw-2rem)] transition-[bottom]">
         <Transition
           enter-from-class="opacity-0"
@@ -165,12 +191,15 @@ onBeforeMount(() => {
             variant="fab"
             size="lg"
             icon
+            class="max-sm:fixed max-sm:left-4 max-sm:bottom-[calc(1rem+var(--rui-sticky-bottom))]"
             @click="scrollToTop()"
           >
             <RuiIcon name="lu-arrow-up" />
           </RuiButton>
         </Transition>
-        <TaskDock />
+        <div class="flex flex-col items-end max-w-full empty:hidden">
+          <TaskDock v-model:bar-height="dockHeight" />
+        </div>
       </div>
     </div>
   </div>

@@ -6,31 +6,37 @@ defineProps<{
 </script>
 
 <template>
-  <div class="ml-3 flex items-center">
+  <div class="flex items-center min-w-0">
     <template v-if="texts">
       <div
         v-for="(entry, index) in texts"
         :key="entry + index"
-        class="flex items-center"
+        class="flex items-center min-w-0"
       >
-        <div v-if="index === texts.length - 1">
+        <div
+          v-if="index === texts.length - 1"
+          class="truncate font-medium text-rui-text"
+        >
           {{ entry }}
         </div>
         <div
           v-else
-          class="flex items-center text-rui-text-secondary"
+          class="flex items-center shrink-0 text-rui-text-secondary"
         >
           {{ entry }}
           <RuiIcon
-            class="d-inline mx-2"
-            size="16"
+            class="mx-1 text-rui-text-disabled"
+            size="14"
             name="lu-chevron-right"
           />
         </div>
       </div>
     </template>
-    <template v-else>
+    <div
+      v-else
+      class="truncate text-rui-text"
+    >
       {{ text }}
-    </template>
+    </div>
   </div>
 </template>

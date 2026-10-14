@@ -14,17 +14,18 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div class="flex items-center justify-between">
+  <div class="flex items-center justify-between gap-2">
     <RuiTooltip
+      class="min-w-0"
       :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>
-        <div class="truncate text-rui-text-secondary max-w-[280px]">
+        <div class="truncate">
           {{ dataDirectory }}
         </div>
       </template>
-      <span class="max-w-[280px]">
+      <span class="max-w-[280px] break-all">
         {{ dataDirectory }}
       </span>
     </RuiTooltip>

@@ -337,10 +337,8 @@ function focusInput(event: MouseEvent): void {
 </script>
 
 <template>
-  <!-- py-1 rather than py-1.5: the bar sits next to buttons on most of its screens, and at 43px it
-       was the tallest control in every one of those rows. -->
   <div
-    class="flex flex-wrap items-center gap-1.5 px-2 py-1 rounded-md border transition-colors border-rui-grey-300 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary"
+    class="flex flex-wrap items-center gap-1.5 px-2 py-1 rounded-md border bg-rui-surface transition-colors border-rui-grey-300 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary"
     :class="{ 'opacity-50': disabled }"
     data-testid="pill-bar"
     @click="focusInput($event)"
@@ -375,19 +373,6 @@ function focusInput(event: MouseEvent): void {
       />
     </RuiMenu>
 
-    <!-- The caret has to stay in the input while the popover is open: the menu must not pull
-         focus into its content (`disable-auto-focus`), must not close when the input that opened
-         it is clicked again, and must stay open when a suggestion is picked, so filters can be
-         added in a row the same way by mouse as by keyboard.
-
-         `bottom-start` because the menu's default placement centres it on the activator, and the
-         activator here is the full-width input: the list would hang half a bar-width to the left
-         of the text the user is typing. Every popover in the bar drops from the left edge of what
-         opened it.
-
-         `full-width` because the menu's activator wrapper is `inline-flex`, so it shrinks to the
-         input's intrinsic size and the `flex-1` on the menu itself only grows the box around it:
-         the input has to fill whatever the pills leave on the line, not sit at its default width. -->
     <RuiMenu
       v-model="narrowOpen"
       :disabled="disabled"
@@ -438,8 +423,6 @@ function focusInput(event: MouseEvent): void {
       />
     </RuiMenu>
 
-    <!-- Not pills: a pill is a predicate, and these only constrain how the predicates apply. See
-         the slot's declaration for why it is gated on there being filters at all. -->
     <slot
       v-if="activeFilters.length > 0"
       name="modifiers"
@@ -451,9 +434,6 @@ function focusInput(event: MouseEvent): void {
       :disabled="disabled"
     />
 
-    <!-- `flex` on the menu root: its activator wrapper is `inline-flex`, so in a block root it sits
-         on the text baseline and the descender makes this one child a pixel taller than the button
-         inside it, which reads as "Add filter" and "Clear all" being off by a pixel. -->
     <RuiMenu
       v-model="addMenuOpen"
       :disabled="disabled || availableFields.length === 0"

@@ -24,7 +24,7 @@ onMounted(load);
       v-model="showAbout"
       max-width="500"
     >
-      <About />
+      <About @close="showAbout = false" />
     </RuiDialog>
     <WalletConnectQrDialog />
   </AppHost>

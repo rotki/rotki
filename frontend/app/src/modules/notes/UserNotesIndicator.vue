@@ -29,7 +29,7 @@ const { hasSpecialNotes, notesCount } = useNotesCount();
       @click="toggleVisibility()"
     >
       <RuiIcon
-        :class="{ '-rotate-[25deg]': visible }"
+        :class="{ 'rotate-[-25deg]': visible }"
         name="lu-notebook"
       />
     </MenuTooltipButton>

@@ -43,6 +43,7 @@ watch(locationName, (locationName) => {
 
   <RuiNavigationDrawer
     v-model="display"
+    below-app-bar
     width="460px"
     temporary
     :stateless="openDialog"

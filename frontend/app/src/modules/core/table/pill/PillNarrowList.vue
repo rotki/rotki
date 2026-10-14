@@ -90,8 +90,6 @@ watch(() => highlighted, (index) => {
 </script>
 
 <template>
-  <!-- The scroll area and the footer are siblings, so the footer stays put while the rows scroll:
-       a syntax hint that scrolls out of sight is one the user has to already know about to find. -->
   <div class="flex flex-col min-w-64 max-w-80">
     <div class="flex flex-col gap-0.5 p-1.5 max-h-68 overflow-y-auto">
       <button
@@ -110,8 +108,6 @@ watch(() => highlighted, (index) => {
         @mousemove="highlightFromPointer(index)"
         @click="emit('select', suggestion)"
       >
-        <!-- A value row carries the same icon its pill will: the asset's mark up front, its chain
-           after it, so `USDC` on five chains reads as five distinct rows. -->
         <PillValueIcon
           v-if="suggestion.kind === 'value' && (suggestion.field.display || suggestion.field.resolveIcon || suggestion.field.resolveSwatch)"
           :display="suggestion.field.display"
@@ -135,9 +131,6 @@ watch(() => highlighted, (index) => {
           size="14px"
           tooltip
         />
-        <!-- A value or a read-out filter is tagged with the field it belongs to, so `ETH` reads as
-           an Asset value and `greater than 100` as an Amount one. A field row needs no tag: its
-           label already is the field. -->
         <span
           v-if="suggestion.kind !== 'field'"
           class="text-xs text-rui-text-secondary shrink-0"
@@ -145,8 +138,6 @@ watch(() => highlighted, (index) => {
           {{ resolveText(suggestion.field.label) }}
         </span>
       </button>
-      <!-- Announced: asset rows are appended when a remote search returns, so without a live region
-         nothing tells a screen reader the list grew under it. -->
       <div
         v-if="loading"
         class="flex justify-center py-2"
@@ -186,10 +177,6 @@ watch(() => highlighted, (index) => {
       </div>
     </div>
 
-    <!-- Drawn as code chips, not prose: `after 15/01/2024` is text the user types verbatim, and a
-         sentence about it would leave them guessing which words are the literal ones. Each one is a
-         button, so the footer demonstrates the syntax instead of describing it: clicking puts the
-         text in the input and the row it produces appears above, which is the actual lesson. -->
     <div
       v-if="examples.length > 0"
       class="flex flex-wrap items-center gap-1.5 px-3 py-2 border-t border-rui-grey-200 dark:border-rui-grey-700"

@@ -31,12 +31,14 @@ describe('tablePageLayout', () => {
     expect(spans[2].findComponent({ name: 'RuiIcon' }).exists()).toBe(false);
   });
 
-  it('should render only the last entry as the current page, carrying the filled pill', () => {
+  /** The current page reads in the primary text color, the steps before it in the secondary one. */
+  it('should render only the last entry as the current page', () => {
     const wrapper = createWrapper({ title: ['Balances', 'Blockchain'] });
     const spans = wrapper.findAll('.text-rui-text > span');
 
-    expect(spans[0].classes()).not.toContain('rounded-md');
-    expect(spans[1].classes()).toContain('rounded-md');
+    expect(spans[0].classes()).toContain('text-rui-text-secondary');
+    expect(spans[1].classes()).toContain('text-rui-text');
+    expect(spans[1].classes()).not.toContain('text-rui-text-secondary');
   });
 
   it('should render a single entry as the current page with no dangling separator', () => {
@@ -44,7 +46,7 @@ describe('tablePageLayout', () => {
     const spans = wrapper.findAll('.text-rui-text > span');
 
     expect(spans).toHaveLength(1);
-    expect(spans[0].classes()).toContain('rounded-md');
+    expect(spans[0].classes()).not.toContain('text-rui-text-secondary');
     expect(spans[0].findComponent({ name: 'RuiIcon' }).exists()).toBe(false);
   });
 

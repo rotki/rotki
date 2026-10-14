@@ -22,18 +22,39 @@ const emit = defineEmits<{
   move: [down: boolean];
   remove: [];
 }>();
+
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <tr class="odd:bg-rui-grey-50 dark:odd:bg-rui-grey-900 group">
-    <td class="pr-0 pl-2">
-      <div class="flex flex-col gap-1 transition-all opacity-0 invisible group-hover:opacity-100 group-hover:visible">
+  <tr class="group">
+    <td
+      class="text-center tabular-nums text-rui-text-secondary"
+      :class="dense ? 'py-1.5' : 'py-2.5'"
+    >
+      {{ item.index + 1 }}
+    </td>
+    <td
+      class="pl-0"
+      :class="dense ? 'py-1.5' : 'py-2.5'"
+    >
+      <PrioritizedListEntry
+        :data="item.data"
+        :size="dense ? '20px' : '24px'"
+      />
+    </td>
+    <td
+      class="w-px pl-0 pr-2"
+      :class="dense ? 'py-1.5' : 'py-2.5'"
+    >
+      <div class="flex items-center justify-end gap-0.5 transition-opacity [tr:not(:hover)_&:not(:focus-within)]:opacity-0 motion-reduce:transition-none">
         <RuiButton
           :id="`move-up-${item.identifier}`"
+          variant="text"
+          icon
           size="sm"
-          class="px-1!"
-          :class="{ 'py-0.5!': dense }"
           :disabled="item.first"
+          :aria-label="t('prioritized_list.item.move_up')"
           @click="emit('move', false)"
         >
           <RuiIcon
@@ -43,10 +64,11 @@ const emit = defineEmits<{
         </RuiButton>
         <RuiButton
           :id="`move-down-${item.identifier}`"
+          variant="text"
+          icon
           size="sm"
-          class="px-1!"
-          :class="{ 'py-0.5!': dense }"
           :disabled="item.last"
+          :aria-label="t('prioritized_list.item.move_down')"
           @click="emit('move', true)"
         >
           <RuiIcon
@@ -54,42 +76,29 @@ const emit = defineEmits<{
             size="16"
           />
         </RuiButton>
-      </div>
-    </td>
-    <td class="text-center px-0">
-      {{ item.index + 1 }}
-    </td>
-    <td>
-      <PrioritizedListEntry
-        :data="item.data"
-        size="28px"
-      />
-    </td>
-    <td class="text-end pl-0">
-      <RuiTooltip
-        v-if="!disableDelete"
-        :options="{ placement: 'top' }"
-        :open-delay="400"
-      >
-        <template #activator>
-          <RuiButton
-            :id="`delete-${item.identifier}`"
-            class="transition-all opacity-0 invisible group-hover:opacity-100 group-hover:visible"
-            icon
-            :class="{ 'p-2!': dense }"
-            variant="text"
-            @click="emit('remove')"
-          >
-            <RuiIcon
-              name="lu-x"
-              :size="dense ? 16 : 20"
-            />
-          </RuiButton>
-        </template>
-        <span>
+        <RuiTooltip
+          v-if="!disableDelete"
+          :options="{ placement: 'top' }"
+          :open-delay="400"
+        >
+          <template #activator>
+            <RuiButton
+              :id="`delete-${item.identifier}`"
+              variant="text"
+              icon
+              size="sm"
+              :aria-label="deleteLabel"
+              @click="emit('remove')"
+            >
+              <RuiIcon
+                name="lu-x"
+                size="16"
+              />
+            </RuiButton>
+          </template>
           {{ deleteLabel }}
-        </span>
-      </RuiTooltip>
+        </RuiTooltip>
+      </div>
     </td>
   </tr>
 </template>

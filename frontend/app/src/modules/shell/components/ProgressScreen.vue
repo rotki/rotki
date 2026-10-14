@@ -26,16 +26,22 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <FullSizeContent>
-    <div class="flex flex-col items-center justify-center mb-10 w-full md:w-5/6">
+    <div
+      class="flex flex-col items-center justify-center mb-10 w-full"
+      :class="{ 'max-w-xl': progress, 'md:w-5/6': !progress }"
+    >
       <template v-if="progress">
-        <div class="text-4xl mb-8">
+        <div
+          class="text-2xl font-semibold tabular-nums text-rui-text mb-4"
+          data-testid="progress-screen-percentage"
+        >
           {{ t('progress_screen.progress', { progress: progressValue }) }}
         </div>
         <RuiProgress
-          thickness="16"
+          thickness="8"
           :value="percentage"
           color="primary"
-          class="w-full rounded-sm overflow-hidden"
+          class="w-full rounded-full overflow-hidden"
         />
       </template>
       <RuiProgress

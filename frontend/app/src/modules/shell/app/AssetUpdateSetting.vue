@@ -22,13 +22,27 @@ const { t } = useI18n({ useScope: 'global' });
     <template #subtitle>
       {{ t('asset_update.manual.subtitle') }}
     </template>
-    <div class="flex items-center gap-4 justify-end">
+    <div class="flex flex-wrap items-center gap-4">
+      <RuiButton
+        variant="outlined"
+        color="primary"
+        :loading="loading"
+        @click="emit('check')"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-refresh-ccw"
+            size="16"
+          />
+        </template>
+        {{ t('asset_update.manual.check') }}
+      </RuiButton>
       <i18n-t
         v-if="skipped"
         scope="global"
         keypath="asset_update.manual.skipped"
         tag="div"
-        class="flex flex-wrap gap-x-2 gap-y-1"
+        class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-rui-text-secondary"
       >
         <template #skipped>
           <BadgeDisplay>
@@ -36,13 +50,6 @@ const { t } = useI18n({ useScope: 'global' });
           </BadgeDisplay>
         </template>
       </i18n-t>
-      <RuiButton
-        color="primary"
-        :loading="loading"
-        @click="emit('check')"
-      >
-        {{ t('asset_update.manual.check') }}
-      </RuiButton>
     </div>
   </SettingsItem>
 </template>

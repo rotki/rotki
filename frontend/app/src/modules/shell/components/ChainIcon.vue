@@ -2,7 +2,7 @@
 import { LOOPRING_CHAIN } from '@/modules/balances/blockchain-types';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';
-import AppImage from '@/modules/shell/components/AppImage.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
 interface Props {
   size?: string;
@@ -22,23 +22,18 @@ const OTHER_CHAINS = [
 </script>
 
 <template>
-  <AppImage
+  <IconMark
     v-if="matchChain(chain) || OTHER_CHAINS.includes(chain)"
     :key="src"
     :src="src"
-    :width="size"
-    :max-width="size"
-    :height="size"
-    :max-height="size"
-    fit="contain"
-    class="icon-bg"
+    :size="size"
     :class="{ blur: !shouldShowAmount }"
   />
   <RuiIcon
     v-else
     :size="size"
     name="lu-link"
-    class="text-rui-grey-400 dark:text-rui-grey-600 icon-bg"
+    class="text-rui-grey-400 dark:text-rui-grey-600"
     :class="{ blur: !shouldShowAmount }"
   />
 </template>

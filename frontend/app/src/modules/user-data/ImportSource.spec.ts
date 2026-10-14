@@ -38,7 +38,7 @@ const ImportSource = (await import('@/modules/user-data/ImportSource.vue')).defa
  * `inputStub` does not carry, and exposing the reset the component calls after an import.
  */
 const fileUploadStub = defineComponent({
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'error'],
   name: 'RuiFileUpload',
   props: ['modelValue', 'errorMessages', 'uploaded', 'loading', 'accept'],
   setup(_props, { expose }) {
@@ -116,10 +116,15 @@ describe('importSource', () => {
 
   async function submit(): Promise<void> {
     await wrapper.find('form').trigger('submit');
+  }
+
+  async function openOptions(): Promise<void> {
+    await wrapper.find('[data-testid=import-options-toggle]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
   }
 
   async function enableCustomFormat(): Promise<void> {
+    await openOptions();
     field('import-date-format-switch').vm.$emit('update:modelValue', true);
     await vi.advanceTimersToNextTimerAsync();
   }
@@ -151,6 +156,28 @@ describe('importSource', () => {
     await enableCustomFormat();
 
     expect(field('import-date-format').props('modelValue')).toBe(DateFormat.DateMonthYearHourMinuteSecond);
+  });
+
+  it('should keep the parsing options folded until asked for', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(field('import-date-format-switch').exists()).toBe(false);
+
+    await openOptions();
+
+    expect(field('import-date-format-switch').exists()).toBe(true);
+  });
+
+  it('should count an option still in effect on the folded toggle', async () => {
+    wrapper = createWrapper();
+    await enableCustomFormat();
+
+    await openOptions();
+
+    const toggle = wrapper.find('[data-testid=import-options-toggle]');
+    expect(toggle.attributes('aria-expanded')).toBe('false');
+    expect(toggle.text()).toContain('import_data.parsing_options_active');
   });
 
   it('should accept the default format the switch seeds', async () => {
@@ -280,7 +307,7 @@ describe('importSource', () => {
     await submit();
 
     expect(upload().props('uploaded')).toBe(false);
-    expect(upload().props('errorMessages')).toBe('bad csv');
+    expect(upload().props('errorMessages')).toEqual(['bad csv']);
     expect(removeFile).not.toHaveBeenCalled();
   });
 
@@ -292,7 +319,7 @@ describe('importSource', () => {
 
     await attachFile();
 
-    expect(upload().props('errorMessages')).toBe('');
+    expect(upload().props('errorMessages')).toEqual([]);
   });
 
   it('should drop the done mark once another file is picked', async () => {
@@ -325,6 +352,7 @@ describe('importSource', () => {
     });
     await vi.advanceTimersToNextTimerAsync();
 
+    expect(wrapper.find('[data-testid=import-options-toggle]').exists()).toBe(false);
     expect(field('import-date-format-switch').exists()).toBe(false);
     expect(wrapper.find('[data-testid=import-timezone-switch]').exists()).toBe(false);
   });

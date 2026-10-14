@@ -2186,7 +2186,6 @@
     },
     "credentials": {
       "description": "选择一个配置文件名称和密码。密码会加密此配置文件中的所有内容。",
-      "highlight": "仅在本应用中可用",
       "label_password": "密码",
       "label_password_backup_reminder": "我已将密码保存在安全的地方。没有密码，我的本地数据将无法恢复。",
       "label_password_repeat": "重复密码",
@@ -2215,8 +2214,6 @@
         "description": "从全新的本地 rotki 用户开始。",
         "title": "创建新账户"
       },
-      "description": "rotki 是一款尊重你隐私的本地应用。\n\nrotki 账户使用你的密码加密，并{highlight}。\n\n你在此创建的账户仅用于本应用，网页端使用的是不同的数据库。",
-      "highlight": "保存在你的本地文件系统中",
       "restore": {
         "description": "已是 rotki 高级版用户？恢复之前同步到云端的数据库。",
         "title": "从云同步恢复"
@@ -4278,7 +4275,6 @@
       "import_trade": "买卖记录",
       "import_transactions": "账户流水",
       "line_one": "[实验性] 如果你发现导入的数据有问题，请告诉我们，以便我们相应调整代码。",
-      "line_two": "BlockFi 可导出两种不同的文件。交易将从仅包含交易的文件中导入。",
       "name": "BlockFi"
     },
     "blockpit": {
@@ -4302,7 +4298,6 @@
       "line_one_link": "请告诉我们",
       "line_three": "crypto.com 的交易/充值/提现不包含手续费明细。目前（2020 年 8 月）这些手续费已被免除，或已计入交易数量。",
       "line_two": "{0} 如果你想连接 Crypto.com Exchange 账户，请等待我们支持后再作为交易所连接。",
-      "line_two_warning": "这仅涉及 Crypto.com 移动应用。",
       "name": "Crypto.com",
       "source_name": "crypto.com 移动应用"
     },
@@ -4324,7 +4319,6 @@
       "line_one": "[实验性] 如果你发现导入的数据有问题，请告诉我们，以便我们相应调整代码。",
       "name": "Nexo"
     },
-    "note": "从 {0} 的 CSV 导出文件导入数据的重要说明。",
     "notice": "这些平台可能经常以不向后兼容的方式更改格式，因此该导入功能可能会失效。如果发生这种情况，请{link}，我们会看看能做些什么。",
     "notice_link": "在 rotki 提交 issue",
     "select_source": {
@@ -4524,11 +4518,6 @@
         "non_empty": "自定义后端 URL 不能为空",
         "url": "输入的内容不是有效的 URL 格式"
       }
-    },
-    "description": {
-      "more_details": "{documentation}提供了有关本地应用和用户的更多详细信息。",
-      "our_docs": "我们的文档",
-      "welcome": "欢迎！请输入你的信息。"
     },
     "incomplete_upgrade_error": {
       "abort": "中止",
@@ -4848,7 +4837,6 @@
       "add_title": "添加笔记",
       "edit_title": "编辑笔记"
     },
-    "empty_notes": "暂无笔记",
     "labels": {
       "content": "写点笔记...",
       "title": "标题"
@@ -4919,7 +4907,6 @@
       "title": "清除当前通知"
     },
     "message_overflow": "收到的通知总数已超过 200 条上限，较早的通知已被移除。",
-    "no_messages": "没有消息！",
     "silent": {
       "off": "静默通知弹窗",
       "on": "弹窗已静默，点击重新允许"
@@ -5447,11 +5434,14 @@
     "was_worth": "当时价值"
   },
   "prioritized_list": {
+    "add_placeholder": "添加{name}",
     "all_added": "没有已禁用的{namePluralized}",
     "disabled_items": "{num} 个已禁用的{namePluralized}",
     "item": {
       "delete": "禁用 {name} 条目",
-      "empty": "暂无{namePluralized}"
+      "empty": "暂无{namePluralized}",
+      "move_down": "下移",
+      "move_up": "上移"
     }
   },
   "profit_loss_events": {

@@ -2206,7 +2206,6 @@
     },
     "credentials": {
       "description": "Bir profil adı ve parola seçin. Parola bu profildeki her şeyi şifreler.",
-      "highlight": "yalnızca uygulamada geçerlidir",
       "label_password": "Parola",
       "label_password_backup_reminder": "Parolamı güvenli bir yere kaydettim. Parolam olmadan yerel verilerim kurtarılamaz.",
       "label_password_repeat": "Parola (tekrar)",
@@ -2235,8 +2234,6 @@
         "description": "Yeni bir yerel rotki profiliyle sıfırdan başlayın.",
         "title": "Yeni hesap oluştur"
       },
-      "description": "rotki, gizliliğinize saygı duyan yerel bir uygulamadır.\n\nrotki hesapları parolanızla şifrelenir ve {highlight}.\n\nBurada oluşturduğunuz hesap yalnızca uygulamada kullanılabilir; web'de farklı bir veritabanı kullanıyoruz.",
-      "highlight": "yerel dosya sisteminize kaydedilir",
       "restore": {
         "description": "Zaten rotki Premium kullanıcısı mısınız? Daha önce buluta senkronize ettiğiniz veritabanını geri yükleyin.",
         "title": "Bulut senkronizasyonundan geri yükle"
@@ -4357,7 +4354,6 @@
       "import_trade": "alım satımları",
       "import_transactions": "işlemleri",
       "line_one": "[Deneysel] İçe aktarılan verilerde bir sorun fark ederseniz kodu buna göre uyarlayabilmemiz için bize bildirin.",
-      "line_two": "BlockFi iki farklı dosyayı dışa aktarmanıza olanak tanır. Alım satımlar, yalnızca alım satımları içeren dosyadan içe aktarılır.",
       "name": "BlockFi"
     },
     "blockpit": {
@@ -4381,7 +4377,6 @@
       "line_one_link": "lütfen bize bildirin",
       "line_three": "crypto.com'dan gelen alım satım/yatırma/çekme kayıtları ücret ayrıntılarını içermez. Ücretler şu anda (Ağustos 2020) alınmıyor ya da işlem gören miktara dahil ediliyor.",
       "line_two": "{0} Crypto.com Exchange hesabınızı bağlamak istiyorsanız lütfen biz desteği ekleyene kadar bekleyin, ardından hesabınızı bir borsa olarak bağlayın.",
-      "line_two_warning": "Bu yalnızca Crypto.com mobil uygulamasını kapsar.",
       "name": "Crypto.com",
       "source_name": "crypto.com mobil uygulaması"
     },
@@ -4403,7 +4398,6 @@
       "line_one": "[Deneysel] İçe aktarılan verilerde bir sorun fark ederseniz kodu buna göre uyarlayabilmemiz için bize bildirin.",
       "name": "Nexo"
     },
-    "note": "{0} tarafından dışa aktarılan CSV dosyalarından veri içe aktarmaya ilişkin önemli notlar.",
     "notice": "Bu platformlar biçimlerini oldukça sık ve geriye dönük uyumsuz şekilde değiştirebilir. Bu nedenle bu içe aktarma çalışmayı durdurabilir. Böyle bir durumda {link}, biz de neler yapabileceğimize bakalım.",
     "notice_link": "rotki için bir sorun kaydı açın",
     "select_source": {
@@ -4604,11 +4598,6 @@
         "non_empty": "Özel backend URL'si boş bırakılamaz",
         "url": "Girilen değer geçerli bir URL biçiminde değil"
       }
-    },
-    "description": {
-      "more_details": "{documentation} yerel uygulama ve kullanıcı hakkında daha fazla ayrıntı sunar.",
-      "our_docs": "Belgelerimiz",
-      "welcome": "Hoş geldiniz! Lütfen bilgilerinizi girin."
     },
     "incomplete_upgrade_error": {
       "abort": "İptal et",
@@ -4971,7 +4960,6 @@
       "add_title": "Not ekle",
       "edit_title": "Notu düzenle"
     },
-    "empty_notes": "Kayıtlı not bulunamadı",
     "labels": {
       "content": "Not alın...",
       "title": "Başlık"
@@ -5057,7 +5045,6 @@
       "title": "Etkin bildirimleri temizle"
     },
     "message_overflow": "Alınan bildirimlerin toplam sayısı 200 sınırını aştı. Eski bildirimler kaldırıldı.",
-    "no_messages": "Mesaj yok!",
     "silent": {
       "off": "Bildirim açılır pencerelerini sessize al",
       "on": "Açılır pencereler sessize alındı. Yeniden izin vermek için tıklayın"
@@ -5585,11 +5572,14 @@
     "was_worth": "değeri"
   },
   "prioritized_list": {
+    "add_placeholder": "{name} ekle",
     "all_added": "Devre dışı {namePluralized} yok",
     "disabled_items": "{num} devre dışı {namePluralized}",
     "item": {
       "delete": "{name} kaydını devre dışı bırak",
-      "empty": "Henüz {namePluralized} yok"
+      "empty": "Henüz {namePluralized} yok",
+      "move_down": "Aşağı taşı",
+      "move_up": "Yukarı taşı"
     }
   },
   "profit_loss_events": {

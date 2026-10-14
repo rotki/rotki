@@ -23,10 +23,6 @@ const { scrambleAddress, scrambleIdentifier, shouldShowAmount } = useScramble();
 </script>
 
 <template>
-  <!--
-    Stacked, this is a menu row: the same two-line treatment every other list row uses, so the key
-    reads as the title and the index as its caption. Inline, it is one line inside a chip.
-  -->
   <div
     class="text-truncate"
     :class="[
@@ -37,8 +33,6 @@ const { scrambleAddress, scrambleIdentifier, shouldShowAmount } = useScramble();
     <div class="font-medium text-truncate text-sm text-rui-text">
       {{ truncateAddress(scrambleAddress(validator.publicKey), length) }}
     </div>
-    <!-- One size and one colour for the whole line: the label used to be a caption while the
-         index beside it inherited the larger body size. -->
     <div class="text-rui-text-secondary text-caption text-truncate">
       <span v-if="horizontal">-</span>
       <span v-else>{{ t('common.validator_index') }}:</span>

@@ -3,14 +3,17 @@ import { type Account, Blockchain } from '@rotki/common';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useScramble } from '@/modules/settings/use-scramble';
+import { badgeSize } from '@/modules/shell/components/asset-icon-display';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
 
-const { account, hideChainIcon = false, noTruncate = false, size = '24px', useAliasName = true } = defineProps<{
+const { account, hideAvatar = false, hideChainIcon = false, noTruncate = false, size = '24px', useAliasName = true } = defineProps<{
   account: Account;
   useAliasName?: boolean;
   noTruncate?: boolean;
   hideChainIcon?: boolean;
+  /** Leaves the avatar to the caller, such as a chip that shows it in its own leading circle. */
+  hideAvatar?: boolean;
   size?: string;
 }>();
 
@@ -23,6 +26,11 @@ const address = computed<string>(() => {
   const addr = account.address;
   return scrambleAddress(addr);
 });
+
+/** The chain sits as a badge on the avatar's corner, as on asset icons, at half the avatar but never under 10px. */
+const chainBadgeSize = computed<string>(() => `${Math.max(10, Number.parseInt(badgeSize(undefined, size, 50)))}px`);
+
+const chainIconSize = computed<string>(() => `${Number.parseInt(get(chainBadgeSize)) - 2}px`);
 
 const aliasName = computed<string | null>(() => {
   if (!get(scrambleData) && useAliasName) {
@@ -46,14 +54,24 @@ const aliasName = computed<string | null>(() => {
     :class-names="{ tooltip: '**:font-mono' }"
   >
     <template #activator>
-      <div
-        v-if="!hideChainIcon"
-        class="pr-1"
+      <span
+        v-if="!hideAvatar"
+        class="relative mr-2 inline-flex shrink-0"
       >
-        <div class="rounded-full overflow-hidden w-6 h-6 dark:bg-rui-grey-600 flex items-center justify-center">
+        <EnsAvatar
+          :address="address"
+          avatar
+          :size="size"
+        />
+        <span
+          v-if="!hideChainIcon"
+          class="absolute -right-1 -bottom-1 z-1 flex items-center justify-center overflow-hidden rounded-full border border-rui-grey-300 bg-white shadow-xs dark:border-rui-grey-900 dark:bg-rui-grey-800"
+          :style="{ width: chainBadgeSize, height: chainBadgeSize }"
+          data-testid="account-chain-badge"
+        >
           <ChainIcon
             v-if="account.chain && account.chain !== 'ALL'"
-            size="22px"
+            :size="chainIconSize"
             :chain="account.chain"
           />
           <RuiTooltip
@@ -64,30 +82,31 @@ const aliasName = computed<string | null>(() => {
             <template #activator>
               <RuiIcon
                 name="lu-link"
-                size="16px"
+                :size="chainIconSize"
                 class="text-rui-text-secondary"
               />
             </template>
             {{ t('common.multi_chain') }}
           </RuiTooltip>
-        </div>
-      </div>
-
-      <EnsAvatar
-        :address="address"
-        avatar
-        class="mr-2"
-        :size="size"
-      />
+        </span>
+      </span>
 
       <div
         :class="{ blur: !shouldShowAmount }"
-        class="text-no-wrap **:font-mono text-xs"
+        class="text-no-wrap"
       >
-        <div v-if="aliasName">
+        <div
+          v-if="aliasName"
+          class="text-sm"
+          data-testid="account-name"
+        >
           {{ aliasName }}
         </div>
-        <div v-else>
+        <div
+          v-else
+          class="font-mono text-xs"
+          data-testid="account-address"
+        >
           {{ !noTruncate ? truncateAddress(address, 6) : address }}
         </div>
       </div>

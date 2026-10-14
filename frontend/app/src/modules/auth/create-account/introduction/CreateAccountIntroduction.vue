@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import type { CreateAccountMode } from '@/modules/auth/create-account/types';
+import { externalLinks } from '@shared/external-links';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const emit = defineEmits<{
   select: [mode: CreateAccountMode];
@@ -37,12 +39,15 @@ const cards = computed<ModeCard[]>(() => [
   <div class="space-y-6">
     <i18n-t
       scope="global"
-      keypath="create_account.introduction.description"
-      class="text-center text-rui-text-secondary whitespace-break-spaces"
-      tag="div"
+      keypath="create_account.introduction.intro"
+      class="text-body-1 text-rui-text-secondary"
+      tag="p"
     >
-      <template #highlight>
-        <strong>{{ t('create_account.introduction.highlight') }}</strong>
+      <template #documentation>
+        <ExternalLink
+          :text="t('login.description.learn_more')"
+          :url="externalLinks.usageGuide"
+        />
       </template>
     </i18n-t>
     <div class="grid gap-3">

@@ -124,14 +124,10 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
 </script>
 
 <template>
-  <!-- Escape is handled here rather than on each picker: the handler has to sit above both of them
-       and below the menu popover to be able to keep the key from reaching it. -->
   <div
     class="flex flex-col gap-3 p-3 min-w-64"
     @keydown.esc="onEscape($event)"
   >
-    <!-- A little more space under the chips than between the fields, so the operator reads as
-         choosing the shape of the filter rather than as another field in the list. -->
     <RuiButtonGroup
       v-if="operators.length > 1"
       class="mb-1"
@@ -152,13 +148,6 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
       </RuiButton>
     </RuiButtonGroup>
 
-    <!-- No `Now` action: the picker offers one by default, but as a filter bound this instant is
-         either empty (From: nothing happened after now) or the same as no bound at all (To).
-
-         `partial-time` lets a bound be given as a bare date, which is how a date range is usually
-         thought of: the picker then fills the time the entry left out, and the two ends take
-         opposite sides of the day so that From/To spans whole days rather than cutting the last
-         one off at midnight. -->
     <RuiDateTimePicker
       v-if="showFrom"
       v-model:menu-open="fromMenuOpen"

@@ -29,28 +29,40 @@ syncStepValidity(parses, valid);
 </script>
 
 <template>
-  <div v-if="enabled">
-    <div class="space-y-3">
-      <RuiRevealableTextField
-        v-model.trim="state.apiKey"
-        dense
-        variant="outlined"
-        :disabled="loading"
-        color="primary"
-        :label="t('premium_credentials.label_api_key')"
-        :error-messages="errors('apiKey')"
-        @update:model-value="touch('apiKey')"
-      />
-      <RuiRevealableTextField
-        v-model.trim="state.apiSecret"
-        dense
-        variant="outlined"
-        :disabled="loading"
-        color="primary"
-        :label="t('premium_credentials.label_api_secret')"
-        :error-messages="errors('apiSecret')"
-        @update:model-value="touch('apiSecret')"
-      />
+  <Transition
+    enter-from-class="grid-rows-[0fr] opacity-0"
+    enter-to-class="grid-rows-[1fr] opacity-100"
+    enter-active-class="collapsing transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none"
+    leave-from-class="grid-rows-[1fr] opacity-100"
+    leave-to-class="grid-rows-[0fr] opacity-0"
+    leave-active-class="collapsing transition-[grid-template-rows,opacity] duration-150 ease-in motion-reduce:transition-none"
+  >
+    <div
+      v-if="enabled"
+      class="grid"
+    >
+      <div class="min-h-0 in-[.collapsing]:overflow-hidden">
+        <div class="space-y-3 pt-6">
+          <RuiRevealableTextField
+            v-model.trim="state.apiKey"
+            dense
+            :disabled="loading"
+            color="primary"
+            :label="t('premium_credentials.label_api_key')"
+            :error-messages="errors('apiKey')"
+            @update:model-value="touch('apiKey')"
+          />
+          <RuiRevealableTextField
+            v-model.trim="state.apiSecret"
+            dense
+            :disabled="loading"
+            color="primary"
+            :label="t('premium_credentials.label_api_secret')"
+            :error-messages="errors('apiSecret')"
+            @update:model-value="touch('apiSecret')"
+          />
+        </div>
+      </div>
     </div>
-  </div>
+  </Transition>
 </template>

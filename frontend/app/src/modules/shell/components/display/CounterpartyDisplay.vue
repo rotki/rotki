@@ -2,7 +2,7 @@
 import { toHumanReadable } from '@rotki/common';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
-import AppImage from '@/modules/shell/components/AppImage.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
 const { counterparty, icon, size = '20px' } = defineProps<{
   counterparty: string;
@@ -34,27 +34,36 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
 
   return undefined;
 });
+
+/** A protocol whose logo is missing shows a generic mark rather than an empty circle. */
+const imageFailed = ref<boolean>(false);
+
+watch(counterpartyImageSrc, () => {
+  set(imageFailed, false);
+});
 </script>
 
 <template>
   <div class="flex items-center gap-2 text-rui-text text-sm">
-    <div
-      :class="useDarkModeImage ? 'p-0.5 bg-black rounded-md' : 'icon-bg'"
-    >
-      <RuiIcon
-        v-if="data.icon"
-        :name="data.icon"
-        :color="data.color || 'secondary'"
-        :size="size"
-      />
-
-      <AppImage
-        v-else-if="counterpartyImageSrc"
-        :src="counterpartyImageSrc"
-        fit="contain"
-        :size="size"
-      />
-    </div>
+    <RuiIcon
+      v-if="data.icon"
+      :name="data.icon"
+      :color="data.color || 'secondary'"
+      :size="size"
+    />
+    <IconMark
+      v-else-if="counterpartyImageSrc && !imageFailed"
+      :src="counterpartyImageSrc"
+      :size="size"
+      :backing="useDarkModeImage ? 'dark' : 'light'"
+      @error="imageFailed = true"
+    />
+    <RuiIcon
+      v-else
+      name="lu-blocks"
+      color="secondary"
+      :size="size"
+    />
     <div
       v-if="!icon"
       class="uppercase"

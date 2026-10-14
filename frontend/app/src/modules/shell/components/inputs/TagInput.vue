@@ -155,18 +155,27 @@ watch(tags, () => {
         />
       </template>
     </RuiAutoComplete>
-    <RuiButton
-      class="mt-1"
-      data-testid="add-tag-button"
-      icon
-      variant="text"
-      color="primary"
-      type="button"
-      :disabled="disabled"
-      @click="handleCreateNewTag()"
+    <RuiTooltip
+      :options="{ placement: 'top' }"
+      :open-delay="400"
     >
-      <RuiIcon name="lu-plus" />
-    </RuiButton>
+      <template #activator>
+        <RuiButton
+          class="mt-6"
+          data-testid="add-tag-button"
+          icon
+          variant="text"
+          color="primary"
+          type="button"
+          :aria-label="t('tag_manager.create_tag.title')"
+          :disabled="disabled"
+          @click="handleCreateNewTag()"
+        >
+          <RuiIcon name="lu-plus" />
+        </RuiButton>
+      </template>
+      {{ t('tag_manager.create_tag.title') }}
+    </RuiTooltip>
 
     <TagFormDialog
       v-model="newTag"

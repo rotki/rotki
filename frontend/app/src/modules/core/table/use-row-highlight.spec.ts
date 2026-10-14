@@ -33,7 +33,7 @@ describe('useRowHighlight', () => {
 
     expect(isHighlighted(target)).toBe(true);
     expect(isHighlighted(other)).toBe(false);
-    expect(rowClass(target)).toContain('bg-rui-primary/[0.08]');
+    expect(rowClass(target)).toContain('bg-rui-primary/8');
     expect(rowClass(other)).toBe('transition-colors duration-1000');
   });
 

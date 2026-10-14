@@ -27,7 +27,7 @@ const { t } = useI18n({ useScope: 'global' });
         :to="group.items[0]?.path"
         parent
       >
-        <div :class="{ 'bg-rui-grey-200 dark:bg-rui-grey-800 rounded-md': mini }">
+        <div :class="{ 'bg-rui-surface-muted rounded-rui-control': mini }">
           <NavigationMenuLink
             v-for="(child, i) in group.items"
             :key="i"

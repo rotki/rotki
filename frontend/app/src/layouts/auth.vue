@@ -22,7 +22,7 @@ const { showAbout } = storeToRefs(useAreaVisibilityStore());
       v-model="showAbout"
       max-width="500"
     >
-      <About />
+      <About @close="showAbout = false" />
     </RuiDialog>
   </AppHost>
 </template>
