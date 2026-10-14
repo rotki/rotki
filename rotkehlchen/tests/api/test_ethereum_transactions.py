@@ -2071,15 +2071,26 @@ def test_monerium_gnosis_pay_events_update(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-def test_notify_missing_credentials_on_redecode(
+def test_notify_reauthentication_on_redecode(
         rotkehlchen_api_server: APIServer,
         websocket_connection: WebsocketReader,
 ) -> None:
-    """Check that a missing key notification is sent if gnosis pay or monerium events are manually
-    redecoded without having the credentials in the db.
+    """Check that a reauthentication notification is sent if Gnosis Pay or Monerium events
+    are manually redecoded without having the credentials in the db.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    for counterparty, service_name in [(CPT_GNOSIS_PAY, 'gnosis pay'), (CPT_MONERIUM, 'monerium')]:
+    for counterparty, message_type, error in [
+        (
+            CPT_GNOSIS_PAY,
+            'gnosispay_sessionkey_expired',
+            'Please sign in with GnosisPay again to refresh your data',
+        ),
+        (
+            CPT_MONERIUM,
+            'monerium_sessionkey_expired',
+            'Please sign in with Monerium again to refresh your data',
+        ),
+    ]:
         websocket_connection.messages.clear()
         capability_name = GNOSIS_PAY_CAPABILITY if counterparty == CPT_GNOSIS_PAY else MONERIUM_CAPABILITY  # noqa: E501
         event = EvmEvent(
@@ -2135,4 +2146,7 @@ def test_notify_missing_credentials_on_redecode(
             ))
 
         websocket_connection.wait_until_messages_num(num=1, timeout=5)
-        assert websocket_connection.messages[0] == {'type': 'missing_api_key', 'data': {'service': service_name}}  # noqa: E501
+        assert websocket_connection.messages[0] == {
+            'type': message_type,
+            'data': {'error': error},
+        }

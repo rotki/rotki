@@ -155,7 +155,10 @@ class GnosisPay:
                     error_message = response.text
 
                 log.error(f'Failed to connect to the GnosisPay API due to {error_message}')
-                notify_reauthentication_required(database=self.database, service='gnosispay')
+                notify_reauthentication_required(
+                    msg_aggregator=self.database.msg_aggregator,
+                    service='gnosispay',
+                )
 
             raise RemoteError(
                 f'Gnosis Pay API request {response.url} failed '

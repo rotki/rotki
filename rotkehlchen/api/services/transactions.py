@@ -46,6 +46,7 @@ from rotkehlchen.errors.misc import (
     RemoteError,
 )
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
     GNOSIS_PAY_CAPABILITY,
@@ -1314,7 +1315,10 @@ class TransactionsService:
                 service_name=ExternalService.GNOSIS_PAY,
             ) is None
         ):
-            self.rotkehlchen.msg_aggregator.add_missing_key_message(ExternalService.GNOSIS_PAY)
+            notify_reauthentication_required(
+                msg_aggregator=self.rotkehlchen.msg_aggregator,
+                service='gnosispay',
+            )
         elif (
             has_monerium and
             has_premium_capability(self.rotkehlchen.premium, MONERIUM_CAPABILITY) and
@@ -1323,7 +1327,10 @@ class TransactionsService:
                 not self.rotkehlchen.monerium.oauth_client.is_authenticated()
             )
         ):
-            self.rotkehlchen.msg_aggregator.add_missing_key_message(ExternalService.MONERIUM)
+            notify_reauthentication_required(
+                msg_aggregator=self.rotkehlchen.msg_aggregator,
+                service='monerium',
+            )
 
     def _decode_given_evmlike_tx(self, tx_ref: EVMTxHash, delete_custom: bool) -> None:
         with self.rotkehlchen.data.db.user_write() as write_cursor:
