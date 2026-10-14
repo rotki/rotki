@@ -12,7 +12,7 @@ const weekdays = getDayNamesReactify(language);
   <div
     v-for="weekday in weekdays"
     :key="weekday"
-    class="text-center text-subtitle-2 text-sm uppercase font-medium text-rui-text-secondary pt-2 border-default"
+    class="border-b border-rui-divider bg-rui-surface-muted py-2 text-center text-[0.8125rem] leading-5 font-medium text-rui-text-secondary"
   >
     {{ weekday }}
   </div>

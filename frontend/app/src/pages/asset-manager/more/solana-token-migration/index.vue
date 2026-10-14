@@ -2,11 +2,13 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import { SolanaTokenKind } from '@rotki/common';
 import { msg } from '@/message-key';
+import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
 import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';
 import SolanaTokenMigrationDialog from '@/modules/assets/admin/solana-token-migration/SolanaTokenMigrationDialog.vue';
 import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
@@ -47,9 +49,9 @@ const cols = computed<DataTableColumn<{ id: number; identifier: string }>[]>(() 
   },
   {
     align: 'end',
+    cellClass: 'w-px',
     key: 'actions',
     label: t('common.actions_text'),
-    sortable: true,
   },
 ]);
 
@@ -102,12 +104,11 @@ function handleMergeCompleted({ sourceIdentifier }: { sourceIdentifier: string; 
 </script>
 
 <template>
-  <TablePageLayout
-    child
-    hide-header
-    class="lg:-mt-5!"
-  >
-    <RuiCard>
+  <TablePageLayout child>
+    <template #title>
+      <AssetManagerMoreTitle />
+    </template>
+    <TableFrame>
       <RuiDataTable
         dense
         :rows="rows"
@@ -118,7 +119,6 @@ function handleMergeCompleted({ sourceIdentifier }: { sourceIdentifier: string; 
           total: rows.length,
         }"
         row-attr="id"
-        outlined
       >
         <template #item.identifier="{ row }">
           <AssetDetails
@@ -127,10 +127,27 @@ function handleMergeCompleted({ sourceIdentifier }: { sourceIdentifier: string; 
           />
         </template>
         <template #item.actions="{ row }">
-          <div class="flex gap-2">
+          <div class="flex items-center justify-end gap-2">
             <RuiButton
-              color="primary"
+              size="sm"
               variant="text"
+              color="primary"
+              data-testid="solana-token-merge"
+              @click="openMergeDialog(row.identifier)"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-combine"
+                  size="16"
+                />
+              </template>
+              {{ t('asset_management.merge_assets') }}
+            </RuiButton>
+            <RuiButton
+              size="sm"
+              variant="outlined"
+              color="primary"
+              data-testid="solana-token-migrate"
               @click="openMigrationDialog(row.identifier)"
             >
               {{ t('asset_management.solana_token_migration.migrate_button') }}
@@ -141,24 +158,10 @@ function handleMergeCompleted({ sourceIdentifier }: { sourceIdentifier: string; 
                 />
               </template>
             </RuiButton>
-            <RuiDivider vertical />
-            <RuiButton
-              color="primary"
-              variant="text"
-              @click="openMergeDialog(row.identifier)"
-            >
-              {{ t('asset_management.merge_assets') }}
-              <template #append>
-                <RuiIcon
-                  name="lu-combine"
-                  size="16"
-                />
-              </template>
-            </RuiButton>
           </div>
         </template>
       </RuiDataTable>
-    </RuiCard>
+    </TableFrame>
 
     <SolanaTokenMigrationDialog
       v-model="migrationData"

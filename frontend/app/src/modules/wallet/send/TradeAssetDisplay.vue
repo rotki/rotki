@@ -61,8 +61,6 @@ const name = computed<string>(() => providedName ?? get(resolvedName));
       <div class="font-medium text-sm -mb-0.5 overflow-hidden truncate">
         <div class="truncate flex items-center gap-1.5">
           <span class="truncate">{{ symbol }}</span>
-          <!-- Only rendered for a symbol that appears twice in the list; otherwise the address is
-               noise on every row. -->
           <span
             v-if="address"
             class="shrink-0 font-mono text-xs font-normal text-rui-text-secondary"
@@ -72,14 +70,12 @@ const name = computed<string>(() => providedName ?? get(resolvedName));
           </span>
         </div>
         <div
-          v-if="list || !(data.price && data.fiatValue)"
+          v-if="list"
           class="truncate text-rui-text-secondary font-normal"
         >
           {{ name }}
         </div>
       </div>
-      <!-- The right-hand side of a list row: what you hold, and the tick for the active asset.
-           Hidden when the amount is zero, which is every row until a wallet is connected. -->
       <div
         v-if="list"
         class="flex items-center gap-2 shrink-0 pl-2"
@@ -105,17 +101,20 @@ const name = computed<string>(() => providedName ?? get(resolvedName));
             />
           </div>
         </div>
-        <RuiIcon
-          v-if="selected"
-          class="text-rui-primary"
-          name="lu-check"
-          size="16"
-          data-testid="trade-asset-selected"
-        />
+        <span class="size-4 shrink-0 flex">
+          <RuiIcon
+            v-if="selected"
+            class="text-rui-primary"
+            name="lu-check"
+            size="16"
+            data-testid="trade-asset-selected"
+          />
+        </span>
       </div>
       <div
-        v-if="!list && data.price"
-        class="text-sm text-rui-text flex items-center gap-1 whitespace-nowrap"
+        v-if="!list"
+        class="text-sm text-rui-text-secondary flex items-center gap-1 whitespace-nowrap"
+        data-testid="trade-asset-selected-balance"
       >
         <span>{{ t('trade.select_asset.balance') }}:</span>
         <RuiSkeletonLoader
@@ -130,7 +129,7 @@ const name = computed<string>(() => providedName ?? get(resolvedName));
               no-scramble
             />
           </div>
-          <div>
+          <div v-if="data.price">
             (<FiatDisplay
               no-scramble
               :value="data.price.multipliedBy(amount)"

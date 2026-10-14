@@ -9,7 +9,6 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSetting } from '@/modules/settings/use-setting';
-import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const { identifier, isCollectionParent = false } = defineProps<{
@@ -61,43 +60,44 @@ function showDeleteConfirmation() {
 <template>
   <div class="grid sm:grid-cols-3 gap-4">
     <RuiCard no-padding>
-      <template #custom-header>
-        <div class="px-4 pt-3 pb-3 flex justify-between items-start">
-          <CardTitle>{{ t('common.price') }}</CardTitle>
-          <RuiTooltip :open-delay="200">
+      <div class="flex flex-col gap-1 p-4">
+        <div class="flex items-center min-h-8 -my-1">
+          <h3 class="mr-auto text-sm text-rui-text-secondary">
+            {{ t('common.price') }}
+          </h3>
+          <RuiTooltip :open-delay="400">
             <template #activator>
               <RuiButton
                 variant="text"
                 icon
-                class="p-2!"
+                size="sm"
+                class="text-rui-text-secondary!"
+                :aria-label="t('assets.refresh_price')"
                 :loading="refreshingPrices"
                 @click="refreshPrice(identifier)"
               >
                 <RuiIcon
                   name="lu-refresh-ccw"
-                  size="18"
+                  size="16"
                 />
               </RuiButton>
             </template>
             {{ t('assets.refresh_price') }}
           </RuiTooltip>
+          <RowActions
+            :delete-tooltip="t('assets.custom_price.delete.tooltip')"
+            :edit-tooltip="t('assets.custom_price.edit.tooltip')"
+            :no-delete="!isManualPrice"
+            :disabled="pricesLoading"
+            @delete-click="showDeleteConfirmation()"
+            @edit-click="setPriceForm()"
+          />
         </div>
-      </template>
-      <div class="px-4 pb-3 flex flex-wrap items-center gap-1 md:gap-3">
         <FiatDisplay
-          class="flex-1 text-h5 font-medium text-rui-text-secondary"
+          class="text-h5 font-semibold"
           :value="info.price"
           :loading="pricesLoading"
           :price-asset="identifier"
-        />
-
-        <RowActions
-          :delete-tooltip="t('assets.custom_price.delete.tooltip')"
-          :edit-tooltip="t('assets.custom_price.edit.tooltip')"
-          :no-delete="!isManualPrice"
-          :disabled="pricesLoading"
-          @delete-click="showDeleteConfirmation()"
-          @edit-click="setPriceForm()"
         />
       </div>
 
@@ -110,28 +110,32 @@ function showDeleteConfirmation() {
       />
     </RuiCard>
     <RuiCard no-padding>
-      <template #header>
-        {{ t('assets.amount') }}
-      </template>
-      <AssetAmountDisplay
-        class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
-        :amount="info.amount"
-        :asset="identifier"
-        no-truncate
-      />
+      <div class="flex flex-col gap-1 p-4">
+        <h3 class="flex items-center min-h-8 -my-1 text-sm text-rui-text-secondary">
+          {{ t('assets.amount') }}
+        </h3>
+        <AssetAmountDisplay
+          class="text-h5 font-semibold"
+          :amount="info.amount"
+          :asset="identifier"
+          no-truncate
+        />
+      </div>
     </RuiCard>
     <RuiCard no-padding>
-      <template #header>
-        {{ t('assets.value') }}
-      </template>
-      <AssetValueDisplay
-        class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
-        :asset="identifier"
-        :amount="info.amount"
-        :price="info.price"
-        :value="info.value"
-        :loading="refreshing"
-      />
+      <div class="flex flex-col gap-1 p-4">
+        <h3 class="flex items-center min-h-8 -my-1 text-sm text-rui-text-secondary">
+          {{ t('assets.value') }}
+        </h3>
+        <AssetValueDisplay
+          class="text-h5 font-semibold"
+          :asset="identifier"
+          :amount="info.amount"
+          :price="info.price"
+          :value="info.value"
+          :loading="refreshing"
+        />
+      </div>
     </RuiCard>
   </div>
 </template>

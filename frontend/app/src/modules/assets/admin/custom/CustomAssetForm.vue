@@ -50,8 +50,8 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col gap-2">
-    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+  <div class="flex flex-col gap-4">
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-1">
       <RuiTextField
         v-model="form.state.name"
         data-testid="name"
@@ -79,6 +79,7 @@ defineExpose({
       min-rows="3"
       auto-grow
       clearable
+      hide-details
       :label="t('common.notes')"
     />
 

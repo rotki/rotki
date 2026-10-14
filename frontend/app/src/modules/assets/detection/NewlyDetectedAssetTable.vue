@@ -8,12 +8,12 @@ import { useNewlyDetectedFields } from '@/modules/assets/detection/use-newly-det
 import { useNewlyDetectedSelection } from '@/modules/assets/detection/use-newly-detected-selection';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
-import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { getTokenChain } from './get-token-chain';
 import NewlyDetectedAssetRowActions from './NewlyDetectedAssetRowActions.vue';
 import NewlyDetectedAssetToolbar from './NewlyDetectedAssetToolbar.vue';
@@ -70,8 +70,9 @@ const emptyState = useTableEmptyState({ error });
 
 const cols = computed<DataTableColumn<Token>[]>(() => [
   {
-    cellClass: 'py-0',
-    class: 'py-0',
+    // `max-w-0`: the asset takes the room left and truncates, keeping the actions on screen
+    cellClass: 'py-0 max-w-0',
+    class: 'py-0 w-full',
     key: 'tokenIdentifier',
     label: t('common.asset'),
     sortable: true,
@@ -104,8 +105,8 @@ const cols = computed<DataTableColumn<Token>[]>(() => [
     label: t('asset_table.newly_detected.seen_during'),
   },
   {
-    align: 'center',
-    cellClass: 'py-0',
+    align: 'end',
+    cellClass: 'py-0 w-px',
     class: 'py-0',
     key: 'actions',
     label: t('common.actions_text'),
@@ -147,88 +148,82 @@ onMounted(async () => {
 </script>
 
 <template>
-  <TablePageLayout
-    child
-    hide-header
-    class="lg:-mt-5!"
-  >
-    <RuiCard>
-      <template #custom-header>
-        <NewlyDetectedAssetToolbar
-          v-model:filters="filter"
-          :all-selected="allSelected"
-          :selected-count="modelSelected.length"
-          :found="collection.found"
-          :fields="fields"
-          @toggle-selection="toggleSelection()"
-          @accept="removeTokens()"
-          @mark-spam="markAsSpam()"
+  <TableFrame>
+    <template #toolbar>
+      <NewlyDetectedAssetToolbar
+        v-model:filters="filter"
+        :all-selected="allSelected"
+        :selected-count="modelSelected.length"
+        :found="collection.found"
+        :fields="fields"
+        @toggle-selection="toggleSelection()"
+        @clear-selection="modelSelected = []"
+        @accept="removeTokens()"
+        @mark-spam="markAsSpam()"
+      />
+    </template>
+
+    <RuiDataTable
+      v-model="modelSelected"
+      v-model:sort.external="sort"
+      v-model:pagination.external="pagination"
+      :cols="cols"
+      :empty="emptyState"
+      :rows="rows"
+      :loading="isLoading"
+      dense
+      row-attr="tokenIdentifier"
+    >
+      <template #item.tokenIdentifier="{ row }">
+        <AssetDetails
+          :actions="{ hideMenu: true }"
+          :asset="row.tokenIdentifier"
         />
       </template>
 
-      <RuiDataTable
-        v-model="modelSelected"
-        v-model:sort.external="sort"
-        v-model:pagination.external="pagination"
-        :cols="cols"
-        :empty="emptyState"
-        :rows="rows"
-        :loading="isLoading"
-        outlined
-        dense
-        row-attr="tokenIdentifier"
-      >
-        <template #item.tokenIdentifier="{ row }">
-          <AssetDetails
-            :actions="{ hideMenu: true }"
-            :asset="row.tokenIdentifier"
-          />
-        </template>
+      <template #item.address="{ row }">
+        <HashLink
+          :location="row.chain"
+          :text="row.address"
+          type="token"
+        />
+      </template>
 
-        <template #item.address="{ row }">
+      <template #item.price="{ row }">
+        <FiatDisplay
+          :value="row.price"
+          :price-asset="row.tokenIdentifier"
+        />
+      </template>
+
+      <template #item.detectedAt="{ row }">
+        <DateDisplay
+          :timestamp="row.detectedAt"
+          milliseconds
+        />
+      </template>
+
+      <template #item.description="{ row }">
+        <div v-if="row.seenDescription">
+          {{ row.seenDescription }}
+        </div>
+
+        <div v-if="row.seenTxReference">
           <HashLink
             :location="row.chain"
-            :text="row.address"
-            type="token"
+            :text="row.seenTxReference"
+            type="transaction"
           />
-        </template>
+        </div>
+      </template>
 
-        <template #item.price="{ row }">
-          <FiatDisplay
-            :value="row.price"
-            :price-asset="row.tokenIdentifier"
-          />
-        </template>
-
-        <template #item.detectedAt="{ row }">
-          <DateDisplay
-            :timestamp="row.detectedAt"
-            milliseconds
-          />
-        </template>
-
-        <template #item.description="{ row }">
-          <div v-if="row.seenDescription">
-            {{ row.seenDescription }}
-          </div>
-
-          <div v-if="row.seenTxReference">
-            <HashLink
-              :location="row.chain"
-              :text="row.seenTxReference"
-              type="transaction"
-            />
-          </div>
-        </template>
-
-        <template #item.actions="{ row }">
-          <NewlyDetectedAssetRowActions
-            :key="row.tokenIdentifier"
-            @accept="removeTokens(row.tokenIdentifier)"
-            @mark-spam="markAsSpam(row.tokenIdentifier)"
-          />
-        </template>
-      </RuiDataTable>
-    </RuiCard>
-  </TablePageLayout>
+      <template #item.actions="{ row }">
+        <NewlyDetectedAssetRowActions
+          :key="row.tokenIdentifier"
+          @accept="removeTokens(row.tokenIdentifier)"
+          @mark-spam="markAsSpam(row.tokenIdentifier)"
+        />
+      </template>
+    </RuiDataTable>
+  </TableFrame>
 </template>

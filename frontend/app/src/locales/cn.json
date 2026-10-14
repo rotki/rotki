@@ -1301,11 +1301,9 @@
       "mark_as_spam": "将代币标记为垃圾代币",
       "mark_selected_as_spam": "将所选代币标记为垃圾代币",
       "seen_during": "发现于",
-      "select_deselect_all_tokens": "全选/取消全选代币",
       "subtitle": "检查新检测到的代币列表，并将垃圾资产加入垃圾代币列表",
       "token_type": "代币类型"
     },
-    "selected": "已选择 {count} 个资产",
     "underlying_tokens": "底层代币"
   },
   "asset_update": {
@@ -1988,8 +1986,7 @@
     },
     "today": "今天",
     "today_events": "今日事件",
-    "upcoming_events": "即将到来的事件",
-    "view_details": "查看详情"
+    "upcoming_events": "即将到来的事件"
   },
   "chain_account_multi_select": {
     "label": "账户"
@@ -2088,7 +2085,6 @@
     },
     "here": "这里",
     "ignored_in_accounting": "已从会计计算中排除（盈亏）",
-    "important_notice": "重要提示：",
     "label": "标签",
     "liabilities": "负债",
     "location": "位置",
@@ -2286,7 +2282,6 @@
     "zar": "南非兰特"
   },
   "currency_drop_down": {
-    "hint": "设为主货币",
     "profit_currency": "盈亏计价货币 ({currency})"
   },
   "customized_event_duplicates": {
@@ -4656,7 +4651,6 @@
       "non_empty": "源标识符不能为空"
     },
     "source_hint": "要合并到目标资产的资产标识符",
-    "subtitle": "合并两个资产",
     "target": {
       "label": "目标",
       "non_empty": "目标资产不能为空"
@@ -4987,9 +4981,6 @@
       }
     },
     "cache": {
-      "create": {
-        "title": "创建缓存"
-      },
       "delete": {
         "error": "清除 {fromAsset} 到 {toAsset} 的缓存失败：{error}",
         "message": "确定要删除 {source} 上 {fromAsset} 到 {toAsset} 交易对的所有缓存价格吗？",
@@ -4999,7 +4990,6 @@
       "dialog": {
         "create": "创建缓存",
         "empty": "所选预言机暂无缓存。",
-        "existing_title": "已有缓存",
         "source": "价格预言机"
       },
       "headers": {
@@ -5478,13 +5468,9 @@
       }
     },
     "headers": {
-      "from_asset": "源资产",
-      "to_asset": "目标资产"
+      "from_asset": "源资产"
     },
-    "is_worth": "价值",
-    "on": "于",
-    "refresh_tooltip": "刷新价格",
-    "was_worth": "当时价值"
+    "refresh_tooltip": "刷新价格"
   },
   "prioritized_list": {
     "add_placeholder": "添加{name}",
@@ -6067,6 +6053,9 @@
       "empty_name": "请输入标签名称"
     }
   },
+  "tag_display": {
+    "filter_by": "按标签 {tag} 筛选"
+  },
   "tag_manager": {
     "confirmation": {
       "message": "确定要删除 {tagToDelete} 吗？这也会删除该标签的所有关联。",
@@ -6401,6 +6390,7 @@
     },
     "recipient": {
       "from_private_address_book": "私有地址簿中的地址",
+      "new_address": "新地址",
       "no_addresses_found": "未找到地址",
       "resolving_ens": "正在解析 ENS...",
       "select_recipient_address": "选择收款地址",
@@ -6416,6 +6406,10 @@
       "search": "按符号或名称搜索",
       "select_token": "选择代币",
       "title": "选择资产"
+    },
+    "status": {
+      "not_tracked": "未在 rotki 中追踪",
+      "updating_balances": "正在更新余额…"
     },
     "to_address": {
       "label": "收款地址"

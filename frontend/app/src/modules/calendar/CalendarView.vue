@@ -12,7 +12,7 @@ import CalendarUpcomingEventsPanel from '@/modules/calendar/CalendarUpcomingEven
 import { useCalendarData } from '@/modules/calendar/use-calendar-data';
 import { useCalendarDateManagement } from '@/modules/calendar/use-calendar-date-management';
 import { useCalendarOperations } from '@/modules/calendar/use-calendar-operations';
-import HistoryTableActions from '@/modules/history/HistoryTableActions.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -64,7 +64,6 @@ onMounted(async () => {
     <template #buttons>
       <RuiButton
         color="primary"
-        size="lg"
         data-testid="calendar-add-event"
         @click="add()"
       >
@@ -76,31 +75,30 @@ onMounted(async () => {
       <CalendarSettingsMenu />
     </template>
 
-    <div class="grid items-start grid-cols-[minmax(0,1fr)_14rem] gap-4">
-      <RuiCard class="h-auto">
-        <HistoryTableActions>
-          <template #filter>
-            <BlockchainAccountSelector
-              v-model="accounts"
-              class="md:w-96"
-              :source="{ multichain: true }"
-              :field="{ dense: true }"
-            />
-          </template>
-          <div class="flex gap-4">
-            <CalendarMonthNavigator v-model="modelVisibleDate" />
-            <CalendarDateNavigator
-              v-model="modelSelectedDate"
-              :visible-date="modelVisibleDate"
-              :today="today"
-              @set-today="setToday()"
-            />
-          </div>
-        </HistoryTableActions>
+    <div class="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_16rem]">
+      <TableFrame>
+        <template #toolbar>
+          <CalendarDateNavigator
+            v-model="modelSelectedDate"
+            :visible-date="modelVisibleDate"
+            :today="today"
+            @set-today="setToday()"
+          />
+          <CalendarMonthNavigator v-model="modelVisibleDate" />
+          <BlockchainAccountSelector
+            v-model="accounts"
+            class="w-full md:ml-auto md:w-72"
+            label-placement="hidden"
+            :menu-options="{ classNames: { menu: 'w-72' } }"
+            :placeholder="t('calendar.all_addresses')"
+            :source="{ multichain: true }"
+            :field="{ dense: true, label: t('calendar.all_addresses') }"
+          />
+        </template>
         <RuiAlert
           v-if="error"
           type="error"
-          class="mb-4"
+          class="m-3"
           :title="t('data_table.fetch_failed')"
           data-testid="calendar-fetch-error"
         >
@@ -127,17 +125,8 @@ onMounted(async () => {
           @edit="edit($event)"
           @add="add($event)"
         />
-
-        <CalendarFormDialog
-          v-model="modelValue"
-          :loading="isLoading"
-          :selected-date="modelSelectedDate"
-          :edit-mode="editMode"
-          @delete="deleteEvent()"
-          @refresh="fetchData()"
-        />
-      </RuiCard>
-      <div class="flex flex-col gap-4 h-auto">
+      </TableFrame>
+      <div class="grid items-start gap-4 md:grid-cols-2 xl:flex xl:flex-col">
         <CalendarSelectedEventsPanel
           v-model:selected-date="modelSelectedDate"
           :selected-date-events="selectedDateEvents"
@@ -153,5 +142,14 @@ onMounted(async () => {
         />
       </div>
     </div>
+
+    <CalendarFormDialog
+      v-model="modelValue"
+      :loading="isLoading"
+      :selected-date="modelSelectedDate"
+      :edit-mode="editMode"
+      @delete="deleteEvent()"
+      @refresh="fetchData()"
+    />
   </TablePageLayout>
 </template>

@@ -23,8 +23,5 @@ const { enabled } = useModuleEnabled(modules[0]);
   >
     <ModuleNotActive :modules="modules" />
   </div>
-  <NftGallery
-    v-else
-    :modules="modules"
-  />
+  <NftGallery v-else />
 </template>

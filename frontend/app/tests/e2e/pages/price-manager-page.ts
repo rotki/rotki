@@ -133,8 +133,8 @@ export class LatestPricePage {
 
   async expectRequiredErrors(): Promise<void> {
     const dialog = this.page.locator('[data-testid=bottom-dialog]');
-    await expect(dialog.getByText('The from asset cannot be empty')).toBeVisible();
-    await expect(dialog.getByText('The to asset cannot be empty')).toBeVisible();
+    await expect(dialog.getByText('Pick the asset to price')).toBeVisible();
+    await expect(dialog.getByText('Pick the asset the price is in')).toBeVisible();
     await expect(dialog.getByText('The price cannot be empty')).toBeVisible();
   }
 
@@ -212,8 +212,8 @@ export class HistoricPricePage {
 
   async expectRequiredErrors(): Promise<void> {
     const dialog = this.page.locator('[data-testid=bottom-dialog]');
-    await expect(dialog.getByText('The from asset cannot be empty')).toBeVisible();
-    await expect(dialog.getByText('The to asset cannot be empty')).toBeVisible();
+    await expect(dialog.getByText('Pick the asset to price')).toBeVisible();
+    await expect(dialog.getByText('Pick the asset the price is in')).toBeVisible();
     await expect(dialog.getByText('The price cannot be empty')).toBeVisible();
   }
 

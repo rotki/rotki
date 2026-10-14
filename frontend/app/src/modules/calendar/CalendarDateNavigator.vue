@@ -37,28 +37,12 @@ watch(
 </script>
 
 <template>
-  <!--
-    Today + chevron are rendered as adjacent siblings in a plain flex wrapper
-    rather than inside a RuiButtonGroup. Nesting a RuiMenu as a group child
-    was causing the menu to flicker open/close on Today clicks — the group
-    intercepts each child's `update:model-value` as a button-selection event
-    and injects `active`/`color`/`size` props into the menu's VNode, which
-    destabilised its open state. Here the two buttons share a visual seam
-    via `rounded-r-none!` / `rounded-l-none!` + `-ml-px`.
-
-    The menu stays `persistent` so that interacting with the nested
-    DateTimePicker (which teleports its own time/date overlays outside this
-    component's DOM subtree) doesn't count as an outside click and dismiss
-    the Go-to-date popup. Close paths: pick a date and hit the corner-down
-    submit button, press Enter/Escape inside the popup, or click the
-    chevron again to toggle.
-  -->
-  <div class="flex">
+  <div class="flex items-center">
     <RuiButton
       color="primary"
       variant="outlined"
-      size="xl"
-      class="rounded-r-none!"
+      size="sm"
+      class="h-8! rounded-r-none!"
       :disabled="alreadyOnToday"
       data-testid="calendar-today"
       @click="emit('set-today')"
@@ -67,6 +51,8 @@ watch(
     </RuiButton>
     <RuiMenu
       v-model="open"
+      class="flex"
+      :options="{ placement: 'bottom-start' }"
       persistent
     >
       <template #activator="{ attrs }">
@@ -74,15 +60,16 @@ watch(
           color="primary"
           variant="outlined"
           icon
-          size="xl"
-          class="rounded-l-none! -ml-px rounded-sm!"
+          size="sm"
+          class="size-8! rounded-l-none! rounded-r-rui-control! -ml-px"
+          :aria-label="t('calendar.go_to_date')"
           v-bind="attrs"
         >
           <RuiIcon name="lu-chevron-down" />
         </RuiButton>
       </template>
       <div
-        class="p-4 flex items-start"
+        class="p-4 flex items-end"
         tabindex="-1"
         @keydown.esc="open = false"
       >
@@ -91,17 +78,20 @@ watch(
           class="w-64 [&_fieldset]:rounded-r-none!"
           type="epoch"
           dense
+          hide-details
           :label="t('calendar.go_to_date')"
           @keydown.enter="goToSelectedDate()"
         />
         <RuiButton
           color="primary"
-          class="rounded-l-none! p-2! py-2.5!"
+          icon
+          class="size-8! rounded-l-none! rounded-r-rui-control!"
+          :aria-label="t('calendar.go_to_date')"
           @click="goToSelectedDate()"
         >
           <RuiIcon
             name="lu-corner-down-left"
-            size="20"
+            size="16"
           />
         </RuiButton>
       </div>

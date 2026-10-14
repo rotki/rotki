@@ -43,8 +43,9 @@ export function useManagedAssetTable(
   const itemsPerPage = useSetting('itemsPerPage');
   const emptyState = useTableEmptyState();
 
+  // `max-w-0`: the asset column takes the room left and truncates, keeping the actions on screen.
   const cols = computed<DataTableColumn<SupportedAsset>[]>(() => [{
-    cellClass: 'py-0',
+    cellClass: 'py-0 max-w-0',
     class: 'w-full',
     key: 'symbol',
     label: t('common.asset'),
@@ -61,8 +62,7 @@ export function useManagedAssetTable(
     label: t('common.address'),
     sortable: true,
   }, {
-    cellClass: 'py-0',
-    class: 'min-w-40',
+    cellClass: 'py-0 whitespace-nowrap',
     key: 'started',
     label: t('asset_table.headers.started'),
     sortable: true,

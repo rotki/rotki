@@ -34,6 +34,7 @@ const { loading, modelErrorMessages, save } = useSolanaTokenMigrationDialog({
     :display="!!modelValue"
     :title="t('asset_management.solana_token_migration.dialog_title')"
     :action="{ primary: t('asset_management.solana_token_migration.migrate_button') }"
+    :layout="{ autoHeight: true, divide: true, maxWidth: '640px' }"
     :loading="loading"
     :prompt-on-close="stateUpdated"
     @confirm="save()"

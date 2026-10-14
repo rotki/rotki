@@ -599,10 +599,8 @@
     "newly_detected": {
       "accept_selected": "Accepter les jetons sélectionnés",
       "seen_during": "Vu pendant",
-      "select_deselect_all_tokens": "Sélectionner/Désélectionner tous les jetons",
       "subtitle": "Inspecter la liste des jetons détectés récemment et ajouter tous les jetons spam à la liste des jetons ignorés"
     },
-    "selected": "{count} actif(s) sélectionné(s)",
     "underlying_tokens": "Jetons sous-jacents"
   },
   "asset_update": {
@@ -922,7 +920,6 @@
     "fee": "Frais",
     "here": "ici",
     "ignored_in_accounting": "Exclu de la comptabilité (PnL)",
-    "important_notice": "Remarque importante :",
     "location": "Emplacement",
     "multi_chain": "Multi Chaîne",
     "name": "Nom",
@@ -1057,7 +1054,6 @@
     "zar": "Rand sud-africain"
   },
   "currency_drop_down": {
-    "hint": "Sélectionner comme devise principale",
     "profit_currency": "Devise du profit ({currency})"
   },
   "dashboard": {
@@ -2002,7 +1998,6 @@
       "non_empty": "L'identifiant de la source ne peut pas être vide"
     },
     "source_hint": "L'identifiant de l'actif que vous souhaitez fusionner dans la cible",
-    "subtitle": "Fusionner deux actifs",
     "target": {
       "label": "Cible",
       "non_empty": "L'actif cible ne peut pas être vide"
@@ -2378,13 +2373,9 @@
       }
     },
     "headers": {
-      "from_asset": "De la devise",
-      "to_asset": "À la devise"
+      "from_asset": "De la devise"
     },
-    "is_worth": "vaut",
-    "on": "sur",
-    "refresh_tooltip": "Actualiser les prix",
-    "was_worth": "valait"
+    "refresh_tooltip": "Actualiser les prix"
   },
   "prioritized_list": {
     "all_added": "Aucun {namePluralized} désactivé",

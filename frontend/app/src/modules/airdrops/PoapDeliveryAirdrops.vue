@@ -2,8 +2,8 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { PoapDeliveryDetails } from '@/modules/airdrops/airdrops';
 import images from '@/modules/airdrops/poap.json';
-import AppImage from '@/modules/shell/components/AppImage.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
 defineProps<{ items: PoapDeliveryDetails[] }>();
 
@@ -68,15 +68,10 @@ function getImage(event: string): string {
     >
       <template #item.name="{ row }">
         <div class="flex items-center gap-4">
-          <div class="icon-bg">
-            <AppImage
-              class="rounded-full"
-              width="36px"
-              height="36px"
-              fit="contain"
-              :src="getImage(row.event)"
-            />
-          </div>
+          <IconMark
+            size="36px"
+            :src="getImage(row.event)"
+          />
 
           <div>{{ row.name }}</div>
         </div>

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
-import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import { historicPriceSchema } from '@/modules/assets/prices/price-forms';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
-import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
 import { useModelForm } from '@/modules/core/form/use-model-form';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
@@ -39,7 +38,15 @@ const form = useModelForm<HistoricalPriceFormPayload>({
 const fromAssetSymbol = useAssetField(computed<string>(() => form.state.fromAsset), 'symbol');
 const toAssetSymbol = useAssetField(computed<string>(() => form.state.toAsset), 'symbol');
 
-const numericPrice = bigNumberifyFromRef(() => form.state.price);
+/** "1 XTZ was worth 0.95 EUR", as the price field's hint once all three are known; the price as typed. */
+const priceHint = computed<string | undefined>(() => {
+  const price = form.state.price;
+  const from = get(fromAssetSymbol);
+  const to = get(toAssetSymbol);
+  if (!price || !from || !to)
+    return undefined;
+  return t('price_form.historic.hint', { fromAsset: from, price, toAsset: to });
+});
 
 defineExpose({
   validate: (): boolean => form.validate(),
@@ -47,70 +54,70 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
-    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
-      <AssetSelect
-        v-model="form.state.fromAsset"
-        :label="t('price_form.from_asset')"
-        variant="outlined"
-        :disabled="editMode"
-        :error-messages="form.errors('fromAsset')"
-        data-testid="historic-price-from-asset"
-        @update:model-value="form.touch('fromAsset')"
+  <div class="flex flex-col gap-2">
+    <dl
+      v-if="editMode"
+      class="grid grid-cols-3 gap-4 m-0 mb-4 rounded-rui-control border border-rui-divider px-4 py-3"
+      data-testid="historic-price-summary"
+    >
+      <div class="flex flex-col gap-1 min-w-0">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('price_form.from_asset') }}
+        </dt>
+        <dd class="m-0 font-medium text-rui-text truncate">
+          {{ fromAssetSymbol || form.state.fromAsset }}
+        </dd>
+      </div>
+      <div class="flex flex-col gap-1 min-w-0">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('price_form.to_asset') }}
+        </dt>
+        <dd class="m-0 font-medium text-rui-text truncate">
+          {{ toAssetSymbol || form.state.toAsset }}
+        </dd>
+      </div>
+      <div class="flex flex-col gap-1">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('common.datetime') }}
+        </dt>
+        <dd class="m-0 text-rui-text">
+          <DateDisplay :timestamp="form.state.timestamp" />
+        </dd>
+      </div>
+    </dl>
+    <template v-else>
+      <div class="grid md:grid-cols-2 gap-x-4 gap-y-1">
+        <AssetSelect
+          v-model="form.state.fromAsset"
+          :label="t('price_form.from_asset')"
+          :error-messages="form.errors('fromAsset')"
+          data-testid="historic-price-from-asset"
+          @update:model-value="form.touch('fromAsset')"
+        />
+        <AssetSelect
+          v-model="form.state.toAsset"
+          :label="t('price_form.to_asset')"
+          :error-messages="form.errors('toAsset')"
+          data-testid="historic-price-to-asset"
+          @update:model-value="form.touch('toAsset')"
+        />
+      </div>
+      <DateTimePicker
+        v-model="form.state.timestamp"
+        :label="t('common.datetime')"
+        type="epoch"
+        :error-messages="form.errors('timestamp')"
+        data-testid="historic-price-datetime"
+        @update:model-value="form.touch('timestamp')"
       />
-      <AssetSelect
-        v-model="form.state.toAsset"
-        :label="t('price_form.to_asset')"
-        :disabled="editMode"
-        variant="outlined"
-        :error-messages="form.errors('toAsset')"
-        data-testid="historic-price-to-asset"
-        @update:model-value="form.touch('toAsset')"
-      />
-    </div>
-    <DateTimePicker
-      v-model="form.state.timestamp"
-      :label="t('common.datetime')"
-      :disabled="editMode"
-      type="epoch"
-      variant="outlined"
-      :error-messages="form.errors('timestamp')"
-      data-testid="historic-price-datetime"
-      @update:model-value="form.touch('timestamp')"
-    />
+    </template>
     <AmountInput
       v-model="form.state.price"
-      variant="outlined"
       :error-messages="form.errors('price')"
+      :hint="priceHint"
       :label="t('common.price')"
       data-testid="historic-price-value"
       @update:model-value="form.touch('price')"
     />
-    <i18n-t
-      v-if="form.state.price && fromAssetSymbol && toAssetSymbol"
-      scope="global"
-      tag="div"
-      keypath="price_form.historic.hint"
-      class="text-caption text-rui-success -mt-9 pl-3"
-    >
-      <template #fromAsset>
-        <strong>
-          {{ fromAssetSymbol }}
-        </strong>
-      </template>
-      <template #toAsset>
-        <strong>
-          {{ toAssetSymbol }}
-        </strong>
-      </template>
-      <template #price>
-        <strong>
-          <ValueDisplay
-            :value="numericPrice"
-            no-tooltip
-          />
-        </strong>
-      </template>
-    </i18n-t>
   </div>
 </template>

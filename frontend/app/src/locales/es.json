@@ -371,7 +371,6 @@
     }
   },
   "currency_drop_down": {
-    "hint": "Seleccionar como la divisa principal",
     "profit_currency": "Divisa de ganancias ({currency})"
   },
   "dashboard": {
@@ -625,7 +624,6 @@
       "non_empty": "El identificador de la fuente no puede no estar vacío"
     },
     "source_hint": "El identificador de activo que se desea fusionar en el destino",
-    "subtitle": "Fusionar dos activos",
     "target": {
       "non_empty": "El activo de destino no puede estar vacío"
     },

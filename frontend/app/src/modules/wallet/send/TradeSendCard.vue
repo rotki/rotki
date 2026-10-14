@@ -148,61 +148,81 @@ watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOpt
     class="rounded-xl!"
     no-padding
   >
-    <div class="p-6 flex flex-col gap-6 border-b border-default">
-      <RuiAlert
-        v-if="warnUntrackedAddress && !isDisconnecting"
-        type="warning"
-        data-testid="untracked-warning"
-      >
-        {{ t('trade.warning.not_tracked') }}
-        <RuiButton
-          color="primary"
-          size="sm"
-          class="mt-2"
-          @click="trackAddress()"
+    <div class="h-17 px-6 flex items-center gap-3 border-b border-default">
+      <div class="flex-1 min-w-0 flex items-center gap-2">
+        <template v-if="!isWalletConnected">
+          <span class="text-sm text-rui-text-secondary shrink-0">{{ t('trade.wallet_mode.label') }}</span>
+          <RuiButtonGroup
+            v-model="walletMode"
+            variant="segmented"
+            size="sm"
+            required
+            data-testid="wallet-mode"
+          >
+            <RuiButton :model-value="WALLET_MODES.LOCAL_BRIDGE">
+              {{ t('trade.wallet_mode.local_bridge') }}
+            </RuiButton>
+            <RuiButton :model-value="WALLET_MODES.WALLET_CONNECT">
+              {{ t('trade.wallet_mode.wallet_connect') }}
+            </RuiButton>
+          </RuiButtonGroup>
+        </template>
+        <RuiTooltip
+          v-else-if="warnUntrackedAddress && !isDisconnecting"
+          class="min-w-0"
+          :open-delay="200"
+          :options="{ placement: 'bottom-start' }"
+          :class-names="{ tooltip: 'max-w-72' }"
         >
-          {{ t('trade.actions.track') }}
-        </RuiButton>
-      </RuiAlert>
-      <RuiAlert
-        v-if="useQueryingBalances"
-        type="warning"
-        data-testid="querying-balances-warning"
-      >
-        {{ t('trade.warning.query_on_progress') }}
-      </RuiAlert>
-      <!-- Wallet Mode Selector -->
-
-      <div class="flex items-end">
-        <div class="grow">
-          <template v-if="!isWalletConnected">
-            <div class="text-rui-text-secondary text-caption uppercase mb-1">
-              {{ t('trade.wallet_mode.label') }}
-            </div>
-            <RuiButtonGroup
-              v-model="walletMode"
-              variant="outlined"
-              color="primary"
-              required
-              size="sm"
+          <template #activator>
+            <span
+              class="flex items-center gap-1.5 text-sm text-rui-warning min-w-0"
+              data-testid="untracked-warning"
             >
-              <RuiButton :model-value="WALLET_MODES.LOCAL_BRIDGE">
-                {{ t('trade.wallet_mode.local_bridge') }}
-              </RuiButton>
-              <RuiButton :model-value="WALLET_MODES.WALLET_CONNECT">
-                {{ t('trade.wallet_mode.wallet_connect') }}
-              </RuiButton>
-            </RuiButtonGroup>
+              <RuiIcon
+                name="lu-triangle-alert"
+                size="16"
+                class="shrink-0"
+              />
+              <span class="truncate">{{ t('trade.status.not_tracked') }}</span>
+            </span>
           </template>
-        </div>
-        <div class="flex gap-2">
-          <TradeConnectedAddressBadge
-            :loading="isConnecting"
-            @connect="connect()"
-            @disconnect="disconnect()"
-          />
-          <TradeHistoryView />
-        </div>
+          {{ t('trade.warning.not_tracked') }}
+        </RuiTooltip>
+        <RuiTooltip
+          v-else-if="useQueryingBalances"
+          class="min-w-0"
+          :open-delay="200"
+          :options="{ placement: 'bottom-start' }"
+          :class-names="{ tooltip: 'max-w-72' }"
+        >
+          <template #activator>
+            <span
+              class="flex items-center gap-2 text-sm text-rui-text-secondary min-w-0"
+              data-testid="querying-balances-warning"
+            >
+              <RuiProgress
+                circular
+                variant="indeterminate"
+                color="primary"
+                size="14"
+                thickness="2"
+                class="shrink-0"
+              />
+              <span class="truncate">{{ t('trade.status.updating_balances') }}</span>
+            </span>
+          </template>
+          {{ t('trade.warning.query_on_progress') }}
+        </RuiTooltip>
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <TradeConnectedAddressBadge
+          v-if="isWalletConnected"
+          :loading="isConnecting"
+          @connect="connect()"
+          @disconnect="disconnect()"
+        />
+        <TradeHistoryView />
       </div>
     </div>
     <div class="p-6">
@@ -298,7 +318,6 @@ watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOpt
     }}
   </RuiAlert>
 
-  <!-- Provider Selection Dialog -->
   <ProviderSelectionDialog
     v-model="showProviderSelection"
     :providers="availableProviders"

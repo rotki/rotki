@@ -43,62 +43,51 @@ const visibleEvents = computed<CalendarEvent[]>(() => {
 const hidden = computed<number>(() => events.length - get(visibleEvents).length);
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { isDark } = useRotkiTheme();
-
-function getColor(isDark: boolean, color: string | undefined, isBg: boolean = false) {
-  if (!color)
-    return undefined;
-
-  if (isDark)
-    return isBg ? `#${color}80` : '#ffffff';
-
-  return `#${color}${isBg ? '1a' : ''}`;
-}
 </script>
 
 <template>
   <div
-    class="flex flex-col items-center h-30 p-1 relative group"
+    class="group relative flex h-28 cursor-pointer flex-col items-center p-1 transition-colors hover:bg-rui-grey-50 dark:hover:bg-white/5"
     :class="{
       '*:opacity-30': !day.isCurrentMonth,
     }"
     @click="selectDate()"
   >
     <div
-      class="text-body-2 w-10 h-5 flex items-center justify-center rounded-full cursor-pointer transition-all"
+      class="flex h-6 min-w-8 items-center justify-center rounded-full px-1.5 text-sm transition-colors"
       :class="{
-        'bg-rui-primary text-white': isSelected,
-        'bg-rui-primary-lighter text-rui-light-text': isToday && !isSelected,
-        'hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800': !isToday && !isSelected,
+        'bg-rui-primary font-medium text-white': isSelected,
+        'bg-rui-primary-subtle font-medium text-rui-primary': isToday && !isSelected,
+        'text-rui-text': !isToday && !isSelected,
       }"
     >
       {{ label }}
     </div>
     <div
-      class="pt-2 w-full flex flex-col gap-0.5"
+      class="pt-1.5 w-full flex flex-col"
       @click.stop=""
     >
-      <RuiChip
+      <button
         v-for="event in visibleEvents"
         :key="event.identifier"
-        class="text-sm w-full"
-        clickable
-        size="sm"
+        type="button"
+        class="flex w-full min-w-0 items-center gap-1.5 rounded-rui-control px-1.5 py-0.5 text-left text-xs transition-colors hover:bg-rui-grey-100 focus-visible:outline-2 focus-visible:outline-rui-primary dark:hover:bg-white/10"
+        :class="isPast ? 'text-rui-text-disabled' : 'text-rui-text'"
         :title="event.name"
-        :class="{
-          'bg-rui-grey-400 text-rui-text-disabled!': isPast,
-        }"
-        :bg-color="isPast ? undefined : getColor(isDark, event.color, true)"
-        :text-color="isPast ? undefined : getColor(isDark, event.color)"
+        data-testid="calendar-day-event"
         @click="edit(event)"
       >
-        {{ event.name }}
-      </RuiChip>
+        <span
+          class="size-2 shrink-0 rounded-full"
+          :class="{ 'bg-rui-grey-400': isPast }"
+          :style="isPast ? undefined : { backgroundColor: `#${event.color}` }"
+        />
+        <span class="truncate">{{ event.name }}</span>
+      </button>
     </div>
     <div
       v-if="hidden"
-      class="py-1.5 w-full text-sm text-rui-secondary font-medium"
+      class="w-full px-1 pt-1 text-xs font-medium text-rui-text-secondary"
     >
       {{ t('calendar.more_events', { hidden }) }}
     </div>
@@ -107,6 +96,7 @@ function getColor(isDark: boolean, color: string | undefined, isBg: boolean = fa
       variant="outlined"
       color="secondary"
       class="p-1! absolute top-1 right-1 transition opacity-0 invisible group-hover:opacity-100 group-hover:visible"
+      :aria-label="t('calendar.add_event')"
       @click="add()"
     >
       <RuiIcon

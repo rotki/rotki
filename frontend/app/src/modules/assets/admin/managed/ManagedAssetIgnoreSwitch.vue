@@ -79,14 +79,16 @@ const tooltipMessage = computed<string>(() =>
         >
           <RuiButton
             icon
+            variant="text"
             v-bind="attrs"
             size="sm"
             :loading="menuLoading"
-            class="dark:bg-rui-grey-800! dark:text-white!"
+            class="text-rui-text-secondary!"
+            :aria-label="t('common.actions.more')"
           >
             <RuiIcon
-              name="lu-chevron-down"
-              size="20"
+              name="lu-ellipsis-vertical"
+              size="18"
             />
           </RuiButton>
         </RuiBadge>

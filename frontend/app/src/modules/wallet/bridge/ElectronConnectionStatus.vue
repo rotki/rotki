@@ -44,7 +44,6 @@ const { t } = useI18n({ useScope: 'global' });
       }}
     </div>
 
-    <!-- Error Display -->
     <RuiAlert
       v-if="error && !isConnected && !isConnecting"
       type="error"

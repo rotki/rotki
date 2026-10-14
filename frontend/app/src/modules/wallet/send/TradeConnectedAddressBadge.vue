@@ -55,7 +55,8 @@ const chain = computed<string | undefined>(() => {
     <template #activator="{ attrs }">
       <div
         v-bind="attrs"
-        class="border border-default rounded-md px-2 py-1 flex items-center gap-2 font-mono text-sm font-medium cursor-pointer"
+        class="h-9 border border-default rounded-md px-2 flex items-center gap-2 font-mono text-sm font-medium cursor-pointer hover:bg-rui-grey-50 dark:hover:bg-rui-grey-900 transition-colors"
+        data-testid="connected-address-badge"
       >
         <div class="p-0.5 rounded-full size-3 border border-rui-success-lighter/40">
           <div class="size-full rounded-full bg-rui-success-lighter" />
@@ -71,6 +72,11 @@ const chain = computed<string | undefined>(() => {
           :text="connectedAddress"
           copy-only
           no-scramble
+        />
+        <RuiIcon
+          name="lu-chevron-down"
+          size="14"
+          class="text-rui-text-secondary shrink-0"
         />
       </div>
     </template>
@@ -90,6 +96,7 @@ const chain = computed<string | undefined>(() => {
         <RuiButton
           variant="list"
           size="sm"
+          data-testid="wallet-disconnect"
           @click="emit('disconnect')"
         >
           <template #append>

@@ -31,6 +31,8 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
+const { t } = useI18n({ useScope: 'global' });
+
 const menuOpened = ref<boolean>(false);
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
 
@@ -39,6 +41,7 @@ const shouldShowAmount = useSetting('shouldShowAmount');
 const loading = isPending(() => asset.identifier);
 
 const dense = computed<boolean>(() => display?.dense ?? false);
+const inline = computed<boolean>(() => display?.inline ?? false);
 const iconOnly = computed<boolean>(() => display?.iconOnly ?? false);
 const size = computed<string>(() => display?.size ?? '30px');
 const optimizeForVirtualScroll = computed<boolean>(() => display?.optimizeForVirtualScroll ?? false);
@@ -52,7 +55,8 @@ const forceChain = computed<string | undefined>(() => resolution?.forceChain);
 
 const showChain = computed<boolean>(() => !get(isCollectionParent));
 
-const title = computed<string>(() => (asset.isCustomAsset ? asset.name : asset.symbol) ?? '');
+/** An asset rotki has no symbol for shows its identifier, so its row is never only an icon. */
+const title = computed<string>(() => (asset.isCustomAsset ? asset.name : asset.symbol) || asset.identifier);
 
 /** Left out when it only repeats the title, as for ETH, whose name is its symbol. */
 const subtitle = computed<string>(() => {
@@ -107,7 +111,6 @@ watch(menuOpened, (menuOpened) => {
       :optimize-for-virtual-scroll="optimizeForVirtualScroll"
     />
   </DefineImage>
-  <!-- Skip RuiMenu entirely when hideMenu=true to avoid popper overhead in virtualized lists -->
   <ReuseImage
     v-if="hideMenu && iconOnly"
     v-bind="$attrs"
@@ -119,6 +122,7 @@ watch(menuOpened, (menuOpened) => {
     class="max-w-80"
     v-bind="$attrs"
     :size="dense ? 'sm' : 'md'"
+    :inline="inline"
     :loading="loading"
     :blur-content="!shouldShowAmount"
     :title="title"
@@ -132,7 +136,7 @@ watch(menuOpened, (menuOpened) => {
     v-else
     :key="asset.identifier"
     v-model="menuOpened"
-    class="flex"
+    class="flex min-w-0"
     :class-names="{ menu: 'w-64 max-w-[90%]' }"
     :options="{ placement: 'bottom-start' }"
   >
@@ -143,7 +147,7 @@ watch(menuOpened, (menuOpened) => {
       />
       <div
         v-else
-        class="w-max flex items-center gap-3 cursor-pointer hover:bg-rui-grey-300 dark:hover:bg-rui-grey-800 rounded-md group -ml-1 pl-1"
+        class="w-max max-w-full min-w-0 flex items-center gap-1 cursor-pointer group"
       >
         <ListItem
           no-padding
@@ -151,6 +155,7 @@ watch(menuOpened, (menuOpened) => {
           class="max-w-80"
           v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
           :size="dense ? 'sm' : 'md'"
+          :inline="inline"
           :loading="loading"
           :blur-content="!shouldShowAmount"
           :title="title"
@@ -164,13 +169,16 @@ watch(menuOpened, (menuOpened) => {
         <RuiButton
           variant="text"
           icon
-          class="opacity-0 group-hover:opacity-100 mr-2 !p-2"
+          size="sm"
+          class="shrink-0 text-rui-text-secondary! transition-opacity opacity-0 group-hover:opacity-100 [tr:hover_&]:opacity-100 focus-visible:opacity-100 motion-reduce:transition-none"
+          :class="{ 'opacity-100': menuOpened }"
+          :aria-label="t('common.actions.more')"
           v-bind="attrs"
           @click.stop="openMenuHandler($event)"
         >
           <RuiIcon
             name="lu-ellipsis-vertical"
-            size="20"
+            :size="16"
           />
         </RuiButton>
       </div>

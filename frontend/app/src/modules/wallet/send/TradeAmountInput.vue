@@ -118,7 +118,10 @@ defineExpose({
 </script>
 
 <template>
-  <div class="border border-default rounded-t-lg bg-rui-grey-50 dark:bg-rui-grey-900 p-3 relative overflow-hidden">
+  <div
+    class="border border-default rounded-t-lg bg-rui-grey-50 dark:bg-rui-grey-900 p-3 relative overflow-hidden"
+    data-testid="trade-amount"
+  >
     <RuiProgress
       v-if="loading"
       class="absolute top-0 left-0"
@@ -180,7 +183,10 @@ defineExpose({
         </RuiButton>
       </div>
 
-      <div class="text-sm text-center text-rui-error pt-2 h-6">
+      <div
+        class="text-sm text-center text-rui-error pt-2 h-6"
+        data-testid="trade-amount-error"
+      >
         <span v-if="amountExceeded">{{ t('trade.amount.insufficient') }}</span>
       </div>
     </div>

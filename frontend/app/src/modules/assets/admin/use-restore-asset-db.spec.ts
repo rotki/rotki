@@ -81,7 +81,7 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
       const { showRestoreConfirmation } = restore();
       showRestoreConfirmation(type);
 
-      expect(get(useConfirmStore().confirmation).message).toBe(expected);
+      expect(get(useConfirmStore().confirmation).message).toBe(`${expected} asset_update.restore.warning`);
     });
 
     it('should refuse to start a second reset while one is running', async () => {

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { msg } from '@/message-key';
+import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
 import NewlyDetectedAssetTable from '@/modules/assets/detection/NewlyDetectedAssetTable.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
@@ -10,5 +12,10 @@ definePage({
 </script>
 
 <template>
-  <NewlyDetectedAssetTable />
+  <TablePageLayout child>
+    <template #title>
+      <AssetManagerMoreTitle />
+    </template>
+    <NewlyDetectedAssetTable />
+  </TablePageLayout>
 </template>

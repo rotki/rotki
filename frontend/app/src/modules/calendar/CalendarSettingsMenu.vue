@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 import GoogleCalendarIntegration from '@/modules/calendar/GoogleCalendarIntegration.vue';
 import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
-import CardTitle from '@/modules/shell/components/CardTitle.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const showMenu = ref(false);
+const showMenu = ref<boolean>(false);
 </script>
 
 <template>
   <RuiMenu
     v-model="showMenu"
-    :class-names="{ menu: 'w-full max-w-96 bg-transparent!' }"
+    :class-names="{ menu: 'w-full max-w-96' }"
     :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">
@@ -25,43 +22,33 @@ const showMenu = ref(false);
           <RuiButton
             variant="text"
             icon
-            color="primary"
-            size="lg"
+            class="text-rui-text-secondary!"
+            :aria-label="t('calendar.dialog.settings.tooltip')"
             v-bind="attrs"
           >
-            <RuiIcon name="lu-settings" />
+            <RuiIcon name="lu-sliders-horizontal" />
           </RuiButton>
         </template>
         <span>{{ t('calendar.dialog.settings.tooltip') }}</span>
       </RuiTooltip>
     </template>
-    <div class="p-4">
-      <CardTitle class="pb-6">
-        {{ t('calendar.dialog.settings.title') }}
-      </CardTitle>
-      <div class="flex flex-col gap-1">
+    <div class="flex flex-col">
+      <div class="flex flex-col px-4 pt-3">
+        <div class="mb-2 text-sm font-semibold text-rui-text">
+          {{ t('calendar.dialog.settings.title') }}
+        </div>
         <SettingSwitch
           setting="autoCreateCalendarReminders"
+          size="sm"
           :label="t('calendar.dialog.settings.auto_create_reminders')"
         />
         <SettingSwitch
           setting="autoDeleteCalendarEntries"
+          size="sm"
           :label="t('calendar.dialog.settings.auto_delete')"
         />
-
-        <!-- Google Calendar Integration -->
-        <GoogleCalendarIntegration />
       </div>
-      <div class="flex justify-end">
-        <RuiButton
-          class="ml-auto"
-          variant="text"
-          color="primary"
-          @click="showMenu = false"
-        >
-          {{ t('common.actions.close') }}
-        </RuiButton>
-      </div>
+      <GoogleCalendarIntegration />
     </div>
   </RuiMenu>
 </template>

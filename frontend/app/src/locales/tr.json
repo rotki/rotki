@@ -1306,11 +1306,9 @@
       "mark_as_spam": "Tokenı spam olarak işaretle",
       "mark_selected_as_spam": "Seçili tokenları spam olarak işaretle",
       "seen_during": "Görüldüğü yer",
-      "select_deselect_all_tokens": "Tüm tokenları seç/seçimi kaldır",
       "subtitle": "Yeni tespit edilen tokenların listesini inceleyin ve istediğiniz varlıkları spam token listesine ekleyin",
       "token_type": "Token türü"
     },
-    "selected": "{count} varlık seçildi",
     "underlying_tokens": "Dayanak tokenlar"
   },
   "asset_update": {
@@ -2008,8 +2006,7 @@
     },
     "today": "Bugün",
     "today_events": "Bugünün etkinlikleri",
-    "upcoming_events": "Yaklaşan etkinlikler",
-    "view_details": "Ayrıntıları görüntüle"
+    "upcoming_events": "Yaklaşan etkinlikler"
   },
   "chain_account_multi_select": {
     "label": "Hesaplar"
@@ -2108,7 +2105,6 @@
     },
     "here": "burada",
     "ignored_in_accounting": "Muhasebeden hariç tutuldu (PnL)",
-    "important_notice": "Önemli not:",
     "label": "Ad",
     "liabilities": "Borçlar",
     "location": "Konum",
@@ -2306,7 +2302,6 @@
     "zar": "Güney Afrika randı"
   },
   "currency_drop_down": {
-    "hint": "Ana para birimi olarak seç",
     "profit_currency": "Kâr para birimi ({currency})"
   },
   "customized_event_duplicates": {
@@ -4736,7 +4731,6 @@
       "non_empty": "Kaynak tanımlayıcı boş bırakılamaz"
     },
     "source_hint": "Hedef varlıkla birleştirmek istediğiniz varlığın tanımlayıcısı",
-    "subtitle": "İki varlığı birleştirin",
     "target": {
       "label": "Hedef",
       "non_empty": "Hedef varlık boş bırakılamaz"
@@ -5125,9 +5119,6 @@
       }
     },
     "cache": {
-      "create": {
-        "title": "Önbellek oluştur"
-      },
       "delete": {
         "error": "{fromAsset}/{toAsset} çifti için önbellek temizlenemedi: {error}",
         "message": "{source} üzerindeki {fromAsset}/{toAsset} çifti için önbelleğe alınmış tüm fiyatları silmek istediğinizden emin misiniz?",
@@ -5137,7 +5128,6 @@
       "dialog": {
         "create": "Önbellek oluştur",
         "empty": "Seçilen oracle için önbellek yok.",
-        "existing_title": "Mevcut önbellekler",
         "source": "Fiyat oracle'ı"
       },
       "headers": {
@@ -5616,13 +5606,9 @@
       }
     },
     "headers": {
-      "from_asset": "Kaynak varlık",
-      "to_asset": "Hedef varlık"
+      "from_asset": "Kaynak varlık"
     },
-    "is_worth": "değeri",
-    "on": "tarih:",
-    "refresh_tooltip": "Fiyatları yenile",
-    "was_worth": "değeri"
+    "refresh_tooltip": "Fiyatları yenile"
   },
   "prioritized_list": {
     "add_placeholder": "{name} ekle",
@@ -6205,6 +6191,9 @@
       "empty_name": "Lütfen bir etiket adı girin"
     }
   },
+  "tag_display": {
+    "filter_by": "{tag} etiketine göre filtrele"
+  },
   "tag_manager": {
     "confirmation": {
       "message": "{tagToDelete} etiketini silmek istediğinizden emin misiniz? Bu işlem, etiketin tüm eşlemelerini de kaldıracaktır.",
@@ -6539,6 +6528,7 @@
     },
     "recipient": {
       "from_private_address_book": "Özel adres defterindeki adresler",
+      "new_address": "Yeni adres",
       "no_addresses_found": "Adres bulunamadı",
       "resolving_ens": "ENS çözümleniyor...",
       "select_recipient_address": "Alıcı adresini seçin",
@@ -6554,6 +6544,10 @@
       "search": "Sembole veya ada göre ara",
       "select_token": "Bir token seçin",
       "title": "Varlık seçin"
+    },
+    "status": {
+      "not_tracked": "rotki'de takip edilmiyor",
+      "updating_balances": "Bakiyeler güncelleniyor…"
     },
     "to_address": {
       "label": "Alıcı adresi"

@@ -2,12 +2,14 @@
 import type { RecentTransaction } from '@/modules/wallet/types';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
-import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { item } = defineProps<{
   item: RecentTransaction;
 }>();
+
+const { t } = useI18n({ useScope: 'global' });
 
 const color = computed<'error' | 'success' | 'warning'>(() => {
   const status = item.status;
@@ -19,48 +21,54 @@ const color = computed<'error' | 'success' | 'warning'>(() => {
   }
   return 'error';
 });
-const dot = '•';
+
+/** The status in words, the same ones the dialog's tabs use, rather than the raw value. */
+const statusLabel = computed<string>(() => {
+  const status = item.status;
+  if (status === 'completed')
+    return t('trade_history_view.labels.completed');
+  if (status === 'pending')
+    return t('trade_history_view.labels.pending');
+  return t('trade_history_view.labels.failed');
+});
 </script>
 
 <template>
-  <div class="flex items-center gap-2 py-4 px-4 border-t border-default">
+  <div class="flex items-start gap-3 py-3 px-4">
     <ChainIcon
-      size="28px"
+      size="24px"
       :chain="item.chain"
+      class="shrink-0 mt-0.5"
     />
-    <div class="flex-1">
-      <div class="flex items-center justify-between text-rui-text-secondary text-sm">
-        <div class="flex items-center gap-2">
-          <DateDisplay
-            class="text-xs!"
-            :timestamp="item.timestamp"
-            milliseconds
-          />
-          {{ dot }}
-          <HashLink
-            class="text-rui-primary underline cursor-pointer pl-0!"
-            :text="item.hash"
-            :location="item.chain"
-            type="transaction"
-          />
-        </div>
-        <RuiChip
-          size="sm"
-          :color="color"
-          :class-names="{ content: 'text-[9px]!' }"
-          class="leading-3 uppercase p-0.5!"
-        >
-          {{ item.status }}
-        </RuiChip>
-      </div>
-      <div class="text-sm">
-        <HistoryEventNote
-          class="text-sm inline-flex flex-wrap whitespace-break-spaces items-center [&_.shrink]:text-xs!"
-          :notes="item.context"
-          :chain="item.chain"
-          :context="item.metadata"
+    <div class="flex-1 min-w-0 flex flex-col gap-1">
+      <HistoryEventNote
+        class="text-sm text-rui-text! leading-6"
+        :notes="item.context"
+        :chain="item.chain"
+        :context="item.metadata"
+      />
+      <div class="flex items-center gap-1.5 min-w-0 text-xs text-rui-text-secondary">
+        <TimeAgoDisplay
+          :timestamp="item.timestamp"
+          milliseconds
+        />
+        <span class="text-rui-text-disabled before:content-['·']" />
+        <HashLink
+          class="pl-0!"
+          :text="item.hash"
+          :location="item.chain"
+          type="transaction"
         />
       </div>
     </div>
+    <RuiChip
+      size="sm"
+      variant="tonal"
+      :color="color"
+      class="shrink-0 mt-0.5"
+      data-testid="trade-history-status"
+    >
+      {{ statusLabel }}
+    </RuiChip>
   </div>
 </template>

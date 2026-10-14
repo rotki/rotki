@@ -2,13 +2,13 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import { type BigNumber, Blockchain } from '@rotki/common';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
-import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { assetLocationParams } from '@/modules/assets/asset-location-fields';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAssetLocationFields } from '@/modules/assets/use-asset-location-fields';
 import { type AssetLocation, useAssetLocationsData } from '@/modules/assets/use-asset-locations-data';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAddressDisplay.vue';
@@ -39,7 +39,6 @@ const valuePending = computed<boolean>(() => isPricePending(identifier));
 
 const {
   assetLocations,
-  currencySymbol,
   detailsLoading,
   matchChain,
   totalValue,
@@ -95,8 +94,7 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
   else label = `${labelAccount} / ${labelValidator}`;
 
   return [{
-    align: 'center',
-    cellClass: 'w-36',
+    cellClass: 'w-48',
     key: 'location',
     label: t('common.location'),
     sortable: true,
@@ -111,13 +109,13 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
     sortable: true,
   }, {
     align: 'end',
+    cellClass: 'font-medium',
     key: 'value',
-    label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol) ?? CURRENCY_USD,
-    }),
+    label: t('common.value'),
     sortable: true,
   }, {
     align: 'end',
+    cellClass: 'text-rui-text-secondary',
     key: 'percentage',
     label: t('asset_locations.header.percentage'),
     sortable: false,
@@ -156,66 +154,70 @@ watch([onlyTags, locationFilter, addresses], () => {
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
+  <section class="flex flex-col gap-3">
+    <h2 class="text-base font-semibold text-rui-text">
       {{ t('asset_locations.title') }}
-    </template>
-    <PillFilterBar
-      v-model:params="pillParams"
-      class="mb-4"
-      :fields="fields"
-      :labels="pillLabels"
-    />
-    <RuiDataTable
-      v-model:sort="sort"
-      :pagination="{
-        page: pagination.page,
-        limit: pagination.itemsPerPage,
-        total: visibleAssetLocations.length,
-      }"
-      :cols="headers"
-      :rows="visibleAssetLocations"
-      outlined
-      dense
-      row-attr="location"
-      :loading="detailsLoading"
-      @update:pagination="setTablePagination($event)"
-    >
-      <template #item.location="{ row }">
-        <LocationDisplay
-          :identifier="row.location"
-          :detail-path="row.detailPath"
-          class="py-2"
+    </h2>
+    <TableFrame>
+      <template #toolbar>
+        <PillFilterBar
+          v-model:params="pillParams"
+          class="flex-1 min-w-64"
+          :fields="fields"
+          :labels="pillLabels"
         />
       </template>
-      <template #item.label="{ row }">
-        <div class="py-4">
-          <LabeledAddressDisplay
-            v-if="row.account"
-            :account="row.account"
+      <RuiDataTable
+        v-model:sort="sort"
+        :pagination="{
+          page: pagination.page,
+          limit: pagination.itemsPerPage,
+          total: visibleAssetLocations.length,
+        }"
+        :cols="headers"
+        :rows="visibleAssetLocations"
+        dense
+        row-attr="location"
+        :loading="detailsLoading"
+        @update:pagination="setTablePagination($event)"
+      >
+        <template #item.location="{ row }">
+          <LocationDisplay
+            :identifier="row.location"
+            :detail-path="row.detailPath"
+            horizontal
+            size="20px"
           />
-          <TagDisplay
-            v-if="row.tags"
-            :tags="row.tags"
-            small
+        </template>
+        <template #item.label="{ row }">
+          <div class="flex flex-wrap items-center gap-2 py-2">
+            <LabeledAddressDisplay
+              v-if="row.account"
+              :account="row.account"
+            />
+            <TagDisplay
+              v-if="row.tags"
+              :tags="row.tags"
+              small
+            />
+          </div>
+        </template>
+        <template #item.amount="{ row }">
+          <ValueDisplay :value="row.amount" />
+        </template>
+        <template #item.value="{ row }">
+          <FiatDisplay
+            :value="row.value"
+            :loading="valuePending"
           />
-        </div>
-      </template>
-      <template #item.amount="{ row }">
-        <ValueDisplay :value="row.amount" />
-      </template>
-      <template #item.value="{ row }">
-        <FiatDisplay
-          :value="row.value"
-          :loading="valuePending"
-        />
-      </template>
-      <template #item.percentage="{ row }">
-        <PercentageDisplay
-          :value="getPercentage(row.value)"
-          :asset-padding="0.1"
-        />
-      </template>
-    </RuiDataTable>
-  </RuiCard>
+        </template>
+        <template #item.percentage="{ row }">
+          <PercentageDisplay
+            :value="getPercentage(row.value)"
+            :asset-padding="0.1"
+          />
+        </template>
+      </RuiDataTable>
+    </TableFrame>
+  </section>
 </template>

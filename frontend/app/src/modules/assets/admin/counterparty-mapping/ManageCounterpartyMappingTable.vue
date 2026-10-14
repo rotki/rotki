@@ -7,6 +7,7 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
@@ -33,29 +34,28 @@ const { t } = useI18n({ useScope: 'global' });
 const pillLabels = usePillBarLabels();
 const emptyState = useTableEmptyState();
 const cols = computed<DataTableColumn<CounterpartyMapping>[]>(() => [{
-  align: 'center',
-  cellClass: 'py-3',
+  cellClass: 'py-2',
   key: 'counterparty',
   label: t('common.counterparty'),
 }, {
-  align: 'center',
-  cellClass: 'py-3',
+  cellClass: 'py-2 font-medium',
   key: 'counterpartySymbol',
   label: t('asset_management.cex_mapping.asset_symbol'),
 }, {
-  cellClass: 'py-0 border-x border-default',
-  class: 'border-x border-default',
+  cellClass: 'py-0',
   key: 'asset',
   label: t('asset_management.cex_mapping.recognized_as'),
 }, {
+  align: 'end',
+  cellClass: 'w-px',
   key: 'actions',
   label: t('common.actions_text'),
 }]);
 </script>
 
 <template>
-  <div>
-    <div class="flex items-center gap-3 mb-4">
+  <TableFrame>
+    <template #toolbar>
       <HintMenuIcon>
         {{ t('asset_management.counterparty_mapping.subtitle') }}
       </HintMenuIcon>
@@ -65,30 +65,25 @@ const cols = computed<DataTableColumn<CounterpartyMapping>[]>(() => [{
         :fields="fields"
         :labels="pillLabels"
       />
-    </div>
+    </template>
     <RuiDataTable
       v-model:pagination.external="paginationModel"
       :rows="collection.data"
       dense
-      striped
       :loading="loading"
       :cols="cols"
       :empty="emptyState"
-      :sticky-offset="64"
       row-attr="counterparty"
-      outlined
     >
       <template #item.counterparty="{ row }">
-        <CounterpartyDisplay
-          class="justify-center"
-          :counterparty="row.counterparty"
-        />
+        <CounterpartyDisplay :counterparty="row.counterparty" />
       </template>
       <template #item.asset="{ row }">
         <AssetDetails :asset="row.asset" />
       </template>
       <template #item.actions="{ row }">
         <RowActions
+          align="end"
           :edit-tooltip="t('asset_table.edit_tooltip')"
           :delete-tooltip="t('asset_table.delete_tooltip')"
           @edit-click="emit('edit', row)"
@@ -96,5 +91,5 @@ const cols = computed<DataTableColumn<CounterpartyMapping>[]>(() => [{
         />
       </template>
     </RuiDataTable>
-  </div>
+  </TableFrame>
 </template>

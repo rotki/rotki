@@ -56,6 +56,7 @@ async function save() {
     :display="!!modelValue"
     :title="dialogTitle"
     :action="{ primary: t('common.actions.save') }"
+    :layout="{ autoHeight: true, divide: true, maxWidth: '640px' }"
     :loading="loading"
     :prompt-on-close="stateUpdated"
     @confirm="save()"

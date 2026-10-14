@@ -4,6 +4,11 @@ import type { AssetActions, AssetDisplay, AssetIdentifierResolution } from '@/mo
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 
+/**
+ * All three bags are forwarded to `AssetDetailsBase` by reference. Rebuilding them here would give
+ * the defaults a second home to drift in, and would hand the child a fresh object identity every
+ * render. Only `resolution.options` stops here, consumed by `useAssetInfo` below.
+ */
 const {
   actions,
   asset,
@@ -35,9 +40,6 @@ const currentAsset = computed<AssetInfoWithId>(() => ({
 </script>
 
 <template>
-  <!-- All three bags are forwarded by reference. Rebuilding them here would give the defaults a
-       second home to drift in, and would hand the child a fresh object identity every render. Only
-       `resolution.options` stops here, consumed by `useAssetInfo` above. -->
   <AssetDetailsBase
     :asset="currentAsset"
     :display="display"

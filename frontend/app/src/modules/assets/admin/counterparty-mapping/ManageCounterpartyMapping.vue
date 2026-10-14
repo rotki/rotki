@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CounterpartyMapping, CounterpartyMappingRequestPayload } from '@/modules/assets/admin/counterparty-mapping/schema';
 import { omit } from 'es-toolkit';
+import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
 import ManageCounterpartyMappingFormDialog
   from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingFormDialog.vue';
 import ManageCounterpartyMappingTable from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingTable.vue';
@@ -71,11 +72,13 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
 
 <template>
   <TablePageLayout child>
+    <template #title>
+      <AssetManagerMoreTitle />
+    </template>
     <template #buttons>
       <RuiButton
         color="primary"
         variant="outlined"
-        size="lg"
         :loading="loading"
         @click="refetch()"
       >
@@ -88,7 +91,6 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
       <RuiButton
         data-testid="managed-counterparty-mapping-add-btn"
         color="primary"
-        size="lg"
         @click="add()"
       >
         <template #prepend>
@@ -97,22 +99,20 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
         {{ t('asset_management.cex_mapping.add_mapping') }}
       </RuiButton>
     </template>
-    <RuiCard>
-      <ManageCounterpartyMappingTable
-        v-model:filters="filter"
-        v-model:pagination="pagination"
-        :collection="collection"
-        :fields="fields"
-        :loading="loading"
-        @refresh="refetch()"
-        @edit="edit($event)"
-        @delete="showDeleteConfirmation($event)"
-      />
-      <ManageCounterpartyMappingFormDialog
-        v-model="modelValue"
-        :edit-mode="editMode"
-        @refresh="refetch()"
-      />
-    </RuiCard>
+    <ManageCounterpartyMappingTable
+      v-model:filters="filter"
+      v-model:pagination="pagination"
+      :collection="collection"
+      :fields="fields"
+      :loading="loading"
+      @refresh="refetch()"
+      @edit="edit($event)"
+      @delete="showDeleteConfirmation($event)"
+    />
+    <ManageCounterpartyMappingFormDialog
+      v-model="modelValue"
+      :edit-mode="editMode"
+      @refresh="refetch()"
+    />
   </TablePageLayout>
 </template>

@@ -38,16 +38,16 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="border-t border-default pt-4">
-    <div class="text-subtitle-1 font-medium mb-1 ">
+  <div class="flex flex-col gap-1 border-t border-rui-divider px-4 py-3">
+    <div class="text-sm font-semibold text-rui-text">
       {{ t('external_services.google_calendar.title') }}
     </div>
 
     <div
       v-if="!isConnected"
-      class="space-y-3"
+      class="flex flex-col gap-3"
     >
-      <div class="text-body-2 text-rui-text-secondary">
+      <div class="text-sm leading-relaxed text-rui-text-secondary">
         {{ t('external_services.google_calendar.description') }}
       </div>
       <div class="flex gap-2">
@@ -80,12 +80,11 @@ onUnmounted(() => {
         </RuiButton>
       </div>
 
-      <!-- Manual Token Input for Docker Mode -->
       <div
         v-if="showTokenInput && !isPackaged"
-        class="space-y-3 border-t pt-3 mt-3"
+        class="flex flex-col gap-3 border-t border-rui-divider pt-3"
       >
-        <div class="text-body-2 text-rui-text-secondary">
+        <div class="text-sm leading-relaxed text-rui-text-secondary">
           {{ t('external_services.google_calendar.paste_token_instruction') }}
         </div>
         <RuiTextArea
@@ -138,7 +137,7 @@ onUnmounted(() => {
 
     <div
       v-else
-      class="space-y-3"
+      class="flex flex-col gap-3"
     >
       <div class="flex items-center gap-2 text-rui-success">
         <RuiIcon
@@ -146,7 +145,7 @@ onUnmounted(() => {
           size="16"
         />
         <span
-          class="text-body-2"
+          class="text-sm"
           data-testid="google-calendar-status"
         >
           {{ connectedUserEmail

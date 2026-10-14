@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import { Priority, Severity } from '@rotki/common';
-import AssetDetails from '@/modules/assets/AssetDetails.vue';
-import OracleCacheActionsCell from '@/modules/assets/prices/components/oracle/OracleCacheActionsCell.vue';
 import OracleCacheFilter from '@/modules/assets/prices/components/oracle/OracleCacheFilter.vue';
+import OracleCacheFormDialog from '@/modules/assets/prices/components/oracle/OracleCacheFormDialog.vue';
+import OracleCacheTable from '@/modules/assets/prices/components/oracle/OracleCacheTable.vue';
 import { OracleCacheFilterKeys } from '@/modules/assets/prices/use-oracle-cache-fields';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
@@ -13,12 +12,20 @@ import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { useSetting } from '@/modules/settings/use-setting';
-import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
+import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
+
+/** The add form's state, opened from the page header's add button. */
+const addOpen = defineModel<boolean>('addOpen', { default: false, required: false });
+
+defineSlots<{
+  /** the page's tab switch, at the start of the toolbar */
+  tabs?: () => any;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -57,30 +64,6 @@ const cacheSourceOptions = computed<{ identifier: PriceOracle; label: string }[]
   { identifier: PriceOracle.CRYPTOCOMPARE, label: t('oracle_prices.sources.cryptocompare') },
 ]);
 
-const columns = computed<DataTableColumn<OracleCacheMeta & { id: number }>[]>(() => [
-  {
-    key: 'fromAsset',
-    label: t('oracle_prices.cache.headers.from_asset'),
-  },
-  {
-    key: 'toAsset',
-    label: t('oracle_prices.cache.headers.to_asset'),
-  },
-  {
-    key: 'fromTimestamp',
-    label: t('oracle_prices.cache.headers.from_date'),
-  },
-  {
-    key: 'toTimestamp',
-    label: t('oracle_prices.cache.headers.to_date'),
-  },
-  {
-    class: 'w-12',
-    key: 'actions',
-    label: '',
-  },
-]);
-
 const rows = computed<(OracleCacheMeta & { id: number })[]>(() => {
   const from = get(filterFromAsset);
   const to = get(filterToAsset);
@@ -116,8 +99,11 @@ async function populateCache(): Promise<void> {
     toAsset: get(newToAsset),
   });
 
-  if (outcome.ok)
+  if (outcome.ok) {
+    set(addOpen, false);
+    set(newFromAsset, '');
     await loadCaches();
+  }
 }
 
 async function clearCache(entry: OracleCacheMeta): Promise<void> {
@@ -168,6 +154,8 @@ defineExpose({
   filterFromAsset,
   filterToAsset,
   loadCaches,
+  // with loadCaches, for the page header's refresh button
+  loadingCaches,
   matches,
   newFromAsset,
   newToAsset,
@@ -177,100 +165,34 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <RuiCard>
-      <template #header>
-        {{ t('oracle_prices.cache.create.title') }}
-      </template>
-      <!-- One row: three inputs and the button are one action, and stacked they took five rows of
-           the page before the table it feeds even started. -->
-      <div class="flex flex-col md:flex-row md:items-center gap-4">
-        <RuiAutoComplete
-          v-model="cacheSource"
-          class="md:w-56"
-          dense
-          :label="t('oracle_prices.cache.dialog.source')"
-          variant="outlined"
-          :options="cacheSourceOptions"
-          key-attr="identifier"
-          text-attr="label"
-          :disabled="cachePending || loadingCaches"
-          hide-details
-        />
-        <AssetSelect
-          v-model="newFromAsset"
-          class="flex-1"
-          dense
-          :label="t('price_management.from_asset')"
-          variant="outlined"
-          hide-details
-          :disabled="cachePending"
-        />
-        <AssetSelect
-          v-model="newToAsset"
-          class="flex-1"
-          dense
-          :label="t('price_management.to_asset')"
-          variant="outlined"
-          hide-details
-          :disabled="cachePending"
-        />
-        <RuiButton
-          class="shrink-0"
-          color="primary"
-          :loading="cachePending"
-          :disabled="!newFromAsset || !newToAsset || cachePending"
-          @click="populateCache()"
-        >
-          <template #prepend>
-            <RuiIcon
-              name="lu-plus"
-              size="16"
-            />
-          </template>
-          {{ t('oracle_prices.cache.dialog.create') }}
-        </RuiButton>
-      </div>
-    </RuiCard>
+  <TableFrame>
+    <template #toolbar>
+      <slot name="tabs" />
+      <HintMenuIcon>
+        {{ t('oracle_prices.cache.hint') }}
+      </HintMenuIcon>
+      <OracleCacheFilter
+        v-model:matches="matches"
+        class="flex-1 min-w-48 md:min-w-96"
+        :disabled="loadingCaches"
+      />
+    </template>
 
-    <RuiCard>
-      <template #header>
-        {{ t('oracle_prices.cache.dialog.existing_title') }}
-      </template>
-      <div class="flex flex-col gap-4">
-        <OracleCacheFilter
-          v-model:matches="matches"
-          :disabled="loadingCaches"
-        />
-        <RuiDataTable
-          outlined
-          dense
-          :cols="columns"
-          :loading="loadingCaches"
-          :rows="rows"
-          row-attr="id"
-          :empty="{ label: t('oracle_prices.cache.dialog.empty') }"
-        >
-          <template #item.fromAsset="{ row }">
-            <AssetDetails :asset="row.fromAsset" />
-          </template>
-          <template #item.toAsset="{ row }">
-            <AssetDetails :asset="row.toAsset" />
-          </template>
-          <template #item.fromTimestamp="{ row }">
-            <DateDisplay :timestamp="Number(row.fromTimestamp)" />
-          </template>
-          <template #item.toTimestamp="{ row }">
-            <DateDisplay :timestamp="Number(row.toTimestamp)" />
-          </template>
-          <template #item.actions="{ row }">
-            <OracleCacheActionsCell
-              :disabled="cachePending"
-              @click="showDeleteConfirmation(row)"
-            />
-          </template>
-        </RuiDataTable>
-      </div>
-    </RuiCard>
-  </div>
+    <OracleCacheTable
+      :rows="rows"
+      :loading="loadingCaches"
+      :disabled="cachePending"
+      @delete="showDeleteConfirmation($event)"
+    />
+
+    <OracleCacheFormDialog
+      v-model:open="addOpen"
+      v-model:source="cacheSource"
+      v-model:from-asset="newFromAsset"
+      v-model:to-asset="newToAsset"
+      :loading="cachePending"
+      :source-options="cacheSourceOptions"
+      @confirm="populateCache()"
+    />
+  </TableFrame>
 </template>

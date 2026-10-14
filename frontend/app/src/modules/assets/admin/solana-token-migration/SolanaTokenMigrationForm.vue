@@ -41,21 +41,21 @@ const form = useModelForm<SolanaTokenMigrationData>({
   stateUpdated,
 });
 
-const assetDetails = computed<string | undefined>(() => {
+/** The asset being migrated as a heading and a name under it; an unknown one is its identifier alone. */
+const migrating = computed<{ title: string; name?: string } | undefined>(() => {
   if (!oldAsset) {
     return undefined;
   }
   const details = getAssetInfo(oldAsset);
 
   if (!details) {
-    return oldAsset;
+    return { title: oldAsset };
   }
 
-  let description = '';
-  if (details.symbol) {
-    description += `[${details.symbol}] `;
-  }
-  return `${description}${details.name} (${oldAsset})`;
+  if (details.symbol)
+    return { name: details.name ?? undefined, title: details.symbol };
+
+  return { title: details.name ?? oldAsset };
 });
 
 const decimalsModel = decimalsTextModel(
@@ -78,13 +78,32 @@ defineExpose({
 
 <template>
   <div class="flex flex-col gap-4">
-    <div
-      v-if="oldAsset"
-      class="flex items-center text-caption text-rui-text-secondary -mt-2 mb-4 gap-2"
+    <dl
+      v-if="oldAsset && migrating"
+      class="m-0 flex flex-col gap-1 rounded-rui-control border border-rui-divider px-4 py-3"
+      data-testid="solana-migration-summary"
     >
-      <span class="font-medium">{{ t('asset_management.solana_token_migration.migrating_asset') }}:</span>
-      <span>{{ assetDetails }}</span>
-    </div>
+      <dt class="text-sm font-medium text-rui-text-secondary">
+        {{ t('asset_management.solana_token_migration.migrating_asset') }}
+      </dt>
+      <dd class="m-0 flex flex-col">
+        <span class="font-medium text-rui-text">
+          {{ migrating.title }}
+          <span
+            v-if="migrating.name"
+            class="font-normal text-rui-text-secondary"
+          >
+            {{ migrating.name }}
+          </span>
+        </span>
+        <span
+          v-if="migrating.title !== oldAsset"
+          class="font-mono text-xs text-rui-text-secondary break-all"
+        >
+          {{ oldAsset }}
+        </span>
+      </dd>
+    </dl>
 
     <div class="grid grid-cols-2 gap-4">
       <div

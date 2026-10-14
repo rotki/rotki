@@ -43,17 +43,21 @@ function edit(event: CalendarEvent) {
     <div
       v-for="(calendarEvents, date) in groupedEvents"
       :key="date"
-      class="flex flex-col gap-2 items-start"
+      class="flex flex-col gap-1 items-start"
     >
-      <DateDisplay
-        :timestamp="calendarEvents[0].timestamp"
-        no-time
-        hide-tooltip
-        class="rounded-xs cursor-pointer text-sm font-bold underline hover:bg-rui-grey-200 dark:hover:bg-rui-grey-800 px-1 transition-all"
+      <button
+        type="button"
+        class="rounded-xs text-xs font-semibold text-rui-text-secondary transition-colors hover:text-rui-primary focus-visible:outline-2 focus-visible:outline-rui-primary"
         @click="handleDateClick(calendarEvents[0].timestamp)"
-      />
+      >
+        <DateDisplay
+          :timestamp="calendarEvents[0].timestamp"
+          no-time
+          hide-tooltip
+        />
+      </button>
 
-      <div class="flex flex-col gap-4 w-full">
+      <div class="flex flex-col gap-1 w-full">
         <CalendarEventList
           v-for="event in calendarEvents"
           :key="event.identifier"

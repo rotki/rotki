@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CexMapping, CexMappingRequestPayload } from '@/modules/assets/types';
 import { omit } from 'es-toolkit';
+import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
 import ManageCexMappingTable from '@/modules/assets/admin/cex-mapping/ManageCexMappingTable.vue';
 import { useCexMappingFields } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-fields';
@@ -70,11 +71,13 @@ const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
 
 <template>
   <TablePageLayout child>
+    <template #title>
+      <AssetManagerMoreTitle />
+    </template>
     <template #buttons>
       <RuiButton
         color="primary"
         variant="outlined"
-        size="lg"
         :loading="loading"
         @click="refetch()"
       >
@@ -87,7 +90,6 @@ const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
       <RuiButton
         data-testid="managed-cex-mapping-add-btn"
         color="primary"
-        size="lg"
         @click="add()"
       >
         <template #prepend>
@@ -96,22 +98,20 @@ const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
         {{ t('asset_management.cex_mapping.add_mapping') }}
       </RuiButton>
     </template>
-    <RuiCard>
-      <ManageCexMappingTable
-        v-model:filters="filter"
-        v-model:pagination="pagination"
-        :collection="collection"
-        :fields="fields"
-        :loading="loading"
-        @refresh="refetch()"
-        @edit="edit($event)"
-        @delete="showDeleteConfirmation($event)"
-      />
-      <ManageCexMappingFormDialog
-        v-model="modelValue"
-        :edit-mode="editMode"
-        @refresh="refetch()"
-      />
-    </RuiCard>
+    <ManageCexMappingTable
+      v-model:filters="filter"
+      v-model:pagination="pagination"
+      :collection="collection"
+      :fields="fields"
+      :loading="loading"
+      @refresh="refetch()"
+      @edit="edit($event)"
+      @delete="showDeleteConfirmation($event)"
+    />
+    <ManageCexMappingFormDialog
+      v-model="modelValue"
+      :edit-mode="editMode"
+      @refresh="refetch()"
+    />
   </TablePageLayout>
 </template>

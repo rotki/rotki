@@ -8,22 +8,22 @@
  * `price_history.source_type` belongs here — borrowing `blockchain` or `fiat` from `PriceOracle`
  * makes the endpoint answer `source_type blockchain is not stored in price_history`.
  *
- * The keys are wire values, which the backend derives from the enum member name — hence
- * `manual current` with a space rather than the `manualcurrent` the settings enum uses.
+ * The keys are wire values as the oracle prices endpoint (colibri) sends and filters them:
+ * `manualcurrent`, which it rejects spelled `manual current` ("Invalid source_type value").
  */
 const sourceLabels: Record<string, string> = {
-  'alchemy': 'Alchemy',
-  'birdeye': 'Birdeye',
-  'coingecko': 'CoinGecko',
-  'coinbase': 'Coinbase',
-  'cryptocompare': 'CryptoCompare',
-  'defillama': 'DefiLlama',
-  'manual': 'Manual',
-  'manual current': 'Manual (current)',
-  'moralis': 'Moralis',
-  'uniswapv2': 'Uniswap V2',
-  'uniswapv3': 'Uniswap V3',
-  'xratescom': 'x-rates.com',
+  alchemy: 'Alchemy',
+  birdeye: 'Birdeye',
+  coingecko: 'CoinGecko',
+  coinbase: 'Coinbase',
+  cryptocompare: 'CryptoCompare',
+  defillama: 'DefiLlama',
+  manual: 'Manual',
+  manualcurrent: 'Manual (current)',
+  moralis: 'Moralis',
+  uniswapv2: 'Uniswap V2',
+  uniswapv3: 'Uniswap V3',
+  xratescom: 'x-rates.com',
 };
 
 /** Maps an oracle id to its display name, falling back to the id when there is no name for it. */

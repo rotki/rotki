@@ -52,7 +52,6 @@ onMounted(async () => {
       <RuiButton
         color="primary"
         variant="outlined"
-        size="lg"
         :loading="loading"
         @click="refresh()"
       >
@@ -65,7 +64,6 @@ onMounted(async () => {
       <RuiButton
         data-testid="managed-asset-add-btn"
         color="primary"
-        size="lg"
         @click="add()"
       >
         <template #prepend>

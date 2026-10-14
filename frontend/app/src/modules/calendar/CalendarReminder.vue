@@ -226,76 +226,80 @@ defineExpose({
 </script>
 
 <template>
-  <div>
-    <div class="border-y border-default">
-      <div class="py-4 flex justify-between items-center">
-        <RuiButton
-          class="-ml-1"
-          variant="text"
-          data-testid="reminder-toggle"
-          :data-expanded="showReminders"
-          :class="{
-            'hover:bg-transparent! active:bg-transparent! cursor-default': length === 0,
-          }"
-          @click="toggleReminder()"
+  <div class="flex flex-col gap-1 border-y border-rui-divider py-3">
+    <div class="flex items-center justify-between gap-4">
+      <RuiButton
+        class="-ml-2"
+        variant="text"
+        size="sm"
+        data-testid="reminder-toggle"
+        :data-expanded="showReminders"
+        :class="{
+          'hover:bg-transparent! active:bg-transparent! cursor-default': length === 0,
+        }"
+        @click="toggleReminder()"
+      >
+        <span class="text-sm font-semibold text-rui-text">{{ t('calendar.reminder.title') }}</span>
+        <span class="rounded-full bg-rui-grey-200 px-1.5 text-xs font-medium text-rui-text-secondary dark:bg-rui-grey-800">
+          {{ length }}
+        </span>
+        <template
+          v-if="length > 0"
+          #append
         >
-          <div class="flex gap-4">
-            <div>{{ t('calendar.reminder.title') }}</div>
-            <RuiBadge
-              color="secondary"
-              :text="length.toString()"
-              placement="center"
-              size="sm"
-            />
-            <RuiIcon
-              v-if="length > 0"
-              class="ml-2 transition"
-              :class="{ 'transform -rotate-180': !showReminders }"
-              name="lu-chevron-up"
+          <RuiIcon
+            size="16"
+            class="transition"
+            :class="{ '-rotate-180': !showReminders }"
+            name="lu-chevron-up"
+          />
+        </template>
+      </RuiButton>
+      <RuiButton
+        color="primary"
+        variant="text"
+        size="sm"
+        data-testid="reminder-add"
+        @click="addRow()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-plus"
+            size="16"
+          />
+        </template>
+        {{ t('calendar.reminder.add_reminder') }}
+      </RuiButton>
+    </div>
+
+    <RuiSwitch
+      v-model="remindInTime"
+      color="primary"
+      size="sm"
+      hide-details
+      :label="t('calendar.reminder.notify')"
+    />
+
+    <RuiAccordions :model-value="showReminders ? 0 : -1">
+      <RuiAccordion eager>
+        <template #default>
+          <div
+            v-if="length > 0"
+            class="flex flex-col pt-3"
+          >
+            <CalendarReminderEntry
+              v-for="(row, index) in form.state.rows"
+              :key="row.key"
+              v-model:amount="row.amount"
+              v-model:unit="row.unit"
+              :latest="row.key === latestKey"
+              :error-messages="form.errors(`rows.${index}.amount`)"
+              @commit="commitRow(row)"
+              @delete="deleteRow(row)"
             />
           </div>
-        </RuiButton>
-        <RuiButton
-          color="secondary"
-          size="sm"
-          data-testid="reminder-add"
-          @click="addRow()"
-        >
-          {{ t('calendar.reminder.add_reminder') }}
-        </RuiButton>
-      </div>
-      <RuiAccordions :model-value="showReminders ? 0 : -1">
-        <RuiAccordion eager>
-          <template #default>
-            <div
-              v-if="length > 0"
-              class="flex flex-col gap-2 pt-2"
-            >
-              <CalendarReminderEntry
-                v-for="(row, index) in form.state.rows"
-                :key="row.key"
-                v-model:amount="row.amount"
-                v-model:unit="row.unit"
-                :latest="row.key === latestKey"
-                :error-messages="form.errors(`rows.${index}.amount`)"
-                @commit="commitRow(row)"
-                @delete="deleteRow(row)"
-              />
-            </div>
-          </template>
-        </RuiAccordion>
-      </RuiAccordions>
-
-      <RuiSwitch
-        v-model="remindInTime"
-        color="primary"
-        size="sm"
-        class="ml-1 flex flex-col items-start"
-      >
-        <div class="text-rui-text-secondary text-sm mt-0.5">
-          {{ t('calendar.reminder.notify') }}
-        </div>
-      </RuiSwitch>
-    </div>
+        </template>
+      </RuiAccordion>
+    </RuiAccordions>
   </div>
 </template>

@@ -5,6 +5,7 @@ import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { counterpartyMappingSchema } from '@/modules/assets/admin/counterparty-mapping/counterparty-mapping-form';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
+import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 
 const modelValue = defineModel<CounterpartyMapping>({ required: true });
@@ -53,26 +54,47 @@ defineExpose({
 
 <template>
   <div class="flex flex-col gap-2">
-    <CounterpartyInput
-      v-model="counterpartyModel"
-      data-testid="counterparty"
-      :label="t('common.counterparty')"
-      :disabled="editMode"
-      exclude-exchanges
-      clearable
-      :error-messages="form.errors('counterparty')"
-    />
-    <RuiTextField
-      v-model="form.state.counterpartySymbol"
-      data-testid="counterparty-symbol"
-      variant="outlined"
-      color="primary"
-      :disabled="editMode"
-      clearable
-      :label="t('asset_management.counterparty_mapping.counterparty_symbol')"
-      :error-messages="form.errors('counterpartySymbol')"
-      @update:model-value="form.touch('counterpartySymbol')"
-    />
+    <dl
+      v-if="editMode"
+      class="grid grid-cols-2 gap-4 m-0 mb-4 rounded-rui-control border border-rui-divider px-4 py-3"
+      data-testid="counterparty-mapping-summary"
+    >
+      <div class="flex flex-col gap-1">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('common.counterparty') }}
+        </dt>
+        <dd class="m-0">
+          <CounterpartyDisplay :counterparty="form.state.counterparty" />
+        </dd>
+      </div>
+      <div class="flex flex-col gap-1">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('asset_management.counterparty_mapping.counterparty_symbol') }}
+        </dt>
+        <dd class="m-0 font-medium text-rui-text">
+          {{ form.state.counterpartySymbol }}
+        </dd>
+      </div>
+    </dl>
+    <template v-else>
+      <CounterpartyInput
+        v-model="counterpartyModel"
+        data-testid="counterparty"
+        :label="t('common.counterparty')"
+        exclude-exchanges
+        clearable
+        :error-messages="form.errors('counterparty')"
+      />
+      <RuiTextField
+        v-model="form.state.counterpartySymbol"
+        data-testid="counterparty-symbol"
+        color="primary"
+        clearable
+        :label="t('asset_management.counterparty_mapping.counterparty_symbol')"
+        :error-messages="form.errors('counterpartySymbol')"
+        @update:model-value="form.touch('counterpartySymbol')"
+      />
+    </template>
     <AssetSelect
       v-model="form.state.asset"
       data-testid="counterparty-asset"

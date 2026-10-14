@@ -8,8 +8,10 @@ import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<CexMapping | undefined>({ required: true });
 
-const { editMode } = defineProps<{
+const { editMode, exchangeName } = defineProps<{
   editMode?: boolean;
+  /** The exchange's own name for the asset, when the dialog opens from a missing mapping. */
+  exchangeName?: string;
 }>();
 
 const emit = defineEmits<{
@@ -43,6 +45,7 @@ const { dialogTitle, loading, modelErrorMessages, save } = useMappingFormDialog(
     :display="!!modelValue"
     :title="dialogTitle"
     :action="{ primary: t('common.actions.save') }"
+    :layout="{ autoHeight: true, divide: true, maxWidth: '640px' }"
     :loading="loading"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
@@ -56,6 +59,7 @@ const { dialogTitle, loading, modelErrorMessages, save } = useMappingFormDialog(
       v-model:state-updated="stateUpdated"
       v-model:for-all-exchanges="forAllExchanges"
       :edit-mode="editMode"
+      :exchange-name="exchangeName"
     />
   </BigDialog>
 </template>

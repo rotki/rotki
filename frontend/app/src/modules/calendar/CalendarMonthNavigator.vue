@@ -3,25 +3,26 @@ import type { Dayjs } from 'dayjs';
 
 const model = defineModel<Dayjs>({ required: true });
 
-function prevMonth() {
-  const prevMonth = get(model).subtract(1, 'month');
-  set(model, prevMonth);
+const { t } = useI18n({ useScope: 'global' });
+
+const readableMonthAndYear = computed<string>(() => get(model).format('MMMM YYYY'));
+
+function prevMonth(): void {
+  set(model, get(model).subtract(1, 'month'));
 }
 
-function nextMonth() {
-  const nextMonth = get(model).add(1, 'month');
-  set(model, nextMonth);
+function nextMonth(): void {
+  set(model, get(model).add(1, 'month'));
 }
-
-const readableMonthAndYear = computed(() => get(model).format('MMMM YYYY'));
 </script>
 
 <template>
-  <div class="flex">
+  <div class="flex items-center gap-1">
     <RuiButton
       variant="text"
       icon
-      class="p-2!"
+      size="sm"
+      :aria-label="t('calendar.previous_month')"
       data-testid="calendar-prev-month"
       @click="prevMonth()"
     >
@@ -30,24 +31,19 @@ const readableMonthAndYear = computed(() => get(model).format('MMMM YYYY'));
     <RuiButton
       variant="text"
       icon
-      class="p-2!"
+      size="sm"
+      :aria-label="t('calendar.next_month')"
       data-testid="calendar-next-month"
       @click="nextMonth()"
     >
       <RuiIcon name="lu-chevron-right" />
     </RuiButton>
-    <div class="pl-4">
-      <RuiTextField
-        class="cursor-pointer"
-        :model-value="readableMonthAndYear"
-        variant="outlined"
-        color="primary"
-        readonly
-        dense
-        hide-details
-        append-icon="lu-calendar-days"
-        data-testid="calendar-month-label"
-      />
-    </div>
+    <h2
+      class="m-0 ml-2 min-w-36 text-lg font-medium text-rui-text"
+      aria-live="polite"
+      data-testid="calendar-month-label"
+    >
+      {{ readableMonthAndYear }}
+    </h2>
   </div>
 </template>
