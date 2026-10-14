@@ -147,6 +147,20 @@ describe('mock engine', () => {
 
       expect(engine.transformResponse(request('GET', '/api/1/tasks/42'), { result: 'backend' })).toBeUndefined();
     });
+
+    it('should own the polls for its own tasks only, since the backend answers those with a 404', () => {
+      const engine = createMockEngine(mocks);
+      const taskId = taskIdOf(engine.transformResponse(request('POST', UPDATES, { async_query: true }), {}));
+
+      expect(engine.ownsTask(request('GET', `/api/1/tasks/${taskId}`))).toBe(true);
+      vi.advanceTimersByTime(DEFAULT_TASK_COMPLETION_MS);
+      expect(engine.ownsTask(request('GET', `/api/1/tasks/${taskId}`))).toBe(true);
+      expect(engine.ownsTask(request('GET', '/api/1/tasks/42'))).toBe(false);
+      expect(engine.ownsTask(request('GET', '/api/1/tasks'))).toBe(false);
+      engine.transformResponse(request('GET', `/api/1/tasks/${taskId}`), {});
+      expect(engine.ownsTask(request('GET', `/api/1/tasks/${taskId}`))).toBe(false);
+      engine.stop();
+    });
   });
 
   describe('task status', () => {

@@ -24,6 +24,11 @@ export interface MockEngine {
   /** Whether the request path has a mock declared, in any method. */
   isMocked: (req: MockRequest) => boolean;
   /**
+   * Whether the request polls a task this engine created. The backend never heard of such a task
+   * and answers its poll with a 404, so the answer must be rewritten whatever the status.
+   */
+  ownsTask: (req: MockRequest) => boolean;
+  /**
    * The payload to answer with, or undefined to pass the backend response
    * through unchanged.
    */
@@ -127,8 +132,12 @@ export function createMockEngine(
    * The path segment after `/tasks/` is not always an id. Siblings such as `/tasks/trigger` and
    * `/tasks/scheduler` share the prefix, and parsing to `NaN` is what routes them onward.
    */
+  function polledTaskId(req: MockRequest): number {
+    return Number.parseInt(req.path.replace(`${TASKS_PATH}/`, ''), 10);
+  }
+
   function taskOutcome(req: MockRequest): unknown {
-    const taskId = Number.parseInt(req.path.replace(`${TASKS_PATH}/`, ''), 10);
+    const taskId = polledTaskId(req);
     if (Number.isNaN(taskId))
       return undefined;
 
@@ -169,6 +178,13 @@ export function createMockEngine(
       return isMocked(req);
     },
     isMocked,
+    ownsTask(req: MockRequest): boolean {
+      if (!isTaskPoll(req))
+        return false;
+
+      const taskId = polledTaskId(req);
+      return pending.has(taskId) || completed.has(taskId);
+    },
     stop(): void {
       for (const timer of timers) clearTimeout(timer);
       timers.clear();
