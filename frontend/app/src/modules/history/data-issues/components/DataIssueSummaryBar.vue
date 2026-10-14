@@ -43,31 +43,31 @@ const allClear = computed<boolean>(() => !failed && SUMMARY_STATES.every(state =
 
 <template>
   <div
-    class="grid grid-cols-1 sm:grid-cols-3 gap-3"
+    class="grid grid-cols-1 sm:grid-cols-3 gap-4"
     data-testid="data-issue-summary"
   >
-    <RuiButton
+    <button
       v-for="card in cards"
       :key="card.state"
-      variant="outlined"
-      class="justify-start! p-3! h-auto!"
-      :class="{ 'border-rui-primary!': card.active }"
+      type="button"
+      class="flex flex-col items-start gap-1 p-4 text-left rounded-rui-card border bg-rui-surface transition-colors hover:bg-rui-hover focus-visible:outline-2 focus-visible:outline-rui-primary"
+      :class="card.active ? 'border-rui-primary ring-1 ring-rui-primary' : 'border-rui-divider'"
+      :aria-pressed="card.active"
       data-testid="data-issue-summary-card"
       :data-key="card.state"
       @click="emit('select', card.state)"
     >
-      <div class="flex items-center gap-3 w-full">
+      <span class="flex items-center gap-1.5 min-h-6 text-sm text-rui-text-secondary">
         <RuiIcon
           :name="card.icon"
           :color="card.color"
+          size="16"
           :class="{ 'animate-spin': card.busy && card.count > 0 }"
         />
-        <div class="flex flex-col items-start">
-          <span class="text-h6 font-medium leading-none">{{ card.count }}</span>
-          <span class="text-caption text-rui-text-secondary">{{ card.label }}</span>
-        </div>
-      </div>
-    </RuiButton>
+        {{ card.label }}
+      </span>
+      <span class="text-h5 font-semibold text-rui-text">{{ card.count }}</span>
+    </button>
 
     <div
       v-if="allClear"

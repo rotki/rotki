@@ -113,7 +113,6 @@ const userNotesLabel = computed<string>(() => {
         <div class="py-2">
           <RuiTextArea
             v-model="modelValue.userNotes"
-            prepend-icon="lu-sticky-note"
             data-testid="swap-sub-event-notes"
             :data-key="type"
             color="primary"

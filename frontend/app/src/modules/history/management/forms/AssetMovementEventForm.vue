@@ -140,21 +140,19 @@ defineExpose({
         auto-select-first
         @blur="form.touch('locationLabel')"
       />
+      <RuiAutoComplete
+        v-model="state.eventSubtype"
+        :label="t('transactions.events.form.event_type.label')"
+        required
+        :options="historyEventTypesData"
+        key-attr="identifier"
+        text-attr="label"
+        data-testid="event-subtype"
+        auto-select-first
+        :error-messages="form.errors('eventSubtype')"
+        @blur="form.touch('eventSubtype')"
+      />
     </div>
-
-    <RuiAutoComplete
-      v-model="state.eventSubtype"
-      variant="outlined"
-      :label="t('transactions.events.form.event_type.label')"
-      required
-      :options="historyEventTypesData"
-      key-attr="identifier"
-      text-attr="label"
-      data-testid="event-subtype"
-      auto-select-first
-      :error-messages="form.errors('eventSubtype')"
-      @blur="form.touch('eventSubtype')"
-    />
 
     <RuiDivider class="mb-6 mt-2" />
 
@@ -185,7 +183,6 @@ defineExpose({
 
     <RuiTextArea
       v-model="state.notes"
-      prepend-icon="lu-sticky-note"
       data-testid="notes"
       color="primary"
       max-rows="5"
@@ -200,7 +197,6 @@ defineExpose({
     <RuiTextArea
       v-if="state.hasFee"
       v-model="state.feeNotes"
-      prepend-icon="lu-sticky-note"
       data-testid="fee-notes"
       color="primary"
       max-rows="5"

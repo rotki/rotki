@@ -56,12 +56,12 @@ function viewBoundary(boundary: DivergenceBoundaryEvent): void {
 <template>
   <section
     v-if="available"
-    class="flex flex-col gap-3"
+    class="flex flex-col gap-2"
     data-testid="data-issue-balance-divergence"
   >
-    <div class="text-overline text-rui-text-secondary">
+    <h3 class="text-xs font-medium text-rui-text-secondary">
       {{ t('balance_divergence.title') }}
-    </div>
+    </h3>
     <i18n-t
       keypath="data_issues.detail.divergence_scope"
       tag="p"

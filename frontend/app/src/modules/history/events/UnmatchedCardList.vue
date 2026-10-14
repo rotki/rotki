@@ -190,7 +190,6 @@ watch(() => items.length, (length) => {
                 name="asset"
                 :item="item"
               />
-              <!-- the action line owns its own clicks: acting on a card must not also select it -->
               <div
                 class="ml-auto"
                 @click.stop

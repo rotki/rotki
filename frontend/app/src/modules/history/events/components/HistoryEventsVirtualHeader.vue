@@ -7,6 +7,7 @@ import {
   sortDirection as sortDirectionOf,
   toggledSort,
 } from '@/modules/history/events/components/history-events-table-header';
+import { injectHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 
 const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
@@ -18,8 +19,13 @@ defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const selection = injectHistoryEventsSelection();
+
 const globalItemsPerPage = useItemsPerPage();
 const { isSmAndDown } = useBreakpoint();
+
+/** Selection mode widens the rows' gutter for their checkboxes, so the column labels move with them. */
+const selecting = computed<boolean>(() => !!selection && get(selection.isSelectionMode));
 
 const sortColumn = computed<'timestamp' | undefined>(() => leadingSortColumn(get(sort), 'timestamp'));
 
@@ -55,7 +61,7 @@ const limits = [10, 25, 50, 100];
 </script>
 
 <template>
-  <div class="relative flex items-center justify-between gap-2 md:gap-4 px-3 md:px-4 h-10 lg:h-12 border-b border-default bg-white dark:bg-dark-elevated/90 sticky top-0 z-5">
+  <div class="relative flex items-center justify-between gap-2 md:gap-4 px-3 md:px-4 h-10 border-b border-rui-divider bg-rui-surface-muted sticky top-0 z-5">
     <RuiProgress
       v-if="loading"
       class="absolute! -bottom-0.5 left-0 w-full pointer-events-none"
@@ -63,18 +69,21 @@ const limits = [10, 25, 50, 100];
       variant="indeterminate"
       thickness="2"
     />
-    <!-- Left side: Column headers - hidden on mobile -->
-    <div class="hidden md:flex items-center text-sm text-rui-text-secondary font-medium">
-      <span>{{ t('transactions.events.headers.event_identifier') }}</span>
+    <div
+      class="hidden lg:flex items-center gap-4 min-w-0 flex-1 text-[0.8125rem] leading-5 text-rui-text-secondary font-medium"
+      :class="selecting ? 'pl-12' : 'pl-2'"
+    >
+      <span class="w-56 shrink-0">{{ t('common.type') }}</span>
+      <span class="w-56 xl:w-60 shrink-0">{{ t('common.asset') }}</span>
+      <span class="hidden xl:inline truncate">{{ t('common.description') }}</span>
     </div>
 
-    <!-- Right side: Sort + Pagination -->
-    <div class="flex items-center gap-2 md:gap-3 flex-1 md:flex-initial justify-between md:justify-end">
-      <!-- Sort by timestamp -->
-      <RuiButton
-        variant="text"
-        size="sm"
-        class="text-sm"
+    <div class="flex items-center gap-2 md:gap-3 flex-1 lg:flex-initial justify-between md:justify-end">
+      <button
+        type="button"
+        class="group/sort inline-flex items-center gap-1 rounded-rui-control px-1.5 py-1 text-[0.8125rem] leading-5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-rui-primary"
+        :class="sortColumn === 'timestamp' ? 'text-rui-text' : 'text-rui-text-secondary'"
+        :aria-label="t('common.datetime')"
         data-testid="events-sort-date"
         @click="toggleSort()"
       >
@@ -84,21 +93,19 @@ const limits = [10, 25, 50, 100];
           name="lu-calendar"
           size="16"
         />
-        <template #append>
-          <RuiIcon
-            :name="sortDirection === 'asc' ? 'lu-arrow-up' : 'lu-arrow-down'"
-            size="14"
-            :class="{ 'opacity-50': sortColumn !== 'timestamp' }"
-          />
-        </template>
-      </RuiButton>
+        <RuiIcon
+          :name="sortDirection === 'asc' ? 'lu-arrow-up' : 'lu-arrow-down'"
+          size="14"
+          class="transition"
+          :class="{ 'opacity-30 group-hover/sort:opacity-60': sortColumn !== 'timestamp' }"
+        />
+      </button>
 
       <RuiDivider
         vertical
         class="h-4"
       />
 
-      <!-- Items per page -->
       <div class="flex items-center gap-1 md:gap-2">
         <span class="hidden lg:inline text-xs text-rui-text-secondary whitespace-nowrap">{{ t('data_table.rows_per_page') }}</span>
         <RuiIcon
@@ -109,6 +116,8 @@ const limits = [10, 25, 50, 100];
         <RuiMenuSelect
           v-model="itemsPerPage"
           :options="limits"
+          :label="t('data_table.rows_per_page')"
+          label-placement="hidden"
           dense
           hide-details
           :class-names="{ label: 'text-xs!' }"
@@ -121,10 +130,9 @@ const limits = [10, 25, 50, 100];
         class="h-4 hidden sm:block"
       />
 
-      <!-- Pagination info - hidden on small screens -->
       <span
         v-if="!isSmAndDown"
-        class="text-sm text-rui-text-secondary whitespace-nowrap"
+        class="text-[0.8125rem] leading-5 text-rui-text-secondary whitespace-nowrap"
         data-testid="events-page-range"
       >
         {{ ((currentPage - 1) * itemsPerPage + 1).toLocaleString() }}-{{ Math.min(currentPage * itemsPerPage, pagination.total).toLocaleString() }}
@@ -132,13 +140,13 @@ const limits = [10, 25, 50, 100];
         {{ pagination.total.toLocaleString() }}
       </span>
 
-      <!-- Pagination buttons -->
       <div class="flex items-center">
         <RuiButton
           variant="text"
           icon
           size="sm"
           :disabled="currentPage <= 1"
+          :aria-label="t('data_table.first_page')"
           data-testid="events-page-first"
           @click="currentPage = 1"
         >
@@ -152,6 +160,7 @@ const limits = [10, 25, 50, 100];
           icon
           size="sm"
           :disabled="currentPage <= 1"
+          :aria-label="t('data_table.previous_page')"
           @click="currentPage = currentPage - 1"
         >
           <RuiIcon
@@ -164,6 +173,7 @@ const limits = [10, 25, 50, 100];
           icon
           size="sm"
           :disabled="currentPage >= totalPages"
+          :aria-label="t('data_table.next_page')"
           data-testid="events-page-next"
           @click="currentPage = currentPage + 1"
         >
@@ -177,6 +187,7 @@ const limits = [10, 25, 50, 100];
           icon
           size="sm"
           :disabled="currentPage >= totalPages"
+          :aria-label="t('data_table.last_page')"
           @click="currentPage = totalPages"
         >
           <RuiIcon

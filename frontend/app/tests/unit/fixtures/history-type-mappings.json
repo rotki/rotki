@@ -259,7 +259,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "donate",
-            "icon": "lu-donate-fill"
+            "icon": "lu-hand-heart"
           }
         },
         "direction": "out",
@@ -269,7 +269,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "receive donation",
-            "icon": "lu-receive-donation-fill"
+            "icon": "lu-heart-handshake"
           }
         },
         "direction": "in",
@@ -472,7 +472,7 @@
       "loan": "lu-handshake",
       "prefork acquisition": "lu-git-branch",
       "staking": "lu-layers",
-      "history event": "lu-history-events-fill",
+      "history event": "lu-history-events",
       "transaction event": "lu-arrow-left-right"
     }
   },

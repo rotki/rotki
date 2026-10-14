@@ -6,6 +6,8 @@ import type { HistoryEventEditData } from '@/modules/history/management/forms/fo
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { getMatchedMovementIgnoreIds } from '@/modules/history/event-utils';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
+import HistoryEventsExpandButton from '@/modules/history/events/components/HistoryEventsExpandButton.vue';
+import HistoryEventsGroupToggle from '@/modules/history/events/components/HistoryEventsGroupToggle.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/modules/history/events/HistoryEventsListItemAction.vue';
@@ -37,6 +39,8 @@ const emit = defineEmits<{
 }>();
 
 const events = computed<HistoryEventEntry[]>(() => eventsProp);
+
+const { t } = useI18n({ useScope: 'global' });
 
 const selection = injectHistoryEventsSelection();
 
@@ -80,64 +84,50 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
 </script>
 
 <template>
-  <!-- Card Layout -->
   <div
     v-if="isCard"
     data-testid="history-event-movement"
     :data-event-id="eventsProp[0]?.identifier"
-    class="p-3 border-b border-default bg-white dark:bg-dark-surface contain-content group transition-all"
+    class="h-34 p-3 flex flex-col gap-2 overflow-hidden border-b border-default bg-white dark:bg-dark-surface contain-content transition-all"
     :class="[
       { 'opacity-50': primaryEvent.ignoredInAccounting },
       highlight && getHighlightClass(highlightType),
     ]"
   >
-    <!-- Top row: Checkbox, Location, Movement badge, Event count, Timestamp -->
-    <div class="flex items-center justify-between gap-2 mb-2">
-      <div class="flex items-center gap-2 min-w-0">
-        <RuiCheckbox
-          v-if="showCheckbox"
-          v-model="isSelectedModel"
-          color="primary"
-          hide-details
-          :disabled="isCheckboxDisabled"
-          class="shrink-0"
-        />
+    <div class="h-14 shrink-0 flex items-center gap-2 min-w-0">
+      <RuiCheckbox
+        v-if="showCheckbox"
+        v-model="isSelectedModel"
+        color="primary"
+        hide-details
+        :disabled="isCheckboxDisabled"
+        class="shrink-0"
+      />
 
-        <HistoryEventType
-          :event="primaryEvent"
-          :chain="chain"
-          :group-location-label="groupLocationLabel"
-          :highlight="highlight"
-          class="min-w-0 flex-1"
-        />
-
-        <RuiButton
-          size="sm"
-          icon
-          color="primary"
-          class="size-5"
-          @click="emit('toggle-expand')"
-        >
-          <RuiIcon
-            class="hidden group-hover:block"
-            name="lu-unfold-vertical"
-            size="14"
+      <HistoryEventType
+        :event="primaryEvent"
+        :chain="chain"
+        :group-location-label="groupLocationLabel"
+        :highlight="highlight"
+        class="min-w-0 flex-1"
+      >
+        <template #append>
+          <HistoryEventsExpandButton
+            data-testid="movement-expand"
+            :count="events.length"
+            @expand="emit('toggle-expand')"
           />
-          <span class="group-hover:hidden text-xs">{{ events.length }}</span>
-        </RuiButton>
-      </div>
-    </div>
+        </template>
+      </HistoryEventType>
 
-    <!-- Middle row: Asset & Amount -->
-    <div class="mb-2">
       <HistoryEventAsset
         :event="primaryEvent"
+        class="w-40 sm:w-48 shrink-0"
         @refresh="emit('refresh')"
       />
     </div>
 
-    <!-- Bottom row: Notes + Actions -->
-    <div class="flex items-start justify-between gap-2">
+    <div class="flex-1 min-h-0 flex items-start justify-between gap-2">
       <HistoryEventNote
         :notes="compactNotes"
         :context="noteContext"
@@ -160,13 +150,15 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
     </div>
   </div>
 
-  <!-- Row Layout -->
   <div
     v-else
     data-testid="history-event-movement"
     :data-event-id="eventsProp[0]?.identifier"
-    class="h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6 group/row relative contain-content"
-    :class="{ 'opacity-50': primaryEvent.ignoredInAccounting }"
+    class="h-[72px] flex items-center gap-4 border-b border-default px-4 group/row relative contain-content transition-colors hover:bg-rui-grey-100 dark:hover:bg-white/5"
+    :class="[
+      showCheckbox ? 'pl-16' : 'pl-6',
+      { 'opacity-50': primaryEvent.ignoredInAccounting },
+    ]"
   >
     <RuiCheckbox
       v-if="showCheckbox"
@@ -174,34 +166,30 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
       color="primary"
       hide-details
       :disabled="isCheckboxDisabled"
-      class="shrink-0 -ml-2"
+      class="absolute left-4 top-1/2 -translate-y-1/2"
     />
 
-    <div class="relative -top-2.5">
-      <RuiButton
-        size="sm"
-        icon
-        color="primary"
-        class="size-5 relative top-4 -left-2 z-6"
-        @click="emit('toggle-expand')"
-      >
-        <RuiIcon
-          class="hidden group-hover/row:block"
-          name="lu-unfold-vertical"
-          size="14"
-        />
-        <span class="group-hover/row:hidden text-xs">{{ events.length }}</span>
-      </RuiButton>
+    <HistoryEventsGroupToggle
+      data-testid="movement-expand"
+      :count="events.length"
+      :selecting="showCheckbox"
+      @toggle="emit('toggle-expand')"
+    />
 
-      <HistoryEventType
-        :event="primaryEvent"
-        :chain="chain"
-        :highlight="highlight"
-        hide-state-chips
-        :group-location-label="groupLocationLabel"
-        class="w-56 shrink-0 self-center"
-      />
-    </div>
+    <HistoryEventType
+      :event="primaryEvent"
+      :chain="chain"
+      :highlight="highlight"
+      hide-state-chips
+      :group-location-label="groupLocationLabel"
+      class="w-56 shrink-0"
+    >
+      <template #append>
+        <span class="text-xs text-rui-text-secondary whitespace-nowrap">
+          {{ t('history_events_list_swap.event_count', { count: events.length }) }}
+        </span>
+      </template>
+    </HistoryEventType>
 
     <HistoryEventAsset
       :event="primaryEvent"
@@ -216,7 +204,6 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
       class="flex-1 min-w-0 overflow-hidden self-center line-clamp-2"
     />
 
-    <!-- A matched movement is effectively one asset moving, so the primary event's balance applies. -->
     <AccountingOverlayCell :event="primaryEvent" />
 
     <HistoryEventsListItemAction

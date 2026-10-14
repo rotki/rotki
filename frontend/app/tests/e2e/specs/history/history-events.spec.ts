@@ -198,9 +198,7 @@ test.describe.serial('history events', () => {
 
     // Anchored on the notes: the movement sorts to the top and shifts every index by one.
     const row = assetMovementRow(ctx);
-    await row.hover();
-    await row.locator('[data-testid=row-edit]').click();
-    await ctx.sharedPage.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible' });
+    await page.rows.edit(row);
 
     await ctx.sharedPage.locator('[data-testid=amount] input').clear();
     await ctx.sharedPage.locator('[data-testid=amount] input').fill(updatedAmount);

@@ -2,6 +2,7 @@
 import type { AccountingOverlayBucket } from '@/modules/history/balances/use-accounting-overlay';
 import { type BigNumber, Zero } from '@rotki/common';
 import { AssetAmountDisplay, AssetValueDisplay } from '@/modules/assets/amount-display/components';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import AccountingOverlayBucketIcon from '@/modules/history/balances/AccountingOverlayBucketIcon.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
@@ -21,6 +22,7 @@ const { buckets, asset, timestamp, account, eventLocation, eventProtocol } = def
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const { getChainName } = useSupportedChains();
 
 // A per-protocol breakdown only earns a total row once there is more than one row to sum.
 const showTotal = computed<boolean>(() => buckets.length > 1);
@@ -68,13 +70,12 @@ const affectedIndex = computed<number>(() => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-2 min-w-[200px] py-0.5">
+  <div class="flex flex-col gap-3 min-w-56">
     <div class="flex flex-col gap-0.5">
       <div class="flex items-center gap-1">
-        <div class="text-xs font-medium uppercase tracking-wide opacity-60">
+        <div class="text-xs font-medium text-rui-text-secondary">
           {{ t('accounting_overlay.balance_after') }}
         </div>
-        <!-- Amounts are rounded past MAX_DISPLAY_DECIMALS; warn that the shown figure isn't exact. -->
         <RuiTooltip
           v-if="excessivePrecision"
           :open-delay="200"
@@ -90,83 +91,78 @@ const affectedIndex = computed<number>(() => {
           {{ t('accounting_overlay.high_precision', { decimals: MAX_DISPLAY_DECIMALS }) }}
         </RuiTooltip>
       </div>
-      <DateDisplay
-        v-if="timestamp"
-        :timestamp="timestamp"
-        milliseconds
-        hide-tooltip
-        class="text-xs opacity-60"
-      />
+      <div class="flex items-center gap-1.5 text-xs text-rui-text-secondary">
+        <DateDisplay
+          v-if="timestamp"
+          :timestamp="timestamp"
+          milliseconds
+          hide-tooltip
+        />
+        <template v-if="account">
+          <span
+            v-if="timestamp"
+            class="size-0.5 rounded-full bg-current"
+          />
+          <EnsAvatar
+            :address="account"
+            avatar
+            size="14px"
+          />
+          <span
+            class="font-mono"
+            :title="account"
+          >
+            {{ account.slice(0, 8) }}
+          </span>
+        </template>
+      </div>
     </div>
     <div class="flex flex-col gap-1">
       <div
         v-for="(bucket, i) in buckets"
         :key="i"
-        class="flex items-center justify-between gap-6 text-sm -mx-1.5 px-1.5 py-0.5 rounded-sm"
+        class="flex items-center justify-between gap-6 text-sm -mx-1.5 px-1.5 py-1 rounded-sm"
         :class="i === affectedIndex
           ? 'bg-rui-primary/5 ring-1 ring-inset ring-rui-primary/20'
           : undefined"
       >
         <div
           class="flex items-center gap-2 min-w-0"
-          :class="i === affectedIndex ? 'opacity-100 font-medium' : 'opacity-90'"
+          :class="i === affectedIndex ? 'font-medium text-rui-text' : 'text-rui-text-secondary'"
         >
-          <!-- The chain/location is what distinguishes two otherwise identical rows (e.g. the same
-               address holding the same asset on several chains), so lead every row with its icon. -->
-          <RuiTooltip
-            :open-delay="200"
-            :options="{ placement: 'top' }"
-          >
-            <template #activator>
-              <LocationIcon
-                :item="bucket.location"
-                icon
-                size="16px"
-              />
-            </template>
-            <span class="capitalize">{{ bucket.location }}</span>
-          </RuiTooltip>
-          <AccountingOverlayBucketIcon
-            v-if="bucket.protocol"
-            :protocol="bucket.protocol"
-          />
-          <!-- Protocol-less holdings live directly in the wallet: show the account's blockie/avatar
-               and a shortened address instead of a generic icon + "Wallet" label. -->
-          <EnsAvatar
-            v-else-if="account"
-            :address="account"
-            avatar
+          <LocationIcon
+            :item="bucket.location"
+            icon
             size="16px"
           />
-          <RuiIcon
-            v-else
-            name="lu-wallet"
-            size="16"
-          />
-          <span
-            v-if="!bucket.protocol && account"
-            class="truncate font-mono text-xs"
-            :title="account"
-          >
-            {{ account.slice(0, 8) }}
-          </span>
-          <span
-            v-else
-            class="truncate"
-          >
-            {{ bucket.protocol ?? t('accounting_overlay.wallet') }}
+          <span class="truncate">{{ getChainName(bucket.location) }}</span>
+          <span class="flex items-center gap-1 min-w-0 text-xs font-normal text-rui-text-disabled">
+            <AccountingOverlayBucketIcon
+              v-if="bucket.protocol"
+              :protocol="bucket.protocol"
+              size="12"
+            />
+            <RuiIcon
+              v-else
+              name="lu-wallet"
+              size="12"
+              class="shrink-0"
+            />
+            <span class="truncate">{{ bucket.protocol ?? t('accounting_overlay.wallet') }}</span>
           </span>
         </div>
-        <div class="flex flex-col items-end shrink-0">
+        <div
+          class="flex flex-col items-end shrink-0"
+          :class="{ 'text-rui-text-disabled': bucket.balance.isZero() }"
+        >
           <AssetAmountDisplay
             :amount="bucket.balance"
             :asset="asset"
-            :decimals="decimals"
+            :decimals="bucket.balance.isZero() ? 0 : decimals"
             no-collection-parent
             no-tooltip
             class="text-xs font-medium tabular-nums"
           />
-          <!-- Historic fiat value at the event timestamp; reuses the price the row already cached. -->
           <AssetValueDisplay
             v-if="timestamp"
             :amount="bucket.balance"
@@ -174,13 +170,13 @@ const affectedIndex = computed<number>(() => {
             :value="Zero"
             :timestamp="{ ms: timestamp }"
             no-collection-parent
-            class="text-xs opacity-60 tabular-nums"
+            class="text-xs text-rui-text-secondary tabular-nums"
           />
         </div>
       </div>
     </div>
     <template v-if="showTotal">
-      <RuiDivider class="opacity-20" />
+      <RuiDivider />
       <div class="flex items-center justify-between gap-6 text-sm font-medium">
         <span>{{ t('accounting_overlay.total') }}</span>
         <div class="flex flex-col items-end shrink-0">
@@ -199,7 +195,7 @@ const affectedIndex = computed<number>(() => {
             :value="Zero"
             :timestamp="{ ms: timestamp }"
             no-collection-parent
-            class="text-xs opacity-60 tabular-nums"
+            class="text-xs text-rui-text-secondary tabular-nums"
           />
         </div>
       </div>

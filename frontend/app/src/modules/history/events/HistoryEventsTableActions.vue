@@ -1,17 +1,16 @@
 <script lang="ts" setup>
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
-import type { DecodeScope } from '@/modules/history/events/event-payloads';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { IgnoreStatus } from '@/modules/history/events/use-history-events-selection-actions';
 import type { SelectionState } from '@/modules/history/events/use-selection-mode';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocations } from '@/modules/core/table/filtering';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
+import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 import HistoryEventsExport from '@/modules/history/events/HistoryEventsExport.vue';
 import { useHistoryEventsPillBar } from '@/modules/history/events/use-history-events-pill-bar';
 import HistoryTableActions from '@/modules/history/HistoryTableActions.vue';
-import HistoryRedecodeButton from '@/modules/history/redecode/HistoryRedecodeButton.vue';
 
 const filters = defineModel<MatchedKeywordWithBehaviour<any>>('filters', { required: true });
 
@@ -24,15 +23,12 @@ const toggles = defineModel<HistoryEventsToggles>('toggles', { required: true })
 const { ignoreStatus } = defineProps<{
   fields: FieldDef[];
   exportParams: HistoryEventRequestPayload;
-  hideRedecodeButtons?: boolean;
   ignoreStatus?: IgnoreStatus;
-  processing?: boolean;
   selection: SelectionState;
 }>();
 
 const emit = defineEmits<{
-  'redecode': [scope: DecodeScope];
-  'selection:action': [action: 'toggle-mode' | 'delete' | 'exit' | 'toggle-all' | 'create-rule' | 'ignore' | 'unignore' | 'toggle-select-all-matching'];
+  'selection:action': [action: 'toggle-mode' | 'delete' | 'clear' | 'exit' | 'toggle-all' | 'create-rule' | 'ignore' | 'unignore' | 'toggle-select-all-matching'];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -71,6 +67,10 @@ function handleUnignore(): void {
   emit('selection:action', 'unignore');
 }
 
+function handleClear(): void {
+  emit('selection:action', 'clear');
+}
+
 function handleExit(): void {
   emit('selection:action', 'exit');
 }
@@ -90,11 +90,14 @@ function handleToggleSelectAllMatching(): void {
 
 <template>
   <HistoryTableActions hide-divider>
-    <template #filter>
+    <template
+      v-if="!selection.isActive"
+      #filter
+    >
       <PillFilterBar
         v-model:matches="filters"
         v-model:params="modelPillParams"
-        class="flex-1 min-w-48 md:min-w-96"
+        class="flex-1 min-w-48 md:min-w-96 max-sm:order-last max-sm:basis-full"
         :fields="fields"
         :labels="pillLabels"
       >
@@ -108,12 +111,6 @@ function handleToggleSelectAllMatching(): void {
           />
         </template>
 
-        <!-- Constrains the active filters to the events themselves rather than their whole
-             group, so it only means anything once something is filtered.
-
-             An icon toggle rather than a labelled switch: it sits inside the bar, where the
-             pills are what should be read, and its label is long enough to crowd them out. The
-             tooltip carries the full name and the explanation the switch's hint used to. -->
         <template #modifiers="{ disabled: barDisabled }">
           <RuiTooltip :open-delay="400">
             <template #activator>
@@ -139,8 +136,6 @@ function handleToggleSelectAllMatching(): void {
               <div class="font-medium">
                 {{ t('transactions.filter.match_exact_filter') }}
               </div>
-              <!-- An icon toggle has no label to read its state from, so the tooltip says which
-                   state it is in rather than only what the setting means. -->
               <div class="text-caption">
                 {{ toggles.matchExactEvents
                   ? t('transactions.filter.match_exact_filter_enabled')
@@ -150,168 +145,152 @@ function handleToggleSelectAllMatching(): void {
           </RuiTooltip>
         </template>
       </PillFilterBar>
+
+      <HistoryEventsExport
+        class="max-sm:ml-auto"
+        :match-exact-events="toggles.matchExactEvents"
+        :filters="exportParams"
+      />
     </template>
 
-    <div
+    <TableSelectionBar
       v-if="selection.isActive"
-      class="flex items-center gap-1.5 h-10 bg-rui-grey-500/10 rounded-md pl-3 pr-1"
+      class="grow"
+      :count="selection.selectedCount"
+      exitable
+      @clear="handleClear()"
+      @exit="handleExit()"
     >
-      <RuiTooltip :open-delay="400">
-        <template #activator>
-          <RuiCheckbox
-            :model-value="selection.isAllSelected || selection.selectAllMatching"
-            :indeterminate="selection.isPartiallySelected"
-            :disabled="selection.selectAllMatching"
-            color="primary"
-            hide-details
-            size="sm"
-            data-testid="selection-select-all-page"
-            @update:model-value="handleToggleAll()"
-          />
-        </template>
-        {{ t('transactions.events.selection_mode.select_all_page') }}
-      </RuiTooltip>
-      <span
-        v-if="!selection.selectAllMatching"
-        class="text-sm text-rui-text-secondary -ml-1 mr-2 select-none"
-        data-testid="selection-count"
-      >
-        {{ t('transactions.events.selection_mode.selected_count', { count: selection.selectedCount }) }}
-      </span>
-      <RuiDivider
-        v-if="!selection.selectAllMatching"
-        vertical
-        class="mr-1 -ml-1 h-4"
-      />
-      <RuiButton
-        variant="text"
-        :color="selection.selectAllMatching ? 'warning' : 'primary'"
-        size="sm"
-        class="text-sm hover:underline cursor-pointer mr-2"
-        :class="selection.selectAllMatching ? '-ml-3' : '-ml-1'"
-        data-testid="selection-select-all-matching"
-        @click="handleToggleSelectAllMatching()"
-      >
-        {{ selection.selectAllMatching ? t('transactions.events.selection_mode.all_matching_selected', { count: selection.totalMatchingCount }) : t('transactions.events.selection_mode.select_all_matching') }}
-        <template
-          v-if="selection.selectAllMatching"
-          #append
+      <template #select-all>
+        <RuiTooltip :open-delay="400">
+          <template #activator>
+            <RuiCheckbox
+              :model-value="selection.isAllSelected || selection.selectAllMatching"
+              :indeterminate="selection.isPartiallySelected"
+              :disabled="selection.selectAllMatching"
+              color="primary"
+              hide-details
+              size="sm"
+              data-testid="selection-select-all-page"
+              @update:model-value="handleToggleAll()"
+            />
+          </template>
+          {{ t('transactions.events.selection_mode.select_all_page') }}
+        </RuiTooltip>
+      </template>
+
+      <template #scope>
+        <RuiButton
+          variant="text"
+          size="sm"
+          :color="selection.selectAllMatching ? 'warning' : 'primary'"
+          data-testid="selection-select-all-matching"
+          @click="handleToggleSelectAllMatching()"
         >
+          {{ selection.selectAllMatching
+            ? t('transactions.events.selection_mode.all_matching_selected', { count: selection.totalMatchingCount })
+            : t('transactions.events.selection_mode.select_all_matching') }}
+          <template
+            v-if="selection.selectAllMatching"
+            #append
+          >
+            <RuiIcon
+              name="lu-x"
+              size="16"
+            />
+          </template>
+        </RuiButton>
+      </template>
+
+      <RuiButton
+        size="sm"
+        variant="outlined"
+        color="error"
+        :disabled="selection.selectedCount === 0"
+        :title="t('transactions.events.selection_mode.delete_selected')"
+        data-testid="selection-delete"
+        @click="handleDelete()"
+      >
+        <template #prepend>
           <RuiIcon
-            name="lu-x"
-            size="18"
+            name="lu-trash-2"
+            size="16"
           />
         </template>
+        {{ t('common.actions.delete') }}
       </RuiButton>
-      <RuiTooltip :open-delay="200">
-        <template #activator>
-          <RuiButton
-            color="error"
-            variant="outlined"
-            class="h-7 px-2.5"
-            :disabled="selection.selectedCount === 0"
-            data-testid="selection-delete"
-            @click="handleDelete()"
-          >
-            <RuiIcon
-              name="lu-trash-2"
-              size="16"
-            />
-          </RuiButton>
-        </template>
-        {{ t('transactions.events.selection_mode.delete_selected') }}
-      </RuiTooltip>
-      <div class="flex">
-        <RuiTooltip :open-delay="200">
-          <template #activator>
-            <RuiButton
-              variant="outlined"
-              class="h-7 px-2.5 rounded-r-none!"
-              :disabled="selection.selectedCount === 0 || !canIgnore || selection.selectAllMatching"
-              data-testid="selection-ignore"
-              @click="handleIgnore()"
-            >
-              <RuiIcon
-                name="lu-eye-off"
-                size="16"
-              />
-            </RuiButton>
-          </template>
-          {{ t('transactions.events.selection_mode.ignore') }}
-        </RuiTooltip>
-        <RuiTooltip :open-delay="200">
-          <template #activator>
-            <RuiButton
-              variant="outlined"
-              class="h-7 px-2.5 rounded-l-none! -ml-px"
-              :disabled="selection.selectedCount === 0 || !canUnignore || selection.selectAllMatching"
-              data-testid="selection-unignore"
-              @click="handleUnignore()"
-            >
-              <RuiIcon
-                name="lu-eye"
-                size="16"
-              />
-            </RuiButton>
-          </template>
-          {{ t('transactions.events.selection_mode.unignore') }}
-        </RuiTooltip>
-      </div>
-      <RuiTooltip :open-delay="200">
-        <template #activator>
-          <RuiButton
-            color="primary"
-            variant="outlined"
-            class="h-7 px-2.5"
-            :disabled="selection.selectedCount === 0 || selection.selectAllMatching"
-            data-testid="selection-create-rule"
-            @click="handleCreateRule()"
-          >
-            <RuiIcon
-              name="lu-file-spreadsheet"
-              size="16"
-            />
-          </RuiButton>
-        </template>
-        {{ t('transactions.events.selection_mode.create_rule') }}
-      </RuiTooltip>
       <RuiButton
-        variant="text"
-        class="h-7 px-2.5"
-        data-testid="selection-exit"
-        @click="handleExit()"
+        size="sm"
+        variant="outlined"
+        :disabled="selection.selectedCount === 0 || !canIgnore || selection.selectAllMatching"
+        :title="t('transactions.events.selection_mode.ignore')"
+        data-testid="selection-ignore"
+        @click="handleIgnore()"
       >
-        {{ t('common.actions.cancel') }}
+        <template #prepend>
+          <RuiIcon
+            name="lu-eye-off"
+            size="16"
+          />
+        </template>
+        {{ t('ignore_buttons.ignore') }}
       </RuiButton>
-    </div>
+      <RuiButton
+        size="sm"
+        variant="outlined"
+        :disabled="selection.selectedCount === 0 || !canUnignore || selection.selectAllMatching"
+        :title="t('transactions.events.selection_mode.unignore')"
+        data-testid="selection-unignore"
+        @click="handleUnignore()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-eye"
+            size="16"
+          />
+        </template>
+        {{ t('ignore_buttons.unignore') }}
+      </RuiButton>
+      <RuiButton
+        size="sm"
+        variant="outlined"
+        :disabled="selection.selectedCount === 0 || selection.selectAllMatching"
+        :title="t('transactions.events.selection_mode.create_rule')"
+        data-testid="selection-create-rule"
+        @click="handleCreateRule()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-file-spreadsheet"
+            size="16"
+          />
+        </template>
+        {{ t('transactions.events.selection_mode.accounting_rule') }}
+      </RuiButton>
+    </TableSelectionBar>
     <template v-else>
-      <RuiTooltip :open-delay="200">
+      <RuiTooltip
+        :options="{ placement: 'top' }"
+        :open-delay="400"
+      >
         <template #activator>
           <RuiButton
             variant="text"
-            size="xl"
             :disabled="!selection.hasAvailableEvents"
             data-testid="selection-toggle-mode"
             @click="handleToggleMode()"
           >
             <template #prepend>
-              <RuiIcon name="lu-copy-check" />
+              <RuiIcon
+                name="lu-copy-check"
+                size="18"
+              />
             </template>
+            {{ t('common.actions.select') }}
           </RuiButton>
         </template>
         {{ selection.hasAvailableEvents ? t('transactions.events.selection_mode.tooltip') : t('transactions.events.selection_mode.no_events') }}
       </RuiTooltip>
-
-      <HistoryRedecodeButton
-        v-if="!hideRedecodeButtons"
-        :processing="processing"
-        @redecode="emit('redecode', $event)"
-      />
-
-      <HistoryEventsExport
-        :match-exact-events="toggles.matchExactEvents"
-        :filters="exportParams"
-      />
     </template>
   </HistoryTableActions>
 </template>

@@ -55,7 +55,6 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
         class="shrink-0"
         :size="dense ? '22px' : '28px'"
       />
-      <!-- field: keep the name and address on one compact line -->
       <div
         v-if="dense"
         class="flex items-baseline gap-1.5 min-w-0"
@@ -73,7 +72,6 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
           {{ truncateAddress(scrambleAddress(item.locationLabel), 4) }}
         </span>
       </div>
-      <!-- dropdown: name over the muted address -->
       <div
         v-else
         class="flex flex-col min-w-0 leading-tight"

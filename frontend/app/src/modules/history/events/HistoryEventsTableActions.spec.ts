@@ -44,11 +44,6 @@ const HistoryTableActionsStub = passthrough('HistoryTableActions', ['filter']);
 const PillFilterBarStub = passthrough('PillFilterBar', ['modifiers', 'views']);
 const PillViewsMenuStub = leaf('PillViewsMenu');
 const HistoryEventsExportStub = leaf('HistoryEventsExport');
-const HistoryRedecodeButtonStub = defineComponent({
-  emits: ['redecode'],
-  name: 'HistoryRedecodeButton',
-  setup: () => (): unknown => h('div', { 'data-testid': 'HistoryRedecodeButton' }),
-});
 
 function selectionState(overrides: Partial<SelectionState> = {}): SelectionState {
   return {
@@ -72,7 +67,6 @@ describe('modules/history/events/HistoryEventsTableActions', () => {
       global: {
         stubs: {
           HistoryEventsExport: HistoryEventsExportStub,
-          HistoryRedecodeButton: HistoryRedecodeButtonStub,
           HistoryTableActions: HistoryTableActionsStub,
           PillFilterBar: PillFilterBarStub,
           PillViewsMenu: PillViewsMenuStub,
@@ -114,7 +108,7 @@ describe('modules/history/events/HistoryEventsTableActions', () => {
   });
 
   it('should flip match exact through the bridge', async () => {
-    const view = mountActions();
+    const view = mountActions({ selection: selectionState({ isActive: false }) });
 
     await view.find('[data-testid="filter-match-exact"]').trigger('click');
 
@@ -122,7 +116,10 @@ describe('modules/history/events/HistoryEventsTableActions', () => {
   });
 
   it('should show match exact as pressed when it is on', () => {
-    const view = mountActions({ toggles: { matchExactEvents: true, showIgnoredAssets: false, stateMarkers: [] } });
+    const view = mountActions({
+      selection: selectionState({ isActive: false }),
+      toggles: { matchExactEvents: true, showIgnoredAssets: false, stateMarkers: [] },
+    });
 
     expect(view.find('[data-testid="filter-match-exact"]').attributes('aria-pressed')).toBe('true');
   });
@@ -133,7 +130,8 @@ describe('modules/history/events/HistoryEventsTableActions', () => {
       ['selection-ignore', 'ignore'],
       ['selection-unignore', 'unignore'],
       ['selection-create-rule', 'create-rule'],
-      ['selection-exit', 'exit'],
+      ['table-selection-clear', 'clear'],
+      ['table-selection-exit', 'exit'],
       ['selection-select-all-matching', 'toggle-select-all-matching'],
     ] as const)('should report %s as a %s', async (testId, expected) => {
       const view = mountActions({ ignoreStatus: { ignoredCount: 1, notIgnoredCount: 1 } });
@@ -155,8 +153,8 @@ describe('modules/history/events/HistoryEventsTableActions', () => {
     it('should count what is selected', () => {
       const view = mountActions({ selection: selectionState({ selectedCount: 7 }) });
 
-      expect(view.find('[data-testid="selection-count"]').text())
-        .toBe('transactions.events.selection_mode.selected_count::7');
+      expect(view.find('[data-testid="table-selection-count"]').text())
+        .toBe('table_selection.count::7');
     });
 
     it.each([
@@ -200,12 +198,18 @@ describe('modules/history/events/HistoryEventsTableActions', () => {
         selection: selectionState({ selectAllMatching: true }),
       });
 
-      expect(view.find('[data-testid="selection-count"]').exists()).toBe(false);
       expect(view.find('[data-testid="selection-select-all-matching"]').text())
         .toContain('transactions.events.selection_mode.all_matching_selected::40');
       expect(view.find('[data-testid="selection-ignore"]').attributes('disabled')).toBeDefined();
       expect(view.find('[data-testid="selection-create-rule"]').attributes('disabled')).toBeDefined();
       expect(view.find('[data-testid="selection-delete"]').attributes('disabled')).toBeUndefined();
+    });
+
+    it('should hide the filter bar and the export while selecting', () => {
+      const view = mountActions();
+
+      expect(view.findComponent(PillFilterBarStub).exists()).toBe(false);
+      expect(view.findComponent(HistoryEventsExportStub).exists()).toBe(false);
     });
   });
 
@@ -214,8 +218,15 @@ describe('modules/history/events/HistoryEventsTableActions', () => {
       const view = mountActions({ selection: selectionState({ isActive: false }) });
 
       expect(view.find('[data-testid="selection-delete"]').exists()).toBe(false);
-      expect(view.findComponent(HistoryRedecodeButtonStub).exists()).toBe(true);
-      expect(view.findComponent(HistoryEventsExportStub).exists()).toBe(true);
+      expect(view.find('[data-testid="selection-toggle-mode"]').exists()).toBe(true);
+    });
+
+    it('should render the export after the filter bar', () => {
+      const view = mountActions({ selection: selectionState({ isActive: false }) });
+
+      const html = view.html();
+      expect(html.indexOf('data-testid="PillFilterBar"')).toBeGreaterThan(-1);
+      expect(html.indexOf('data-testid="HistoryEventsExport"')).toBeGreaterThan(html.indexOf('data-testid="PillFilterBar"'));
     });
 
     it('should enter selection mode', async () => {
@@ -230,24 +241,6 @@ describe('modules/history/events/HistoryEventsTableActions', () => {
       const view = mountActions({ selection: selectionState({ hasAvailableEvents: false, isActive: false }) });
 
       expect(view.find('[data-testid="selection-toggle-mode"]').attributes('disabled')).toBeDefined();
-    });
-
-    it('should hide the redecode button when the page asks it to', () => {
-      const view = mountActions({
-        hideRedecodeButtons: true,
-        selection: selectionState({ isActive: false }),
-      });
-
-      expect(view.findComponent(HistoryRedecodeButtonStub).exists()).toBe(false);
-    });
-
-    it('should pass a redecode on to the page', async () => {
-      const view = mountActions({ selection: selectionState({ isActive: false }) });
-
-      view.findComponent(HistoryRedecodeButtonStub).vm.$emit('redecode', 'all');
-      await nextTick();
-
-      expect(view.emitted('redecode')).toStrictEqual([['all']]);
     });
   });
 });

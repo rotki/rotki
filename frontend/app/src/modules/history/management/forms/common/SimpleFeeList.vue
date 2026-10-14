@@ -58,7 +58,7 @@ function add(): void {
 
 <template>
   <div>
-    <div class="flex py-2 mb-4 items-center gap-4">
+    <div class="flex mt-2 mb-3 items-center gap-4">
       <div class="font-medium">
         {{ t('backend_mappings.events.history_event_subtype.fee') }}
       </div>

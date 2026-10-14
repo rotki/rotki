@@ -60,7 +60,6 @@ watch(menuOpened, (menuOpened) => {
 </script>
 
 <template>
-  <!-- Disable scroll/resize listeners to optimize performance in virtualized lists -->
   <RuiMenu
     v-model="menuOpened"
     class="flex"
@@ -102,7 +101,6 @@ watch(menuOpened, (menuOpened) => {
             no-collection-parent
             :class="[dense ? 'text-xs' : 'text-sm', inline && 'font-medium']"
           />
-          <!-- separator as pseudo content: a raw middot in the template is not translatable text -->
           <span
             v-if="inline"
             class="text-rui-text-disabled before:content-['·']"
@@ -114,7 +112,7 @@ watch(menuOpened, (menuOpened) => {
             :value="Zero"
             :timestamp="{ ms: event.timestamp }"
             class="text-rui-text-secondary"
-            :class="dense ? 'text-xs' : 'text-[13px]'"
+            :class="dense ? 'text-xs' : 'text-[13px] leading-5'"
           />
         </div>
         <div

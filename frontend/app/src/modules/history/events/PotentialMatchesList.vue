@@ -73,15 +73,11 @@ watchDebounced(onlyExpectedAssets, () => {
 </script>
 
 <template>
-  <!-- Only the matches region grows: everything above it keeps its height, so the list fills
-       whatever the dialog or the pinned sheet leaves over instead of a viewport guess. -->
   <div class="flex flex-col gap-4 flex-1 min-h-0">
     <div class="shrink-0">
       <p class="text-body-2 font-medium mb-2">
         {{ entryLabels?.matchingFor ?? t('asset_movement_matching.dialog.matching_for') }}
       </p>
-      <!-- kept as two components rather than one that branches: the card has no column headers,
-           so it takes no `locationHeader` -->
       <PotentialMatchSubjectCard
         v-if="isPinned"
         :entry="movementEntry"

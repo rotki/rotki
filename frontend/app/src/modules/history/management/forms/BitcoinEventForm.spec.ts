@@ -145,7 +145,6 @@ describe('forms/BitcoinEventForm.vue', () => {
         "data-testid=location",
         "data-testid=notes",
         "data-testid=primary",
-        "data-testid=secondary",
         "data-testid=sequence-index",
         "data-testid=tx-ref",
       ]

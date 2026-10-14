@@ -125,11 +125,11 @@ defineExpose({
     />
 
     <SimpleFeeList
+      v-if="state.hasFee"
       v-model="state.fees"
       path="fees"
       :errors="form.errors"
       :touch="form.touch"
-      :disabled="!state.hasFee"
       :location="state.location"
     />
 

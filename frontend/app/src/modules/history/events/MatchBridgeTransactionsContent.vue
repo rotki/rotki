@@ -111,10 +111,6 @@ onBeforeMount(async () => {
     </RuiTab>
   </RuiTabs>
 
-  <!-- A resolution reports itself here rather than as a notification: the outcome and its undo
-       belong next to the list they changed, and the panel the action was taken from is still
-       open. It sits above both branches so it shows on either tab, since an undo puts the leg
-       back in the unmatched one. -->
   <UnmatchedResolutionStrip
     v-if="resolutionNotice"
     :message="resolutionNotice.message"
@@ -125,9 +121,6 @@ onBeforeMount(async () => {
     @dismiss="dismissResolution()"
   />
 
-  <!-- Pinned bypasses RuiTabItems: it sizes itself from its content and hides the overflow, so
-       in a bounded column the bottom of the panel - the pager - is silently cut off. Rendering
-       the active list straight into a flex column lets it size to the space it actually has. -->
   <div
     v-if="isPinned"
     class="flex-1 min-h-0 flex flex-col px-3 my-4"

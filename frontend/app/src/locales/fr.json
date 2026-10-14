@@ -2843,7 +2843,6 @@
         "eth_block_event": "Bloc {blockNumber} produit",
         "eth_deposit_event": "Événements de dépôt {txRef}",
         "eth_withdrawal_event": "Retrait pour le validateur {validatorIndex}",
-        "event_identifier": "Information événement",
         "history_event": "Événement {location}"
       },
       "skipped": {

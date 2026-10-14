@@ -16,6 +16,7 @@ import {
   toEthStakingPayload,
 } from '@/modules/history/events/tx/repulling-forms';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
+import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
 import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
 import ValidatorFilterInput from '@/modules/staking/eth2/ValidatorFilterInput.vue';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
@@ -177,10 +178,17 @@ defineExpose({
         clearable
         :hint="t('transactions.repulling.eth_staking.addresses_hint')"
       >
+        <template #selection.prepend="{ item }">
+          <EnsAvatar
+            :address="item"
+            avatar
+            size="24px"
+          />
+        </template>
         <template #selection="{ item }">
           <AccountDisplay
             :account="{ address: item, chain: Blockchain.ETH }"
-            size="20px"
+            hide-avatar
             hide-chain-icon
           />
         </template>

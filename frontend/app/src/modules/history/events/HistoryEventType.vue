@@ -24,6 +24,11 @@ const { event, groupLocationLabel, icon, label, highlight, hideStateChips, linke
   linkedLeg?: boolean;
 }>();
 
+defineSlots<{
+  /** Shown after the label, such as the control that expands a collapsed swap. */
+  append?: () => any;
+}>();
+
 const { getEventTypeData } = useHistoryEventMappings();
 const { matchChain } = useSupportedChains();
 
@@ -137,7 +142,7 @@ const showLocationLabel = computed<boolean>(() => {
 
     <div class="ml-3 min-w-0">
       <div class="flex items-center gap-1 min-w-0">
-        <div class="font-medium uppercase text-sm truncate">
+        <div class="font-medium text-sm truncate">
           {{ label ?? attrs.label }}
         </div>
         <div
@@ -150,6 +155,7 @@ const showLocationLabel = computed<boolean>(() => {
             :state="state"
           />
         </div>
+        <slot name="append" />
       </div>
       <HistoryEventAccount
         v-if="showLocationLabel"
@@ -157,7 +163,6 @@ const showLocationLabel = computed<boolean>(() => {
         :location-label="event.locationLabel!"
         class="text-rui-text-secondary"
       />
-      <!-- Indented past the account line's avatar, so both hashes start at the same x. -->
       <HashLink
         v-if="legTxRef"
         :text="legTxRef"

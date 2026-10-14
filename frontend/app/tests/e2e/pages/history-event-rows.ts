@@ -104,15 +104,24 @@ export class HistoryEventRows {
   }
 
   /**
+   * Opens a row's overflow menu and picks one of its actions. The menu renders in the page's overlay
+   * layer, not inside the row, so the action is looked up in the open menu.
+   */
+  async rowAction(row: Locator, action: 'row-edit' | 'row-delete'): Promise<void> {
+    await row.hover();
+    await row.locator('[data-testid=row-actions-menu]').click();
+    await this.page.getByRole('menu').locator(`[data-testid=${action}]`).click();
+  }
+
+  /**
    * Opens the edit dialog for an already-resolved row.
    *
-   * The edit button is only rendered for rows that may be edited (`hideEditAction` hides it for a
+   * The edit entry is only offered for rows that may be edited (`hideEditAction` hides it for a
    * swap sub-event and for a movement fee), so waiting on it against a position blocks for the
    * whole timeout once the list has moved such an event into that slot.
    */
   async edit(row: Locator): Promise<void> {
-    await row.hover();
-    await row.locator('[data-testid=row-edit]').click();
+    await this.rowAction(row, 'row-edit');
     await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible' });
   }
 
@@ -133,8 +142,7 @@ export class HistoryEventRows {
    * deletion clears it.
    */
   async delete(row: Locator): Promise<void> {
-    await row.hover();
-    await row.locator('[data-testid=row-delete]').click();
+    await this.rowAction(row, 'row-delete');
     const dialog = this.page.locator('[data-testid=confirm-dialog]');
     await dialog.locator('[data-testid=button-confirm]').click();
     await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });

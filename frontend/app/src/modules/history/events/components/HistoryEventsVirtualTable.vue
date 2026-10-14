@@ -73,16 +73,25 @@ const fetchError = useTableFetchError();
 const emptyState = useTableEmptyState();
 const fetchFailed = computed<boolean>(() => !!(fetchError && get(fetchError)));
 
+const tableHeight = computed<string>(() => `calc(100vh - ${tableHeightOffset ?? DEFAULT_TABLE_HEIGHT_OFFSET}px)`);
+
 const tableContainerStyle = computed<{ height: string }>(() => ({
-  height: `calc(100vh - ${tableHeightOffset ?? DEFAULT_TABLE_HEIGHT_OFFSET}px)`,
+  height: get(tableHeight),
+}));
+
+/**
+ * A message or spinner has nothing to scroll, so on a tall window it would float in the middle of
+ * an empty viewport-high box, far below the table header. It gets the table's height up to a cap.
+ */
+const placeholderStyle = computed<{ height: string }>(() => ({
+  height: `min(${get(tableHeight)}, 24rem)`,
 }));
 
 provideHistoryEventsRowContext(rowContext);
 </script>
 
 <template>
-  <div class="flex flex-col border border-default rounded-lg overflow-hidden bg-slate-50 dark:bg-dark-surface">
-    <!-- Sticky Header with Sort + Pagination -->
+  <div class="flex flex-col overflow-hidden bg-slate-50 dark:bg-dark-surface">
     <HistoryEventsVirtualHeader
       v-model:sort="sort"
       v-model:pagination="pagination"
@@ -91,7 +100,6 @@ provideHistoryEventsRowContext(rowContext);
       :found="found"
     />
 
-    <!-- Upgrade Row (premium limit warning) -->
     <UpgradeRow
       v-if="showUpgradeRow"
       :limit="found"
@@ -101,7 +109,6 @@ provideHistoryEventsRowContext(rowContext);
       :label="t('plan_limit.labels.events')"
     />
 
-    <!-- Query Status Slot -->
     <slot
       name="query-status"
       :colspan="5"
@@ -128,10 +135,9 @@ provideHistoryEventsRowContext(rowContext);
       </div>
     </RuiAlert>
 
-    <!-- Loading state -->
     <div
       v-if="loading && groups.length === 0"
-      :style="tableContainerStyle"
+      :style="placeholderStyle"
       class="flex items-center justify-center dark:bg-dark-surface"
     >
       <RuiProgress
@@ -142,49 +148,67 @@ provideHistoryEventsRowContext(rowContext);
       />
     </div>
 
-    <!-- Empty state -->
     <div
       v-else-if="!loading && groups.length === 0"
-      :style="tableContainerStyle"
-      class="flex flex-col items-center justify-center gap-2 text-rui-text-secondary whitespace-break-spaces text-center"
+      :style="placeholderStyle"
+      class="flex flex-col items-center justify-center px-4"
     >
-      <template v-if="fetchFailed">
-        <span class="text-rui-text font-medium">{{ emptyState.label }}</span>
+      <RuiTableErrorState
+        v-if="fetchFailed"
+        class="w-full max-w-xl"
+        :title="emptyState.label"
+        :action-text="t('common.actions.retry')"
+        @action="emit('refetch')"
+      >
         <span data-testid="history-events-fetch-error">{{ emptyState.description }}</span>
-        <RuiButton
-          variant="text"
-          color="primary"
-          @click="emit('refetch')"
-        >
-          {{ t('common.actions.retry') }}
-        </RuiButton>
-      </template>
-      <template v-else-if="hasActiveFilters">
-        {{ t('transactions.empty_state.no_data_with_filters') }}
-        <RuiButton
-          variant="text"
-          color="primary"
-          class="underline"
-          @click="emit('clear-filters')"
-        >
-          {{ t('transactions.empty_state.clear_filters') }}
-        </RuiButton>
-      </template>
-      <template v-else-if="processing">
+      </RuiTableErrorState>
+      <RuiTableEmptyState
+        v-else-if="hasActiveFilters"
+        :label="t('transactions.empty_state.no_data_with_filters')"
+      >
+        <template #description>
+          <RuiButton
+            variant="outlined"
+            color="primary"
+            size="sm"
+            data-testid="history-events-clear-filters"
+            @click="emit('clear-filters')"
+          >
+            <template #prepend>
+              <RuiIcon
+                name="lu-filter-x"
+                size="14"
+              />
+            </template>
+            {{ t('transactions.empty_state.clear_filters') }}
+          </RuiButton>
+        </template>
+      </RuiTableEmptyState>
+      <div
+        v-else-if="processing"
+        class="flex flex-col items-center gap-3 max-w-md text-center"
+      >
         <RuiProgress
           circular
           variant="indeterminate"
           color="primary"
-          size="24"
+          size="32"
         />
-        {{ t('transactions.empty_state.syncing') }}
-      </template>
-      <template v-else>
-        {{ t('transactions.empty_state.no_events') }}
-      </template>
+        <div class="font-medium text-rui-text">
+          {{ t('transactions.empty_state.syncing') }}
+        </div>
+        <div class="text-sm text-rui-text-secondary">
+          {{ t('transactions.empty_state.syncing_hint') }}
+        </div>
+      </div>
+      <RuiTableEmptyState
+        v-else
+        class="max-w-md"
+        :label="t('transactions.empty_state.no_events')"
+        :description="t('transactions.empty_state.no_events_hint')"
+      />
     </div>
 
-    <!-- Virtual Scroll Container -->
     <div
       v-else
       v-bind="containerProps"
@@ -201,7 +225,6 @@ provideHistoryEventsRowContext(rowContext);
     </div>
   </div>
 
-  <!-- Redecode Confirmation Dialog -->
   <RedecodeConfirmationDialog
     v-model:show="modelShowRedecodeConfirmation"
     :payload="redecodePayload"

@@ -19,15 +19,17 @@ const { showConfirmation, taskRunning } = useHistoryEventsExport(
   <RuiTooltip :open-delay="400">
     <template #activator>
       <RuiButton
-        color="primary"
-        variant="outlined"
+        variant="text"
         icon
-        size="xl"
-        class="rounded-sm!"
         :disabled="taskRunning"
+        :aria-label="t('common.actions.export_csv')"
+        data-testid="history-events-export"
         @click="showConfirmation()"
       >
-        <RuiIcon name="lu-file-down" />
+        <RuiIcon
+          name="lu-file-down"
+          size="18"
+        />
       </RuiButton>
     </template>
     {{ t('common.actions.export_csv') }}

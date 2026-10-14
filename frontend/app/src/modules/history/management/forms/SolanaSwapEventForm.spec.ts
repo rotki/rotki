@@ -170,23 +170,18 @@ describe('forms/SolanaSwapEventForm', () => {
         "data-testid=advanced-accordion",
         "data-testid=counterparty",
         "data-testid=datetime",
-        "data-testid=fee",
         "data-testid=has-fee",
         "data-testid=location",
         "data-testid=location-label",
         "data-testid=receive",
         "data-testid=sequence-index",
         "data-testid=spend",
-        "data-testid=sub-event-amount[data-key=fee]",
         "data-testid=sub-event-amount[data-key=receive]",
         "data-testid=sub-event-amount[data-key=spend]",
-        "data-testid=sub-event-asset[data-key=fee]",
         "data-testid=sub-event-asset[data-key=receive]",
         "data-testid=sub-event-asset[data-key=spend]",
-        "data-testid=swap-sub-event-add[data-key=fee]",
         "data-testid=swap-sub-event-add[data-key=receive]",
         "data-testid=swap-sub-event-add[data-key=spend]",
-        "data-testid=swap-sub-event-notes[data-key=fee]",
         "data-testid=swap-sub-event-notes[data-key=receive]",
         "data-testid=swap-sub-event-notes[data-key=spend]",
         "data-testid=tx-ref",
@@ -209,8 +204,9 @@ describe('forms/SolanaSwapEventForm', () => {
 
     expect(wrapper.find('[data-testid=has-fee]').exists()).toBe(true);
     expect(wrapper.find<HTMLInputElement>('[data-testid=has-fee]').element.checked).toBeUndefined();
-    expect(wrapper.find('[data-testid=sub-event-amount][data-key=fee]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=sub-event-asset][data-key=fee]').exists()).toBe(true);
+    // no fee yet, so no fee rows to fill in
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=fee]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=sub-event-asset][data-key=fee]').exists()).toBe(false);
 
     expect(wrapper.find('[data-testid=address]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=sequence-index]').exists()).toBe(true);
@@ -218,16 +214,15 @@ describe('forms/SolanaSwapEventForm', () => {
 
     expect(wrapper.find('[data-testid=swap-sub-event-notes][data-key=spend]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=swap-sub-event-notes][data-key=receive]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=swap-sub-event-notes][data-key=fee]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=swap-sub-event-notes][data-key=fee]').exists()).toBe(false);
   });
 
-  it('should enable fee-related fields when "Has Fee" checkbox is toggled', async () => {
+  it('should show the fee rows once "Has Fee" is checked', async () => {
     wrapper = createWrapper();
 
     const feeToggle = wrapper.find('[data-testid=has-fee] input');
 
-    expect(wrapper.find('[data-testid=sub-event-amount][data-key=fee] input').attributes('disabled')).toBeFalsy();
-    expect(wrapper.find('[data-testid=sub-event-asset][data-key=fee] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-testid=sub-event-amount][data-key=fee]').exists()).toBe(false);
 
     await feeToggle.setValue(true);
     await vi.advanceTimersToNextTimerAsync();

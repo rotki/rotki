@@ -116,6 +116,18 @@ describe('historyRefreshSelection', () => {
     expect(wrapper.find('[data-testid=refresh-selection-cancel]').exists()).toBe(false);
   });
 
+  it('should emit a repull and close the menu', async () => {
+    const menu = wrapper.findComponent(RuiMenuStub);
+    menu.vm.$emit('update:modelValue', true);
+    await nextTick();
+
+    await wrapper.find('[data-testid=refresh-selection-repull]').trigger('click');
+
+    expect(wrapper.emitted('repull')).toEqual([[]]);
+    expect(wrapper.emitted('refresh')).toBeUndefined();
+    expect(menu.props('modelValue')).toBe(false);
+  });
+
   it('should route select all to the tab that is showing', async () => {
     await wrapper.find('[data-testid=refresh-selection-select-all] input').trigger('click');
 

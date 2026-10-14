@@ -39,6 +39,42 @@ const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
   validatorIndex: () => context?.validatorIndex,
 });
 
+interface NoteDisplay {
+  note: NoteFormat;
+  /** The word just before an amount, kept on the amount's line. */
+  lead?: string;
+}
+
+/** The words of a run before an amount, if the amount can take the last one with it. */
+function wordsBefore(previous: NoteDisplay | undefined, note: NoteFormat): string | undefined {
+  if (note.type !== NoteType.AMOUNT || !note.amount || previous?.note.type !== NoteType.WORD)
+    return undefined;
+  return previous.note.word?.trimEnd() || undefined;
+}
+
+/**
+ * Moves the last word before each amount onto the amount, so a line break can never leave a word
+ * like "to" alone at a line's end with its amount on the next one.
+ */
+const displayNotes = computed<NoteDisplay[]>(() => {
+  const display: NoteDisplay[] = [];
+  for (const note of get(formattedNotes)) {
+    const previous = display.at(-1);
+    const words = wordsBefore(previous, note);
+    if (!previous || !words) {
+      display.push({ note });
+      continue;
+    }
+    const cut = words.lastIndexOf(' ');
+    if (cut === -1)
+      display.pop();
+    else
+      previous.note = { ...previous.note, word: words.slice(0, cut) };
+    display.push({ lead: words.slice(cut + 1), note });
+  }
+  return display;
+});
+
 function isLinkType(t: any): t is keyof ExplorerUrls {
   return [NoteType.TX, NoteType.ADDRESS, NoteType.BLOCK].includes(t);
 }
@@ -55,7 +91,7 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
     class="notes-content text-sm text-rui-text-secondary leading-relaxed"
   >
     <template
-      v-for="(note, index) in formattedNotes"
+      v-for="({ note, lead }, index) in displayNotes"
       :key="index"
     >
       <template v-if="note.type === NoteType.FLAG && note.countryCode">
@@ -76,7 +112,7 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
       <HashLink
         v-else-if="note.showHashLink && note.address && isLinkType(note.type)"
         :key="index"
-        class="inline-flex align-middle bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 rounded-full m-0.5"
+        class="inline-flex align-middle bg-rui-grey-300/50 dark:bg-rui-grey-800/50 pr-1 rounded-full m-0.5"
         :class="{
           'pl-2': isLinkTypeWithoutImage(note.type, note.chain ?? chain),
         }"
@@ -85,7 +121,13 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
         :location="note.chain ?? chain"
         :display-mode="note.showCopyOnly ? 'copy' : 'default'"
       />
-      <template v-else-if="note.type === NoteType.AMOUNT">
+      <span
+        v-else-if="note.type === NoteType.AMOUNT"
+        :class="{ 'whitespace-nowrap': lead }"
+      >
+        <template v-if="lead">
+          {{ ` ${lead} ` }}
+        </template>
         <AssetAmountDisplay
           v-if="note.amount && note.asset"
           :key="`${index}-amount`"
@@ -100,7 +142,7 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
           no-truncate
           :value="note.amount"
         />
-      </template>
+      </span>
       <ExternalLink
         v-else-if="note.type === NoteType.URL && note.url"
         :key="`${index}-link`"

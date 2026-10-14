@@ -191,13 +191,13 @@ defineExpose({
     />
 
     <SwapSubEventList
+      v-if="state.hasFee"
       v-model="state.fee"
       data-testid="fee"
       path="fee"
       :errors="form.errors"
       :touch="form.touch"
       :location="state.location"
-      :disabled="!state.hasFee"
       :timestamp="state.timestamp"
       type="fee"
     />

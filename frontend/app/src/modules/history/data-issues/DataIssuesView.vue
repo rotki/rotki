@@ -251,28 +251,28 @@ onMounted(async () => {
         @select="selectState($event)"
       />
 
-      <RuiCard>
-        <PillFilterBar
-          v-model:matches="filters"
-          class="mb-4"
-          :fields="fields"
-          :labels="pillLabels"
-        />
-
-        <DataIssuesTable
-          v-model:pagination="pagination"
-          :rows="state.data"
-          :loading="showLoading"
-          :empty-description="emptyDescription"
-          :show-clear-filters="isEmpty && hasActiveFilters"
-          @open="openDetail($event)"
-          @goto="goToEvent($event)"
-          @dismiss="onDismiss($event.id)"
-          @retry="onRetry($event.id)"
-          @resolve="onResolveFromRow($event)"
-          @clear-filters="clearFilters()"
-        />
-      </RuiCard>
+      <DataIssuesTable
+        v-model:pagination="pagination"
+        :rows="state.data"
+        :loading="showLoading"
+        :empty-description="emptyDescription"
+        :show-clear-filters="isEmpty && hasActiveFilters"
+        @open="openDetail($event)"
+        @goto="goToEvent($event)"
+        @dismiss="onDismiss($event.id)"
+        @retry="onRetry($event.id)"
+        @resolve="onResolveFromRow($event)"
+        @clear-filters="clearFilters()"
+      >
+        <template #toolbar>
+          <PillFilterBar
+            v-model:matches="filters"
+            class="flex-1 min-w-64"
+            :fields="fields"
+            :labels="pillLabels"
+          />
+        </template>
+      </DataIssuesTable>
     </div>
 
     <DataIssueDetailDrawer

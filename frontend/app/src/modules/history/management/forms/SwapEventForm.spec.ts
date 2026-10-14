@@ -131,9 +131,6 @@ describe('forms/SwapEventForm', () => {
       [
         "data-testid=advanced-accordion",
         "data-testid=datetime",
-        "data-testid=fee-add",
-        "data-testid=fee-amount",
-        "data-testid=fee-asset",
         "data-testid=has-fee",
         "data-testid=location",
         "data-testid=receive-notes",
@@ -163,7 +160,8 @@ describe('forms/SwapEventForm', () => {
 
     expect(wrapper.find('[data-testid=has-fee]').exists()).toBe(true);
     expect(wrapper.find<HTMLInputElement>('[data-testid=has-fee]').element.checked).toBeUndefined();
-    expect(wrapper.find('[data-testid=fee-add]').exists()).toBe(true);
+    // no fee yet, so no fee rows to fill in
+    expect(wrapper.find('[data-testid=fee-add]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=advanced-accordion]').exists()).toBe(true);
 
     expect(wrapper.find('[data-testid=spend-notes]').exists()).toBe(true);
@@ -228,18 +226,16 @@ describe('forms/SwapEventForm', () => {
     expect(wrapper.find('[data-testid=sub-event-asset][data-key=spend] .details').exists()).toBe(true);
   });
 
-  it('should enable fee-related fields when "Has Fee" checkbox is toggled', async () => {
+  it('should show the fee rows once "Has Fee" is checked', async () => {
     wrapper = createWrapper();
 
-    const feeAddButton = wrapper.find('[data-testid=fee-add]');
-    const feeToggle = wrapper.find('[data-testid=has-fee] input');
+    expect(wrapper.find('[data-testid=fee-add]').exists()).toBe(false);
 
-    expect(feeAddButton.attributes('disabled')).toBe('');
-
-    await feeToggle.setValue(true);
+    await wrapper.find('[data-testid=has-fee] input').setValue(true);
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(feeAddButton.attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('[data-testid=fee-add]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=fee-amount]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=fee-notes][data-index="1"]').exists()).toBe(true);
   });
 

@@ -7,7 +7,10 @@ defineProps<{
   processing: boolean;
 }>();
 
-const emit = defineEmits<{ refresh: [payload?: HistoryRefreshEventData] }>();
+const emit = defineEmits<{
+  refresh: [payload?: HistoryRefreshEventData];
+  repull: [];
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -27,7 +30,6 @@ function confirmRefresh() {
   <RuiButtonGroup
     variant="outlined"
     color="primary"
-    size="lg"
     :class="{ 'outline-rui-text-disabled!': processing }"
   >
     <RuiTooltip :open-delay="400">
@@ -53,6 +55,7 @@ function confirmRefresh() {
       :processing="processing"
       :disabled="processing"
       @refresh="emit('refresh', $event)"
+      @repull="emit('repull')"
     />
   </RuiButtonGroup>
 </template>

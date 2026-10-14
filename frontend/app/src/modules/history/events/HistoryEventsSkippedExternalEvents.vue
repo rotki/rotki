@@ -10,15 +10,11 @@ const { exportCSV, loading, locationsData, reProcessSkippedEvents, skippedEvents
 
 const headers: DataTableColumn<SkippedEventsLocation>[] = [
   {
-    align: 'center',
-    cellClass: 'py-3',
     key: 'location',
     label: t('common.location'),
   },
   {
     align: 'end',
-    cellClass: 'pr-12!',
-    class: 'pr-12!',
     key: 'number',
     label: t('transactions.events.skipped.headers.number'),
   },
@@ -59,17 +55,20 @@ const headers: DataTableColumn<SkippedEventsLocation>[] = [
           {{ t('transactions.events.skipped.reprocess.action') }}
         </RuiButton>
       </div>
+      <p
+        v-if="skippedEvents.total === 0"
+        class="text-sm text-rui-text-secondary py-2"
+      >
+        {{ t('transactions.events.skipped.no_skipped_events') }}
+      </p>
       <RuiDataTable
+        v-else
         :cols="headers"
         :rows="locationsData"
         row-attr="location"
         dense
-        striped
         outlined
-        class="bg-white dark:bg-transparent"
-        :empty="{
-          description: t('transactions.events.skipped.no_skipped_events'),
-        }"
+        hide-pagination
       >
         <template #item.location="{ row }">
           <LocationDisplay :identifier="row.location" />
@@ -78,9 +77,11 @@ const headers: DataTableColumn<SkippedEventsLocation>[] = [
           {{ row.number }}
         </template>
         <template #tfoot>
-          <tr>
-            <th>{{ t('common.total') }}</th>
-            <td class="text-end pr-12 py-2">
+          <tr class="text-sm font-medium">
+            <td class="px-4 py-2">
+              {{ t('common.total') }}
+            </td>
+            <td class="px-4 py-2 text-end">
               {{ skippedEvents.total }}
             </td>
           </tr>

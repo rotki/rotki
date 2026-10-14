@@ -16,7 +16,6 @@ import {
 } from '@/modules/history/events/event-action-visibility';
 import { editTargetFor } from '@/modules/history/events/history-event-edit-target';
 import HistoryEventAction from '@/modules/history/events/HistoryEventAction.vue';
-import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const { item, index, completeGroupEvents, canUnlink, collapseAction } = defineProps<{
   item: HistoryEventEntry;
@@ -71,43 +70,20 @@ function deleteEvent(item: HistoryEventEntry) {
       [COLLAPSE_ACTION_CLASSES]: collapseAction && !hasMissingRule,
     }"
   >
-    <!-- Edit/Delete/Other actions - hidden on default when missing rule, visible on hover -->
-    <RowActions
+    <HistoryEventAction
       :class="{
         'opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity': hasMissingRule && !collapseAction,
         [COLLAPSE_ACTION_CLASSES]: hasMissingRule && collapseAction,
       }"
-      align="end"
-      :delete-tooltip="t('transactions.events.actions.delete')"
-      :edit-tooltip="t('transactions.events.actions.edit')"
-      :no-delete="hideDeleteAction(item, index, completeGroupEvents)"
-      :no-edit="hideEditAction(item, index)"
-      @edit-click="editEvent(item)"
-      @delete-click="deleteEvent(item)"
-    >
-      <!-- A missing rule replaces the overflow menu, so unlink gets its own button or it is unreachable here. -->
-      <RuiButton
-        v-if="canUnlink && hasMissingRule"
-        data-testid="row-unlink"
-        :title="t('transactions.events.actions.unlink')"
-        variant="text"
-        icon
-        @click="emit('unlink-event')"
-      >
-        <RuiIcon
-          size="16"
-          name="lu-unlink"
-        />
-      </RuiButton>
-      <HistoryEventAction
-        v-else-if="!hasMissingRule"
-        :event="item"
-        :can-unlink="canUnlink"
-        @unlink="emit('unlink-event')"
-      />
-    </RowActions>
+      :event="item"
+      :can-edit="!hideEditAction(item, index)"
+      :can-delete="!hideDeleteAction(item, index, completeGroupEvents)"
+      :can-unlink="canUnlink"
+      @edit="editEvent(item)"
+      @delete="deleteEvent(item)"
+      @unlink="emit('unlink-event')"
+    />
 
-    <!-- Warning button - always visible when there's a missing rule (shown last/rightmost) -->
     <RuiButton
       v-if="hasMissingRule"
       :title="t('actions.history_events.missing_rule.title')"

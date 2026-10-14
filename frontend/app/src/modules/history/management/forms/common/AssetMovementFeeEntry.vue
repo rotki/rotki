@@ -29,12 +29,13 @@ const { t } = useI18n({ useScope: 'global' });
       color="primary"
     />
 
-    <div class="grid md:grid-cols-2 gap-4">
+    <div
+      v-if="hasFee"
+      class="grid md:grid-cols-2 gap-4 mt-2"
+    >
       <AmountInput
         v-model="fee"
-        :disabled="!hasFee"
         clearable
-        variant="outlined"
         data-testid="fee-amount"
         :label="t('common.fee')"
         :error-messages="errorMessages.fee"
@@ -42,8 +43,6 @@ const { t } = useI18n({ useScope: 'global' });
       />
       <AssetSelect
         v-model="feeAsset"
-        :disabled="!hasFee"
-        variant="outlined"
         clearable
         data-testid="fee-asset"
         :label="t('transactions.events.form.fee_asset.label')"

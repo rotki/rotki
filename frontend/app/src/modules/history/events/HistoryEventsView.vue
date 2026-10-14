@@ -32,6 +32,7 @@ import {
   type EventPriceUpdatePayload,
   provideEventPriceUpdate,
 } from '@/modules/history/events/prices/use-event-price-update-trigger';
+import { useHistoryEventsSection } from '@/modules/history/events/use-history-events-section';
 import { provideHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
 import { useHistoryEventsViewActions } from '@/modules/history/events/use-history-events-view-actions';
 import { toTableSource } from '@/modules/history/events/view-projections';
@@ -47,6 +48,11 @@ const { mainPage = false, restrictions = {}, sectionTitle = '' } = defineProps<{
   mainPage?: boolean;
 }>();
 
+defineSlots<{
+  /** Replaces the heading above the frame when embedded, e.g. to set actions beside the title. */
+  title?: () => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
@@ -59,7 +65,7 @@ const dialogContainer = useTemplateRef<InstanceType<typeof HistoryEventsDialogCo
 
 const tableHeightOffset = useHistoryEventsTableHeight(
   useTemplateRef<ComponentPublicInstance>('tableActions'),
-  useTemplateRef<ComponentPublicInstance>('filtersChips'),
+  useTemplateRef<HTMLDivElement>('contextStrip'),
 );
 
 const {
@@ -187,6 +193,12 @@ provideEventPriceUpdate({
 });
 
 useHistoryEventsDialogRouting(dialogContainer);
+
+const section = useHistoryEventsSection();
+
+// A page showing the events as one of its sections refreshes them with the rest of the page.
+if (section)
+  watch(section.reloads, async () => actions.fetch.dataAndLocations());
 </script>
 
 <template>
@@ -201,6 +213,7 @@ useHistoryEventsDialogRouting(dialogContainer);
         <HistoryEventsViewButtons
           :processing="processing"
           :loading="anyEventsDecoding"
+          @redecode="actions.redecode.by($event)"
           @refresh="actions.refresh.all(true, $event)"
           @show:dialog="dialogContainer?.show($event)"
         />
@@ -208,72 +221,81 @@ useHistoryEventsDialogRouting(dialogContainer);
 
       <div>
         <div class="flex gap-4 items-start">
-          <RuiCard class="flex-1 min-w-0">
-            <template
+          <section
+            class="flex-1 min-w-0"
+            data-testid="history-events-container"
+          >
+            <div
               v-if="!mainPage"
-              #header
+              class="flex items-center gap-x-1 mb-3 min-h-8"
             >
-              <div class="flex items-center gap-x-1">
+              <slot name="title">
                 <RefreshButton
+                  v-if="!section"
                   :disabled="refreshing"
                   :tooltip="t('transactions.refresh_tooltip')"
                   @refresh="actions.refresh.all(true)"
                 />
-                {{ usedTitle }}
-              </div>
-            </template>
-
-            <HistoryEventsTableActions
-              ref="tableActions"
-              v-model:filters="filters"
-              v-model:toggles="toggles"
-              :action="action"
-              :location-labels="locationLabels"
-              :processing="processing"
-              :fields="fields"
-              :export-params="requestPayload"
-              :hide-redecode-buttons="!mainPage"
-              :selection="selectionMode.state.value"
-              :ignore-status="ignoreStatus"
-              @update:action="onActionChanged($event)"
-              @update:location-labels="onLocationLabelsChanged($event)"
-              @redecode="actions.redecode.by($event)"
-              @selection:action="handleSelectionAction($event)"
-            />
-
-            <div
-              v-if="overlayAvailable"
-              class="flex items-center justify-end gap-2 px-2 pt-2 mb-1"
-            >
-              <AccountingOverlayToggle v-model="overlayMode" />
-              <BalanceDivergenceToggle />
+                <h3 class="text-base font-semibold text-rui-text m-0">
+                  {{ usedTitle }}
+                </h3>
+              </slot>
             </div>
 
-            <HistoryEventsFiltersChips
-              ref="filtersChips"
-              :group-identifiers="groupIdentifiers"
-              :duplicate-handling-status="duplicateHandlingStatus"
-              @refresh="actions.fetch.dataAndLocations()"
-            />
+            <div class="border border-rui-divider rounded-rui-card overflow-hidden bg-rui-surface">
+              <HistoryEventsTableActions
+                ref="tableActions"
+                v-model:filters="filters"
+                v-model:toggles="toggles"
+                class="mb-0! p-3 border-b border-rui-divider"
+                :action="action"
+                :location-labels="locationLabels"
+                :fields="fields"
+                :export-params="requestPayload"
+                :selection="selectionMode.state.value"
+                :ignore-status="ignoreStatus"
+                @update:action="onActionChanged($event)"
+                @update:location-labels="onLocationLabelsChanged($event)"
+                @selection:action="handleSelectionAction($event)"
+              />
 
-            <HistoryEventsVirtualTable
-              v-model:sort="sort"
-              v-model:pagination="pagination"
-              :table-height-offset="tableHeightOffset"
-              :processing="processing || refreshing"
-              :source="tableSource"
-              :highlight="tableHighlight"
-              :has-active-filters="hasActiveFilters"
-              :duplicate-handling-status="duplicateHandlingStatus"
-              @clear-filters="clearFilters()"
-              @show:dialog="dialogContainer?.show($event)"
-              @refresh="handleRedecode($event)"
-              @refresh:block-event="actions.redecode.blocks($event)"
-              @refetch="refetch()"
-              @set-page="setPage($event)"
-              @update-event-ids="handleUpdateEventIds($event)"
-            />
-          </RuiCard>
+              <div
+                ref="contextStrip"
+                class="flex flex-wrap items-start gap-2 px-3 py-2 empty:hidden"
+              >
+                <HistoryEventsFiltersChips
+                  class="mr-auto"
+                  :group-identifiers="groupIdentifiers"
+                  :duplicate-handling-status="duplicateHandlingStatus"
+                  @refresh="actions.fetch.dataAndLocations()"
+                />
+                <AccountingOverlayToggle
+                  v-if="overlayAvailable"
+                  v-model="overlayMode"
+                  class="ml-auto"
+                />
+                <BalanceDivergenceToggle v-if="overlayAvailable" />
+              </div>
+
+              <HistoryEventsVirtualTable
+                v-model:sort="sort"
+                v-model:pagination="pagination"
+                :table-height-offset="tableHeightOffset"
+                :processing="processing || refreshing"
+                :source="tableSource"
+                :highlight="tableHighlight"
+                :has-active-filters="hasActiveFilters"
+                :duplicate-handling-status="duplicateHandlingStatus"
+                @clear-filters="clearFilters()"
+                @show:dialog="dialogContainer?.show($event)"
+                @refresh="handleRedecode($event)"
+                @refresh:block-event="actions.redecode.blocks($event)"
+                @refetch="refetch()"
+                @set-page="setPage($event)"
+                @update-event-ids="handleUpdateEventIds($event)"
+              />
+            </div>
+          </section>
         </div>
 
         <HistoryEventsDialogContainer

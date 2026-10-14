@@ -7,9 +7,8 @@ import HistoryEventsListItemAction from '@/modules/history/events/HistoryEventsL
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry } from '@/modules/history/events/schemas';
 
 /**
- * Seam: which unlink affordance the row offers. A missing accounting rule replaces the overflow
- * menu with the warning button, so an unlinkable row needs its own unlink button there or the
- * action is unreachable without expanding the subgroup.
+ * Seam: every action on an event goes through its one overflow menu, missing rule or not, so the
+ * row passes the menu what may be done and turns its choices into the row's own events.
  */
 describe('modules/history/events/HistoryEventsListItemAction', () => {
   let wrapper: VueWrapper | undefined;
@@ -34,24 +33,48 @@ describe('modules/history/events/HistoryEventsListItemAction', () => {
     return wrapper;
   }
 
-  it('should offer unlink as its own button when a missing rule hides the menu', async () => {
+  it('should keep the menu, with unlink in it, when a missing rule shows its warning', () => {
     const action = mountAction({ canUnlink: true, missingRule: true });
 
-    expect(action.findComponent(HistoryEventAction).exists()).toBe(false);
-    await action.find('[data-testid="row-unlink"]').trigger('click');
-    expect(action.emitted('unlink-event')).toHaveLength(1);
+    expect(action.findComponent(HistoryEventAction).props('canUnlink')).toBe(true);
   });
 
   it('should offer unlink through the menu when the rule is present', () => {
     const action = mountAction({ canUnlink: true });
 
-    expect(action.find('[data-testid="row-unlink"]').exists()).toBe(false);
     expect(action.findComponent(HistoryEventAction).props('canUnlink')).toBe(true);
   });
 
   it('should offer no unlink at all for a row that cannot be unlinked', () => {
     const action = mountAction({ missingRule: true });
 
-    expect(action.find('[data-testid="row-unlink"]').exists()).toBe(false);
+    expect(action.findComponent(HistoryEventAction).props('canUnlink')).toBeFalsy();
+  });
+
+  it('should turn the menu\'s unlink into the row\'s unlink', async () => {
+    const action = mountAction({ canUnlink: true });
+
+    action.findComponent(HistoryEventAction).vm.$emit('unlink');
+    await nextTick();
+
+    expect(action.emitted('unlink-event')).toHaveLength(1);
+  });
+
+  it('should open the event for editing from the menu', async () => {
+    const action = mountAction({});
+
+    action.findComponent(HistoryEventAction).vm.$emit('edit');
+    await nextTick();
+
+    expect(action.emitted('edit-event')).toHaveLength(1);
+  });
+
+  it('should ask to delete the event from the menu', async () => {
+    const action = mountAction({});
+
+    action.findComponent(HistoryEventAction).vm.$emit('delete');
+    await nextTick();
+
+    expect(action.emitted('delete-event')).toHaveLength(1);
   });
 });

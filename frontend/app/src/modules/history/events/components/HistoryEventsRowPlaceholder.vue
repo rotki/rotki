@@ -9,26 +9,21 @@ const card = computed<boolean>(() => variant === 'card');
 <template>
   <div
     class="animate-pulse contain-content"
-    :class="card ? 'p-3 border-b border-default' : 'h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6'"
+    :class="card ? 'h-34 p-3 flex flex-col gap-2 border-b border-default' : 'h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6'"
   >
     <template v-if="card">
-      <!-- Top row: Event type with icon -->
-      <div class="flex items-center gap-3 mb-2">
+      <div class="h-14 flex items-center gap-3">
         <div class="size-10 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700 shrink-0" />
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-1 flex-1">
           <div class="h-4 w-20 rounded-sm bg-rui-grey-300 dark:bg-rui-grey-700" />
           <div class="h-3 w-14 rounded-sm bg-rui-grey-200 dark:bg-rui-grey-800" />
         </div>
-      </div>
-      <!-- Middle row: Asset & Amount -->
-      <div class="flex items-center gap-2 mb-2">
-        <div class="size-8 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700" />
+        <div class="size-8 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700 shrink-0" />
         <div class="flex flex-col gap-1">
           <div class="h-4 w-24 rounded-sm bg-rui-grey-300 dark:bg-rui-grey-700" />
           <div class="h-3 w-16 rounded-sm bg-rui-grey-200 dark:bg-rui-grey-800" />
         </div>
       </div>
-      <!-- Bottom row: Notes -->
       <div class="h-3 w-3/4 rounded-sm bg-rui-grey-200 dark:bg-rui-grey-800" />
     </template>
     <template v-else>

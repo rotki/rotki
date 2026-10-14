@@ -2796,11 +2796,12 @@
       "divergence_no_mismatch": "The cause is probably not a missing or wrong event in this wallet. Look for an ignored event, or an event recorded under another account or protocol.",
       "divergence_scope": "Compares the tracked wallet balance with the on-chain balance up to {date}.",
       "event_date": "Affected event:",
+      "match_in_history": "Match in history",
       "no_attempts": "No automatic checks or fixes have been attempted yet.",
+      "open_event": "Open event #{id}",
       "redecoding_failed": "rotki could not compare the customized transactions with the current decoder. Your saved events were left unchanged.",
       "redecoding_would_change_balance": "Current decoding differs from your saved events for this account and asset. Your saved events are unchanged. Whether these differences resolve the negative balance has not been verified.",
       "redecoding_would_not_change_balance": "Current decoding has the same effect on this account and asset balance as your saved events. Your saved events are unchanged.",
-      "related_event": "Related history event: #{id}",
       "remediation_history": "Automatic checks and fixes",
       "resolution_note": "Resolution note",
       "title": "Issue details",
@@ -2909,7 +2910,11 @@
   },
   "data_table": {
     "fetch_failed": "Could not load the data",
+    "first_page": "First page",
+    "last_page": "Last page",
+    "next_page": "Next page",
     "no_data": "No data available",
+    "previous_page": "Previous page",
     "rows_per_page": "Rows per page"
   },
   "database_backups": {
@@ -4287,6 +4292,9 @@
     "bridge_description": "Bridge {spendAmount} {spendAsset} on {fromChain} to {receiveAmount} {receiveAsset} on {toChain}",
     "bridge_expanded": "Linked bridge · {count} events",
     "bridge_label": "Bridge",
+    "collapse_events": "Collapse the {count} events",
+    "event_count": "{count} events",
+    "expand_events": "Show the {count} events",
     "fee_description": "{notes} with fee: {feeText}",
     "movement_expanded": "Linked movement · {count} events",
     "swap_description": "Swap {spendAmount} {spendAsset} for {receiveAmount} {receiveAsset}",
@@ -4309,6 +4317,7 @@
     "non_syncing_hint": "{count} exchange is excluded from syncing | {count} exchanges are excluded from syncing",
     "refresh": "Refresh {total} {type}",
     "refresh_disabled": "Refreshing {service} is disabled because the required API key is not configured",
+    "repull": "Re-pull a time range…",
     "search_address": "Search by address",
     "search_banks": "Search by bank",
     "search_chain": "Search by chain",
@@ -6783,7 +6792,9 @@
       "clear_filters": "Clear filters",
       "no_data_with_filters": "No events match the current filters",
       "no_events": "No events yet",
-      "syncing": "Your history is being queried and decoded"
+      "no_events_hint": "Connect an exchange or track a blockchain address to sync your history, or add an event manually.",
+      "syncing": "Your history is being queried and decoded",
+      "syncing_hint": "Events will appear here as they are processed. This can take a while on the first sync."
     },
     "events": {
       "accounting_rule": {
@@ -7026,7 +7037,6 @@
         "eth_block_event": "Block {blockNumber} produced",
         "eth_deposit_event": "Deposit events {txRef}",
         "eth_withdrawal_event": "Withdrawal for validator {validatorIndex}",
-        "event_identifier": "Event information",
         "evm_event": "Transaction {txRef}",
         "evm_swap_event": "EVM swap event",
         "history_event": "{location} event",
@@ -7048,6 +7058,7 @@
       },
       "redecoding": "Re-decoding",
       "selection_mode": {
+        "accounting_rule": "Accounting rule",
         "all_matching_selected": "All events in {count} groups are selected",
         "create_rule": "Set custom accounting rule",
         "delete_selected": "Delete selected events",
@@ -7055,7 +7066,6 @@
         "no_events": "There is no event to select",
         "select_all_matching": "Select all matching events",
         "select_all_page": "Select all on this page",
-        "selected_count": "{count} selected",
         "tooltip": "Select multiple events",
         "unignore": "Include in accounting (PnL)"
       },
