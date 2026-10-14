@@ -2113,7 +2113,6 @@
     "status": "状态",
     "tags": "标签",
     "total": "总计",
-    "trades": "交易 | 交易",
     "tx_hash": "交易哈希",
     "type": "类型",
     "unclaimed": "未领取",
@@ -2627,8 +2626,7 @@
         },
         "take_snapshot": "创建快照",
         "take_snapshot_confirm": {
-          "message": "这将忽略缓存重新获取所有余额并保存新快照。过程可能较慢，并可能触发 API 速率限制。是否继续？",
-          "title": "创建快照"
+          "message": "这将忽略缓存重新获取所有余额并保存新快照。过程可能较慢，并可能触发 API 速率限制。是否继续？"
         },
         "title": "快照"
       },
@@ -4122,9 +4120,6 @@
       "placeholder": "选择操作",
       "recent": "最近使用"
     }
-  },
-  "history_events_alert": {
-    "nudge": "历史事件需要查询和解码。请前往{link}页面以确保数据是最新的。"
   },
   "history_events_list_swap": {
     "bridge_description": "将 {fromChain} 上的 {spendAmount} {spendAsset} 跨链为 {toChain} 上的 {receiveAmount} {receiveAsset}",
@@ -7029,20 +7024,39 @@
     "message": "rotki 支持的最低 Windows 版本是 Windows 8 (6.2)"
   },
   "wrapped": {
+    "all_time": "全部时间",
+    "empty": {
+      "description": "请选择其他日期范围，或确认你的历史事件已查询并解码。",
+      "title": "此期间没有活动"
+    },
     "exchange_activity": "各交易所的交易",
-    "filter_by_date": "按日期筛选",
     "free_limit": "事件分析视图不可用",
     "gas_spent": "各地址花费的 Gas（ETH）",
-    "gas_spent_total": "Gas 总花费（ETH）",
-    "get_data": "获取数据",
     "get_rotki_premium": "获取 rotki 高级版",
     "gnosis_payments": "Gnosis Pay 各币种最大单笔支付",
+    "highlights": {
+      "busiest_day": "最繁忙的一天",
+      "gas": "Gas 花费",
+      "trades": "交易",
+      "transactions": "链上交易"
+    },
     "loading": "请稍候，我们正在刷新你的历史事件，以确保回顾数据为最新。",
     "premium_nudge": "升级高级版，解锁 rotki 全部功能",
     "protocol_activity": "各协议的交易数量",
+    "show_all": "显示全部 {count} 项",
+    "show_less": "收起",
+    "sync": {
+      "action": "前往历史事件同步",
+      "never": "你的历史事件尚未同步，因此此分析可能不完整。",
+      "stale": "历史上次同步于{time}。"
+    },
     "title": "事件分析",
     "top_days": "你交易最频繁的日子",
     "transactions_by_chain": "各链交易数",
+    "unit": {
+      "trades": "笔交易",
+      "transactions": "笔链上交易"
+    },
     "year_subtitle": "你的 DeFi 活动明细"
   }
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import HistoricalBalancesAsOf from '@/modules/statistics/historical-balances/components/HistoricalBalancesAsOf.vue';
@@ -52,7 +53,7 @@ async function reload(): Promise<void> {
 </script>
 
 <template>
-  <TablePageLayout :title="[t('navigation_menu.statistics_sub.historical_balances')]">
+  <TablePageLayout :title="[t('navigation_menu.statistics'), t('navigation_menu.statistics_sub.historical_balances')]">
     <template #buttons>
       <RuiTooltip
         :disabled="!blockedReason"
@@ -89,7 +90,7 @@ async function reload(): Promise<void> {
       </RuiButton>
     </template>
 
-    <RuiCard content-class="flex flex-col gap-4">
+    <div class="flex flex-col gap-4">
       <HistoricalBalancesAsOf v-model="modelDay" />
 
       <RuiAlert
@@ -138,9 +139,10 @@ async function reload(): Promise<void> {
 
       <div
         v-else-if="rows.length > 0"
+        class="flex flex-col gap-1"
         data-testid="historical-balances-total"
       >
-        <div class="text-rui-text-secondary text-caption uppercase">
+        <div class="text-sm text-rui-text-secondary">
           <i18n-t
             keypath="historical_balances.total.title"
             scope="global"
@@ -161,16 +163,33 @@ async function reload(): Promise<void> {
           </span>
         </div>
         <FiatDisplay
-          class="text-h5 font-medium"
+          class="self-start min-w-48 text-h5 font-medium leading-8"
           :value="summary.total"
           :loading="summary.pendingCount > 0 && summary.total.isZero()"
         />
         <div
           v-if="summary.pendingCount > 0 || summary.missingCount > 0 || summary.spamCount > 0"
-          class="flex flex-col text-body-2 text-rui-text-secondary mt-1"
+          class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-rui-text-secondary"
         >
-          <span v-if="summary.pendingCount > 0">{{ t('historical_balances.total.pending', { count: summary.pendingCount }, summary.pendingCount) }}</span>
-          <span v-if="summary.missingCount > 0">{{ t('historical_balances.total.missing', { count: summary.missingCount }, summary.missingCount) }}</span>
+          <span
+            v-if="summary.pendingCount > 0"
+            class="flex items-center gap-1.5"
+          >
+            <RuiProgress
+              variant="indeterminate"
+              circular
+              size="12"
+              thickness="2"
+              color="primary"
+            />
+            {{ t('historical_balances.total.pending', { count: summary.pendingCount }, summary.pendingCount) }}
+          </span>
+          <span
+            v-if="summary.missingCount > 0"
+            class="text-rui-warning"
+          >
+            {{ t('historical_balances.total.missing', { count: summary.missingCount }, summary.missingCount) }}
+          </span>
           <span
             v-if="summary.spamCount > 0"
             data-testid="historical-balances-spam-count"
@@ -179,28 +198,31 @@ async function reload(): Promise<void> {
           </span>
         </div>
         <div
-          class="text-caption text-rui-text-secondary mt-1"
+          class="text-xs text-rui-text-secondary"
           data-testid="historical-balances-coverage"
         >
           {{ t('historical_balances.total.coverage') }}
         </div>
       </div>
 
-      <template v-if="!error">
-        <HistoricalBalancesFilters
-          v-model:locations="modelLocations"
-          v-model:accounts="modelAccounts"
-          v-model:search="modelSearch"
-          v-model:mode="modelMode"
-          :location-options="locations"
-          :account-options="accounts"
-        />
+      <TableFrame v-if="!error">
+        <template #toolbar>
+          <HistoricalBalancesFilters
+            v-model:locations="modelLocations"
+            v-model:accounts="modelAccounts"
+            v-model:search="modelSearch"
+            v-model:mode="modelMode"
+            class="w-full"
+            :location-options="locations"
+            :account-options="accounts"
+          />
+        </template>
         <HistoricalBalancesTable
           :rows="rows"
           :loading="loading"
           :filtered="filtered"
         />
-      </template>
-    </RuiCard>
+      </TableFrame>
+    </div>
   </TablePageLayout>
 </template>

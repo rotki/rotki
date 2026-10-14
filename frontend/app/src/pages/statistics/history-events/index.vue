@@ -2,6 +2,7 @@
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import WrappedContainer from '@/modules/statistics/wrapped/components/WrappedContainer.vue';
 import WrappedContainerPlaceholder from '@/modules/statistics/WrappedContainerPlaceholder.vue';
 
@@ -12,14 +13,19 @@ definePage({
   },
 });
 
+const { t } = useI18n({ useScope: 'global' });
+
 const { allowed } = useFeatureAccess(PremiumFeature.EVENT_ANALYSIS_VIEW);
 </script>
 
 <template>
-  <div class="container">
-    <RuiCard class="max-w-[920px] mx-auto">
-      <WrappedContainer v-if="allowed" />
-      <WrappedContainerPlaceholder v-else />
+  <TablePageLayout :title="[t('navigation_menu.statistics'), t('navigation_menu.statistics_sub.history_events')]">
+    <WrappedContainer v-if="allowed" />
+    <RuiCard
+      v-else
+      class="max-w-[920px] mx-auto"
+    >
+      <WrappedContainerPlaceholder />
     </RuiCard>
-  </div>
+  </TablePageLayout>
 </template>

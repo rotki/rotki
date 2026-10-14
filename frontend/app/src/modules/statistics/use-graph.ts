@@ -11,8 +11,9 @@ export function useGraph(): NewGraphApi {
 
   provide(THEME_KEY, store);
 
-  const white = '#ffffff';
-  const secondaryBlack = '#3f1300';
+  // neutral greys, so only the theme's graph color carries hue
+  const secondaryLight = '#3f3f46';
+  const secondaryDark = '#d4d4d8';
 
   const baseColor = computed<string>(() => get(usedTheme).graph);
 
@@ -34,7 +35,7 @@ export function useGraph(): NewGraphApi {
     };
   });
 
-  const secondaryColor = computed<string>(() => (get(isDark) ? white : secondaryBlack));
+  const secondaryColor = computed<string>(() => (get(isDark) ? secondaryDark : secondaryLight));
 
   return {
     baseColor,

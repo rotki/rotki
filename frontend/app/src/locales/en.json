@@ -2174,7 +2174,6 @@
     "status": "Status",
     "tags": "Tags",
     "total": "Total",
-    "trades": "Trade|Trades",
     "tx_hash": "Tx Hash",
     "type": "Type",
     "unclaimed": "Unclaimed",
@@ -2692,8 +2691,7 @@
         },
         "take_snapshot": "Take snapshot",
         "take_snapshot_confirm": {
-          "message": "This refetches all your balances ignoring the cache and saves a new snapshot. It can be slow and may hit API rate limits. Continue?",
-          "title": "Take snapshot"
+          "message": "This refetches all your balances ignoring the cache and saves a new snapshot. It can be slow and may hit API rate limits. Continue?"
         },
         "title": "Snapshots"
       },
@@ -4283,9 +4281,6 @@
       "placeholder": "Choose an action",
       "recent": "Recent"
     }
-  },
-  "history_events_alert": {
-    "nudge": "History events need to be queried and decoded. Navigate to {link} view to ensure your data is up to date."
   },
   "history_events_list_swap": {
     "bridge_description": "Bridge {spendAmount} {spendAsset} on {fromChain} to {receiveAmount} {receiveAsset} on {toChain}",
@@ -7316,20 +7311,39 @@
     "message": "rotki's minimum supported Windows version is Windows 8(6.2)"
   },
   "wrapped": {
+    "all_time": "All time",
+    "empty": {
+      "description": "Pick another date range, or make sure your history events are queried and decoded.",
+      "title": "No activity in this period"
+    },
     "exchange_activity": "Trades by exchange",
-    "filter_by_date": "Filter by date",
     "free_limit": "The events analysis view is not available",
     "gas_spent": "ETH spent on gas per address",
-    "gas_spent_total": "Total ETH spent on gas",
-    "get_data": "Get data",
     "get_rotki_premium": "Get rotki premium",
     "gnosis_payments": "Gnosis Pay top single payments by currency",
+    "highlights": {
+      "busiest_day": "Busiest day",
+      "gas": "Spent on gas",
+      "trades": "Trades",
+      "transactions": "Transactions"
+    },
     "loading": "Hang on, we are refreshing your history events to make sure your wrapped data is up to date.",
     "premium_nudge": "Unlock all the rotki potential with premium",
     "protocol_activity": "Number of transactions by protocol",
+    "show_all": "Show all {count}",
+    "show_less": "Show less",
+    "sync": {
+      "action": "Sync in History events",
+      "never": "Your history events have not been synced yet, so this analysis may be incomplete.",
+      "stale": "History last synced {time}."
+    },
     "title": "Events Analysis",
     "top_days": "Your busiest transaction days",
     "transactions_by_chain": "Transactions per chain",
+    "unit": {
+      "trades": "trade | trades",
+      "transactions": "transaction | transactions"
+    },
     "year_subtitle": "Your DeFi Activity Breakdown"
   }
 }

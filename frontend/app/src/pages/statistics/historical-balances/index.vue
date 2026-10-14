@@ -22,7 +22,7 @@ const premium = usePremium();
   <HistoricalBalancesView v-if="premium" />
   <TablePageLayout
     v-else
-    :title="[t('navigation_menu.statistics_sub.historical_balances')]"
+    :title="[t('navigation_menu.statistics'), t('navigation_menu.statistics_sub.historical_balances')]"
   >
     <GetPremiumPlaceholder
       :title="t('navigation_menu.statistics_sub.historical_balances')"

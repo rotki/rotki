@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { useWrappedFormatters } from '@/modules/statistics/wrapped/use-wrapped-formatters';
 
 describe('useWrappedFormatters', () => {
-  const { calculateFontSize, formatDate, hasSectionData } = useWrappedFormatters();
+  const { calculateFontSize, formatDate, formatShortDate, hasSectionData } = useWrappedFormatters();
 
   describe('hasSectionData', () => {
     it('should return false for undefined data', () => {
@@ -31,6 +31,13 @@ describe('useWrappedFormatters', () => {
     it('should format a unix timestamp as a full date', () => {
       const timestamp = dayjs('2023-06-15T12:00:00Z').unix();
       expect(formatDate(timestamp)).toBe(dayjs(timestamp * 1000).format('dddd, MMMM D, YYYY'));
+    });
+  });
+
+  describe('formatShortDate', () => {
+    it('should abbreviate the weekday and month', () => {
+      const timestamp = dayjs('2025-09-24T12:00:00Z').unix();
+      expect(formatShortDate(timestamp)).toBe(dayjs(timestamp * 1000).format('ddd, MMM D, YYYY'));
     });
   });
 

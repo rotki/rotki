@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 interface UseWrappedFormattersReturn {
   calculateFontSize: (symbol: string) => string;
   formatDate: (timestamp: number) => string;
+  formatShortDate: (timestamp: number) => string;
   hasSectionData: (data: Record<string, any> | Array<any> | undefined) => boolean;
 }
 
@@ -19,6 +20,11 @@ export function useWrappedFormatters(): UseWrappedFormattersReturn {
     return dayjs(timestamp * 1000).format('dddd, MMMM D, YYYY');
   }
 
+  /** The date for a narrow place, such as a highlight tile, where the long form would wrap. */
+  function formatShortDate(timestamp: number): string {
+    return dayjs(timestamp * 1000).format('ddd, MMM D, YYYY');
+  }
+
   function calculateFontSize(symbol: string): string {
     const length = symbol.length;
     return `${1.8 - length * 0.4}em`;
@@ -27,6 +33,7 @@ export function useWrappedFormatters(): UseWrappedFormattersReturn {
   return {
     calculateFontSize,
     formatDate,
+    formatShortDate,
     hasSectionData,
   };
 }

@@ -2133,7 +2133,6 @@
     "status": "Durum",
     "tags": "Etiketler",
     "total": "Toplam",
-    "trades": "alım satım|alım satım",
     "tx_hash": "İşlem hash'i",
     "type": "Tür",
     "unclaimed": "Talep edilmedi",
@@ -2647,8 +2646,7 @@
         },
         "take_snapshot": "Anlık görüntü al",
         "take_snapshot_confirm": {
-          "message": "Tüm bakiyeleriniz önbellek dikkate alınmadan yeniden alınacak ve yeni bir anlık görüntü kaydedilecek. Bu yavaş olabilir ve API istek sınırlarına takılabilir. Devam edilsin mi?",
-          "title": "Anlık görüntü al"
+          "message": "Tüm bakiyeleriniz önbellek dikkate alınmadan yeniden alınacak ve yeni bir anlık görüntü kaydedilecek. Bu yavaş olabilir ve API istek sınırlarına takılabilir. Devam edilsin mi?"
         },
         "title": "Anlık görüntüler"
       },
@@ -4201,9 +4199,6 @@
       "placeholder": "Bir eylem seçin",
       "recent": "Son kullanılanlar"
     }
-  },
-  "history_events_alert": {
-    "nudge": "Geçmiş olaylarının sorgulanması ve çözümlenmesi gerekiyor. Verilerinizin güncel olduğundan emin olmak için {link} görünümüne gidin."
   },
   "history_events_list_swap": {
     "bridge_description": "{fromChain} zincirindeki {spendAmount} {spendAsset}, {toChain} zincirinde {receiveAmount} {receiveAsset} olarak köprülendi",
@@ -7167,20 +7162,39 @@
     "message": "rotki'nin desteklediği en düşük Windows sürümü: Windows 8 (6.2)"
   },
   "wrapped": {
+    "all_time": "Tüm zamanlar",
+    "empty": {
+      "description": "Başka bir tarih aralığı seçin ya da geçmiş olaylarınızın sorgulanıp çözümlendiğinden emin olun.",
+      "title": "Bu dönemde etkinlik yok"
+    },
     "exchange_activity": "Borsaya göre alım satımlar",
-    "filter_by_date": "Tarihe göre filtrele",
     "free_limit": "Olay analizi görünümü kullanılamıyor",
     "gas_spent": "Adres başına gas için harcanan ETH",
-    "gas_spent_total": "Gas için harcanan toplam ETH",
-    "get_data": "Verileri getir",
     "get_rotki_premium": "rotki Premium'a geç",
     "gnosis_payments": "Para birimine göre en yüksek tekil Gnosis Pay ödemeleri",
+    "highlights": {
+      "busiest_day": "En yoğun gün",
+      "gas": "Gas için harcanan",
+      "trades": "Alım satımlar",
+      "transactions": "İşlemler"
+    },
     "loading": "Biraz bekleyin; analiz verilerinizin güncel olduğundan emin olmak için geçmiş olaylarınızı yeniliyoruz.",
     "premium_nudge": "Premium ile rotki'nin tüm potansiyelini açığa çıkarın",
     "protocol_activity": "Protokole göre işlem sayısı",
+    "show_all": "{count} öğenin tümünü göster",
+    "show_less": "Daha az göster",
+    "sync": {
+      "action": "Geçmiş olaylarında eşitle",
+      "never": "Geçmiş olaylarınız henüz eşitlenmedi, bu yüzden bu analiz eksik olabilir.",
+      "stale": "Geçmiş en son {time} eşitlendi."
+    },
     "title": "Olay analizi",
     "top_days": "En yoğun işlem günleriniz",
     "transactions_by_chain": "Zincire göre işlemler",
+    "unit": {
+      "trades": "alım satım | alım satım",
+      "transactions": "işlem | işlem"
+    },
     "year_subtitle": "DeFi etkinliğinizin dökümü"
   }
 }

@@ -16,25 +16,28 @@ const exchangeItems = computed<Array<[string, BigNumber]>>(() => {
     return [];
   return Object.entries(tradesByExchange).sort((a, b) => sortDesc(a[1], b[1]));
 });
+
+function weight(item: [string, BigNumber]): number {
+  return item[1].toNumber();
+}
 </script>
 
 <template>
   <WrappedCard
     v-if="exchangeItems.length > 0"
     :items="exchangeItems"
+    :weight="weight"
   >
     <template #header-icon>
       <RuiIcon
         name="lu-coins-exchange"
-        class="text-rui-primary"
-        size="12"
+        size="16"
       />
     </template>
     <template #header>
       {{ t('wrapped.exchange_activity') }}
     </template>
-    <template #label="{ item, index }">
-      <span>{{ index + 1 }}.</span>
+    <template #label="{ item }">
       <LocationDisplay
         horizontal
         class="[&_span]:text-rui-text!"
@@ -47,7 +50,7 @@ const exchangeItems = computed<Array<[string, BigNumber]>>(() => {
         :value="item[1]"
         :format="{ integer: true }"
       />
-      {{ t('common.trades', item[1].toNumber()) }}
+      <span class="font-normal text-rui-text-secondary">{{ t('wrapped.unit.trades', item[1].toNumber()) }}</span>
     </template>
   </WrappedCard>
 </template>

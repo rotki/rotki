@@ -5,8 +5,8 @@ import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import WrappedCard from '../WrappedCard.vue';
 
+/** The gas each address spent; the total heads the page among the highlights. */
 const { ethOnGasPerAddress } = defineProps<{
-  ethOnGas?: BigNumber;
   ethOnGasPerAddress?: Record<string, BigNumber>;
 }>();
 
@@ -18,40 +18,22 @@ const gasPerAddressItems = computed<Array<[string, BigNumber]>>(() => {
     return [];
   return Object.entries(ethOnGasPerAddress).sort((a, b) => sortDesc(a[1], b[1]));
 });
+
+function weight(item: [string, BigNumber]): number {
+  return item[1].toNumber();
+}
 </script>
 
 <template>
   <WrappedCard
-    v-if="ethOnGas"
-    :items="[{ label: t('backend_mappings.events.type.gas_fee'), value: ethOnGas }]"
-  >
-    <template #header-icon>
-      <RuiIcon
-        name="lu-fuel"
-        class="text-rui-primary"
-        size="12"
-      />
-    </template>
-    <template #header>
-      {{ t('wrapped.gas_spent_total') }}
-    </template>
-    <template #value="{ item }">
-      <AssetAmountDisplay
-        asset="ETH"
-        :amount="item.value"
-      />
-    </template>
-  </WrappedCard>
-
-  <WrappedCard
     v-if="gasPerAddressItems.length > 0"
     :items="gasPerAddressItems"
+    :weight="weight"
   >
     <template #header-icon>
       <RuiIcon
         name="lu-fuel"
-        class="text-rui-primary"
-        size="12"
+        size="16"
       />
     </template>
     <template #header>
@@ -59,9 +41,8 @@ const gasPerAddressItems = computed<Array<[string, BigNumber]>>(() => {
     </template>
     <template #label="{ item }">
       <HashLink
-        class="bg-rui-grey-200 dark:bg-rui-grey-800 rounded-full pr-1 pl-0"
         :text="item[0]"
-        :truncate-length="isSmAndDown ? 6 : 20"
+        :truncate-length="isSmAndDown ? 6 : 12"
       />
     </template>
     <template #value="{ item }">

@@ -83,13 +83,8 @@ defineExpose({
 </script>
 
 <template>
-  <div>
-    <div class="grid md:grid-cols-2 gap-4 mb-4">
-      <!--
-        One picker for both, narrowed to nfts when the row is an nft. The nft case used to be a
-        plain text field asking the user to type `_nft_<address>_<number>` from the hint, because
-        the search had no way to return nfts alone.
-      -->
+  <div class="flex flex-col gap-2">
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <AssetSelect
         v-model="form.state.asset"
         :disabled="disableAsset"
@@ -110,7 +105,7 @@ defineExpose({
       v-if="isCurrentCurrencyUsd"
       v-model:primary-value="modelAssetToUsdPrice"
       v-model:secondary-value="form.state.usdValue"
-      class="mb-5"
+      v-model:reversed="modelFiatValueFocused"
       :loading="fetching"
       :disabled="fetching"
       :label="{
@@ -126,14 +121,13 @@ defineExpose({
         secondary: form.errors('usdValue'),
       }"
       :hint="t('transactions.events.form.asset_price.hint')"
-      @update:reversed="modelFiatValueFocused = $event"
     />
 
     <TwoFieldsAmountInput
       v-else
       v-model:primary-value="modelAssetToFiatPrice"
       v-model:secondary-value="modelFiatValue"
-      class="mb-5"
+      v-model:reversed="modelFiatValueFocused"
       :loading="fetching"
       :disabled="fetching"
       :label="{
@@ -144,7 +138,6 @@ defineExpose({
           symbol: currencySymbol,
         }),
       }"
-      @update:reversed="modelFiatValueFocused = $event"
     />
   </div>
 </template>
