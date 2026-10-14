@@ -27,7 +27,11 @@ from rotkehlchen.assets.asset import (
     EvmToken,
     SolanaToken,
 )
-from rotkehlchen.assets.details_retry import redecode_token_txs, stop_token_details_retry
+from rotkehlchen.assets.details_retry import (
+    redecode_created_tokens_txs,
+    redecode_token_txs,
+    stop_token_details_retry,
+)
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetFlag, AssetType
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -275,11 +279,10 @@ class AssetsService:
                 after_seconds=None,
                 task_name=f'Redecode transactions of added token {asset.identifier}',
                 exception_is_error=True,
-                method=redecode_token_txs,
+                method=redecode_created_tokens_txs,
                 database=self.rotkehlchen.data.db,
                 chain_id=asset.chain_id,
-                address=asset.evm_address,
-                created=True,
+                addresses=[asset.evm_address],
             )
         if is_rebasing is not None:
             GlobalDBHandler.set_asset_flag(
@@ -300,14 +303,19 @@ class AssetsService:
             is_rebasing: bool | None,
     ) -> dict[str, Any]:
         try:
-            GlobalDBHandler.edit_user_asset(asset)
+            # The edit and the stop of the details retry are one transaction, so that a retry
+            # can't fill the details the user did not touch between the two.
+            with GlobalDBHandler().conn.write_ctx():
+                GlobalDBHandler.edit_user_asset(asset)
+                was_marked = isinstance(asset, EvmToken) and stop_token_details_retry(  # keep what the user saved  # noqa: E501
+                    chain_id=asset.chain_id,
+                    address=asset.evm_address,
+                )
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
-        if isinstance(asset, EvmToken) and stop_token_details_retry(  # keep what the user saved
-            chain_id=asset.chain_id,
-            address=asset.evm_address,
-        ):  # the events of a marked token may have used wrong decimals, so redecode them
+        if was_marked and isinstance(asset, EvmToken):
+            # the events of a marked token may have used wrong decimals, so redecode them
             redecode_token_txs(
                 database=self.rotkehlchen.data.db,
                 chain_id=asset.chain_id,

@@ -5,23 +5,23 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.details_retry import (
-    TOKEN_DETAILS_INDEX,
     TokenDetails,
     TokenDetailsRetryMark,
+    clear_given_up_attempts,
     count_token_details_retry_attempt,
+    finish_token_details_retry,
+    get_given_up_tokens_added_since,
     get_token_details_retry_marks,
-    is_token_details_retry_given_up,
-    pop_given_up_tokens_added_since,
     postpone_token_details_retry,
+    redecode_created_tokens_txs,
     redecode_token_txs,
     remove_token_details_retry_mark,
+    save_found_token_details,
 )
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     check_if_spam_token,
     create_evm_token_if_missing,
-    edit_token_and_clean_cache,
     get_or_create_evm_token,
 )
 from rotkehlchen.chain.base.modules.aave.v3.constants import (
@@ -73,7 +73,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.filtering import EVENTS_WITH_COUNTERPARTY_JOIN
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.misc import InputError, NotERC20Conformant, RemoteError
+from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_general_cache_exists,
@@ -338,16 +338,18 @@ def _get_tokens_missing_details(
 
 
 def _drop_resolved_token_marks(
-        database: DBHandler,
         marks: list[TokenDetailsRetryMark],
-) -> list[TokenDetailsRetryMark]:
-    """Remove the marks that don't need a query anymore. Tokens found to be spam after they
-    were marked are not worth querying again. Tokens that could not be created but were added
-    since, for example by an asset update, keep the details they were added with, and the
-    transactions where they were seen are flagged for redecoding. Returns the rest of the marks.
+) -> tuple[list[TokenDetailsRetryMark], list[ChecksumEvmAddress]]:
+    """Remove the marks of tokens found to be spam after they were marked, since they are not
+    worth querying again. The marks of tokens that could not be created when marked but exist
+    now, for example after an asset update, are kept since the transactions where they were
+    seen have to be redecoded, which the caller does for all the tokens of the run at once.
+
+    Returns the marks that still have to be queried and the addresses of the tokens that exist
+    now.
     """
     if len(marks) == 0:
-        return marks
+        return marks, []
 
     chain_id = marks[0].chain_id
     with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -357,31 +359,18 @@ def _drop_resolved_token_marks(
             (chain_id.serialize_for_db(), *(x.address for x in marks)),
         ))
 
-    remaining = []
+    remaining, added = [], []
     for mark in marks:
-        if (is_spam := protocols.get(mark.address) == SPAM_PROTOCOL) is False and (
-            mark.saved is not None or mark.address not in protocols
-        ):  # still has to be queried
-            remaining.append(mark)
+        if protocols.get(mark.address) != SPAM_PROTOCOL:
+            if mark.saved is not None or mark.address not in protocols:
+                remaining.append(mark)  # still has to be queried
+            else:  # could not be created when marked, but exists now
+                added.append(mark.address)
             continue
 
-        if is_spam is False:  # could not be created when marked, but exists now
-            redecode_token_txs(database=database, chain_id=chain_id, address=mark.address, created=True)  # noqa: E501
         remove_token_details_retry_mark(chain_id=chain_id, address=mark.address)
 
-    return remaining
-
-
-def _get_saved_token_details(identifier: str) -> TokenDetails | None:
-    """Read the name, symbol and decimals of a token from the global DB, so that what is
-    checked is not an older version of the token kept in memory. None if it does not exist."""
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        return cursor.execute(
-            'SELECT A.name, C.symbol, B.decimals FROM assets AS A JOIN evm_tokens AS B '
-            'ON A.identifier=B.identifier LEFT JOIN common_asset_details AS C '
-            'ON C.identifier=A.identifier WHERE A.identifier=?',
-            (identifier,),
-        ).fetchone()
+    return remaining, added
 
 
 def _save_found_token_details(
@@ -391,74 +380,65 @@ def _save_found_token_details(
         mark: TokenDetailsRetryMark | None,
         info: dict[str, Any],
         selected_details: TokenDetails | None,
-) -> None:
-    """Save the queried details of a token that was missing them.
+) -> bool:
+    """Save the queried details of a token that was missing them. info has only the details
+    that the query returned.
 
     Only the details that were missing are saved: all of them for a token without a mark and
-    the ones recorded in the mark for a marked token. The token is checked again under the
-    lock, since a user edit, an asset update or a decoder may have changed it while its details
-    were queried. A missing detail is only saved if it still has the value it had when the
-    token was selected, for a token without a mark, or when it was marked. The ones that
-    changed are left as they are.
+    the ones recorded in the mark for a marked token. The checks and the writes happen in one
+    global DB transaction (see save_found_token_details), since a user edit, an asset update
+    or a decoder may have changed the token while its details were queried. A missing detail is
+    only saved if it still has the value it had when the token was selected, for a token
+    without a mark, or when it was marked.
+
+    A token that could not be created when marked is created once the details given by the
+    caller plus the queried ones are complete, with the given ones winning. Otherwise an
+    attempt is counted.
+
+    Returns whether such a token exists now, so the caller redecodes the transactions where it
+    was seen, which were skipped for lack of the token, and then removes its mark.
     """
     if mark is not None and mark.saved is None:  # the token could not be created at the time
+        if any(prop not in (details := {**info, **mark.given}) for prop in ERC20_PROPERTIES):
+            count_token_details_retry_attempt(mark=mark)
+            return False
+
         if create_evm_token_if_missing(
             userdb=database,
             chain_id=chain_id,
             address=address,
-            name=info['name'],
-            symbol=info['symbol'],
-            decimals=info['decimals'],
+            name=details['name'],
+            symbol=details['symbol'],
+            decimals=details['decimals'],
         ):
             log.debug(
                 'Created token %s at %s with its queried details',
                 address, chain_id.to_name(),
             )
-        # also if it was added meanwhile, since the events where it was seen were skipped
-        redecode_token_txs(database=database, chain_id=chain_id, address=address, created=True)
-        remove_token_details_retry_mark(chain_id=chain_id, address=address)
-        return
+        return True  # also if it was added meanwhile
 
-    expected, missing = (
-        (selected_details, ERC20_PROPERTIES) if mark is None else (mark.saved, mark.missing)
-    )
+    if (expected := selected_details if mark is None else mark.saved) is None:
+        return False  # can't happen. A token without a mark was selected with its details
+
     identifier = evm_address_to_identifier(address=address, chain_id=chain_id)
-    with database.get_or_create_token_lock:
-        if is_token_details_retry_given_up(chain_id=chain_id, address=address):
-            log.debug('Token %s was edited by the user while its details were queried', identifier)
-            return
+    with database.get_or_create_token_lock:  # a decoder with an older version of the token would overwrite it  # noqa: E501
+        saved = save_found_token_details(
+            chain_id=chain_id,
+            address=address,
+            mark=mark,
+            expected=expected,
+            found=info,
+        )
 
-        if (saved := _get_saved_token_details(identifier)) is None:
-            log.debug('Token %s was deleted while its details were queried', identifier)
-        elif len(found := {
-            prop: info[prop] for prop in missing
-            if expected is not None and
-            saved[TOKEN_DETAILS_INDEX[prop]] == expected[TOKEN_DETAILS_INDEX[prop]]
-        }) == 0:
-            log.debug('Token %s was edited while its details were queried', identifier)
-            if mark is not None:  # its events still have the amounts of the marked details
-                redecode_token_txs(database=database, chain_id=chain_id, address=address)
-        else:
-            AssetResolver.clean_memory_cache(identifier)  # so the token is loaded from the DB
-            try:
-                edit_token_and_clean_cache(
-                    token=EvmToken(identifier),
-                    name=found.get('name'),
-                    symbol=found.get('symbol'),
-                    decimals=found.get('decimals'),
-                    started=None,
-                    chain_inquirer=None,  # we already have the info
-                )
-            except (UnknownAsset, WrongAssetType, DeserializationError, InputError) as e:
-                log.error('Failed to update details of token %s due to %s', identifier, e)
-                return  # keep the mark, if any, to try again
-            else:
-                log.debug('Updated the details %s of token %s', sorted(found), identifier)
-                # the amounts of its events were calculated with the old decimals
-                redecode_token_txs(database=database, chain_id=chain_id, address=address)
+    if saved is None:
+        log.debug('Token %s was edited by the user or deleted while its details were queried', identifier)  # noqa: E501
+    elif saved.redecode:
+        # the amounts of its events were calculated with the details it had when marked
+        log.debug('Updated the details %s of token %s', sorted(saved.written), identifier)
+        redecode_token_txs(database=database, chain_id=chain_id, address=address)
+        finish_token_details_retry(chain_id=chain_id, address=address, saved=saved)
 
-        if mark is not None:
-            remove_token_details_retry_mark(chain_id=chain_id, address=address)
+    return False
 
 
 def _count_failed_attempts(
@@ -552,10 +532,14 @@ def _retry_chain_token_details(
         node_inquirer: EvmNodeInquirer,
         tokens: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]],
         selected_details: dict[ChecksumEvmAddress, TokenDetails],
-) -> None:
-    """Query in chunks the details of the given tokens of a chain and save them for the
-    tokens that returned all of them. The rest count a failed attempt. selected_details has
-    the details that the tokens without a mark had when selected.
+) -> list[ChecksumEvmAddress]:
+    """Query in chunks the details of the given tokens of a chain and save the ones that
+    came back, as long as they are among the ones the token is missing. A token with some of
+    its missing details still not returned counts a failed attempt and keeps only those as
+    missing. selected_details has the details that the tokens without a mark had when selected.
+
+    Returns the tokens that could not be created when marked and exist now. The caller
+    redecodes the transactions where they were seen, all at once, and removes their marks.
 
     A single token can make the query of its whole chunk fail, for example a contract that
     burns all the gas, so a chunk that fails is queried again one token at a time. A token
@@ -567,6 +551,7 @@ def _retry_chain_token_details(
     """
     failed: list[tuple[ChecksumEvmAddress, TokenDetailsRetryMark | None]] = []
     answered_in_run: list[ChecksumEvmAddress] = []
+    created: list[ChecksumEvmAddress] = []
     for chunk in get_chunks(tokens, TOKEN_DETAILS_RETRY_CHUNK_SIZE):
         try:
             infos = node_inquirer.get_multiple_erc20_contracts_info([x[0] for x in chunk])
@@ -590,14 +575,15 @@ def _retry_chain_token_details(
 
         for address, mark in chunk:
             if (info := infos.get(address)) is not None:
-                _save_found_token_details(
+                if _save_found_token_details(
                     database=database,
                     chain_id=chain_id,
                     address=address,
                     mark=mark,
                     info=info,
                     selected_details=selected_details.get(address),
-                )
+                ):
+                    created.append(address)
             elif address in answered:  # the details came back incomplete
                 _count_failed_attempts(
                     chain_id=chain_id,
@@ -608,12 +594,38 @@ def _retry_chain_token_details(
         if nodes_down:
             log.error('Stopping token details retry at %s since the nodes fail', chain_id.to_name())  # noqa: E501
             postpone_token_details_retry(marks=[mark for _, mark in failed if mark is not None])
-            return
+            return created
 
     if len(answered_in_run) != 0:  # the last queries failed while the nodes answered the rest
         _count_failed_attempts(chain_id=chain_id, tokens=failed, selected_details=selected_details)
     else:
         postpone_token_details_retry(marks=[mark for _, mark in failed if mark is not None])
+
+    return created
+
+
+def _redecode_created_tokens(
+        database: DBHandler,
+        chain_id: ChainID,
+        given_up_added: list[ChecksumEvmAddress],
+        marked_added: list[ChecksumEvmAddress],
+        created: list[ChecksumEvmAddress],
+) -> None:
+    """Redecode the transactions of the tokens that were created in this run of a chain, with
+    a single scan of the logs for all of them. Only then are their marks removed and the
+    attempts of the given up ones cleared, so that if this is interrupted the next run does it
+    again.
+
+    given_up_added are the given up tokens that exist now, marked_added the marked tokens
+    that exist now and created the ones that were created by the retry.
+    """
+    if len(addresses := list(dict.fromkeys([*given_up_added, *marked_added, *created]))) == 0:
+        return
+
+    redecode_created_tokens_txs(database=database, chain_id=chain_id, addresses=addresses)
+    clear_given_up_attempts(chain_id=chain_id, addresses=given_up_added)
+    for address in [*marked_added, *created]:
+        remove_token_details_retry_mark(chain_id=chain_id, address=address)
 
 
 def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
@@ -629,7 +641,7 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
     Every run goes through the next TOKEN_DETAILS_RETRY_BATCH_SIZE tokens with their
     identifier as name and the TOKEN_DETAILS_RETRY_BATCH_SIZE least recently tried marked
     tokens of each chain, querying them in chunks per chain with the nodes. Details are only
-    saved when all of them were found, and only the ones that were missing are written. The
+    saved if they are among the ones the token is missing, and only those are written. The
     identifier of the last token without a mark is saved so that tokens that can't be updated
     don't block the rest, and the next run starts
     again from the beginning when the end is reached. Tokens are given up after
@@ -672,22 +684,28 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
     for _, chain_id, address, details in tokens:
         tokens_by_chain[chain_id][address] = None
         selected_details[chain_id][address] = details
+
     for chain_id in chain_ids:
-        for address in pop_given_up_tokens_added_since(chain_id=chain_id):
-            redecode_token_txs(database=chains_aggregator.database, chain_id=chain_id, address=address, created=True)  # noqa: E501
-        for mark in _drop_resolved_token_marks(
-            database=chains_aggregator.database,
+        given_up_added = get_given_up_tokens_added_since(chain_id=chain_id)
+        remaining, marked_added = _drop_resolved_token_marks(
             marks=get_token_details_retry_marks(chain_id=chain_id, limit=TOKEN_DETAILS_RETRY_BATCH_SIZE),  # noqa: E501
-        ):
+        )
+        for mark in remaining:
             tokens_by_chain[chain_id][mark.address] = mark
 
-    for chain_id, chain_tokens in tokens_by_chain.items():
-        _retry_chain_token_details(
+        created = _retry_chain_token_details(
             database=chains_aggregator.database,
             chain_id=chain_id,
-            node_inquirer=chains_aggregator.get_evm_manager(chain_id=chain_id).node_inquirer,  # type: ignore[arg-type]  # chain ids come from EVM_CHAIN_IDS_WITH_TRANSACTIONS
-            tokens=list(chain_tokens.items()),
+            node_inquirer=chains_aggregator.get_evm_manager(chain_id=chain_id).node_inquirer,
+            tokens=list(tokens_by_chain[chain_id].items()),
             selected_details=selected_details[chain_id],
+        ) if len(tokens_by_chain[chain_id]) != 0 else []
+        _redecode_created_tokens(
+            database=chains_aggregator.database,
+            chain_id=chain_id,
+            given_up_added=given_up_added,
+            marked_added=marked_added,
+            created=created,
         )
 
 

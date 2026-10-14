@@ -590,10 +590,11 @@ def _get_or_create_token(
         retry_details = query_failed = False
         retry_missing: frozenset[str] = frozenset()
         if None in (name, symbol, decimals, token_kind) and chain_inquirer is not None:
-            given = {
-                prop for prop, value in zip(('name', 'symbol', 'decimals'), (name, symbol, decimals), strict=True)  # noqa: E501
+            given_values = {
+                prop: value for prop, value in zip(('name', 'symbol', 'decimals'), (name, symbol, decimals), strict=True)  # noqa: E501
                 if value is not None
             }
+            given = frozenset(given_values)
             try:
                 name, symbol, decimals, token_kind, missing = _query_or_get_given_token_info(
                     chain_inquirer=chain_inquirer,
@@ -630,6 +631,10 @@ def _get_or_create_token(
                         chain_id=chain_id,  # type: ignore[arg-type]  # erc20 tokens have it
                         address=address,  # type: ignore[arg-type]  # erc20 tokens are evm
                         saved=None,
+                        # all the queried ones are needed to create it. The given ones are kept
+                        # since they win over the queried ones when it is created.
+                        missing=frozenset(ERC20_PROPERTIES) - given,
+                        given=given_values,
                     )
                 raise (
                     TokenQueryFailed(f'Could not query the details of token {address}')

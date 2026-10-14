@@ -874,7 +874,7 @@ def test_adding_token_redecodes_its_transactions(rotkehlchen_api_server: APIServ
         return task
 
     with (
-        patch('rotkehlchen.api.services.assets.redecode_token_txs') as redecode,
+        patch('rotkehlchen.api.services.assets.redecode_created_tokens_txs') as redecode,
         patch.object(supervisor, 'spawn_and_track', side_effect=spawn_and_track),
     ):
         assert_proper_sync_response_with_result(requests.put(
@@ -886,5 +886,4 @@ def test_adding_token_redecodes_its_transactions(rotkehlchen_api_server: APIServ
 
     assert get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10) == []
     redecode.assert_called_once()
-    assert redecode.call_args.kwargs['address'] == address
-    assert redecode.call_args.kwargs['created'] is True
+    assert redecode.call_args.kwargs['addresses'] == [address]

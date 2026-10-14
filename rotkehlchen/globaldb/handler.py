@@ -43,11 +43,13 @@ from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     CounterpartyAssetMappingDeleteEntry,
@@ -1411,11 +1413,35 @@ class GlobalDBHandler:
             return write_cursor.rowcount != 0
 
     @staticmethod
+    def _clear_token_details_retry_keys(
+            write_cursor: DBCursor,
+            tokens: Sequence[tuple[int, ChecksumEvmAddress]],
+    ) -> None:
+        """Remove the token details retry bookkeeping of the evm tokens, given as (chain, address),
+        that are being removed. A given up key is permanent, so it would otherwise keep the token
+        from being marked again if it is seen after the removal while its query fails."""
+        write_cursor.executemany(
+            'DELETE FROM unique_cache WHERE key=?',
+            [
+                (compute_cache_key((cache_type, str(chain), address)),)
+                for chain, address in tokens
+                for cache_type in (CacheType.TOKEN_DETAILS_RETRY, CacheType.TOKEN_DETAILS_GIVEN_UP)
+            ],
+        )
+
+    @staticmethod
     def delete_asset_by_identifier(identifier: str) -> None:
         """Delete an asset by identifier EVEN if it's in the owned assets table
          May raise:
          - InputError if no asset with the provided identifier was found"""
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            # Read before the delete, which cascades to the evm_tokens row.
+            GlobalDBHandler._clear_token_details_retry_keys(
+                write_cursor=write_cursor,
+                tokens=write_cursor.execute(
+                    'SELECT chain, address FROM evm_tokens WHERE identifier=?', (identifier,),
+                ).fetchall(),
+            )
             write_cursor.execute('DELETE FROM assets WHERE identifier=?;', (identifier,))
             if write_cursor.rowcount != 1:
                 raise InputError(
@@ -2001,6 +2027,14 @@ class GlobalDBHandler:
                     # against such a thread (each waiting on the lock the other holds).
                     with user_db.user_write() as user_db_cursor:
                         with self.conn.write_ctx() as write_cursor:
+                            # the tokens that are not shipped are going away
+                            self._clear_token_details_retry_keys(
+                                write_cursor=write_cursor,
+                                tokens=write_cursor.execute(
+                                    'SELECT chain, address FROM evm_tokens WHERE identifier NOT IN '  # noqa: E501
+                                    '(SELECT identifier FROM clean_db.evm_tokens)',
+                                ).fetchall(),
+                            )
                             # If versions match drop tables
                             write_cursor.execute('DELETE FROM assets')
                             write_cursor.execute('DELETE FROM asset_collections')

@@ -1516,16 +1516,45 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.contract_info_erc20_cache.add(address, result)
         return result
 
+    def _decode_erc20_property(
+            self,
+            prop: str,
+            output: tuple[bool, bytes],
+            address: ChecksumEvmAddress,
+    ) -> Any:
+        """Decode a single property of the output of an erc20 contract query on its own, so
+        that one that can't be decoded does not take the others with it.
+
+        Returns the value or None if the call failed, returned nothing or can't be decoded."""
+        if len(_missing_properties(properties=(prop,), output=(output,))) != 0:
+            return None
+
+        for abi in (self.contracts.erc20_abi, self.contracts.univ1lp_abi):  # the latter has bytes name and symbol  # noqa: E501
+            try:
+                value = self._process_contract_info(
+                    output=[output],
+                    properties=(prop,),
+                    contract=EvmContract(address=address, abi=abi, deployed_block=0),
+                    token_kind=TokenKind.ERC20,
+                )[0]
+                return value.rstrip(b'\x00').decode() if isinstance(value, bytes) else value
+            except (OverflowError, DeserializationError, UnicodeDecodeError):
+                continue
+
+        return None
+
     def get_multiple_erc20_contracts_info(
             self,
             addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, dict[str, Any]]:
         """Query decimals, symbol and name of many erc20 contracts in a single multicall.
 
-        Only addresses for which all three were returned and could be decoded are in the
-        result, so a value in it is never a default. Unlike get_erc20_contract_info this does
-        not read the contract info cache, it drops the entries of the queried addresses since
-        they may have the details from before they were fixed, and a failed query is raised.
+        The result has, for each address, only the properties that were returned and could be
+        decoded, so a value in it is never a default. A property is missing if its call
+        failed, returned nothing or can't be decoded, and doesn't affect the others. Addresses
+        with no property are not in the result. Unlike get_erc20_contract_info this does not
+        read the contract info cache, it drops the entries of the queried addresses since they
+        may have the details from before they were fixed, and a failed query is raised.
 
         May raise:
         - RemoteError if the multicall could not be executed
@@ -1546,16 +1575,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             self.token_query_failures.remove(address)  # the nodes can be reached again
             self.contract_info_erc20_cache.remove(address)  # may have the details before a fix
             token_output = output[idx * ERC20_PROPERTIES_NUM:(idx + 1) * ERC20_PROPERTIES_NUM]
-            if len(_missing_properties(properties=ERC20_PROPERTIES, output=token_output)) != 0:
-                continue
-
-            try:
-                result[address] = self._process_and_create_erc20_info(
-                    output=token_output,
-                    address=address,
-                )
-            except (NotERC20Conformant, UnicodeDecodeError):  # undecodable bytes32 name/symbol
-                continue
+            if len(info := {
+                prop: value for prop, prop_output in zip(ERC20_PROPERTIES, token_output, strict=True)  # noqa: E501
+                if (value := self._decode_erc20_property(prop=prop, output=prop_output, address=address)) is not None  # noqa: E501
+            }) != 0:
+                result[address] = info
 
         return result
 
