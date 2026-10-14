@@ -1,6 +1,10 @@
 import type { ComputedRef } from 'vue';
-import type { ExchangeInfo } from '@/modules/balances/types/exchanges';
+import type { ExchangeData, ExchangeInfo } from '@/modules/balances/types/exchanges';
+import { type AssetBalanceWithPriceAndChains, type BigNumber, Zero } from '@rotki/common';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { fromExchanges } from '@/modules/balances/aggregation/core/sources';
+import { summarizeBalances } from '@/modules/balances/aggregation/core/summarize';
+import { useAggregationContext } from '@/modules/balances/aggregation/use-aggregation-context';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { exchangeAssetSum } from '@/modules/core/common/data/calculation';
@@ -9,6 +13,10 @@ import { useLocationStore } from '@/modules/core/common/use-location-store';
 interface UseBankDataReturn {
   /** The connected banks with balances, richest first. */
   banks: ComputedRef<ExchangeInfo[]>;
+  /** Every bank's holdings in one list, an asset held at several banks broken down by bank. */
+  balances: ComputedRef<AssetBalanceWithPriceAndChains[]>;
+  /** What all banks hold together, ignored assets left out. */
+  total: ComputedRef<BigNumber>;
   isBankLocation: (location: string) => boolean;
 }
 
@@ -21,11 +29,15 @@ export function useBankData(): UseBankDataReturn {
   const { exchangeBalances } = storeToRefs(useBalancesStore());
   const { banks: bankLocations } = storeToRefs(useLocationStore());
   const { isAssetIgnored } = useAssetsStore();
+  const context = useAggregationContext();
 
   const isBankLocation = (location: string): boolean => get(bankLocations).includes(location);
 
-  const banks = computed<ExchangeInfo[]>(() => Object.entries(get(exchangeBalances))
-    .filter(([location]) => isBankLocation(location))
+  const bankBalances = computed<ExchangeData>(() => Object.fromEntries(
+    Object.entries(get(exchangeBalances)).filter(([location]) => isBankLocation(location)),
+  ));
+
+  const banks = computed<ExchangeInfo[]>(() => Object.entries(get(bankBalances))
     .map(([location, balances]) => ({
       balances,
       location,
@@ -33,8 +45,14 @@ export function useBankData(): UseBankDataReturn {
     }))
     .sort((a, b) => sortDesc(a.total, b.total)));
 
+  const balances = computed<AssetBalanceWithPriceAndChains[]>(() => summarizeBalances([fromExchanges(get(bankBalances))], context));
+
+  const total = computed<BigNumber>(() => get(banks).reduce((sum, bank) => sum.plus(bank.total), Zero));
+
   return {
+    balances,
     banks,
     isBankLocation,
+    total,
   };
 }

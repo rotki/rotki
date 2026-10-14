@@ -20,8 +20,7 @@
         "redetect": "Re-detectar tokens"
       }
     },
-    "edit_tooltip": "Editar cuenta",
-    "refresh_tooltip": "Actualizar los saldos de {blockchain} ignorando cualquier entrada en caché"
+    "edit_tooltip": "Editar cuenta"
   },
   "account_form": {
     "advanced_tooltip": "Mostrar las opciones avanzadas de xpub | Ocultar las opciones avanzadas de xpub",
@@ -440,8 +439,7 @@
     }
   },
   "exchange_balances": {
-    "add_exchange": "Añadir exchange",
-    "select_exchange": "Elegir exchange"
+    "add_exchange": "Añadir exchange"
   },
   "external_services": {
     "api_key": "Clave de la API",

@@ -10,7 +10,6 @@ import { sortAssetBalances } from '@/modules/core/common/display/balances';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import PremiumLock from '@/modules/premium/PremiumLock.vue';
 import { usePremium } from '@/modules/premium/use-premium';
-import { useSetting } from '@/modules/settings/use-setting';
 
 interface PoolDetailsProps {
   assets: PoolAsset[];
@@ -24,7 +23,6 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   direction: 'desc' as const,
 });
 
-const currencySymbol = useSetting('currencySymbol');
 const { getAssetPrice } = usePriceUtils();
 const { getAssetInfo } = useAssetSelectInfo();
 const premium = usePremium();
@@ -39,9 +37,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   align: 'end',
   class: 'text-no-wrap',
   key: 'price',
-  label: t('common.price', {
-    symbol: get(currencySymbol),
-  }),
+  label: t('common.price'),
   sortable: true,
 }, {
   align: 'end',
@@ -52,9 +48,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   align: 'end',
   class: 'text-no-wrap',
   key: 'value',
-  label: t('common.value_in_symbol', {
-    symbol: get(currencySymbol),
-  }),
+  label: t('common.value'),
   sortable: true,
 }]);
 

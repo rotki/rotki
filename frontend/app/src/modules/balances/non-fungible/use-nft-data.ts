@@ -156,9 +156,11 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
       return headers;
     }
 
-    // Non-dashboard columns
+    // Non-dashboard columns: as in the other balance tables, the asset price recedes and the main currency price leads
     return [{
-      cellClass: 'text-no-wrap',
+      class: 'w-full',
+      // max-w-0: the name takes what the other columns leave and truncates, rather than widening the table
+      cellClass: 'text-no-wrap max-w-0',
       key: 'name',
       label: t('common.name'),
       sortable: true,
@@ -168,25 +170,26 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
       label: t('non_fungible_balances.ignore'),
     }, {
       align: 'end',
+      cellClass: 'text-rui-text-secondary',
       class: 'text-no-wrap',
       key: 'priceInAsset',
       label: t('non_fungible_balances.column.price_in_asset'),
-      width: '75%',
     }, {
       align: 'end',
+      cellClass: 'font-medium',
       class: 'text-no-wrap',
       key: 'price',
       label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
       sortable: true,
     }, {
+      align: 'center',
       class: 'text-no-wrap',
       key: 'manuallyInput',
       label: t('non_fungible_balances.column.custom_price'),
     }, {
-      align: 'center',
+      align: 'end',
       key: 'actions',
       label: t('common.actions_text'),
-      width: '50',
     }];
   });
 

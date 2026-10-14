@@ -38,11 +38,13 @@ describe('asset-balances', () => {
     expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');
   });
 
-  it('should drop the currency from the price and value headers only when nested in another row', async () => {
+  /** The cells already carry the currency symbol, so the headers never repeat it. */
+  it('should leave the currency out of the price and value headers, nested or not', async () => {
     const headers = (): string => wrapper.find('thead').text();
 
-    expect(headers()).toContain('common.price_in_symbol');
-    expect(headers()).toContain('common.value_in_symbol');
+    expect(headers()).not.toContain('_in_symbol');
+    expect(headers()).toContain('common.price');
+    expect(headers()).toContain('common.value');
 
     await wrapper.setProps({ nested: true });
 

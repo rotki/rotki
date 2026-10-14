@@ -8,6 +8,8 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 
 interface UseNftPriceManagementReturn {
   customPrice: DeepReadonly<Ref<ManualPriceFormPayload | null>>;
+  /** Whether the NFT in the form already has a custom price, so the form edits it rather than adds one. */
+  hasCustomPrice: Readonly<Ref<boolean>>;
   modelOpenPriceDialog: Ref<boolean>;
   deletePrice: (item: NonFungibleBalance) => Promise<void>;
   setPriceForm: (item: NonFungibleBalance) => void;
@@ -24,6 +26,7 @@ export function useNftPriceManagement(
 
   const modelOpenPriceDialog = shallowRef<boolean>(false);
   const customPrice = shallowRef<ManualPriceFormPayload | null>(null);
+  const hasCustomPrice = shallowRef<boolean>(false);
 
   async function deletePrice(toDeletePrice: NonFungibleBalance): Promise<void> {
     try {
@@ -44,6 +47,7 @@ export function useNftPriceManagement(
   }
 
   function setPriceForm(item: NonFungibleBalance): void {
+    set(hasCustomPrice, item.manuallyInput);
     set(customPrice, {
       fromAsset: item.id,
       price: item.priceInAsset.toFixed(),
@@ -67,6 +71,7 @@ export function useNftPriceManagement(
   return {
     customPrice: readonly(customPrice),
     deletePrice,
+    hasCustomPrice: readonly(hasCustomPrice),
     modelOpenPriceDialog,
     setPriceForm,
     showDeleteConfirmation,

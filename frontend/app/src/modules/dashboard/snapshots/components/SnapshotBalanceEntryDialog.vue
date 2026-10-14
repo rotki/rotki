@@ -347,8 +347,6 @@ defineExpose({
       :timestamp="timestamp"
       @update:asset="checkAssetExist($event)"
     >
-      <!-- Sits where the location selector's "only show existing" toggle used to
-        be, so flipping split mode doesn't move it. -->
       <template #before-location>
         <RuiSwitch
           v-model="splitMode"
@@ -366,7 +364,7 @@ defineExpose({
       v-if="splitMode"
       v-model="splits"
       v-model:valid="splitValid"
-      class="mt-3"
+      untitled
       :total="splitTotal"
       :locations="existingLocations"
       :max-per-location="splitCaps"

@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import type { Module } from '@/modules/core/common/modules';
-import NftImageRenderingSettingMenu from '@/modules/settings/general/nft/NftImageRenderingSettingMenu.vue';
-import ActiveModules from '@/modules/settings/modules/ActiveModules.vue';
+import NftSettingsMenu from '@/modules/balances/nft/NftSettingsMenu.vue';
 
 defineProps<{
-  modules: Module[];
   sectionLoading: boolean;
 }>();
 
@@ -26,7 +23,6 @@ function onRefresh(): void {
         <RuiButton
           variant="outlined"
           color="primary"
-          size="lg"
           :loading="sectionLoading"
           @click="onRefresh()"
         >
@@ -38,7 +34,6 @@ function onRefresh(): void {
       </template>
       {{ t('non_fungible_balances.refresh') }}
     </RuiTooltip>
-    <ActiveModules :modules="modules" />
-    <NftImageRenderingSettingMenu />
+    <NftSettingsMenu />
   </div>
 </template>

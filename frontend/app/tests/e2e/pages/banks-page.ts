@@ -72,8 +72,18 @@ export class BanksPage {
     await this.save();
   }
 
-  balancesCard(): Locator {
-    return this.page.locator('[data-testid=bank-balances-card]');
+  /** The one table every bank's balances share, with the connections named in its toolbar. */
+  balancesTable(): Locator {
+    return this.page.locator('[data-testid=bank-balances]');
+  }
+
+  /** A connection's line in the balances toolbar; `data-state` is `ok`, `authentication` or `failed`. */
+  balancesConnection(name: string): Locator {
+    return this.page.locator(`[data-testid=bank-balances-connection][data-connection="${name}"]`);
+  }
+
+  balancesEmpty(): Locator {
+    return this.page.locator('[data-testid=bank-balances-empty]');
   }
 
   /** The dashboard's locations card, which holds a tile per place a balance is held. */

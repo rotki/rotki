@@ -67,8 +67,6 @@ const { containerProps, list, wrapperProps } = useVirtualList(items, { itemHeigh
 </script>
 
 <template>
-  <!-- Shared row so the static and virtualised paths render identically. The fixed
-    verb column aligns the entities across rows without a grid. -->
   <DefineRow #default="{ item }">
     <div
       class="flex items-center gap-3 text-body-2"

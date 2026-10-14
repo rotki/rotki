@@ -11,7 +11,6 @@ import { approxEqualUsd, type LocationSplit } from '@/modules/dashboard/snapshot
 import { formatPercent } from '@/modules/dashboard/snapshots/utils/snapshot-percent';
 import { getTotalValue, locationsTotal, TOTAL_LOCATION } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import { useSetting } from '@/modules/settings/use-setting';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
@@ -33,7 +32,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const currencySymbol = useSetting('currencySymbol');
 const { show } = useConfirmStore();
 
 const sort = ref<DataTableSortData<LocationDataSnapshot>>({
@@ -72,9 +70,7 @@ const allocatedShare = computed<string>(() => sharePercent(get(allocated)));
 
 const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(() => [
   {
-    align: 'center',
     cellClass: 'py-2',
-    class: 'w-50',
     key: 'location',
     label: t('common.location'),
     sortable: true,
@@ -82,7 +78,7 @@ const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(()
   {
     align: 'end',
     key: 'usdValue',
-    label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
+    label: t('common.value'),
     sortable: true,
   },
   {
@@ -138,7 +134,7 @@ function applyDistribute(): void {
   <RuiNavigationDrawer
     v-model="open"
     below-app-bar
-    width="560px"
+    width="640px"
     temporary
     position="right"
     :stateless="entryOpen"
@@ -147,9 +143,9 @@ function applyDistribute(): void {
     data-testid="snapshot-locations-drawer"
   >
     <div class="flex items-center justify-between gap-2 p-4 border-b border-default">
-      <h5 class="text-h6">
+      <h2 class="text-base font-semibold text-rui-text">
         {{ t('dashboard.snapshot.detail.locations.title') }}
-      </h5>
+      </h2>
       <div class="flex items-center gap-2">
         <RuiButton
           color="primary"
@@ -174,8 +170,6 @@ function applyDistribute(): void {
       </div>
     </div>
 
-    <!-- The body scrolls as a whole, so nothing in it may shrink: the table root hides its
-         overflow, and as a shrinking flex item it would clip its own rows instead. -->
     <div class="overflow-y-auto grow min-h-0 p-4 flex flex-col gap-4 *:shrink-0">
       <RuiDataTable
         v-model:sort="sort"
@@ -187,6 +181,8 @@ function applyDistribute(): void {
       >
         <template #item.location="{ row }">
           <LocationDisplay
+            horizontal
+            size="20px"
             :opens-details="false"
             :identifier="row.location"
           />

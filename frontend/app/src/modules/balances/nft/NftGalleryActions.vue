@@ -1,15 +1,9 @@
 <script setup lang="ts">
-import type { Module } from '@/modules/core/common/modules';
-import NftImageRenderingSettingMenu from '@/modules/settings/general/nft/NftImageRenderingSettingMenu.vue';
-import ActiveModules from '@/modules/settings/modules/ActiveModules.vue';
-import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
+import NftSettingsMenu from '@/modules/balances/nft/NftSettingsMenu.vue';
 
-interface Props {
-  modules: Module[];
+const { loading } = defineProps<{
   loading: boolean;
-}
-
-const { loading, modules } = defineProps<Props>();
+}>();
 
 const emit = defineEmits<{
   refresh: [];
@@ -19,13 +13,24 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div class="flex items-center gap-3">
-    <NftImageRenderingSettingMenu />
-    <ActiveModules :modules="modules" />
-    <RefreshButton
-      :loading="loading"
-      :tooltip="t('nft_gallery.refresh_tooltip')"
-      @refresh="emit('refresh')"
-    />
+  <div class="flex items-center gap-2">
+    <RuiTooltip :open-delay="400">
+      <template #activator>
+        <RuiButton
+          variant="outlined"
+          color="primary"
+          :loading="loading"
+          data-testid="nft-gallery-refresh"
+          @click="emit('refresh')"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-refresh-ccw" />
+          </template>
+          {{ t('common.refresh') }}
+        </RuiButton>
+      </template>
+      {{ t('nft_gallery.refresh_tooltip') }}
+    </RuiTooltip>
+    <NftSettingsMenu />
   </div>
 </template>

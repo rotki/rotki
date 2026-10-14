@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { type AssetBalanceWithPrice, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
+import BankBalancesEmpty from '@/modules/banks/components/BankBalancesEmpty.vue';
+import BankConnectionItem from '@/modules/banks/components/BankConnectionItem.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBankData } from '@/modules/banks/use-bank-data';
 import { useBanks } from '@/modules/banks/use-banks';
-import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import InternalLink from '@/modules/shell/components/InternalLink.vue';
+import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
+import TableSearchField from '@/modules/core/table/TableSearchField.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -18,36 +20,28 @@ definePage({
   },
 });
 
-interface BankLocationBalances {
-  location: string;
-  balances: AssetBalanceWithPrice[];
-}
+const search = ref<string>('');
 
 const { connections } = storeToRefs(useBankConnectionsStore());
-const { banks } = useBankData();
-const { fetchBankBalances, refreshBankConnections } = useBanks();
+const { balances, banks } = useBankData();
+const { fetchBankBalances, refreshBankConnections, refreshSupportedBanks } = useBanks();
 const { useIsActive } = useTaskCenter();
 const { t } = useI18n({ useScope: 'global' });
+const router = useRouter();
 
 const loading = useIsActive(ActivityKind.BANK_BALANCES);
-
-/** The backend already prices each balance in the main currency, so the price is implied. */
-const perLocation = computed<BankLocationBalances[]>(() => get(banks).map(bank => ({
-  balances: Object.entries(bank.balances).map(([asset, { amount, value }]) => ({
-    amount,
-    asset,
-    price: amount.isZero() ? Zero : value.div(amount),
-    value,
-  })),
-  location: bank.location,
-})));
 
 async function refresh(ignoreCache = false): Promise<void> {
   await refreshBankConnections();
   await fetchBankBalances(ignoreCache);
 }
 
+async function connect(location?: string): Promise<void> {
+  await router.push({ path: '/api-keys/banks', query: { add: 'true', ...(location ? { location } : {}) } });
+}
+
 onBeforeMount(() => {
+  startPromise(refreshSupportedBanks());
   startPromise(refresh());
 });
 </script>
@@ -55,7 +49,10 @@ onBeforeMount(() => {
 <template>
   <TablePageLayout :title="[t('navigation_menu.balances'), t('navigation_menu.balances_sub.bank_balances')]">
     <template #buttons>
-      <RuiTooltip :open-delay="400">
+      <RuiTooltip
+        v-if="connections.length > 0"
+        :open-delay="400"
+      >
         <template #activator>
           <RuiButton
             variant="outlined"
@@ -75,7 +72,7 @@ onBeforeMount(() => {
       <RuiButton
         color="primary"
         data-testid="add-bank-connection"
-        :to="{ path: '/api-keys/banks', query: { add: 'true' } }"
+        @click="connect()"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
@@ -84,43 +81,49 @@ onBeforeMount(() => {
       </RuiButton>
     </template>
 
-    <RuiCard
-      v-for="entry in perLocation"
-      :key="entry.location"
-      data-testid="bank-balances-card"
+    <BankBalancesEmpty
+      v-if="connections.length === 0"
+      @connect="connect($event)"
+    />
+
+    <TableFrame
+      v-else
+      data-testid="bank-balances"
     >
-      <template #header>
-        <LocationDisplay
-          :identifier="entry.location"
-          :open-details="false"
+      <template #toolbar>
+        <ul
+          class="flex flex-col gap-1 min-w-0 p-0 m-0 list-none"
+          :aria-label="t('bank_balances.connections')"
+        >
+          <BankConnectionItem
+            v-for="connection in connections"
+            :key="`${connection.location}#${connection.name}`"
+            :connection="connection"
+          />
+        </ul>
+        <TableSearchField
+          v-model="search"
+          data-testid="bank-balances-search"
         />
       </template>
-      <AssetBalances
-        :balances="entry.balances"
-        :loading="loading"
-      />
-    </RuiCard>
 
-    <RuiCard v-if="perLocation.length === 0">
-      <div
-        class="p-4 text-rui-text-secondary"
-        data-testid="bank-balances-empty"
+      <AssetBalances
+        v-model:search="search"
+        data-testid="bank-asset-balances"
+        :breakdown="{ hide: true }"
+        :loading="loading && balances.length === 0"
+        :balances="balances"
+        :show-per-protocol="banks.length > 1"
+        sticky-header
       >
-        <template v-if="connections.length === 0">
-          <i18n-t
-            scope="global"
-            keypath="bank_balances.no_connections"
-            tag="span"
-          >
-            <InternalLink :to="{ path: '/api-keys/banks', query: { add: 'true' } }">
-              {{ t('bank_balances.click_here') }}
-            </InternalLink>
-          </i18n-t>
+        <template #empty>
+          <TableEmptyNotice
+            icon="lu-landmark"
+            :title="t('bank_balances.empty_table.title')"
+            :description="t('bank_balances.empty_table.description')"
+          />
         </template>
-        <template v-else>
-          {{ t('bank_balances.no_balances') }}
-        </template>
-      </div>
-    </RuiCard>
+      </AssetBalances>
+    </TableFrame>
   </TablePageLayout>
 </template>

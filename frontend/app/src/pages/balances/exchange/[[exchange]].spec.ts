@@ -8,34 +8,63 @@ import { defineComponent } from 'vue';
 import ExchangeBalancesPage from '@/pages/balances/exchange/[[exchange]].vue';
 
 const navigateToExchangeSetup = vi.fn();
-const openExchangeDetails = vi.fn();
 const refreshExchangeBalances = vi.fn(async (): Promise<void> => {});
+const refreshInView = vi.fn(async (): Promise<void> => {});
 const refreshSelectedExchangeBalances = vi.fn(async (): Promise<void> => {});
 
 interface PageState {
   balances: AssetBalanceWithPrice[];
-  detailTab: number;
   loading: boolean;
   used: string[];
+  view: 'balances' | 'savings';
 }
 
 const pageState = vi.hoisted((): PageState => ({
   balances: [],
-  detailTab: 0,
   loading: false,
   used: [],
+  view: 'balances',
 }));
 
-const DetailPanelStub = defineComponent({
-  emits: ['refresh', 'update:modelValue'],
-  name: 'ExchangeDetailPanelStub',
+const RefreshButtonStub = defineComponent({
+  emits: ['refresh', 'refresh-all', 'refresh-exchange'],
+  name: 'ExchangeBalancesRefreshButtonStub',
+  props: {
+    exchanges: { default: () => [], type: Array },
+    loading: { default: false, type: Boolean },
+    selected: { default: undefined, type: String },
+  },
+  template: '<div data-testid="refresh-button" />',
+});
+
+const CardsStub = defineComponent({
+  name: 'ExchangeBalanceCardsStub',
+  props: {
+    exchangeBalance: { default: undefined, type: Function },
+    exchanges: { default: () => [], type: Array },
+    selected: { default: undefined, type: String },
+    total: { default: undefined, type: Object },
+  },
+  template: '<div data-testid="exchange-cards" />',
+});
+
+const EmptyStub = defineComponent({
+  emits: ['connect'],
+  name: 'ExchangeBalancesEmptyStub',
+  template: '<div data-testid="exchanges-empty" />',
+});
+
+const AssetBalancesStub = defineComponent({
+  name: 'AssetBalancesStub',
   props: {
     balances: { default: () => [], type: Array },
-    exchange: { default: '', type: String },
+    breakdown: { default: undefined, type: Object },
     loading: { default: false, type: Boolean },
-    modelValue: { default: 0, type: Number },
+    search: { default: '', type: String },
+    showPerProtocol: { default: false, type: Boolean },
+    stickyHeader: { default: false, type: Boolean },
   },
-  template: '<div data-testid="detail-panel" />',
+  template: '<div data-testid="asset-balances" />',
 });
 
 vi.mock('@/pages/balances/exchange/use-exchange-balances-page', async () => {
@@ -46,15 +75,13 @@ vi.mock('@/pages/balances/exchange/use-exchange-balances-page', async () => {
       balances: computed(() => pageState.balances),
       exchangeBalance: () => bigNumberify(100),
       isExchangeLoading: computed(() => pageState.loading),
-      modelExchangeDetailTabs: shallowRef(pageState.detailTab),
-      modelSelectedExchange: shallowRef(''),
-      modelSelectedTab: shallowRef(undefined),
+      modelView: shallowRef(pageState.view),
       navigateToExchangeSetup,
-      openExchangeDetails,
       refreshExchangeBalances,
+      refreshInView,
       refreshSelectedExchangeBalances,
       sortedExchanges: computed(() => pageState.used),
-      usedExchanges: computed(() => pageState.used),
+      totalBalance: computed(() => bigNumberify(200)),
     }),
   };
 });
@@ -68,13 +95,12 @@ describe('pages/balances/exchange/[[exchange]]', () => {
         plugins: [createPinia()],
         provide: libraryDefaults,
         stubs: {
-          ExchangeAmountRow: { props: ['balance', 'exchange'], template: '<div />' },
-          ExchangeDetailPanel: DetailPanelStub,
-          FiatDisplay: { props: ['value'], template: '<div />' },
+          AssetBalances: AssetBalancesStub,
+          BinanceSavingDetail: { props: ['exchange'], template: '<div data-testid="binance-savings" />' },
+          ExchangeBalanceCards: CardsStub,
+          ExchangeBalancesEmpty: EmptyStub,
+          ExchangeBalancesRefreshButton: RefreshButtonStub,
           HideSmallBalances: { props: ['source'], template: '<div />' },
-          InternalLink: { props: ['to'], template: '<a><slot /></a>' },
-          LocationDisplay: { props: ['identifier', 'openDetails', 'size'], template: '<div data-testid="exchange-tab" />' },
-          RuiMenuSelect: { props: ['modelValue', 'options', 'label'], template: '<div data-testid="exchange-picker" />' },
           TablePageLayout: { props: ['title'], template: '<div><slot name="buttons" /><slot /></div>' },
         },
       },
@@ -86,9 +112,9 @@ describe('pages/balances/exchange/[[exchange]]', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     pageState.balances = [];
-    pageState.detailTab = 0;
     pageState.loading = false;
     pageState.used = [];
+    pageState.view = 'balances';
   });
 
   afterEach(() => {
@@ -96,10 +122,25 @@ describe('pages/balances/exchange/[[exchange]]', () => {
   });
 
   describe('with no exchange connected', () => {
-    it('should offer the setup shortcut instead of the picker', async () => {
+    it('should show the empty state instead of the cards and table', () => {
       wrapper = mountPage();
 
-      expect(wrapper.find('[data-testid=exchange-picker]').exists()).toBe(false);
+      expect(wrapper.findComponent(EmptyStub).exists()).toBe(true);
+      expect(wrapper.findComponent(CardsStub).exists()).toBe(false);
+      expect(wrapper.findComponent(AssetBalancesStub).exists()).toBe(false);
+    });
+
+    it('should open the add dialog on the exchange the empty state picks', () => {
+      wrapper = mountPage();
+
+      wrapper.findComponent(EmptyStub).vm.$emit('connect', 'kraken');
+
+      expect(navigateToExchangeSetup).toHaveBeenCalledWith('kraken');
+    });
+
+    it('should still offer the header add button', async () => {
+      wrapper = mountPage();
+
       await wrapper.find('[data-testid=add-exchange]').trigger('click');
 
       expect(navigateToExchangeSetup).toHaveBeenCalledTimes(1);
@@ -111,20 +152,21 @@ describe('pages/balances/exchange/[[exchange]]', () => {
       pageState.used = ['kraken', 'binance'];
     });
 
-    it('should show a tab per exchange', () => {
+    it('should show a card per exchange, with none selected on the all view', () => {
       wrapper = mountPage();
 
-      expect(wrapper.findAll('[data-testid=exchange-tab]')).toHaveLength(2);
+      const cards = wrapper.findComponent(CardsStub);
+      expect(cards.props('exchanges')).toEqual(['kraken', 'binance']);
+      expect(cards.props('selected')).toBeUndefined();
     });
 
-    it('should show the hint rather than a panel until one is chosen', () => {
+    it('should list every exchange balances with their locations on the all view', () => {
       wrapper = mountPage();
 
-      expect(wrapper.findComponent(DetailPanelStub).exists()).toBe(false);
-      expect(wrapper.text()).toContain('exchange_balances.select_hint');
+      expect(wrapper.findComponent(AssetBalancesStub).props('showPerProtocol')).toBe(true);
     });
 
-    it('should show the panel for the exchange in the route, with its balances', () => {
+    it('should show the exchange in the route without a location column', () => {
       pageState.balances = [{
         amount: bigNumberify(1),
         asset: 'ETH',
@@ -134,34 +176,43 @@ describe('pages/balances/exchange/[[exchange]]', () => {
 
       wrapper = mountPage('kraken');
 
-      const panel = wrapper.findComponent(DetailPanelStub);
-      expect(panel.exists()).toBe(true);
-      expect(panel.props('exchange')).toBe('kraken');
-      expect(panel.props('balances')).toHaveLength(1);
+      const table = wrapper.findComponent(AssetBalancesStub);
+      expect(wrapper.findComponent(CardsStub).props('selected')).toBe('kraken');
+      expect(table.props('balances')).toHaveLength(1);
+      expect(table.props('showPerProtocol')).toBe(false);
     });
 
-    it('should refresh a single exchange from the panel', () => {
+    it('should wire the refresh button to the page, every exchange and a single one', () => {
       wrapper = mountPage('kraken');
 
-      wrapper.findComponent(DetailPanelStub).vm.$emit('refresh', 'kraken');
+      const button = wrapper.findComponent(RefreshButtonStub);
+      expect(button.props('selected')).toBe('kraken');
 
-      expect(refreshSelectedExchangeBalances).toHaveBeenCalledWith('kraken');
+      button.vm.$emit('refresh');
+      button.vm.$emit('refresh-all');
+      button.vm.$emit('refresh-exchange', 'binance');
+
+      expect(refreshInView).toHaveBeenCalledOnce();
+      expect(refreshExchangeBalances).toHaveBeenCalledOnce();
+      expect(refreshSelectedExchangeBalances).toHaveBeenCalledWith('binance');
     });
 
-    it('should refresh every exchange from the toolbar button', async () => {
+    it('should offer the savings view only for binance', () => {
       wrapper = mountPage('kraken');
+      expect(wrapper.find('[data-testid=exchange-balances-view]').exists()).toBe(false);
+      wrapper.unmount();
 
-      await wrapper.find('[data-testid=refresh-exchange-balances]').trigger('click');
-
-      expect(refreshExchangeBalances).toHaveBeenCalledTimes(1);
+      wrapper = mountPage('binance');
+      expect(wrapper.find('[data-testid=exchange-balances-view]').exists()).toBe(true);
     });
 
-    it('should block the toolbar refresh while a detail tab other than the first is open', () => {
-      pageState.detailTab = 1;
+    it('should show the savings history in place of the table when chosen', () => {
+      pageState.view = 'savings';
 
-      wrapper = mountPage('kraken');
+      wrapper = mountPage('binance');
 
-      expect(wrapper.find('[data-testid=refresh-exchange-balances]').attributes('disabled')).toBeDefined();
+      expect(wrapper.find('[data-testid=binance-savings]').exists()).toBe(true);
+      expect(wrapper.findComponent(AssetBalancesStub).exists()).toBe(false);
     });
   });
 });

@@ -51,7 +51,6 @@ const name = computed<string>(() => {
     <template #activator>
       <ProtocolIcon
         :protocol="transformedProtocol"
-        :size="20"
         hide-tooltip
       />
     </template>

@@ -147,7 +147,7 @@ test.describe.serial('balances', () => {
 
     await manualBalancesPage.visit();
     await ctx.app.changeCurrency('EUR');
-    await manualBalancesPage.showsCurrency('EUR');
+    await manualBalancesPage.showsCurrency('€');
   });
 
   test('delete', async () => {

@@ -41,7 +41,7 @@ export class ManualBalancesPage {
     await locationOption.click();
     await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
     await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
-    await expect(this.page.locator('[data-testid=price-refresh]')).not.toBeDisabled();
+    await expect(this.page.locator('[data-testid=manual-balances-refresh]')).not.toBeDisabled();
   }
 
   /**
@@ -137,7 +137,7 @@ export class ManualBalancesPage {
     await editForm.locator('[data-testid=manual-balances-form-amount] input').fill(amount);
     await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
     await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
-    await expect(this.page.locator('[data-testid=price-refresh]')).not.toBeDisabled();
+    await expect(this.page.locator('[data-testid=manual-balances-refresh]')).not.toBeDisabled();
   }
 
   async deleteBalance(label: string): Promise<void> {
@@ -149,10 +149,11 @@ export class ManualBalancesPage {
     await confirmDialog(this.page, 'Delete manually tracked balance');
   }
 
-  async showsCurrency(currency: string): Promise<void> {
-    await this.page.locator('[data-testid=manual-balances]').first().scrollIntoViewIfNeeded();
-    await expect(this.page.locator('[data-testid=manual-balances]').first()).toContainText(`${currency} Value`);
-    await this.page.locator('[data-testid=manual-balances]').first().waitFor({ state: 'visible' });
+  /** The headers name no currency (the cells carry it), so the total shows whether the switch took. */
+  async showsCurrency(symbol: string): Promise<void> {
+    const total = this.page.locator('[data-testid=manual-balance-total]').first();
+    await total.scrollIntoViewIfNeeded();
+    await expect(total).toContainText(symbol);
   }
 
   async openAddDialog(): Promise<void> {

@@ -25,38 +25,36 @@ const sortProperties = [
 </script>
 
 <template>
-  <div class="flex">
+  <div class="flex items-center gap-1">
+    <RuiMenuSelect
+      v-model="sortByModel"
+      class="w-40"
+      :options="sortProperties"
+      key-attr="value"
+      text-attr="text"
+      :label="t('nft_gallery.sort.by')"
+      label-placement="hidden"
+      hide-details
+      dense
+      data-testid="nft-gallery-sort"
+    />
     <RuiTooltip
       :options="{ placement: 'top' }"
       :open-delay="400"
     >
       <template #activator>
         <RuiButton
-          color="secondary"
-          class="rounded-r-none"
+          variant="text"
+          icon
+          class="text-rui-text-secondary!"
+          :aria-label="sortDescModel ? t('sorting_selector.desc.sort_asc_tooltip') : t('sorting_selector.desc.sort_desc_tooltip')"
+          data-testid="nft-gallery-sort-direction"
           @click="toggleSortDesc()"
         >
           <RuiIcon :name="sortDescModel ? 'lu-arrow-down-z-a' : 'lu-arrow-down-a-z'" />
         </RuiButton>
       </template>
-      <span v-if="sortDescModel">
-        {{ t('sorting_selector.desc.sort_asc_tooltip') }}
-      </span>
-      <span v-else>
-        {{ t('sorting_selector.desc.sort_desc_tooltip') }}
-      </span>
+      {{ sortDescModel ? t('sorting_selector.desc.sort_asc_tooltip') : t('sorting_selector.desc.sort_desc_tooltip') }}
     </RuiTooltip>
-    <div class="flex-1">
-      <RuiMenuSelect
-        v-model="sortByModel"
-        :options="sortProperties"
-        class="[&_fieldset]:rounded-l-none! [&_fieldset]:border-l-0!"
-        key-attr="value"
-        text-attr="text"
-        hide-details
-        variant="outlined"
-        dense
-      />
-    </div>
   </div>
 </template>

@@ -14,9 +14,11 @@ const splits = defineModel<LocationSplit[]>({ required: true });
 /** Whether the split is complete (every row filled, no dupes, sums to `total`). */
 const valid = defineModel<boolean>('valid', { default: false });
 
-const { hint, locations, maxPerLocation = {}, timestamp, total } = defineProps<{
+const { hint, locations, maxPerLocation = {}, timestamp, total, untitled = false } = defineProps<{
   /** Replaces the default hint, which describes splitting one balance. */
   hint?: string;
+  /** Leaves the title out, for a split shown under a switch that already names it. */
+  untitled?: boolean;
   /** The balance's full USD value that the split must add up to. */
   total: BigNumber;
   timestamp: number;
@@ -160,24 +162,28 @@ watch([result, isValid], () => {
     class="flex flex-col gap-3"
     data-testid="snapshot-location-split"
   >
-    <div class="flex items-center justify-between">
-      <div class="text-subtitle-2">
-        {{ t('dashboard.snapshot.detail.split.title') }}
-      </div>
+    <div
+      v-if="!untitled"
+      class="text-subtitle-2"
+    >
+      {{ t('dashboard.snapshot.detail.split.title') }}
+    </div>
+
+    <div class="flex items-start justify-between gap-4">
+      <p class="text-caption text-rui-text-secondary pt-1.5">
+        {{ hint ?? t('dashboard.snapshot.detail.split.hint') }}
+      </p>
       <RuiButton
         variant="text"
         color="primary"
         size="sm"
+        class="shrink-0"
         data-testid="snapshot-location-split-distribute"
         @click="distribute()"
       >
         {{ t('dashboard.snapshot.detail.split.distribute') }}
       </RuiButton>
     </div>
-
-    <p class="text-caption text-rui-text-secondary">
-      {{ hint ?? t('dashboard.snapshot.detail.split.hint') }}
-    </p>
 
     <div
       v-for="(row, index) in rows"
@@ -232,7 +238,7 @@ watch([result, isValid], () => {
           variant="text"
           icon
           size="sm"
-          class="mt-1"
+          class="mt-7"
           :disabled="rows.length <= 1"
           @click="removeRow(index)"
         >

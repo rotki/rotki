@@ -21,8 +21,5 @@ const { enabled } = useModuleEnabled(modules[0]);
     v-if="!enabled"
     :modules="modules"
   />
-  <NonFungibleBalances
-    v-else
-    :modules="modules"
-  />
+  <NonFungibleBalances v-else />
 </template>

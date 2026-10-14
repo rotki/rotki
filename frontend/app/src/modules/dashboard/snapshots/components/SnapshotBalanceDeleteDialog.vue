@@ -123,14 +123,14 @@ defineExpose({ open });
     :display="display"
     :title="t('dashboard.snapshot.edit.dialog.balances.delete_title')"
     :message="t('dashboard.snapshot.edit.dialog.balances.delete_confirmation')"
+    :primary-action="t('common.actions.delete')"
+    confirm-type="warning"
     max-width="700"
     :disabled="confirmDisabled"
     @cancel="cancel()"
     @confirm="confirm()"
   >
     <div class="mt-4 flex flex-col gap-3">
-      <!-- Pinned at the top so toggling split mode doesn't make this control jump
-        upwards when the single-location selector below it unmounts. -->
       <RuiSwitch
         v-model="splitMode"
         color="primary"
@@ -154,6 +154,7 @@ defineExpose({ open });
         v-if="splitMode"
         v-model="splits"
         v-model:valid="splitValid"
+        untitled
         :total="total"
         :locations="existingLocations"
         :max-per-location="locationCaps"

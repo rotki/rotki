@@ -41,8 +41,11 @@ vi.mock('vue-router', async () => {
 });
 
 vi.mock('@/modules/balances/use-aggregated-balances', () => ({
-  useAggregatedBalances: (): { getExchangeBalances: (id: string) => AssetBalanceWithPrice[] } => ({
-    getExchangeBalances: (id: string): AssetBalanceWithPrice[] => exchangeBalances.current[id] ?? [],
+  useAggregatedBalances: (): { getExchangeBalances: (id?: string) => AssetBalanceWithPrice[] } => ({
+    // without an exchange, every exchange's rows together, as the real aggregation sums them
+    getExchangeBalances: (id?: string): AssetBalanceWithPrice[] => (id
+      ? exchangeBalances.current[id] ?? []
+      : Object.values(exchangeBalances.current).flat()),
   }),
 }));
 
@@ -125,10 +128,10 @@ describe('pages/balances/exchange/useExchangeBalancesPage', () => {
     it('should list each exchange once, however many keys it has', async () => {
       connected.current = [{ location: 'kraken' }, { location: 'binance' }, { location: 'kraken' }];
 
-      const { usedExchanges } = setup();
+      const { sortedExchanges } = setup();
       await flushPromises();
 
-      expect(get(usedExchanges)).toEqual(['kraken', 'binance']);
+      expect(get(sortedExchanges)).toEqual(['kraken', 'binance']);
     });
 
     it('should sort them by balance, largest first', async () => {
@@ -143,17 +146,6 @@ describe('pages/balances/exchange/useExchangeBalancesPage', () => {
       await flushPromises();
 
       expect(get(sortedExchanges)).toEqual(['binance', 'kraken', 'coinbase']);
-    });
-
-    it('should not reorder the unsorted list when the sorted one is read', async () => {
-      connected.current = [{ location: 'kraken' }, { location: 'binance' }];
-      exchangeBalances.current = { binance: [balance('BTC', 500)], kraken: [balance('ETH', 100)] };
-
-      const { sortedExchanges, usedExchanges } = setup();
-      await flushPromises();
-
-      expect(get(sortedExchanges)).toEqual(['binance', 'kraken']);
-      expect(get(usedExchanges)).toEqual(['kraken', 'binance']);
     });
 
     it('should total every asset an exchange holds', async () => {
@@ -174,21 +166,34 @@ describe('pages/balances/exchange/useExchangeBalancesPage', () => {
   });
 
   describe('with no exchange in the route', () => {
-    it('should expose no balances, so the page shows its hint', async () => {
-      exchangeBalances.current = { kraken: [balance('ETH', 100)] };
+    it('should expose every exchange balances together', async () => {
+      exchangeBalances.current = { binance: [balance('BTC', 500)], kraken: [balance('ETH', 100)] };
 
       const { balances } = setup();
       await flushPromises();
 
-      expect(get(balances)).toEqual([]);
+      expect(get(balances).map(({ asset }) => asset)).toEqual(['BTC', 'ETH']);
     });
 
-    it('should start with no tab highlighted', async () => {
-      const { modelSelectedTab } = setup();
+    it('should refresh every exchange from the page refresh', async () => {
+      const { refreshInView } = setup();
       await flushPromises();
+      refreshExchangeSavings.mockClear();
 
-      expect(get(modelSelectedTab)).toBeUndefined();
+      await refreshInView();
+
+      expect(refreshConnectedExchangeBalances).toHaveBeenCalledOnce();
+      expect(refreshExchangeBalance).not.toHaveBeenCalled();
     });
+  });
+
+  it('should total every exchange, whichever one is in view', async () => {
+    exchangeBalances.current = { binance: [balance('BTC', 500)], kraken: [balance('ETH', 100)] };
+
+    const { totalBalance } = setup('kraken');
+    await flushPromises();
+
+    expect(get(totalBalance).toNumber()).toBe(600);
   });
 
   describe('with an exchange in the route', () => {
@@ -202,45 +207,21 @@ describe('pages/balances/exchange/useExchangeBalancesPage', () => {
       expect(get(balances)[0].asset).toBe('ETH');
     });
 
-    it('should highlight its tab', async () => {
-      const { modelSelectedTab } = setup('kraken');
+    it('should refresh only that exchange from the page refresh', async () => {
+      const { refreshInView } = setup('kraken');
       await flushPromises();
 
-      expect(get(modelSelectedTab)).toBe('kraken');
-    });
-  });
+      await refreshInView();
 
-  describe('the location query the mobile picker reads', () => {
-    it('should be picked up on mount', async () => {
-      routeRef.current = ref({ query: { location: 'kraken' } });
-
-      const { modelSelectedExchange } = setup();
-      await flushPromises();
-
-      expect(get(modelSelectedExchange)).toBe('kraken');
+      expect(refreshExchangeBalance).toHaveBeenCalledWith('kraken');
+      expect(refreshConnectedExchangeBalances).not.toHaveBeenCalled();
     });
 
-    it('should follow a later route change', async () => {
-      const { modelSelectedExchange } = setup();
+    it('should start on the balances view', async () => {
+      const { modelView } = setup('binance');
       await flushPromises();
 
-      set(routeRef.current!, { query: { location: 'binance' } });
-      await flushPromises();
-
-      expect(get(modelSelectedExchange)).toBe('binance');
-    });
-
-    it('should open the details for whatever the picker holds', async () => {
-      routeRef.current = ref({ query: { location: 'kraken' } });
-
-      const { openExchangeDetails } = setup();
-      await flushPromises();
-      openExchangeDetails();
-
-      expect(pushMock).toHaveBeenCalledWith({
-        name: '/balances/exchange/[[exchange]]',
-        params: { exchange: 'kraken' },
-      });
+      expect(get(modelView)).toBe('balances');
     });
   });
 
@@ -286,5 +267,14 @@ describe('pages/balances/exchange/useExchangeBalancesPage', () => {
     navigateToExchangeSetup();
 
     expect(pushMock).toHaveBeenCalledWith({ path: '/api-keys/exchanges', query: { add: 'true' } });
+  });
+
+  it('should open the add dialog on a given exchange', async () => {
+    const { navigateToExchangeSetup } = setup();
+    await flushPromises();
+
+    navigateToExchangeSetup('kraken');
+
+    expect(pushMock).toHaveBeenCalledWith({ path: '/api-keys/exchanges', query: { add: 'true', location: 'kraken' } });
   });
 });

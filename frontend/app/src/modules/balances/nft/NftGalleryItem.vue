@@ -130,12 +130,12 @@ const mediaStyle = computed<StyleValue>(() => {
         <strong class="text-rui-warning-lighter">{{ domain }}</strong>
       </RuiTooltip>
     </div>
-    <div class="p-4">
+    <div class="p-4 flex flex-col min-w-0">
       <RuiTooltip
         :options="{ placement: 'top' }"
         :open-delay="400"
         :class-names="{ tooltip: 'max-w-80' }"
-        class="text-truncate block text-subtitle-1 font-medium"
+        class="block truncate text-body-1 font-medium"
       >
         <template #activator>
           {{ name }}
@@ -146,40 +146,35 @@ const mediaStyle = computed<StyleValue>(() => {
         v-if="item.collection"
         :options="{ placement: 'top' }"
         :open-delay="400"
-        :class-names="{ tooltip: 'max-w-80 text-truncate overflow-hidden' }"
-        class="pt-1 text-truncate max-w-full"
+        :disabled="!item.collection.description"
+        :class-names="{ tooltip: 'max-w-80' }"
+        class="block truncate text-body-2 text-rui-text-secondary"
       >
         <template #activator>
-          <RuiChip
-            tile
-            size="sm"
-            class="font-medium text-caption"
-          >
-            {{ item.collection.name }}
-          </RuiChip>
+          {{ item.collection.name }}
         </template>
         {{ item.collection.description }}
       </RuiTooltip>
-      <div class="pt-4 flex flex-col font-medium">
-        <AssetAmountDisplay
-          :amount="item.priceInAsset"
-          :asset="item.priceAsset"
-        />
-        <FiatDisplay
-          class="text-rui-text-secondary"
-          :value="item.price"
-          no-scramble
-          symbol="ticker"
+      <div class="mt-4 flex items-end justify-between gap-2">
+        <div class="flex flex-col min-w-0">
+          <AssetAmountDisplay
+            class="font-medium"
+            :amount="item.priceInAsset"
+            :asset="item.priceAsset"
+          />
+          <FiatDisplay
+            class="text-body-2 text-rui-text-secondary"
+            :value="item.price"
+            no-scramble
+            symbol="ticker"
+          />
+        </div>
+        <IconLink
+          v-if="item.permalink"
+          :url="item.permalink"
+          class="-mr-1.5 -mb-0.5 shrink-0"
         />
       </div>
     </div>
-    <template #footer>
-      <IconLink
-        v-if="item.permalink"
-        :url="item.permalink"
-        class="-mt-2 -mx-1"
-        text="OpenSea"
-      />
-    </template>
   </RuiCard>
 </template>

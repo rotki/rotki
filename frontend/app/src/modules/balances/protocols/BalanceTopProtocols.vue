@@ -16,9 +16,8 @@ const showMore = computed<number>(() => protocols.length - visible);
 <template>
   <div
     v-if="protocols.length > 0"
-    class="flex justify-end pl-2"
+    class="flex items-center justify-end gap-1 pl-2"
   >
-    <!-- Single protocol: no tooltip, no overlap -->
     <ProtocolTooltipIcon
       v-if="protocols.length === 1"
       :protocol-balance="protocols[0]"
@@ -26,7 +25,6 @@ const showMore = computed<number>(() => protocols.length - visible);
       :loading="loading"
     />
 
-    <!-- Multiple protocols: with tooltips and overlap -->
     <template v-else>
       <ProtocolTooltipIcon
         v-for="protocolBalance in protocols.slice(0, visible)"
@@ -34,7 +32,6 @@ const showMore = computed<number>(() => protocols.length - visible);
         :protocol-balance="protocolBalance"
         :asset="asset"
         :loading="loading"
-        class="-ml-2"
       />
 
       <RuiMenu
@@ -45,8 +42,8 @@ const showMore = computed<number>(() => protocols.length - visible);
       >
         <template #activator="{ open, attrs }">
           <div
-            class="rounded-full h-8 px-1 min-w-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 font-bold text-xs text-rui-light-text z-[1] cursor-pointer transition-all"
-            :class="{ 'bg-rui-grey-400 dark:bg-rui-grey-100': open }"
+            class="rounded-full h-7 px-1.5 min-w-7 bg-rui-grey-100 dark:bg-rui-grey-800 flex items-center justify-center font-medium text-xs text-rui-text-secondary cursor-pointer transition-colors"
+            :class="{ 'bg-rui-grey-200 dark:bg-rui-grey-700': open }"
             v-bind="attrs"
           >
             {{ showMore }}+

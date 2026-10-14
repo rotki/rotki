@@ -4,8 +4,8 @@ import { Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
 import ManualBalancesDialog from '@/modules/accounts/manual-balances/ManualBalancesDialog.vue';
+import ManualBalancesRefreshButton from '@/modules/accounts/manual-balances/ManualBalancesRefreshButton.vue';
 import ManualBalanceTable from '@/modules/accounts/manual-balances/ManualBalanceTable.vue';
-import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
@@ -85,10 +85,9 @@ onBeforeMount(async () => {
     ]"
   >
     <template #buttons>
-      <PriceRefresh />
+      <ManualBalancesRefreshButton />
       <RuiButton
         color="primary"
-        size="lg"
         data-testid="manual-balances-add-button"
         :disabled="loading"
         @click="add()"
@@ -101,37 +100,29 @@ onBeforeMount(async () => {
       <HideSmallBalances :source="BalanceSource.MANUAL" />
     </template>
 
-    <div>
-      <RuiTabs
-        :model-value="tab"
-        color="primary"
-        class="border border-default rounded-sm bg-white dark:bg-rui-grey-900 flex max-w-min mb-3"
-        @update:model-value="goToTab($event)"
-      >
-        <RuiTab value="assets">
-          {{ t('common.assets') }}
-        </RuiTab>
-        <RuiTab value="liabilities">
-          {{ t('common.liabilities') }}
-        </RuiTab>
-      </RuiTabs>
-      <RuiTabItems :model-value="tab">
-        <RuiTabItem value="assets">
-          <ManualBalanceTable
-            data-testid="manual-balances"
-            type="balances"
-            @edit="balance = $event"
-          />
-        </RuiTabItem>
-        <RuiTabItem value="liabilities">
-          <ManualBalanceTable
-            data-testid="manual-liabilities"
-            type="liabilities"
-            @edit="balance = $event"
-          />
-        </RuiTabItem>
-      </RuiTabItems>
-    </div>
+    <ManualBalanceTable
+      :key="tab"
+      :data-testid="tab === 'liabilities' ? 'manual-liabilities' : 'manual-balances'"
+      :type="tab === 'liabilities' ? 'liabilities' : 'balances'"
+      @edit="balance = $event"
+      @add="add()"
+    >
+      <template #toolbar>
+        <RuiTabs
+          :model-value="tab"
+          variant="segmented"
+          color="primary"
+          @update:model-value="goToTab($event)"
+        >
+          <RuiTab value="assets">
+            {{ t('common.assets') }}
+          </RuiTab>
+          <RuiTab value="liabilities">
+            {{ t('common.liabilities') }}
+          </RuiTab>
+        </RuiTabs>
+      </template>
+    </ManualBalanceTable>
 
     <ManualBalancesDialog
       v-model="balance"
