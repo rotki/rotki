@@ -26,13 +26,8 @@ const fields = computed<FieldDef[]>(() => [...get(selectionFields), ...get(filte
 </script>
 
 <template>
-  <!--
-    The bar draws a border but no surface of its own: it sits straight on the page background here,
-    not inside a card, so it brings the surface its own pills already assume.
-  -->
   <PillFilterBar
     v-model:matches="modelMatches"
-    class="bg-white dark:bg-rui-grey-900"
     :fields="fields"
     :labels="pillLabels"
   />

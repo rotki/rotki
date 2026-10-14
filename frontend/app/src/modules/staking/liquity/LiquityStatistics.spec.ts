@@ -99,11 +99,13 @@ describe('modules/staking/liquity/LiquityStatistics', () => {
           LiquityAssetBalanceList: AssetListStub,
           LiquityPnlRow: PnlRowStub,
           LiquityStatisticRow: { props: ['label'], template: '<div><slot /></div>' },
-          RuiAccordion: { template: '<div><slot /></div>' },
-          RuiAccordions: { template: '<div><slot /></div>' },
         },
       },
     });
+  }
+
+  async function showDetails(): Promise<void> {
+    await wrapper.find('[data-testid=statistics-details-toggle]').trigger('click');
   }
 
   beforeEach(() => {
@@ -135,28 +137,43 @@ describe('modules/staking/liquity/LiquityStatistics', () => {
     expect(wrapper.find('[data-testid=total-gains-staking]').exists()).toBe(true);
   });
 
-  it('should price the stability-pool totals in LUSD', () => {
+  it('should keep the breakdown behind its toggle', async () => {
+    statsState.statistic = statistic();
+
+    wrapper = mountComponent();
+
+    expect(wrapper.find('[data-testid=statistics-details]').exists()).toBe(false);
+    await showDetails();
+    expect(wrapper.find('[data-testid=statistics-details]').exists()).toBe(true);
+    await showDetails();
+    expect(wrapper.find('[data-testid=statistics-details]').exists()).toBe(false);
+  });
+
+  it('should price the stability-pool totals in LUSD', async () => {
     statsState.statistic = statistic();
     statsState.deposited = { amount: bigNumberify(1000), value: bigNumberify(1000) };
 
     wrapper = mountComponent();
+    await showDetails();
 
     expect(wrapper.findComponent(BalanceDisplayStub).props('asset')).toBe(LUSD_ID);
   });
 
-  it('should hide the profit row until there is a figure', () => {
+  it('should hide the profit row until there is a figure', async () => {
     statsState.statistic = statistic();
 
     wrapper = mountComponent();
+    await showDetails();
 
     expect(wrapper.findComponent(PnlRowStub).exists()).toBe(false);
   });
 
-  it('should show the profit row once there is a figure', () => {
+  it('should show the profit row once there is a figure', async () => {
     statsState.statistic = statistic();
     statsState.pnl = bigNumberify(42);
 
     wrapper = mountComponent();
+    await showDetails();
 
     expect(wrapper.findComponent(PnlRowStub).props('value')).toStrictEqual(bigNumberify(42));
   });

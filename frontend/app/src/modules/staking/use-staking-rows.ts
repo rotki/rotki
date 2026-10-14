@@ -33,6 +33,11 @@ interface UseStakingRowsOptions<TResponse extends StakingResponse, TRow, TTotal>
 export interface UseStakingRowsReturn<TRow, TTotal> {
   /** The addresses the last successful query could not load. */
   failedAddresses: ComputedRef<string[]>;
+  /**
+   * Whether a query has succeeded yet. Until one has, empty rows mean nothing is known rather than
+   * that there are no positions, so a table must not say there are none.
+   */
+  loaded: Readonly<Ref<boolean>>;
   loading: Readonly<Ref<boolean>>;
   refresh: () => Promise<void>;
   rows: ComputedRef<TRow[]>;
@@ -56,6 +61,7 @@ export function useStakingRows<TResponse extends StakingResponse, TRow, TTotal>(
 
   const rows = shallowRef<TRow[]>([]);
   const failedAddresses = shallowRef<string[]>([]);
+  const loaded = shallowRef<boolean>(false);
   const loading = shallowRef<boolean>(false);
 
   const total = computed<TTotal>(() => toTotal(get(rows)));
@@ -83,6 +89,7 @@ export function useStakingRows<TResponse extends StakingResponse, TRow, TTotal>(
         ok: (fetched) => {
           set(rows, fetched.rows);
           set(failedAddresses, fetched.failed);
+          set(loaded, true);
         },
       });
       onActionableError(outcome, error => logger.error(`action failure for ${part} staking:`, error));
@@ -94,6 +101,7 @@ export function useStakingRows<TResponse extends StakingResponse, TRow, TTotal>(
 
   return {
     failedAddresses: computed<string[]>(() => get(failedAddresses)),
+    loaded: readonly(loaded),
     loading: readonly(loading),
     refresh,
     rows: computed<TRow[]>(() => get(rows)),

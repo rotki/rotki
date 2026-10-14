@@ -15,6 +15,7 @@ vi.mock('@/modules/staking/solana/use-solana-stake-accounts', async () => {
   return {
     useSolanaStakeAccounts: (): ReturnType<typeof useSolanaStakeAccounts> => ({
       failedAddresses: computed(() => ['0xBad']),
+      loaded: shallowRef<boolean>(true),
       loading: shallowRef<boolean>(false),
       refresh,
       rows: computed(() => []),
@@ -27,6 +28,21 @@ vi.mock('@/modules/assets/prices/use-price-task-manager', () => ({
   usePriceTaskManager: (): { fetchPrices: typeof fetchPrices } => ({ fetchPrices }),
 }));
 
+vi.mock('@/modules/accounts/address-book/use-address-name-resolution', () => ({
+  useAddressNameResolution: (): Record<string, unknown> => ({ getAddressName: (): undefined => undefined }),
+}));
+
+vi.mock('@/modules/staking/use-staking-history-sync', async () => {
+  const { computed } = await import('vue');
+  return {
+    useStakingHistorySync: (): Record<string, unknown> => ({
+      chainName: computed(() => 'Solana'),
+      syncHistory: vi.fn(),
+      syncingHistory: computed(() => false),
+    }),
+  };
+});
+
 const HistoryEventsViewStub = defineComponent({
   name: 'HistoryEventsViewStub',
   props: { restrictions: { default: () => ({}), type: Object } },
@@ -38,9 +54,9 @@ describe('modules/staking/solana/SolanaPage', () => {
     return mount(SolanaPage, {
       global: {
         stubs: {
-          BalanceDisplay: true,
           HistoryEventsView: HistoryEventsViewStub,
           SolanaStakeAccountsTable: true,
+          StakingHeadlineBalance: true,
           TablePageLayout: { template: '<div><slot name="buttons" /><slot /></div>' },
         },
       },

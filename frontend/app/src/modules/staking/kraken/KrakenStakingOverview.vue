@@ -1,64 +1,75 @@
 <script setup lang="ts">
-import type { AssetBalance, BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { sum } from '@/modules/core/common/display/balances';
-import ValueAccuracyHint from '@/modules/shell/components/ValueAccuracyHint.vue';
+import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
+import { useSetting } from '@/modules/settings/use-setting';
 
-const { earned } = defineProps<{
+/**
+ * What the staking has earned, as two figures read first: its value when each reward arrived, and
+ * what the same rewards are worth now.
+ */
+defineProps<{
+  /** Whether a current price is still missing for some earned asset. */
   loading: boolean;
   totalHistorical: BigNumber;
-  earned: AssetBalance[];
+  totalCurrent: BigNumber;
+  /** How many staking rewards the figures add up, which says how much history they cover. */
+  rewardsCount: number;
 }>();
 
-const totalCurrent = computed<BigNumber>(() => sum(earned));
-
 const { t } = useI18n({ useScope: 'global' });
+const currencySymbol = useSetting('currencySymbol');
+
+/** Outside USD the historical values are converted at today's rate, which the one hint also says. */
+const convertedFromUsd = computed<boolean>(() => get(currencySymbol) !== CURRENCY_USD);
 </script>
 
 <template>
-  <RuiCard>
+  <RuiCard class="h-auto">
     <template #header>
       {{ t('kraken_staking_overview.title') }}
     </template>
-    <div class="font-medium">
-      {{ t('kraken_staking_overview.earned') }}
-    </div>
-    <div class="mt-2 ml-4 flex flex-col gap-2">
-      <div class="flex justify-between items-center">
-        <div class="flex items-center text-rui-text-secondary gap-2 font-light">
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <div class="flex items-center gap-1.5 text-sm text-rui-text-secondary">
           {{ t('kraken_staking_overview.historical') }}
           <RuiTooltip
             :options="{ placement: 'top' }"
             :open-delay="400"
+            :class-names="{ tooltip: 'max-w-64' }"
           >
             <template #activator>
               <RuiIcon
-                size="20"
+                size="16"
                 name="lu-info"
               />
             </template>
             <span>{{ t('kraken_staking_overview.hint.historical') }}</span>
+            <span
+              v-if="convertedFromUsd"
+              class="block mt-1"
+            >
+              {{ t('price_accuracy_hint.tooltip') }}
+            </span>
           </RuiTooltip>
         </div>
-        <div class="flex items-center">
-          <ValueAccuracyHint />
-          <FiatDisplay
-            :value="totalHistorical"
-            symbol="ticker"
-            class="text-rui-text-secondary"
-          />
-        </div>
+        <FiatDisplay
+          :value="totalHistorical"
+          class="text-h5 font-semibold"
+          data-testid="kraken-total-historical"
+        />
       </div>
-      <div class="flex justify-between items-center">
-        <div class="flex items-center text-rui-text-secondary gap-2 font-light">
+      <div>
+        <div class="flex items-center gap-1.5 text-sm text-rui-text-secondary">
           {{ t('kraken_staking_overview.current') }}
           <RuiTooltip
             :options="{ placement: 'top' }"
             :open-delay="400"
+            :class-names="{ tooltip: 'max-w-64' }"
           >
             <template #activator>
               <RuiIcon
-                size="20"
+                size="16"
                 name="lu-info"
               />
             </template>
@@ -68,10 +79,16 @@ const { t } = useI18n({ useScope: 'global' });
         <FiatDisplay
           :value="totalCurrent"
           :loading="loading"
-          symbol="ticker"
-          class="text-rui-text-secondary"
+          class="text-h5 font-semibold"
+          data-testid="kraken-total-current"
         />
       </div>
+    </div>
+    <div
+      class="mt-4 text-sm text-rui-text-secondary"
+      data-testid="kraken-rewards-count"
+    >
+      {{ t('kraken_staking_overview.rewards_count', { count: rewardsCount }, rewardsCount) }}
     </div>
   </RuiCard>
 </template>

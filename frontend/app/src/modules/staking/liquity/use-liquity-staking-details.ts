@@ -6,7 +6,6 @@ import type {
 } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
-import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import {
   aggregateEntries,
   aggregateStatistics,
@@ -14,7 +13,7 @@ import {
   collectProxies,
 } from '@/modules/staking/liquity/liquity-aggregation';
 import { useLiquityStore } from '@/modules/staking/liquity/use-liquity-store';
-import { ActivityKind, ActivityPart, type ActivitySteps } from '@/modules/task-center/core/types';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseLiquityStakingDetailsReturn {
@@ -23,23 +22,18 @@ interface UseLiquityStakingDetailsReturn {
   aggregatedStakingPool: ComputedRef<LiquityPoolDetailEntry | null>;
   aggregatedStatistic: ComputedRef<LiquityStatisticDetails | null>;
   availableAddresses: ComputedRef<string[]>;
-  liquityHistoricPriceStatus: ReturnType<ReturnType<typeof useHistoricCachePriceStore>['getProtocolStatsPriceQueryStatus']>;
   loading: ComputedRef<boolean>;
   modelSelectedAccounts: Ref<AddressAccount[]>;
   proxyInformation: ComputedRef<Record<string, string[]> | null>;
-  stakingQueryStatus: ComputedRef<ActivitySteps | undefined>;
 }
 
 export function useLiquityStakingDetails(): UseLiquityStakingDetailsReturn {
   const { staking, stakingPools, statistics } = storeToRefs(useLiquityStore());
-  const { useActivity, useIsActive } = useTaskCenter();
-  const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
+  const { useIsActive } = useTaskCenter();
 
   const modelSelectedAccounts = ref<AddressAccount[]>([]);
 
-  const stakingActivity = useActivity(ActivityKind.LIQUITY, ActivityPart.STAKE);
-  const stakingQueryStatus = computed<ActivitySteps | undefined>(() => get(stakingActivity)?.steps);
-  const liquityHistoricPriceStatus = getProtocolStatsPriceQueryStatus('liquity');
+  // What is being read, and how far along, is reported in the task dock; the page only needs to know a refresh runs.
   const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKE);
 
   const selectedAddresses = computed<string[]>(() =>
@@ -69,10 +63,8 @@ export function useLiquityStakingDetails(): UseLiquityStakingDetailsReturn {
     aggregatedStakingPool,
     aggregatedStatistic,
     availableAddresses,
-    liquityHistoricPriceStatus,
     loading,
     modelSelectedAccounts,
     proxyInformation,
-    stakingQueryStatus,
   };
 }

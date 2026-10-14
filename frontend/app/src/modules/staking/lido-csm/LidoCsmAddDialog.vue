@@ -6,6 +6,7 @@ import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelec
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { requiredField } from '@/modules/core/form/fields';
 import { useForm } from '@/modules/core/form/use-form';
+import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import { useLidoCsmApi } from '@/modules/staking/api/use-lido-csm-api';
 
 defineOptions({
@@ -103,80 +104,46 @@ async function submitForm(): Promise<void> {
 </script>
 
 <template>
-  <RuiDialog
-    v-model="dialogOpen"
-    max-width="720"
+  <BigDialog
+    :display="dialogOpen"
+    :title="t('staking_page.lido_csm.form.title')"
+    :action="{
+      disabled: !valid,
+      primary: t('staking_page.lido_csm.form.submit'),
+    }"
+    :loading="submitting"
+    :layout="{ autoHeight: true, maxWidth: '560px' }"
+    data-testid="lido-csm-dialog"
+    @confirm="submitForm()"
+    @cancel="closeDialog()"
   >
-    <RuiCard
-      divide
-      no-padding
-      :class-names="{ content: 'overflow-hidden' }"
-    >
-      <template #header>
-        {{ t('staking_page.lido_csm.form.title') }}
-      </template>
-      <RuiButton
-        variant="text"
-        class="absolute top-2 right-2"
-        icon
-        @click="closeDialog()"
-      >
-        <RuiIcon
-          class="text-white"
-          name="lu-x"
-        />
-      </RuiButton>
-      <div class="p-4 space-y-6">
-        <p class="text-sm text-rui-text-secondary">
-          {{ t('staking_page.lido_csm.form.description') }}
-        </p>
-        <div class="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-          <BlockchainAccountSelector
-            v-model="form.state.selectedAccount"
-            data-testid="lido-csm-address"
-            :source="{ chains: [Blockchain.ETH] }"
-            :field="{
-              errorMessages: form.errors('selectedAccount'),
-              hint: t('staking_page.lido_csm.form.address_hint'),
-              label: t('staking_page.lido_csm.form.address_label'),
-              showDetails: true,
-            }"
-            @update:model-value="form.touch('selectedAccount')"
-          />
-          <RuiTextField
-            v-model="form.state.nodeOperatorId"
-            type="number"
-            min="0"
-            step="1"
-            color="primary"
-            :label="t('staking_page.lido_csm.form.node_operator_label')"
-            :hint="t('staking_page.lido_csm.form.node_operator_hint')"
-            :error-messages="form.errors('nodeOperatorId')"
-            variant="outlined"
-            data-testid="lido-csm-node-operator"
-            @update:model-value="form.touch('nodeOperatorId')"
-          />
-        </div>
-      </div>
-      <template #footer>
-        <div class="w-full flex justify-end gap-2 pt-2">
-          <RuiButton
-            variant="text"
-            @click="closeDialog()"
-          >
-            {{ t('common.actions.cancel') }}
-          </RuiButton>
-          <RuiButton
-            color="primary"
-            :loading="submitting"
-            :disabled="!valid"
-            data-testid="lido-csm-submit"
-            @click="submitForm()"
-          >
-            {{ t('staking_page.lido_csm.form.submit') }}
-          </RuiButton>
-        </div>
-      </template>
-    </RuiCard>
-  </RuiDialog>
+    <div class="flex flex-col gap-4">
+      <BlockchainAccountSelector
+        v-model="form.state.selectedAccount"
+        data-testid="lido-csm-address"
+        :source="{ chains: [Blockchain.ETH] }"
+        :field="{
+          errorMessages: form.errors('selectedAccount'),
+          hint: t('staking_page.lido_csm.form.address_hint'),
+          label: t('staking_page.lido_csm.form.address_label'),
+          required: true,
+          showDetails: true,
+        }"
+        @update:model-value="form.touch('selectedAccount')"
+      />
+      <RuiTextField
+        v-model="form.state.nodeOperatorId"
+        type="number"
+        min="0"
+        step="1"
+        color="primary"
+        required
+        :label="t('staking_page.lido_csm.form.node_operator_label')"
+        :hint="t('staking_page.lido_csm.form.node_operator_hint')"
+        :error-messages="form.errors('nodeOperatorId')"
+        data-testid="lido-csm-node-operator"
+        @update:model-value="form.touch('nodeOperatorId')"
+      />
+    </div>
+  </BigDialog>
 </template>

@@ -5,8 +5,10 @@ import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vu
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import { HYPE_IDENTIFIER, HYPERLIQUID_LOCATION } from '@/modules/staking/hyperliquid/constants';
 
-const { rows, loading } = defineProps<{
+const { rows, loaded, loading } = defineProps<{
   rows: HyperliquidStakingRow[];
+  /** Whether a query has succeeded; until then an empty table says nothing could be loaded. */
+  loaded: boolean;
   loading: boolean;
 }>();
 
@@ -40,7 +42,7 @@ const columns = computed<DataTableColumn<HyperliquidStakingRow>[]>(() => [{
     :cols="columns"
     :rows="rows"
     :loading="loading"
-    :empty="{ label: t('staking_page.hyperliquid.table.empty') }"
+    :empty="{ label: loaded ? t('staking_page.hyperliquid.table.empty') : t('staking_page.not_loaded') }"
   >
     <template #item.address="{ row }">
       <HashLink

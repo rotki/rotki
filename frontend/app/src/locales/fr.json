@@ -1821,19 +1821,13 @@
     }
   },
   "kraken_page": {
-    "loading": "Vos informations de staking Kraken sont en cours de chargement...",
-    "page": {
-      "api_key": "Clé API",
-      "description": "Pour voir vos informations de staking, vous devez ajouter une clé API Kraken {link}.",
-      "title": "Staking Kraken"
-    }
+    "loading": "Vos informations de staking Kraken sont en cours de chargement..."
   },
   "kraken_staking_events": {
     "refresh_tooltip": "Rafraîchir vos événements de mise en jeu Kraken"
   },
   "kraken_staking_overview": {
     "current": "Valeur actuelle",
-    "earned": "Total gagné",
     "hint": {
       "current": "Sur la base du prix actuel des actifs",
       "historical": "Sur la base du prix historique des actifs"
@@ -1859,15 +1853,11 @@
     "refresh_tooltip": "Rafraîchir les montants misés et les prix",
     "select_account": "Sélectionner un compte"
   },
-  "liquity_staking_events": {
-    "title": "Événements de mise en jeu"
-  },
   "liquity_statistic": {
     "estimated_pnl": "PnL estimé",
     "estimated_pnl_warning": "Cette estimation de PnL tient compte des gains actuellement non réclamés",
-    "no_stability_pool_gains": "Aucun gain du pool de stabilité non réclamé",
-    "no_staking_gains": "Aucun gain de mise en jeu non réclamé",
     "no_statistics": "Aucune statistique trouvée",
+    "none": "Aucun",
     "stability_pool_gains": "Gains du pool de stabilité",
     "staking_gains": "Gains de mise en jeu",
     "switch": {
@@ -2601,14 +2591,6 @@
     "desc": {
       "sort_asc_tooltip": "Changer le tri en ascendant",
       "sort_desc_tooltip": "Changer le tri en descendant"
-    }
-  },
-  "staking_page": {
-    "dropdown_hint": "Sélectionnez un emplacement pour voir plus de détails",
-    "dropdown_label": "Sélectionnez l'emplacement",
-    "page": {
-      "description": "Sélectionnez l'un des emplacements pris en charge pour voir plus d'informations sur vos actifs en jeu.",
-      "title": "Emplacements de participation"
     }
   },
   "statistics_graph_settings": {

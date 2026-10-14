@@ -12,7 +12,7 @@ const rows: HyperliquidStakingRow[] = [{
 }];
 
 describe('modules/staking/hyperliquid/HyperliquidStakingTable', () => {
-  function mountTable(tableRows: HyperliquidStakingRow[]): VueWrapper {
+  function mountTable(tableRows: HyperliquidStakingRow[], loaded: boolean = true): VueWrapper {
     return mount(HyperliquidStakingTable, {
       global: {
         stubs: {
@@ -31,7 +31,7 @@ describe('modules/staking/hyperliquid/HyperliquidStakingTable', () => {
           },
         },
       },
-      props: { loading: false, rows: tableRows },
+      props: { loaded, loading: false, rows: tableRows },
     });
   }
 
@@ -46,5 +46,11 @@ describe('modules/staking/hyperliquid/HyperliquidStakingTable', () => {
     const wrapper = mountTable([]);
 
     expect(wrapper.find('[data-testid=empty]').text()).toBe('staking_page.hyperliquid.table.empty');
+  });
+
+  it('should not claim nothing is staked before a query has succeeded', () => {
+    const wrapper = mountTable([], false);
+
+    expect(wrapper.find('[data-testid=empty]').text()).toBe('staking_page.not_loaded');
   });
 });

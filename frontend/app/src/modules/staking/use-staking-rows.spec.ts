@@ -90,6 +90,18 @@ describe('modules/staking/useStakingRows', () => {
     expect(get(result.rows)).toEqual(['a', 'b']);
   });
 
+  it('should count as loaded only once a query has succeeded', async () => {
+    runTask.mockResolvedValue(err(TaskFailed({ message: 'api down' })));
+    const result = setup();
+
+    await result.refresh();
+    expect(get(result.loaded)).toBe(false);
+
+    runTask.mockResolvedValue(ok({ failed: [], rows: [] }));
+    await result.refresh();
+    expect(get(result.loaded)).toBe(true);
+  });
+
   it('should be loading only while a query is in flight', async () => {
     const result = setup();
 

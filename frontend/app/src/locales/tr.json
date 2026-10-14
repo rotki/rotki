@@ -3274,7 +3274,6 @@
     "api_key": "API anahtarı",
     "api_key_menu": {
       "consensus_rpc_title": "Staking veri kaynağı",
-      "dismiss": "Bir daha gösterme",
       "optional": "İsteğe bağlı API anahtarı",
       "stop_reminding": "Bana hatırlatma"
     },
@@ -4505,29 +4504,29 @@
     }
   },
   "kraken_page": {
+    "connect": {
+      "action": "Kraken'ı bağla",
+      "description": "rotki, Kraken staking ödüllerinizi salt okunur bir API anahtarıyla okur. Ne kazandığınızı görmek için bir tane ekleyin.",
+      "title": "Staking bilgilerinizi görmek için Kraken'ı bağlayın"
+    },
     "loading": "Kraken staking bilgileriniz yükleniyor...",
-    "no_premium": "Kraken staking bilgileri için rotki Premium planı gerekir",
-    "page": {
-      "api_key": "API anahtarı",
-      "description": "Staking bilgilerinizi görmek için bir Kraken {link} eklemeniz gerekir",
-      "title": "Kraken staking"
-    }
+    "no_premium": "Kraken staking bilgileri için rotki Premium planı gerekir"
   },
   "kraken_staking_events": {
     "filter": {
-      "period": "Tarih"
+      "period": "Tarih",
+      "placeholder": "Tarihe göre filtrele…"
     },
-    "query_historical_price": "Kraken geçmiş fiyatları sorgulanıyor ({processed}/{total})",
     "refresh_tooltip": "Kraken staking olaylarınızı yenile"
   },
   "kraken_staking_overview": {
     "current": "Güncel değer",
-    "earned": "Toplam kazanç",
     "hint": {
       "current": "Varlıkların güncel fiyatına göre",
       "historical": "Varlıkların geçmiş fiyatına göre"
     },
     "historical": "Alındığı andaki değer",
+    "rewards_count": "{count} staking ödülünden | {count} staking ödülünden",
     "title": "Toplam kazanç"
   },
   "kraken_staking_received": {
@@ -4547,21 +4546,16 @@
     "title": "Stability Pool yatırmaları"
   },
   "liquity_staking_details": {
+    "all_accounts": "Tüm adresler",
     "has_proxy_addresses": "{length} proxy adresine sahip:",
-    "query_historical_price": "Liquity geçmiş fiyatları sorgulanıyor ({processed}/{total})",
-    "query_staking_data": "Liquity staking verileri sorgulanıyor ({processed}/{total})",
     "refresh_tooltip": "Stake edilen miktarları, fiyatları ve staking olaylarını yenile",
     "select_account": "Hesap seçin"
-  },
-  "liquity_staking_events": {
-    "title": "Stake olayları"
   },
   "liquity_statistic": {
     "estimated_pnl": "Tahmini kâr/zarar",
     "estimated_pnl_warning": "Bu kâr/zarar tahmini, talep edilmemiş mevcut kazançları dikkate alır",
-    "no_stability_pool_gains": "Talep edilmemiş Stability Pool kazancı yok",
-    "no_staking_gains": "Talep edilmemiş staking kazancı yok",
     "no_statistics": "İstatistik bulunamadı",
+    "none": "Yok",
     "stability_pool_gains": "Stability Pool kazançları",
     "staking_gains": "Staking kazançları",
     "switch": {
@@ -5215,6 +5209,15 @@
   "page_not_found": {
     "back": "Gösterge paneline dön",
     "title": "Hay aksi, sayfa bulunamadı."
+  },
+  "page_settings": {
+    "all_addresses": "Tüm adresler",
+    "disabled": "Etkin değil, bu yüzden verileri sorgulanmıyor",
+    "enable": "Etkinleştir",
+    "manage_addresses": "Adresler",
+    "module": "{name} modülü",
+    "some_addresses": "{count} adres | {count} adres",
+    "title": "Ayarlar"
   },
   "password_confirmation_dialog": {
     "description": "{username} profilinin parolasını unutmadığınızdan emin olmak için lütfen parolayı şimdi onaylayın. Otomatik giriş kullanılırken bu onay belirli aralıklarla istenir.",
@@ -6001,8 +6004,9 @@
     "solana": "Solana"
   },
   "staking_page": {
-    "dropdown_hint": "Daha fazla ayrıntı görmek için bir konum seçin",
-    "dropdown_label": "Konum seçin",
+    "eth": {
+      "api_key_hint": "İsteğe bağlı bir Beaconcha.in API anahtarı blok üretim geçmişini ekler"
+    },
     "failed_addresses": "Bu adresin staking bilgileri yüklenemedi: {addresses} | Bu adreslerin staking bilgileri yüklenemedi: {addresses}",
     "hyperliquid": {
       "table": {
@@ -6018,7 +6022,6 @@
       "form": {
         "address_hint": "Düğüm operatörü adına ödülleri toplayan veya teminat yatıran ETH adresini seçin.",
         "address_label": "Takip edilen adres",
-        "description": "Bir ETH adresini Lido'nun verdiği sayısal düğüm operatörü kimliğiyle eşleştirin.",
         "node_operator_hint": "Lido tarafından atanan sayısal ID'yi kullanın.",
         "node_operator_label": "Düğüm operatörü ID'si",
         "submit": "Düğüm operatörü ekle",
@@ -6037,27 +6040,42 @@
         "fetch_failed": "Lido CSM düğüm operatörleri sorgulanamadı: {message}"
       },
       "table": {
-        "actions": "Eylemler",
         "address": "Adres",
         "bond_claimable": "Talep edilebilir",
         "bond_current": "Teminat",
         "bond_required": "Gerekli",
-        "description": "rotki, stETH staking teminatını muhasebe sözleşmesinden okumak için aşağıdaki eşleştirmeleri kullanacak.",
+        "bond_short": "Gerekli teminatın {amount} altında. Tamamlanana kadar operatör doğrulayıcı ekleyemez ve aradaki fark ödüllerinden kesilir.",
         "empty": "Henüz takip edilen düğüm operatörü yok.",
         "keys_total": "Doğrulayıcılar",
         "node_operator": "Operatör",
         "not_available": "Yok",
-        "operator_type": "Operatör türü",
         "refresh_tooltip": "Lido CSM metriklerini yenile",
         "remove": "Kaldır",
         "rewards_pending": "Ödüller"
       },
-      "title": "Lido CSM düğüm operatörleri"
+      "totals": {
+        "bond": "Toplam teminat",
+        "claimable": "Talep edilebilir teminat",
+        "rewards": "Bekleyen ödüller"
+      }
     },
-    "page": {
-      "description": "Stake ettiğiniz varlıklar hakkında daha fazla bilgi görmek için desteklenen konumlardan birini seçin.",
-      "title": "Staking konumları"
+    "locations": {
+      "eth2": "Doğrulayıcılar, ödülleri ve çekimleri",
+      "hyperliquid": "Doğrulayıcılara delege edilen HYPE",
+      "kraken": "Kraken borsasında stake edilen varlıklar",
+      "lido_csm": "Lido CSM düğüm operatörlerinizin teminatı",
+      "liquity": "Stabilite havuzu yatırımları ve LQTY stake'i",
+      "solana": "Stake hesapları ve doğrulayıcıları"
     },
+    "no_matching_locations": "Aramanızla eşleşen staking konumu yok",
+    "not_loaded": "Staking pozisyonları henüz yüklenemedi. Neyin yanlış gittiğini görev panelinde görebilirsiniz.",
+    "refresh_menu": {
+      "sync_history": "Geçmiş olaylarını senkronize et",
+      "sync_history_description": "{chain} hesaplarınızın, borsalarınızın ve bankalarınızın işlemlerini sorgular ve çözümler. Yenile'den daha yavaştır.",
+      "title": "Diğer yenileme seçenekleri"
+    },
+    "refresh_tooltip": "Stake edilen miktarları, fiyatları ve staking olaylarını yenile",
+    "search_locations": "Konum ara",
     "solana": {
       "staked": "Stake edilen SOL",
       "table": {
@@ -6068,7 +6086,8 @@
         "stake_account": "Stake hesabı",
         "validator": "Doğrulayıcı"
       }
-    }
+    },
+    "switch_location": "Staking konumunu değiştir"
   },
   "statistics_graph_settings": {
     "infer_zero_timed_balances": {

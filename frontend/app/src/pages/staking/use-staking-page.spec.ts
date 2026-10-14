@@ -7,8 +7,10 @@ import { useStakingPage } from './use-staking-page';
 const LAST_LOCATION_KEY = 'rotki.staking.last_location';
 
 const pushMock = vi.hoisted(() => vi.fn(async (): Promise<void> => {}));
+const routeQuery = vi.hoisted((): Record<string, string> => ({}));
 
 vi.mock('vue-router', () => ({
+  useRoute: (): { query: Record<string, string> } => ({ query: routeQuery }),
   useRouter: (): { push: typeof pushMock } => ({ push: pushMock }),
 }));
 
@@ -35,6 +37,7 @@ describe('pages/staking/useStakingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    delete routeQuery.overview;
   });
 
   describe('with a location in the route', () => {
@@ -88,6 +91,17 @@ describe('pages/staking/useStakingPage', () => {
         name: '/staking/[[location]]',
         params: { location: 'lido-csm' },
       });
+    });
+
+    it('should stay on the location grid when the breadcrumb asked for it', async () => {
+      localStorage.setItem(LAST_LOCATION_KEY, 'lido-csm');
+      routeQuery.overview = 'true';
+
+      const { page } = setup('');
+      await flushPromises();
+
+      expect(pushMock).not.toHaveBeenCalled();
+      expect(get(page)).toBeNull();
     });
 
     it('should not record anything new while redirecting', async () => {

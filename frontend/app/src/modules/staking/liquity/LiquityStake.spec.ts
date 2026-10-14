@@ -50,7 +50,8 @@ describe('modules/staking/liquity/LiquityStake', () => {
       global: {
         plugins: [createPinia()],
         provide: libraryDefaults,
-        stubs: { BalanceDisplay: BalanceDisplayStub },
+        // the headline takes the same balance, so one stub stands in for both
+        stubs: { BalanceDisplay: BalanceDisplayStub, StakingHeadlineBalance: BalanceDisplayStub },
       },
       props,
     });

@@ -24,7 +24,7 @@ const { balances, emptyLabel, loading } = defineProps<{
   </div>
   <div
     v-else
-    class="text-rui-text-secondary pb-2"
+    class="text-rui-text-secondary py-1"
   >
     {{ emptyLabel }}
   </div>

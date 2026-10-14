@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { StakingLocation } from '@/pages/staking/staking-pages';
+import type { StakingInfo } from '@/pages/staking/use-staking-locations';
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import AppImage from '@/modules/shell/components/AppImage.vue';
-import FullSizeContent from '@/modules/shell/components/FullSizeContent.vue';
-import InternalLink from '@/modules/shell/components/InternalLink.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { useStakingPage } from '@/pages/staking/use-staking-page';
 
 definePage({
@@ -19,95 +19,87 @@ const { location: locationProp } = defineProps<{
   location: StakingLocation | '';
 }>();
 
-const imageSize = '64px';
-
 const { t } = useI18n({ useScope: 'global' });
 
-const [DefineIcon, ReuseIcon] = createReusableTemplate<{ image: string }>();
+const search = ref<string>('');
 
-const { getRedirectLink, modelLocation, page, staking } = useStakingPage(() => locationProp);
+const { getRedirectLink, page, staking } = useStakingPage(() => locationProp);
+
+/** Matched against the name and what the location tracks, so "validator" finds the ETH card. */
+const filtered = computed<StakingInfo[]>(() => {
+  const query = get(search).trim().toLocaleLowerCase();
+  if (!query)
+    return get(staking);
+  return get(staking).filter(item => `${item.name} ${item.description}`.toLocaleLowerCase().includes(query));
+});
 </script>
 
 <template>
   <div class="container">
-    <RuiCard :class-names="{ content: 'flex' }">
-      <DefineIcon #default="{ image }">
-        <AppImage
-          class="icon-bg"
-          fit="contain"
-          size="1.5rem"
-          :src="image"
-        />
-      </DefineIcon>
-      <RuiMenuSelect
-        v-model="modelLocation"
-        :options="staking"
-        :label="t('staking_page.dropdown_label')"
-        key-attr="id"
-        text-attr="name"
-        hide-details
-        :item-height="52"
-        variant="outlined"
-      >
-        <template #selection="{ item: { image, name } }">
-          <div class="flex items-center gap-3">
-            <ReuseIcon v-bind="{ image }" />
-            {{ name }}
-          </div>
-        </template>
-        <template #item.prepend="{ item: { image } }">
-          <ReuseIcon v-bind="{ image }" />
-        </template>
-      </RuiMenuSelect>
-    </RuiCard>
-
     <div
       v-if="page"
-      class="pt-8"
       data-testid="staking-page"
     >
       <Component :is="page" />
     </div>
-    <div
+    <TablePageLayout
       v-else
+      :title="[t('navigation_menu.staking')]"
+      child
       data-testid="staking-picker"
     >
-      <div class="flex items-center justify-center md:justify-end mt-2 md:mr-6 text-rui-text-secondary gap-2">
-        <RuiIcon
-          class="shrink-0"
-          name="lu-corner-left-up"
-        />
-        <div class="pt-3">
-          {{ t('staking_page.dropdown_hint') }}
+      <template #buttons>
+        <div class="w-full sm:w-64">
+          <RuiTextField
+            v-model="search"
+            dense
+            hide-details
+            clearable
+            prepend-icon="lu-search"
+            :label="t('staking_page.search_locations')"
+            label-placement="hidden"
+            :placeholder="t('staking_page.search_locations')"
+            data-testid="staking-location-filter"
+          />
         </div>
-      </div>
-      <FullSizeContent class="gap-6">
-        <span class="font-bold text-h5">
-          {{ t('staking_page.page.title') }}
-        </span>
-        <div class="flex gap-4">
-          <RuiTooltip
-            v-for="item in staking"
-            :key="item.id"
-            :open-delay="400"
-          >
-            <template #activator>
-              <InternalLink :to="getRedirectLink(item.id)">
-                <AppImage
-                  :size="imageSize"
-                  fit="contain"
-                  :src="item.image"
-                />
-              </InternalLink>
-            </template>
-            {{ item.name }}
-          </RuiTooltip>
-        </div>
+      </template>
 
-        <div class="text-body-1 text-rui-text-secondary text-center max-w-148">
-          {{ t('staking_page.page.description') }}
-        </div>
-      </FullSizeContent>
-    </div>
+      <div
+        v-if="filtered.length > 0"
+        class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+      >
+        <RouterLink
+          v-for="item in filtered"
+          :key="item.id"
+          :to="getRedirectLink(item.id)"
+          class="flex items-center gap-4 p-4 rounded-rui-card border border-rui-divider bg-rui-surface hover:border-rui-primary-border hover:bg-rui-primary-subtle transition-colors"
+          data-testid="staking-location-card"
+          :data-location="item.id"
+        >
+          <AppImage
+            :src="item.image"
+            size="2.5rem"
+            fit="contain"
+            class="shrink-0"
+          />
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <span class="text-base font-medium text-rui-text">{{ item.name }}</span>
+            <span class="text-sm text-rui-text-secondary">{{ item.description }}</span>
+          </div>
+          <RuiIcon
+            name="lu-chevron-right"
+            size="16"
+            class="ml-auto shrink-0 text-rui-text-secondary"
+          />
+        </RouterLink>
+      </div>
+      <div
+        v-else
+        class="py-16 text-center text-sm text-rui-text-secondary"
+        data-testid="staking-location-none"
+      >
+        {{ t('staking_page.no_matching_locations') }}
+      </div>
+    </TablePageLayout>
   </div>
 </template>

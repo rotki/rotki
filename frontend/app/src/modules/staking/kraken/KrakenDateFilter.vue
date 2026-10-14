@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
+import type { PillBarLabels } from '@/modules/core/table/pill/core/types';
 import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
 import { assert } from '@rotki/common';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
@@ -8,8 +9,16 @@ import { KrakenStakingFilterValueKeys, useKrakenStakingFields } from '@/modules/
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 
+const { t } = useI18n({ useScope: 'global' });
+
 const fields = useKrakenStakingFields();
-const pillLabels = usePillBarLabels();
+const barLabels = usePillBarLabels();
+
+// the bar only ever narrows by date here, so its placeholder says so
+const pillLabels = computed<PillBarLabels>(() => ({
+  ...get(barLabels),
+  narrow: t('kraken_staking_events.filter.placeholder'),
+}));
 
 /**
  * The bar's model is the flat keyword map every table filter speaks; this page's model is the
@@ -39,14 +48,8 @@ const matches = computed<MatchedKeywordWithBehaviour<string>>({
 </script>
 
 <template>
-  <!--
-    The bar draws a border but no surface of its own: everywhere else it sits inside a card, which
-    is what makes it read as a white input. Here it sits straight on the page background, so it
-    brings the surface its own pills already assume.
-  -->
   <PillFilterBar
     v-model:matches="matches"
-    class="bg-white dark:bg-rui-grey-900"
     :fields="fields"
     :labels="pillLabels"
   />

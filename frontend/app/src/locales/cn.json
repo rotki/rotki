@@ -3250,7 +3250,6 @@
     "api_key": "API Key",
     "api_key_menu": {
       "consensus_rpc_title": "质押数据源",
-      "dismiss": "不再显示",
       "optional": "可选 API Key",
       "stop_reminding": "不再提醒"
     },
@@ -4426,29 +4425,29 @@
     }
   },
   "kraken_page": {
+    "connect": {
+      "action": "连接 Kraken",
+      "description": "rotki 通过只读 API Key 读取你的 Kraken 质押奖励。添加一个即可查看你的收益。",
+      "title": "连接 Kraken 以查看你的质押"
+    },
     "loading": "你的 Kraken 质押信息正在加载中...",
-    "no_premium": "Kraken 质押信息需要 rotki 高级版套餐",
-    "page": {
-      "api_key": "API Key",
-      "description": "要查看你的质押信息，需要添加 Kraken {link}",
-      "title": "Kraken 质押"
-    }
+    "no_premium": "Kraken 质押信息需要 rotki 高级版套餐"
   },
   "kraken_staking_events": {
     "filter": {
-      "period": "日期"
+      "period": "日期",
+      "placeholder": "按日期筛选…"
     },
-    "query_historical_price": "正在查询 Kraken 历史价格（{processed}/{total}）",
     "refresh_tooltip": "刷新你的 Kraken 质押事件"
   },
   "kraken_staking_overview": {
     "current": "当前价值",
-    "earned": "累计收益",
     "hint": {
       "current": "基于当前资产价格",
       "historical": "基于资产的历史价格"
     },
     "historical": "到账时的价值",
+    "rewards_count": "来自 {count} 笔质押奖励 | 来自 {count} 笔质押奖励",
     "title": "累计收益"
   },
   "kraken_staking_received": {
@@ -4468,21 +4467,16 @@
     "title": "稳定池存入"
   },
   "liquity_staking_details": {
+    "all_accounts": "所有地址",
     "has_proxy_addresses": "有 {length} 个代理地址：",
-    "query_historical_price": "正在查询 Liquity 历史价格（{processed}/{total}）",
-    "query_staking_data": "正在查询 Liquity 质押数据（{processed}/{total}）",
     "refresh_tooltip": "刷新质押数量、价格和质押事件",
     "select_account": "选择账户"
-  },
-  "liquity_staking_events": {
-    "title": "质押事件"
   },
   "liquity_statistic": {
     "estimated_pnl": "预估盈亏",
     "estimated_pnl_warning": "此预估盈亏已计入当前未领取的收益",
-    "no_stability_pool_gains": "无未领取的稳定池收益",
-    "no_staking_gains": "无未领取的质押收益",
     "no_statistics": "未找到统计数据",
+    "none": "无",
     "stability_pool_gains": "稳定池收益",
     "staking_gains": "质押收益",
     "switch": {
@@ -5077,6 +5071,15 @@
   "page_not_found": {
     "back": "返回仪表盘",
     "title": "糟糕，找不到该页面。"
+  },
+  "page_settings": {
+    "all_addresses": "所有地址",
+    "disabled": "未启用，因此不会查询其数据",
+    "enable": "启用",
+    "manage_addresses": "地址",
+    "module": "{name} 模块",
+    "some_addresses": "{count} 个地址",
+    "title": "设置"
   },
   "password_confirmation_dialog": {
     "description": "为确保你记得 {username} 的密码，请现在确认。使用自动登录时需要定期进行此确认。",
@@ -5863,8 +5866,9 @@
     "solana": "Solana"
   },
   "staking_page": {
-    "dropdown_hint": "选择一个位置以查看详情",
-    "dropdown_label": "选择位置",
+    "eth": {
+      "api_key_hint": "可选的 Beaconcha.in API Key 可提供出块历史"
+    },
     "failed_addresses": "无法加载此地址的质押信息：{addresses} | 无法加载这些地址的质押信息：{addresses}",
     "hyperliquid": {
       "table": {
@@ -5880,7 +5884,6 @@
       "form": {
         "address_hint": "选择为该节点运营者接收奖励或提交抵押品的 ETH 地址。",
         "address_label": "追踪地址",
-        "description": "将 ETH 地址与 Lido 分配的数字节点运营者 ID 配对。",
         "node_operator_hint": "使用 Lido 分配的数字 ID。",
         "node_operator_label": "节点运营者 ID",
         "submit": "添加节点运营者",
@@ -5899,27 +5902,42 @@
         "fetch_failed": "查询 Lido CSM 节点运营者失败：{message}"
       },
       "table": {
-        "actions": "操作",
         "address": "地址",
         "bond_claimable": "可领取",
         "bond_current": "保证金",
         "bond_required": "所需",
-        "description": "rotki 将使用以下配对从会计合约中读取 stETH 质押保证金。",
+        "bond_short": "比所需保证金少 {amount}。补足之前，该运营者无法添加验证者，差额将从其奖励中扣除。",
         "empty": "尚未追踪任何节点运营者。",
         "keys_total": "验证者",
         "node_operator": "运营者",
         "not_available": "N/A",
-        "operator_type": "运营者类型",
         "refresh_tooltip": "刷新 Lido CSM 指标",
         "remove": "移除",
         "rewards_pending": "奖励"
       },
-      "title": "Lido CSM 节点运营者"
+      "totals": {
+        "bond": "保证金总额",
+        "claimable": "可领取保证金",
+        "rewards": "待领取奖励"
+      }
     },
-    "page": {
-      "description": "选择一个支持的位置以查看你的质押资产详情。",
-      "title": "质押位置"
+    "locations": {
+      "eth2": "验证者及其奖励和提款",
+      "hyperliquid": "委托给验证者的 HYPE",
+      "kraken": "在 Kraken 交易所质押的资产",
+      "lido_csm": "你的 Lido CSM 节点运营者的保证金",
+      "liquity": "稳定池存款和 LQTY 质押",
+      "solana": "质押账户及其验证者"
     },
+    "no_matching_locations": "没有与你的搜索匹配的质押位置",
+    "not_loaded": "尚无法加载质押仓位。任务面板中会显示出错原因。",
+    "refresh_menu": {
+      "sync_history": "同步历史事件",
+      "sync_history_description": "查询你的 {chain} 账户、交易所和银行的交易并进行解码。比刷新更慢。",
+      "title": "更多刷新选项"
+    },
+    "refresh_tooltip": "刷新质押数量、价格和质押事件",
+    "search_locations": "搜索位置",
     "solana": {
       "staked": "已质押的 SOL",
       "table": {
@@ -5930,7 +5948,8 @@
         "stake_account": "质押账户",
         "validator": "验证者"
       }
-    }
+    },
+    "switch_location": "切换质押位置"
   },
   "statistics_graph_settings": {
     "infer_zero_timed_balances": {

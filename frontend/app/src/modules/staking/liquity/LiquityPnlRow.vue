@@ -14,25 +14,29 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <LiquityStatisticRow>
     <template #label>
-      <div class="flex items-center justify-end gap-2">
+      <div class="flex items-center gap-1.5">
+        {{ t('liquity_statistic.estimated_pnl') }}
         <RuiTooltip
           :options="{ placement: 'top' }"
           :open-delay="400"
           :class-names="{ tooltip: 'max-w-40' }"
         >
           <template #activator>
-            <RuiIcon name="lu-info" />
+            <RuiIcon
+              name="lu-info"
+              size="16"
+            />
           </template>
           <span>
             {{ t('liquity_statistic.estimated_pnl_warning') }}
           </span>
         </RuiTooltip>
-        {{ t('liquity_statistic.estimated_pnl') }}
       </div>
     </template>
     <FiatDisplay
       :value="value"
       :loading="loading"
+      class="py-1 pr-10 font-medium"
       pnl
     />
   </LiquityStatisticRow>

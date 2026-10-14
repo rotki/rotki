@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
+import { Blockchain } from '@rotki/common';
+import StakingHeadlineBalance from '@/modules/staking/components/StakingHeadlineBalance.vue';
 import StakingPageLayout from '@/modules/staking/components/StakingPageLayout.vue';
 import { SOL_IDENTIFIER, SOLANA_STAKING_RESTRICTIONS } from '@/modules/staking/solana/constants';
 import SolanaStakeAccountsTable from '@/modules/staking/solana/SolanaStakeAccountsTable.vue';
@@ -11,15 +12,15 @@ defineOptions({
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { failedAddresses, loading, refresh, rows, total } = useSolanaStakeAccounts();
+const { failedAddresses, loaded, loading, refresh, rows, total } = useSolanaStakeAccounts();
 </script>
 
 <template>
   <StakingPageLayout
-    :title="t('staking.solana')"
+    location="solana"
+    :chain="Blockchain.SOLANA"
     :asset="SOL_IDENTIFIER"
     :failed-addresses="failedAddresses"
-    :events-title="t('staking_page.solana.events')"
     :loading="loading"
     :refresh="refresh"
     :restrictions="SOLANA_STAKING_RESTRICTIONS"
@@ -28,8 +29,7 @@ const { failedAddresses, loading, refresh, rows, total } = useSolanaStakeAccount
       <template #header>
         {{ t('staking_page.solana.staked') }}
       </template>
-      <BalanceDisplay
-        class="text-h5"
+      <StakingHeadlineBalance
         data-testid="solana-staked-total"
         :asset="SOL_IDENTIFIER"
         :value="{ amount: total }"
@@ -40,6 +40,7 @@ const { failedAddresses, loading, refresh, rows, total } = useSolanaStakeAccount
 
     <SolanaStakeAccountsTable
       :rows="rows"
+      :loaded="loaded"
       :loading="loading"
     />
   </StakingPageLayout>

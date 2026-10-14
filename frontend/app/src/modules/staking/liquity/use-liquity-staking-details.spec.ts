@@ -1,7 +1,5 @@
 import type { ComputedRef } from 'vue';
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
-import type { StatsPriceQueryData } from '@/modules/core/messaging/types';
-import type { ActivitySteps } from '@/modules/task-center/core/types';
 import {
   bigNumberify,
   type LiquityPoolDetails,
@@ -23,12 +21,10 @@ interface StoreState {
   statistics: LiquityStatistics | null;
 }
 
-const { activity, isActive, priceStatus, storeState } = vi.hoisted(() => {
-  const activity: { current?: { steps?: ActivitySteps } } = {};
-  const priceStatus: { current?: StatsPriceQueryData } = {};
+const { isActive, storeState } = vi.hoisted(() => {
   const storeState: StoreState = { pools: {}, staking: {}, statistics: null };
 
-  return { activity, isActive: { current: false }, priceStatus, storeState };
+  return { isActive: { current: false }, storeState };
 });
 
 vi.mock('@/modules/staking/liquity/use-liquity-store', async () => {
@@ -46,17 +42,7 @@ vi.mock('@/modules/task-center/use-task-center', async () => {
   const { computed } = await import('vue');
   return {
     useTaskCenter: (): Record<string, unknown> => ({
-      useActivity: (): ComputedRef<unknown> => computed(() => activity.current),
       useIsActive: (): ComputedRef<boolean> => computed(() => isActive.current),
-    }),
-  };
-});
-
-vi.mock('@/modules/assets/prices/use-historic-cache-price-store', async () => {
-  const { computed } = await import('vue');
-  return {
-    useHistoricCachePriceStore: (): Record<string, unknown> => ({
-      getProtocolStatsPriceQueryStatus: (): ComputedRef<unknown> => computed(() => priceStatus.current),
     }),
   };
 });
@@ -94,9 +80,7 @@ describe('modules/staking/liquity/useLiquityStakingDetails', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    activity.current = undefined;
     isActive.current = false;
-    priceStatus.current = undefined;
     storeState.pools = {};
     storeState.staking = {};
     storeState.statistics = null;
@@ -136,26 +120,10 @@ describe('modules/staking/liquity/useLiquityStakingDetails', () => {
     expect(get(accountFilter)).toEqual([{ address: OWNER_A, chain: 'eth' }]);
   });
 
-  it('should report the staking activity progress', () => {
-    activity.current = { steps: { current: 3, total: 10 } };
-
-    expect(get(setup().stakingQueryStatus)).toEqual({ current: 3, total: 10 });
-  });
-
-  it('should report no progress when there is no activity', () => {
-    expect(get(setup().stakingQueryStatus)).toBeUndefined();
-  });
-
   it('should follow the liquity staking activity for its loading state', () => {
     isActive.current = true;
 
     expect(get(setup().loading)).toBe(true);
-  });
-
-  it('should expose the historic price query status', () => {
-    priceStatus.current = { counterparty: 'liquity', processed: 2, total: 5 };
-
-    expect(get(setup().liquityHistoricPriceStatus)).toEqual({ counterparty: 'liquity', processed: 2, total: 5 });
   });
 
   it('should show the global statistics until an account is chosen', () => {

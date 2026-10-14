@@ -98,17 +98,39 @@ describe('lidoCsmTable', () => {
       wrapper = createWrapper([WITH_METRICS]);
 
       expect(amounts(12)).toEqual(['2.5', '2', '0.5', '0.25']);
-      expect(row(12).find('[data-testid=cell-operatorTypeLabel]').text()).toBe('Permissionless');
       expect(row(12).find('[data-testid=cell-totalDeposited]').text()).toBe('7');
-      expect(row(12).find('[data-testid=cell-nodeOperatorId]').text()).toBe('#12');
+      expect(row(12).find('[data-testid=cell-nodeOperatorId] span').text()).toBe('#12');
+      expect(row(12).find('[data-testid=lido-csm-operator-type]').text()).toBe('Permissionless');
     });
 
     it('should mark every metric unavailable for an operator without metrics', () => {
       wrapper = createWrapper([WITHOUT_METRICS]);
 
       expect(amounts(3)).toEqual([]);
-      for (const key of ['operatorTypeLabel', 'bondCurrent', 'bondRequired', 'bondClaimable', 'totalDeposited', 'rewardsPending'])
+      expect(row(3).find('[data-testid=lido-csm-operator-type]').exists()).toBe(false);
+      for (const key of ['bondCurrent', 'bondRequired', 'bondClaimable', 'totalDeposited', 'rewardsPending'])
         expect(row(3).find(`[data-testid=cell-${key}]`).text()).toBe('staking_page.lido_csm.table.not_available');
+    });
+
+    it('should not warn about the bond of an operator that meets the requirement', () => {
+      wrapper = createWrapper([WITH_METRICS]);
+
+      expect(row(12).find('[data-testid=lido-csm-bond-short]').exists()).toBe(false);
+    });
+
+    it('should warn about the bond of an under-bonded operator', () => {
+      const short: LidoCsmNodeOperator = {
+        ...WITH_METRICS,
+        metrics: {
+          bond: { claimable: bigNumberify('0'), current: bigNumberify('1.5'), required: bigNumberify('2') },
+          keys: { totalDeposited: 7 },
+          operatorType: { id: 1, label: 'Permissionless' },
+          rewards: { pending: bigNumberify('0.25') },
+        },
+      };
+      wrapper = createWrapper([short]);
+
+      expect(row(12).find('[data-testid=lido-csm-bond-short]').exists()).toBe(true);
     });
   });
 
