@@ -3340,7 +3340,6 @@
     "api_key": "API key",
     "api_key_menu": {
       "consensus_rpc_title": "Staking data source",
-      "dismiss": "Don't show again",
       "optional": "Optional API key",
       "stop_reminding": "Stop reminding me"
     },
@@ -4595,29 +4594,29 @@
     }
   },
   "kraken_page": {
+    "connect": {
+      "action": "Connect Kraken",
+      "description": "rotki reads your Kraken staking rewards through a read-only API key. Add one to see what you have earned.",
+      "title": "Connect Kraken to see your staking"
+    },
     "loading": "Your Kraken staking information is loading...",
-    "no_premium": "Kraken staking information needs a rotki Premium plan",
-    "page": {
-      "api_key": "API key",
-      "description": "To see your staking information you need to add a Kraken {link}",
-      "title": "Kraken Staking"
-    }
+    "no_premium": "Kraken staking information needs a rotki Premium plan"
   },
   "kraken_staking_events": {
     "filter": {
-      "period": "Date"
+      "period": "Date",
+      "placeholder": "Filter by date…"
     },
-    "query_historical_price": "Querying Kraken historical prices ({processed}/{total})",
     "refresh_tooltip": "Refresh your Kraken staking events"
   },
   "kraken_staking_overview": {
     "current": "Current value",
-    "earned": "Total Earned",
     "hint": {
       "current": "Based on the current price of assets",
       "historical": "Based on the historical price of assets"
     },
     "historical": "Value when received",
+    "rewards_count": "From {count} staking reward | From {count} staking rewards",
     "title": "Total earned"
   },
   "kraken_staking_received": {
@@ -4637,21 +4636,16 @@
     "title": "Stability pool deposits"
   },
   "liquity_staking_details": {
+    "all_accounts": "All addresses",
     "has_proxy_addresses": "has {length} proxy address(es):",
-    "query_historical_price": "Querying Liquity historical prices ({processed}/{total})",
-    "query_staking_data": "Querying Liquity staking data ({processed}/{total})",
     "refresh_tooltip": "Refresh the staked amounts, prices and staking events",
     "select_account": "Select account"
-  },
-  "liquity_staking_events": {
-    "title": "Stake Events"
   },
   "liquity_statistic": {
     "estimated_pnl": "Estimated PnL",
     "estimated_pnl_warning": "This estimated PnL takes the current unclaimed gains into account",
-    "no_stability_pool_gains": "No Unclaimed Stability Pool Gains",
-    "no_staking_gains": "No Unclaimed Staking Gains",
     "no_statistics": "No statistics found",
+    "none": "None",
     "stability_pool_gains": "Stability pool gains",
     "staking_gains": "Staking gains",
     "switch": {
@@ -5334,6 +5328,15 @@
   "page_not_found": {
     "back": "Back to dashboard",
     "title": "Oops, the page could not be found."
+  },
+  "page_settings": {
+    "all_addresses": "Every address",
+    "disabled": "Not enabled, so its data is not queried",
+    "enable": "Enable",
+    "manage_addresses": "Addresses",
+    "module": "{name} module",
+    "some_addresses": "{count} address | {count} addresses",
+    "title": "Settings"
   },
   "password_confirmation_dialog": {
     "description": "To ensure you remember your password for {username}, please confirm it now. This is required periodically when using auto-login.",
@@ -6127,11 +6130,11 @@
     "solana": "Solana"
   },
   "staking_page": {
-    "dropdown_hint": "Select a location to see more details",
-    "dropdown_label": "Select location",
+    "eth": {
+      "api_key_hint": "An optional Beaconcha.in API key adds block production history"
+    },
     "failed_addresses": "The staking information for this address could not be loaded: {addresses} | The staking information for these addresses could not be loaded: {addresses}",
     "hyperliquid": {
-      "events": "Hyperliquid staking events",
       "table": {
         "address": "Address",
         "delegated": "Delegated",
@@ -6145,7 +6148,6 @@
       "form": {
         "address_hint": "Select the ETH address that collects rewards or posts collateral for the node operator.",
         "address_label": "Tracked address",
-        "description": "Pair an ETH address with the numeric node operator identifier from Lido.",
         "node_operator_hint": "Use the numeric ID assigned by Lido.",
         "node_operator_label": "Node operator ID",
         "submit": "Add node operator",
@@ -6164,29 +6166,43 @@
         "fetch_failed": "Failed to query the Lido CSM node operators: {message}"
       },
       "table": {
-        "actions": "Actions",
         "address": "Address",
         "bond_claimable": "Claimable",
         "bond_current": "Bond",
         "bond_required": "Required",
-        "description": "rotki will use the following pairs to read the stETH staking bond from the accounting contract.",
+        "bond_short": "{amount} short of the required bond. Until it is topped up the operator cannot add validators, and the difference is taken from its rewards.",
         "empty": "No node operators are tracked yet.",
         "keys_total": "Validators",
         "node_operator": "Operator",
         "not_available": "N/A",
-        "operator_type": "Operator type",
         "refresh_tooltip": "Refresh Lido CSM metrics",
         "remove": "Remove",
         "rewards_pending": "Rewards"
       },
-      "title": "Lido CSM node operators"
+      "totals": {
+        "bond": "Total bond",
+        "claimable": "Claimable bond",
+        "rewards": "Pending rewards"
+      }
     },
-    "page": {
-      "description": "Select one of the supported locations to see more information about your staked assets.",
-      "title": "Staking Locations"
+    "locations": {
+      "eth2": "Validators, their rewards and withdrawals",
+      "hyperliquid": "HYPE delegated to validators",
+      "kraken": "Assets staked on the Kraken exchange",
+      "lido_csm": "The bond of your Lido CSM node operators",
+      "liquity": "Stability pool deposits and the LQTY stake",
+      "solana": "Stake accounts and their validators"
     },
+    "no_matching_locations": "No staking location matches your search",
+    "not_loaded": "The staking positions could not be loaded yet. The task dock shows what went wrong.",
+    "refresh_menu": {
+      "sync_history": "Sync history events",
+      "sync_history_description": "Query the transactions of your {chain} accounts, exchanges and banks, and decode them. Slower than Refresh.",
+      "title": "More refresh options"
+    },
+    "refresh_tooltip": "Refresh the staked amounts, prices and staking events",
+    "search_locations": "Search locations",
     "solana": {
-      "events": "Solana staking events",
       "staked": "Staked SOL",
       "table": {
         "amount": "Amount",
@@ -6196,7 +6212,8 @@
         "stake_account": "Stake account",
         "validator": "Validator"
       }
-    }
+    },
+    "switch_location": "Switch staking location"
   },
   "statistics_graph_settings": {
     "infer_zero_timed_balances": {

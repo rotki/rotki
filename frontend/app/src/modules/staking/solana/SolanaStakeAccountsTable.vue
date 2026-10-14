@@ -5,8 +5,10 @@ import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vu
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import { SOL_IDENTIFIER, SOLANA_LOCATION } from '@/modules/staking/solana/constants';
 
-const { rows, loading } = defineProps<{
+const { rows, loaded, loading } = defineProps<{
   rows: SolanaStakeAccountRow[];
+  /** Whether a query has succeeded; until then an empty table says nothing could be loaded. */
+  loaded: boolean;
   loading: boolean;
 }>();
 
@@ -38,7 +40,7 @@ const columns = computed<DataTableColumn<SolanaStakeAccountRow>[]>(() => [{
     :cols="columns"
     :rows="rows"
     :loading="loading"
-    :empty="{ label: t('staking_page.solana.table.empty') }"
+    :empty="{ label: loaded ? t('staking_page.solana.table.empty') : t('staking_page.not_loaded') }"
   >
     <template #item.address="{ row }">
       <HashLink

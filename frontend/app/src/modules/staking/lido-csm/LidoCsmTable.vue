@@ -2,8 +2,10 @@
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
+import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
+import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -20,6 +22,7 @@ const { rows, loading } = defineProps<{
 }>();
 
 const emit = defineEmits<{
+  add: [];
   refresh: [];
 }>();
 
@@ -39,17 +42,25 @@ interface LidoCsmTableRow {
   bondCurrent?: BigNumber;
   bondRequired?: BigNumber;
   bondClaimable?: BigNumber;
+  /** How far the bond falls below what is required, set only when it does. */
+  bondShortfall?: BigNumber;
   totalDeposited?: number;
   rewardsPending?: BigNumber;
 }
 
 type LidoCsmMetrics = LidoCsmNodeOperator['metrics'];
 
-function bondFields(bond: NonNullable<LidoCsmMetrics>['bond'] | undefined): Pick<LidoCsmTableRow, 'bondClaimable' | 'bondCurrent' | 'bondRequired'> {
+/**
+ * The bond figures, plus the shortfall of an under-bonded operator: in CSM such an operator cannot
+ * add validators and has the difference taken from its rewards, so it is flagged on the row.
+ */
+function bondFields(bond: NonNullable<LidoCsmMetrics>['bond'] | undefined): Pick<LidoCsmTableRow, 'bondClaimable' | 'bondCurrent' | 'bondRequired' | 'bondShortfall'> {
+  const shortfall = bond ? bond.required.minus(bond.current) : undefined;
   return {
     bondClaimable: bond?.claimable,
     bondCurrent: bond?.current,
     bondRequired: bond?.required,
+    bondShortfall: shortfall?.gt(0) ? shortfall : undefined,
   };
 }
 
@@ -80,27 +91,31 @@ const tableColumns = computed<DataTableColumn<LidoCsmTableRow>[]>(() => [{
   key: 'nodeOperatorId',
   label: t('staking_page.lido_csm.table.node_operator'),
 }, {
-  key: 'operatorTypeLabel',
-  label: t('staking_page.lido_csm.table.operator_type'),
-}, {
+  // figures align at the end, under headers that do too
+  align: 'end',
   key: 'bondCurrent',
   label: t('staking_page.lido_csm.table.bond_current'),
 }, {
+  align: 'end',
   key: 'bondRequired',
   label: t('staking_page.lido_csm.table.bond_required'),
 }, {
+  align: 'end',
   key: 'bondClaimable',
   label: t('staking_page.lido_csm.table.bond_claimable'),
 }, {
+  align: 'end',
   key: 'totalDeposited',
   label: t('staking_page.lido_csm.table.keys_total'),
 }, {
+  align: 'end',
   key: 'rewardsPending',
   label: t('staking_page.lido_csm.table.rewards_pending'),
 }, {
+  // one delete button needs no header, and its label was what pushed the table past the page
   align: 'end',
   key: 'actions',
-  label: t('staking_page.lido_csm.table.actions'),
+  label: '',
 }]);
 
 function handleRemove(address: string, nodeOperatorIdValue: number): void {
@@ -133,108 +148,167 @@ function handleRemove(address: string, nodeOperatorIdValue: number): void {
 </script>
 
 <template>
-  <RuiCard>
-    <div class="space-y-4 overflow-x-auto">
-      <p class="text-sm text-rui-text-secondary">
-        {{ t('staking_page.lido_csm.table.description') }}
-      </p>
-      <RuiDataTable
-        dense
-        outlined
-        class="min-w-full"
-        row-attr="key"
-        :cols="tableColumns"
-        :rows="tableRows"
-        :loading="loading"
-        :empty="{ label: t('staking_page.lido_csm.table.empty') }"
-      >
-        <template #item.address="{ row }">
-          <HashLink
-            :text="row.address"
-            location="ethereum"
-          />
-        </template>
-        <template #item.nodeOperatorId="{ row }">
+  <div class="overflow-x-auto">
+    <RuiDataTable
+      dense
+      outlined
+      class="min-w-full [&_tr[data-id=row]]:h-[57px]"
+      row-attr="key"
+      :cols="tableColumns"
+      :rows="tableRows"
+      :loading="loading"
+    >
+      <template #no-data>
+        <TableEmptyNotice
+          icon="lu-server"
+          :title="t('staking_page.lido_csm.table.empty')"
+          :description="t('staking_page.lido_csm.description')"
+        >
+          <RuiButton
+            color="primary"
+            data-testid="lido-csm-empty-add"
+            @click="emit('add')"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-plus" />
+            </template>
+            {{ t('staking_page.lido_csm.form.submit') }}
+          </RuiButton>
+        </TableEmptyNotice>
+      </template>
+      <template #item.address="{ row }">
+        <HashLink
+          :text="row.address"
+          location="ethereum"
+        />
+      </template>
+      <template #item.nodeOperatorId="{ row }">
+        <div class="flex flex-col">
           <span class="text-sm">
             #{{ row.nodeOperatorId }}
           </span>
-        </template>
-        <template #item.operatorTypeLabel="{ row }">
-          <span class="font-medium text-sm">
-            {{ row.operatorTypeLabel ?? t('staking_page.lido_csm.table.not_available') }}
+          <span
+            v-if="row.operatorTypeLabel"
+            class="text-caption text-rui-text-secondary"
+            data-testid="lido-csm-operator-type"
+          >
+            {{ row.operatorTypeLabel }}
           </span>
-        </template>
-        <template #item.bondCurrent="{ row }">
+        </div>
+      </template>
+      <template #item.bondCurrent="{ row }">
+        <div
+          v-if="row.bondCurrent"
+          class="flex items-center justify-end gap-2"
+        >
+          <RuiTooltip
+            v-if="row.bondShortfall"
+            :open-delay="200"
+            :class-names="{ tooltip: 'max-w-64' }"
+          >
+            <template #activator>
+              <RuiIcon
+                name="lu-triangle-alert"
+                size="16"
+                class="text-rui-warning"
+                data-testid="lido-csm-bond-short"
+              />
+            </template>
+            <i18n-t
+              scope="global"
+              keypath="staking_page.lido_csm.table.bond_short"
+              tag="span"
+            >
+              <template #amount>
+                <AssetAmountDisplay
+                  :asset="STETH_IDENTIFIER"
+                  :amount="row.bondShortfall"
+                />
+              </template>
+            </i18n-t>
+          </RuiTooltip>
           <BalanceDisplay
-            v-if="row.bondCurrent"
             :asset="STETH_IDENTIFIER"
             :value="{ amount: row.bondCurrent }"
             calculate-value
+            no-icon
           />
-          <span
-            v-else
-            class="text-sm text-rui-text-secondary"
-          >
-            {{ t('staking_page.lido_csm.table.not_available') }}
-          </span>
-        </template>
-        <template #item.bondRequired="{ row }">
-          <BalanceDisplay
-            v-if="row.bondRequired"
-            :asset="STETH_IDENTIFIER"
-            :value="{ amount: row.bondRequired }"
-            calculate-value
-          />
-          <span
-            v-else
-            class="text-sm text-rui-text-secondary"
-          >
-            {{ t('staking_page.lido_csm.table.not_available') }}
-          </span>
-        </template>
-        <template #item.bondClaimable="{ row }">
-          <BalanceDisplay
-            v-if="row.bondClaimable"
-            :asset="STETH_IDENTIFIER"
-            :value="{ amount: row.bondClaimable }"
-            calculate-value
-          />
-          <span
-            v-else
-            class="text-sm text-rui-text-secondary"
-          >
-            {{ t('staking_page.lido_csm.table.not_available') }}
-          </span>
-        </template>
-        <template #item.totalDeposited="{ row }">
-          <span class="text-sm">
-            {{ row.totalDeposited ?? t('staking_page.lido_csm.table.not_available') }}
-          </span>
-        </template>
-        <template #item.rewardsPending="{ row }">
-          <BalanceDisplay
-            v-if="row.rewardsPending"
-            :asset="STETH_IDENTIFIER"
-            :value="{ amount: row.rewardsPending }"
-            calculate-value
-          />
-          <span
-            v-else
-            class="text-sm text-rui-text-secondary"
-          >
-            {{ t('staking_page.lido_csm.table.not_available') }}
-          </span>
-        </template>
-        <template #item.actions="{ row }">
-          <RowActions
-            no-edit
-            align="end"
-            :disabled="removingEntryKey === row.key"
-            :delete-tooltip="t('staking_page.lido_csm.table.remove')"
-            @delete-click="handleRemove(row.address, row.nodeOperatorId)"
-          />
-        </template>
-      </RuiDataTable>
-    </div>
-  </RuiCard>
+        </div>
+        <span
+          v-else
+          class="text-sm text-rui-text-secondary"
+        >
+          {{ t('staking_page.lido_csm.table.not_available') }}
+        </span>
+      </template>
+      <template #item.bondRequired="{ row }">
+        <BalanceDisplay
+          v-if="row.bondRequired"
+          :asset="STETH_IDENTIFIER"
+          :value="{ amount: row.bondRequired }"
+          calculate-value
+          no-icon
+        />
+        <span
+          v-else
+          class="text-sm text-rui-text-secondary"
+        >
+          {{ t('staking_page.lido_csm.table.not_available') }}
+        </span>
+      </template>
+      <template #item.bondClaimable="{ row }">
+        <BalanceDisplay
+          v-if="row.bondClaimable"
+          :asset="STETH_IDENTIFIER"
+          :value="{ amount: row.bondClaimable }"
+          calculate-value
+          no-icon
+        />
+        <span
+          v-else
+          class="text-sm text-rui-text-secondary"
+        >
+          {{ t('staking_page.lido_csm.table.not_available') }}
+        </span>
+      </template>
+      <template #item.totalDeposited="{ row }">
+        <span
+          v-if="row.totalDeposited !== undefined"
+          class="text-sm"
+        >
+          {{ row.totalDeposited }}
+        </span>
+        <span
+          v-else
+          class="text-sm text-rui-text-secondary"
+        >
+          {{ t('staking_page.lido_csm.table.not_available') }}
+        </span>
+      </template>
+      <template #item.rewardsPending="{ row }">
+        <BalanceDisplay
+          v-if="row.rewardsPending"
+          :asset="STETH_IDENTIFIER"
+          :value="{ amount: row.rewardsPending }"
+          calculate-value
+          no-icon
+        />
+        <span
+          v-else
+          class="text-sm text-rui-text-secondary"
+        >
+          {{ t('staking_page.lido_csm.table.not_available') }}
+        </span>
+      </template>
+      <template #item.actions="{ row }">
+        <RowActions
+          no-edit
+          align="end"
+          :disabled="removingEntryKey === row.key"
+          :delete-tooltip="t('staking_page.lido_csm.table.remove')"
+          @delete-click="handleRemove(row.address, row.nodeOperatorId)"
+        />
+      </template>
+    </RuiDataTable>
+  </div>
 </template>

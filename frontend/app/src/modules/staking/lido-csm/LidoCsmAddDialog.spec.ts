@@ -66,14 +66,12 @@ describe('lidoCsmAddDialog', () => {
             props: ['modelValue', 'field', 'source'],
             template: '<div />',
           },
-          RuiCard: {
-            name: 'RuiCard',
-            template: '<div><slot name="header" /><slot /><slot name="footer" /></div>',
-          },
-          RuiDialog: {
-            name: 'RuiDialog',
-            props: ['modelValue'],
-            template: '<div><slot v-if="modelValue" /></div>',
+          // the dialog's confirm button, standing in for BigDialog's footer
+          BigDialog: {
+            emits: ['confirm', 'cancel'],
+            name: 'BigDialog',
+            props: ['display', 'action', 'loading', 'title', 'layout'],
+            template: '<div v-if="display"><slot /><button data-testid="lido-csm-submit" :disabled="action.disabled" @click="$emit(\'confirm\')" /></div>',
           },
           RuiTextField: inputStub('RuiTextField'),
         },
@@ -96,8 +94,8 @@ describe('lidoCsmAddDialog', () => {
     return value.map(String);
   }
 
-  function submitDisabled(): unknown {
-    return wrapper.findComponent<StubInstance>('[data-testid=lido-csm-submit]').props('disabled');
+  function submitDisabled(): boolean {
+    return wrapper.find('[data-testid=lido-csm-submit]').attributes('disabled') !== undefined;
   }
 
   async function selectAccount(accounts: AddressAccount[] = [account()]): Promise<void> {

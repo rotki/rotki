@@ -4,7 +4,7 @@ const { label = '' } = defineProps<{
 }>();
 
 defineSlots<{
-  /** The value shown under the label. */
+  /** The value shown at the end of the row. */
   default: () => any;
   /** Replaces the plain text label when it needs more than text, e.g. a tooltip. */
   label: () => any;
@@ -14,13 +14,15 @@ defineSlots<{
 <template>
   <div>
     <RuiDivider />
-    <div class="text-right py-4">
-      <div class="font-medium pb-2">
+    <div class="flex items-start justify-between gap-4 py-3">
+      <div class="text-rui-text-secondary pt-1">
         <slot name="label">
           {{ label }}
         </slot>
       </div>
-      <slot />
+      <div class="text-right">
+        <slot />
+      </div>
     </div>
   </div>
 </template>

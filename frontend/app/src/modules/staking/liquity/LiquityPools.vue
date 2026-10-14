@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LiquityPoolDetailEntry } from '@rotki/common';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
+import StakingHeadlineBalance from '@/modules/staking/components/StakingHeadlineBalance.vue';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
@@ -18,40 +19,29 @@ const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.POOLS);
       {{ t('liquity_pools.title') }}
     </template>
     <template v-if="pool">
-      <div class="flex items-center justify-end">
+      <StakingHeadlineBalance
+        :asset="pool.deposited.asset"
+        :value="pool.deposited"
+        :loading="loading"
+      />
+      <RuiDivider class="my-4" />
+      <div class="grid grid-cols-[1fr_auto] items-center gap-x-4">
+        <div class="text-rui-text-secondary">
+          {{ t('liquity_pools.rewards') }}
+        </div>
         <BalanceDisplay
-          :asset="pool.deposited.asset"
-          :value="pool.deposited"
-          icon-size="32px"
+          :asset="pool.rewards.asset"
+          :value="pool.rewards"
           :loading="loading"
         />
-      </div>
-      <RuiDivider class="my-4" />
-      <div class="flex flex-col gap-1">
-        <div class="flex items-center justify-between">
-          <div class="text-rui-text-secondary">
-            {{ t('liquity_pools.rewards') }}
-          </div>
-          <div>
-            <BalanceDisplay
-              :asset="pool.rewards.asset"
-              :value="pool.rewards"
-              :loading="loading"
-            />
-          </div>
+        <div class="text-rui-text-secondary">
+          {{ t('liquity_pools.liquidation_gains') }}
         </div>
-        <div class="flex items-center justify-between">
-          <div class="text-rui-text-secondary">
-            {{ t('liquity_pools.liquidation_gains') }}
-          </div>
-          <div>
-            <BalanceDisplay
-              :asset="pool.gains.asset"
-              :value="pool.gains"
-              :loading="loading"
-            />
-          </div>
-        </div>
+        <BalanceDisplay
+          :asset="pool.gains.asset"
+          :value="pool.gains"
+          :loading="loading"
+        />
       </div>
     </template>
     <div

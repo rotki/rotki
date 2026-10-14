@@ -15,31 +15,30 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <RuiCard
-    no-padding
-    class="mb-4"
-  >
+  <RuiCard no-padding>
     <template #custom-header>
-      <div class="flex items-center justify-between p-4">
-        <h6 class="text-h6">
+      <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
+        <h6 class="text-base font-semibold text-rui-text">
           {{ t('kraken_staking_received.title') }}
         </h6>
-        <RuiButtonGroup
-          v-model="selection"
-          required
-          variant="outlined"
-          color="primary"
-        >
-          <RuiButton model-value="current">
-            {{ t('kraken_staking_received.switch.current') }}
-          </RuiButton>
-          <RuiButton model-value="historical">
-            {{ t('kraken_staking_received.switch.historical') }}
-          </RuiButton>
-        </RuiButtonGroup>
+        <div class="flex items-center gap-1">
+          <ValueAccuracyHint v-if="selection === 'historical'" />
+          <RuiButtonGroup
+            v-model="selection"
+            variant="segmented"
+            required
+          >
+            <RuiButton model-value="current">
+              {{ t('kraken_staking_received.switch.current') }}
+            </RuiButton>
+            <RuiButton model-value="historical">
+              {{ t('kraken_staking_received.switch.historical') }}
+            </RuiButton>
+          </RuiButtonGroup>
+        </div>
       </div>
     </template>
-    <div class="p-4 py-0 max-h-44">
+    <div class="px-4 pb-2">
       <div
         v-for="item in received"
         :key="item.asset"
@@ -49,15 +48,12 @@ const { t } = useI18n({ useScope: 'global' });
           :asset="item.asset"
           :display="{ dense: true }"
         />
-        <div class="flex items-center gap-3">
-          <ValueAccuracyHint v-if="selection === 'historical'" />
-          <BalanceDisplay
-            no-icon
-            :asset="item.asset"
-            :value="item"
-            :loading="loading && selection === 'current'"
-          />
-        </div>
+        <BalanceDisplay
+          no-icon
+          :asset="item.asset"
+          :value="item"
+          :loading="loading && selection === 'current'"
+        />
       </div>
     </div>
   </RuiCard>

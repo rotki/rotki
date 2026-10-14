@@ -1,13 +1,24 @@
 <script setup lang="ts">
-import ActiveModules from '@/modules/settings/modules/ActiveModules.vue';
+import { provideHistoryEventsSection } from '@/modules/history/events/use-history-events-section';
 import ModuleNotActive from '@/modules/settings/modules/ModuleNotActive.vue';
+import ModuleSettingsMenu from '@/modules/settings/modules/ModuleSettingsMenu.vue';
 import LiquityStakingDetails from '@/modules/staking/liquity/LiquityStakingDetails.vue';
 import LiquityStakingPagePlaceholder from '@/modules/staking/liquity/LiquityStakingPagePlaceholder.vue';
 import { LIQUITY_MODULES, useLiquityPage } from '@/modules/staking/liquity/use-liquity-page';
+import { useStakingHistorySync } from '@/modules/staking/use-staking-history-sync';
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { fetch, moduleEnabled, premium } = useLiquityPage();
+
+// The page's Refresh covers the staking events too, so the events section drops its own.
+const { reload: reloadEvents } = provideHistoryEventsSection();
+const { chainName, syncHistory, syncingHistory } = useStakingHistorySync(reloadEvents);
+
+async function refresh(): Promise<void> {
+  await fetch(true);
+  reloadEvents();
+}
 </script>
 
 <template>
@@ -24,11 +35,14 @@ const { fetch, moduleEnabled, premium } = useLiquityPage();
     />
     <LiquityStakingDetails
       v-else
+      :syncing-history="syncingHistory"
+      :chain-name="chainName"
       data-testid="staking-details"
-      @refresh="fetch($event)"
+      @refresh="refresh()"
+      @sync-history="syncHistory()"
     >
       <template #modules>
-        <ActiveModules :modules="LIQUITY_MODULES" />
+        <ModuleSettingsMenu :modules="LIQUITY_MODULES" />
       </template>
     </LiquityStakingDetails>
   </div>

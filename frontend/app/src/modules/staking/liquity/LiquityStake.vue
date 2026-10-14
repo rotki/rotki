@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LiquityStakingDetailEntry } from '@rotki/common';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
+import StakingHeadlineBalance from '@/modules/staking/components/StakingHeadlineBalance.vue';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
@@ -20,31 +21,27 @@ const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKE);
       {{ t('loan_stake.title') }}
     </template>
     <template v-if="stake">
-      <div class="flex items-center justify-end">
-        <BalanceDisplay
-          :asset="stake.staked.asset"
-          :value="stake.staked"
-          icon-size="32px"
-          :loading="loading"
-        />
-      </div>
+      <StakingHeadlineBalance
+        :asset="stake.staked.asset"
+        :value="stake.staked"
+        :loading="loading"
+      />
       <RuiDivider class="my-4" />
-      <div class="flex items-center justify-between">
+      <div class="grid grid-cols-[1fr_auto] items-center gap-x-4">
         <div class="text-rui-text-secondary">
           {{ t('loan_stake.unclaimed_rewards') }}
         </div>
-        <div class="flex flex-col gap-1">
-          <BalanceDisplay
-            :asset="stake.lusdRewards.asset"
-            :value="stake.lusdRewards"
-            :loading="loading"
-          />
-          <BalanceDisplay
-            :asset="stake.ethRewards.asset"
-            :value="stake.ethRewards"
-            :loading="loading"
-          />
-        </div>
+        <BalanceDisplay
+          :asset="stake.lusdRewards.asset"
+          :value="stake.lusdRewards"
+          :loading="loading"
+        />
+        <div />
+        <BalanceDisplay
+          :asset="stake.ethRewards.asset"
+          :value="stake.ethRewards"
+          :loading="loading"
+        />
       </div>
     </template>
     <div

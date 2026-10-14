@@ -3,13 +3,12 @@ import type { RouteLocationRaw } from 'vue-router';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
-import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
+import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
+import { provideHistoryEventsSection } from '@/modules/history/events/use-history-events-section';
 import { usePremium } from '@/modules/premium/use-premium';
-import AppImage from '@/modules/shell/components/AppImage.vue';
-import FullSizeContent from '@/modules/shell/components/FullSizeContent.vue';
-import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import StakingLocationTitle from '@/modules/staking/components/StakingLocationTitle.vue';
 import KrakenStaking from '@/modules/staking/kraken/KrakenStaking.vue';
 import KrakenStakingPagePlaceholder from '@/modules/staking/kraken/KrakenStakingPagePlaceholder.vue';
 import { useKrakenStakingOperations } from '@/modules/staking/kraken/use-kraken-staking-operations';
@@ -24,13 +23,19 @@ const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const { refreshPrices } = usePriceRefresh();
 
 const { t } = useI18n({ useScope: 'global' });
+const router = useRouter();
 
 const premium = usePremium();
 
-const addKrakenApiKeysLink: RouteLocationRaw = {
+// The page's Refresh queries the Kraken staking events, so the events section drops its own.
+const { reload: reloadEvents } = provideHistoryEventsSection();
+
+/** The exchange keys form, opened on Kraken. */
+const connectKrakenLink: RouteLocationRaw = {
   name: '/api-keys/exchanges/',
   query: {
     add: 'true',
+    location: 'kraken',
   },
 };
 
@@ -46,6 +51,11 @@ async function refresh(ignoreCache: boolean = false): Promise<void> {
   await load(ignoreCache);
   const assets = get(events).received.map(item => item.asset);
   await refreshPrices(ignoreCache, assets);
+}
+
+async function refreshPage(): Promise<void> {
+  await refresh(true);
+  reloadEvents();
 }
 
 /**
@@ -70,10 +80,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <TablePageLayout
-    :title="[t('navigation_menu.staking'), t('staking.kraken')]"
-    child
-  >
+  <TablePageLayout child>
+    <template #title>
+      <StakingLocationTitle location="kraken" />
+    </template>
     <template #buttons>
       <RuiTooltip
         v-if="premium && isKrakenConnected"
@@ -83,8 +93,9 @@ onUnmounted(() => {
           <RuiButton
             variant="outlined"
             color="primary"
+            data-testid="kraken-staking-refresh"
             :loading="refreshing || loading"
-            @click="refresh(true)"
+            @click="refreshPage()"
           >
             <template #prepend>
               <RuiIcon name="lu-refresh-ccw" />
@@ -97,35 +108,28 @@ onUnmounted(() => {
     </template>
 
     <KrakenStakingPagePlaceholder v-if="!premium" />
-    <FullSizeContent
+    <div
       v-else-if="!isKrakenConnected"
-      class="gap-4"
+      class="rounded-rui-card border border-rui-divider bg-rui-surface"
+      data-testid="kraken-staking-connect"
     >
-      <span class="font-bold text-h5">
-        {{ t('kraken_page.page.title') }}
-      </span>
-
-      <InternalLink :to="addKrakenApiKeysLink">
-        <AppImage
-          width="64px"
-          fit="contain"
-          :src="getPublicProtocolImagePath('kraken.svg')"
-        />
-      </InternalLink>
-
-      <i18n-t
-        scope="global"
-        tag="h6"
-        keypath="kraken_page.page.description"
-        class="font-light text-h6 text-rui-text-secondary"
+      <TableEmptyNotice
+        icon="lu-key-round"
+        :title="t('kraken_page.connect.title')"
+        :description="t('kraken_page.connect.description')"
       >
-        <template #link>
-          <InternalLink :to="addKrakenApiKeysLink">
-            {{ t('kraken_page.page.api_key') }}
-          </InternalLink>
-        </template>
-      </i18n-t>
-    </FullSizeContent>
+        <RuiButton
+          color="primary"
+          data-testid="kraken-staking-connect-button"
+          @click="router.push(connectKrakenLink)"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-plus" />
+          </template>
+          {{ t('kraken_page.connect.action') }}
+        </RuiButton>
+      </TableEmptyNotice>
+    </div>
     <ProgressScreen v-else-if="loading">
       <template #message>
         {{ t('kraken_page.loading') }}
@@ -134,7 +138,6 @@ onUnmounted(() => {
     <KrakenStaking
       v-else
       v-model="filters"
-      :loading="refreshing"
     />
   </TablePageLayout>
 </template>

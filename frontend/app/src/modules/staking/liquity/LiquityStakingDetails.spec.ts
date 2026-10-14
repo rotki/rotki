@@ -1,6 +1,4 @@
-import type { StatsPriceQueryData } from '@/modules/core/messaging/types';
 import type { useLiquityStakingDetails } from '@/modules/staking/liquity/use-liquity-staking-details';
-import type { ActivitySteps } from '@/modules/task-center/core/types';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
@@ -10,16 +8,12 @@ import LiquityStakingDetails from '@/modules/staking/liquity/LiquityStakingDetai
 
 interface DetailsState {
   loading: boolean;
-  priceStatus: StatsPriceQueryData | undefined;
   proxies: Record<string, string[]> | null;
-  queryStatus: ActivitySteps | undefined;
 }
 
 const detailsState = vi.hoisted((): DetailsState => ({
   loading: false,
-  priceStatus: undefined,
   proxies: null,
-  queryStatus: undefined,
 }));
 
 const ProxyInfoStub = defineComponent({
@@ -49,11 +43,9 @@ vi.mock('@/modules/staking/liquity/use-liquity-staking-details', async () => {
       aggregatedStakingPool: computed(() => null),
       aggregatedStatistic: computed(() => null),
       availableAddresses: computed(() => ['0xaaa']),
-      liquityHistoricPriceStatus: computed(() => detailsState.priceStatus),
       loading: computed(() => detailsState.loading),
       modelSelectedAccounts: ref([]),
       proxyInformation: computed(() => detailsState.proxies),
-      stakingQueryStatus: computed(() => detailsState.queryStatus),
     }),
   };
 });
@@ -76,6 +68,7 @@ describe('modules/staking/liquity/LiquityStakingDetails', () => {
           TablePageLayout: { props: ['title', 'child'], template: '<div><slot name="buttons" /><slot /></div>' },
         },
       },
+      props: { chainName: 'Ethereum', syncingHistory: false },
     });
   }
 
@@ -83,9 +76,7 @@ describe('modules/staking/liquity/LiquityStakingDetails', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     detailsState.loading = false;
-    detailsState.priceStatus = undefined;
     detailsState.proxies = null;
-    detailsState.queryStatus = undefined;
   });
 
   afterEach(() => {
@@ -97,7 +88,7 @@ describe('modules/staking/liquity/LiquityStakingDetails', () => {
 
     await wrapper.find('[data-testid=liquity-refresh]').trigger('click');
 
-    expect(wrapper.emitted('refresh')).toEqual([[true]]);
+    expect(wrapper.emitted('refresh')).toEqual([[]]);
   });
 
   it('should offer the addresses that hold a position to the account selector', () => {
@@ -117,12 +108,20 @@ describe('modules/staking/liquity/LiquityStakingDetails', () => {
     });
   });
 
+  it('should leave a refresh\'s progress to the task dock', () => {
+    detailsState.loading = true;
+
+    wrapper = mountComponent();
+
+    expect(wrapper.find('[data-testid=liquity-query-status]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=liquity-refresh]').exists()).toBe(true);
+  });
+
   describe('the proxy section', () => {
-    it('should stay hidden with no proxies and nothing loading', () => {
+    it('should stay hidden with no proxies', () => {
       wrapper = mountComponent();
 
       expect(wrapper.findComponent(ProxyInfoStub).exists()).toBe(false);
-      expect(wrapper.find('[data-testid=liquity-query-status]').exists()).toBe(false);
     });
 
     it('should show the proxies once there are some', () => {
@@ -131,42 +130,6 @@ describe('modules/staking/liquity/LiquityStakingDetails', () => {
       wrapper = mountComponent();
 
       expect(wrapper.findComponent(ProxyInfoStub).props('proxyInformation')).toEqual({ '0xaaa': ['0xproxy'] });
-    });
-  });
-
-  describe('the query progress', () => {
-    it('should stay hidden while loading with no progress to report', () => {
-      detailsState.loading = true;
-
-      wrapper = mountComponent();
-
-      expect(wrapper.find('[data-testid=liquity-query-status]').exists()).toBe(false);
-    });
-
-    it('should show once loading and a staking count is known', () => {
-      detailsState.loading = true;
-      detailsState.queryStatus = { current: 3, total: 10 };
-
-      wrapper = mountComponent();
-
-      expect(wrapper.find('[data-testid=liquity-query-status]').exists()).toBe(true);
-    });
-
-    it('should show for a historic price count alone', () => {
-      detailsState.loading = true;
-      detailsState.priceStatus = { counterparty: 'liquity', processed: 2, total: 5 };
-
-      wrapper = mountComponent();
-
-      expect(wrapper.find('[data-testid=liquity-query-status]').exists()).toBe(true);
-    });
-
-    it('should stay hidden when a count is known but nothing is loading', () => {
-      detailsState.queryStatus = { current: 3, total: 10 };
-
-      wrapper = mountComponent();
-
-      expect(wrapper.find('[data-testid=liquity-query-status]').exists()).toBe(false);
     });
   });
 });

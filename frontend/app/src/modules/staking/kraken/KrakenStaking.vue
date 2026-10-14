@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
-import { type AssetBalance, HistoryEventEntryType } from '@rotki/common';
-import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
+import { type AssetBalance, type BigNumber, HistoryEventEntryType } from '@rotki/common';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
+import { sum } from '@/modules/core/common/display/balances';
 import HistoryEventsView from '@/modules/history/events/HistoryEventsView.vue';
 import KrakenDateFilter from '@/modules/staking/kraken/KrakenDateFilter.vue';
 import KrakenStakingOverview from '@/modules/staking/kraken/KrakenStakingOverview.vue';
@@ -11,10 +11,6 @@ import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-stor
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 
-defineProps<{
-  loading: boolean;
-}>();
-
 const { t } = useI18n({ useScope: 'global' });
 
 const selection = ref<'current' | 'historical'>('current');
@@ -22,78 +18,55 @@ const selection = ref<'current' | 'historical'>('current');
 const { events } = storeToRefs(useKrakenStakingStore());
 const { getAssetPrice } = usePriceUtils();
 
-const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
-const krakenHistoricPriceStatus = getProtocolStatsPriceQueryStatus('kraken');
+interface PricedEarnings {
+  /** Whether a current price is still missing for some asset. */
+  pricing: boolean;
+  earned: AssetBalance[];
+}
 
-type EarnedAssetsData = [boolean, AssetBalance[]];
-
-const earnedAssetsData = computed<EarnedAssetsData>(() => {
-  const earned = get(events).received;
-
-  if (get(selection) === 'historical') {
-    return [false, earned];
-  }
-
-  let loading = false;
-
-  const earnedWithPrice = earned.map((item) => {
+/**
+ * The earned assets at their current prices, whatever the per-asset list shows: the overview's
+ * current total is read from these, and it used to follow the list's toggle into historical values.
+ */
+const currentEarnings = computed<PricedEarnings>(() => {
+  let pricing = false;
+  const earned = get(events).received.map((item) => {
     const price = getAssetPrice(item.asset);
     if (!price || price.lte(0)) {
-      loading = true;
-
+      pricing = true;
       return item;
     }
-    return {
-      ...item,
-      value: price.times(item.amount),
-    };
+    return { ...item, value: price.times(item.amount) };
   });
-
-  return [loading, earnedWithPrice];
+  return { earned, pricing };
 });
+
+const totalCurrent = computed<BigNumber>(() => sum(get(currentEarnings).earned));
+
+const shownEarnings = computed<AssetBalance[]>(() =>
+  get(selection) === 'historical' ? get(events).received : get(currentEarnings).earned);
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
-      <KrakenDateFilter
-        v-model="modelValue"
-        class="flex-1 min-w-0"
-      />
+    <KrakenDateFilter v-model="modelValue" />
 
-      <div
-        v-if="loading && krakenHistoricPriceStatus"
-        class="flex items-center gap-2 text-rui-text-secondary text-sm md:shrink-0"
-      >
-        <RuiProgress
-          thickness="2"
-          size="18"
-          color="primary"
-          variant="indeterminate"
-          circular
-        />
-        {{ t('kraken_staking_events.query_historical_price', {
-          processed: krakenHistoricPriceStatus.processed,
-          total: krakenHistoricPriceStatus.total,
-        }) }}
-      </div>
-    </div>
-    <div class="grid md:grid-cols-2 gap-4">
+    <div class="grid md:grid-cols-2 gap-4 items-start">
       <KrakenStakingOverview
-        :loading="earnedAssetsData[0]"
+        :loading="currentEarnings.pricing"
         :total-historical="events.totalValue"
-        :earned="earnedAssetsData[1]"
+        :total-current="totalCurrent"
+        :rewards-count="events.entriesFound"
       />
       <KrakenStakingReceived
         v-model="selection"
-        :loading="earnedAssetsData[0]"
-        :received="earnedAssetsData[1]"
+        :loading="currentEarnings.pricing"
+        :received="shownEarnings"
       />
     </div>
 
-    <!-- as an exception here we specify event-types to only include staking events  -->
-    <!-- if an alternative way becomes possible we can use that -->
     <HistoryEventsView
+      :section-title="t('common.events')"
       :restrictions="{
         entryTypes: [HistoryEventEntryType.HISTORY_EVENT],
         eventTypes: ['staking'],

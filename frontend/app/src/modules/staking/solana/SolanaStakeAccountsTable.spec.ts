@@ -10,7 +10,7 @@ const rows: SolanaStakeAccountRow[] = [
 ];
 
 describe('modules/staking/solana/SolanaStakeAccountsTable', () => {
-  function mountTable(tableRows: SolanaStakeAccountRow[]): VueWrapper {
+  function mountTable(tableRows: SolanaStakeAccountRow[], loaded: boolean = true): VueWrapper {
     return mount(SolanaStakeAccountsTable, {
       global: {
         stubs: {
@@ -29,7 +29,7 @@ describe('modules/staking/solana/SolanaStakeAccountsTable', () => {
           },
         },
       },
-      props: { loading: false, rows: tableRows },
+      props: { loaded, loading: false, rows: tableRows },
     });
   }
 
@@ -56,5 +56,11 @@ describe('modules/staking/solana/SolanaStakeAccountsTable', () => {
     const wrapper = mountTable([]);
 
     expect(wrapper.find('[data-testid=empty]').text()).toBe('staking_page.solana.table.empty');
+  });
+
+  it('should not claim there are none before a query has succeeded', () => {
+    const wrapper = mountTable([], false);
+
+    expect(wrapper.find('[data-testid=empty]').text()).toBe('staking_page.not_loaded');
   });
 });

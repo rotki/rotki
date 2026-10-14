@@ -2748,20 +2748,13 @@
     }
   },
   "kraken_page": {
-    "loading": "Ваша информация о стейкинге на Kraken загружается...",
-    "page": {
-      "api_key": "API ключ",
-      "description": "Чтобы увидеть информацию о стейкинге, вам нужно добавить {link} Kraken",
-      "title": "Стейкинг Kraken"
-    }
+    "loading": "Ваша информация о стейкинге на Kraken загружается..."
   },
   "kraken_staking_events": {
-    "query_historical_price": "Запрос исторических цен Kraken ({processed}/{total})",
     "refresh_tooltip": "Обновить ваши события стейкинга Kraken"
   },
   "kraken_staking_overview": {
     "current": "Текущая стоимость",
-    "earned": "Всего заработано",
     "hint": {
       "current": "На основе текущей цены активов",
       "historical": "На основе исторической цены активов"
@@ -2787,20 +2780,14 @@
   },
   "liquity_staking_details": {
     "has_proxy_addresses": "имеет {length} прокси-адрес(а):",
-    "query_historical_price": "Запрос исторических цен Liquity ({processed}/{total})",
-    "query_staking_data": "Запрос данных стейкинга Liquity ({processed}/{total})",
     "refresh_tooltip": "Обновить суммы стейка и цены",
     "select_account": "Выберите аккаунт"
-  },
-  "liquity_staking_events": {
-    "title": "События стейка"
   },
   "liquity_statistic": {
     "estimated_pnl": "Оценочный PnL",
     "estimated_pnl_warning": "Этот оценочный PnL учитывает текущие невостребованные прибыли",
-    "no_stability_pool_gains": "Нет невостребованной прибыли пула стабильности",
-    "no_staking_gains": "Нет невостребованной прибыли от стейкинга",
     "no_statistics": "Статистика не найдена",
+    "none": "Нет",
     "stability_pool_gains": "Прибыль пула стабильности",
     "staking_gains": "Прибыль от стейкинга",
     "switch": {
@@ -3815,14 +3802,11 @@
     "version": "Версия {version}"
   },
   "staking_page": {
-    "dropdown_hint": "Выберите местоположение, чтобы увидеть больше деталей",
-    "dropdown_label": "Выберите местоположение",
     "lido_csm": {
       "description": "Отслеживайте операторов узлов, которых вы зарегистрировали в программе Lido CSM, чтобы rotki мог получать их балансы облигаций (bond balances) непосредственно из бухгалтерского контракта.",
       "form": {
         "address_hint": "Выберите адрес ETH, который собирает вознаграждения или размещает залог для оператора узла.",
         "address_label": "Отслеживаемый адрес",
-        "description": "Свяжите адрес ETH с числовым идентификатором оператора узла от Lido.",
         "node_operator_hint": "Используйте числовой ID, присвоенный Lido.",
         "node_operator_label": "ID оператора узла",
         "submit": "Добавить оператора узла",
@@ -3837,26 +3821,18 @@
         "fetch_failed": "Не удалось запросить операторов узлов Lido CSM: {message}"
       },
       "table": {
-        "actions": "Действия",
         "address": "Адрес",
         "bond_claimable": "К получению",
         "bond_current": "Залог",
         "bond_required": "Требуется",
-        "description": "rotki будет использовать следующие пары для чтения стейкинговой облигации stETH из бухгалтерского контракта.",
         "empty": "Операторы узлов пока не отслеживаются.",
         "keys_total": "Валидаторы",
         "node_operator": "Оператор",
         "not_available": "Н/Д",
-        "operator_type": "Тип оператора",
         "refresh_tooltip": "Обновить метрики Lido CSM",
         "remove": "Удалить",
         "rewards_pending": "Вознаграждения"
-      },
-      "title": "Операторы узлов Lido CSM"
-    },
-    "page": {
-      "description": "Выберите одно из поддерживаемых местоположений, чтобы увидеть больше информации о ваших стейкнутых активах.",
-      "title": "Местоположения стейкинга"
+      }
     }
   },
   "statistics_graph_settings": {

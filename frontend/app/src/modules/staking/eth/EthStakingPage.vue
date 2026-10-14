@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import AccountFormApiKeyAlert from '@/modules/accounts/management/AccountFormApiKeyAlert.vue';
-import AccountFormApiKeyMenu from '@/modules/accounts/management/AccountFormApiKeyMenu.vue';
 import { EthStaking } from '@/modules/premium/premium';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import ModuleNotActive from '@/modules/settings/modules/ModuleNotActive.vue';
 import { useSetting } from '@/modules/settings/use-setting';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import StakingLocationTitle from '@/modules/staking/components/StakingLocationTitle.vue';
 import EthStakingFilterBar from './components/EthStakingFilterBar.vue';
 import EthStakingHeaderActions from './components/EthStakingHeaderActions.vue';
 import EthStakingPagePlaceholder from './components/EthStakingPagePlaceholder.vue';
 import { useEthStakingAccess } from './use-eth-staking-access';
+import { useEthStakingPageRefresh } from './use-eth-staking-page-refresh';
 import { useEthStakingPerformance } from './use-eth-staking-performance';
 import { useEthStakingRefresh } from './use-eth-staking-refresh';
 import { useEthValidatorManagement } from './use-eth-validator-management';
-
-const { t } = useI18n({ useScope: 'global' });
 
 const { allowed, enabled, module } = useEthStakingAccess();
 
@@ -66,11 +65,13 @@ const {
   refreshPerformance,
 } = useEthStakingPerformance();
 
-const { refresh, refreshing } = useEthStakingRefresh({
+const { refresh, refreshing: stakingRefreshing } = useEthStakingRefresh({
   getPerformance,
   refreshPerformance,
   setTotal,
 });
+
+const { chainName, refreshPage, refreshing, syncHistory, syncingHistory } = useEthStakingPageRefresh(refresh, stakingRefreshing);
 
 onBeforeMount(async () => {
   if (get(enabled))
@@ -81,30 +82,30 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <div>
+  <TablePageLayout child>
+    <template #title>
+      <StakingLocationTitle location="eth2" />
+    </template>
+    <template
+      v-if="allowed && enabled"
+      #buttons
+    >
+      <EthStakingHeaderActions
+        :refreshing="refreshing"
+        :syncing-history="syncingHistory"
+        :chain-name="chainName"
+        :optional-api-key-service="optionalApiKeyService"
+        @refresh="refreshPage()"
+        @sync-history="syncHistory()"
+      />
+    </template>
+
     <EthStakingPagePlaceholder v-if="!allowed" />
     <ModuleNotActive
       v-else-if="!enabled"
       :modules="[module]"
     />
-
-    <TablePageLayout
-      v-else
-      :title="[t('navigation_menu.staking'), t('staking.eth2')]"
-      child
-    >
-      <template #buttons>
-        <AccountFormApiKeyMenu
-          v-if="optionalApiKeyService"
-          :service="optionalApiKeyService"
-        />
-
-        <EthStakingHeaderActions
-          :refreshing="refreshing"
-          @refresh="refresh(true)"
-        />
-      </template>
-
+    <template v-else>
       <AccountFormApiKeyAlert
         v-if="blockingApiKeyService"
         :service="blockingApiKeyService"
@@ -126,6 +127,6 @@ onBeforeMount(async () => {
           />
         </template>
       </EthStaking>
-    </TablePageLayout>
-  </div>
+    </template>
+  </TablePageLayout>
 </template>

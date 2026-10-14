@@ -55,7 +55,7 @@ describe('modules/staking/liquity/LiquityPage', () => {
         plugins: [createPinia()],
         provide: libraryDefaults,
         stubs: {
-          ActiveModules: { props: ['modules'], template: '<div data-testid="active-modules" />' },
+          ModuleSettingsMenu: { props: ['modules'], template: '<div data-testid="module-settings" />' },
           LiquityStakingDetails: StakingDetailsStub,
           LiquityStakingPagePlaceholder: PlaceholderStub,
           ModuleNotActive: ModuleNotActiveStub,
@@ -132,10 +132,10 @@ describe('modules/staking/liquity/LiquityPage', () => {
       expect(wrapper.findComponent(ModuleNotActiveStub).exists()).toBe(false);
     });
 
-    it('should offer the module toggle in the details header', () => {
+    it('should offer the module settings in the details header', () => {
       wrapper = mountPage();
 
-      expect(wrapper.find('[data-testid=active-modules]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=module-settings]').exists()).toBe(true);
     });
 
     it('should refetch when the details ask for a refresh', () => {
