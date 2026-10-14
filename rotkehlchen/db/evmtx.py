@@ -197,6 +197,26 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         if len(transactions_to_redecode) == 0:
             return
 
+        # A tx that decoded to no events was added to the ignored actions by the decoder. Its
+        # events would be skipped by accounting once decoded, so it is removed. Redecoding adds
+        # it back if there are still no events. Txs with events are not touched since the
+        # user may have ignored them.
+        group_ids = {
+            EvmEvent._calculate_group_identifier(tx_ref=tx_hash, location=location)
+            for tx_hash in transactions_to_redecode.values()
+        }
+        with_events: set[str] = set()
+        for group_chunk, placeholders in get_query_chunks(list(group_ids)):
+            with_events.update(row[0] for row in write_cursor.execute(
+                f'SELECT DISTINCT group_identifier FROM history_events '
+                f'WHERE group_identifier IN ({placeholders})',
+                group_chunk,
+            ))
+        write_cursor.executemany(
+            'DELETE FROM ignored_actions WHERE identifier=?',
+            [(x,) for x in group_ids - with_events],
+        )
+
         for tx_hash_chunk, _ in get_query_chunks(list(transactions_to_redecode.values())):
             dbevents.delete_events_by_tx_ref(
                 write_cursor=write_cursor,
