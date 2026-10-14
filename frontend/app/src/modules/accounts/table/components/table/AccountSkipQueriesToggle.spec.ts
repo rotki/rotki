@@ -61,6 +61,12 @@ describe('modules/accounts/table/components/table/AccountSkipQueriesToggle', () 
     return wrapper.findAll('[data-testid=account-skip-queries-chain]');
   }
 
+  /** Several chains list under the entry once it is opened, in place inside the row's menu. */
+  async function openChains(props: { address: string; chains: string[] }): Promise<void> {
+    wrapper = createWrapper(props);
+    await button().trigger('click');
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     set(items, [chain('eth')]);
@@ -106,8 +112,15 @@ describe('modules/accounts/table/components/table/AccountSkipQueriesToggle', () 
       set(state, SkipState.PARTIAL);
     });
 
-    it('should offer one entry per chain, and act on that chain alone', async () => {
+    it('should list nothing until the entry is opened', () => {
       wrapper = createWrapper({ address: ADDRESS, chains: ['eth', 'optimism', 'base'] });
+
+      expect(chainItems()).toHaveLength(0);
+      expect(button().attributes('aria-expanded')).toBe('false');
+    });
+
+    it('should offer one entry per chain, and act on that chain alone', async () => {
+      await openChains({ address: ADDRESS, chains: ['eth', 'optimism', 'base'] });
 
       expect(chainItems()).toHaveLength(3);
       await wrapper.find('[data-testid=account-skip-queries-chain][data-chain=optimism]').trigger('click');
@@ -116,16 +129,16 @@ describe('modules/accounts/table/components/table/AccountSkipQueriesToggle', () 
       expect(toggleAll).not.toHaveBeenCalled();
     });
 
-    it('should not act on a chain that is switched off whole', () => {
-      wrapper = createWrapper({ address: ADDRESS, chains: ['eth', 'optimism', 'base'] });
+    it('should not act on a chain that is switched off whole', async () => {
+      await openChains({ address: ADDRESS, chains: ['eth', 'optimism', 'base'] });
 
       const wholeChain = wrapper.find('[data-testid=account-skip-queries-chain][data-chain=base]');
       expect(wholeChain.attributes('disabled')).toBeDefined();
       expect(wholeChain.text()).toContain('account_balances.skip_queries.chain_whole');
     });
 
-    it('should say which chains are already skipped', () => {
-      wrapper = createWrapper({ address: ADDRESS, chains: ['eth', 'optimism', 'base'] });
+    it('should say which chains are already skipped', async () => {
+      await openChains({ address: ADDRESS, chains: ['eth', 'optimism', 'base'] });
 
       expect(wrapper.find('[data-testid=account-skip-queries-chain][data-chain=eth]').text())
         .toContain('account_balances.skip_queries.chain_skipped');
@@ -135,7 +148,7 @@ describe('modules/accounts/table/components/table/AccountSkipQueriesToggle', () 
     });
 
     it('should offer to skip them all while some are still queried, counting only the chains it can act on', async () => {
-      wrapper = createWrapper({ address: ADDRESS, chains: ['eth', 'optimism', 'base'] });
+      await openChains({ address: ADDRESS, chains: ['eth', 'optimism', 'base'] });
 
       const all = wrapper.find('[data-testid=account-skip-queries-all]');
       expect(all.text()).toContain('account_balances.skip_queries.skip_all::2');
@@ -144,16 +157,16 @@ describe('modules/accounts/table/components/table/AccountSkipQueriesToggle', () 
       expect(toggleAll).toHaveBeenCalledTimes(1);
     });
 
-    it('should offer to query them all again once every chain is skipped', () => {
+    it('should offer to query them all again once every chain is skipped', async () => {
       set(state, SkipState.ALL);
 
-      wrapper = createWrapper({ address: ADDRESS, chains: ['eth', 'optimism', 'base'] });
+      await openChains({ address: ADDRESS, chains: ['eth', 'optimism', 'base'] });
 
       expect(wrapper.find('[data-testid=account-skip-queries-all]').text())
         .toContain('account_balances.skip_queries.resume_all::2');
     });
 
-    it('should not toggle anything when the button only opens the menu', async () => {
+    it('should not toggle anything when the entry only opens the list', async () => {
       wrapper = createWrapper({ address: ADDRESS, chains: ['eth', 'optimism', 'base'] });
 
       await button().trigger('click');

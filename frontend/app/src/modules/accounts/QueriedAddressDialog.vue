@@ -8,9 +8,19 @@ import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-addr
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { type Module, SUPPORTED_MODULES } from '@/modules/core/common/modules';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
-import AppImage from '@/modules/shell/components/AppImage.vue';
 import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAddressDisplay.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
+
+interface QueriedAddressRow {
+  address: string;
+  /**
+   * The tracked account behind the address. Removing an account leaves its queried addresses in
+   * place, so an address can outlive its account; it then shows bare, still removable.
+   */
+  account: BlockchainAccount | undefined;
+}
 
 const { module } = defineProps<{ module: Module }>();
 
@@ -44,6 +54,11 @@ const addresses = computed<string[]>(() => {
   return addresses[index] ?? [];
 });
 
+const rows = computed<QueriedAddressRow[]>(() => get(addresses).map(address => ({
+  account: get(accounts).find(account => getAccountAddress(account) === address),
+  address,
+})));
+
 const usableAddresses = computed(() => {
   const accountList = getAddresses(Blockchain.ETH);
   const moduleAddresses = get(addresses);
@@ -63,12 +78,6 @@ async function addAddress() {
   set(selectedAccounts, []);
 }
 
-function getAccount(address: string): BlockchainAccount {
-  const account = get(accounts).find(account => getAccountAddress(account) === address);
-  assert(account);
-  return account;
-}
-
 function close() {
   set(selectedAccounts, []);
   emit('close');
@@ -78,71 +87,87 @@ function close() {
 <template>
   <RuiDialog
     model-value
-    max-width="450px"
+    max-width="520px"
     @closed="close()"
   >
     <RuiCard>
       <template #custom-header>
-        <div class="flex items-center justify-between p-4 gap-4">
-          <AppImage
-            class="icon-bg"
-            size="1.5rem"
-            fit="contain"
+        <div class="flex items-start gap-3 p-4 pb-2">
+          <IconMark
+            size="1.25rem"
+            class="mt-0.5 shrink-0"
             :src="currentModule?.icon"
           />
-          <RuiCardHeader class="p-0">
-            <template #header>
+          <div class="flex-1 min-w-0">
+            <div class="text-base font-medium text-rui-text">
               {{ t('queried_address_dialog.title') }}
-            </template>
-            <template #subheader>
+            </div>
+            <div class="text-sm text-rui-text-secondary">
               {{ t('queried_address_dialog.subtitle', { module: currentModule?.name }) }}
-            </template>
-          </RuiCardHeader>
-
+            </div>
+          </div>
           <RuiButton
-            class="shrink-0"
+            class="shrink-0 -mt-1 -mr-2"
             variant="text"
+            size="sm"
             icon
+            :aria-label="t('common.actions.close')"
             data-testid="queried-address-close"
             @click="close()"
           >
-            <RuiIcon name="lu-x" />
+            <RuiIcon
+              name="lu-x"
+              size="18"
+            />
           </RuiButton>
         </div>
       </template>
-      <div class="flex items-center gap-2">
+      <div class="flex items-end gap-2">
         <BlockchainAccountSelector
           v-model="selectedAccounts"
-          class="flex-1"
+          class="flex-1 min-w-0"
           :source="{ chains: [ETH], hideOnEmptyUsable: true, usableAddresses }"
           :field="{ dense: true, label: t('queried_address_dialog.add') }"
         />
         <RuiButton
           :disabled="selectedAccounts.length === 0"
-          variant="text"
-          icon
+          class="h-8"
+          size="sm"
+          variant="outlined"
+          color="primary"
           data-testid="queried-address-add"
           @click="addAddress()"
         >
-          <RuiIcon name="lu-plus" />
+          {{ t('common.actions.add') }}
         </RuiButton>
       </div>
       <div
-        v-if="addresses.length > 0"
-        class="overflow-y-scroll mt-4 h-64"
+        v-if="rows.length > 0"
+        class="overflow-y-auto mt-2 max-h-72 rounded-rui-control border border-rui-divider between:border-t between:border-rui-divider"
       >
         <div
-          v-for="address in addresses"
-          :key="address"
-          class="flex items-start gap-4 py-2 border-t border-default"
+          v-for="row in rows"
+          :key="row.address"
+          class="flex items-center gap-3 px-3 py-2"
           data-testid="queried-address-row"
         >
-          <div class="flex-1">
-            <LabeledAddressDisplay :account="getAccount(address)" />
-            <TagDisplay
-              :tags="getAccount(address).tags"
-              small
-            />
+          <div class="flex-1 min-w-0">
+            <template v-if="row.account">
+              <LabeledAddressDisplay :account="row.account" />
+              <TagDisplay
+                :tags="row.account.tags"
+                small
+              />
+            </template>
+            <template v-else>
+              <HashLink
+                :text="row.address"
+                location="ethereum"
+              />
+              <div class="text-xs text-rui-text-secondary">
+                {{ t('queried_address_dialog.untracked') }}
+              </div>
+            </template>
           </div>
           <RuiTooltip
             :options="{ placement: 'top' }"
@@ -152,13 +177,13 @@ function close() {
               <RuiButton
                 variant="text"
                 icon
-                color="primary"
-                class="p-2! mt-0.5"
+                size="sm"
+                color="error"
                 data-testid="queried-address-remove"
                 @click="
                   deleteQueriedAddress({
                     module,
-                    address,
+                    address: row.address,
                   })
                 "
               >
@@ -175,7 +200,8 @@ function close() {
       </div>
       <div
         v-else
-        class="border-t border-default mt-4 pt-4 text-body-2 text-center text-rui-text-secondary h-64"
+        class="mt-2 rounded-rui-control border border-dashed border-rui-divider px-3 py-3 text-sm text-rui-text-secondary"
+        data-testid="queried-address-empty"
       >
         {{
           t('queried_address_dialog.all_address_queried', {

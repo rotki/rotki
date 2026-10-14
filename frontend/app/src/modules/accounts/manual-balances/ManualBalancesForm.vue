@@ -114,9 +114,10 @@ defineExpose({
       :label="t('manual_balances_form.fields.balance_type')"
     />
 
-    <div class="flex items-start gap-4">
+    <div class="flex items-start gap-2">
       <AssetSelect
         v-model="state.asset"
+        class="flex-1 min-w-0"
         :label="t('common.asset')"
         data-testid="manual-balances-form-asset"
         :source="{ chain: state.location }"
@@ -134,17 +135,13 @@ defineExpose({
             icon
             type="button"
             color="primary"
-            class="pt-5 pb-2 mt-1 px-2"
+            class="mt-6"
+            data-testid="manual-balances-form-custom-asset"
+            :aria-label="t('manual_balances_form.fields.create_a_custom_asset')"
             :disabled="submitting"
             @click="openCustomAssetForm()"
           >
-            <div class="flex">
-              <RuiIcon name="lu-server" />
-              <RuiIcon
-                name="lu-circle-plus"
-                class="-mt-4 -ml-2"
-              />
-            </div>
+            <RuiIcon name="lu-package-plus" />
           </RuiButton>
         </template>
         <span>

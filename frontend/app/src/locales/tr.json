@@ -56,8 +56,7 @@
       "tooltip": {
         "disabled": "Ayarlar → Zincirler bölümünde atlandığı için rotki bunu sorgulamaz",
         "last_detected": "Son tespit: {time}",
-        "redetect": "Tokenları yeniden tespit et",
-        "redetect_all": "Tüm adresler için tokenları yeniden tespit et"
+        "redetect": "Tokenları yeniden tespit et"
       }
     },
     "detected": {
@@ -66,7 +65,6 @@
     },
     "edit_tooltip": "Hesabı düzenle",
     "enter_selection_mode": "Yok saymak veya spam olarak işaretlemek için genişletilmiş bir hesaptaki varlıkları seçin",
-    "exit_selection_mode": "Seçim modundan çık",
     "filter_field_labels": {
       "account": "Hesap",
       "chain": "Zincir"
@@ -1835,8 +1833,7 @@
     "evm_detection": {
       "found": "{count} zincire eklendi | {count} zincire eklendi",
       "none": "Yeni zincir bulunamadı",
-      "title": "EVM hesaplarını tespit et",
-      "tooltip": "Kayıtlı tüm EVM hesaplarının diğer EVM zincirlerindeki etkinliklerini tespit et ve hesapları bu zincirlere kaydet."
+      "title": "EVM hesaplarını tespit et"
     },
     "export_blockchain_accounts": "Blokzincir hesaplarını dışa aktar",
     "filter": {
@@ -1863,8 +1860,7 @@
     "validator_index_label": "{index} numaralı Ethereum doğrulayıcısı",
     "validators": {
       "auto_detection_info": "Doğrulayıcılar ETH yatırma işlemlerinden otomatik olarak tespit edilir. Yatırmayı yapan adresi Ethereum hesabı olarak ekleyin, geçmiş olaylarını çözümleyin, ardından listeyi güncellemek için yenile düğmesine tıklayın.",
-      "consolidated": "Birleştirildiği doğrulayıcı:",
-      "selected": "{count} doğrulayıcı seçildi"
+      "consolidated": "Birleştirildiği doğrulayıcı:"
     }
   },
   "bridge_matching": {
@@ -3272,7 +3268,8 @@
     "api_key_menu": {
       "consensus_rpc_title": "Staking veri kaynağı",
       "dismiss": "Bir daha gösterme",
-      "optional": "İsteğe bağlı API anahtarı"
+      "optional": "İsteğe bağlı API anahtarı",
+      "stop_reminding": "Bana hatırlatma"
     },
     "beaconchain": {
       "api_key_message": "Beaconcha.in API anahtarınız varsa blok üretim geçmişini ve gelişmiş staking analizlerini almak için buraya ekleyebilirsiniz. Doğrulayıcı eklemek için gerekli değildir.",
@@ -4668,6 +4665,11 @@
         "subtitle": "Bakiye miktarını, konumunu ve etiketlerini düzenleyin",
         "title": "Manuel bakiyeyi düzenle"
       }
+    },
+    "refresh_menu": {
+      "label": "Diğer yenileme seçenekleri",
+      "prices": "Yalnızca fiyatları yenile",
+      "prices_description": "Elle takip ettiğiniz varlıkların güncel fiyatlarını getirir"
     }
   },
   "manual_balances_form": {
@@ -4699,12 +4701,19 @@
     },
     "delete_tooltip": "Bakiyeyi sil",
     "edit_tooltip": "Bakiyeyi düzenle",
+    "empty": {
+      "add_liability": "Borç ekle",
+      "balances_description": "rotki'nin kendi başına okuyamadığı varlıkları takip edin; nakit, bir tasarruf hesabı veya desteklenmeyen bir borsa gibi.",
+      "balances_title": "Henüz manuel bakiye yok",
+      "clear_filters": "Filtreleri temizle",
+      "filtered_description": "Diğer kayıtları görmek için filtreleri değiştirin veya temizleyin.",
+      "filtered_title": "Bu filtrelerle eşleşen kayıt yok",
+      "liabilities_description": "Net varlığınızın hesaba katması için borçlarınızı kaydedin; bir kredi veya ipotek gibi.",
+      "liabilities_title": "Henüz borç yok"
+    },
     "missing_asset": {
       "title": "Varlık eksik",
       "tooltip": "Bu varlığın bulunmadığı bir GlobalDB kullanıyorsunuz. Farklı bir varlık belirlemek için olayı düzenleyin veya bu kaydı silin."
-    },
-    "refresh": {
-      "tooltip": "Manuel bakiyeleri yenile"
     }
   },
   "merge_dialog": {

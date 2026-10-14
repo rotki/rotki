@@ -29,12 +29,13 @@ const {
    */
   editMode?: boolean;
   selectedChain?: string;
+  /** The book a new entry starts in; after a save, the dialog reports the book it went into. */
   location?: 'global' | 'private';
   root?: boolean;
 }>();
 
 const emit = defineEmits<{
-  'update:tab': [tab: number];
+  'update:location': [location: 'global' | 'private'];
   'refresh': [];
 }>();
 
@@ -128,7 +129,7 @@ async function save(): Promise<boolean> {
   if (success) {
     set(modelValue, undefined);
     set(open, false);
-    emit('update:tab', location === 'global' ? 0 : 1);
+    emit('update:location', location);
     emit('refresh');
   }
   return success;
@@ -168,6 +169,7 @@ watchImmediate([open, () => editableItem], ([open, editableItem]) => {
     :display="!!modelValue"
     :title="dialogTitle"
     :action="{ primary: t('common.actions.save') }"
+    :layout="{ autoHeight: true, divide: true, maxWidth: '640px' }"
     :loading="loading"
     :prompt-on-close="stateUpdated"
     @confirm="save()"

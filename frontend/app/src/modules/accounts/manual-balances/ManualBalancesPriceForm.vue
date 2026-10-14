@@ -24,66 +24,56 @@ const {
 
 const { t } = useI18n({ useScope: 'global' });
 
+const priceSource = computed<'fetched' | 'manual'>({
+  get: () => get(isCustomPrice) ? 'manual' : 'fetched',
+  set: (source: 'fetched' | 'manual') => set(isCustomPrice, source === 'manual'),
+});
+
 defineExpose({
   savePrice,
 });
 </script>
 
 <template>
-  <div>
-    <div
+  <div class="flex flex-col gap-2">
+    <RuiButtonGroup
       v-if="fetchedPrice"
-      class="flex items-center gap-2 mb-8 justify-center"
+      v-model="priceSource"
+      variant="segmented"
+      required
+      size="sm"
+      class="self-start"
+      data-testid="manual-balances-form-price-source"
+      :disabled="pending || fetchingPrice"
     >
-      <div
-        class="text-sm"
-        :class="{ 'text-rui-text-secondary': isCustomPrice }"
-      >
+      <RuiButton model-value="fetched">
         {{ t('manual_balances_form.fields.use_fetched_price') }}
-      </div>
-      <RuiSwitch
-        v-model="isCustomPrice"
-        hide-details
-        color="primary"
-        class="-my-2"
-        :disabled="pending || fetchingPrice"
-      />
-      <div
-        class="text-sm"
-        :class="{ 'text-rui-text-secondary': !isCustomPrice }"
-      >
+      </RuiButton>
+      <RuiButton model-value="manual">
         {{ t('manual_balances_form.fields.input_manual_price') }}
-      </div>
-    </div>
-    <div class="grid grid-cols-2 gap-y-2">
+      </RuiButton>
+    </RuiButtonGroup>
+    <div class="grid grid-cols-2 gap-x-4">
       <AmountInput
         v-model="price"
         :disabled="fetchingPrice || !isCustomPrice || pending"
         :loading="fetchingPrice"
-        variant="outlined"
-        class="[&_fieldset]:rounded-r-none!"
         :label="t('common.price')"
       />
       <AssetSelect
         v-model="priceAsset"
         :disabled="fetchingPrice || !isCustomPrice || pending"
         :loading="fetchingPrice"
-        variant="outlined"
-        class="[&_fieldset]:rounded-l-none!"
         :hint="t('manual_balances_form.fields.price_asset_hint')"
         :label="t('manual_balances_form.fields.price_asset')"
       />
     </div>
-
     <div
       v-if="fiatPriceHint"
-      class="-mt-4 mb-4 text-body-2 font-bold text-rui-success"
+      class="-mt-4 text-caption text-rui-text-secondary"
+      data-testid="manual-balances-form-fiat-price"
     >
-      {{
-        t('common.price_in_symbol', {
-          symbol: currencySymbol,
-        })
-      }}:
+      {{ t('common.price_in_symbol', { symbol: currencySymbol }) }}:
       <FiatDisplay :value="fiatPriceHint" />
     </div>
   </div>

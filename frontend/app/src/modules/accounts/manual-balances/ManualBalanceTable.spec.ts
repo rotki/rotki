@@ -12,8 +12,6 @@ const {
   prepareForEdit,
   pricesLoading,
   refetch,
-  refresh,
-  refreshing,
   rows,
   showDeleteConfirmation,
 } = await vi.hoisted(async () => {
@@ -24,8 +22,6 @@ const {
     prepareForEdit: vi.fn((balance: unknown) => balance),
     pricesLoading: ref<boolean>(false),
     refetch: vi.fn(async () => {}),
-    refresh: vi.fn(),
-    refreshing: ref<boolean>(false),
     rows: ref<unknown[]>([]),
     showDeleteConfirmation: vi.fn(),
   };
@@ -46,8 +42,6 @@ vi.mock('@/modules/accounts/manual-balances/use-manual-balance-table-actions', (
   useManualBalanceTableActions: (): Record<string, unknown> => ({
     prepareForEdit,
     pricesLoading,
-    refresh,
-    refreshing,
     showDeleteConfirmation,
   }),
 }));
@@ -117,13 +111,13 @@ function createWrapper(type: 'balances' | 'liabilities' = 'balances'): VueWrappe
     global: {
       stubs: {
         PillFilterBar: true,
-        RefreshButton: { emits: ['refresh'], props: ['loading', 'tooltip'], template: '<button @click="$emit(\'refresh\')" />' },
         RowActions: RowActionsStub,
-        RuiCard: { template: '<div><slot name="custom-header" /><slot /></div>' },
         RuiDataTable: TableStub,
+        TableFrame: { template: '<div><div data-testid="toolbar"><slot name="toolbar" /></div><slot /></div>' },
       },
     },
     props: { type },
+    slots: { toolbar: '<span data-testid="toolbar-control" />' },
   });
 }
 
@@ -137,7 +131,6 @@ describe('manualBalanceTable', () => {
     vi.clearAllMocks();
     set(dataSource, []);
     set(pricesLoading, false);
-    set(refreshing, false);
     set(rows, [balance()]);
     prepareForEdit.mockImplementation((value: unknown) => value);
   });
@@ -165,12 +158,11 @@ describe('manualBalanceTable', () => {
     });
   });
 
-  it('should refresh on request', async () => {
+  /** The page puts its assets / liabilities switch in the table's toolbar, ahead of the filter. */
+  it('should render the controls it is given in its toolbar', () => {
     const wrapper = createWrapper();
 
-    await wrapper.find('button').trigger('click');
-
-    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(wrapper.find('[data-testid=toolbar] [data-testid=toolbar-control]').exists()).toBe(true);
   });
 
   /** The table is a view onto the balances, so it re-reads whenever they actually change. */

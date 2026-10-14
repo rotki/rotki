@@ -3,6 +3,7 @@ import { isAddressAccount, isValidatorAccount } from '@/modules/accounts/account
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
+import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
 import ValidatorDisplay from '@/modules/shell/components/display/ValidatorDisplay.vue';
 
 type OptionKind = 'address' | 'validator';
@@ -101,6 +102,19 @@ defineExpose({
     auto-select-first
     @update:model-value="modelValue = $event"
   >
+    <template #selection.prepend="{ item }">
+      <RuiIcon
+        v-if="item.kind === OptionKind.VALIDATOR"
+        name="lu-shield-check"
+        size="14"
+      />
+      <EnsAvatar
+        v-else
+        :address="item.id"
+        avatar
+        size="24px"
+      />
+    </template>
     <template #selection="{ item }">
       <ValidatorDisplay
         v-if="item.kind === OptionKind.VALIDATOR && item.validatorIndex !== undefined"
@@ -109,6 +123,7 @@ defineExpose({
       />
       <AccountDisplay
         v-else
+        hide-avatar
         hide-chain-icon
         :account="{ address: item.id, chain }"
       />

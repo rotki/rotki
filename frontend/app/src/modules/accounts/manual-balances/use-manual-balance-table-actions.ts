@@ -4,29 +4,19 @@ import { omit } from 'es-toolkit';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseManualBalanceTableActionsReturn {
   prepareForEdit: (balance: ManualBalanceWithPrice) => ManualBalance;
   pricesLoading: ComputedRef<boolean>;
-  refresh: () => Promise<void>;
-  refreshing: ComputedRef<boolean>;
   showDeleteConfirmation: (id: number) => void;
 }
 
 export function useManualBalanceTableActions(): UseManualBalanceTableActionsReturn {
-  const { deleteManualBalance, fetchManualBalances } = useManualBalances();
+  const { deleteManualBalance } = useManualBalances();
   const { show } = useConfirmStore();
   const { t } = useI18n({ useScope: 'global' });
 
-  const { useIsActive } = useTaskCenter();
-  const refreshing = useIsActive(ActivityKind.MANUAL_BALANCES);
   const { refreshing: pricesLoading } = usePriceRefresh();
-
-  async function refresh(): Promise<void> {
-    await fetchManualBalances(true);
-  }
 
   function showDeleteConfirmation(id: number): void {
     show(
@@ -48,8 +38,6 @@ export function useManualBalanceTableActions(): UseManualBalanceTableActionsRetu
   return {
     prepareForEdit,
     pricesLoading,
-    refresh,
-    refreshing,
     showDeleteConfirmation,
   };
 }

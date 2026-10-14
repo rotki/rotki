@@ -17,12 +17,13 @@ interface UseAccountFetchingReturn {
 export function useAccountFetching(): UseAccountFetchingReturn {
   const { queryAccounts, queryBtcAccounts } = useBlockchainAccountsApi();
   const { fetchEthStakingValidators } = useEthStaking();
-  const { revisionOf, updateAccounts } = useBlockchainAccountsStore();
+  const { markFetchFailed, revisionOf, updateAccounts } = useBlockchainAccountsStore();
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   /**
-   * Reports a chain's fetch failure, unless it is one the user should not be told about.
+   * Marks the chain's read as settled, so the accounts page stops waiting on it, and reports the
+   * failure, unless it is one the user should not be told about.
    *
    * @remarks
    * This fans out over every supported chain, so a logout mid-flight would otherwise raise one
@@ -32,6 +33,7 @@ export function useAccountFetching(): UseAccountFetchingReturn {
    * them.
    */
   const notifyFetchFailure = (chain: string, error: unknown): void => {
+    markFetchFailed(chain);
     if (isRequestCancellation(error) || isSessionExpired(error))
       return;
 

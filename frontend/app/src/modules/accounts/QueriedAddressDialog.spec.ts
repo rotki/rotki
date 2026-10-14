@@ -51,8 +51,9 @@ function createWrapper(module: Module = Module.ETH2): VueWrapper<any> {
   return mount(QueriedAddressDialog, {
     global: {
       stubs: {
-        AppImage: true,
         BlockchainAccountSelector: AccountSelectorStub,
+        HashLink: { props: ['text'], template: '<div>{{ text }}</div>' },
+        IconMark: true,
         LabeledAddressDisplay: { props: ['account'], template: '<div class="address">{{ account.address }}</div>' },
         RuiDialog: { template: '<div><slot /></div>' },
         RuiTooltip: { template: '<div><slot name="activator" /></div>' },
@@ -120,6 +121,17 @@ describe('queriedAddressDialog', () => {
       queried({ eth2: [ADDRESSES[0]] });
 
       expect(listed(createWrapper(Module.NFTS))).toEqual([]);
+    });
+
+    /** Removing an account keeps its queried addresses, so one can outlive the account it named. */
+    it('should still list an address whose account is gone, marked as untracked', () => {
+      const removed = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12';
+      queried({ eth2: [removed] });
+
+      const wrapper = createWrapper();
+
+      expect(wrapper.findAll('[data-testid=queried-address-row]')).toHaveLength(1);
+      expect(wrapper.text()).toContain('queried_address_dialog.untracked');
     });
 
     it('should say so when the module queries every address', () => {

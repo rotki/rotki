@@ -23,8 +23,7 @@
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Τελευταία σάρωση: {time}",
-        "redetect": "Επανασάρωση tokens",
-        "redetect_all": "Επανασάρωση tokens για όλες τις διεθύνσεις"
+        "redetect": "Επανασάρωση tokens"
       }
     },
     "edit_tooltip": "Επεξεργασία λογαριασμού"

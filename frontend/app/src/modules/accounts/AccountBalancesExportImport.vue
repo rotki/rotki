@@ -72,11 +72,13 @@ async function doImport() {
         <RuiFileUpload
           v-model="importFile"
           accept=".csv"
+          :disabled="loading"
           :upload-text="t('file_upload.dropzone.prefix')"
           :click-to-upload-text="t('file_upload.dropzone.choose')"
           :replace-text="t('file_upload.dropzone.replace')"
+          data-testid="accounts-import-file"
         />
-        <div class="mt-2 text-caption text-rui-text-secondary">
+        <div class="mt-2 text-sm text-rui-text-secondary">
           <i18n-t
             scope="global"
             keypath="blockchain_balances.import_csv_example"

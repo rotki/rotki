@@ -1,29 +1,20 @@
 <script setup lang="ts">
+import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
+
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div>
-    <RuiMenu :options="{ placement: 'right' }">
-      <template #activator="{ attrs }">
-        <RuiButton
-          variant="text"
-          icon
-          v-bind="attrs"
-        >
-          <RuiIcon name="lu-circle-question-mark" />
-        </RuiButton>
-      </template>
-      <div class="p-4 max-w-80 flex flex-col gap-2">
-        <div>
-          <b>{{ t('address_book.hint.global') }}</b>
-          {{ t('address_book.hint.global_description') }}
-        </div>
-        <div>
-          <b>{{ t('address_book.hint.private') }}</b>
-          {{ t('address_book.hint.private_description') }}
-        </div>
-      </div>
-    </RuiMenu>
-  </div>
+  <HintMenuIcon>
+    <div class="flex flex-col gap-2 text-sm">
+      <p class="m-0">
+        <span class="font-medium">{{ t('address_book.hint.global') }}</span>
+        {{ t('address_book.hint.global_description') }}
+      </p>
+      <p class="m-0">
+        <span class="font-medium">{{ t('address_book.hint.private') }}</span>
+        {{ t('address_book.hint.private_description') }}
+      </p>
+    </div>
+  </HintMenuIcon>
 </template>

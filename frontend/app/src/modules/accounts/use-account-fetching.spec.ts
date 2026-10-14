@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   notifyError: vi.fn(),
   queryAccounts: vi.fn(),
   queryBtcAccounts: vi.fn(),
+  markFetchFailed: vi.fn(),
   revisionOf: vi.fn((_chain: string): number => 0),
   updateAccounts: vi.fn(),
 }));
@@ -31,6 +32,7 @@ vi.mock('@/modules/accounts/use-eth-staking', () => ({
 
 vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
   useBlockchainAccountsStore: vi.fn(() => ({
+    markFetchFailed: mocks.markFetchFailed,
     revisionOf: mocks.revisionOf,
     updateAccounts: mocks.updateAccounts,
   })),
@@ -107,6 +109,8 @@ describe('useAccountFetching', () => {
     const { useAccountFetching } = await importModule();
     await useAccountFetching().fetch('eth');
     expect(mocks.notifyError).toHaveBeenCalledOnce();
+    // settled, so the accounts page shows its empty state rather than loading forever
+    expect(mocks.markFetchFailed).toHaveBeenCalledWith('eth');
   });
 
   it('should notify when fetching btc accounts fails', async () => {

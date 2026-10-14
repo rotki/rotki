@@ -211,20 +211,20 @@ describe('addressBookFormDialog', () => {
       expect(wrapper.emitted('refresh')).toHaveLength(1);
     });
 
-    it('should switch to the tab the entry was saved into', async () => {
+    it('should report the book the entry was saved into', async () => {
       const wrapper = createWrapper({ editMode: true, editableItem: entry({ location: 'global' }) });
 
       await confirm(wrapper);
 
-      expect(wrapper.emitted('update:tab')?.[0]).toEqual([0]);
+      expect(wrapper.emitted('update:location')?.[0]).toEqual(['global']);
     });
 
-    it('should switch to the private tab for a private entry', async () => {
+    it('should report the private book for a private entry', async () => {
       const wrapper = editing();
 
       await confirm(wrapper);
 
-      expect(wrapper.emitted('update:tab')?.[0]).toEqual([1]);
+      expect(wrapper.emitted('update:location')?.[0]).toEqual(['private']);
     });
   });
 

@@ -53,7 +53,7 @@ const TableStub = defineComponent({
 });
 
 const DialogStub = defineComponent({
-  emits: ['update:open', 'update-tab', 'refresh'],
+  emits: ['update:open', 'update:location', 'refresh'],
   props: ['open', 'editableItem', 'editMode', 'selectedChain', 'location'],
   template: '<div />',
 });
@@ -74,8 +74,6 @@ function createWrapper(): VueWrapper<any> {
         EthNamesHint: true,
         PillFilterBar: true,
         RuiTab: true,
-        RuiTabItem: { template: '<div><slot /></div>' },
-        RuiTabItems: { template: '<div><slot /></div>' },
         RuiTabs: TabsStub,
         TablePageLayout: { template: '<div><slot name="buttons" /><slot /></div>' },
       },
@@ -92,7 +90,7 @@ function entry(): AddressBookEntry {
 }
 
 async function switchToPrivate(wrapper: VueWrapper<any>): Promise<void> {
-  wrapper.findComponent(TabsStub).vm.$emit('update:modelValue', 1);
+  wrapper.findComponent(TabsStub).vm.$emit('update:modelValue', 'private');
   await nextTick();
 }
 
@@ -102,7 +100,7 @@ describe('addressBookManagement', () => {
     setActivePinia(createPinia());
   });
 
-  /** The tab strip is the scope of everything below it, so the tab index picks the address book. */
+  /** The tab strip is the scope of everything below it, so the tab picks the address book. */
   describe('the scope tabs', () => {
     it('should start on the global address book', () => {
       expect(dialog(createWrapper()).props('location')).toBe('global');
@@ -196,7 +194,7 @@ describe('addressBookManagement', () => {
     it('should follow the dialog moving to another tab', async () => {
       const wrapper = createWrapper();
 
-      dialog(wrapper).vm.$emit('update-tab', 1);
+      dialog(wrapper).vm.$emit('update:location', 'private');
       await nextTick();
 
       expect(dialog(wrapper).props('location')).toBe('private');

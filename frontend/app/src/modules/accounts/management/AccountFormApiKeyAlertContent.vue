@@ -61,7 +61,7 @@ const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{
         color="primary"
         variant="text"
         size="sm"
-        class="inline -my-1 ml-auto [&>span]:underline"
+        class="inline -my-1 -ml-2.5 [&>span]:underline"
       >
         {{ buttonText }}
       </RuiButton>

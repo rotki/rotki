@@ -83,7 +83,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-2">
     <BtcAddressInput
       ref="input"
       v-model:xpub="xpub"

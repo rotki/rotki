@@ -17,7 +17,6 @@ vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   useNotificationDispatcher: (): Record<string, unknown> => ({ notify }),
 }));
 
-/** Stands in for the library uploader, which only holds the chosen file through its model. */
 const FileUploadStub = defineComponent({
   emits: ['update:modelValue'],
   name: 'RuiFileUpload',

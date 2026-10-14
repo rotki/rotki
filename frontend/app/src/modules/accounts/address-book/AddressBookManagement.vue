@@ -14,19 +14,20 @@ import { addressBookChainParams, type Filters } from '@/modules/accounts/address
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+
+/** The book in view; the page keeps it in the route. */
+const location = defineModel<AddressBookLocation>('location', { default: 'global', required: false });
 
 const { t } = useI18n({ useScope: 'global' });
 
 const selectedChain = ref<string>();
 const strictBlockchain = ref<boolean>(false);
-const tab = ref<number>(0);
 
 const locations: AddressBookLocation[] = ['global', 'private'];
-
-const location = computed<AddressBookLocation>(() => locations[get(tab)]);
 
 const { editableItem, openDialog } = useCommonTableProps<AddressBookPayload>();
 
@@ -61,6 +62,10 @@ const {
   urlState: { mode: 'route' },
 });
 
+/** Whether a filled pill or a chain narrows the rows; a pill still waiting for its value does not. */
+const filtered = computed<boolean>(() => !!get(selectedChain)
+  || Object.values(get(filters)).some(value => (Array.isArray(value) ? value.length > 0 : !!value)));
+
 function add(): void {
   set(editableItem, null);
   set(openDialog, true);
@@ -80,14 +85,11 @@ watchImmediate(location, async () => {
 </script>
 
 <template>
-  <TablePageLayout
-    class="p-4"
-    :title="[t('navigation_menu.manage_address_book')]"
-  >
+  <TablePageLayout :title="[t('navigation_menu.manage_address_book')]">
     <template #buttons>
+      <AddressBookManagementMore @refresh="fetchData()" />
       <RuiButton
         color="primary"
-        size="lg"
         data-testid="address-book-add"
         @click="add()"
       >
@@ -96,70 +98,56 @@ watchImmediate(location, async () => {
         </template>
         {{ t('address_book.dialog.add_title') }}
       </RuiButton>
-      <AddressBookManagementMore @refresh="fetchData()" />
     </template>
 
-    <RuiCard>
-      <!-- The tabs are the scope the bar filters within, so they come first and share its row: the
-           bar used to sit above them, which read as filtering the tab strip itself. -->
-      <div class="flex flex-wrap items-center gap-4 mb-3">
-        <div class="flex items-center gap-2">
-          <RuiTabs
-            v-model="tab"
-            color="primary"
-            class="border border-default rounded-sm bg-white dark:bg-rui-grey-900 flex max-w-min"
-            data-testid="address-book-scope-tabs"
+    <TableFrame>
+      <template #toolbar>
+        <RuiTabs
+          v-model="location"
+          variant="segmented"
+          color="primary"
+          data-testid="address-book-scope-tabs"
+        >
+          <RuiTab
+            v-for="loc in locations"
+            :key="loc"
+            :value="loc"
+            class="capitalize"
+            data-testid="address-book-scope-tab"
+            :data-key="loc"
           >
-            <RuiTab
-              v-for="loc in locations"
-              :key="loc"
-              class="capitalize"
-              data-testid="address-book-scope-tab"
-              :data-key="loc"
-            >
-              {{ loc }}
-            </RuiTab>
-          </RuiTabs>
-          <EthNamesHint with-header />
-        </div>
-
+            {{ loc }}
+          </RuiTab>
+        </RuiTabs>
+        <EthNamesHint />
         <PillFilterBar
           v-model:matches="filters"
           v-model:params="pillParams"
-          class="flex-1"
+          class="flex-1 min-w-48 md:min-w-96"
           :fields="fields"
           :labels="pillLabels"
         />
-      </div>
+      </template>
 
-      <RuiTabItems v-model="tab">
-        <RuiTabItem
-          v-for="loc in locations"
-          :key="loc"
-        >
-          <template #default>
-            <AddressBookTable
-              v-model:sort="sort"
-              v-model:pagination="pagination"
-              :collection="state"
-              :location="loc"
-              :loading="isLoading"
-              :blockchain="selectedChain"
-              @edit="edit($event)"
-              @refresh="fetchData()"
-            />
-          </template>
-        </RuiTabItem>
-      </RuiTabItems>
-    </RuiCard>
+      <AddressBookTable
+        v-model:sort="sort"
+        v-model:pagination="pagination"
+        :collection="state"
+        :filtered="filtered"
+        :location="location"
+        :loading="isLoading"
+        :blockchain="selectedChain"
+        @edit="edit($event)"
+        @refresh="fetchData()"
+      />
+    </TableFrame>
 
     <AddressBookFormDialog
       v-model:open="openDialog"
+      v-model:location="location"
       :editable-item="editableItem"
       :edit-mode="!!editableItem"
       :selected-chain="selectedChain"
-      :location="location"
-      @update-tab="tab = $event"
       @refresh="fetchData()"
     />
   </TablePageLayout>
