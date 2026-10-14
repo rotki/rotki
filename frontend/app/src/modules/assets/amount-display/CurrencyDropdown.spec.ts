@@ -168,21 +168,21 @@ describe('currencyDropdown', () => {
     function fontSizeOf(wrapper: VueWrapper<any>, ticker: string): string | undefined {
       const item = wrapper.findAll('.currency').find(node => node.text().includes(`currencies.${ticker}`));
       assert(item);
-      return item.find('.font-bold').attributes('style');
+      return item.find('.font-semibold').attributes('style');
     }
 
-    it('should render a one-character symbol at full size', async () => {
+    it('should render a one-character symbol at full size in its tile', async () => {
       const wrapper = createWrapper();
       await type(wrapper, 'usd');
 
-      expect(fontSizeOf(wrapper, 'usd')).toBe('font-size: 2em;');
+      expect(fontSizeOf(wrapper, 'usd')).toBe('font-size: 1rem;');
     });
 
-    it('should shrink a three-character symbol', async () => {
+    it('should shrink a three-character symbol to fit the tile', async () => {
       const wrapper = createWrapper();
       await type(wrapper, 'chf');
 
-      expect(fontSizeOf(wrapper, 'chf')).toBe('font-size: 1.2em;');
+      expect(fontSizeOf(wrapper, 'chf')).toBe('font-size: 0.625rem;');
     });
   });
 });

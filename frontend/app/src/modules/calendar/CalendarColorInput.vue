@@ -3,6 +3,8 @@ import { rgbPointsToHex } from '@rotki/common';
 
 const model = defineModel<string | undefined>({ required: true });
 
+const { t } = useI18n({ useScope: 'global' });
+
 const contextColorsInHex: string[] = contextColors
   .map((item) => {
     const name = `--rui-light-${item}-main`;
@@ -25,32 +27,33 @@ function updateModel(newValue: string) {
 </script>
 
 <template>
-  <div>
-    <RuiMenu
-      :options="{ placement: 'left' }"
-      :class-names="{ menu: 'max-w-72' }"
-    >
-      <template #activator="{ attrs }">
-        <div
-          class="rounded-full w-8 h-8 border-2 border-rui-grey-100 cursor-pointer"
-          :style="{
-            backgroundColor: `#${modelValue}`,
-          }"
-          v-bind="attrs"
-        />
-      </template>
-      <div class="p-2 flex gap-2">
-        <div
-          v-for="color in contextColorsInHex"
-          :key="color"
-          class="rounded-full w-6 h-6 border-2 border-rui-grey-100 cursor-pointer"
-          :style="{
-            backgroundColor: `#${color}`,
-          }"
-          @click="updateModel(color)"
-        />
-      </div>
-      <RuiColorPicker v-model="model" />
-    </RuiMenu>
-  </div>
+  <RuiMenu
+    class="flex"
+    :options="{ placement: 'bottom-start' }"
+    :class-names="{ menu: 'max-w-72' }"
+  >
+    <template #activator="{ attrs }">
+      <button
+        type="button"
+        class="size-5 shrink-0 cursor-pointer rounded-full ring-1 ring-rui-divider focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rui-primary"
+        :style="{ backgroundColor: `#${model}` }"
+        :aria-label="t('calendar.dialog.color')"
+        data-testid="calendar-form-color"
+        v-bind="attrs"
+      />
+    </template>
+    <div class="flex gap-2 p-3 pb-0">
+      <button
+        v-for="color in contextColorsInHex"
+        :key="color"
+        type="button"
+        class="size-6 cursor-pointer rounded-full ring-1 ring-rui-divider focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rui-primary"
+        :class="{ 'ring-2 ring-offset-2 ring-rui-text': color === model }"
+        :style="{ backgroundColor: `#${color}` }"
+        :aria-label="`#${color}`"
+        @click="updateModel(color)"
+      />
+    </div>
+    <RuiColorPicker v-model="model" />
+  </RuiMenu>
 </template>

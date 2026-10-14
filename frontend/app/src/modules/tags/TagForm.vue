@@ -45,25 +45,23 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col gap-2 py-2">
-    <RuiCard
-      variant="outlined"
-      class="overflow-hidden mb-2"
-      :class-names="{ content: 'flex justify-between items-center' }"
+  <div class="flex flex-col gap-4 py-2">
+    <div
+      class="flex items-center justify-between gap-4 rounded-rui-control border border-rui-divider bg-rui-grey-50 dark:bg-rui-grey-900 px-4 py-3"
+      data-testid="tag-creator-preview"
     >
-      <template #custom-header>
-        <div class="bg-rui-grey-100 dark:bg-rui-grey-800 text-rui-text-secondary px-4 py-2 font-medium text-sm">
-          {{ t('tag_creator.tag_view') }}
-        </div>
-      </template>
-      <TagIcon
-        class="min-w-28 min-h-8"
-        :tag="form.state"
-      />
+      <div class="flex items-center gap-3 min-w-0">
+        <span class="text-body-2 text-rui-text-secondary shrink-0">{{ t('tag_creator.tag_view') }}</span>
+        <TagIcon
+          class="min-w-20"
+          :tag="form.state"
+        />
+      </div>
       <RuiButton
         size="sm"
         variant="text"
         color="primary"
+        class="shrink-0"
         @click="randomize()"
       >
         <template #prepend>
@@ -71,7 +69,7 @@ defineExpose({
         </template>
         {{ t('tag_creator.shuffle') }}
       </RuiButton>
-    </RuiCard>
+    </div>
     <RuiTextField
       v-model="form.state.name"
       color="primary"
@@ -85,31 +83,30 @@ defineExpose({
       color="primary"
       data-testid="tag-creator-description"
       :label="t('common.description')"
+      hide-details
     />
 
-    <RuiDivider class="mb-4" />
-
-    <div class="grid md:grid-cols-2 gap-4">
-      <RuiCard class="flex flex-col items-center">
-        <template #header>
+    <div class="grid md:grid-cols-2 gap-6 pt-2">
+      <section class="flex flex-col gap-2">
+        <h3 class="text-body-2 font-medium text-rui-text m-0">
           {{ t('tag_creator.labels.foreground') }}
-        </template>
+        </h3>
         <RuiColorPicker
           v-model="form.state.foregroundColor"
           class="w-full"
           data-testid="tag-creator-color-picker-foreground"
         />
-      </RuiCard>
-      <RuiCard class="flex flex-col items-center">
-        <template #header>
+      </section>
+      <section class="flex flex-col gap-2">
+        <h3 class="text-body-2 font-medium text-rui-text m-0">
           {{ t('tag_creator.labels.background') }}
-        </template>
+        </h3>
         <RuiColorPicker
           v-model="form.state.backgroundColor"
           class="w-full"
           data-testid="tag-creator-color-picker-background"
         />
-      </RuiCard>
+      </section>
     </div>
   </div>
 </template>

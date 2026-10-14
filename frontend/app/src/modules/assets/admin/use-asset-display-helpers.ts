@@ -3,7 +3,7 @@ import type { Collection } from '@/modules/core/common/collection';
 import { getAddressFromEvmIdentifier, isEvmIdentifier, type SupportedAsset, toSentenceCase } from '@rotki/common';
 import { CUSTOM_ASSET } from '@/modules/assets/types';
 
-interface AssetDisplay {
+export interface AssetDisplay {
   customAssetType: string;
   evmChain: string | null | undefined;
   identifier: string;

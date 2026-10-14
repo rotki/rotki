@@ -1023,6 +1023,7 @@
     }
   },
   "airdrops": {
+    "claim_by": "Claim by",
     "headers": {
       "source": "Source"
     },
@@ -1088,6 +1089,7 @@
       "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not given, the symbol is assumed as default. If that does not work and if not otherwise set rotki will not be able to retrieve prices for the asset from CryptoCompare",
       "decimals": "Decimals",
       "forked": "Forked",
+      "icon": "Icon",
       "rebasing": "Rebasing token",
       "rebasing_hint": "Enable for tokens whose balance changes over time without transfer events.",
       "started": "Started",
@@ -1136,6 +1138,7 @@
       "delete_error": "Could not delete the mapping: {message}",
       "edit_error": "Could not edit the mapping: {message}",
       "edit_title": "Edit the mapping",
+      "exchange_name": "The exchange calls it {name}",
       "form": {
         "asset_non_empty": "The recognized asset field cannot be empty",
         "location_non_empty": "The location field cannot be empty",
@@ -1168,6 +1171,16 @@
     "edit_title": "Edit an asset",
     "merge_assets": "Merge Assets",
     "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)",
+    "more": {
+      "descriptions": {
+        "cex_mapping": "Link the symbol an exchange uses to the asset rotki knows it as.",
+        "counterparty_mapping": "Link the symbol a protocol uses to the asset rotki knows it as.",
+        "missing_mappings": "Exchange symbols rotki could not recognise yet, ready to be mapped.",
+        "newly_detected": "Review tokens found in your accounts, then accept them or mark them as spam.",
+        "solana_token_migration": "Move Solana tokens saved in the old format to the new one, or merge them."
+      },
+      "switch_tool": "Switch to another tool"
+    },
     "solana_token_migration": {
       "dialog_title": "Migrate Solana Token",
       "merge_suggestion": {
@@ -1342,11 +1355,10 @@
       "mark_as_spam": "Mark token as spam",
       "mark_selected_as_spam": "Mark selected tokens as spam",
       "seen_during": "Seen during",
-      "select_deselect_all_tokens": "Select/deselect all tokens",
+      "select_all_matching": "Select all {count} tokens",
       "subtitle": "Inspect the list of newly detected tokens and add any assets to the spam tokens list",
       "token_type": "Token Type"
     },
-    "selected": "{count} asset(s) selected",
     "underlying_tokens": "Underlying Tokens"
   },
   "asset_update": {
@@ -1974,6 +1986,7 @@
   "calendar": {
     "add_error": "Could not add event: {message}",
     "add_event": "Add Event",
+    "all_addresses": "All addresses",
     "delete_error": {
       "message": "Failed to delete event: {message}"
     },
@@ -1982,6 +1995,7 @@
       "add": {
         "title": "Add an event"
       },
+      "color": "Event color",
       "delete": {
         "message": "Are you sure you want to delete the event?"
       },
@@ -2006,7 +2020,9 @@
     },
     "go_to_date": "Go to date",
     "more_events": "{hidden} more",
+    "next_month": "Next month",
     "no_events": "No events",
+    "previous_month": "Previous month",
     "reminder": {
       "add_error": {
         "message": "There was a problem adding the reminder: {message}",
@@ -2049,8 +2065,7 @@
     },
     "today": "Today",
     "today_events": "Today's Events",
-    "upcoming_events": "Upcoming Events",
-    "view_details": "View Details"
+    "upcoming_events": "Upcoming Events"
   },
   "chain_account_multi_select": {
     "label": "Accounts"
@@ -2151,7 +2166,6 @@
     },
     "here": "here",
     "ignored_in_accounting": "Excluded from accounting (PnL)",
-    "important_notice": "Important notice:",
     "label": "Label",
     "liabilities": "Liabilities",
     "location": "Location",
@@ -2353,8 +2367,9 @@
     "zar": "South African Rand"
   },
   "currency_drop_down": {
-    "hint": "Select as the main currency",
-    "profit_currency": "Profit Currency ({currency})"
+    "profit_currency": "Profit Currency ({currency})",
+    "search_placeholder": "Search currencies",
+    "title": "Main currency"
   },
   "customized_event_duplicates": {
     "actions": {
@@ -4835,7 +4850,6 @@
       "non_empty": "The source identifier cannot not be empty"
     },
     "source_hint": "The asset identifier that you want to merge into the target",
-    "subtitle": "Merge two assets",
     "target": {
       "label": "Target",
       "non_empty": "The target asset cannot be empty"
@@ -5248,9 +5262,8 @@
       }
     },
     "cache": {
-      "create": {
-        "title": "Create cache"
-      },
+      "add": "Add cache",
+      "add_subtitle": "Fetch every historical price of a pair from an oracle at once, so reports and graphs read them locally instead of querying the oracle one day at a time.",
       "delete": {
         "error": "Clearing the cache for {fromAsset} to {toAsset} failed: {error}",
         "message": "Are you sure you want to delete all cached prices for the {fromAsset} to {toAsset} pair on {source}?",
@@ -5260,7 +5273,6 @@
       "dialog": {
         "create": "Create Cache",
         "empty": "No caches exist for the selected oracle.",
-        "existing_title": "Existing caches",
         "source": "Price Oracle"
       },
       "headers": {
@@ -5269,10 +5281,12 @@
         "to_asset": "To Asset",
         "to_date": "To Date"
       },
+      "hint": "Pairs whose whole price history rotki fetched from an oracle and stored, between the two dates shown. Deleting one makes rotki fetch those prices again, day by day, when they are next needed.",
       "notification": {
         "success": "Cache for {fromAsset} to {toAsset} on {source} was successfully created",
         "title": "Oracle cache population"
-      }
+      },
+      "refresh_tooltip": "Refresh the oracle caches list"
     },
     "delete": {
       "dialog": {
@@ -5303,6 +5317,7 @@
     "headers": {
       "source": "Source"
     },
+    "hint": "Prices rotki fetched from its price oracles and kept. Editing one changes the price rotki uses for that time; deleting one makes rotki fetch it again when it is next needed.",
     "refresh_tooltip": "Refresh the oracle prices list",
     "settings_tooltip": "Price oracle settings: choose which oracles are used, and in which order",
     "sources": {
@@ -5696,10 +5711,12 @@
     },
     "from_asset": "From Asset",
     "historic": {
-      "add_title": "Add a manual historical price"
+      "add_title": "Add a manual historical price",
+      "hint": "Prices you set for an asset at a point in time. rotki uses one for that time instead of fetching a price, in the history and in profit and loss reports."
     },
     "latest": {
-      "add_title": "Add a manual latest price"
+      "add_title": "Add a manual latest price",
+      "hint": "Prices you set for an asset today. rotki uses one instead of the price it fetches: for an asset no oracle has a price for, or one whose fetched price is wrong."
     },
     "to_asset": "To Asset"
   },
@@ -5743,13 +5760,9 @@
       }
     },
     "headers": {
-      "from_asset": "From Asset",
-      "to_asset": "To Asset"
+      "from_asset": "From Asset"
     },
-    "is_worth": "is worth",
-    "on": "on",
-    "refresh_tooltip": "Refresh prices",
-    "was_worth": "was worth"
+    "refresh_tooltip": "Refresh prices"
   },
   "prioritized_list": {
     "add_placeholder": "Add a {name}",
@@ -6378,6 +6391,7 @@
       "subtitle": "Edit tag and tailor it to fit your preferences.",
       "title": "Edit Tag"
     },
+    "system_tag": "System tag, it can't be edited or deleted",
     "title": "Tag Manager"
   },
   "task_center": {
@@ -6701,6 +6715,7 @@
     },
     "recipient": {
       "from_private_address_book": "Addresses from private address book",
+      "new_address": "New address",
       "no_addresses_found": "No addresses found",
       "resolving_ens": "Resolving ENS...",
       "select_recipient_address": "Select recipient address",
@@ -6716,6 +6731,10 @@
       "search": "Search by symbol or name",
       "select_token": "Select a token",
       "title": "Select Asset"
+    },
+    "status": {
+      "not_tracked": "Not tracked in rotki",
+      "updating_balances": "Updating balances…"
     },
     "to_address": {
       "label": "To address"

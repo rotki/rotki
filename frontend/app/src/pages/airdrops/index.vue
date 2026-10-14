@@ -4,6 +4,8 @@ import AirdropDisplay from '@/modules/airdrops/AirdropDisplay.vue';
 import PoapDeliveryAirdrops from '@/modules/airdrops/PoapDeliveryAirdrops.vue';
 import { AssetAmountDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -44,7 +46,6 @@ const {
           <RuiButton
             variant="outlined"
             color="primary"
-            size="lg"
             :loading="loading"
             data-testid="airdrop-refresh"
             @click="fetchAirdrops()"
@@ -59,30 +60,30 @@ const {
       </RuiTooltip>
     </template>
 
-    <RuiCard>
-      <PillFilterBar
-        v-model:params="modelPillParams"
-        class="mb-4"
-        :fields="fields"
-        :labels="pillLabels"
-      />
+    <RuiAlert
+      v-if="!modelHideUnknownAlert && status === 'unknown'"
+      type="info"
+      class="mb-4"
+      closeable
+      data-testid="airdrop-unknown-alert"
+      @close="modelHideUnknownAlert = true"
+    >
+      {{ t('airdrops.unknown_info') }}
+    </RuiAlert>
 
-      <RuiAlert
-        v-if="!modelHideUnknownAlert && status === 'unknown'"
-        type="info"
-        class="mb-4"
-        closeable
-        data-testid="airdrop-unknown-alert"
-        @close="modelHideUnknownAlert = true"
-      >
-        {{ t('airdrops.unknown_info') }}
-      </RuiAlert>
-
+    <TableFrame>
+      <template #toolbar>
+        <PillFilterBar
+          v-model:params="modelPillParams"
+          class="flex-1 min-w-64"
+          :fields="fields"
+          :labels="pillLabels"
+        />
+      </template>
       <RuiDataTable
         v-model:pagination="modelPagination"
         v-model:expanded="modelExpanded"
         v-model:sort="modelSort"
-        outlined
         data-testid="airdrop-table"
         :rows="rows"
         :cols="cols"
@@ -118,6 +119,7 @@ const {
             <template #activator>
               <RuiChip
                 color="info"
+                variant="tonal"
                 size="sm"
               >
                 {{ t('common.unknown') }}
@@ -127,18 +129,43 @@ const {
             {{ t('airdrops.unknown_tooltip') }}
           </RuiTooltip>
           <RuiChip
-            v-else
-            :color="claimed ? 'success' : 'grey'"
+            v-else-if="claimed"
+            color="success"
+            variant="tonal"
             size="sm"
           >
-            {{
-              claimed
-                ? t('common.claimed')
-                : cutoffTime && cutoffTime < Date.now() / 1000
-                  ? t('common.missed')
-                  : t('common.unclaimed')
-            }}
+            {{ t('common.claimed') }}
           </RuiChip>
+          <RuiChip
+            v-else-if="cutoffTime && cutoffTime < Date.now() / 1000"
+            color="grey"
+            variant="tonal"
+            size="sm"
+          >
+            {{ t('common.missed') }}
+          </RuiChip>
+          <RuiTooltip
+            v-else
+            :options="{ placement: 'top' }"
+            :open-delay="400"
+            :disabled="!cutoffTime"
+          >
+            <template #activator>
+              <RuiChip
+                color="primary"
+                variant="tonal"
+                size="sm"
+                data-testid="airdrop-unclaimed"
+              >
+                {{ t('common.unclaimed') }}
+              </RuiChip>
+            </template>
+            {{ t('airdrops.claim_by') }}
+            <DateDisplay
+              v-if="cutoffTime"
+              :timestamp="cutoffTime"
+            />
+          </RuiTooltip>
         </template>
         <template #item.source="{ row }">
           <AirdropDisplay
@@ -177,6 +204,6 @@ const {
           />
         </template>
       </RuiDataTable>
-    </RuiCard>
+    </TableFrame>
   </TablePageLayout>
 </template>

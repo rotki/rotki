@@ -33,11 +33,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex gap-4">
+  <div class="flex items-start gap-3">
     <AmountInput
       ref="amountInputWrapper"
       v-model="amount"
       :label="t('calendar.reminder.labels.amount')"
+      label-placement="hidden"
+      class="w-28"
       integer
       :error-messages="errorMessages"
       dense
@@ -48,6 +50,7 @@ onMounted(() => {
       <RuiMenuSelect
         v-model="unit"
         :label="t('calendar.reminder.labels.unit')"
+        label-placement="hidden"
         :options="unitOptions"
         key-attr="key"
         text-attr="label"
@@ -57,23 +60,23 @@ onMounted(() => {
       />
     </div>
 
-    <div class="pt-2 text-rui-text-secondary text-sm">
+    <div class="flex h-8 items-center text-sm text-rui-text-secondary">
       {{ t('calendar.reminder.before_event') }}
     </div>
-    <div>
-      <RuiButton
-        icon
-        color="error"
-        variant="text"
-        class="p-2!"
-        data-testid="reminder-delete"
-        @click="emit('delete')"
-      >
-        <RuiIcon
-          size="20"
-          name="lu-trash-2"
-        />
-      </RuiButton>
-    </div>
+    <RuiButton
+      icon
+      color="error"
+      variant="text"
+      size="sm"
+      class="ml-auto size-8!"
+      :aria-label="t('common.actions.delete')"
+      data-testid="reminder-delete"
+      @click="emit('delete')"
+    >
+      <RuiIcon
+        size="16"
+        name="lu-trash-2"
+      />
+    </RuiButton>
   </div>
 </template>

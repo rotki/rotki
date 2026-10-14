@@ -32,32 +32,23 @@ const tabs = computed<{ label: string; transactions: RecentTransaction[] }[]>(()
 
 <template>
   <div>
-    <RuiTooltip
-      class="h-full"
-      :open-delay="200"
-    >
+    <RuiTooltip :open-delay="200">
       <template #activator>
         <RuiButton
-          variant="outlined"
-          color="primary"
-          size="sm"
-          class="h-full"
+          variant="text"
+          icon
+          :aria-label="t('trade.recent_transactions.title')"
+          data-testid="trade-history-open"
           @click="openDialog = true"
         >
-          <div
+          <RuiProgress
             v-if="pendingTransactions.length > 0"
-            class="flex items-center"
-          >
-            <RuiProgress
-              circular
-              variant="indeterminate"
-              color="primary"
-              class="flex"
-              thickness="2"
-              size="16"
-            />
-          </div>
-
+            circular
+            variant="indeterminate"
+            color="primary"
+            thickness="2"
+            size="18"
+          />
           <RuiIcon
             v-else
             name="lu-history"
@@ -80,41 +71,52 @@ const tabs = computed<{ label: string; transactions: RecentTransaction[] }[]>(()
         <template #header>
           {{ t('trade.recent_transactions.title') }}
         </template>
-        <div class="max-h-[calc(100vh-400px)] overflow-auto ">
-          <RuiTabs
-            v-model="tabValue"
-            color="primary"
+        <RuiButton
+          variant="text"
+          class="absolute top-2 right-2"
+          icon
+          :aria-label="t('common.actions.close')"
+          data-testid="trade-history-close"
+          @click="openDialog = false"
+        >
+          <RuiIcon name="lu-x" />
+        </RuiButton>
+        <RuiTabs
+          v-model="tabValue"
+          color="primary"
+          class="border-b border-default"
+        >
+          <RuiTab
+            v-for="tab in tabs"
+            :key="tab.label"
           >
-            <RuiTab
-              v-for="tab in tabs"
-              :key="tab.label"
+            {{ tab.label }}
+          </RuiTab>
+        </RuiTabs>
+        <RuiTabItems v-model="tabValue">
+          <RuiTabItem
+            v-for="tab in tabs"
+            :key="tab.label"
+          >
+            <div
+              v-if="tab.transactions.length > 0"
+              class="h-[min(24rem,50vh)] overflow-auto between:border-t between:border-default"
             >
-              {{ tab.label }}
-            </RuiTab>
-          </RuiTabs>
-          <RuiTabItems v-model="tabValue">
-            <RuiTabItem
-              v-for="tab in tabs"
-              :key="tab.label"
+              <TradeHistoryItem
+                v-for="item in tab.transactions"
+                :key="item.hash"
+                :item="item"
+              />
+            </div>
+            <div
+              v-else
+              class="h-[min(24rem,50vh)] flex items-center justify-center text-sm text-rui-text-secondary"
+              data-testid="trade-history-empty"
             >
-              <div
-                v-if="tab.transactions.length > 0"
-              >
-                <TradeHistoryItem
-                  v-for="item in tab.transactions"
-                  :key="item.hash"
-                  :item="item"
-                />
-              </div>
-              <div
-                v-else
-                class="text-rui-text-secondary p-4"
-              >
-                {{ t('trade.recent_transactions.no_data') }}
-              </div>
-            </RuiTabItem>
-          </RuiTabItems>
-        </div>
+              {{ t('trade.recent_transactions.no_data') }}
+            </div>
+          </RuiTabItem>
+        </RuiTabItems>
       </RuiCard>
     </RuiDialog>
   </div>

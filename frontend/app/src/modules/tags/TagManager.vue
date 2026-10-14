@@ -2,6 +2,7 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -40,10 +41,7 @@ const headers = computed<DataTableColumn<Tag>[]>(() => [
     sortable: true,
   },
   {
-    key: 'tagView',
-    label: t('tag_creator.tag_view'),
-  },
-  {
+    align: 'end',
     cellClass: 'w-20',
     key: 'action',
     label: t('common.actions_text'),
@@ -89,7 +87,6 @@ onMounted(async () => {
     <template #buttons>
       <RuiButton
         color="primary"
-        size="lg"
         data-testid="add-tags"
         @click="handleCreateTagClick()"
       >
@@ -100,29 +97,32 @@ onMounted(async () => {
       </RuiButton>
     </template>
 
-    <RuiCard :class-names="{ content: 'flex flex-col gap-4' }">
-      <RuiTextField
-        v-model="search"
-        variant="outlined"
-        color="primary"
-        dense
-        clearable
-        prepend-icon="lu-search"
-        :label="t('common.actions.search')"
-        hide-details
-        data-testid="tag-manager-search"
-      />
+    <TableFrame>
+      <template #toolbar>
+        <RuiTextField
+          v-model="search"
+          class="w-full sm:w-72"
+          color="primary"
+          dense
+          clearable
+          prepend-icon="lu-search"
+          :label="t('common.actions.search')"
+          label-placement="hidden"
+          :placeholder="t('common.actions.search')"
+          hide-details
+          data-testid="tag-manager-search"
+        />
+      </template>
       <RuiDataTable
         v-model:sort="sort"
         dense
-        outlined
         :rows="tags"
         row-attr="name"
         :cols="headers"
         :search="search"
         data-testid="tag-manager-table"
       >
-        <template #item.tagView="{ row }">
+        <template #item.name="{ row }">
           <TagIcon
             :tag="row"
             small
@@ -131,18 +131,34 @@ onMounted(async () => {
         <template #item.action="{ row }">
           <RowActions
             v-if="!isReservedTag(row.name)"
+            align="end"
             @edit-click="editItem(row)"
             @delete-click="showDeleteConfirmation(row)"
           />
-          <span
+          <RuiTooltip
             v-else
-            class="text-rui-text-secondary"
+            class="flex justify-end"
+            :options="{ placement: 'top' }"
+            :open-delay="400"
           >
-            -
-          </span>
+            <template #activator>
+              <span
+                class="inline-flex size-9 items-center justify-center text-rui-text-disabled"
+                tabindex="0"
+                :aria-label="t('tag_manager.system_tag')"
+                data-testid="tag-manager-system-tag"
+              >
+                <RuiIcon
+                  name="lu-lock"
+                  size="16"
+                />
+              </span>
+            </template>
+            {{ t('tag_manager.system_tag') }}
+          </RuiTooltip>
         </template>
       </RuiDataTable>
-    </RuiCard>
+    </TableFrame>
 
     <TagFormDialog
       v-model="tag"

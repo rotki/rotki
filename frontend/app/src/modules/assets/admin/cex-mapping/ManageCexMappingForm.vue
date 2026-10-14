@@ -13,8 +13,10 @@ const forAllExchanges = defineModel<boolean>('forAllExchanges', { required: true
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const { editMode = false } = defineProps<{
+const { editMode = false, exchangeName } = defineProps<{
   editMode?: boolean;
+  /** The exchange's own name for the asset, when known: the clue to what it is recognized as. */
+  exchangeName?: string;
 }>();
 
 const EXCLUDED_EXCHANGES = [
@@ -82,32 +84,66 @@ defineExpose({
 
 <template>
   <div class="flex flex-col gap-2">
-    <RuiSwitch
-      v-model="forAllExchanges"
-      :disabled="editMode"
-      color="primary"
+    <dl
+      v-if="editMode"
+      class="grid grid-cols-2 gap-4 m-0 mb-4 rounded-rui-control border border-rui-divider px-4 py-3"
+      data-testid="cex-mapping-summary"
     >
-      {{ t('asset_management.cex_mapping.save_for_all') }}
-    </RuiSwitch>
-    <ExchangeInput
-      v-model="locationModel"
-      :label="t('common.exchange')"
-      :disabled="editMode || forAllExchanges"
-      :excludes="EXCLUDED_EXCHANGES"
-      clearable
-      :error-messages="form.errors('location')"
-    />
-    <RuiTextField
-      v-model="form.state.locationSymbol"
-      data-testid="location-symbol"
-      variant="outlined"
-      color="primary"
-      :disabled="editMode"
-      clearable
-      :label="t('asset_management.cex_mapping.location_symbol')"
-      :error-messages="form.errors('locationSymbol')"
-      @update:model-value="form.touch('locationSymbol')"
-    />
+      <div class="flex flex-col gap-1">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('common.exchange') }}
+        </dt>
+        <dd class="m-0">
+          <LocationDisplay
+            v-if="form.state.location"
+            horizontal
+            :open-details="false"
+            :identifier="form.state.location"
+          />
+          <span
+            v-else
+            class="text-rui-text"
+          >
+            {{ t('asset_management.cex_mapping.all_exchanges') }}
+          </span>
+        </dd>
+      </div>
+      <div class="flex flex-col gap-1">
+        <dt class="text-sm font-medium text-rui-text-secondary">
+          {{ t('asset_management.cex_mapping.location_symbol') }}
+        </dt>
+        <dd class="m-0 font-medium text-rui-text">
+          {{ form.state.locationSymbol }}
+        </dd>
+      </div>
+    </dl>
+    <template v-else>
+      <RuiSwitch
+        v-model="forAllExchanges"
+        color="primary"
+        class="mb-2"
+      >
+        {{ t('asset_management.cex_mapping.save_for_all') }}
+      </RuiSwitch>
+      <ExchangeInput
+        v-if="!forAllExchanges"
+        v-model="locationModel"
+        :label="t('common.exchange')"
+        :excludes="EXCLUDED_EXCHANGES"
+        clearable
+        :error-messages="form.errors('location')"
+      />
+      <RuiTextField
+        v-model="form.state.locationSymbol"
+        data-testid="location-symbol"
+        color="primary"
+        clearable
+        :label="t('asset_management.cex_mapping.location_symbol')"
+        :hint="exchangeName ? t('asset_management.cex_mapping.exchange_name', { name: exchangeName }) : undefined"
+        :error-messages="form.errors('locationSymbol')"
+        @update:model-value="form.touch('locationSymbol')"
+      />
+    </template>
     <AssetSelect
       v-model="form.state.asset"
       :label="t('asset_management.cex_mapping.recognized_as')"

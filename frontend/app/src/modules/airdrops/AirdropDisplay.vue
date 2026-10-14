@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useAirdropsMetadata } from '@/modules/airdrops/use-airdrops-metadata';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
-import AppImage from '@/modules/shell/components/AppImage.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
 const { source, iconUrl, icon } = defineProps<{
   source: string;
@@ -24,11 +24,9 @@ const imageFromIconName = computed<string | undefined>(() => {
 
 <template>
   <div class="flex items-center gap-4">
-    <AppImage
-      class="icon-bg"
+    <IconMark
       size="1.5rem"
       :src="iconUrl || imageFromIconName || image"
-      fit="contain"
       :loading="loading"
     />
     <div>{{ name }}</div>

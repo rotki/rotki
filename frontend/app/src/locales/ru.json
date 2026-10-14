@@ -836,10 +836,8 @@
       "mark_as_spam": "Пометить токен как спам",
       "mark_selected_as_spam": "Пометить выбранные токены как спам",
       "seen_during": "Замечен во время",
-      "select_deselect_all_tokens": "Выбрать/отменить все токены",
       "subtitle": "Просмотрите список новых обнаруженных токенов и добавьте любые активы в список спам-токенов"
     },
-    "selected": "Выбрано {count} актив(ов)",
     "underlying_tokens": "Базовые токены"
   },
   "asset_update": {
@@ -1225,8 +1223,7 @@
     },
     "today": "Сегодня",
     "today_events": "События сегодня",
-    "upcoming_events": "Предстоящие события",
-    "view_details": "Просмотреть детали"
+    "upcoming_events": "Предстоящие события"
   },
   "change_password": {
     "button": "Сменить пароль",
@@ -1306,7 +1303,6 @@
     "fee": "Комиссия",
     "here": "здесь",
     "ignored_in_accounting": "Исключено из учета (PnL)",
-    "important_notice": "Важное замечание:",
     "label": "Метка",
     "liabilities": "Обязательства",
     "location": "Местоположение",
@@ -1467,7 +1463,6 @@
     "zar": "Южноафриканский рэнд"
   },
   "currency_drop_down": {
-    "hint": "Выбрать как основную валюту",
     "profit_currency": "Валюта прибыли ({currency})"
   },
   "dashboard": {
@@ -2937,7 +2932,6 @@
       "non_empty": "Идентификатор источника не может быть пустым"
     },
     "source_hint": "Идентификатор актива, который вы хотите объединить с целевым",
-    "subtitle": "Объединить два актива",
     "target": {
       "label": "Цель",
       "non_empty": "Целевой актив не может быть пустым"
@@ -3543,13 +3537,9 @@
       }
     },
     "headers": {
-      "from_asset": "Из актива",
-      "to_asset": "В актив"
+      "from_asset": "Из актива"
     },
-    "is_worth": "стоит",
-    "on": "на",
-    "refresh_tooltip": "Обновить цены",
-    "was_worth": "стоил"
+    "refresh_tooltip": "Обновить цены"
   },
   "prioritized_list": {
     "add_placeholder": "Добавить: {name}",

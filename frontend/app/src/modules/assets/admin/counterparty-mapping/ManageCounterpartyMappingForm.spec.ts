@@ -44,6 +44,7 @@ describe('manageCounterpartyMappingForm', () => {
       global: {
         stubs: {
           AssetSelect: inputStub('AssetSelect'),
+          CounterpartyDisplay: { name: 'CounterpartyDisplay', props: ['counterparty'], template: '<div />' },
           CounterpartyInput: inputStub('CounterpartyInput'),
           RuiTextField: inputStub('RuiTextField'),
         },
@@ -175,12 +176,14 @@ describe('manageCounterpartyMappingForm', () => {
     expect(wrapper.emitted('update:stateUpdated')?.at(-1)).not.toEqual([true]);
   });
 
-  it('should lock the counterparty and its symbol while editing', async () => {
+  it('should show the counterparty and its symbol as text while editing', async () => {
     wrapper = createWrapper(baseModel(), { editMode: true });
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(field('counterparty').props('disabled')).toBe(true);
-    expect(field('counterparty-symbol').props('disabled')).toBe(true);
+    expect(field('counterparty').exists()).toBe(false);
+    expect(field('counterparty-symbol').exists()).toBe(false);
+    expect(wrapper.findComponent({ name: 'CounterpartyDisplay' }).props('counterparty')).toBe('uniswap-v2');
+    expect(wrapper.get('[data-testid=counterparty-mapping-summary]').text()).toContain('USDC');
     // Repointing the mapping at another asset is the whole point of the edit dialog.
     expect(field('counterparty-asset').props('disabled')).toBeFalsy();
   });

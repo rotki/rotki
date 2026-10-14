@@ -90,13 +90,12 @@ defineExpose({
 </script>
 
 <template>
-  <div>
-    <div class="grid grid-cols-[auto_1fr] gap-6 h-full">
-      <RuiCard
-        rounded="sm"
-        class="w-32 items-center justify-center relative"
-        :class-names="{ content: 'p-6!' }"
-      >
+  <div class="flex flex-col gap-2">
+    <div class="text-sm font-medium text-rui-text">
+      {{ t('asset_form.labels.icon') }}
+    </div>
+    <div class="grid grid-cols-[auto_1fr] gap-4">
+      <div class="relative size-28 flex items-center justify-center rounded-rui-control border border-rui-divider bg-rui-surface">
         <RuiTooltip
           v-if="preview && refreshable"
           :options="{ placement: 'right' }"
@@ -134,21 +133,23 @@ defineExpose({
           no-tooltip
           :show-chain="false"
         />
-      </RuiCard>
+        <RuiIcon
+          v-else
+          name="lu-image"
+          size="32"
+          class="text-rui-text-disabled"
+        />
+      </div>
       <RuiFileUpload
         v-model="icon"
-        class="grow"
         accept=".png,.svg,.jpeg,.jpg,.webp"
         :upload-text="t('file_upload.dropzone.prefix')"
         :click-to-upload-text="t('file_upload.dropzone.choose')"
         :replace-text="t('file_upload.dropzone.replace')"
+        :hint="icon && identifier ? t('asset_form.replaced') : undefined"
+        :hide-details="!(icon && identifier)"
+        data-testid="asset-icon-upload"
       />
-    </div>
-    <div
-      v-if="icon && identifier"
-      class="text-caption text-rui-success mt-2"
-    >
-      {{ t('asset_form.replaced') }}
     </div>
   </div>
 </template>

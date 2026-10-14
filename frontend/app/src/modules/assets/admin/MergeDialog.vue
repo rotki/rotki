@@ -118,16 +118,24 @@ watch(display, (isDisplayed) => {
         <template #header>
           {{ t('merge_dialog.title') }}
         </template>
-        <template #subheader>
-          {{ t('merge_dialog.subtitle') }}
-        </template>
         <div class="mb-4 text-body-2 text-rui-text-secondary">
           {{ t('merge_dialog.hint') }}
         </div>
 
-        <!-- We use `RuiTextField` here instead `asset-select` -->
-        <!-- because the source can be filled with unknown identifier -->
+        <dl
+          v-if="propSourceIdentifier"
+          class="m-0 flex flex-col gap-1 rounded-rui-control border border-rui-divider px-4 py-3"
+          data-testid="merge-source-summary"
+        >
+          <dt class="text-sm font-medium text-rui-text-secondary">
+            {{ t('merge_dialog.source.label') }}
+          </dt>
+          <dd class="m-0 font-mono text-sm text-rui-text break-all">
+            {{ form.state.sourceIdentifier }}
+          </dd>
+        </dl>
         <RuiTextField
+          v-else
           v-model="form.state.sourceIdentifier"
           :label="t('merge_dialog.source.label')"
           :error-messages="form.errors('sourceIdentifier')"
@@ -164,7 +172,7 @@ watch(display, (isDisplayed) => {
         <template #footer>
           <div class="grow" />
           <RuiButton
-            variant="text"
+            variant="outlined"
             color="primary"
             @click="input(false)"
           >

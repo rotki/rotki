@@ -22,13 +22,13 @@ function edit(event: CalendarEvent): void {
 </script>
 
 <template>
-  <RuiCard
-    :class-names="{ content: 'pt-2!' }"
+  <section
+    class="flex flex-col gap-3 rounded-rui-card border border-rui-divider bg-rui-surface p-4"
     data-testid="calendar-upcoming-list"
   >
-    <template #header>
+    <div class="text-sm font-semibold text-rui-text">
       {{ t('calendar.upcoming_events') }}
-    </template>
+    </div>
     <CalendarUpcomingEventList
       v-if="upcomingEvents.length > 0"
       v-model:selected-date="selectedDate"
@@ -38,9 +38,9 @@ function edit(event: CalendarEvent): void {
     />
     <div
       v-else
-      class="text-body-2 text-rui-text-secondary -mt-2"
+      class="text-sm text-rui-text-secondary"
     >
       {{ t('calendar.no_events') }}
     </div>
-  </RuiCard>
+  </section>
 </template>

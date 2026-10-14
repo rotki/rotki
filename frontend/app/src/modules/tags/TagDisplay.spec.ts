@@ -1,10 +1,11 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
 
 describe('tagDisplay', () => {
+  let wrapper: VueWrapper<InstanceType<typeof TagDisplay>>;
   let pinia: Pinia;
 
   function createWrapper(clickable: boolean): VueWrapper<InstanceType<typeof TagDisplay>> {
@@ -22,20 +23,24 @@ describe('tagDisplay', () => {
     };
   });
 
+  afterEach((): void => {
+    wrapper.unmount();
+  });
+
   it('should leave the tags as plain labels by default', async () => {
-    const wrapper = createWrapper(false);
+    wrapper = createWrapper(false);
     const tag = wrapper.find('[data-testid=tag]');
 
-    expect(tag.attributes('title')).toBeUndefined();
+    expect(tag.attributes('role')).toBeUndefined();
     await tag.trigger('click');
     expect(wrapper.emitted('select')).toBeUndefined();
   });
 
-  it('should offer each tag as a filter and emit it when clickable', async () => {
-    const wrapper = createWrapper(true);
+  it('should make each tag a button that emits it when clickable', async () => {
+    wrapper = createWrapper(true);
     const tag = wrapper.find('[data-testid=tag]');
 
-    expect(tag.attributes('title')).toBe('tag_display.filter_by::hardware');
+    expect(tag.attributes('role')).toBe('button');
     await tag.trigger('click');
     expect(wrapper.emitted('select')).toEqual([['hardware']]);
   });

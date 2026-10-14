@@ -72,7 +72,7 @@ export class CalendarPage {
 
   async openEventByName(name: string): Promise<void> {
     const event = this.eventInPanel(this.selectedPanel(), name).first();
-    await event.getByRole('button', { name: /view details/i }).click();
+    await event.click();
     await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
 
@@ -246,6 +246,6 @@ export class CalendarPage {
   }
 
   async expectMonthLabel(label: string): Promise<void> {
-    await expect(this.page.getByTestId('calendar-month-label').locator('input')).toHaveValue(label, { timeout: TIMEOUT_SHORT });
+    await expect(this.page.getByTestId('calendar-month-label')).toHaveText(label, { timeout: TIMEOUT_SHORT });
   }
 }

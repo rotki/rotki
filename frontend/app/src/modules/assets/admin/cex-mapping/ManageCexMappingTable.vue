@@ -7,6 +7,7 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
@@ -33,29 +34,28 @@ const { t } = useI18n({ useScope: 'global' });
 const pillLabels = usePillBarLabels();
 const emptyState = useTableEmptyState();
 const cols = computed<DataTableColumn<CexMapping>[]>(() => [{
-  align: 'center',
-  cellClass: 'py-3',
+  cellClass: 'py-2',
   key: 'location',
   label: t('common.exchange'),
 }, {
-  align: 'center',
-  cellClass: 'py-3',
+  cellClass: 'py-2 font-medium',
   key: 'locationSymbol',
   label: t('asset_management.cex_mapping.asset_symbol'),
 }, {
-  cellClass: 'py-0 border-x border-default',
-  class: 'border-x border-default',
+  cellClass: 'py-0',
   key: 'asset',
   label: t('asset_management.cex_mapping.recognized_as'),
 }, {
+  align: 'end',
+  cellClass: 'w-px',
   key: 'actions',
   label: t('common.actions_text'),
 }]);
 </script>
 
 <template>
-  <div>
-    <div class="flex items-center gap-3 mb-4">
+  <TableFrame>
+    <template #toolbar>
       <HintMenuIcon>
         {{ t('asset_management.cex_mapping.subtitle') }}
       </HintMenuIcon>
@@ -65,33 +65,26 @@ const cols = computed<DataTableColumn<CexMapping>[]>(() => [{
         :fields="fields"
         :labels="pillLabels"
       />
-    </div>
+    </template>
     <RuiDataTable
       v-model:pagination.external="paginationModel"
       :rows="collection.data"
       dense
-      striped
       :loading="loading"
       :cols="cols"
       :empty="emptyState"
-      :sticky-offset="64"
       row-attr="location"
-      outlined
     >
       <template #item.location="{ row }">
         <div
           v-if="!row.location"
-          class="flex flex-col gap-1 items-center"
+          class="flex items-center gap-2 text-rui-text-secondary whitespace-nowrap"
         >
-          <div class="icon-bg">
-            <RuiIcon
-              name="lu-building-2"
-              color="secondary"
-            />
-          </div>
-          <div class="text-rui-text-secondary whitespace-nowrap">
-            {{ t('asset_management.cex_mapping.all_exchanges') }}
-          </div>
+          <RuiIcon
+            name="lu-building-2"
+            size="20"
+          />
+          {{ t('asset_management.cex_mapping.all_exchanges') }}
         </div>
         <LocationDisplay
           v-else
@@ -103,6 +96,7 @@ const cols = computed<DataTableColumn<CexMapping>[]>(() => [{
       </template>
       <template #item.actions="{ row }">
         <RowActions
+          align="end"
           :edit-tooltip="t('asset_table.edit_tooltip')"
           :delete-tooltip="t('asset_table.delete_tooltip')"
           @edit-click="emit('edit', row)"
@@ -110,5 +104,5 @@ const cols = computed<DataTableColumn<CexMapping>[]>(() => [{
         />
       </template>
     </RuiDataTable>
-  </div>
+  </TableFrame>
 </template>

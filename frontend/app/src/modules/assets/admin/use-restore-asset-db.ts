@@ -92,11 +92,13 @@ export function useRestoreAssetDb(): UseRestoreAssetDbReturn {
   }
 
   function showRestoreConfirmation(type: ResetType): void {
+    const message = type === 'soft'
+      ? t('asset_update.restore.delete_confirmation.soft_reset_message')
+      : t('asset_update.restore.delete_confirmation.hard_reset_message');
+    // the shared-database caveat is shown when it matters, at the moment of resetting
     show(
       {
-        message: type === 'soft'
-          ? t('asset_update.restore.delete_confirmation.soft_reset_message')
-          : t('asset_update.restore.delete_confirmation.hard_reset_message'),
+        message: `${message} ${t('asset_update.restore.warning')}`,
         title: t('asset_update.restore.delete_confirmation.title'),
       },
       async () => restoreAssets(type),

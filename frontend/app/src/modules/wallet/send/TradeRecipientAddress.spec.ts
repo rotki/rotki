@@ -27,6 +27,14 @@ vi.mock('@/modules/wallet/send/use-trade-recipient-address', () => ({
   useTradeRecipientAddress: (): typeof recipientApi => recipientApi,
 }));
 
+const addressNames: Record<string, string> = {};
+
+vi.mock('@/modules/accounts/address-book/use-address-name-resolution', () => ({
+  useAddressNameResolution: (): { getAddressName: (address: string) => string | undefined } => ({
+    getAddressName: (address: string): string | undefined => addressNames[address],
+  }),
+}));
+
 const connected = ref<boolean>(false);
 
 vi.mock('@/modules/wallet/use-wallet-store', () => ({
@@ -89,7 +97,10 @@ describe('tradeRecipientAddress', () => {
     set(recipientApi.filteredAddressBookOptions, []);
     set(recipientApi.modelOpenOptionsDialog, false);
     set(recipientApi.modelSearchValue, '');
+    set(recipientApi.modelAddressBookSearch, '');
     set(recipientApi.resolvingEns, false);
+    for (const key of Object.keys(addressNames))
+      delete addressNames[key];
   });
 
   afterEach(() => {
@@ -147,6 +158,35 @@ describe('tradeRecipientAddress', () => {
       expect(wrapper.text()).toContain('trade.recipient.no_addresses_found');
     });
 
+    it('should list an address that is both tracked and in the address book once, as tracked', async () => {
+      const BOB = '0x89e48081004d48d371f0904c0633Cf3f82A7a563';
+      set(recipientApi.trackedAddresses, [ALICE]);
+      set(recipientApi.filteredAddressBookOptions, [ALICE.toLowerCase(), BOB]);
+      set(recipientApi.modelOpenOptionsDialog, true);
+      await nextTick();
+
+      const shown = wrapper.findAll('.address-display').map(item => item.text());
+      expect(shown).toEqual([ALICE, BOB]);
+      expect(wrapper.text()).toContain('trade.recipient.tracked_addresses');
+      expect(wrapper.text()).toContain('trade.recipient.from_private_address_book');
+    });
+
+    it('should filter the tracked addresses by name or address with the one search', async () => {
+      const BOB = '0x89e48081004d48d371f0904c0633Cf3f82A7a563';
+      addressNames[BOB] = 'Bob wallet';
+      set(recipientApi.trackedAddresses, [ALICE, BOB]);
+      set(recipientApi.modelOpenOptionsDialog, true);
+      set(recipientApi.modelAddressBookSearch, 'bob');
+      await nextTick();
+
+      expect(wrapper.findAll('.address-display').map(item => item.text())).toEqual([BOB]);
+
+      set(recipientApi.modelAddressBookSearch, '0x9531');
+      await nextTick();
+
+      expect(wrapper.findAll('.address-display').map(item => item.text())).toEqual([ALICE]);
+    });
+
     it('should mark the field when what is in it is not an address', async () => {
       expect(wrapper.text()).toContain('trade.to_address.label');
       expect(wrapper.find('[data-testid=recipient-field]').classes()).not.toContain('!border-rui-error');
@@ -175,17 +215,21 @@ describe('tradeRecipientAddress', () => {
       expect(recipientApi.reset).toHaveBeenCalledOnce();
     });
 
-    it('should warn about an address the wallet never interacted with, only while connected', async () => {
+    /** A chip inside the field, so the warning arriving after the check does not push the form down. */
+    it('should mark an address the wallet never interacted with, only while connected', async () => {
+      const chip = (): ReturnType<typeof wrapper.find> => wrapper.find('[data-testid="recipient-never-interacted"]');
+
       await wrapper.setProps({ showWarning: true });
-      expect(wrapper.text()).not.toContain('trade.never_interacted');
+      expect(chip().exists()).toBe(false);
 
       set(connected, true);
       await nextTick();
 
-      expect(wrapper.text()).toContain('trade.never_interacted');
+      expect(chip().exists()).toBe(true);
+      expect(chip().text()).toContain('trade.recipient.new_address');
 
       await wrapper.setProps({ showWarning: false });
-      expect(wrapper.text()).not.toContain('trade.never_interacted');
+      expect(chip().exists()).toBe(false);
     });
   });
 });

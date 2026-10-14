@@ -13,86 +13,43 @@ const emit = defineEmits<{
   edit: [event: CalendarEvent];
 }>();
 
-function edit(calendarEvent: CalendarEvent) {
-  emit('edit', calendarEvent);
-}
-
 const time = computed<string>(() => dayjs(event.timestamp * 1000).format('HH:mm'));
 
-const MAX_LENGTH = 70;
-
-const showTooltip = computed<boolean>(() => {
-  const desc = event.description;
-  return desc !== undefined && desc.length > MAX_LENGTH;
-});
-
-const description = computed<string>(() => {
-  const desc = event.description;
-  if (desc === undefined) {
-    return '';
-  }
-  if (!get(showTooltip))
-    return desc;
-
-  return `${desc.slice(0, MAX_LENGTH)}...`;
-});
-
-const { t } = useI18n({ useScope: 'global' });
-
-function onEventClicked(calendarEvent: CalendarEvent) {
-  if (!get(selectedDate).isSame(visibleDate, 'month')) {
+function onEventClicked(calendarEvent: CalendarEvent): void {
+  if (!get(selectedDate).isSame(visibleDate, 'month'))
     set(selectedDate, dayjs(calendarEvent.timestamp * 1000));
-  }
 
-  edit(calendarEvent);
+  emit('edit', calendarEvent);
 }
 </script>
 
 <template>
-  <div
-    class="flex items-center gap-4"
+  <button
+    type="button"
+    class="-mx-2 flex w-[calc(100%+1rem)] items-start gap-3 rounded-rui-control p-2 text-left transition-colors hover:bg-rui-grey-100 focus-visible:outline-2 focus-visible:outline-rui-primary motion-reduce:transition-none dark:hover:bg-rui-grey-800"
     data-testid="calendar-event"
     :data-key="event.identifier"
     :data-event-name="event.name"
+    @click="onEventClicked(event)"
   >
-    <div
-      class="min-w-5 min-h-5 rounded-full"
-      :style="{
-        backgroundColor: `#${event.color}`,
-      }"
+    <span
+      class="mt-1.5 size-2.5 shrink-0 rounded-full"
+      :style="{ backgroundColor: `#${event.color}` }"
     />
-    <div>
-      <div class="text-body-2 font-medium">
+    <span class="flex min-w-0 flex-col">
+      <span class="text-sm font-medium text-rui-text">
         {{ event.name }}
-      </div>
-      <RuiTooltip
-        v-if="event.description"
-        :options="{ placement: 'left' }"
-        :disabled="!showTooltip"
-        :open-delay="400"
-        :class-names="{ tooltip: 'max-w-80 whitespace-break-spaces' }"
-      >
-        <template #activator>
-          <div class="text-body-2 text-rui-text-secondary">
-            {{ description }}
-          </div>
-        </template>
-        <span>{{ event.description }}</span>
-      </RuiTooltip>
-      <div class="text-caption">
+      </span>
+      <span class="text-xs text-rui-text-secondary">
         {{ time }}
-      </div>
-      <div>
-        <RuiButton
-          color="primary"
-          variant="text"
-          size="sm"
-          class="-ml-1"
-          @click="onEventClicked(event)"
-        >
-          {{ t('calendar.view_details') }}
-        </RuiButton>
-      </div>
-    </div>
-  </div>
+      </span>
+      <span
+        v-if="event.description"
+        class="mt-0.5 line-clamp-2 text-sm text-rui-text-secondary"
+        :title="event.description"
+      >
+        {{ event.description }}
+      </span>
+    </span>
+  </button>
 </template>

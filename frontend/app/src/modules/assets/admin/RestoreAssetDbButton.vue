@@ -44,32 +44,36 @@ const { loading, showRestoreConfirmation } = useRestoreAssetDb();
   </RuiMenu>
   <div
     v-else
-    class="flex flex-col gap-4"
+    class="flex flex-col rounded-rui-card border border-rui-divider between:border-t between:border-rui-divider"
   >
-    <RuiCard>
-      <div class="flex justify-between items-center gap-2">
-        {{ t('asset_update.restore.soft_reset_hint') }}
-        <RuiButton
-          variant="outlined"
-          color="error"
-          :loading="loading"
-          @click="showRestoreConfirmation('soft')"
-        >
-          {{ t('asset_update.restore.soft_reset') }}
-        </RuiButton>
+    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 p-4">
+      <div class="flex flex-col gap-0.5">
+        <span class="text-sm font-medium text-rui-text">{{ t('asset_update.restore.soft_reset') }}</span>
+        <span class="text-sm text-rui-text-secondary">{{ t('asset_update.restore.soft_reset_hint') }}</span>
       </div>
-    </RuiCard>
-    <RuiCard>
-      <div class="flex justify-between items-center gap-2">
-        {{ t('asset_update.restore.hard_reset_hint') }}
-        <RuiButton
-          color="error"
-          :loading="loading"
-          @click="showRestoreConfirmation('hard')"
-        >
-          {{ t('asset_update.restore.hard_reset') }}
-        </RuiButton>
+      <RuiButton
+        variant="outlined"
+        color="error"
+        :loading="loading"
+        data-testid="asset-db-soft-reset"
+        @click="showRestoreConfirmation('soft')"
+      >
+        {{ t('asset_update.restore.soft_reset') }}
+      </RuiButton>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 p-4">
+      <div class="flex flex-col gap-0.5">
+        <span class="text-sm font-medium text-rui-text">{{ t('asset_update.restore.hard_reset') }}</span>
+        <span class="text-sm text-rui-text-secondary">{{ t('asset_update.restore.hard_reset_hint') }}</span>
       </div>
-    </RuiCard>
+      <RuiButton
+        color="error"
+        :loading="loading"
+        data-testid="asset-db-hard-reset"
+        @click="showRestoreConfirmation('hard')"
+      >
+        {{ t('asset_update.restore.hard_reset') }}
+      </RuiButton>
+    </div>
   </div>
 </template>

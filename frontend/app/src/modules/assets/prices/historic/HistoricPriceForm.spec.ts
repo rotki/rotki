@@ -190,13 +190,14 @@ describe('historicPriceForm', () => {
     expect(wrapper.emitted('update:stateUpdated')?.at(-1)).not.toEqual([true]);
   });
 
-  it('should lock everything but the price while editing', async () => {
+  it('should show what is priced and when as text while editing, leaving only the price to change', async () => {
     wrapper = createWrapper(baseModel(), { editMode: true });
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(field('historic-price-from-asset').props('disabled')).toBe(true);
-    expect(field('historic-price-to-asset').props('disabled')).toBe(true);
-    expect(field('historic-price-datetime').props('disabled')).toBe(true);
+    expect(field('historic-price-from-asset').exists()).toBe(false);
+    expect(field('historic-price-to-asset').exists()).toBe(false);
+    expect(field('historic-price-datetime').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=historic-price-summary]').exists()).toBe(true);
     expect(field('historic-price-value').props('disabled')).toBeFalsy();
   });
 

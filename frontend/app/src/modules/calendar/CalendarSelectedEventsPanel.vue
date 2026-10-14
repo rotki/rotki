@@ -24,26 +24,26 @@ function edit(event: CalendarEvent): void {
 </script>
 
 <template>
-  <RuiCard
-    :class-names="{ content: 'pt-2!' }"
+  <section
+    class="flex flex-col gap-2 rounded-rui-card border border-rui-divider bg-rui-surface p-4"
     data-testid="calendar-selected-list"
   >
-    <template #header>
-      <div v-if="today.isSame(selectedDate, 'day')">
+    <div class="text-sm font-semibold text-rui-text">
+      <template v-if="today.isSame(selectedDate, 'day')">
         {{ t('calendar.today_events') }}
-      </div>
-      <div v-else>
+      </template>
+      <template v-else>
         <DateDisplay
           :timestamp="selectedDate.unix()"
           no-time
           hide-tooltip
         />
         {{ t('common.events') }}
-      </div>
-    </template>
+      </template>
+    </div>
     <div
       v-if="selectedDateEvents.length > 0"
-      class="flex flex-col gap-4"
+      class="flex flex-col gap-1"
     >
       <CalendarEventList
         v-for="event in selectedDateEvents"
@@ -56,9 +56,9 @@ function edit(event: CalendarEvent): void {
     </div>
     <div
       v-else
-      class="text-body-2 text-rui-text-secondary -mt-2"
+      class="text-sm text-rui-text-secondary"
     >
       {{ t('calendar.no_events') }}
     </div>
-  </RuiCard>
+  </section>
 </template>

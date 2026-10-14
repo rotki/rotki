@@ -170,22 +170,23 @@ describe('oraclePriceContent', () => {
   });
 
   describe('source chip', () => {
-    it('should fill an oracle source with its brand colour', async () => {
+    // Every source is a tonal chip; an oracle's brand colour is a dot inside it, not a filled chip.
+    it('should draw an oracle source as a tonal grey chip rather than a filled brand one', async () => {
       await mountWith([entry(PriceOracle.COINGECKO)]);
 
-      expect(chip(0)).toMatchObject({ bgColor: '#8dc63f', textColor: '#ffffff', variant: 'filled' });
+      expect(chip(0)).toMatchObject({ bgColor: undefined, color: 'grey', variant: 'tonal' });
     });
 
-    it('should outline a manual source in the warning colour', async () => {
+    it('should draw a manual source as a tonal warning chip', async () => {
       await mountWith([entry(PriceOracle.MANUAL)]);
 
-      expect(chip(0)).toMatchObject({ bgColor: undefined, color: 'warning', textColor: undefined, variant: 'outlined' });
+      expect(chip(0)).toMatchObject({ color: 'warning', variant: 'tonal' });
     });
 
-    it('should outline a source it has no colour for in grey', async () => {
+    it('should draw a source it has no colour for as a tonal grey chip', async () => {
       await mountWith([entry('some_new_oracle')]);
 
-      expect(chip(0)).toMatchObject({ bgColor: undefined, color: 'grey', variant: 'outlined' });
+      expect(chip(0)).toMatchObject({ color: 'grey', variant: 'tonal' });
     });
   });
 });

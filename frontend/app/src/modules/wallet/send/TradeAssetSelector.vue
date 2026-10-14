@@ -168,6 +168,7 @@ function redetectTokens(): void {
 <template>
   <div
     class="border border-default rounded-b-lg bg-rui-grey-50 dark:bg-rui-grey-900 px-3 py-2.5 mt-0.5 flex justify-between items-center hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800 cursor-pointer gap-4"
+    data-testid="trade-asset-selector"
     @click="openDialog = true"
   >
     <TradeAssetDisplay
@@ -189,6 +190,7 @@ function redetectTokens(): void {
         v-if="connected"
         class="rounded-full"
         size="sm"
+        variant="outlined"
         color="primary"
         @click.stop="setMax()"
       >
@@ -212,9 +214,6 @@ function redetectTokens(): void {
       <template #header>
         {{ t('trade.select_asset.select_token') }}
       </template>
-      <!-- No colour override: `text-white` painted the icon white on the card's white header, so
-           the close button was invisible in light mode. The button's own colour handles both
-           themes. -->
       <RuiButton
         variant="text"
         class="absolute top-2 right-2"
@@ -225,97 +224,101 @@ function redetectTokens(): void {
       >
         <RuiIcon name="lu-x" />
       </RuiButton>
-      <div class="p-4 pb-4">
-        <RuiAlert
-          v-if="useQueryingBalances"
-          class="mb-4"
-          type="warning"
-        >
-          {{ t('trade.warning.query_on_progress') }}
-        </RuiAlert>
-        <div class="flex gap-2 items-center">
+      <div class="p-4 pb-2 flex flex-col gap-2">
+        <div class="flex gap-2 items-start">
+          <div class="flex-1 min-w-0 h-8 flex items-center gap-2 px-3 border border-rui-outline rounded-rui-control transition-colors focus-within:border-rui-primary">
+            <RuiIcon
+              name="lu-search"
+              size="16"
+              class="text-rui-text-secondary shrink-0"
+              aria-hidden="true"
+            />
+            <input
+              ref="searchField"
+              v-model="search"
+              type="text"
+              class="flex-1 min-w-0 bg-transparent py-2 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary"
+              :placeholder="t('trade.select_asset.search')"
+              :aria-label="t('trade.select_asset.search')"
+              autocomplete="off"
+              spellcheck="false"
+              role="combobox"
+              aria-controls="trade-asset-listbox"
+              :aria-expanded="assetOptions.length > 0"
+              :aria-activedescendant="assetOptions.length > 0 ? `trade-asset-option-${highlighted}` : undefined"
+              data-testid="trade-asset-search"
+              @keydown="onKeydown($event)"
+            />
+            <RuiButton
+              v-if="search"
+              variant="text"
+              icon
+              size="sm"
+              class="p-1! shrink-0"
+              :aria-label="t('common.actions.clear')"
+              data-testid="trade-asset-search-clear"
+              @click="search = ''"
+            >
+              <RuiIcon
+                name="lu-x"
+                size="14"
+              />
+            </RuiButton>
+          </div>
           <ChainSelect
             v-model="internalChain"
-            class="flex-1"
+            class="w-56 shrink-0"
             hide-details
             dense
+            label-placement="hidden"
             :items="chainOptions"
           />
-          <RuiTooltip
-            :open-delay="400"
-            :options="{ placement: 'top' }"
-          >
-            <template #activator>
-              <RuiButton
-                variant="text"
-                icon
-                class="p-1!"
-                color="primary"
-                :disabled="!address || !internalChain"
-                :loading="useQueryingBalances || isDetecting"
-                @click="redetectTokens()"
-              >
-                <RuiIcon name="lu-refresh-ccw" />
-              </RuiButton>
-            </template>
-            {{ t('account_balances.detect_tokens.tooltip.redetect') }}
-          </RuiTooltip>
         </div>
-        <div class="flex items-center gap-2 mt-2 px-3 border rounded-md transition-colors border-default focus-within:border-rui-primary">
-          <RuiIcon
-            name="lu-search"
-            size="16"
-            class="text-rui-text-secondary shrink-0"
-            aria-hidden="true"
-          />
-          <input
-            ref="searchField"
-            v-model="search"
-            type="text"
-            class="flex-1 min-w-0 bg-transparent py-2 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary"
-            :placeholder="t('trade.select_asset.search')"
-            :aria-label="t('trade.select_asset.search')"
-            autocomplete="off"
-            spellcheck="false"
-            role="combobox"
-            aria-controls="trade-asset-listbox"
-            :aria-expanded="assetOptions.length > 0"
-            :aria-activedescendant="assetOptions.length > 0 ? `trade-asset-option-${highlighted}` : undefined"
-            data-testid="trade-asset-search"
-            @keydown="onKeydown($event)"
-          />
-          <RuiButton
-            v-if="search"
-            variant="text"
-            icon
-            size="sm"
-            class="p-1! shrink-0"
-            :aria-label="t('common.actions.clear')"
-            data-testid="trade-asset-search-clear"
-            @click="search = ''"
+        <div class="h-7 flex items-center justify-between gap-2 text-xs text-rui-text-secondary">
+          <span
+            v-if="useQueryingBalances"
+            class="flex items-center gap-1.5 min-w-0"
+            data-testid="trade-asset-querying"
           >
-            <RuiIcon
-              name="lu-x"
-              size="14"
+            <RuiProgress
+              circular
+              variant="indeterminate"
+              color="primary"
+              size="12"
+              thickness="2"
+              class="shrink-0"
             />
+            <span class="truncate">{{ t('trade.status.updating_balances') }}</span>
+          </span>
+          <span
+            v-else
+            aria-live="polite"
+            data-testid="trade-asset-count"
+          >
+            {{ search
+              ? t('trade.select_asset.result_count', { count: assetOptions.length, total: totalForChain })
+              : t('trade.select_asset.asset_count', { count: assetOptions.length }, assetOptions.length) }}
+          </span>
+          <RuiButton
+            variant="text"
+            size="sm"
+            color="primary"
+            class="-mr-2 shrink-0"
+            :disabled="!address || !internalChain"
+            :loading="useQueryingBalances || isDetecting"
+            data-testid="trade-asset-redetect"
+            @click="redetectTokens()"
+          >
+            <template #prepend>
+              <RuiIcon
+                name="lu-refresh-ccw"
+                size="14"
+              />
+            </template>
+            {{ t('account_balances.detect_tokens.selection.redetect') }}
           </RuiButton>
         </div>
-        <!-- The list is a fixed height, so how much sits below the fold is not otherwise visible. -->
-        <div
-          class="mt-2 text-xs text-rui-text-secondary"
-          aria-live="polite"
-          data-testid="trade-asset-count"
-        >
-          {{ search
-            ? t('trade.select_asset.result_count', { count: assetOptions.length, total: totalForChain })
-            : t('trade.select_asset.asset_count', { count: assetOptions.length }, assetOptions.length) }}
-        </div>
       </div>
-      <!-- Virtualized: a single chain can carry well over a hundred owned assets, and every row
-           mounts an icon plus its asset resolution. -->
-      <!-- A fixed height, not a max: the list is searched, and sizing to the result count makes the
-           dialog grow and collapse on every keystroke. Viewport-relative so it still fits a short
-           window, but never content-relative. -->
       <div
         v-if="assetOptions.length > 0"
         v-bind="containerProps"
@@ -353,10 +356,6 @@ function redetectTokens(): void {
           </button>
         </div>
       </div>
-      <!-- Same height as the populated list, so searching down to nothing does not collapse the
-           dialog around the search box the user is still typing in. -->
-      <!-- Keeps the id the search field's aria-controls names, so it does not dangle when the list
-           is empty. -->
       <div
         v-else
         id="trade-asset-listbox"

@@ -34,19 +34,20 @@ const aliasName = computed<string | undefined>(() => {
       :address="address"
       size="2rem"
       avatar
+      class="shrink-0"
     />
-    <div class="flex flex-col">
-      <div
-        class="font-mono text-rui-text-secondary text-sm"
-        :class="{ 'text-xs!': dense }"
-      >
-        {{ address }}
-      </div>
+    <div class="flex flex-col min-w-0">
       <div
         v-if="aliasName"
-        class="font-medium text-sm"
+        class="font-medium text-sm truncate"
       >
         {{ aliasName }}
+      </div>
+      <div
+        class="font-mono text-rui-text-secondary truncate"
+        :class="aliasName || dense ? 'text-xs' : 'text-sm'"
+      >
+        {{ address }}
       </div>
     </div>
   </div>

@@ -59,7 +59,6 @@ onMounted(async () => {
       <RuiButton
         color="primary"
         variant="outlined"
-        size="lg"
         :loading="loading"
         @click="refetch()"
       >
@@ -72,7 +71,6 @@ onMounted(async () => {
       <RuiButton
         data-testid="managed-asset-add-btn"
         color="primary"
-        size="lg"
         @click="add()"
       >
         <template #prepend>
@@ -88,7 +86,8 @@ onMounted(async () => {
           <RuiButton
             variant="text"
             icon
-            size="lg"
+            class="text-rui-text-secondary!"
+            :aria-label="t('common.actions.more')"
             v-bind="attrs"
           >
             <RuiIcon name="lu-ellipsis-vertical" />
@@ -117,33 +116,31 @@ onMounted(async () => {
       </RuiMenu>
     </template>
 
-    <RuiCard>
-      <MergeDialog v-model="mergeTool" />
+    <ManagedAssetTable
+      v-model:filters="modelFilter"
+      v-model:pill-params="modelPillParams"
+      v-model:expanded="modelExpanded"
+      v-model:selected="modelSelectedRows"
+      v-model:pagination="pagination"
+      v-model:sort="sort"
+      :ignored-handling="modelIgnoredAssetsHandling"
+      :collection="assets"
+      :loading="loading"
+      :change="!loading"
+      :fields="fields"
+      @refresh="refetch()"
+      @edit="edit($event)"
+      @delete-asset="showDeleteConfirmation($event)"
+      @update:page="setPage($event)"
+    />
 
-      <ManagedAssetTable
-        v-model:filters="modelFilter"
-        v-model:pill-params="modelPillParams"
-        v-model:expanded="modelExpanded"
-        v-model:selected="modelSelectedRows"
-        v-model:pagination="pagination"
-        v-model:sort="sort"
-        :ignored-handling="modelIgnoredAssetsHandling"
-        :collection="assets"
-        :loading="loading"
-        :change="!loading"
-        :fields="fields"
-        @refresh="refetch()"
-        @edit="edit($event)"
-        @delete-asset="showDeleteConfirmation($event)"
-        @update:page="setPage($event)"
-      />
+    <MergeDialog v-model="mergeTool" />
 
-      <ManagedAssetFormDialog
-        v-model="modelValue"
-        :asset-types="assetTypes"
-        :edit-mode="editMode"
-        @refresh="refetch()"
-      />
-    </RuiCard>
+    <ManagedAssetFormDialog
+      v-model="modelValue"
+      :asset-types="assetTypes"
+      :edit-mode="editMode"
+      @refresh="refetch()"
+    />
   </TablePageLayout>
 </template>

@@ -116,7 +116,7 @@ describe('manageCexMappingForm', () => {
   });
 
   it('should show no message before anything is edited', async () => {
-    wrapper = createWrapper({ asset: '', location: null, locationSymbol: '' }, { forAllExchanges: false });
+    wrapper = createWrapper({ asset: '', location: 'kraken', locationSymbol: '' }, { forAllExchanges: false });
     await vi.advanceTimersToNextTimerAsync();
 
     expect(messages('ExchangeInput')).toEqual([]);
@@ -146,7 +146,7 @@ describe('manageCexMappingForm', () => {
     await wrapper.vm.validate();
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(messages('ExchangeInput')).toEqual([]);
+    expect(stub('ExchangeInput').exists()).toBe(false);
     expect(messages('AssetSelect')).toEqual([
       'asset_management.cex_mapping.form.asset_non_empty',
     ]);
@@ -196,21 +196,30 @@ describe('manageCexMappingForm', () => {
     expect(wrapper.emitted('update:stateUpdated')?.at(-1)).not.toEqual([true]);
   });
 
-  it('should lock everything but the asset while editing', async () => {
+  it('should show the exchange and the symbol as text while editing, leaving only the asset to change', async () => {
     wrapper = createWrapper(baseModel(), { editMode: true });
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(stub('RuiSwitch').props('disabled')).toBe(true);
-    expect(stub('ExchangeInput').props('disabled')).toBe(true);
-    expect(stub('RuiTextField').props('disabled')).toBe(true);
+    expect(stub('RuiSwitch').exists()).toBe(false);
+    expect(stub('ExchangeInput').exists()).toBe(false);
+    expect(stub('RuiTextField').exists()).toBe(false);
+    expect(stub('LocationDisplay').props('identifier')).toBe('kraken');
+    expect(wrapper.get('[data-testid=cex-mapping-summary]').text()).toContain('USDC');
     expect(stub('AssetSelect').props('disabled')).toBeFalsy();
   });
 
-  it('should lock the exchange while the mapping covers all of them', async () => {
+  it('should name every exchange in the summary of a mapping that covers all of them', async () => {
+    wrapper = createWrapper({ ...baseModel(), location: null }, { editMode: true, forAllExchanges: true });
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(wrapper.get('[data-testid=cex-mapping-summary]').text()).toContain('asset_management.cex_mapping.all_exchanges');
+  });
+
+  it('should leave out the exchange field while the mapping covers all of them', async () => {
     wrapper = createWrapper({ ...baseModel(), location: null }, { forAllExchanges: true });
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(stub('ExchangeInput').props('disabled')).toBe(true);
+    expect(stub('ExchangeInput').exists()).toBe(false);
   });
 
   it.each([

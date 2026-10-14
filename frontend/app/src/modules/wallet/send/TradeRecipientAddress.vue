@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue';
+import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import TradeAddressDisplay from '@/modules/wallet/send/TradeAddressDisplay.vue';
 import { useTradeRecipientAddress } from '@/modules/wallet/send/use-trade-recipient-address';
@@ -7,7 +8,7 @@ import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 
 const model = defineModel<string>({ required: true });
 
-defineProps<{
+const { chain } = defineProps<{
   chain: string;
   showWarning: boolean;
 }>();
@@ -44,11 +45,30 @@ watch(usedAnyFocused, (focused) => {
   handleFocusChange(focused);
 });
 
-const { containerProps: trackedContainerProps, list: trackedList, wrapperProps: trackedWrapperProps } = useVirtualList(trackedAddresses, {
+const { getAddressName } = useAddressNameResolution();
+
+/** The dialog's one search, matched against a tracked address and the name it resolves to. */
+const searchTerm = computed<string>(() => get(modelAddressBookSearch).trim().toLowerCase());
+
+const shownTracked = computed<string[]>(() => {
+  const term = get(searchTerm);
+  if (!term)
+    return get(trackedAddresses);
+  return get(trackedAddresses).filter(address => address.toLowerCase().includes(term)
+    || (getAddressName(address, chain)?.toLowerCase().includes(term) ?? false));
+});
+
+/** An address book entry that is also a tracked account is listed once, under the tracked ones. */
+const shownAddressBook = computed<string[]>(() => {
+  const tracked = new Set(get(trackedAddresses).map(address => address.toLowerCase()));
+  return get(filteredAddressBookOptions).filter(address => !tracked.has(address.toLowerCase()));
+});
+
+const { containerProps: trackedContainerProps, list: trackedList, wrapperProps: trackedWrapperProps } = useVirtualList(shownTracked, {
   itemHeight: 56,
 });
 
-const { containerProps: addressBookContainerProps, list: addressBookList, wrapperProps: addressBookWrapperProps } = useVirtualList(filteredAddressBookOptions, {
+const { containerProps: addressBookContainerProps, list: addressBookList, wrapperProps: addressBookWrapperProps } = useVirtualList(shownAddressBook, {
   itemHeight: 56,
 });
 </script>
@@ -60,37 +80,56 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
   >
     <template #activator>
       <div
-        class="flex items-center bg-rui-grey-50 dark:bg-rui-grey-900 rounded-lg border border-default mt-1 duration-50 w-full"
+        class="h-16 flex items-center gap-2 px-3 bg-rui-grey-50 dark:bg-rui-grey-900 rounded-lg border border-default mt-1 duration-50 w-full"
         data-testid="recipient-field"
         :class="{
           'border-rui-error!': !valid,
         }"
       >
-        <div
-          v-if="model"
-          class="flex w-full justify-between gap-2 p-3"
-        >
+        <template v-if="model">
           <TradeAddressDisplay
             dense
             :chain="chain"
             :address="model"
             readonly
+            class="flex-1 min-w-0"
           />
+          <RuiTooltip
+            v-if="connected && showWarning"
+            :open-delay="200"
+            :class-names="{ tooltip: 'max-w-64' }"
+          >
+            <template #activator>
+              <RuiChip
+                size="sm"
+                variant="tonal"
+                color="warning"
+                class="shrink-0"
+                data-testid="recipient-never-interacted"
+              >
+                {{ t('trade.recipient.new_address') }}
+              </RuiChip>
+            </template>
+            {{ t('trade.never_interacted') }}
+          </RuiTooltip>
           <RuiButton
             icon
             variant="text"
+            size="sm"
+            class="shrink-0"
+            :aria-label="t('common.actions.clear')"
             data-testid="recipient-clear"
             @click="reset()"
           >
             <RuiIcon
               name="lu-x"
-              size="18"
+              size="16"
             />
           </RuiButton>
-        </div>
+        </template>
         <template v-else>
-          <label class="flex flex-col flex-1 p-3">
-            <span class="text-sm text-rui-grey-500 font-medium block">
+          <label class="flex flex-col flex-1 min-w-0 gap-0.5">
+            <span class="text-sm text-rui-text-secondary font-medium">
               {{ t('trade.to_address.label') }}
             </span>
             <input
@@ -104,20 +143,27 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
               @blur="applySearchInput()"
             />
           </label>
-          <div class="p-3 pl-0">
-            <RuiButton
-              variant="outlined"
-              color="primary"
-              class="p-3!"
-              data-testid="recipient-open-address-book"
-              @click="modelOpenOptionsDialog = true"
-            >
-              <RuiIcon
-                name="lu-book-user"
-                size="18"
-              />
-            </RuiButton>
-          </div>
+          <RuiTooltip
+            :open-delay="400"
+            class="shrink-0"
+          >
+            <template #activator>
+              <RuiButton
+                variant="text"
+                color="primary"
+                icon
+                :aria-label="t('trade.recipient.select_recipient_address')"
+                data-testid="recipient-open-address-book"
+                @click="modelOpenOptionsDialog = true"
+              >
+                <RuiIcon
+                  name="lu-book-user"
+                  size="18"
+                />
+              </RuiButton>
+            </template>
+            {{ t('trade.recipient.select_recipient_address') }}
+          </RuiTooltip>
         </template>
       </div>
     </template>
@@ -148,13 +194,6 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
     </template>
   </RuiMenu>
 
-  <RuiAlert
-    v-if="connected && model && showWarning"
-    type="warning"
-    class="mt-2"
-  >
-    {{ t('trade.never_interacted') }}
-  </RuiAlert>
   <RuiDialog
     v-model="modelOpenOptionsDialog"
     max-width="500"
@@ -171,26 +210,34 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
         variant="text"
         class="absolute top-2 right-2"
         icon
+        :aria-label="t('common.actions.close')"
+        data-testid="recipient-dialog-close"
         @click="modelOpenOptionsDialog = false"
       >
-        <RuiIcon
-          class="text-white"
-          name="lu-x"
-        />
+        <RuiIcon name="lu-x" />
       </RuiButton>
-      <div class="flex flex-col max-h-[calc(100vh-200px)] overflow-hidden">
-        <div class="flex flex-1 flex-col relative overflow-hidden">
-          <div class="uppercase text-xs font-medium px-4 border-b border-default py-2 bg-rui-grey-50 dark:bg-rui-grey-900">
+      <div class="px-4 pt-3 pb-3 border-b border-default">
+        <RuiTextField
+          v-model="modelAddressBookSearch"
+          prepend-icon="lu-search"
+          dense
+          hide-details
+          color="primary"
+          :label="t('common.actions.search')"
+          label-placement="hidden"
+          :placeholder="t('common.actions.search')"
+          data-testid="recipient-dialog-search"
+        />
+      </div>
+      <div class="flex flex-col h-[min(26rem,60vh)] overflow-hidden">
+        <div
+          v-if="shownTracked.length > 0"
+          class="flex flex-1 flex-col relative overflow-hidden min-h-0"
+        >
+          <div class="text-xs font-medium text-rui-text-secondary px-4 border-b border-default py-2 bg-rui-grey-50 dark:bg-rui-grey-900">
             {{ t('trade.recipient.tracked_addresses') }}
           </div>
           <div
-            v-if="trackedAddresses.length === 0"
-            class="p-4 text-rui-text-secondary"
-          >
-            {{ t('trade.recipient.no_addresses_found') }}
-          </div>
-          <div
-            v-else
             class="flex-1"
             v-bind="trackedContainerProps"
           >
@@ -205,29 +252,15 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
             </div>
           </div>
         </div>
-        <div class="flex flex-1 flex-col overflow-hidden border-t border-default">
-          <div class="uppercase text-xs font-medium px-4 border-b border-default py-2">
+        <div
+          v-if="shownAddressBook.length > 0"
+          class="flex flex-1 flex-col overflow-hidden min-h-0"
+          :class="{ 'border-t border-default': shownTracked.length > 0 }"
+        >
+          <div class="text-xs font-medium text-rui-text-secondary px-4 border-b border-default py-2 bg-rui-grey-50 dark:bg-rui-grey-900">
             {{ t('trade.recipient.from_private_address_book') }}
           </div>
-          <div class="p-4">
-            <RuiTextField
-              v-model="modelAddressBookSearch"
-              prepend-icon="lu-search"
-              variant="outlined"
-              dense
-              hide-details
-              color="primary"
-              :label="t('common.actions.search')"
-            />
-          </div>
           <div
-            v-if="filteredAddressBookOptions.length === 0"
-            class="p-4 text-rui-text-secondary"
-          >
-            {{ t('trade.recipient.no_addresses_found') }}
-          </div>
-          <div
-            v-else
             class="flex-1"
             v-bind="addressBookContainerProps"
           >
@@ -241,6 +274,13 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
               />
             </div>
           </div>
+        </div>
+        <div
+          v-if="shownTracked.length === 0 && shownAddressBook.length === 0"
+          class="flex-1 flex items-center justify-center text-sm text-rui-text-secondary"
+          data-testid="recipient-dialog-empty"
+        >
+          {{ t('trade.recipient.no_addresses_found') }}
         </div>
       </div>
     </RuiCard>

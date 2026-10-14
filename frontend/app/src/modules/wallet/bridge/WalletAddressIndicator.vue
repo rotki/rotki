@@ -151,7 +151,6 @@ onBeforeUnmount(() => {
       </template>
     </div>
 
-    <!-- Connection Error Display -->
     <div
       v-if="connectionError"
       class="mt-2 p-2 rounded-md bg-rui-error/10 border border-rui-error/20"

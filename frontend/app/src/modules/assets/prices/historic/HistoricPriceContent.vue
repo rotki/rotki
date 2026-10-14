@@ -2,19 +2,21 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
-import dayjs from 'dayjs';
-import { ValueDisplay } from '@/modules/assets/amount-display/components';
+import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import HistoricPriceFormDialog from '@/modules/assets/prices/historic/HistoricPriceFormDialog.vue';
+import { priceDecimals } from '@/modules/assets/prices/price-decimals';
 import { HistoricPriceFilterKeys, useHistoricPriceFields } from '@/modules/assets/prices/use-historic-price-fields';
 import { useHistoricPrices } from '@/modules/assets/prices/use-historic-price-manager';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -33,11 +35,7 @@ const headers = computed<DataTableColumn<HistoricalPrice>[]>(() => [
     label: t('price_table.headers.from_asset'),
     sortable: true,
   },
-  {
-    cellClass: 'text-xs! text-rui-text-secondary!',
-    key: 'wasWorth',
-    label: '',
-  },
+  // one amount, "0.03271 EUR", where "was worth", a number, an asset and "on" split one sentence
   {
     align: 'end',
     key: 'price',
@@ -45,21 +43,12 @@ const headers = computed<DataTableColumn<HistoricalPrice>[]>(() => [
     sortable: true,
   },
   {
-    key: 'toAsset',
-    label: t('price_table.headers.to_asset'),
-    sortable: true,
-  },
-  {
-    cellClass: 'text-xs! text-rui-text-secondary!',
-    key: 'on',
-    label: '',
-  },
-  {
     key: 'timestamp',
     label: t('common.datetime'),
     sortable: true,
   },
   {
+    align: 'end',
     class: 'w-12',
     key: 'actions',
     label: '',
@@ -72,7 +61,7 @@ const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',
   price: '',
   sourceType: PriceOracle.MANUAL,
-  timestamp: dayjs().unix(),
+  timestamp: Math.floor(Date.now() / 1000),
   toAsset: '',
 });
 
@@ -153,7 +142,6 @@ onMounted(async () => {
           <RuiButton
             variant="outlined"
             color="primary"
-            size="lg"
             :loading="loading"
             @click="refresh()"
           >
@@ -167,7 +155,6 @@ onMounted(async () => {
       </RuiTooltip>
       <RuiButton
         color="primary"
-        size="lg"
         data-testid="historic-price-add"
         @click="add()"
       >
@@ -177,16 +164,20 @@ onMounted(async () => {
         {{ t('price_management.dialog.add_title') }}
       </RuiButton>
     </template>
-    <RuiCard>
-      <PillFilterBar
-        v-model:matches="matches"
-        class="mb-4"
-        :fields="fields"
-        :labels="pillLabels"
-      />
+    <TableFrame>
+      <template #toolbar>
+        <HintMenuIcon>
+          {{ t('price_management.historic.hint') }}
+        </HintMenuIcon>
+        <PillFilterBar
+          v-model:matches="matches"
+          class="flex-1 min-w-48 md:min-w-96"
+          :fields="fields"
+          :labels="pillLabels"
+        />
+      </template>
       <RuiDataTable
         v-model:sort="sort"
-        outlined
         dense
         :cols="headers"
         :loading="loading"
@@ -197,23 +188,19 @@ onMounted(async () => {
         <template #item.fromAsset="{ row }">
           <AssetDetails :asset="row.fromAsset" />
         </template>
-        <template #item.toAsset="{ row }">
-          <AssetDetails :asset="row.toAsset" />
-        </template>
         <template #item.timestamp="{ row }">
           <DateDisplay :timestamp="row.timestamp" />
         </template>
         <template #item.price="{ row }">
-          <ValueDisplay :value="row.price" />
-        </template>
-        <template #item.wasWorth>
-          {{ t('price_table.was_worth') }}
-        </template>
-        <template #item.on>
-          {{ t('price_table.on') }}
+          <AssetAmountDisplay
+            :amount="row.price"
+            :asset="row.toAsset"
+            :decimals="priceDecimals(row.price)"
+          />
         </template>
         <template #item.actions="{ row }">
           <RowActions
+            align="end"
             :disabled="loading"
             :delete-tooltip="t('price_table.actions.delete.tooltip')"
             :edit-tooltip="t('price_table.actions.edit.tooltip')"
@@ -222,7 +209,7 @@ onMounted(async () => {
           />
         </template>
       </RuiDataTable>
-    </RuiCard>
+    </TableFrame>
 
     <HistoricPriceFormDialog
       v-model="modelValue"

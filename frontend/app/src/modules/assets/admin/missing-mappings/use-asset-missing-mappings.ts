@@ -65,24 +65,22 @@ export function useAssetMissingMappings(): UseAssetMissingMappingsReturn {
   const fields = useMissingMappingsFields();
 
   const cols = computed<DataTableColumn<MissingMapping>[]>(() => [{
-    align: 'center',
-    cellClass: 'py-3',
+    cellClass: 'py-2',
     key: 'location',
     label: t('common.location'),
     sortable: true,
   }, {
-    cellClass: 'py-3',
+    cellClass: 'py-2',
     key: 'identifier',
     label: t('common.asset'),
     sortable: true,
   }, {
-    cellClass: 'py-3 border-x border-default',
-    class: 'border-x border-default',
+    cellClass: 'py-2 text-rui-text-secondary',
     key: 'details',
     label: t('common.details'),
   }, {
-    align: 'center',
-    cellClass: 'py-3 w-24',
+    align: 'end',
+    cellClass: 'py-2 w-px',
     key: 'actions',
     label: t('common.actions_text'),
   }]);

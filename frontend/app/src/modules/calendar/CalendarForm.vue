@@ -79,51 +79,34 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
-    <div>
-      <DateTimePicker
-        v-model="form.state.timestamp"
-        :label="t('common.datetime')"
-        persistent-hint
-        variant="outlined"
-        data-testid="datetime"
-        type="epoch"
-        :error-messages="form.errors('timestamp')"
-        @blur="form.touch('timestamp')"
-      />
-
-      <CalendarReminder
-        ref="reminderRef"
-        v-model="modelValue"
-        :edit-mode="editMode"
-        class="pt-2"
-      />
-    </div>
-
-    <div class="flex gap-4 pt-4">
-      <RuiTextField
-        v-model="form.state.name"
-        class="flex-1"
-        :label="t('common.name')"
-        variant="outlined"
-        color="primary"
-        :error-messages="form.errors('name')"
-        data-testid="calendar-form-name"
-        @blur="form.touch('name')"
-      />
-
-      <div class="pt-3">
+  <div class="flex flex-col gap-2">
+    <RuiTextField
+      v-model="form.state.name"
+      :label="t('common.name')"
+      color="primary"
+      :error-messages="form.errors('name')"
+      data-testid="calendar-form-name"
+      @blur="form.touch('name')"
+    >
+      <template #prepend>
         <CalendarColorInput v-model="form.state.color" />
-      </div>
-    </div>
+      </template>
+    </RuiTextField>
 
-    <!-- The description is optional on the event but the field takes a string, so it is coerced
-         at the binding rather than behind a writable computed. -->
+    <DateTimePicker
+      v-model="form.state.timestamp"
+      :label="t('common.datetime')"
+      data-testid="datetime"
+      type="epoch"
+      :error-messages="form.errors('timestamp')"
+      @blur="form.touch('timestamp')"
+    />
+
     <RuiTextArea
       :model-value="form.state.description ?? ''"
       :label="t('common.description')"
       color="primary"
-      min-rows="5"
+      min-rows="3"
       :error-messages="form.errors('description')"
       :hint="t('common.optional')"
       data-testid="calendar-form-description"
@@ -131,24 +114,32 @@ defineExpose({
       @blur="form.touch('description')"
     />
 
-    <BlockchainAccountSelector
-      v-model="accounts"
-      :field="{
-        errorMessages: form.errors('address'),
-        hint: t('common.optional'),
-        label: t('common.account'),
-        showDetails: true,
-      }"
-    />
+    <div class="grid gap-x-4 gap-y-2 md:grid-cols-2">
+      <BlockchainAccountSelector
+        v-model="accounts"
+        :field="{
+          errorMessages: form.errors('address'),
+          hint: t('common.optional'),
+          label: t('common.account'),
+          showDetails: true,
+        }"
+      />
 
-    <CounterpartyInput
-      v-model="form.state.counterparty"
-      :label="t('common.counterparty')"
-      data-testid="counterparty"
-      :error-messages="form.errors('counterparty')"
-      :hint="t('common.optional')"
-      persistent-hint
-      @blur="form.touch('counterparty')"
+      <CounterpartyInput
+        v-model="form.state.counterparty"
+        :label="t('common.counterparty')"
+        data-testid="counterparty"
+        :error-messages="form.errors('counterparty')"
+        :hint="t('common.optional')"
+        persistent-hint
+        @blur="form.touch('counterparty')"
+      />
+    </div>
+
+    <CalendarReminder
+      ref="reminderRef"
+      v-model="modelValue"
+      :edit-mode="editMode"
     />
 
     <RuiCheckbox

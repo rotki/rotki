@@ -90,27 +90,50 @@ watchImmediate(days, (days) => {
   emit('update:range', [fromTimestamp, toTimestamp]);
 });
 
-function getEvents(day: Dayjs) {
-  return eventsWithDate.filter(item => item.date === day.format('YYYY-MM-DD'));
+const NO_EVENTS: CalendarEvent[] = [];
+
+/**
+ * The events grouped by day once per change of the event list. Each cell gets the same array back
+ * until the events change, so selecting a day re-renders only the cells whose state flips, not all
+ * 42 as when every render filtered the list again and handed each cell a new array.
+ */
+const eventsByDate = computed<Map<string, CalendarEvent[]>>(() => {
+  const grouped = new Map<string, CalendarEvent[]>();
+  for (const event of eventsWithDate) {
+    const dayEvents = grouped.get(event.date);
+    if (dayEvents)
+      dayEvents.push(event);
+    else
+      grouped.set(event.date, [event]);
+  }
+  return grouped;
+});
+
+const cells = computed<{ key: string; day: { date: Dayjs; isCurrentMonth: boolean } }[]>(() =>
+  get(days).map(day => ({ day, key: day.date.format('YYYY-MM-DD') })),
+);
+
+function getEvents(key: string): CalendarEvent[] {
+  return get(eventsByDate).get(key) ?? NO_EVENTS;
 }
 </script>
 
 <template>
   <div class="overflow-x-auto">
     <div
-      class="rounded-xl border border-default overflow-hidden grid grid-cols-7 [&>div:not(:nth-child(7n))]:border-r min-w-224"
+      class="grid grid-cols-7 [&>div:not(:nth-child(7n))]:border-r [&>div:not(:nth-child(7n))]:border-rui-divider min-w-160"
     >
       <CalendarWeekdays />
       <CalendarMonthDayItem
-        v-for="(day, index) in days"
-        :key="day.date.toString()"
+        v-for="({ day, key }, index) in cells"
+        :key="key"
         :class="{ 'border-t': index > 6 }"
         :day="day"
-        :events="getEvents(day.date)"
+        :events="getEvents(key)"
         :is-past="day.date.isBefore(today, 'day')"
         :is-selected="day.date.isSame(selectedDate, 'day')"
         :is-today="day.date.isSame(today, 'day')"
-        class="border-default"
+        class="border-rui-divider"
         @edit="edit($event)"
         @select-date="setSelectedDate(day.date)"
         @add="add(day.date)"

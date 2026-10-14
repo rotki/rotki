@@ -8,7 +8,7 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <RuiButtonGroup class="dark:divide-rui-grey-800!">
+  <div class="flex items-center justify-end gap-1">
     <RuiTooltip
       :open-delay="300"
       :close-delay="0"
@@ -17,12 +17,16 @@ const { t } = useI18n({ useScope: 'global' });
         <RuiButton
           color="success"
           icon
+          size="sm"
           variant="text"
-          class="m-auto rounded-none!"
+          :aria-label="t('asset_table.newly_detected.accept')"
           data-testid="accept-token"
           @click="emit('accept')"
         >
-          <RuiIcon name="lu-check" />
+          <RuiIcon
+            name="lu-check"
+            size="16"
+          />
         </RuiButton>
       </template>
       {{ t('asset_table.newly_detected.accept') }}
@@ -35,15 +39,19 @@ const { t } = useI18n({ useScope: 'global' });
         <RuiButton
           color="error"
           icon
+          size="sm"
           variant="text"
-          class="m-auto rounded-none!"
+          :aria-label="t('asset_table.newly_detected.mark_as_spam')"
           data-testid="mark-token-spam"
           @click="emit('mark-spam')"
         >
-          <RuiIcon name="lu-octagon-alert" />
+          <RuiIcon
+            name="lu-octagon-alert"
+            size="16"
+          />
         </RuiButton>
       </template>
       {{ t('asset_table.newly_detected.mark_as_spam') }}
     </RuiTooltip>
-  </RuiButtonGroup>
+  </div>
 </template>

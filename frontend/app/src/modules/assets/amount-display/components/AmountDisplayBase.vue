@@ -116,10 +116,6 @@ const ZERO_WIDTH_SPACE = '​';
         :no-truncate="noTruncate"
       />
     </template>
-    <!--
-      While loading, a zero-width space keeps the value's line box and baseline, so nothing moves when
-      the value arrives; the bar sits inside that line, inset so stacked placeholders keep a gap.
-    -->
     <template v-else>
       {{ ZERO_WIDTH_SPACE }}<span
         class="skeleton absolute inset-x-0 inset-y-1 rounded-md"

@@ -125,10 +125,10 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col gap-3">
+  <div class="flex flex-col gap-4">
     <div
       v-if="editMode"
-      class="flex items-center text-caption text-rui-text-secondary -mt-2 mb-4 gap-2"
+      class="flex items-center text-caption text-rui-text-secondary gap-2"
     >
       <span class="font-medium"> {{ t('asset_form.identifier') }}: </span>
       <div class="flex items-center">
@@ -141,7 +141,7 @@ defineExpose({
         />
       </div>
     </div>
-    <div class="grid md:grid-cols-2 gap-x-4 gap-y-3">
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-1">
       <div
         class="col-span-2"
         data-testid="type-select"
@@ -284,7 +284,7 @@ defineExpose({
         />
       </div>
 
-      <div class="col-span-2 grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
+      <div class="col-span-2 grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-1">
         <RuiTextField
           v-model="form.state.name"
           data-testid="name-input"
@@ -336,7 +336,7 @@ defineExpose({
     <RuiCard
       no-padding
       rounded="sm"
-      class="col-span-2 mt-2 mb-4 overflow-hidden"
+      class="col-span-2 overflow-hidden"
     >
       <RuiAccordions>
         <RuiAccordion

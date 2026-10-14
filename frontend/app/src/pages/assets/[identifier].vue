@@ -6,6 +6,8 @@ import AssetLocations from '@/modules/assets/AssetLocations.vue';
 import AssetValueRow from '@/modules/assets/AssetValueRow.vue';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import { NoteLocation } from '@/modules/core/common/notes';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { AssetAmountAndValueOverTime } from '@/modules/premium/premium';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
@@ -50,6 +52,17 @@ const {
   toggleSpam,
   toggleWhitelistAsset,
 } = useAssetDetail(() => identifier);
+
+const { getChainName } = useSupportedChains();
+
+const title = computed<string | undefined>(() => (get(isCustomAsset) ? get(asset)?.name : get(asset)?.symbol) ?? undefined);
+
+const subtitle = computed<string | undefined>(() => (get(isCustomAsset) ? get(asset)?.customAssetType : get(asset)?.name) ?? undefined);
+
+const chainName = computed<string | undefined>(() => {
+  const location = get(contractInfo)?.location;
+  return location ? getChainName(location) : undefined;
+});
 </script>
 
 <template>
@@ -57,69 +70,53 @@ const {
     class="p-4"
     hide-header
   >
-    <div class="flex flex-wrap justify-between w-full gap-4">
-      <div class="flex gap-4 items-center">
+    <div class="flex flex-wrap items-center justify-between w-full gap-4">
+      <div class="flex items-center gap-4 min-w-0">
         <AssetIcon
           :identifier="identifier"
           size="48px"
           :show-chain="!isCollectionParent"
         />
 
-        <div
-          v-if="!isCustomAsset"
-          class="flex flex-col"
-        >
-          <span class="text-h5 font-medium">{{ asset?.symbol }}</span>
-          <span class="text-body-2 text-rui-text-secondary">
-            {{ asset?.name }}
-          </span>
-        </div>
-
-        <div
-          v-else
-          class="flex flex-col"
-        >
-          <span class="text-h5 font-medium">{{ asset?.name }}</span>
-          <span class="text-body-2 text-rui-text-secondary">
-            {{ asset?.customAssetType }}
-          </span>
-        </div>
-
-        <div class="flex items-center gap-2 ml-4">
-          <HashLink
-            v-if="contractInfo"
-            :location="contractInfo.location"
-            type="token"
-            :text="contractInfo.address"
-            :display-mode="contractInfo.location ? 'link' : 'copy'"
-            hide-text
-            size="18"
-            class="[&_a]:p-2.5!"
-          />
-
-          <AssetExternalLinks
-            v-if="asset"
-            :coingecko="asset.coingecko"
-            :cryptocompare="asset.cryptocompare"
-          />
+        <div class="flex flex-col min-w-0">
+          <span class="text-h5 leading-7 font-semibold truncate">{{ title }}</span>
+          <div
+            class="flex flex-wrap items-center gap-x-2 h-6 text-sm text-rui-text-secondary"
+            data-testid="asset-meta"
+          >
+            <span v-if="subtitle">{{ subtitle }}</span>
+            <template v-if="contractInfo">
+              <span
+                v-if="subtitle"
+                class="size-1 rounded-full bg-rui-text-disabled"
+              />
+              <span v-if="chainName">{{ chainName }}</span>
+              <HashLink
+                :location="contractInfo.location"
+                type="token"
+                :text="contractInfo.address"
+                :display-mode="contractInfo.location ? 'default' : 'copy'"
+                size="14"
+              />
+            </template>
+            <template v-if="asset?.coingecko || asset?.cryptocompare">
+              <span class="size-1 rounded-full bg-rui-text-disabled" />
+              <AssetExternalLinks
+                :coingecko="asset.coingecko"
+                :cryptocompare="asset.cryptocompare"
+              />
+            </template>
+          </div>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <RuiButton
-          v-if="!isCollectionParent"
-          icon
-          variant="text"
-          data-testid="edit-asset"
-          @click="goToEdit()"
+      <div class="flex items-center gap-3">
+        <div
+          v-if="!isCustomAsset"
+          class="flex items-center gap-2"
         >
-          <RuiIcon name="lu-pencil" />
-        </RuiButton>
-
-        <template v-if="!isCustomAsset">
-          <div class="text-body-2 mr-4">
+          <span class="text-sm">
             {{ t('assets.action.ignore') }}
-          </div>
-
+          </span>
           <ManagedAssetIgnoreSwitch
             :asset="{ identifier, assetType: asset?.assetType, protocol: asset?.protocol }"
             :loading="loadingIgnore"
@@ -128,7 +125,22 @@ const {
             @toggle-whitelist="toggleWhitelistAsset()"
             @toggle-spam="toggleSpam()"
           />
-        </template>
+        </div>
+        <RuiButton
+          v-if="!isCollectionParent"
+          variant="outlined"
+          color="primary"
+          data-testid="edit-asset"
+          @click="goToEdit()"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-pencil"
+              size="16"
+            />
+          </template>
+          {{ t('common.actions.edit') }}
+        </RuiButton>
       </div>
     </div>
 
@@ -151,15 +163,19 @@ const {
       :identifier="identifier"
     />
 
-    <RuiCard v-else>
-      <template #header>
+    <section
+      v-else
+      class="flex flex-col gap-3"
+    >
+      <h2 class="text-base font-semibold text-rui-text">
         {{ t('assets.multi_chain_assets') }}
-      </template>
-
-      <AssetBalances
-        :balances="collectionBalance"
-        :breakdown="{ all: true, hide: true }"
-      />
-    </RuiCard>
+      </h2>
+      <TableFrame>
+        <AssetBalances
+          :balances="collectionBalance"
+          :breakdown="{ all: true, hide: true }"
+        />
+      </TableFrame>
+    </section>
   </TablePageLayout>
 </template>

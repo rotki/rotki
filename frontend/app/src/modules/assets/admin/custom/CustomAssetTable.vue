@@ -7,9 +7,9 @@ import { useCustomAssetTable } from '@/modules/assets/admin/custom/use-custom-as
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
-import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -48,19 +48,17 @@ const deleteAsset = (asset: CustomAsset): void => emit('delete-asset', asset);
 </script>
 
 <template>
-  <RuiCard>
-    <template #custom-header>
-      <div class="flex items-center gap-3 px-4 pt-4">
-        <HintMenuIcon>
-          {{ t('asset_table.custom.subtitle') }}
-        </HintMenuIcon>
-        <PillFilterBar
-          v-model:matches="filtersModel"
-          class="flex-1 min-w-48 md:min-w-96"
-          :fields="fields"
-          :labels="pillLabels"
-        />
-      </div>
+  <TableFrame>
+    <template #toolbar>
+      <HintMenuIcon>
+        {{ t('asset_table.custom.subtitle') }}
+      </HintMenuIcon>
+      <PillFilterBar
+        v-model:matches="filtersModel"
+        class="flex-1 min-w-48 md:min-w-96"
+        :fields="fields"
+        :labels="pillLabels"
+      />
     </template>
     <RuiDataTable
       v-model:pagination.external="paginationModel"
@@ -74,7 +72,6 @@ const deleteAsset = (asset: CustomAsset): void => emit('delete-asset', asset);
       data-testid="custom-assets-table"
       single-expand
       sticky-header
-      outlined
       dense
       class="custom-assets-table"
     >
@@ -82,12 +79,17 @@ const deleteAsset = (asset: CustomAsset): void => emit('delete-asset', asset);
         <AssetDetailsBase :asset="getAsset(row)" />
       </template>
       <template #item.custom_asset_type="{ row }">
-        <BadgeDisplay>
+        <RuiChip
+          size="sm"
+          variant="tonal"
+          color="primary"
+        >
           {{ row.customAssetType }}
-        </BadgeDisplay>
+        </RuiChip>
       </template>
       <template #item.actions="{ row }">
         <RowActions
+          align="end"
           :edit-tooltip="t('asset_table.edit_tooltip')"
           :delete-tooltip="t('asset_table.delete_tooltip')"
           @edit-click="edit(row)"
@@ -100,14 +102,17 @@ const deleteAsset = (asset: CustomAsset): void => emit('delete-asset', asset);
         </RowActions>
       </template>
       <template #expanded-item="{ row }">
-        <RuiCard>
-          <div class="font-bold">
-            {{ t('common.notes') }}:
-          </div>
-          <div class="pt-2">
+        <div
+          class="pl-12 flex flex-col gap-0.5 max-w-prose"
+          data-testid="custom-asset-notes"
+        >
+          <span class="text-caption font-medium text-rui-text-secondary">
+            {{ t('common.notes') }}
+          </span>
+          <p class="m-0 text-body-2 text-rui-text whitespace-pre-line">
             {{ row.notes }}
-          </div>
-        </RuiCard>
+          </p>
+        </div>
       </template>
       <template #item.expand="{ row }">
         <RuiTableRowExpander
@@ -117,5 +122,5 @@ const deleteAsset = (asset: CustomAsset): void => emit('delete-asset', asset);
         />
       </template>
     </RuiDataTable>
-  </RuiCard>
+  </TableFrame>
 </template>

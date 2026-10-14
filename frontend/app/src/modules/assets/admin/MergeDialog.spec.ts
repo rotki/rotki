@@ -169,7 +169,7 @@ describe('mergeDialog', () => {
     expect(messages('merge-target')).toEqual(['merge_dialog.target.non_empty']);
   });
 
-  it('should seed both fields from the props when the dialog opens', async () => {
+  it('should seed both from the props when the dialog opens, showing a given source as text', async () => {
     wrapper = createWrapper({
       modelValue: false,
       sourceIdentifier: 'eip155:1/erc20:0xseeded',
@@ -178,7 +178,9 @@ describe('mergeDialog', () => {
     await wrapper.setProps({ modelValue: true });
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(field('merge-source').props('modelValue')).toBe('eip155:1/erc20:0xseeded');
+    // A row hands the source over, so there is nothing to type: no field, just the identifier.
+    expect(field('merge-source').exists()).toBe(false);
+    expect(wrapper.get('[data-testid=merge-source-summary]').text()).toContain('eip155:1/erc20:0xseeded');
     expect(field('merge-target').props('modelValue')).toBe('BTC');
   });
 

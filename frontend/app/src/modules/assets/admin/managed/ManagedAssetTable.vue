@@ -9,16 +9,16 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import AssetUnderlyingTokens from '@/modules/assets/admin/AssetUnderlyingTokens.vue';
 import ManagedAssetActions from '@/modules/assets/admin/managed/ManagedAssetActions.vue';
 import ManagedAssetIgnoreSwitch from '@/modules/assets/admin/managed/ManagedAssetIgnoreSwitch.vue';
+import ManagedAssetName from '@/modules/assets/admin/managed/ManagedAssetName.vue';
+import ManagedAssetRowActions from '@/modules/assets/admin/managed/ManagedAssetRowActions.vue';
 import { useAssetDisplayHelpers } from '@/modules/assets/admin/use-asset-display-helpers';
 import { useManagedAssetOperations } from '@/modules/assets/admin/use-managed-asset-operations';
 import { useManagedAssetTable } from '@/modules/assets/admin/use-managed-asset-table';
-import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
-import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
@@ -45,7 +45,6 @@ const emit = defineEmits<{
   'edit': [asset: SupportedAsset];
   'delete-asset': [asset: SupportedAsset];
 }>();
-const { t } = useI18n({ useScope: 'global' });
 
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
@@ -80,18 +79,20 @@ const { fetchIgnoredAssets } = useIgnoredAssetOperations();
 </script>
 
 <template>
-  <div data-testid="managed-assets-table">
-    <ManagedAssetActions
-      v-model:pill-params="pillParams"
-      v-model:selected="selected"
-      v-model:matches="filtersModel"
-      :ignored-handling="ignoredHandling"
-      :fields="fields"
-      :spam-disabled="spamDisabled"
-      @ignore="massIgnore($event)"
-      @mark-spam="massSpam()"
-      @refresh:ignored="fetchIgnoredAssets()"
-    />
+  <TableFrame data-testid="managed-assets-table">
+    <template #toolbar>
+      <ManagedAssetActions
+        v-model:pill-params="pillParams"
+        v-model:selected="selected"
+        v-model:matches="filtersModel"
+        :ignored-handling="ignoredHandling"
+        :fields="fields"
+        :spam-disabled="spamDisabled"
+        @ignore="massIgnore($event)"
+        @mark-spam="massSpam()"
+        @refresh:ignored="fetchIgnoredAssets()"
+      />
+    </template>
 
     <RuiDataTable
       v-model="selected"
@@ -109,21 +110,12 @@ const { fetchIgnoredAssets } = useIgnoredAssetOperations();
       data-testid="managed-assets-table"
       single-expand
       sticky-header
-      outlined
     >
       <template #item.symbol="{ row }">
-        <div class="flex items-center gap-2">
-          <AssetDetailsBase :asset="getAsset(row)" />
-          <RuiChip
-            v-if="row.isRebasing"
-            color="primary"
-            size="sm"
-            variant="outlined"
-            class="shrink-0"
-          >
-            {{ t('common.rebasing_token') }}
-          </RuiChip>
-        </div>
+        <ManagedAssetName
+          :asset="getAsset(row)"
+          :rebasing="!!row.isRebasing"
+        />
       </template>
       <template #item.address="{ row }">
         <HashLink
@@ -155,18 +147,12 @@ const { fetchIgnoredAssets } = useIgnoredAssetOperations();
         />
       </template>
       <template #item.actions="{ row }">
-        <RowActions
+        <ManagedAssetRowActions
           v-if="canBeEdited(row)"
-          :edit-tooltip="t('asset_table.edit_tooltip')"
-          :delete-tooltip="t('asset_table.delete_tooltip')"
-          @edit-click="edit(row)"
-          @delete-click="deleteAsset(row)"
-        >
-          <CopyButton
-            :tooltip="t('asset_table.copy_identifier.tooltip')"
-            :value="row.identifier"
-          />
-        </RowActions>
+          :identifier="row.identifier"
+          @edit="edit(row)"
+          @delete="deleteAsset(row)"
+        />
       </template>
       <template #expanded-item="{ row }">
         <AssetUnderlyingTokens
@@ -182,5 +168,5 @@ const { fetchIgnoredAssets } = useIgnoredAssetOperations();
         />
       </template>
     </RuiDataTable>
-  </div>
+  </TableFrame>
 </template>

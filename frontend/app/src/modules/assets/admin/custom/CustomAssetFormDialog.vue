@@ -41,6 +41,7 @@ const { dialogTitle, loading, modelErrorMessages, modelValue, save } = useCustom
     :display="!!modelValue"
     :title="dialogTitle"
     :action="{ primary: t('common.actions.save') }"
+    :layout="{ divide: true }"
     :loading="loading"
     :prompt-on-close="stateUpdated"
     @confirm="save()"

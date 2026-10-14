@@ -36,9 +36,25 @@ describe('modules/assets/detection/NewlyDetectedAssetToolbar', () => {
     expect(wrapper.emitted('mark-spam')).toHaveLength(1);
   });
 
-  it('should disable the action buttons when nothing is selected', () => {
+  it('should show no selection actions, only the hint and the filter, when nothing is selected', () => {
     const wrapper = mountToolbar({ selectedCount: 0 });
-    expect(wrapper.find('[data-testid=accept-selected]').attributes('disabled')).toBeDefined();
-    expect(wrapper.find('[data-testid=mark-selected-spam]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-testid=table-selection-bar]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=accept-selected]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=mark-selected-spam]').exists()).toBe(false);
+  });
+
+  it('should offer to widen the selection to every matching token until all are selected', async () => {
+    const partial = mountToolbar({ found: 5, selectedCount: 2 });
+    await partial.find('[data-testid=select-all-matching]').trigger('click');
+    expect(partial.emitted('toggle-selection')).toHaveLength(1);
+
+    const all = mountToolbar({ allSelected: true, found: 5, selectedCount: 5 });
+    expect(all.find('[data-testid=select-all-matching]').exists()).toBe(false);
+  });
+
+  it('should ask to clear the selection from the bar', async () => {
+    const wrapper = mountToolbar({ selectedCount: 2 });
+    await wrapper.find('[data-testid=table-selection-clear]').trigger('click');
+    expect(wrapper.emitted('clear-selection')).toHaveLength(1);
   });
 });

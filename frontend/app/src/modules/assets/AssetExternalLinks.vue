@@ -9,6 +9,8 @@ const { coingecko, cryptocompare } = defineProps<{
   cryptocompare?: string;
 }>();
 
+const { t } = useI18n({ useScope: 'global' });
+
 const { coingeckoAsset, cryptocompareAsset } = externalLinks;
 </script>
 
@@ -19,15 +21,15 @@ const { coingeckoAsset, cryptocompareAsset } = externalLinks;
     :url="coingeckoAsset.replace('$symbol', coingecko)"
   >
     <RuiButton
-      size="sm"
+      variant="text"
       icon
+      size="sm"
+      :aria-label="t('external_services.coingecko.title')"
     >
-      <template #prepend>
-        <AppImage
-          size="30px"
-          :src="getPublicServiceImagePath('coingecko.svg')"
-        />
-      </template>
+      <AppImage
+        size="16px"
+        :src="getPublicServiceImagePath('coingecko.svg')"
+      />
     </RuiButton>
   </ExternalLink>
   <ExternalLink
@@ -36,15 +38,15 @@ const { coingeckoAsset, cryptocompareAsset } = externalLinks;
     :url="cryptocompareAsset.replace('$symbol', cryptocompare)"
   >
     <RuiButton
-      size="sm"
+      variant="text"
       icon
+      size="sm"
+      :aria-label="t('external_services.cryptocompare.title')"
     >
-      <template #prepend>
-        <AppImage
-          size="30px"
-          :src="getPublicServiceImagePath('cryptocompare.svg')"
-        />
-      </template>
+      <AppImage
+        size="16px"
+        :src="getPublicServiceImagePath('cryptocompare.svg')"
+      />
     </RuiButton>
   </ExternalLink>
 </template>

@@ -22,14 +22,17 @@ async function refresh() {
   <RuiButton
     variant="outlined"
     color="primary"
-    size="lg"
+    size="sm"
     :loading="refreshing"
     data-testid="price-refresh"
     :disabled="disabled"
     @click="refresh()"
   >
     <template #prepend>
-      <RuiIcon name="lu-refresh-ccw" />
+      <RuiIcon
+        name="lu-refresh-ccw"
+        size="16"
+      />
     </template>
     {{ t('price_refresh.button') }}
   </RuiButton>
