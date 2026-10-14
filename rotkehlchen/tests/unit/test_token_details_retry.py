@@ -21,6 +21,7 @@ from rotkehlchen.assets import details_retry
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.details_retry import (
     TOKEN_DETAILS_RETRY_MAX_ATTEMPTS,
+    TOKEN_DETAILS_RETRY_MAX_POSTPONES,
     TokenDetailsRetryMark,
     count_token_details_retry_attempt,
     get_token_details_retry_marks,
@@ -1304,3 +1305,24 @@ def test_asset_update_changing_a_token_keeps_its_retry_mark(
 
     assert set(_marks()) == {token.evm_address}
 
+
+def test_lone_token_failing_on_its_own_is_given_up_after_many_postponed_runs(
+        database: DBHandler,
+) -> None:
+    """With no other token to answer, a token that always fails looks like an outage, so a run
+    only postpones it. After TOKEN_DETAILS_RETRY_MAX_POSTPONES runs it counts an attempt, and
+    after enough of those it is given up."""
+    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=(address := _address(1)), saved=None)  # noqa: E501
+    chains_aggregator, _ = _chains_aggregator(database=database, infos=RemoteError('fails'))
+
+    for _ in range(TOKEN_DETAILS_RETRY_MAX_POSTPONES - 1):
+        retry_missing_token_details(chains_aggregator)
+    assert _marks() == {address: (0, None)}  # still not an attempt
+
+    retry_missing_token_details(chains_aggregator)
+    assert _marks() == {address: (1, None)}
+
+    for _ in range((TOKEN_DETAILS_RETRY_MAX_ATTEMPTS - 1) * TOKEN_DETAILS_RETRY_MAX_POSTPONES):
+        retry_missing_token_details(chains_aggregator)
+    assert _marks() == {}
+    assert is_token_details_retry_given_up(ChainID.ETHEREUM, address) is True
