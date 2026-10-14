@@ -758,7 +758,8 @@ def create_evm_token_if_missing(
         decimals: int,
 ) -> bool:
     """Create an erc20 token with the given details only if it is not in the DB. Unlike
-    get_or_create_evm_token an existing token is left untouched.
+    get_or_create_evm_token an existing token is left untouched. Has to be called holding
+    get_or_create_token_lock, so that the caller can read what it creates it with under it.
 
     Returns whether the token was created.
     """
@@ -774,19 +775,18 @@ def create_evm_token_if_missing(
             is_spam_token := check_if_spam_token(symbol=symbol, name=name)
         ) else None,
     )
-    with userdb.get_or_create_token_lock:
-        try:
-            Asset(token.identifier).check_existence()
-        except UnknownAsset:
-            pass
-        else:
-            return False
+    try:
+        Asset(token.identifier).check_existence()
+    except UnknownAsset:
+        pass
+    else:
+        return False
 
-        try:
-            _add_new_token(userdb=userdb, token=token, is_spam_token=is_spam_token, encounter=None)
-        except InputError as e:  # added outside the lock, like an asset update
-            log.debug('Did not create token %s due to %s', token.identifier, e)
-            return False
+    try:
+        _add_new_token(userdb=userdb, token=token, is_spam_token=is_spam_token, encounter=None)
+    except InputError as e:  # added outside the lock, like an asset update
+        log.debug('Did not create token %s due to %s', token.identifier, e)
+        return False
 
     return True
 

@@ -58,6 +58,13 @@ TokenDetails = tuple[str | None, str | None, int]
 TOKEN_DETAILS_INDEX: Final = {'name': 0, 'symbol': 1, 'decimals': 2}
 
 
+TOKEN_DETAILS_QUERY: Final = (
+    'SELECT A.name, C.symbol, B.decimals FROM assets AS A JOIN evm_tokens AS B '
+    'ON A.identifier=B.identifier LEFT JOIN common_asset_details AS C '
+    'ON C.identifier=A.identifier WHERE A.identifier=?'
+)
+
+
 class TokenDetailsRetryMark(NamedTuple):
     chain_id: ChainID
     address: ChecksumEvmAddress
@@ -171,6 +178,41 @@ def mark_token_details_retry(
         )
 
 
+def _deserialize_mark(
+        chain_id: ChainID,
+        address: ChecksumEvmAddress,
+        value: str,
+) -> TokenDetailsRetryMark | None:
+    try:
+        data = jsonloads_dict(value)
+        return TokenDetailsRetryMark(
+            chain_id=chain_id,
+            address=address,
+            attempts=data['attempts'],
+            saved=None if (saved := data['saved']) is None else tuple(saved),
+            # marks from before the missing details were kept had all of them retried
+            missing=frozenset(data.get('missing', ERC20_PROPERTIES)),
+            given=data.get('given', {}),
+        )
+    except (JSONDecodeError, KeyError) as e:
+        log.error('Skipping malformed token details retry mark %s due to %s', address, e)
+        return None
+
+
+def get_token_details_retry_mark(
+        chain_id: ChainID,
+        address: ChecksumEvmAddress,
+) -> TokenDetailsRetryMark | None:
+    """Get the retry mark of a token, if it has one"""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        value = globaldb_get_unique_cache_value(
+            cursor=cursor,
+            key_parts=_mark_key_parts(chain_id=chain_id, address=address),
+        )
+
+    return None if value is None else _deserialize_mark(chain_id=chain_id, address=address, value=value)  # noqa: E501
+
+
 def get_token_details_retry_marks(
         chain_id: ChainID,
         limit: int,
@@ -185,19 +227,12 @@ def get_token_details_retry_marks(
             'ORDER BY last_queried_ts, key LIMIT ?',
             (prefix.replace('_', '\\_') + '0x%', limit),
         ):
-            try:
-                data = jsonloads_dict(value)
-                marks.append(TokenDetailsRetryMark(
-                    chain_id=chain_id,
-                    address=ChecksumEvmAddress(key[len(prefix):]),
-                    attempts=data['attempts'],
-                    saved=None if (saved := data['saved']) is None else tuple(saved),
-                    # marks from before the missing details were kept had all of them retried
-                    missing=frozenset(data.get('missing', ERC20_PROPERTIES)),
-                    given=data.get('given', {}),
-                ))
-            except (JSONDecodeError, KeyError) as e:
-                log.error('Skipping malformed token details retry mark %s due to %s', key, e)
+            if (mark := _deserialize_mark(
+                chain_id=chain_id,
+                address=ChecksumEvmAddress(key[len(prefix):]),
+                value=value,
+            )) is not None:
+                marks.append(mark)
 
     return marks
 
@@ -211,9 +246,28 @@ def _delete_mark(write_cursor: DBCursor, chain_id: ChainID, address: ChecksumEvm
     return write_cursor.rowcount != 0
 
 
-def remove_token_details_retry_mark(chain_id: ChainID, address: ChecksumEvmAddress) -> None:
+def remove_token_details_retry_mark(
+        chain_id: ChainID,
+        address: ChecksumEvmAddress,
+        only_created: bool = False,
+) -> None:
+    """Remove the retry mark of a token. With only_created the mark is kept unless it is of a
+    token that was not created when marked and exists now, checked in the deletion transaction.
+    A mark that is not like that was written after the caller read the one it is cleaning up:
+    a decoder created the token with fallbacks, or the token was deleted and seen again, and
+    it still tracks what has to be recovered."""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        _delete_mark(write_cursor=write_cursor, chain_id=chain_id, address=address)
+        if only_created:
+            write_cursor.execute(
+                "DELETE FROM unique_cache WHERE key=? AND json_extract(value, '$.saved') IS NULL "
+                'AND EXISTS (SELECT 1 FROM evm_tokens WHERE identifier=?)',
+                (
+                    compute_cache_key(_mark_key_parts(chain_id=chain_id, address=address)),
+                    evm_address_to_identifier(address=address, chain_id=chain_id),
+                ),
+            )
+        else:
+            _delete_mark(write_cursor=write_cursor, chain_id=chain_id, address=address)
 
 
 def stop_token_details_retry(chain_id: ChainID, address: ChecksumEvmAddress) -> bool:
@@ -287,12 +341,7 @@ def count_token_details_retry_attempt(mark: TokenDetailsRetryMark) -> None:
 
 def _read_token_details(write_cursor: DBCursor, identifier: str) -> TokenDetails | None:
     """Read the name, symbol and decimals of a token. None if it does not exist"""
-    return write_cursor.execute(
-        'SELECT A.name, C.symbol, B.decimals FROM assets AS A JOIN evm_tokens AS B '
-        'ON A.identifier=B.identifier LEFT JOIN common_asset_details AS C '
-        'ON C.identifier=A.identifier WHERE A.identifier=?',
-        (identifier,),
-    ).fetchone()
+    return write_cursor.execute(TOKEN_DETAILS_QUERY, (identifier,)).fetchone()
 
 
 def save_found_token_details(
@@ -428,17 +477,22 @@ def get_given_up_tokens_added_since(chain_id: ChainID) -> list[ChecksumEvmAddres
 
 
 def clear_given_up_attempts(chain_id: ChainID, addresses: Sequence[ChecksumEvmAddress]) -> None:
-    """Clear the attempts kept by the given up tokens that were added after being given up"""
+    """Clear the attempts kept by the given up tokens that were added after being given up.
+    Only the entries that still exist are updated, since the token may have been deleted since
+    they were selected, which removes them, and a stale cleanup must not recreate one."""
     if len(addresses) == 0:
         return
 
+    value = _serialize_mark(attempts=0, saved=None)
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        for address in addresses:
-            globaldb_set_unique_cache_value(
-                write_cursor=write_cursor,
-                key_parts=_mark_key_parts(chain_id=chain_id, address=address, given_up=True),
-                value=_serialize_mark(attempts=0, saved=None),
-            )
+        write_cursor.executemany(
+            'UPDATE unique_cache SET value=? WHERE key=?',
+            [
+                (value, compute_cache_key(
+                    _mark_key_parts(chain_id=chain_id, address=address, given_up=True),
+                )) for address in addresses
+            ],
+        )
 
 
 def _flag_transactions_for_redecoding(
@@ -504,3 +558,42 @@ def redecode_created_tokens_txs(
         ),
         values=addresses,
     )
+
+
+def redecode_pending_token_txs(
+        database: DBHandler,
+        mark: TokenDetailsRetryMark,
+) -> bool:
+    """Redecode the transactions of a marked token whose details changed since it was marked,
+    which happens if a previous run stopped after writing them and before redecoding, or if
+    someone else changed them. It does not depend on what the nodes return, so a token whose
+    queries stop answering is not given up with its events calculated with the old details.
+
+    Returns whether there was anything pending, in which case the mark was updated.
+    """
+    if mark.saved is None:
+        return False
+
+    identifier = evm_address_to_identifier(address=mark.address, chain_id=mark.chain_id)
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        if (current := cursor.execute(TOKEN_DETAILS_QUERY, (identifier,)).fetchone()) is None:
+            return False
+
+    if len(changed := frozenset(
+        prop for prop in mark.missing
+        if current[TOKEN_DETAILS_INDEX[prop]] != mark.saved[TOKEN_DETAILS_INDEX[prop]]
+    )) == 0:
+        return False
+
+    redecode_token_txs(database=database, chain_id=mark.chain_id, address=mark.address)
+    finish_token_details_retry(
+        chain_id=mark.chain_id,
+        address=mark.address,
+        saved=SavedDetails(
+            written=frozenset(),
+            redecode=True,
+            remaining=mark.missing - changed,
+            saved=current,
+        ),
+    )
+    return True
