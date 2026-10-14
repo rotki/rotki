@@ -59,7 +59,6 @@ describe('pages/reports/[id]', () => {
           ExportReportCsv: { props: ['reportId'], template: '<div data-testid="export-stub" />' },
           ProfitLossEvents: { props: ['report', 'refreshing', 'reportEvents'], template: '<div data-testid="events-stub" />' },
           ProfitLossOverview: { props: ['report', 'symbol', 'loading'], template: '<div data-testid="overview-stub" />' },
-          ProgressScreen: { template: '<div data-testid="progress-stub"><slot /></div>' },
           ReportActionable: { emits: ['regenerate'], props: ['report', 'initialOpen'], template: '<div data-testid="actionable-stub" />' },
           ReportHeader: { props: ['period'], template: '<div data-testid="header-stub" />' },
         },
@@ -83,12 +82,12 @@ describe('pages/reports/[id]', () => {
     wrapper?.unmount();
   });
 
-  it('should show only the progress screen while loading', () => {
+  it('should show only the skeleton while loading', () => {
     detailState.loading = true;
 
     wrapper = mountPage();
 
-    expect(wrapper.find('[data-testid=progress-stub]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=report-detail-skeleton]').exists()).toBe(true);
     expect(wrapper.findComponent(ReportHeader).exists()).toBe(false);
   });
 

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
-import type { RouteLocationRaw } from 'vue-router';
 import type { Report } from '@/modules/reports/report-types';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
 import ProfitLossOverview from '@/modules/reports/ProfitLossOverview.vue';
 import { calculateTotalProfitLoss } from '@/modules/reports/report-utils';
-import ReportsTableMoreAction from '@/modules/reports/ReportsTableMoreAction.vue';
+import ReportsTableRowActions from '@/modules/reports/ReportsTableRowActions.vue';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -37,14 +37,11 @@ const limits = computed(() => ({
 }));
 
 const tableHeaders = computed<DataTableColumn<ReportData>[]>(() => [
+  // the period names a report, so it leads; the figures follow, and when it was made comes last, quieter
   {
+    cellClass: 'whitespace-nowrap',
     key: 'startTs',
-    label: t('profit_loss_reports.columns.start'),
-    sortable: true,
-  },
-  {
-    key: 'endTs',
-    label: t('profit_loss_reports.columns.end'),
+    label: t('profit_loss_reports.columns.period'),
     sortable: true,
   },
   {
@@ -61,6 +58,7 @@ const tableHeaders = computed<DataTableColumn<ReportData>[]>(() => [
   },
   {
     align: 'end',
+    cellClass: 'whitespace-nowrap',
     key: 'timestamp',
     label: t('profit_loss_reports.columns.created'),
     sortable: true,
@@ -79,15 +77,6 @@ const showUpgradeMessage = computed(
   () => get(reports).entriesLimit > 0 && get(reports).entriesLimit < get(reports).entriesFound,
 );
 
-function getReportUrl(identifier: number): RouteLocationRaw {
-  return {
-    name: '/reports/[id]',
-    params: {
-      id: identifier.toString(),
-    },
-  };
-}
-
 const sort = ref<DataTableSortColumn<ReportData>>({
   column: 'timestamp',
   direction: 'desc',
@@ -97,89 +86,85 @@ useRememberTableSorting<ReportData>(TableId.REPORTS, sort, tableHeaders);
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
+  <section class="flex flex-col gap-3">
+    <h2 class="text-base font-semibold text-rui-text">
       {{ t('profit_loss_reports.title') }}
-    </template>
-    <RuiDataTable
-      v-model:expanded="expanded"
-      v-model:sort="sort"
-      :cols="tableHeaders"
-      :rows="items"
-      single-expand
-      outlined
-      row-attr="identifier"
-    >
-      <template
-        v-if="showUpgradeMessage"
-        #body.prepend
+    </h2>
+    <TableFrame>
+      <RuiDataTable
+        v-model:expanded="expanded"
+        v-model:sort="sort"
+        :cols="tableHeaders"
+        :rows="items"
+        single-expand
+        row-attr="identifier"
+        data-testid="reports-table"
       >
-        <UpgradeRow
-          :total="limits.total"
-          :limit="limits.limit"
-          :colspan="tableHeaders.length"
-          :label="t('plan_limit.labels.reports')"
-        />
-      </template>
-      <template #item.timestamp="{ row }">
-        <DateDisplay :timestamp="row.timestamp" />
-      </template>
-      <template #item.startTs="{ row }">
-        <DateDisplay
-          no-time
-          :timestamp="row.startTs"
-        />
-      </template>
-      <template #item.endTs="{ row }">
-        <DateDisplay
-          no-time
-          :timestamp="row.endTs"
-        />
-      </template>
-      <template #item.free="{ row }">
-        <FiatDisplay
-          :value="row.free"
-          :currency="row.settings.profitCurrency ?? undefined"
-          pnl
-        />
-      </template>
-      <template #item.taxable="{ row }">
-        <FiatDisplay
-          :value="row.taxable"
-          :currency="row.settings.profitCurrency ?? undefined"
-          pnl
-        />
-      </template>
-      <template #item.actions="{ row }">
-        <div class="flex items-center justify-end gap-4">
-          <RouterLink :to="getReportUrl(row.identifier)">
-            <RuiButton
-              size="sm"
-              variant="text"
-              color="primary"
-            >
-              <template #prepend>
-                <RuiIcon
-                  size="20"
-                  name="lu-file-text"
-                />
-              </template>
-              {{ t('reports_table.load') }}
-            </RuiButton>
-          </RouterLink>
-
-          <ReportsTableMoreAction
+        <template
+          v-if="showUpgradeMessage"
+          #body.prepend
+        >
+          <UpgradeRow
+            :total="limits.total"
+            :limit="limits.limit"
+            :colspan="tableHeaders.length"
+            :label="t('plan_limit.labels.reports')"
+          />
+        </template>
+        <template #item.timestamp="{ row }">
+          <DateDisplay
+            class="text-rui-text-secondary"
+            :timestamp="row.timestamp"
+          />
+        </template>
+        <template #item.startTs="{ row }">
+          <i18n-t
+            scope="global"
+            keypath="profit_loss_report.report_period"
+            tag="span"
+            class="font-medium text-rui-text"
+          >
+            <template #start>
+              <DateDisplay
+                no-time
+                :timestamp="row.startTs"
+              />
+            </template>
+            <template #end>
+              <DateDisplay
+                no-time
+                :timestamp="row.endTs"
+              />
+            </template>
+          </i18n-t>
+        </template>
+        <template #item.free="{ row }">
+          <FiatDisplay
+            :value="row.free"
+            :currency="row.settings.profitCurrency ?? undefined"
+            pnl
+          />
+        </template>
+        <template #item.taxable="{ row }">
+          <FiatDisplay
+            :value="row.taxable"
+            :currency="row.settings.profitCurrency ?? undefined"
+            pnl
+          />
+        </template>
+        <template #item.actions="{ row }">
+          <ReportsTableRowActions
             :report-id="row.identifier"
             @delete="deleteReport(row.identifier)"
           />
-        </div>
-      </template>
-      <template #expanded-item="{ row }">
-        <ProfitLossOverview
-          :report="row"
-          :symbol="row.settings.profitCurrency"
-        />
-      </template>
-    </RuiDataTable>
-  </RuiCard>
+        </template>
+        <template #expanded-item="{ row }">
+          <ProfitLossOverview
+            flat
+            :report="row"
+          />
+        </template>
+      </RuiDataTable>
+    </TableFrame>
+  </section>
 </template>

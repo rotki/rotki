@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
@@ -7,6 +8,7 @@ import ReportsTable from '@/modules/reports/ReportsTable.vue';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
 import ErrorScreen from '@/modules/shell/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { type Activity, ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import { useTaskController } from '@/modules/task-center/use-task-controller';
@@ -57,10 +59,27 @@ watch(() => get(reportActivity)?.cancellable, (cancellable) => {
   if (!cancellable)
     set(confirmingStop, false);
 });
+
+const accountingSettingsRoute: RouteLocationRaw = { name: '/settings/accounting/' };
 </script>
 
 <template>
-  <div class="container">
+  <TablePageLayout :title="[t('navigation_menu.profit_loss_report')]">
+    <template #buttons>
+      <RouterLink :to="accountingSettingsRoute">
+        <RuiButton
+          variant="outlined"
+          color="primary"
+          data-testid="report-accounting-settings"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-settings" />
+          </template>
+          {{ t('profit_loss_report.settings') }}
+        </RuiButton>
+      </RouterLink>
+    </template>
+
     <ReportGenerator
       v-show="!isRunning && !reportError.message"
       @generate="generate($event)"
@@ -88,22 +107,26 @@ watch(() => get(reportActivity)?.cancellable, (cancellable) => {
     </ErrorScreen>
     <ReportsTable
       v-show="!isRunning && !reportError.message"
-      class="mt-8"
+      class="mt-4"
     />
     <ProgressScreen
       v-if="isRunning"
       :progress="progress"
     >
       <template #message>
-        <div
+        <span
           v-if="processingState"
-          class="medium text-h6 mb-4"
+          class="block text-base font-medium text-rui-text mb-1"
         >
           {{ processingState }}
-        </div>
-        {{ t('profit_loss_report.loading_message') }}
+        </span>
+        <span class="block text-sm text-rui-text-secondary">
+          {{ t('profit_loss_report.loading_message') }}
+        </span>
       </template>
-      {{ t('profit_loss_report.loading_hint') }}
+      <span class="block max-w-xl text-sm text-rui-text-secondary">
+        {{ t('profit_loss_report.loading_hint') }}
+      </span>
       <div
         v-if="reportActivity?.cancellable"
         class="flex justify-center mt-6"
@@ -147,7 +170,7 @@ watch(() => get(reportActivity)?.cancellable, (cancellable) => {
     </ProgressScreen>
     <RuiDialog
       v-model="modelImportDataDialog"
-      max-width="600"
+      max-width="560"
     >
       <RuiCard>
         <template #header>
@@ -156,9 +179,12 @@ watch(() => get(reportActivity)?.cancellable, (cancellable) => {
         <RuiFileUpload
           v-model="modelReportDebugData"
           accept=".json"
+          :disabled="importDataLoading"
           :upload-text="t('file_upload.dropzone.prefix')"
           :click-to-upload-text="t('file_upload.dropzone.choose')"
           :replace-text="t('file_upload.dropzone.replace')"
+          hide-details
+          data-testid="report-debug-data-file"
         />
         <template #footer>
           <div class="grow" />
@@ -181,5 +207,5 @@ watch(() => get(reportActivity)?.cancellable, (cancellable) => {
         </template>
       </RuiCard>
     </RuiDialog>
-  </div>
+  </TablePageLayout>
 </template>

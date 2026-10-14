@@ -147,6 +147,19 @@ const yearModel = computed({
   },
 });
 
+/** The all time and custom choices, empty while a year is selected; pressing the selected one again keeps it. */
+const rangeModel = computed<string | undefined>({
+  get() {
+    return get(isAllTime) || get(isCustom) ? year : undefined;
+  },
+  set(value) {
+    if (value === 'all-time')
+      selectAllTime();
+    else if (value === 'custom')
+      set(yearModel, 'custom');
+  },
+});
+
 const quarterModel = computed({
   get() {
     return quarter;
@@ -160,10 +173,10 @@ const quarterModel = computed({
 <template>
   <div class="flex flex-col gap-4">
     <div>
-      <div class="text-subtitle-1 font-medium mb-2">
+      <div class="text-sm font-medium text-rui-text mb-2">
         {{ t('generate.period') }}
       </div>
-      <div class="flex gap-4">
+      <div class="flex flex-wrap gap-3">
         <RuiMenu :options="{ placement: 'bottom-end' }">
           <template #activator="{ attrs }">
             <RuiButtonGroup
@@ -190,9 +203,7 @@ const quarterModel = computed({
               data-testid="button-older-years"
             >
               <div class="flex items-center gap-2">
-                <template v-if="isOlderYearSelected">
-                  {{ year }}
-                </template>
+                {{ isOlderYearSelected ? year : t('generate.older') }}
                 <RuiIcon
                   name="lu-chevron-down"
                   size="16"
@@ -214,27 +225,28 @@ const quarterModel = computed({
           </div>
         </RuiMenu>
 
-        <RuiButton
+        <RuiButtonGroup
+          v-model="rangeModel"
           variant="outlined"
-          :color="isAllTime ? 'primary' : undefined"
-          data-testid="button-all-time"
-          @click="selectAllTime()"
+          active-color="primary"
         >
-          {{ t('generate.all_time') }}
-        </RuiButton>
-
-        <RuiButton
-          variant="outlined"
-          :color="isCustom ? 'primary' : undefined"
-          data-testid="button-custom"
-          @click="yearModel = 'custom'"
-        >
-          {{ t('generate.custom_selection') }}
-        </RuiButton>
+          <RuiButton
+            model-value="all-time"
+            data-testid="button-all-time"
+          >
+            {{ t('generate.all_time') }}
+          </RuiButton>
+          <RuiButton
+            model-value="custom"
+            data-testid="button-custom"
+          >
+            {{ t('generate.custom_selection') }}
+          </RuiButton>
+        </RuiButtonGroup>
       </div>
     </div>
     <div v-if="year !== 'custom' && year !== 'all-time'">
-      <div class="text-subtitle-1 font-medium mb-2">
+      <div class="text-sm font-medium text-rui-text mb-2">
         {{ t('generate.sub_period_label') }}
       </div>
       <RuiButtonGroup

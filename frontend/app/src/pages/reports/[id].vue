@@ -7,7 +7,7 @@ import ProfitLossEvents from '@/modules/reports/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/modules/reports/ProfitLossOverview.vue';
 import ReportActionable from '@/modules/reports/ReportActionable.vue';
 import ReportHeader from '@/modules/reports/ReportHeader.vue';
-import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { useReportDetail } from '@/pages/reports/use-report-detail';
 
 definePage({
@@ -45,40 +45,55 @@ const {
 </script>
 
 <template>
-  <ProgressScreen v-if="loading">
-    {{ t('profit_loss_report.loading') }}
-  </ProgressScreen>
+  <TablePageLayout :aria-busy="loading || undefined">
+    <template #title>
+      <RuiSkeletonLoader
+        v-if="loading"
+        class="w-72 h-5"
+      />
+      <ReportHeader
+        v-else
+        :period="{ start: selectedReport.startTs, end: selectedReport.endTs }"
+      />
+    </template>
+    <template
+      v-if="!loading"
+      #buttons
+    >
+      <ReportActionable
+        v-if="latest"
+        :report="selectedReport"
+        :initial-open="initialOpenReportActionable"
+        @regenerate="regenerateReport()"
+      />
+      <RuiButton
+        color="primary"
+        variant="outlined"
+        data-testid="regenerate-report"
+        @click="regenerateReport()"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-refresh-ccw" />
+        </template>
+        {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
+      </RuiButton>
+      <ExportReportCsv :report-id="reportId" />
+    </template>
 
-  <div
-    v-else
-    class="container"
-  >
-    <div class="flex flex-col gap-8">
-      <ReportHeader :period="{ start: selectedReport.startTs, end: selectedReport.endTs }" />
-      <AccountingSettingsDisplay :accounting-settings="settings" />
-      <div class="flex gap-2">
-        <ExportReportCsv :report-id="reportId" />
-        <ReportActionable
-          v-if="latest"
-          :report="selectedReport"
-          :initial-open="initialOpenReportActionable"
-          @regenerate="regenerateReport()"
-        />
-        <RuiButton
-          color="primary"
-          variant="outlined"
-          data-testid="regenerate-report"
-          @click="regenerateReport()"
-        >
-          <template #prepend>
-            <RuiIcon
-              name="lu-refresh-ccw"
-              size="18"
-            />
-          </template>
-          {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
-        </RuiButton>
-      </div>
+    <div
+      v-if="loading"
+      class="flex flex-col gap-6"
+      :aria-label="t('profit_loss_report.loading')"
+      data-testid="report-detail-skeleton"
+    >
+      <RuiSkeletonLoader class="h-40 rounded-rui-card" />
+      <RuiSkeletonLoader class="h-28 rounded-rui-card" />
+      <RuiSkeletonLoader class="h-96 rounded-rui-card" />
+    </div>
+    <div
+      v-else
+      class="flex flex-col gap-6"
+    >
       <RuiAlert
         v-if="showCompletenessWarning"
         type="warning"
@@ -109,6 +124,7 @@ const {
       >
         {{ t('profit_loss_report.actionable.stale_details') }}
       </RuiAlert>
+      <AccountingSettingsDisplay :accounting-settings="settings" />
       <ProfitLossOverview
         :report="selectedReport"
         :loading="loading"
@@ -119,5 +135,5 @@ const {
         :refreshing="refreshing"
       />
     </div>
-  </div>
+  </TablePageLayout>
 </template>

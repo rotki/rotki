@@ -5670,7 +5670,6 @@
           "found_amount": "Bulunan miktar",
           "missing_acquisitions": "Eksik edinimler",
           "missing_amount": "Eksik miktar",
-          "quick_action": "Hızlı eylem",
           "total_missing": "Toplam eksik miktar"
         },
         "hint": "Bazı varlık edinimleri eksik. Bu varlıkları nereden satın aldığınızı bulmanız ve ilgili edinim olaylarını içe aktarmanız ya da manuel olarak oluşturmanız gerekecek",
@@ -5718,14 +5717,11 @@
     "out_of_sync_alert": "Geçmiş olaylarınızın verileri güncel değil. Lütfen rapor oluşturmadan önce geçmiş olaylarınızı güncelleyin.",
     "processing_alert": "Geçmiş olayları şu anda işleniyor (%{percentage}). Lütfen işleme tamamlanana kadar bekleyin.",
     "report_period": "Rapor dönemi: {start} - {end}",
-    "settings_tooltip": "Muhasebe ayarlarını aç",
     "sync_history": "Geçmişi şimdi senkronize et"
   },
   "profit_loss_reports": {
     "columns": {
       "created": "Oluşturulma tarihi",
-      "end": "Dönem sonu",
-      "start": "Dönem başı",
       "taxable_profit_loss": "Vergiye tabi kâr/zarar",
       "taxfree_profit_loss": "Vergiden muaf kâr/zarar"
     },

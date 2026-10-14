@@ -88,31 +88,20 @@ function close() {
     :class-names="{ content: 'flex flex-col flex-1 min-h-0 overflow-hidden' }"
     variant="flat"
   >
-    <!-- Dialog mode keeps its own header; when pinned, the rail's tab provides title + close. -->
     <div
       v-if="!isPinned"
-      class="flex bg-rui-primary text-white p-2 shrink-0"
+      class="flex items-center gap-1 pl-4 pr-2 py-2 border-b border-rui-divider shrink-0"
     >
-      <RuiButton
-        variant="text"
-        icon
-        @click="close()"
+      <h2
+        class="grow text-base font-semibold text-rui-text"
+        data-testid="report-actionable-title"
       >
-        <RuiIcon
-          class="text-white"
-          name="lu-x"
-        />
-      </RuiButton>
-
-      <h6 class="flex items-center pl-2 text-h6">
         {{
           t('profit_loss_report.actionable.issues_found', {
             total: actionableItemsLength.total,
           })
         }}
-      </h6>
-
-      <div class="grow" />
+      </h2>
 
       <RuiTooltip
         :options="{ placement: 'bottom' }"
@@ -122,24 +111,49 @@ function close() {
           <RuiButton
             variant="text"
             icon
+            size="sm"
+            class="text-rui-text-secondary"
+            :aria-label="t('profit_loss_report.actionable.actions.pin_section')"
             @click="pinSection()"
           >
             <RuiIcon
-              class="text-white"
               name="lu-pin"
+              size="18"
             />
           </RuiButton>
         </template>
         {{ t('profit_loss_report.actionable.actions.pin_section') }}
       </RuiTooltip>
+      <RuiButton
+        variant="text"
+        icon
+        size="sm"
+        class="text-rui-text-secondary"
+        :aria-label="t('common.actions.close')"
+        @click="close()"
+      >
+        <RuiIcon
+          name="lu-x"
+          size="18"
+        />
+      </RuiButton>
     </div>
 
     <RuiStepper
       :steps="stepperContents"
       :step="step"
-      class="border-b-2 border-default shrink-0"
-      :class="{ 'py-2': isPinned, 'py-4': !isPinned }"
+      class="border-b border-rui-divider shrink-0"
+      :class="{ 'py-2': isPinned, 'py-3': !isPinned }"
     />
+
+    <p
+      v-if="stepperContents[step - 1]?.hint"
+      class="shrink-0 text-sm text-rui-text-secondary border-b border-rui-divider"
+      :class="isPinned ? 'px-3 py-2' : 'px-4 py-3'"
+      data-testid="report-actionable-hint"
+    >
+      {{ stepperContents[step - 1]?.hint }}
+    </p>
 
     <div
       class="flex-1 min-h-0 flex flex-col"
@@ -159,7 +173,6 @@ function close() {
           <template #actions="{ items }">
             <ReportActionableCardActions
               :is-pinned="isPinned"
-              :hint="content.hint"
               :step="step"
               :total-steps="stepperContents.length"
               :is-missing-acquisitions="content.key === 'missingAcquisitions'"

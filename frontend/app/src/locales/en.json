@@ -209,11 +209,13 @@
     "days": "{days} days",
     "eth_staking_taxable_after_withdrawal_enabled": "ETH staking deferred to withdrawals",
     "gas_costs": "Gas costs",
+    "no": "No",
     "past_cost_basis": "Past cost basis calculated",
     "profit_currency": "Profit currency",
     "subtitle": "The settings this report was generated with",
     "tax_free_period": "Tax free period",
-    "title": "Accounting settings"
+    "title": "Accounting settings",
+    "yes": "Yes"
   },
   "accounting_overlay": {
     "balance_after": "Balance after this event",
@@ -4010,11 +4012,13 @@
       "end_date": "End Date",
       "start_date": "Start Date"
     },
+    "older": "Older",
     "period": "Period",
     "sub_period": {
       "all": "All"
     },
     "sub_period_label": "Quarter",
+    "summary_all_time": "Everything up to now",
     "validation": {
       "empty_end_date": "End date cannot be empty",
       "empty_start_date": "Start date cannot be empty",
@@ -5766,6 +5770,7 @@
     "edit_historic_price": "Update historic price",
     "edit_price_warning": "You will need to regenerate the report to see the updated price in the report events.",
     "headers": {
+      "event": "Event",
       "pnl_free": "Tax Free P/L",
       "pnl_taxable": "Taxable P/L",
       "tax_free_amount": "Tax Free Amount",
@@ -5774,6 +5779,7 @@
     "same_action": "This events happen on the same action"
   },
   "profit_loss_overview": {
+    "empty": "No taxable or tax free profit or loss in this period.",
     "headers": {
       "tax_free_profit_loss": "Tax Free P/L",
       "taxable_profit_loss": "Taxable P/L"
@@ -5793,7 +5799,6 @@
           "found_amount": "Found Amount",
           "missing_acquisitions": "Missing Acquisitions",
           "missing_amount": "Missing Amount",
-          "quick_action": "Quick Action",
           "total_missing": "Amount Missing"
         },
         "hint": "Some asset acquisitions are missing. You will need to figure out where you bought them and either import or manually create the relevant acquisition events",
@@ -5835,6 +5840,7 @@
       "subtitle": "The report generation was not possible due to an error",
       "title": "Profit and Loss Report Generation"
     },
+    "generate_title": "Generate a report",
     "go_to_exchanges": "Go to Exchange Settings",
     "loading": "Please wait while your PnL report is loading",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
@@ -5842,14 +5848,13 @@
     "out_of_sync_alert": "Your history events data is out of sync. Please update your history events before generating a report.",
     "processing_alert": "History events are currently being processed ({percentage}%). Please wait until processing is complete.",
     "report_period": "{start} to {end}",
-    "settings_tooltip": "Open the accounting settings",
+    "settings": "Accounting settings",
     "sync_history": "Sync history now"
   },
   "profit_loss_reports": {
     "columns": {
       "created": "Created",
-      "end": "Period End",
-      "start": "Period Start",
+      "period": "Period",
       "taxable_profit_loss": "Taxable P/L",
       "taxfree_profit_loss": "Tax Free P/L"
     },
@@ -5921,6 +5926,10 @@
   },
   "reports_table": {
     "delete": "Delete report",
+    "delete_confirm": {
+      "message": "The report and its events are removed. Generating it again can take a while.",
+      "title": "Delete this report?"
+    },
     "load": "Load report"
   },
   "request_queue": {

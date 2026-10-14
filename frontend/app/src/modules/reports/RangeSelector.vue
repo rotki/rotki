@@ -93,7 +93,6 @@ watchImmediate(form.valid, (valid) => {
       v-if="custom"
       v-model:start="form.state.start"
       v-model:end="form.state.end"
-      class="mt-1.5"
       allow-empty
       max-end-date="now"
       :start-error-messages="form.errors('start')"

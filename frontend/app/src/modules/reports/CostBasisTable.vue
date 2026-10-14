@@ -54,6 +54,7 @@ const cols = computed<DataTableColumn<Acquisition>[]>(() => [
   },
   {
     align: 'end',
+    cellClass: 'whitespace-nowrap',
     key: 'timestamp',
     label: t('common.datetime'),
     sortable: true,
@@ -96,35 +97,27 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
       :class="{ 'pl-8.5': showGroupLine }"
       class="grow"
     >
-      <div class="flex pb-4 items-center gap-4">
-        <p class="text-body-1 mb-0">
+      <div class="flex pb-3 items-center gap-3">
+        <h3 class="text-sm font-medium text-rui-text">
           {{ t('cost_basis_table.cost_basis') }}
-        </p>
+        </h3>
         <RuiChip
-          v-if="costBasis.isComplete"
           size="sm"
-          color="success"
+          variant="tonal"
+          :color="costBasis.isComplete ? 'success' : 'error'"
+          data-testid="cost-basis-status"
         >
-          {{ t('cost_basis_table.complete') }}
-        </RuiChip>
-        <RuiChip
-          v-else
-          size="sm"
-          color="error"
-        >
-          {{ t('cost_basis_table.incomplete') }}
+          {{ costBasis.isComplete ? t('cost_basis_table.complete') : t('cost_basis_table.incomplete') }}
         </RuiChip>
       </div>
-      <RuiCard
-        variant="flat"
-        no-padding
-      >
+      <div>
         <RuiDataTable
           v-model:sort="sort"
           :rows="matchedAcquisitions"
           :cols="cols"
           row-attr="amount"
           outlined
+          dense
         >
           <template #item.amount="{ row }">
             <ValueDisplay :value="row.amount" />
@@ -136,7 +129,10 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
             <ValueDisplay :value="row.fullAmount.minus(row.amount)" />
           </template>
           <template #item.rate="{ row }">
-            <FiatDisplay :value="row.rate" />
+            <FiatDisplay
+              :value="row.rate"
+              :currency="currency ?? undefined"
+            />
           </template>
           <template #item.timestamp="{ row }">
             <DateDisplay :timestamp="row.timestamp" />
@@ -145,7 +141,7 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
             <SuccessDisplay :success="row.taxable" />
           </template>
         </RuiDataTable>
-      </RuiCard>
+      </div>
     </div>
   </div>
 </template>

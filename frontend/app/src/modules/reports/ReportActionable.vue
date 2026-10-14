@@ -50,16 +50,19 @@ const { t } = useI18n({ useScope: 'global' });
       <template #activator="{ attrs }">
         <RuiButton
           color="error"
+          variant="outlined"
+          data-testid="report-show-issues"
           v-bind="attrs"
         >
-          <span class="pr-2">
-            {{ t('profit_loss_report.actionable.show_issues') }}
-          </span>
+          <template #prepend>
+            <RuiIcon name="lu-triangle-alert" />
+          </template>
+          {{ t('profit_loss_report.actionable.show_issues') }}
           <template #append>
             <RuiChip
               size="sm"
+              variant="tonal"
               color="error"
-              class="p-0! bg-rui-error-darker!"
             >
               {{ actionableItemsLength.toString() }}
             </RuiChip>
