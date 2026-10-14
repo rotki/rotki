@@ -78,7 +78,11 @@ describe('indexerOrderSetting', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(IndexerOrderSetting, {
-      global: { plugins: [pinia] },
+      global: {
+        plugins: [pinia],
+        // The editor dialog renders in place, so the open scope's list can be read off the wrapper.
+        stubs: { RuiDialog: { template: '<div><slot /></div>' } },
+      },
       provide: libraryDefaults,
     });
   }
@@ -174,7 +178,7 @@ describe('indexerOrderSetting', () => {
 
     const warnings = wrapper.findAll('[data-testid=chain-warning-alert]');
     expect(warnings).toHaveLength(1);
-    expect(warnings[0].text()).toBe('evm_settings.indexer.chain_warnings.key_required');
+    expect(warnings[0].text()).toContain('evm_settings.indexer.chain_warnings.key_required');
   });
 
   it('should not warn on the default tab', async () => {
@@ -184,8 +188,13 @@ describe('indexerOrderSetting', () => {
   });
 
   async function selectTab(tab: string): Promise<void> {
-    await wrapper.find(`[data-testid=indexer-tab][data-key="${tab}"]`).trigger('click');
+    await wrapper.find(`[data-testid=edit-indexer-order][data-key="${tab}"]`).trigger('click');
     await nextTick();
+  }
+
+  async function removeChain(chain: string): Promise<void> {
+    await wrapper.find(`[data-testid=remove-chain][data-key="${chain}"]`).trigger('click');
+    await flushPromises();
   }
 
   function defaultList(): VueWrapper<InstanceType<typeof PrioritizedList>> {
@@ -262,8 +271,7 @@ describe('indexerOrderSetting', () => {
       optimism: [EvmIndexer.ETHERSCAN],
     });
 
-    wrapper.findAllComponents({ name: 'IndexerTabLabel' })[0].vm.$emit('remove', 'gnosis');
-    await flushPromises();
+    await removeChain('gnosis');
 
     const { update } = useSettingsOperations();
     expect(update).toHaveBeenCalledWith({ evmIndexersOrder: { optimism: [EvmIndexer.ETHERSCAN] } });
@@ -275,8 +283,7 @@ describe('indexerOrderSetting', () => {
     await selectTab('gnosis');
     expect(chainList().exists()).toBe(true);
 
-    wrapper.findAllComponents({ name: 'IndexerTabLabel' })[0].vm.$emit('remove', 'gnosis');
-    await flushPromises();
+    await removeChain('gnosis');
 
     expect(wrapper.find('[data-testid=default-indexer-order]').exists()).toBe(true);
   });

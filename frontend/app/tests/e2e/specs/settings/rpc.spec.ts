@@ -93,7 +93,9 @@ test.describe.serial('settings::rpc narrow viewport', () => {
     await ctx.sharedPage.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
     await ctx.sharedPage.locator('[data-testid=settings-button]').click();
     await ctx.sharedPage.locator('[data-testid=user-dropdown]').waitFor({ state: 'detached' });
-    await ctx.sharedPage.locator('[data-testid=nav-tab][data-key="settings-rpc"]').click();
+    // The tab bar is hidden below md; the breadcrumb's section menu is how a narrow screen switches.
+    await ctx.sharedPage.getByTestId('settings-section-switch').click();
+    await ctx.sharedPage.locator('[data-testid=settings-section-link][data-key="settings-rpc"]').click();
     await ctx.sharedPage.getByTestId('rpc-settings-dropdowns').waitFor({ state: 'visible' });
   });
 

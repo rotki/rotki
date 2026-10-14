@@ -11,10 +11,11 @@ vi.mock('@/modules/settings/use-setting-model', () => ({ useSettingModel: useSet
 vi.mock('@/modules/settings/use-setting', () => ({ useSetting: useSettingMock }));
 
 const RuiTextFieldStub = {
-  props: ['modelValue', 'successMessages', 'errorMessages', 'label'],
+  props: ['modelValue', 'successMessages', 'errorMessages', 'label', 'hint'],
   emits: ['update:model-value'],
   template: `<div>
     <span class="model">{{ modelValue }}</span>
+    <span class="hint">{{ hint }}</span>
     <span class="success">{{ successMessages }}</span>
     <span class="error">{{ errorMessages }}</span>
     <span class="error-count">{{ Array.isArray(errorMessages) ? errorMessages.length : (errorMessages ? 1 : 0) }}</span>

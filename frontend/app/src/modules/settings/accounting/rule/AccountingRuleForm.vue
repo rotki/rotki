@@ -55,85 +55,80 @@ defineExpose({
 </script>
 
 <template>
-  <HistoryEventTypeForm
-    v-model:event-type="form.state.eventType"
-    v-model:event-subtype="form.state.eventSubtype"
-    :counterparty="form.state.counterparty"
-    :error-messages="{
-      eventType: form.errors('eventType'),
-      eventSubtype: form.errors('eventSubtype'),
-    }"
-    :disabled="isEventSpecificRule"
-    disable-warning
-    @touch="touchEventType()"
-  />
-
-  <CounterpartyInput
-    v-model="form.state.counterparty"
-    class="md:w-1/2"
-    :label="t('common.counterparty')"
-    :disabled="isEventSpecificRule"
-    :error-messages="form.errors('counterparty')"
-    @blur="form.touch('counterparty')"
-  />
-
-  <AccountingRuleWithLinkedSetting
-    v-model="form.state.taxable"
-    class="border-t border-default"
-    identifier="taxable"
-    :label="t('accounting_settings.rule.labels.taxable')"
-    :hint="t('accounting_settings.rule.labels.taxable_subtitle')"
-  />
-
-  <AccountingRuleWithLinkedSetting
-    v-model="form.state.countEntireAmountSpend"
-    class="border-t border-default"
-    identifier="countEntireAmountSpend"
-    :label="t('accounting_settings.rule.labels.count_entire_amount_spend')"
-    :hint="t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle')"
-  />
-
-  <AccountingRuleWithLinkedSetting
-    v-model="form.state.countCostBasisPnl"
-    class="border-t border-default"
-    identifier="countCostBasisPnl"
-    :label="t('accounting_settings.rule.labels.count_cost_basis_pnl')"
-    :hint="t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle')"
-    :learn-more-url="externalLinks.usageGuideSection.accountingRuleCountCostBasisPnl"
-  />
-
-  <RuiDivider class="mb-6" />
-
-  <RuiAutoComplete
-    v-model="form.state.accountingTreatment"
-    class="md:w-1/2"
-    variant="outlined"
-    :options="accountingTreatments"
-    key-attr="identifier"
-    text-attr="label"
-    clearable
-    :label="t('accounting_settings.rule.labels.accounting_treatment')"
-    :hint="t('accounting_settings.rule.labels.accounting_treatment_subtitle')"
-    :error-messages="form.errors('accountingTreatment')"
-    @blur="form.touch('accountingTreatment')"
-  />
-  <div class="text-rui-text-secondary text-caption flex items-center gap-3 md:w-1/2 mt-1">
-    <span class="inline-flex items-center gap-1">
-      <RuiIcon
-        name="lu-book-open"
-        size="14"
+  <div class="flex flex-col gap-2">
+    <section class="flex flex-col gap-3">
+      <HistoryEventTypeForm
+        v-model:event-type="form.state.eventType"
+        v-model:event-subtype="form.state.eventSubtype"
+        :counterparty="form.state.counterparty"
+        :error-messages="{
+          eventType: form.errors('eventType'),
+          eventSubtype: form.errors('eventSubtype'),
+        }"
+        :disabled="isEventSpecificRule"
+        disable-warning
+        @touch="touchEventType()"
       />
-      {{ t('accounting_settings.rule.learn_more') }}:
-    </span>
-    <ExternalLink
-      :url="externalLinks.usageGuideSection.accountingTreatmentSwap"
-      color="primary"
-      :text="t('accounting_settings.rule.labels.accounting_treatment_swap')"
-    />
-    <ExternalLink
-      :url="externalLinks.usageGuideSection.accountingTreatmentBasisTransfer"
-      color="primary"
-      :text="t('accounting_settings.rule.labels.accounting_treatment_basis_transfer')"
-    />
+      <CounterpartyInput
+        v-model="form.state.counterparty"
+        :label="t('common.counterparty')"
+        :disabled="isEventSpecificRule"
+        :error-messages="form.errors('counterparty')"
+        @blur="form.touch('counterparty')"
+      />
+    </section>
+
+    <section class="flex flex-col gap-2">
+      <span class="text-sm font-medium text-rui-text">
+        {{ t('accounting_settings.rule.sections.accounting') }}
+      </span>
+      <div class="rounded-rui-control border border-rui-divider between:border-t between:border-rui-divider">
+        <AccountingRuleWithLinkedSetting
+          v-model="form.state.taxable"
+          identifier="taxable"
+          :label="t('accounting_settings.rule.labels.taxable')"
+          :hint="t('accounting_settings.rule.labels.taxable_subtitle')"
+        />
+        <AccountingRuleWithLinkedSetting
+          v-model="form.state.countEntireAmountSpend"
+          identifier="countEntireAmountSpend"
+          :label="t('accounting_settings.rule.labels.count_entire_amount_spend')"
+          :hint="t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle')"
+        />
+        <AccountingRuleWithLinkedSetting
+          v-model="form.state.countCostBasisPnl"
+          identifier="countCostBasisPnl"
+          :label="t('accounting_settings.rule.labels.count_cost_basis_pnl')"
+          :hint="t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle')"
+          :learn-more-url="externalLinks.usageGuideSection.accountingRuleCountCostBasisPnl"
+        />
+      </div>
+      <div>
+        <RuiAutoComplete
+          v-model="form.state.accountingTreatment"
+          :options="accountingTreatments"
+          key-attr="identifier"
+          text-attr="label"
+          clearable
+          :label="t('accounting_settings.rule.labels.accounting_treatment')"
+          :hint="t('accounting_settings.rule.labels.accounting_treatment_subtitle')"
+          :error-messages="form.errors('accountingTreatment')"
+          @blur="form.touch('accountingTreatment')"
+        />
+        <div class="flex flex-wrap items-center gap-x-3 text-xs text-rui-text-secondary">
+          {{ t('accounting_settings.rule.learn_more') }}:
+          <ExternalLink
+            :url="externalLinks.usageGuideSection.accountingTreatmentSwap"
+            color="primary"
+            :text="t('accounting_settings.rule.labels.accounting_treatment_swap')"
+          />
+          <ExternalLink
+            :url="externalLinks.usageGuideSection.accountingTreatmentBasisTransfer"
+            color="primary"
+            :text="t('accounting_settings.rule.labels.accounting_treatment_basis_transfer')"
+          />
+        </div>
+      </div>
+    </section>
   </div>
 </template>

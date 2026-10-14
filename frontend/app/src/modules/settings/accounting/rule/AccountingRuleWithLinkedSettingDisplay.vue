@@ -36,34 +36,29 @@ const value = computed<boolean>(() => {
 </script>
 
 <template>
-  <RuiBadge
-    placement="top"
-    size="sm"
-    color="secondary"
-    class="[&_span]:px-0!"
-    :model-value="!!selectedLinkableSetting"
-  >
-    <template #icon>
-      <RuiTooltip
-        v-if="selectedLinkableSetting"
-        :options="{ placement: 'top' }"
-        :open-delay="400"
-      >
-        <template #activator>
+  <span class="inline-flex items-center gap-1.5">
+    <SuccessDisplay
+      size="20"
+      :success="value"
+    />
+    <RuiTooltip
+      v-if="selectedLinkableSetting"
+      :options="{ placement: 'top' }"
+      :open-delay="400"
+    >
+      <template #activator>
+        <span
+          class="inline-flex items-center gap-1 text-xs text-rui-text-secondary whitespace-nowrap"
+          data-testid="accounting-rule-linked-setting"
+        >
           <RuiIcon
             size="12"
             name="lu-link"
           />
-        </template>
-        <div>{{ t('accounting_settings.rule.value_overwritten') }}</div>
-        <div class="font-bold">
           {{ selectedLinkableSetting.label }}
-        </div>
-      </RuiTooltip>
-    </template>
-    <SuccessDisplay
-      size="28"
-      :success="value"
-    />
-  </RuiBadge>
+        </span>
+      </template>
+      {{ t('accounting_settings.rule.value_overwritten') }}
+    </RuiTooltip>
+  </span>
 </template>

@@ -25,9 +25,6 @@ const {
         <template #title>
           {{ t('database_settings.user_backups.title') }}
         </template>
-        <template #subtitle>
-          {{ t('database_settings.user_backups.subtitle') }}
-        </template>
       </SettingCategoryHeader>
       <div class="flex flex-wrap gap-2">
         <RuiButton

@@ -2,18 +2,27 @@
 import PnlCsvSummarySetting from '@/modules/settings/accounting/PnlCsvSummarySetting.vue';
 import PnlCsvWithFormulasSetting from '@/modules/settings/accounting/PnlCsvWithFormulasSetting.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
+import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsItem setting-key="pnlCsvHaveSummary">
+  <SettingCategory>
     <template #title>
       {{ t('account_settings.csv_export_settings.title') }}
     </template>
-    <div class="pl-4 md:pl-8 lg:pl-12">
+    <SettingsItem setting-key="pnlCsvWithFormulas">
+      <template #subtitle>
+        {{ t('account_settings.csv_export_settings.descriptions.export_csv_formulas') }}
+      </template>
       <PnlCsvWithFormulasSetting />
+    </SettingsItem>
+    <SettingsItem setting-key="pnlCsvHaveSummary">
+      <template #subtitle>
+        {{ t('account_settings.csv_export_settings.descriptions.have_csv_summary') }}
+      </template>
       <PnlCsvSummarySetting />
-    </div>
-  </SettingsItem>
+    </SettingsItem>
+  </SettingCategory>
 </template>

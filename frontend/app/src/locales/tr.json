@@ -139,11 +139,19 @@
       }
     },
     "csv_export_settings": {
+      "descriptions": {
+        "export_csv_formulas": "Hücreler tablo formüllerini korur; dosyayı düzenlediğinizde toplamlar yeniden hesaplanır.",
+        "have_csv_summary": "Tüm olaylar CSV dosyasına bir toplamlar bölümü ekler."
+      },
       "labels": {
         "export_csv_formulas": "Formüller PnL CSV dosyasıyla birlikte dışa aktarılsın mı?",
         "have_csv_summary": "Tüm olaylar CSV dışa aktarımına tüm olayların bir özeti eklensin mi?"
       },
-      "title": "PnL CSV dışa aktarma"
+      "title": "PnL CSV dışa aktarma",
+      "titles": {
+        "export_csv_formulas": "Formüller",
+        "have_csv_summary": "Özet"
+      }
     },
     "messages": {
       "cost_basis": {
@@ -214,6 +222,9 @@
     "wallet": "Cüzdan"
   },
   "accounting_settings": {
+    "cost_basis": {
+      "title": "Maliyet esası"
+    },
     "rule": {
       "action_dialog": {
         "add_event_specific": "Yalnızca bu olay için kural ekle",
@@ -237,6 +248,7 @@
       "confirm_delete": "Bu özel muhasebe kuralını silmek istediğinizden emin misiniz?",
       "confirm_reset": "Tüm muhasebe kurallarını rotki varsayılanlarına sıfırlamak istediğinizden emin misiniz? Bu işlem tüm özel ve düzenlenmiş kuralları kaldırır ve geri alınamaz.",
       "conflicts": {
+        "banner": "{count} kural son rotki güncellemesiyle çakışıyor. | {count} kural son rotki güncellemesiyle çakışıyor.",
         "error": {
           "description": "Muhasebe kuralı çakışmaları çözülürken hata oluştu: {error}",
           "title": "Muhasebe kuralı çakışmalarını çözme"
@@ -244,9 +256,25 @@
         "labels": {
           "choose_version": "Sürüm seçin"
         },
+        "matching": "İki sürüm de aynı olduğu için gizlendi: {properties}.",
+        "resolve": "Çöz",
+        "save": {
+          "all": "Tümünü kaydet ({total})",
+          "choices": "{count} seçimi kaydet | {count} seçimi kaydet"
+        },
+        "strategy": {
+          "keep_local": "Tümünde yereli koru",
+          "keep_remote": "Tümünde uzağı al",
+          "per_rule": "Kural kural seç"
+        },
+        "subtitle": "Yerel, kuralın sizin düzenlediğiniz hâlidir. Uzak, son rotki güncellemesindeki sürümdür.",
+        "summary": {
+          "all_local": "Her kural yerel sürümünüzü korur.",
+          "all_remote": "Her kural uzak sürümü alır.",
+          "remaining": "{total} kuraldan {remaining} tanesi için hâlâ seçim gerekiyor."
+        },
         "title": "Muhasebe kuralı çakışmalarını çöz"
       },
-      "current_setting_value": "Geçerli ayar değeri:",
       "custom_events_info": "Seçili {count} olay için özel muhasebe kuralı oluşturuluyor",
       "delete": "Muhasebe kuralını sil",
       "delete_error": "Muhasebe kuralı silinemedi: {message}",
@@ -266,6 +294,7 @@
         "event_type": "Tür"
       },
       "import": "Muhasebe kurallarını içe aktar",
+      "import_hint": "rotki'den dışa aktarılmış bir kural JSON dosyası",
       "labels": {
         "accounting_treatment": "Muhasebeleştirme yöntemi",
         "accounting_treatment_basis_transfer": "Maliyet esası aktarımı",
@@ -275,9 +304,8 @@
         "count_cost_basis_pnl_subtitle": "Varlığın edinildiği zamana göre oluşmuş olabilecek kâr/zararın hesaba katılıp katılmayacağı.",
         "count_entire_amount_spend": "Tüm miktarı harcama olarak say",
         "count_entire_amount_spend_subtitle": "Tüm miktarın harcama, yani gider (negatif kâr/zarar) olarak sayılıp sayılmayacağı",
+        "event": "Olay",
         "event_ids": "Olay ID'leri",
-        "event_subtype": "Olay alt türü",
-        "event_type": "Olay türü",
         "taxable": "Vergiye tabi",
         "taxable_subtitle": "Olayın vergiye tabi sayılıp sayılmayacağı"
       },
@@ -285,7 +313,9 @@
       "overwrite_by_setting": "Başka bir muhasebe ayarındaki değerle geçersiz kıl",
       "refresh_tooltip": "Muhasebe kurallarını yenile",
       "reset": "Varsayılanlara sıfırla",
-      "subtitle": "Olay muhasebe kurallarınızı görüntüleyin ve yönetin",
+      "sections": {
+        "accounting": "Muhasebe"
+      },
       "tabs": {
         "custom": "Belirli olaylar için özel kurallar",
         "regular": "Standart kurallar"
@@ -294,7 +324,20 @@
       "value_overwritten": "Bu muhasebe ayarını izler",
       "view_events": "Bu kuralla eşleşen olayları görüntüle"
     },
+    "taxes": {
+      "title": "Vergiler"
+    },
     "trade": {
+      "descriptions": {
+        "calculate_past_cost_basis": "Rapor döneminden önceki olayları da işler; böylece daha önce alınıp dönem içinde satılan varlıkların maliyet esası olur.",
+        "cost_basis_method": "Bir satışın hangi önceki alımlarla eşleştirileceğini belirler; bu, gerçekleşen kâr/zararı değiştirir.",
+        "eth_staking_taxable_after_withdrawal_enabled": "Shanghai güncellemesi çekimleri mümkün kılmadan önceki staking olayları raporlarda atlanır.",
+        "include_crypto2crypto": "İki kripto varlık arasındaki takasları vergiye tabi işlemler olarak say. Yalnızca fiat satışlarının vergilendirildiği yerlerde kapatın.",
+        "include_fees_in_cost_basis": "Bir işlemde ödenen ücretler ayrı bir gider yerine varlığın maliyet esasına eklenir.",
+        "include_gas_costs": "Ethereum işlem ücretlerini kâr/zararda gider olarak say.",
+        "tax_free": "Bu süreden uzun tutulan varlıkların satışı, bazı yargı bölgelerinde olduğu gibi vergilendirilmez.",
+        "use_asset_collections_in_cost_basis": "rotki'nin tek bir koleksiyonda topladığı varlıklar (ör. bir token ve köprülenmiş sürümleri) tek bir maliyet esasını paylaşır."
+      },
       "labels": {
         "calculate_past_cost_basis": "Rapor oluşturulurken geçmiş maliyet esasını hesapla",
         "cost_basis_method": "Maliyet esası yöntemi",
@@ -306,7 +349,16 @@
         "taxfree_after_period": "Kaç gün sonra vergiden muaf olur",
         "use_asset_collections_in_cost_basis": "Aynı koleksiyondaki varlıklar arasında maliyet esasını paylaş"
       },
-      "title": "Alım satım ayarları"
+      "titles": {
+        "calculate_past_cost_basis": "Geçmiş maliyet esası",
+        "cost_basis_method": "Maliyet esası yöntemi",
+        "eth_staking_taxable_after_withdrawal_enabled": "ETH staking",
+        "include_crypto2crypto": "Kriptodan kriptoya alım satımlar",
+        "include_fees_in_cost_basis": "Maliyet esasındaki ücretler",
+        "include_gas_costs": "Gas maliyetleri",
+        "tax_free": "Vergiden muaf dönem",
+        "use_asset_collections_in_cost_basis": "Varlık koleksiyonları"
+      }
     }
   },
   "action_center": {
@@ -906,12 +958,10 @@
     }
   },
   "active_modules": {
-    "activate": "{name} modülünü etkinleştir",
     "enable": {
       "description": "{name} modülünü etkinleştirmek ister misiniz?",
       "title": "Etkinleştirilen modül"
-    },
-    "view_addresses": "{name} için sorgulanan adresleri görüntüle"
+    }
   },
   "address_book": {
     "actions": {
@@ -2013,7 +2063,6 @@
   },
   "chain_settings": {
     "chain_queries": {
-      "subtitle": "Birbirinden bağımsız iki denetim: rotki'nin veri için hangi zincirleri ve adresleri sorguladığı ve bir adresin nerede etkin olduğunu tespit ederken hangi zincirleri kontrol ettiği.",
       "title": "Zincirler"
     }
   },
@@ -2148,15 +2197,12 @@
       "bottom": "Ek bir seçeneğiniz daha var: çakışmaları tek tek yönetebilirsiniz.",
       "top": "Yerel değişiklikler tespit edildi. İki seçeneğiniz var:"
     },
-    "all_buttons_description": "Tüm çakışmaları çöz",
     "duplicate_warn": "Şu tanımlayıcılara sahip varlıklar çakışma verilerinde birden fazla kez geçiyor: {identifiers}. Bu, bir soruna işaret ediyor. Çakışma çözümü başarısız olursa lütfen ekiple iletişime geçin.",
-    "hint": "{conflicts} varlık kaydı otomatik olarak güncellenemiyor. Kalan {remaining} kayıt için kullanıcı girdisi gerekiyor.",
     "keep_local": "Tümünde yerel sürümü koru",
     "keep_local_tooltip": "Etkilenen varlıkların hiçbiri güncellenmeyecek. Manuel güncelleme gerekebilir.",
     "keep_remote": "Tümünde uzak sürümü kullan",
     "keep_remote_tooltip": "Tüm varlıkları günceller. Başka bir şey yapmanız gerekmez.",
     "manage": "Çakışmaları yönet",
-    "resolve_all_hint": "Tüm çakışmalar {source} verileri kullanılarak çözülecek.",
     "subtitle": "{conflicts} varlık kaydı otomatik olarak güncellenemiyor. Kalan {remaining} kayıt için kullanıcı girdisi gerekiyor.",
     "table": {
       "headers": {
@@ -2850,8 +2896,7 @@
       "select_cache": "Yenilenecek protokol verilerini seçin",
       "subtitle": "rotki'deki protokol verilerini yenilemenizi sağlar",
       "success": "Protokol verileri başarıyla temizlendi",
-      "title": "Protokol verilerini yenile",
-      "tooltip": "Seçili kaynak için protokol verilerini yenile"
+      "title": "Protokol verilerini yenile"
     },
     "title": "Verileri yönet"
   },
@@ -2898,7 +2943,6 @@
   },
   "database_settings": {
     "asset_database": {
-      "subtitle": "Varlık veritabanını yönetin",
       "title": "Varlık veritabanı"
     },
     "database_info": {
@@ -2911,21 +2955,14 @@
         "userdb_size": "Diskteki boyut:",
         "userdb_version": "Veritabanı sürümü:"
       },
-      "subtitle": "Veritabanı bilgilerinizi görüntüleyin",
       "title": "Veritabanı bilgileri"
     },
-    "import_export": {
-      "subtitle": "Kullanıcı varlıklarınızı dışa veya içe aktarın",
-      "title": "Kullanıcı varlıklarını dışa/içe aktar"
-    },
     "manage_data": {
-      "subtitle": "Verilerinizi yönetin",
       "title": "Verileri yönet"
     },
     "user_backups": {
       "backup_button": "Yeni yedek oluştur",
       "delete_selected": "Seçili yedekleri sil",
-      "subtitle": "Veritabanı yedeklerinizi görüntüleyin",
       "title": "Kullanıcı veritabanı yedekleri"
     }
   },
@@ -3107,11 +3144,11 @@
   "evm_settings": {
     "general": {
       "chains_to_skip_detection": {
+        "label": "Atlanacak zincirler",
         "search_keywords": "hesap tespitini atla, zincirler arası tespit, zincir etkinliği",
         "subtitle": "Takip edilen bir adresin diğer EVM zincirlerindeki etkinliği kontrol edilirken bu zincirler hariç tutulur, böylece adres bu zincirlere eklenmez. Bu ayar, zaten takip ettiğiniz zincirlerin sorgulanmasını durdurmaz.",
         "title": "Hesap etkinliği tespitini atla"
       },
-      "title": "EVM",
       "treat_eth2_as_eth": {
         "subtitle": "Etkinleştirildiğinde stake edilmiş ETH (ETH2), normal ETH olarak gösterilir ve hesaplanır.",
         "title": "ETH2'yi ETH olarak değerlendir"
@@ -3119,6 +3156,7 @@
     },
     "indexer": {
       "add_chain": "Zincire özel ayar ekle",
+      "add_indexer": "Dizinleyici ekle",
       "api_key_missing_alert": "Birinci öncelikli indeksleyiciniz {indexer}, ancak bunun için yapılandırılmış bir API anahtarınız yok. Sorgular daha yavaş olabilir veya başarısız olabilir. Daha iyi performans için bir API anahtarı eklemeyi düşünün.",
       "chain_order": "{chain} indeksleyici sırası",
       "chain_updated": "{chain} indeksleyici sırası güncellendi",
@@ -3136,7 +3174,6 @@
       "subtitle": "İndeksleyiciler, geçmiş olaylarını sorgulamak için kullanılır. Her EVM zinciri için indeksleyicilerin öncelik sırasını yapılandırın. İlk indeksleyici başarısız olursa sıradaki denenir ve bu böyle devam eder.",
       "suppressed_no_indexer_chains": {
         "error": "Susturulan zincirler güncellenemedi.",
-        "hint": "Hiçbir indeksleyicinin hizmet veremediği durumlarda bildirilmeyecek zincirleri seçin. Bir zincirin yeniden bildirilmesi için onu listeden kaldırın.",
         "label": "Susturulan zincirler",
         "subtitle": "Hiçbir indeksleyici hizmet veremediğinde eylem merkezinin bildirmediği zincirleri yönetin.",
         "success": "Susturulan zincirler güncellendi",
@@ -3238,16 +3275,12 @@
   },
   "explorers": {
     "address": "Adresler",
-    "address_url": "Adresler şu URL'de açılacak: {addressUrl}",
     "block": "Bloklar",
-    "block_url": "Bloklar şu URL'de açılacak: {blockUrl}",
     "chain_selector": "Blokzincir",
     "subtitle": "Adresler ve işlemler için harici gezgin URL'lerini ayarlayın",
     "title": "Blok gezginleri",
     "token": "Token",
-    "token_url": "Tokenlar şu URL'de açılacak: {tokenUrl}",
-    "tx": "İşlemler",
-    "tx_url": "İşlemler şu URL'de açılacak: {txUrl}"
+    "tx": "İşlemler"
   },
   "external_services": {
     "actions": {
@@ -3318,7 +3351,6 @@
       "hint": "Etherscan API anahtarınızı girin",
       "title": "Etherscan"
     },
-    "get_api_key": "API anahtarı için {link} başvurabilirsiniz",
     "gnosispay": {
       "delete_confirmation": {
         "message": "Gnosis Pay kimlik doğrulamasını kaldırmak istediğinizden emin misiniz?",
@@ -3574,12 +3606,6 @@
         "error": "Karıştırma modu ayarlanırken hata oluştu: {message}"
       }
     },
-    "subtitle": {
-      "alias_names": "Adresler için takma ad",
-      "blockchain_address_aliases": "Blokzincir adresi takma adları",
-      "graph_settings": "Grafik ayarları",
-      "graph_settings_hint": "Grafik ayarlarınızı yönetin."
-    },
     "title": "Yalnızca arayüz ayarları",
     "validation": {
       "timeframe": {
@@ -3608,9 +3634,10 @@
         "floating_precision": "Ondalık hassasiyeti",
         "main_currency": "Ana para birimi",
         "main_currency_subtitle": "Ana para birimi olarak seçin"
-      },
-      "subtitle": "Miktar ayarlarınızı yönetin.",
-      "title": "Miktar ayarları"
+      }
+    },
+    "application": {
+      "title": "Uygulama"
     },
     "auto_detect_tokens": {
       "label": "Geçmiş olaylarını düzenli aralıklarla kontrol ederek tokenları otomatik olarak tespit et ve bakiyeleri yenile.",
@@ -3712,7 +3739,6 @@
         "read_timeout": "Okuma zaman aşımı",
         "read_timeout_hint": "Harici bir servise bağlantı kurulduktan sonra ilk baytın gelmesi için beklenecek saniye sayısı."
       },
-      "subtitle": "Harici servis ayarlarınızı yönetin.",
       "suppress_missing_key": {
         "clear_all": "Tümünü temizle",
         "error": "Susturulan servisler güncellenirken hata oluştu",
@@ -3737,6 +3763,9 @@
           "non_empty": "Lütfen okuma zaman aşımını girin"
         }
       }
+    },
+    "formats": {
+      "title": "Biçimler"
     },
     "history_event": {
       "auto_create_profit_events": {
@@ -3765,7 +3794,6 @@
         "subtitle": "Atlanan harici olayları görüntüleyin ve yönetin",
         "title": "Atlanan harici olaylar"
       },
-      "subtitle": "Geçmiş olayı ayarlarınızı yönetin.",
       "title": "Geçmiş olayları"
     },
     "labels": {
@@ -3788,9 +3816,11 @@
       }
     },
     "nft_setting": {
+      "add": "Ekle",
       "allow_all_confirmation": {
-        "message": "Her NFT görseli onu barındıran sunucudan yüklenir ve bu sunucu IP adresinizi görebilir.",
-        "title": "Tüm alan adlarından gelen görsellere izin ver"
+        "cancel": "İzin listesini koru",
+        "confirm": "Tüm görsellere izin ver",
+        "message": "Her NFT görseli onu barındıran sunucudan yüklenir ve bu sunucu IP adresinizi görebilir."
       },
       "label": {
         "include_nfts": "NFT'leri grafiklere ve toplam net değere dahil et",
@@ -3801,7 +3831,8 @@
           "only_allow_whitelisted": "Yalnızca izin listesindeki alan adlarından gelen görsellere izin ver"
         },
         "whitelist_domains": "Alan adları",
-        "whitelisted_domain_entries": "kayıt yok | {count} benzersiz kayıt | {count} benzersiz kayıt",
+        "whitelist_domains_placeholder": "rarible.com, opensea.com",
+        "whitelist_empty": "Henüz alan adı yok; bir tane ekleyene kadar NFT görselleri gizli kalır.",
         "whitelisted_domains": "İzin listesindeki alan adları",
         "whitelisted_domains_hint": "Birden fazla alan adını virgülle ayırın"
       },
@@ -3810,12 +3841,12 @@
         "success": "NFT görsellerinin gösterimi için izin verilen alan adları başarıyla kaydedildi"
       },
       "subtitle": {
-        "include_nfts": "NFT ayarlarınızı yönetin",
         "nft_images_rendering_setting": "NFT görsellerini gösterme ayarı",
         "nft_images_rendering_setting_hint": "NFT görsellerini kötü amaçlı bir sunucudan almak gizliliğinizin zarar görmesine yol açabilir; daha fazla bilgiyi {link} bulabilirsiniz"
       },
       "title": "NFT ayarları",
       "update_whitelist_confirmation": {
+        "confirm": "İzin ver",
         "message": "Bu alan adlarından gelen NFT görsellerine izin vermek istediğinizden emin misiniz? | {domain} alan adından gelen NFT görsellerine izin vermek istediğinizden emin misiniz?",
         "title": "İzin listesindeki alan adlarını güncelle"
       }
@@ -3846,7 +3877,6 @@
         "title": "Düğümü sil"
       }
     },
-    "subtitle": "Genel ayarlarınızı yönetin.",
     "thousand_separator": {
       "validation": {
         "cannot_be_numeric_character": "Binlik ayırıcı sayısal bir karakter olamaz",
@@ -3855,7 +3885,9 @@
         "single_character": "Binlik ayırıcı tek bir karakter olmalıdır"
       }
     },
-    "title": "Genel ayarlar",
+    "tokens_balances": {
+      "title": "Token'lar ve bakiyeler"
+    },
     "usage_analytics": {
       "label": "rotki'nin geliştirilmesine yardımcı olmak için anonim kullanım analitiği gönder; gizliliğiniz korunmaya devam eder.",
       "title": "Kullanım analitiği",
@@ -4813,7 +4845,6 @@
     "select_accounts_hint": "Her alt modül için verilerin alınacağı hesapları seçin. Hiçbir adres seçilmezse veriler mevcut tüm adresler için alınır",
     "some_accounts": "{number} adres",
     "table": {
-      "enabled": "Etkin",
       "select_accounts": "Hesapları seç"
     },
     "tasks": {
@@ -4822,7 +4853,6 @@
   },
   "module_settings": {
     "coverage_note": "Bu modüller yalnızca birkaç belirli protokolün bakiye sorgularını kontrol eder. rotki'nin desteklediklerinin tam listesi değildir. İşlem çözümleme, bu ayarlardan bağımsız olarak 100'den fazla DeFi protokolünü otomatik olarak kapsar. Desteklenen zincirlerin, borsaların ve protokollerin tam listesini {link} adresinde bulabilirsiniz.",
-    "hint": "Yalnızca seçilen modüllerin verileri sorgulanır. Hiçbir modül seçilmezse desteklenen tüm modüller için sorgulama devre dışı kalır. Ayrıca, bir modülü etkinleştirdikten sonra etkinleştirmenin geçerli olması için çıkış yapıp yeniden giriş yapmanız gerektiğini unutmayın",
     "integrations_link_label": "rotki.com/integrations",
     "subtitle": "Bakiye sorgulama modülü ayarlarınızı görüntüleyin ve yönetin.",
     "title": "Modül ayarları"
@@ -5100,7 +5130,11 @@
         "oracle_penalty_threshold_count": "Oracle ceza eşiği (hata sayısı)"
       },
       "subtitle": "Çalışma sırasında hatalı davranan oracle'lar için ceza ayarları.",
-      "title": "Oracle ceza ayarları"
+      "title": "Oracle ceza ayarları",
+      "units": {
+        "failures": "Hata sayısı",
+        "seconds": "Saniye"
+      }
     }
   },
   "oracle_prices": {
@@ -5217,6 +5251,7 @@
     "enable_label": "Düzenli parola onayını etkinleştir",
     "hint": "1 ile 14 gün arasında bir değer girin",
     "label": "Parola onay aralığı (gün)",
+    "saved": "Parola onayı kaydedildi",
     "subtitle": "Otomatik giriş kullanırken parolanızı ne sıklıkla onaylamanız gerektiğini yapılandırın. Bu, parolanızı unutmamanıza yardımcı olur.",
     "title": "Parola onayı",
     "validation": {
@@ -5551,14 +5586,16 @@
     },
     "to_asset": "Hedef varlık"
   },
-  "price_oracle_selection": {
-    "hint": "* Tüm oracle'ları devre dışı bırakmak, varlıkların fiyatlarını sorgulamayı imkânsız hâle getirir. Değişiklikleri uygulamak için 'Fiyatları yenile' düğmesine tıklamanız gerekebilir."
-  },
   "price_oracle_settings": {
     "data_name": "fiyat oracle'ı",
+    "empty_warning": "Oracle yok: rotki bu listeyle varlıkları fiyatlandıramaz.",
     "historic_prices": "Geçmiş fiyatlar",
     "latest_prices": "Güncel fiyatlar",
-    "latest_prices_update": "Güncel fiyatlar için oracle sıralaması güncellendi. Değişiklikleri uygulamak için 'Fiyatları yenile' düğmesine tıklamanız gerekebilir.",
+    "status": {
+      "cache_cleared": "Kaydedildi. Önbellekteki geçmiş fiyatlar temizlendi.",
+      "refresh_now": "Şimdi yenile",
+      "saved_refresh": "Kaydedildi. Fiyatlar hâlâ eski sırayı kullanıyor."
+    },
     "subtitle": "Hangi fiyat oracle'larının hangi sırayla kullanılacağını yönetin.",
     "title": "Fiyat oracle'ı ayarları"
   },
@@ -5797,11 +5834,13 @@
     "active": "Etkin",
     "active_hint": "Yalnızca etkin düğümler sorgulanır",
     "endpoint": "Uç nokta",
+    "endpoint_placeholder": "https://",
     "owned": "Sahip olunan",
     "owned_hint": "Bu düğüm size ait özel bir düğümse etkinleştirin",
     "owned_hint_provider": "Bu anahtar, eklendiği her zincire ağırlığı 0 olan sahip olunan bir düğüm olarak eklenir; böylece önce bu düğümler denenir ve mevcut düğümleriniz birbirlerine göre ağırlıklarını korur.",
     "weight": "Ağırlık",
     "weight_hint": "Düğüm ağırlığı {weight}/100 (herkese açık bir düğümün ağırlığı değiştirildiğinde diğer düğümler de buna göre ayarlanır)",
+    "weight_owned_hint": "Sahip olunan düğümler önce sorgulanır, bu yüzden ağırlık yalnızca herkese açık düğümler için geçerlidir.",
     "weight_per_hundred": "/100"
   },
   "rpc_provider_setup": {
@@ -5876,7 +5915,6 @@
       "placeholder": "Ayarlarda ara..."
     },
     "security_settings": {
-      "subtitle": "Hesap güvenliğinizi yönetin",
       "title": "Güvenlik"
     },
     "validation": {
@@ -6820,7 +6858,6 @@
           "hint": "[İsteğe bağlı] Bu eylem için saklanacak ek notlar"
         },
         "resulting_combination": {
-          "label": "Ortaya çıkan kombinasyon",
           "unknown": "Ortaya çıkan kombinasyon bilinmiyor, bu olay doğru şekilde işlenmeyecek."
         },
         "sequence_index": {

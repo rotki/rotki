@@ -28,10 +28,16 @@ const form = useForm<ExplorerUrlState, ExplorerUrlState>({
   transform: (state): ExplorerUrlState => ({ url: state.url }),
 });
 
+/** The url as last saved or seeded, so the save action only shows up for an actual change. */
+const saved = ref<string>(get(url));
+
 /** The form api is a plain object, so its refs only unwrap in the template through a local one. */
 const invalid = computed<boolean>(() => !get(form.valid));
 
-function saveData(value?: string) {
+const changed = computed<boolean>(() => form.state.url !== get(saved));
+
+function saveData(value?: string): void {
+  set(saved, value ?? '');
   emit('save-data', value);
 }
 
@@ -41,32 +47,37 @@ watch(() => form.state.url, (value) => {
 
 // The settings page reseeds every field when the user switches chain.
 watch(url, (value) => {
-  if (value !== form.state.url)
+  if (value !== form.state.url) {
     form.state.url = value;
+    set(saved, value);
+  }
 });
 </script>
 
 <template>
-  <div class="flex items-start gap-4">
-    <RuiTextField
-      v-model="form.state.url"
-      class="flex-1"
-      variant="outlined"
-      color="primary"
-      clearable
-      :error-messages="form.errors(EXPLORER_URL_FIELD)"
-      v-bind="$attrs"
-      @update:model-value="form.touch(EXPLORER_URL_FIELD)"
-      @clear="saveData()"
-    />
-    <RuiButton
-      variant="text"
-      class="mt-1"
-      icon
-      :disabled="invalid"
-      @click="saveData(form.state.url)"
-    >
-      <RuiIcon name="lu-save" />
-    </RuiButton>
-  </div>
+  <RuiTextField
+    v-model="form.state.url"
+    color="primary"
+    clearable
+    :error-messages="form.errors(EXPLORER_URL_FIELD)"
+    v-bind="$attrs"
+    @update:model-value="form.touch(EXPLORER_URL_FIELD)"
+    @clear="saveData()"
+    @keydown.enter="changed && !invalid && saveData(form.state.url)"
+  >
+    <template #append>
+      <RuiButton
+        v-if="changed"
+        variant="text"
+        color="primary"
+        size="sm"
+        :disabled="invalid"
+        :aria-label="t('common.actions.save')"
+        data-testid="explorer-save"
+        @click="saveData(form.state.url)"
+      >
+        {{ t('common.actions.save') }}
+      </RuiButton>
+    </template>
+  </RuiTextField>
 </template>

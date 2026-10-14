@@ -1,9 +1,12 @@
 import type { MaybeRef, Ref, ShallowRef } from 'vue';
 import { startPromise } from '@shared/utils';
-import { defaultDocument } from '@vueuse/core';
+import { defaultDocument, promiseTimeout } from '@vueuse/core';
 
 const SCROLL_SETTLE_TIMEOUT = 1500;
 const SCROLL_TOP_MARGIN = 20;
+const CHECK_THROTTLE = 100;
+/** How far down the scroller, as a share of its height, a section's top must pass to count as read. */
+const READING_LINE = 0.3;
 
 /**
  * Smooth-scrolls `parent` so `element` sits just below its top edge, resolving once the scroll settles
@@ -88,24 +91,36 @@ export function useSettingsScrollSpy({ navigation, scroller }: UseSettingsScroll
     return undefined;
   }
 
-  function checkVisibility(): void {
-    const parent = get(scroller);
-    if (parent) {
-      const edgeId = resolveEdgeId(parent);
-      if (edgeId !== undefined) {
-        set(currentId, edgeId);
-        return;
-      }
-    }
-
+  /**
+   * The section being read: the last one whose top has passed a line a third of the way down the
+   * scroller, so a section only counts once it fills the view rather than when its first pixel shows.
+   * Falls back to the first section, which also covers sections not rendered yet.
+   */
+  function resolveReadingId(parent: HTMLDivElement): string {
+    const line = parent.getBoundingClientRect().top + parent.clientHeight * READING_LINE;
+    let reading = navItems[0]?.id ?? '';
     for (const nav of navItems) {
       const element = defaultDocument?.getElementById(nav.id);
-      if (element && isElementInViewport(element)) {
-        set(currentId, nav.id);
-        return;
-      }
+      if (element && element.getBoundingClientRect().top <= line)
+        reading = nav.id;
     }
-    set(currentId, navItems[0]?.id ?? '');
+    return reading;
+  }
+
+  /** Set while a click scrolls to its section, which stays selected even where it cannot reach the top. */
+  let pinned = false;
+
+  function checkVisibility(): void {
+    if (pinned)
+      return;
+
+    const parent = get(scroller);
+    if (!parent) {
+      set(currentId, navItems[0]?.id ?? '');
+      return;
+    }
+
+    set(currentId, resolveEdgeId(parent) ?? resolveReadingId(parent));
   }
 
   async function scrollToElement(el?: string | Element): Promise<void> {
@@ -114,11 +129,28 @@ export function useSettingsScrollSpy({ navigation, scroller }: UseSettingsScroll
 
     const element = typeof el === 'string' ? defaultDocument?.getElementById(el) : el;
     const parent = get(scroller);
-    if (element && parent)
+    if (!element || !parent)
+      return;
+
+    const navId = navItems.find(nav => nav.id === element.id)?.id;
+    if (navId === undefined) {
       await scrollIntoContainer(parent, element);
+      return;
+    }
+
+    set(currentId, navId);
+    pinned = true;
+    try {
+      await scrollIntoContainer(parent, element);
+      // the throttled check still due from the scroll would undo the choice
+      await promiseTimeout(CHECK_THROTTLE);
+    }
+    finally {
+      pinned = false;
+    }
   }
 
-  const throttledCheckVisibility = useThrottleFn(checkVisibility, 100);
+  const throttledCheckVisibility = useThrottleFn(checkVisibility, CHECK_THROTTLE, true);
 
   function onViewportChange(): void {
     startPromise(throttledCheckVisibility());

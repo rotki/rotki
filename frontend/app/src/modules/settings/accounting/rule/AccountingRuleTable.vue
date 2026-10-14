@@ -3,11 +3,11 @@ import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/modules/core/common/collection';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
-import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
-import HistoryEventTypeCombination from '@/modules/history/events/HistoryEventTypeCombination.vue';
-import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
+import AccountingRuleColumnHeader from '@/modules/settings/accounting/rule/AccountingRuleColumnHeader.vue';
+import AccountingRuleEventCell from '@/modules/settings/accounting/rule/AccountingRuleEventCell.vue';
 import AccountingRuleEventsDialog from '@/modules/settings/accounting/rule/AccountingRuleEventsDialog.vue';
 import AccountingRuleWithLinkedSettingDisplay from '@/modules/settings/accounting/rule/AccountingRuleWithLinkedSettingDisplay.vue';
+import AccountingTreatmentChip from '@/modules/settings/accounting/rule/AccountingTreatmentChip.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
@@ -39,89 +39,61 @@ const eventsDialogOpen = ref<boolean>(false);
  * The table's columns, with an extra one in the custom-rule view.
  *
  * @remarks
- * A custom rule gains an event-ids column and keeps the type, subtype and counterparty ones, so
- * that view is the regular set plus one rather than a different set.
+ * A custom rule gains an event-ids column and keeps the others, so that view is the regular set plus
+ * one rather than a different set.
  */
 const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => {
-  const baseColumns: DataTableColumn<AccountingRuleEntry>[] = [];
-
-  baseColumns.push(
+  const columns: DataTableColumn<AccountingRuleEntry>[] = [
     {
-      cellClass: 'py-4',
-      class: 'whitespace-pre-line',
-      key: 'eventTypeAndSubtype',
-      label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
-        'accounting_settings.rule.labels.event_subtype',
-      )}`,
+      cellClass: 'max-w-56',
+      key: 'event',
+      label: t('accounting_settings.rule.labels.event'),
     },
     {
-      key: 'resultingCombination',
-      label: t('transactions.events.form.resulting_combination.label'),
-    },
-    {
-      cellClass: isCustom ? '' : 'border-r border-default',
-      class: isCustom ? '' : 'border-r border-default',
       key: 'counterparty',
       label: t('common.counterparty'),
     },
-  );
+  ];
 
   if (isCustom) {
-    baseColumns.push({
-      cellClass: 'py-4 border-r border-default',
-      class: 'border-r border-default',
+    columns.push({
       key: 'eventIds',
       label: t('accounting_settings.rule.labels.event_ids'),
     });
   }
 
-  baseColumns.push(
+  columns.push(
     {
       align: 'center',
-      class: 'max-w-24 text-sm whitespace-normal font-medium align-center',
       key: 'taxable',
       label: t('accounting_settings.rule.labels.taxable'),
     },
     {
       align: 'center',
-      class: 'max-w-24 text-sm whitespace-normal font-medium align-center',
       key: 'countEntireAmountSpend',
       label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
     },
     {
       align: 'center',
-      class: 'max-w-24 text-sm whitespace-normal font-medium align-center',
       key: 'countCostBasisPnl',
       label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
     },
     {
-      class: 'max-w-24 text-sm whitespace-normal font-medium align-center',
       key: 'accountingTreatment',
       label: t('accounting_settings.rule.labels.accounting_treatment'),
     },
     {
-      align: 'center',
+      align: 'end',
+      class: 'w-px',
       key: 'actions',
-      label: t('common.actions_text'),
-      width: '1px',
+      label: '',
     },
   );
 
-  return baseColumns;
+  return columns;
 });
 
-const { getEventTypeData, getHistoryEventSubTypeName, getHistoryEventTypeName } = useHistoryEventMappings();
-
-function getType(eventType: string, eventSubtype: string) {
-  return get(
-    getEventTypeData({
-      eventSubtype,
-      eventType,
-    }),
-  );
-}
-
-function openEventsDialog(eventIds: number[]) {
+function openEventsDialog(eventIds: number[]): void {
   set(selectedEventIds, eventIds);
   set(eventsDialogOpen, true);
 }
@@ -130,7 +102,8 @@ function openEventsDialog(eventIds: number[]) {
 <template>
   <RuiDataTable
     v-model:pagination.external="paginationModel"
-    outlined
+    dense
+    disable-sticky-pagination
     :rows="state.data"
     :cols="cols"
     :empty="emptyState"
@@ -139,90 +112,44 @@ function openEventsDialog(eventIds: number[]) {
     data-testid="accounting-rule-table"
   >
     <template #header.taxable>
-      <RuiTooltip
-        :options="{ placement: 'top' }"
-        :open-delay="400"
-        class="flex items-center h-full"
-        :class-names="{ tooltip: 'max-w-40' }"
-      >
-        <template #activator>
-          <div class="flex items-center text-left gap-2">
-            <RuiIcon
-              class="shrink-0"
-              size="18"
-              name="lu-info"
-            />
-            {{ t('accounting_settings.rule.labels.taxable') }}
-          </div>
-        </template>
-        {{ t('accounting_settings.rule.labels.taxable_subtitle') }}
-      </RuiTooltip>
+      <AccountingRuleColumnHeader
+        :label="t('accounting_settings.rule.labels.taxable')"
+        :hint="t('accounting_settings.rule.labels.taxable_subtitle')"
+      />
     </template>
     <template #header.countEntireAmountSpend>
-      <RuiTooltip
-        :options="{ placement: 'top' }"
-        :open-delay="400"
-        class="flex items-center"
-        :class-names="{ tooltip: 'max-w-40' }"
-      >
-        <template #activator>
-          <div class="flex items-center text-left gap-2">
-            <RuiIcon
-              class="shrink-0"
-              size="18"
-              name="lu-info"
-            />
-            {{ t('accounting_settings.rule.labels.count_entire_amount_spend') }}
-          </div>
-        </template>
-        {{ t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle') }}
-      </RuiTooltip>
+      <AccountingRuleColumnHeader
+        :label="t('accounting_settings.rule.labels.count_entire_amount_spend')"
+        :hint="t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle')"
+      />
     </template>
     <template #header.countCostBasisPnl>
-      <RuiTooltip
-        :options="{ placement: 'top' }"
-        :open-delay="400"
-        class="flex items-center"
-        :class-names="{ tooltip: 'max-w-40' }"
-      >
-        <template #activator>
-          <div class="flex items-center text-left gap-2">
-            <RuiIcon
-              class="shrink-0"
-              size="18"
-              name="lu-info"
-            />
-            {{ t('accounting_settings.rule.labels.count_cost_basis_pnl') }}
-          </div>
-        </template>
-        {{ t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle') }}
-      </RuiTooltip>
+      <AccountingRuleColumnHeader
+        :label="t('accounting_settings.rule.labels.count_cost_basis_pnl')"
+        :hint="t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle')"
+      />
     </template>
     <template #header.accountingTreatment>
-      <div class="max-w-20 text-sm whitespace-normal font-medium">
-        {{ t('accounting_settings.rule.labels.accounting_treatment') }}
-      </div>
+      <AccountingRuleColumnHeader :label="t('accounting_settings.rule.labels.accounting_treatment')" />
     </template>
-    <template #item.eventTypeAndSubtype="{ row }">
-      <div data-testid="accounting-rule-event-type">
-        {{ getHistoryEventTypeName(row.eventType) }} -
-      </div>
-      <div data-testid="accounting-rule-event-subtype">
-        {{ getHistoryEventSubTypeName(row.eventSubtype) }}
-      </div>
-    </template>
-    <template #item.resultingCombination="{ row }">
-      <HistoryEventTypeCombination
-        :type="getType(row.eventType, row.eventSubtype)"
-        show-label
+    <template #item.event="{ row }">
+      <AccountingRuleEventCell
+        :event-type="row.eventType"
+        :event-subtype="row.eventSubtype"
       />
     </template>
     <template #item.counterparty="{ row }">
       <CounterpartyDisplay
         v-if="row.counterparty"
+        class="whitespace-nowrap"
         :counterparty="row.counterparty"
       />
-      <span v-else>-</span>
+      <span
+        v-else
+        class="text-rui-text-secondary"
+      >
+        -
+      </span>
     </template>
     <template #item.taxable="{ row }">
       <AccountingRuleWithLinkedSettingDisplay
@@ -243,18 +170,16 @@ function openEventsDialog(eventIds: number[]) {
       />
     </template>
     <template #item.accountingTreatment="{ row }">
-      <BadgeDisplay v-if="row.accountingTreatment">
-        {{ row.accountingTreatment }}
-      </BadgeDisplay>
-      <span v-else>-</span>
+      <AccountingTreatmentChip :treatment="row.accountingTreatment" />
     </template>
     <template #item.eventIds="{ row }">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1 text-sm">
         <span>{{ row.eventIds?.length || 0 }} {{ t('common.events') }}</span>
         <RuiButton
           v-if="row.eventIds && row.eventIds.length > 0"
           variant="text"
           icon
+          size="sm"
           @click="openEventsDialog(row.eventIds)"
         >
           <RuiIcon
@@ -266,6 +191,8 @@ function openEventsDialog(eventIds: number[]) {
     </template>
     <template #item.actions="{ row }">
       <RowActions
+        align="end"
+        class="text-rui-text-secondary transition-opacity [tr:not(:hover)_&:not(:focus-within)]:opacity-0 motion-reduce:transition-none"
         :delete-tooltip="t('accounting_settings.rule.delete')"
         :edit-tooltip="t('accounting_settings.rule.edit')"
         @delete-click="emit('delete-click', row)"

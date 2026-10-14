@@ -14,6 +14,8 @@ export interface ServiceKeyAction {
   primary?: string;
   addText?: string;
   editText?: string;
+  /** What the status chip says once the service is set up; a key card's default is "Key set". */
+  statusText?: string;
 }
 
 const {
@@ -30,6 +32,7 @@ const {
   title: string;
   subtitle?: string;
   imageSrc: string;
+  /** Set for a service that needs a premium plan; the card says so whether or not the plan allows it. */
   featureGate?: FeatureGate;
   roundedIcon?: boolean;
   keySet?: boolean;
@@ -103,46 +106,66 @@ defineExpose({
 </script>
 
 <template>
-  <RuiCard
-    no-padding
-    class="h-full"
-    :class="{ 'border-rui-success/50! bg-rui-success/5 dark:bg-rui-success/5': keySet }"
-    :class-names="{ content: 'h-full flex flex-col' }"
-  >
-    <div class="grow">
-      <div class="px-6 pt-6">
+  <section class="flex h-full flex-col rounded-rui-card border border-rui-divider bg-rui-surface">
+    <div class="flex grow flex-col gap-3 p-4">
+      <div class="flex items-center gap-3 min-w-0">
         <AppImage
           :src="imageSrc"
-          class="size-10"
+          class="size-9 shrink-0"
           :class="{ 'rounded-full overflow-hidden': roundedIcon }"
         />
-      </div>
-      <RuiCardHeader class="px-6!">
-        <template #header>
+        <h3 class="m-0 grow min-w-0 truncate text-base font-semibold text-rui-text">
           {{ title }}
-        </template>
-        <template #subheader>
-          {{ subtitle }}
-        </template>
-      </RuiCardHeader>
-      <div
-        v-if="$slots.banner"
-        class="px-6 pb-2"
+        </h3>
+        <div class="flex shrink-0 items-center gap-1.5">
+          <RuiTooltip
+            v-if="featureGate"
+            :open-delay="400"
+          >
+            <template #activator>
+              <span
+                class="flex size-6 items-center justify-center rounded-full bg-rui-primary/10 text-rui-primary"
+                data-testid="service-key-premium"
+              >
+                <RuiIcon
+                  name="lu-crown"
+                  size="14"
+                />
+              </span>
+            </template>
+            {{ t('external_services.status.premium') }}
+          </RuiTooltip>
+          <RuiChip
+            v-if="keySet"
+            size="sm"
+            variant="tonal"
+            color="success"
+            data-testid="service-key-status"
+          >
+            {{ action?.statusText || t('external_services.status.key_set') }}
+          </RuiChip>
+        </div>
+      </div>
+      <p
+        class="m-0 text-sm text-rui-text-secondary line-clamp-3"
+        :title="subtitle"
       >
+        {{ subtitle }}
+      </p>
+      <div v-if="$slots.banner">
         <slot name="banner" />
       </div>
     </div>
     <div
       v-if="featureBlocked"
-      class="py-2.5 px-6 -ml-4 flex items-center gap-2 text-body-2 border-t border-default text-rui-text-secondary"
+      class="flex items-center gap-2 border-t border-rui-divider px-4 py-2.5 text-sm text-rui-text-secondary"
     >
       <PremiumLock />
       {{ featureGate?.message }}
     </div>
     <div
       v-else
-      class="px-6 py-4 border-t border-default"
-      :class="{ 'border-rui-success/20!': keySet }"
+      class="border-t border-rui-divider px-4 py-3"
     >
       <RuiButton
         variant="outlined"
@@ -167,13 +190,26 @@ defineExpose({
       :title="title"
       :subtitle="subtitle"
       :action="dialogAction"
+      :layout="{ autoHeight: true, divide: true, maxWidth: '600px' }"
       @cancel="setOpen(false)"
       @confirm="emit('confirm')"
     >
+      <template #header>
+        <div class="flex items-center gap-3 mb-1">
+          <AppImage
+            :src="imageSrc"
+            class="size-7 shrink-0"
+            :class="{ 'rounded-full overflow-hidden': roundedIcon }"
+          />
+          <h5 class="m-0 font-medium text-xl text-rui-text">
+            {{ title }}
+          </h5>
+        </div>
+      </template>
       <template #left-buttons>
         <slot name="left-buttons" />
       </template>
       <slot />
     </BigDialog>
-  </RuiCard>
+  </section>
 </template>

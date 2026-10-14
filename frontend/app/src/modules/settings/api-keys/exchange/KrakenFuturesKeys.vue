@@ -48,7 +48,7 @@ function toggle(): void {
 </script>
 
 <template>
-  <div class="flex items-center gap-2 text-subtitle-2 pb-4">
+  <div class="flex items-center gap-2 min-h-9 pt-2 text-subtitle-2">
     {{ t('exchange_settings.inputs.kraken_futures_keys') }}
     <RuiTooltip
       v-if="editMode"

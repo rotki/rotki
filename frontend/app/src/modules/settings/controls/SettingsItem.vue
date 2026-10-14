@@ -50,17 +50,16 @@ const registryTitle = computed<string | undefined>(() => {
 </script>
 
 <template>
-  <!-- :id (from the setting-key/action-key anchor) is bound before $attrs so an explicit :id still wins -->
   <div
     v-if="$slots.title || $slots.subtitle || registryTitle"
     :id="anchor"
     v-bind="$attrs"
-    class="flex flex-col md:flex-row py-4 md:py-6 gap-4 md:gap-8 lg:gap-12 border-b border-default"
+    class="flex flex-col md:flex-row pt-4 pb-1 gap-2 md:gap-8 lg:gap-10 border-b border-rui-divider"
   >
-    <div class="w-full md:w-[150px] lg:w-[200px] xl:w-[288px] shrink-0">
+    <div class="flex flex-col gap-1 w-full md:w-[200px] lg:w-[240px] xl:w-[280px] shrink-0 md:pt-1.5">
       <div
         v-if="$slots.title || registryTitle"
-        class="font-medium"
+        class="text-sm font-medium text-rui-text"
       >
         <slot name="title">
           {{ registryTitle }}
@@ -68,7 +67,7 @@ const registryTitle = computed<string | undefined>(() => {
       </div>
       <div
         v-if="$slots.subtitle"
-        class="text-rui-text-secondary text-sm"
+        class="text-xs leading-5 text-rui-text-secondary"
       >
         <slot name="subtitle" />
       </div>

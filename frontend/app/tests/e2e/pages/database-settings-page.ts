@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM } from '../helpers/constants';
 import { openSettingsTab } from '../helpers/utils';
 
-const SECTION_IDS = ['database_info', 'user_backups', 'manage_data', 'import_export', 'asset_database'] as const;
+const SECTION_IDS = ['database_info', 'user_backups', 'asset_database', 'manage_data'] as const;
 
 export class DatabaseSettingsPage {
   constructor(private readonly page: Page) {}

@@ -22,7 +22,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const navigation = computed<{ id: string; label: string }[]>(() => [
   { id: SettingsCategoryIds.CHAIN_QUERIES, label: t('chain_settings.chain_queries.title') },
-  { id: SettingsCategoryIds.CHAINS, label: t('evm_settings.general.title') },
   { id: SettingsCategoryIds.INDEXER, label: t('evm_settings.indexer.title') },
 ]);
 </script>
@@ -36,9 +35,6 @@ const navigation = computed<{ id: string; label: string }[]>(() => [
       <template #title>
         {{ t('chain_settings.chain_queries.title') }}
       </template>
-      <template #subtitle>
-        {{ t('chain_settings.chain_queries.subtitle') }}
-      </template>
       <SettingsItem setting-key="disabledChainQueries">
         <template #subtitle>
           {{ t('general_settings.disabled_chain_queries.subtitle') }}
@@ -51,11 +47,6 @@ const navigation = computed<{ id: string; label: string }[]>(() => [
         </template>
         <EvmChainsToIgnoreSettings />
       </SettingsItem>
-    </SettingCategory>
-    <SettingCategory :id="SettingsCategoryIds.CHAINS">
-      <template #title>
-        {{ t('evm_settings.general.title') }}
-      </template>
       <SettingsItem setting-key="treatEth2AsEth">
         <template #subtitle>
           {{ t('evm_settings.general.treat_eth2_as_eth.subtitle') }}

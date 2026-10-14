@@ -99,10 +99,11 @@ const {
         :status="status"
       />
 
-      <div class="flex justify-end">
+      <div class="flex">
         <RuiButton
           :disabled="!modelSource || pending"
           :loading="pending"
+          variant="outlined"
           color="error"
           data-testid="purge-submit"
           @click="showConfirmation(modelSource)"

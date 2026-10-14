@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import AccountingRuleActionDialog from '@/modules/settings/accounting/rule/AccountingRuleActionDialog.vue';
 import AccountingRuleConflictsBanner from '@/modules/settings/accounting/rule/AccountingRuleConflictsBanner.vue';
 import AccountingRuleFormDialog from '@/modules/settings/accounting/rule/AccountingRuleFormDialog.vue';
@@ -65,36 +66,34 @@ onMounted(async () => {
 <template>
   <div
     :id="anchorId('accountingRule')"
-    class="mt-4"
+    class="flex flex-col gap-4"
   >
     <AccountingRuleSettingHeader
-      :loading="isLoading"
       :export-loading="exportFileLoading"
       :import-loading="importFileLoading"
       :reset-loading="resetLoading"
-      @refresh="refresh()"
       @add="add()"
       @export="exportJSON()"
       @import="modelImportDialogOpen = true"
       @reset="confirmReset()"
     />
 
-    <RuiCard class="mt-5">
-      <template #custom-header>
-        <div class="p-4 pb-0">
-          <AccountingRuleConflictsBanner
-            v-model:open="modelConflictsDialogOpen"
-            :count="conflictsNumber"
-            @refresh="refresh()"
-          />
-          <AccountingRuleToolbar
-            v-model:custom-rule-handling="modelCustomRuleHandling"
-            v-model:filter="filter"
-            :fields="fields"
-          />
-        </div>
-      </template>
+    <AccountingRuleConflictsBanner
+      v-model:open="modelConflictsDialogOpen"
+      :count="conflictsNumber"
+      @refresh="refresh()"
+    />
 
+    <TableFrame>
+      <template #toolbar>
+        <AccountingRuleToolbar
+          v-model:custom-rule-handling="modelCustomRuleHandling"
+          v-model:filter="filter"
+          :fields="fields"
+          :loading="isLoading"
+          @refresh="refresh()"
+        />
+      </template>
       <AccountingRuleTable
         :key="modelCustomRuleHandling"
         v-model:pagination="pagination"
@@ -105,28 +104,28 @@ onMounted(async () => {
         @edit-click="edit($event)"
         @view-events-click="viewEvents($event)"
       />
+    </TableFrame>
 
-      <AccountingRuleFormDialog
-        v-model="modelRule"
-        :edit-mode="modelEditMode"
-        :event-ids="modelEventIds"
-        @refresh="refetch()"
-      />
+    <AccountingRuleFormDialog
+      v-model="modelRule"
+      :edit-mode="modelEditMode"
+      :event-ids="modelEventIds"
+      @refresh="refetch()"
+    />
 
-      <AccountingRuleActionDialog
-        v-if="actionDialog.open && actionDialog.context"
-        :has-event-specific-rule="actionDialog.hasEventSpecificRule"
-        :has-general-rule="actionDialog.hasGeneralRule"
-        :event-ids="actionDialog.eventIds"
-        @close="closeActionDialog()"
-        @select="handleRuleAction($event)"
-      />
+    <AccountingRuleActionDialog
+      v-if="actionDialog.open && actionDialog.context"
+      :has-event-specific-rule="actionDialog.hasEventSpecificRule"
+      :has-general-rule="actionDialog.hasGeneralRule"
+      :event-ids="actionDialog.eventIds"
+      @close="closeActionDialog()"
+      @select="handleRuleAction($event)"
+    />
 
-      <AccountingRuleImportDialog
-        v-model="modelImportDialogOpen"
-        :loading="importFileLoading"
-        @refresh="refresh()"
-      />
-    </RuiCard>
+    <AccountingRuleImportDialog
+      v-model="modelImportDialogOpen"
+      :loading="importFileLoading"
+      @refresh="refresh()"
+    />
   </div>
 </template>

@@ -71,11 +71,9 @@ onMounted(() => {
     <template #subtitle>
       {{ t('data_management.refresh_cache.subtitle') }}
     </template>
-    <div class="flex items-center gap-4">
+    <div class="flex flex-col gap-4">
       <RuiAutoComplete
         v-model="source"
-        class="flex-1 min-w-0"
-        variant="outlined"
         :label="t('data_management.refresh_cache.select_cache')"
         :options="refreshable"
         text-attr="text"
@@ -88,23 +86,23 @@ onMounted(() => {
         </template>
       </RuiAutoComplete>
 
-      <RuiTooltip
-        :options="{ placement: 'top' }"
-        :open-delay="400"
+      <RuiButton
+        variant="outlined"
+        color="primary"
+        class="self-start"
+        :disabled="!source || loading"
+        :loading="loading"
+        data-testid="refresh-cache-button"
+        @click="confirm()"
       >
-        <template #activator>
-          <RuiButton
-            variant="text"
-            icon
-            :disabled="!source || loading"
-            :loading="loading"
-            @click="confirm()"
-          >
-            <RuiIcon name="lu-rotate-ccw" />
-          </RuiButton>
+        <template #prepend>
+          <RuiIcon
+            name="lu-rotate-ccw"
+            size="16"
+          />
         </template>
-        <span> {{ t('data_management.refresh_cache.tooltip') }} </span>
-      </RuiTooltip>
+        {{ t('data_management.refresh_cache.title') }}
+      </RuiButton>
     </div>
 
     <ActionStatusIndicator

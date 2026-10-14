@@ -15,7 +15,6 @@ import { getRegistryEntry } from '@/modules/settings/settings-registry';
 export interface ActionEntry {
   readonly anchor?: SettingsHighlightId;
   readonly category?: SettingsCategoryId;
-  readonly group?: MessageKey;
   readonly keywords?: readonly MessageKey[];
   readonly tab?: RouteName;
   readonly titleKey: MessageKey;
@@ -29,7 +28,6 @@ export interface ActionEntry {
 export const settingsActions = {
   accountingRule: {
     anchor: SettingsHighlightIds.ACCOUNTING_RULE,
-    keywords: [msg.$t('accounting_settings.rule.subtitle')],
     tab: '/settings/accounting/',
     titleKey: msg.$t('accounting_settings.rule.title'),
   },
@@ -55,7 +53,7 @@ export const settingsActions = {
     titleKey: msg.$t('price_oracle_settings.historic_prices'),
   },
   historyQueryIndicator: {
-    category: SettingsCategoryIds.INTERFACE_ONLY,
+    category: SettingsCategoryIds.REFRESH,
     titleKey: msg.$t('frontend_settings.history_query_indicator.title'),
   },
   latestPrices: {
@@ -64,7 +62,7 @@ export const settingsActions = {
   },
   logLevel: {
     anchor: SettingsHighlightIds.LOG_LEVEL,
-    category: SettingsCategoryIds.BACKEND,
+    category: SettingsCategoryIds.GENERAL,
     keywords: [msg.$t('backend_settings.settings.log_level.hint')],
     titleKey: msg.$t('backend_settings.settings.log_level.label'),
   },
@@ -100,8 +98,7 @@ export const settingsActions = {
   },
   resetDismissalStatus: {
     anchor: SettingsHighlightIds.RESET_DISMISSAL_STATUS,
-    category: SettingsCategoryIds.INTERFACE_ONLY,
-    group: msg.$t('frontend_settings.history_query_indicator.title'),
+    category: SettingsCategoryIds.REFRESH,
     keywords: [msg.$t('frontend_settings.history_query_indicator.reset_dismissal_status.subtitle')],
     titleKey: msg.$t('frontend_settings.history_query_indicator.reset_dismissal_status.title'),
   },

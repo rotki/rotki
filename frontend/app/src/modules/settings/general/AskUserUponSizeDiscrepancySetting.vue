@@ -28,7 +28,6 @@ const [DefineSwitch, ReuseSwitch] = createReusableTemplate();
     />
   </DefineSwitch>
 
-  <!-- in a menu or dialog only the switch: SettingsItem draws the settings page's titled row, which a narrow popup squeezes -->
   <ReuseSwitch v-if="dialog" />
   <SettingsItem
     v-else

@@ -19,8 +19,11 @@ vi.mock('@/modules/settings/accounting/use-accounting-settings', () => ({
 
 const FileUploadStub = defineComponent({
   name: 'RuiFileUpload',
-  props: { accept: { default: undefined, type: String }, modelValue: { default: undefined, type: File } },
-  emits: ['update:modelValue'],
+  props: {
+    errorMessages: { default: (): string[] => [], type: Array },
+    modelValue: { default: undefined, type: File },
+  },
+  emits: ['update:modelValue', 'error'],
   template: '<div />',
 });
 
@@ -44,8 +47,12 @@ describe('accountingRuleImportDialog', () => {
     });
   }
 
+  function upload(): VueWrapper<InstanceType<typeof FileUploadStub>> {
+    return wrapper.findComponent(FileUploadStub);
+  }
+
   async function chooseFile(): Promise<void> {
-    wrapper.findComponent(FileUploadStub).vm.$emit('update:modelValue', file);
+    upload().vm.$emit('update:modelValue', file);
     await nextTick();
   }
 
@@ -62,12 +69,6 @@ describe('accountingRuleImportDialog', () => {
 
   afterEach(() => {
     wrapper?.unmount();
-  });
-
-  it('should take only json files', () => {
-    wrapper = createWrapper();
-
-    expect(wrapper.findComponent(FileUploadStub).props('accept')).toBe('.json');
   });
 
   it('should not offer the import until a file is chosen', async () => {
@@ -107,25 +108,34 @@ describe('accountingRuleImportDialog', () => {
 
       expect(wrapper.emitted('update:modelValue')).toEqual([[false]]);
       expect(wrapper.emitted('refresh')).toHaveLength(1);
-      expect(wrapper.findComponent(FileUploadStub).props('modelValue')).toBeUndefined();
+      expect(upload().props('modelValue')).toBeUndefined();
     });
   });
 
   describe('on failure', () => {
-    it('should report why and stay open with the file', async () => {
+    it('should show why on the field and stay open with the file', async () => {
       spies.importJSON.mockResolvedValue({ message: 'rule 3 is invalid', success: false });
       wrapper = createWrapper();
       await chooseFile();
 
       await importChosenFile();
 
-      expect(useMessageStore().message).toMatchObject({
-        description: 'actions.accounting_rules.import.message.failure::rule 3 is invalid',
-        success: false,
-      });
+      expect(upload().props('errorMessages')).toEqual(['actions.accounting_rules.import.message.failure::rule 3 is invalid']);
+      expect(useMessageStore().message).toBeUndefined();
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
       expect(wrapper.emitted('refresh')).toBeUndefined();
-      expect(wrapper.findComponent(FileUploadStub).props('modelValue')?.name).toBe('rules.json');
+      expect(upload().props('modelValue')?.name).toBe('rules.json');
+    });
+
+    it('should clear the error once another file is chosen', async () => {
+      spies.importJSON.mockResolvedValue({ message: 'rule 3 is invalid', success: false });
+      wrapper = createWrapper();
+      await chooseFile();
+      await importChosenFile();
+
+      await chooseFile();
+
+      expect(upload().props('errorMessages')).toEqual([]);
     });
 
     it('should say nothing when the import was not attempted', async () => {
@@ -137,6 +147,7 @@ describe('accountingRuleImportDialog', () => {
 
       expect(spies.importJSON).toHaveBeenCalledOnce();
       expect(useMessageStore().message).toBeUndefined();
+      expect(upload().props('errorMessages')).toEqual([]);
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     });
   });

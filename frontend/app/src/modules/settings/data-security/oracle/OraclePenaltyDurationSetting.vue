@@ -8,7 +8,7 @@ const { t } = useI18n({ useScope: 'global' });
   <SettingNumber
     setting="oraclePenaltyDuration"
     data-testid="oracle-penalty-duration"
-    :label="t('oracle_cache_management.penalty.labels.oracle_penalty_duration')"
+    :label="t('oracle_cache_management.penalty.units.seconds')"
     :min="1"
   />
 </template>

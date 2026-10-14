@@ -30,7 +30,7 @@ export const frontendRegistry = {
   autoDetectTokensCooldownHours: frontend('autoDetectTokensCooldownHours', {
     anchor: SettingsHighlightIds.AUTO_DETECT_TOKENS_COOLDOWN,
     search: {
-      category: SettingsCategoryIds.GENERAL,
+      category: SettingsCategoryIds.TOKENS_BALANCES,
       keywords: [msg.$t('general_settings.auto_detect_tokens_cooldown.subtitle')],
       titleKey: msg.$t('general_settings.auto_detect_tokens_cooldown.title'),
     },
@@ -38,7 +38,7 @@ export const frontendRegistry = {
   autoDetectTokensOnLogin: frontend('autoDetectTokensOnLogin', {
     anchor: SettingsHighlightIds.AUTO_DETECT_TOKENS_ON_LOGIN,
     search: {
-      category: SettingsCategoryIds.GENERAL,
+      category: SettingsCategoryIds.TOKENS_BALANCES,
       keywords: [msg.$t('general_settings.auto_detect_tokens_on_login.subtitle')],
       titleKey: msg.$t('general_settings.auto_detect_tokens_on_login.title'),
     },
@@ -85,8 +85,7 @@ export const frontendRegistry = {
   evmQueryIndicatorMinOutOfSyncPeriod: frontend('evmQueryIndicatorMinOutOfSyncPeriod', {
     anchor: SettingsHighlightIds.MIN_OUT_OF_SYNC_PERIOD,
     search: {
-      category: SettingsCategoryIds.INTERFACE_ONLY,
-      group: msg.$t('frontend_settings.history_query_indicator.title'),
+      category: SettingsCategoryIds.REFRESH,
       keywords: [msg.$t('frontend_settings.history_query_indicator.min_out_of_sync_period.subtitle')],
       titleKey: msg.$t('frontend_settings.history_query_indicator.min_out_of_sync_period.title'),
     },
@@ -94,7 +93,7 @@ export const frontendRegistry = {
   explorers: frontend('explorers', {
     anchor: SettingsHighlightIds.EXPLORERS,
     search: {
-      category: SettingsCategoryIds.INTERFACE_ONLY,
+      category: SettingsCategoryIds.ALIAS,
       keywords: [msg.$t('explorers.subtitle')],
       titleKey: msg.$t('explorers.title'),
     },
@@ -140,7 +139,7 @@ export const frontendRegistry = {
   passwordConfirmationInterval: frontend('passwordConfirmationInterval', { anchor: SettingsHighlightIds.PASSWORD_CONFIRMATION }),
   persistPrivacySettings: frontend('persistPrivacySettings', {
     anchor: SettingsHighlightIds.PERSIST_PRIVACY,
-    search: { category: SettingsCategoryIds.INTERFACE_ONLY, titleKey: msg.$t('frontend_settings.persist_privacy.title') },
+    search: { category: SettingsCategoryIds.PRIVACY, titleKey: msg.$t('frontend_settings.persist_privacy.title') },
   }),
   persistTableSorting: frontend('persistTableSorting', {
     anchor: SettingsHighlightIds.PERSIST_TABLE_SORTING,
@@ -154,11 +153,11 @@ export const frontendRegistry = {
   profitLossReportPeriod: frontend('profitLossReportPeriod'),
   queryPeriod: frontend('queryPeriod', {
     anchor: SettingsHighlightIds.PERIODIC_QUERY,
-    search: { category: SettingsCategoryIds.INTERFACE_ONLY, titleKey: msg.$t('frontend_settings.periodic_query.title') },
+    search: { category: SettingsCategoryIds.REFRESH, titleKey: msg.$t('frontend_settings.periodic_query.title') },
   }),
   refreshPeriod: frontend('refreshPeriod', {
     anchor: SettingsHighlightIds.REFRESH_BALANCE,
-    search: { category: SettingsCategoryIds.INTERFACE_ONLY, titleKey: msg.$t('frontend_settings.refresh_balance.title') },
+    search: { category: SettingsCategoryIds.REFRESH, titleKey: msg.$t('frontend_settings.refresh_balance.title') },
   }),
   renderAllNftImages: frontend('renderAllNftImages', {
     anchor: SettingsHighlightIds.NFT_IMAGE_RENDERING,
@@ -173,7 +172,7 @@ export const frontendRegistry = {
   savedViews: frontend('savedViews', { userFacing: false }),
   scrambleData: frontend('scrambleData', {
     anchor: SettingsHighlightIds.SCRAMBLE,
-    search: { category: SettingsCategoryIds.INTERFACE_ONLY, titleKey: msg.$t('frontend_settings.scramble.title') },
+    search: { category: SettingsCategoryIds.PRIVACY, titleKey: msg.$t('frontend_settings.scramble.title') },
   }),
   scrambleMultiplier: frontend('scrambleMultiplier', { anchor: SettingsHighlightIds.SCRAMBLE }),
   selectedTheme: frontend('selectedTheme'),

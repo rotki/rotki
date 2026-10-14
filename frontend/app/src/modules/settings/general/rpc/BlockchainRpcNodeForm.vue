@@ -118,10 +118,42 @@ defineExpose({
       :disabled="isEtherscan"
       :error-messages="form.errors('endpoint')"
       :label="t('rpc_node_form.endpoint')"
+      :placeholder="t('rpc_node_form.endpoint_placeholder')"
       @blur="form.touch('endpoint')"
     />
 
-    <div class="flex items-center gap-4">
+    <div class="rounded-rui-control border border-rui-divider between:border-t between:border-rui-divider">
+      <label class="flex items-start gap-4 px-4 py-3 cursor-pointer">
+        <span class="flex-1">
+          <span class="block text-sm font-medium text-rui-text">{{ t('rpc_node_form.owned') }}</span>
+          <span class="block text-xs text-rui-text-secondary mt-0.5">
+            {{ restricted ? t('rpc_node_form.owned_hint_provider') : t('rpc_node_form.owned_hint') }}
+          </span>
+        </span>
+        <RuiSwitch
+          v-model="form.state.owned"
+          color="primary"
+          hide-details
+          data-testid="node-owned"
+          :disabled="isEtherscan || restricted"
+        />
+      </label>
+      <label class="flex items-start gap-4 px-4 py-3 cursor-pointer">
+        <span class="flex-1">
+          <span class="block text-sm font-medium text-rui-text">{{ t('rpc_node_form.active') }}</span>
+          <span class="block text-xs text-rui-text-secondary mt-0.5">{{ t('rpc_node_form.active_hint') }}</span>
+        </span>
+        <RuiSwitch
+          v-model="form.state.active"
+          color="primary"
+          hide-details
+          data-testid="node-active"
+          :disabled="isEtherscan || restricted"
+        />
+      </label>
+    </div>
+
+    <div class="mt-3 flex items-center gap-4">
       <RuiSlider
         v-model="numericWeight"
         class="flex-1"
@@ -130,7 +162,7 @@ defineExpose({
         :label="t('rpc_node_form.weight')"
         :min="MIN_WEIGHT"
         :max="MAX_WEIGHT"
-        :hint="t('rpc_node_form.weight_hint', { weight: form.state.weight })"
+        :hint="form.state.owned ? t('rpc_node_form.weight_owned_hint') : t('rpc_node_form.weight_hint', { weight: form.state.weight })"
         :step="1"
         show-thumb-label
         @blur="form.touch('weight')"
@@ -140,31 +172,12 @@ defineExpose({
         :disabled="form.state.owned"
         :error-messages="form.errors('weight').length > 0 ? [''] : []"
         hide-details
-        class="w-32 [&>div]:min-w-0"
+        class="w-24 [&>div]:min-w-0"
       >
         <template #append>
           {{ t('rpc_node_form.weight_per_hundred') }}
         </template>
       </AmountInput>
     </div>
-
-    <RuiSwitch
-      v-model="form.state.owned"
-      color="primary"
-      class="mt-4"
-      data-testid="node-owned"
-      :label="t('rpc_node_form.owned')"
-      :disabled="isEtherscan || restricted"
-      :hint="restricted ? t('rpc_node_form.owned_hint_provider') : t('rpc_node_form.owned_hint')"
-    />
-    <RuiSwitch
-      v-model="form.state.active"
-      color="primary"
-      class="mt-4"
-      data-testid="node-active"
-      :label="t('rpc_node_form.active')"
-      :disabled="isEtherscan || restricted"
-      :hint="t('rpc_node_form.active_hint')"
-    />
   </div>
 </template>

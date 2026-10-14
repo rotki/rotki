@@ -7,7 +7,11 @@ import FloatingPrecisionSetting from '@/modules/settings/general/amount/Floating
 import MainCurrencySetting from '@/modules/settings/general/amount/MainCurrencySetting.vue';
 import NumericSeparatorsSettings from '@/modules/settings/general/amount/NumericSeparatorsSettings.vue';
 import RoundingSettings from '@/modules/settings/general/amount/RoundingSettings.vue';
+import CsvExportDelimiterSetting from '@/modules/settings/general/CsvExportDelimiterSetting.vue';
 import CurrencyLocationSetting from '@/modules/settings/general/CurrencyLocationSetting.vue';
+import DateDisplayFormatSetting from '@/modules/settings/general/DateDisplayFormatSetting.vue';
+import DateInputFormatSetting from '@/modules/settings/general/DateInputFormatSetting.vue';
+import DisplayDateInLocaltimeSetting from '@/modules/settings/general/DisplayDateInLocaltimeSetting.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 import SubscriptToggle from './general/amount/SubscriptToggle.vue';
 
@@ -19,10 +23,7 @@ const amountExample = bigNumberify(123456.789);
 <template>
   <SettingCategory>
     <template #title>
-      {{ t('general_settings.amount.title') }}
-    </template>
-    <template #subtitle>
-      {{ t('general_settings.amount.subtitle') }}
+      {{ t('general_settings.formats.title') }}
     </template>
 
     <SettingsItem setting-key="currency">
@@ -68,6 +69,18 @@ const amountExample = bigNumberify(123456.789);
 
     <SettingsItem setting-key="currencyLocation">
       <CurrencyLocationSetting />
+    </SettingsItem>
+
+    <SettingsItem setting-key="dateDisplayFormat">
+      <DateDisplayFormatSetting />
+      <DateInputFormatSetting />
+    </SettingsItem>
+
+    <SettingsItem setting-key="displayDateInLocaltime">
+      <div class="flex flex-col gap-2">
+        <DisplayDateInLocaltimeSetting />
+        <CsvExportDelimiterSetting />
+      </div>
     </SettingsItem>
   </SettingCategory>
 </template>

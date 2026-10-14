@@ -2,6 +2,7 @@
 import type { ZodType } from 'zod';
 import { useForm } from '@/modules/core/form/use-form';
 import { numberSettingSchema, SETTING_FIELD, type SettingFieldState } from '@/modules/settings/controls/setting-field-schemas';
+import SettingsMenuSection from '@/modules/settings/SettingsMenuSection.vue';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
@@ -76,33 +77,21 @@ watch(writeError, (message) => {
 </script>
 
 <template>
-  <div>
-    <RuiCardHeader class="p-0 mb-6">
-      <template #header>
-        {{ t('statistics_graph_settings.multiplier.title') }}
-      </template>
-      <template #subheader>
-        {{ t('statistics_graph_settings.multiplier.subtitle') }}
-      </template>
-    </RuiCardHeader>
+  <SettingsMenuSection
+    :title="t('statistics_graph_settings.multiplier.title')"
+    :description="t('statistics_graph_settings.multiplier.subtitle')"
+  >
     <RuiTextField
       v-model="form.state.value"
       color="primary"
       min="0"
+      dense
       :label="t('statistics_graph_settings.multiplier.label')"
       type="number"
+      :hint="period === 0 ? t('statistics_graph_settings.multiplier.off') : t('statistics_graph_settings.multiplier.on', { period })"
       :success-messages="success"
       :error-messages="error || form.errors(SETTING_FIELD)"
       @update:model-value="onInput($event)"
     />
-
-    <div class="text-body-2 text-rui-text-secondary mt-2">
-      <span v-if="period === 0">
-        {{ t('statistics_graph_settings.multiplier.off') }}
-      </span>
-      <span v-else>
-        {{ t('statistics_graph_settings.multiplier.on', { period }) }}
-      </span>
-    </div>
-  </div>
+  </SettingsMenuSection>
 </template>

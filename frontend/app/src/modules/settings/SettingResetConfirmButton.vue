@@ -1,8 +1,10 @@
 <script setup lang="ts">
-const { tooltip, compact = false, disabled = false } = defineProps<{
+const { tooltip, compact = false, disabled = false, labelled = false } = defineProps<{
   tooltip?: string;
   compact?: boolean;
   disabled?: boolean;
+  /** The field beside it carries a label on top, so the button drops to the input's line. */
+  labelled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -39,7 +41,7 @@ function cancel(): void {
       >
         <template #activator>
           <RuiButton
-            :class="compact ? 'ml-1' : 'mt-1 ml-2'"
+            :class="[compact ? 'ml-1' : 'ml-2', { 'mt-1': !compact && !labelled, 'mt-6': !compact && labelled, 'mt-6.5': compact && labelled }]"
             variant="text"
             icon
             :size="compact ? 'sm' : undefined"

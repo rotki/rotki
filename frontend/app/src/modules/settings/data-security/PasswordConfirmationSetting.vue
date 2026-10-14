@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
+import { startPromise } from '@shared/utils';
 import { Constraints } from '@/modules/core/common/constraints';
 import { useForm } from '@/modules/core/form/use-form';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
@@ -9,6 +10,7 @@ import {
   toIntervalDays,
   toIntervalSeconds,
 } from '@/modules/settings/data-security/password-confirmation-form';
+import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
@@ -18,9 +20,12 @@ interface PasswordConfirmationPayload {
   passwordConfirmationInterval: number;
 }
 
+const SAVE_DEBOUNCE = 800;
+
 const { t } = useI18n({ useScope: 'global' });
 
 const { updateFrontendSetting } = useSettingsOperations();
+const { setSuccess, success } = useClearableMessages();
 const enablePasswordConfirmation = useSetting('enablePasswordConfirmation');
 const passwordConfirmationInterval = useSetting('passwordConfirmationInterval');
 
@@ -37,6 +42,7 @@ const form = useForm<PasswordConfirmationFormState, PasswordConfirmationPayload>
   schema,
   submit: async (payload: PasswordConfirmationPayload): Promise<{ success: boolean }> => {
     await updateFrontendSetting(payload);
+    setSuccess(t('password_confirmation_setting.saved'), true);
     return { success: true };
   },
   transform: (state): PasswordConfirmationPayload => ({
@@ -47,13 +53,25 @@ const form = useForm<PasswordConfirmationFormState, PasswordConfirmationPayload>
 
 const invalid = computed<boolean>(() => !get(form.valid));
 
-const loading = computed<boolean>(() => get(form.submitting));
-
 const hasChanged = computed<boolean>(() => {
   const currentDays = Number.parseFloat(form.state.intervalDays);
   const storedDays = get(passwordConfirmationInterval) / Constraints.SECONDS_PER_DAY;
   return currentDays !== storedDays || get(enabled) !== get(enablePasswordConfirmation);
 });
+
+/** Writes the toggle and interval, as every other setting does on change, once they differ from what is stored and are valid. */
+async function save(): Promise<void> {
+  if (!get(hasChanged) || get(invalid))
+    return;
+  await form.submit();
+}
+
+const scheduleSave = useDebounceFn(save, SAVE_DEBOUNCE);
+
+function onIntervalInput(): void {
+  form.touch('intervalDays');
+  startPromise(scheduleSave());
+}
 
 /**
  * Applies the toggle, asking first when it is being turned off.
@@ -63,15 +81,18 @@ const hasChanged = computed<boolean>(() => {
  * warning rather than being applied directly.
  */
 function handleToggleChange(value: boolean): void {
-  if (!value)
+  if (!value) {
     set(showDisableWarning, true);
-  else
-    set(enabled, value);
+    return;
+  }
+  set(enabled, value);
+  startPromise(save());
 }
 
 function confirmDisable(): void {
   set(enabled, false);
   set(showDisableWarning, false);
+  startPromise(save());
 }
 
 function cancelDisable(): void {
@@ -114,23 +135,12 @@ watchImmediate([passwordConfirmationInterval, enablePasswordConfirmation], ([int
       :max="Constraints.MAX_PASSWORD_CONFIRMATION_DAYS"
       :label="t('password_confirmation_setting.label')"
       :hint="t('password_confirmation_setting.hint')"
+      :success-messages="success"
       :error-messages="form.errors('intervalDays')"
       :disabled="!enabled"
       data-testid="password-confirmation-interval-input"
-      @update:model-value="form.touch('intervalDays')"
+      @update:model-value="onIntervalInput()"
     />
-
-    <div class="flex justify-end mt-4">
-      <RuiButton
-        data-testid="save-password-confirmation-settings"
-        color="primary"
-        :loading="loading"
-        :disabled="loading || !hasChanged || invalid"
-        @click="form.submit()"
-      >
-        {{ t('common.actions.save') }}
-      </RuiButton>
-    </div>
 
     <ConfirmDialog
       :display="showDisableWarning"

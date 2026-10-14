@@ -14,9 +14,6 @@ const premium = usePremium();
     <template #title>
       {{ t('premium_components.theme_manager.text') }}
     </template>
-    <template #subtitle>
-      {{ t('premium_components.theme_manager.text_hint') }}
-    </template>
     <SettingsItem>
       <ThemeManager
         v-if="premium"

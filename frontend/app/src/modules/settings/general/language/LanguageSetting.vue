@@ -103,30 +103,12 @@ onMounted(() => {
       {{ t('general_settings.language.force_saved_language_setting_in_machine_hint') }}
     </RuiCheckbox>
 
-    <RuiAlert
-      type="warning"
-      class="mt-4"
-    >
+    <div class="mt-2 text-xs text-rui-text-secondary">
       {{ t('general_settings.language.contribution') }}
       <ExternalLink
         :url="externalLinks.contributeSection.language"
-        custom
-      >
-        <RuiButton
-          variant="text"
-          color="primary"
-          size="sm"
-          class="-ml-1.5 mt-3"
-        >
-          {{ t('general_settings.language.click_here') }}
-          <template #append>
-            <RuiIcon
-              name="lu-external-link"
-              size="16"
-            />
-          </template>
-        </RuiButton>
-      </ExternalLink>
-    </RuiAlert>
+        :text="t('general_settings.language.click_here')"
+      />
+    </div>
   </SettingsItem>
 </template>

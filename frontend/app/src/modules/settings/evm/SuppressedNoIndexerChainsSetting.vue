@@ -35,17 +35,19 @@ const [DefineChainItem, ReuseChainItem] = createReusableTemplate<{ item: EvmChai
       key-attr="id"
       text-attr="name"
       :label="t('evm_settings.indexer.suppressed_no_indexer_chains.label')"
-      :hint="t('evm_settings.indexer.suppressed_no_indexer_chains.hint')"
       data-testid="suppressed-no-indexer-chains"
       :item-height="48"
       :success-message="t('evm_settings.indexer.suppressed_no_indexer_chains.success')"
       :error-message="t('evm_settings.indexer.suppressed_no_indexer_chains.error')"
     >
-      <template #selection="{ item }">
-        <ReuseChainItem
-          :item="item"
-          size="20px"
+      <template #selection.prepend="{ item }">
+        <ChainIcon
+          :chain="item.id"
+          size="24px"
         />
+      </template>
+      <template #selection="{ item }">
+        {{ item.name }}
       </template>
       <template #item="{ item }">
         <ReuseChainItem

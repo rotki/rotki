@@ -159,11 +159,19 @@
       }
     },
     "csv_export_settings": {
+      "descriptions": {
+        "export_csv_formulas": "Cells keep spreadsheet formulas, so totals recalculate when you edit the file.",
+        "have_csv_summary": "Adds a block of totals to the all-events CSV."
+      },
       "labels": {
         "export_csv_formulas": "Export formulas in the PnL CSV",
         "have_csv_summary": "Add a summary of all events to the all-events CSV export"
       },
-      "title": "PnL CSV export"
+      "title": "PnL CSV export",
+      "titles": {
+        "export_csv_formulas": "Formulas",
+        "have_csv_summary": "Summary"
+      }
     },
     "messages": {
       "cost_basis": {
@@ -236,6 +244,9 @@
     "wallet": "Wallet"
   },
   "accounting_settings": {
+    "cost_basis": {
+      "title": "Cost basis"
+    },
     "rule": {
       "action_dialog": {
         "add_event_specific": "Add rule for this event only",
@@ -259,6 +270,7 @@
       "confirm_delete": "Are you sure you want to delete this custom accounting rule?",
       "confirm_reset": "Are you sure you want to reset all accounting rules to rotki's defaults? This removes every custom and edited rule and cannot be undone.",
       "conflicts": {
+        "banner": "{count} rule conflicts with the latest rotki update. | {count} rules conflict with the latest rotki update.",
         "error": {
           "description": "Error while resolving accounting rules conflicts: {error}",
           "title": "Resolving accounting rules conflicts"
@@ -266,9 +278,25 @@
         "labels": {
           "choose_version": "Keep"
         },
+        "matching": "Hidden because both versions agree: {properties}.",
+        "resolve": "Resolve",
+        "save": {
+          "all": "Save all {total}",
+          "choices": "Save {count} choice | Save {count} choices"
+        },
+        "strategy": {
+          "keep_local": "Keep all local",
+          "keep_remote": "Keep all remote",
+          "per_rule": "Choose per rule"
+        },
+        "subtitle": "Local is the rule as you edited it. Remote is the version from the latest rotki update.",
+        "summary": {
+          "all_local": "Every rule keeps your local version.",
+          "all_remote": "Every rule takes the remote version.",
+          "remaining": "{remaining} of {total} rules still need a choice."
+        },
         "title": "Resolve accounting rules conflicts"
       },
-      "current_setting_value": "Current setting value:",
       "custom_events_info": "Creating a custom accounting rule for {count} selected event(s)",
       "delete": "Delete accounting rule",
       "delete_error": "Could not delete accounting rule: {message}",
@@ -288,6 +316,7 @@
         "event_type": "Type"
       },
       "import": "Import accounting rules",
+      "import_hint": "A JSON file of rules exported from rotki",
       "labels": {
         "accounting_treatment": "Accounting treatment",
         "accounting_treatment_basis_transfer": "Basis transfer",
@@ -297,9 +326,8 @@
         "count_cost_basis_pnl_subtitle": "Count the profit or loss against what the asset cost when it was acquired.",
         "count_entire_amount_spend": "Count entire amount as spend",
         "count_entire_amount_spend_subtitle": "Count the whole amount as a spend, an expense with negative PnL.",
+        "event": "Event",
         "event_ids": "Event IDs",
-        "event_subtype": "Event Sub Type",
-        "event_type": "Event Type",
         "taxable": "Taxable",
         "taxable_subtitle": "Count the event as taxable."
       },
@@ -307,7 +335,9 @@
       "overwrite_by_setting": "Take the value from an accounting setting",
       "refresh_tooltip": "Refresh accounting rules",
       "reset": "Reset to defaults",
-      "subtitle": "Manage and view your event accounting rules",
+      "sections": {
+        "accounting": "Accounting"
+      },
       "tabs": {
         "custom": "Event-specific rules",
         "regular": "General rules"
@@ -316,7 +346,20 @@
       "value_overwritten": "Follows this accounting setting",
       "view_events": "View events matching this rule"
     },
+    "taxes": {
+      "title": "Taxes"
+    },
     "trade": {
+      "descriptions": {
+        "calculate_past_cost_basis": "Process events from before the report period too, so assets bought earlier and sold inside it have a cost basis.",
+        "cost_basis_method": "Decides which earlier acquisitions a sale is matched against, which changes the realized PnL.",
+        "eth_staking_taxable_after_withdrawal_enabled": "Staking events from before the Shanghai upgrade made withdrawals possible are skipped in reports.",
+        "include_crypto2crypto": "Count swaps between two crypto assets as taxable trades. Turn this off where only sales to fiat are taxed.",
+        "include_fees_in_cost_basis": "Fees paid on a trade raise the asset's cost basis instead of counting as a separate expense.",
+        "include_gas_costs": "Count Ethereum transaction fees as expenses in the PnL.",
+        "tax_free": "Sales of assets held longer than this are not taxed, as some jurisdictions allow.",
+        "use_asset_collections_in_cost_basis": "Assets rotki groups into one collection, like a token and its bridged versions, share one cost basis."
+      },
       "labels": {
         "calculate_past_cost_basis": "Calculate the cost basis from events before the report period",
         "cost_basis_method": "Cost basis method",
@@ -328,7 +371,16 @@
         "taxfree_after_period": "Tax-free after (days)",
         "use_asset_collections_in_cost_basis": "Share cost basis across assets in the same collection"
       },
-      "title": "Trade Settings"
+      "titles": {
+        "calculate_past_cost_basis": "Past cost basis",
+        "cost_basis_method": "Cost basis method",
+        "eth_staking_taxable_after_withdrawal_enabled": "ETH staking",
+        "include_crypto2crypto": "Crypto-to-crypto trades",
+        "include_fees_in_cost_basis": "Fees in cost basis",
+        "include_gas_costs": "Gas costs",
+        "tax_free": "Tax-free period",
+        "use_asset_collections_in_cost_basis": "Asset collections"
+      }
     }
   },
   "action_center": {
@@ -928,12 +980,10 @@
     }
   },
   "active_modules": {
-    "activate": "Activate the {name} module",
     "enable": {
       "description": "Would you like to enable the {name} module?",
       "title": "Enabled module"
-    },
-    "view_addresses": "View the queried addresses for {name}"
+    }
   },
   "address_book": {
     "actions": {
@@ -2072,7 +2122,6 @@
   },
   "chain_settings": {
     "chain_queries": {
-      "subtitle": "Two independent controls: which chains and addresses rotki queries for data, and which chains it checks when detecting where an address is active.",
       "title": "Chains"
     }
   },
@@ -2209,15 +2258,12 @@
       "bottom": "You also have another extra option, you can manage the conflicts individually.",
       "top": "Local changes have been detected. You have two options:"
     },
-    "all_buttons_description": "Resolve for all conflicts",
     "duplicate_warn": "Assets with the following identifier(s) {identifiers} appear multiple times in the conflict data, which indicates a problem. If the conflict resolution fails please contact the team.",
-    "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
     "keep_local": "Keep All Local",
     "keep_local_tooltip": "No affected assets will be updated. Manual updates may be necessary.",
     "keep_remote": "Keep All Remote",
     "keep_remote_tooltip": "Update all assets. No further action necessary.",
     "manage": "Manage Conflicts",
-    "resolve_all_hint": "All conflicts will be resolved by using {source} data.",
     "subtitle": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
     "table": {
       "headers": {
@@ -2918,8 +2964,7 @@
       "select_cache": "Select protocol data to refresh",
       "subtitle": "Allows you to refresh protocol data in rotki",
       "success": "Protocol data was successfully cleared",
-      "title": "Refresh protocol data",
-      "tooltip": "Refresh protocol data for selected source"
+      "title": "Refresh protocol data"
     },
     "title": "Manage Data"
   },
@@ -2966,7 +3011,6 @@
   },
   "database_settings": {
     "asset_database": {
-      "subtitle": "Manage the asset database",
       "title": "Asset Database"
     },
     "database_info": {
@@ -2979,21 +3023,14 @@
         "userdb_size": "Size on disk:",
         "userdb_version": "Database Version:"
       },
-      "subtitle": "View your database information",
       "title": "Database Information"
     },
-    "import_export": {
-      "subtitle": "Export or import your user assets",
-      "title": "Export/Import User Assets"
-    },
     "manage_data": {
-      "subtitle": "Manage your data",
       "title": "Manage Data"
     },
     "user_backups": {
       "backup_button": "Create new Backup",
       "delete_selected": "Delete selected Backups",
-      "subtitle": "View your database backups",
       "title": "User Database Backups"
     }
   },
@@ -3175,11 +3212,11 @@
   "evm_settings": {
     "general": {
       "chains_to_skip_detection": {
+        "label": "Chains to skip",
         "search_keywords": "skip account detection, cross-chain detection, chain activity",
         "subtitle": "When checking a tracked address for activity on other EVM chains, leave these out, so the address is not added to them. This does not stop querying chains you already track.",
         "title": "Skip account activity detection"
       },
-      "title": "EVM",
       "treat_eth2_as_eth": {
         "subtitle": "When enabled, staked ETH (ETH2) will be displayed and counted as regular ETH.",
         "title": "Treat ETH2 as ETH"
@@ -3187,6 +3224,7 @@
     },
     "indexer": {
       "add_chain": "Add chain",
+      "add_indexer": "Add indexer",
       "api_key_missing_alert": "{indexer} is your first priority indexer but you don't have an API key configured. Queries may be slower or fail. Consider adding an API key for better performance.",
       "chain_order": "{chain} Indexer Order",
       "chain_updated": "{chain} indexer order updated",
@@ -3204,7 +3242,6 @@
       "subtitle": "History events are queried through these indexers in order. If one fails, the next is tried.",
       "suppressed_no_indexer_chains": {
         "error": "Failed to update suppressed chains.",
-        "hint": "Select chains that should not be reported when no indexer can serve them. Remove a chain to report it again.",
         "label": "Suppressed chains",
         "subtitle": "Manage the chains the action center does not report when no indexer can serve them.",
         "success": "Suppressed chains updated",
@@ -3326,16 +3363,17 @@
   },
   "explorers": {
     "address": "Addresses",
-    "address_url": "Addresses will open at {addressUrl}",
     "block": "Blocks",
-    "block_url": "Blocks will open at {blockUrl}",
     "chain_selector": "Blockchain",
+    "custom": "Custom",
+    "customized": "Custom explorers:",
+    "default_url": "Default: {url}",
+    "none": "none",
+    "reset": "Reset to defaults",
     "subtitle": "Where links to addresses, transactions, blocks and tokens open, per chain. Leave a field empty to use the default.",
     "title": "Blockchain explorers",
     "token": "Tokens",
-    "token_url": "Tokens will open at {tokenUrl}",
-    "tx": "Transactions",
-    "tx_url": "Transactions will open at {txUrl}"
+    "tx": "Transactions"
   },
   "external_services": {
     "actions": {
@@ -3407,7 +3445,7 @@
       "hint": "Enter your Etherscan API key",
       "title": "Etherscan"
     },
-    "get_api_key": "You can apply for an API key {link}",
+    "get_key_from": "Get a {service} API key",
     "gnosispay": {
       "connected": {
         "description": "rotki can read your Gnosis Pay transactions.",
@@ -3559,7 +3597,9 @@
     "set_up_count": "{count} of {total} set up",
     "set_up_only": "Set up only",
     "status": {
-      "connected": "Connected"
+      "connected": "Connected",
+      "key_set": "Key set",
+      "premium": "Part of rotki Premium"
     },
     "subtitle": "rotki queries these services for prices and blockchain data. Many work without a key, where one mainly lifts rate limits; others need a key before rotki can use them at all.",
     "thegraph": {
@@ -3595,7 +3635,10 @@
       }
     },
     "alias_names": {
+      "data_name": "name source",
       "label": "Show names instead of addresses",
+      "row_title": "Address names",
+      "saved": "Saved",
       "title": "rotki shows the first name it finds, checking these sources from top to bottom.",
       "validation": {
         "error": "Failed to change alias names visibility"
@@ -3710,11 +3753,12 @@
         "error": "Error setting scramble mode: {message}"
       }
     },
-    "subtitle": {
-      "alias_names": "Alias name for addresses",
-      "blockchain_address_aliases": "Blockchain address aliases",
-      "graph_settings": "Graph settings",
-      "graph_settings_hint": "Manage your graph settings."
+    "sections": {
+      "addresses": "Addresses",
+      "display": "Display",
+      "graphs": "Graphs",
+      "privacy": "Privacy",
+      "refresh": "Refresh"
     },
     "title": "Interface-only Settings",
     "validation": {
@@ -3744,9 +3788,10 @@
         "floating_precision": "Floating Precision",
         "main_currency": "Main Currency",
         "main_currency_subtitle": "Select as the main currency"
-      },
-      "subtitle": "Manage your amount settings.",
-      "title": "Amounts Settings"
+      }
+    },
+    "application": {
+      "title": "Application"
     },
     "auto_detect_tokens": {
       "label": "Automatically detect tokens and refresh balances by periodically checking history events.",
@@ -3848,7 +3893,6 @@
         "read_timeout": "Read timeout",
         "read_timeout_hint": "The number of seconds to wait for the first byte after a connection to an external service has been established."
       },
-      "subtitle": "Manage your external service settings.",
       "suppress_missing_key": {
         "clear_all": "Clear all",
         "error": "Error updating suppressed services",
@@ -3873,6 +3917,9 @@
           "non_empty": "Please input the read timeout"
         }
       }
+    },
+    "formats": {
+      "title": "Formats"
     },
     "history_event": {
       "auto_create_profit_events": {
@@ -3901,7 +3948,6 @@
         "subtitle": "View and manage skipped external events",
         "title": "Skipped External Events"
       },
-      "subtitle": "Manage your history event settings.",
       "title": "History events"
     },
     "labels": {
@@ -3924,9 +3970,11 @@
       }
     },
     "nft_setting": {
+      "add": "Add",
       "allow_all_confirmation": {
-        "message": "Every NFT image will load from whichever server hosts it, and that server can see your IP address.",
-        "title": "Allow images from all domains"
+        "cancel": "Keep the whitelist",
+        "confirm": "Allow all images",
+        "message": "Every NFT image will load from whichever server hosts it, and that server can see your IP address."
       },
       "label": {
         "include_nfts": "Include NFTs in graphs and total net worth",
@@ -3937,7 +3985,8 @@
           "only_allow_whitelisted": "Only allow images from whitelisted domains"
         },
         "whitelist_domains": "Domains",
-        "whitelisted_domain_entries": "no entries | {count} unique entry | {count} unique entries",
+        "whitelist_domains_placeholder": "rarible.com, opensea.com",
+        "whitelist_empty": "No domains yet, so NFT images stay hidden until you add one.",
         "whitelisted_domains": "Whitelisted domains",
         "whitelisted_domains_hint": "Separate several domains with commas"
       },
@@ -3946,12 +3995,12 @@
         "success": "Allowed domains for image rendering of NFTs saved successfully"
       },
       "subtitle": {
-        "include_nfts": "Manage your NFT settings",
         "nft_images_rendering_setting": "NFT images rendering setting",
         "nft_images_rendering_setting_hint": "Loading NFT images from a malicious server can leak private information about you. Read more {link}."
       },
       "title": "NFTs",
       "update_whitelist_confirmation": {
+        "confirm": "Allow",
         "message": "Are you sure you want to allow images for NFT from these domains? | Are you sure you want to allow images for NFT from domain: {domain} ?",
         "title": "Update whitelisted domains"
       }
@@ -3982,7 +4031,6 @@
         "title": "Delete node"
       }
     },
-    "subtitle": "Manage your general settings.",
     "thousand_separator": {
       "validation": {
         "cannot_be_numeric_character": "The thousand separator cannot be numeric character",
@@ -3991,7 +4039,9 @@
         "single_character": "The thousand separator must be a single character"
       }
     },
-    "title": "General Settings",
+    "tokens_balances": {
+      "title": "Tokens & balances"
+    },
     "usage_analytics": {
       "label": "Submit anonymous usage analytics to help improve rotki; your privacy remains protected.",
       "title": "Usage analytics",
@@ -4972,10 +5022,10 @@
     },
     "all_accounts": "All addresses",
     "filter": "Search modules",
+    "no_match": "No module matches the search",
     "select_accounts_hint": "Choose the addresses this module queries",
     "some_accounts": "{number} address | {number} addresses",
     "table": {
-      "enabled": "Enabled",
       "select_accounts": "Queried addresses"
     },
     "tasks": {
@@ -4984,7 +5034,6 @@
   },
   "module_settings": {
     "coverage_note": "Everything rotki supports is listed on {link}.",
-    "hint": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled. Also, please remember that after activating a module, you need to logout and login again for the activation to take effect",
     "integrations_link_label": "rotki.com/integrations",
     "subtitle": "Modules turn on balance queries for a few specific protocols. Transaction decoding covers every supported protocol regardless.",
     "title": "Modules"
@@ -5286,7 +5335,11 @@
         "oracle_penalty_threshold_count": "Failures before penalty"
       },
       "subtitle": "An oracle that keeps failing is penalized for a while.",
-      "title": "Penalties"
+      "title": "Penalties",
+      "units": {
+        "failures": "Failures",
+        "seconds": "Seconds"
+      }
     }
   },
   "oracle_prices": {
@@ -5408,6 +5461,7 @@
     "enable_label": "Enable periodic password confirmation",
     "hint": "Enter a value between 1 and 14 days",
     "label": "Password confirmation interval (days)",
+    "saved": "Password confirmation saved",
     "subtitle": "Configure how often you need to confirm your password when using auto-login. This helps ensure you remember your password.",
     "title": "Password Confirmation",
     "validation": {
@@ -5809,14 +5863,16 @@
     },
     "to_asset": "To Asset"
   },
-  "price_oracle_selection": {
-    "hint": "* Disabling all the oracles will make it impossible to query prices for assets. You may need to click 'Refresh Prices' to apply the changes."
-  },
   "price_oracle_settings": {
     "data_name": "price oracle",
+    "empty_warning": "No oracles: rotki can't price assets with this list.",
     "historic_prices": "Historical prices",
     "latest_prices": "Latest prices",
-    "latest_prices_update": "Latest order prices updated. You may need to click the 'Refresh Prices' button to apply the changes.",
+    "status": {
+      "cache_cleared": "Saved. Cached historical prices cleared.",
+      "refresh_now": "Refresh now",
+      "saved_refresh": "Saved. Prices still use the old order."
+    },
     "subtitle": "rotki asks the oracles in this order and uses the first price it gets.",
     "title": "Price oracles"
   },
@@ -6066,11 +6122,13 @@
     "active": "Active",
     "active_hint": "Only active nodes will be queried",
     "endpoint": "Endpoint",
+    "endpoint_placeholder": "https://",
     "owned": "Owned",
     "owned_hint": "Enable if this node is a private node owned by the user",
     "owned_hint_provider": "Every chain this key is added to gets it as an owned node with a weight of 0, so they are tried first and your existing nodes keep their weights relative to each other.",
     "weight": "Weight",
     "weight_hint": "Changing a public node's weight rebalances the others.",
+    "weight_owned_hint": "Owned nodes are queried first, so weight only applies to public nodes.",
     "weight_per_hundred": "/100"
   },
   "rpc_provider_setup": {
@@ -6145,7 +6203,6 @@
       "placeholder": "Search settings..."
     },
     "security_settings": {
-      "subtitle": "Manage your account security",
       "title": "Security"
     },
     "validation": {
@@ -7111,7 +7168,6 @@
           "hint": "[Optional] Additional notes to store for the action"
         },
         "resulting_combination": {
-          "label": "Resulting combination",
           "unknown": "The resulting combination is unknown, this event won't be processed correctly."
         },
         "sequence_index": {

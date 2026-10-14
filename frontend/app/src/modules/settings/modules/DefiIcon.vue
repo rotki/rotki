@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { toSentenceCase } from '@rotki/common';
-import AppImage from '@/modules/shell/components/AppImage.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
 interface Item {
   icon?: string;
@@ -24,12 +24,10 @@ const { item, size = '1.5rem', vertical = false } = defineProps<{
     class="flex items-center"
     :class="vertical ? 'flex-col gap-1' : 'flex-row gap-2'"
   >
-    <AppImage
-      class="icon-bg"
+    <IconMark
       :src="item.icon"
       :size="size"
       :loading="!item.icon"
-      fit="contain"
     />
     <div
       class="text-rui-text-secondary"

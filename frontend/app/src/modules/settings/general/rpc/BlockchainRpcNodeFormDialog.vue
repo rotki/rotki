@@ -85,9 +85,8 @@ const { reset: resetRun, retry, rows, running, run, stop, summary } = useRpcProv
 /** The offer only makes sense while adding: an edit is one node on one chain by definition. */
 const offered = computed<boolean>(() => get(model)?.mode === 'add' && get(provider) !== undefined);
 
-/** The results are a short list, so they take the height they need instead of the form's. */
-const layout = computed<BigDialogLayout | undefined>(() =>
-  get(phase) === 'results' ? { autoHeight: true, maxWidth: '640px' } : undefined);
+/** Both the short form and the results list take the height they need, at a form's width. */
+const layout: BigDialogLayout = { autoHeight: true, maxWidth: '640px' };
 
 const action = computed(() => {
   if (get(phase) === 'form')

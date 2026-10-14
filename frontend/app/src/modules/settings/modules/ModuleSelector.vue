@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import { transformCase, Zero } from '@rotki/common';
 import { err, ok, type Result } from 'plainfp/result';
 import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
@@ -7,13 +6,13 @@ import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-addr
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/modules/core/common/modules';
-import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
+import ModuleAddressesCell from '@/modules/settings/modules/ModuleAddressesCell.vue';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import AppImage from '@/modules/shell/components/AppImage.vue';
-import RowActions from '@/modules/shell/components/RowActions.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -22,8 +21,8 @@ type ModuleEntry = SupportedModule & { enabled: boolean };
 const { t } = useI18n({ useScope: 'global' });
 
 const supportedModules = SUPPORTED_MODULES;
-const loading = ref(false);
-const search = ref('');
+const loading = ref<boolean>(false);
+const search = ref<string>('');
 const manageModule = ref<Module>();
 
 const { queriedAddresses } = storeToRefs(useSessionMetadataStore());
@@ -34,43 +33,23 @@ const { update: updateSettings } = useSettingsOperations();
 const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
 const { submitTask } = useNativeTask();
 
-const sort = ref<DataTableSortColumn<ModuleEntry>>({
-  column: 'name',
-  direction: 'asc',
-});
-
-const headers = computed<DataTableColumn<ModuleEntry>[]>(() => [{
-  class: 'w-full',
-  key: 'name',
-  label: t('common.name'),
-  sortable: true,
-}, {
-  key: 'selectedAccounts',
-  label: t('module_selector.table.select_accounts'),
-}, {
-  align: 'end',
-  cellClass: 'flex justify-end align-center',
-  key: 'enabled',
-  label: t('module_selector.table.enabled'),
-}, {
-  align: 'center',
-  key: 'actions',
-  label: '',
-}]);
-
-useRememberTableSorting<ModuleEntry>(TableId.MODULES, sort, headers);
-
 const modules = computed<ModuleEntry[]>(() => {
   const active = get(activeModules);
   const filter = get(search).toLowerCase();
   const filteredModules = filter
     ? supportedModules.filter(m => m.name.toLowerCase().includes(filter))
     : supportedModules;
-  return filteredModules.map(module => ({
-    ...module,
-    enabled: active.includes(module.identifier),
-  }));
+  return [...filteredModules]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(module => ({
+      ...module,
+      enabled: active.includes(module.identifier),
+    }));
 });
+
+/** Each bulk action is offered only while it would change something. */
+const allEnabled = computed<boolean>(() => supportedModules.every(m => get(activeModules).includes(m.identifier)));
+const noneEnabled = computed<boolean>(() => get(activeModules).length === 0);
 
 const { start: clearNfBalances } = useTimeoutFn(() => {
   set(nonFungibleTotalValue, Zero);
@@ -152,15 +131,14 @@ async function disableAll() {
     clearNfBalances();
 }
 
-function selected(identifier: Module) {
+/** No queried addresses means the backend queries every tracked Ethereum address for the module. */
+function selected(identifier: Module): string {
   const index = transformCase(identifier, true);
   const addresses = get(queriedAddresses)[index];
   if (!addresses || addresses.length === 0)
     return t('module_selector.all_accounts');
 
-  return t('module_selector.some_accounts', {
-    number: addresses.length,
-  });
+  return t('module_selector.some_accounts', { number: addresses.length }, addresses.length);
 }
 
 onMounted(async () => {
@@ -169,102 +147,99 @@ onMounted(async () => {
 </script>
 
 <template>
-  <RuiCard>
-    <div class="flex flex-col md:flex-row md:justify-between gap-4 mb-4">
+  <TableFrame>
+    <template #toolbar>
       <RuiTextField
         v-model="search"
         color="primary"
-        class="min-w-80 flex-1"
-        :label="t('module_selector.filter')"
+        class="w-full sm:w-72"
+        :placeholder="t('module_selector.filter')"
         clearable
         hide-details
         dense
         prepend-icon="lu-search"
       />
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 ml-auto">
         <RuiButton
           color="primary"
-          :loading="loading"
-          class="py-2!"
+          variant="outlined"
+          size="sm"
+          :disabled="loading || allEnabled"
           data-testid="modules_enable_all"
           @click="enableAll()"
         >
           {{ t('module_selector.actions.enable_all') }}
         </RuiButton>
-
         <RuiButton
           color="primary"
           variant="outlined"
-          :loading="loading"
-          class="py-2!"
+          size="sm"
+          :disabled="loading || noneEnabled"
           data-testid="modules_disable_all"
           @click="disableAll()"
         >
           {{ t('module_selector.actions.disable_all') }}
         </RuiButton>
       </div>
-    </div>
+    </template>
 
-    <RuiDataTable
-      v-model:sort="sort"
-      :cols="headers"
-      :rows="modules"
-      row-attr="identifier"
+    <RuiTable
       :loading="loading"
-      outlined
-      dense
+      :empty="modules.length === 0 ? { label: t('module_selector.no_match') } : false"
     >
-      <template #item.name="{ row }">
-        <div class="flex items-center gap-2">
-          <AppImage
-            class="icon-bg"
-            size="1.5rem"
-            fit="contain"
-            :src="row.icon"
-          />
-          <span>{{ row.name }}</span>
-        </div>
-      </template>
-
-      <template #item.selectedAccounts="{ row }">
-        <RuiChip
-          color="primary"
-          placement="center"
-          size="sm"
-          variant="outlined"
-          class="h-5! bg-rui-primary-lighter/10! font-medium"
+      <thead>
+        <tr>
+          <th class="w-full">
+            {{ t('common.name') }}
+          </th>
+          <th class="whitespace-nowrap">
+            {{ t('module_selector.table.select_accounts') }}
+          </th>
+          <th />
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          v-for="row in modules"
+          :key="row.identifier"
         >
-          {{ selected(row.identifier) }}
-        </RuiChip>
-      </template>
-
-      <template #item.enabled="{ row }">
-        <RuiSwitch
-          color="primary"
-          data-testid="module-switch"
-          :data-key="row.identifier"
-          :disabled="loading"
-          :model-value="row.enabled"
-          hide-details
-          class="py-2"
-          @update:model-value="switchModule(row.identifier, $event)"
-        />
-      </template>
-      <template #item.actions="{ row }">
-        <RowActions
-          no-delete
-          class="px-4"
-          :edit-disabled="!row.enabled"
-          :edit-tooltip="t('module_selector.select_accounts_hint')"
-          @edit-click="manageModule = row.identifier"
-        />
-      </template>
-    </RuiDataTable>
+          <td>
+            <div class="flex items-center gap-3">
+              <IconMark
+                size="1.25rem"
+                :src="row.icon"
+              />
+              <span class="font-medium">{{ row.name }}</span>
+            </div>
+          </td>
+          <td class="whitespace-nowrap">
+            <ModuleAddressesCell
+              :enabled="row.enabled"
+              :identifier="row.identifier"
+              :label="selected(row.identifier)"
+              @manage="manageModule = row.identifier"
+            />
+          </td>
+          <td class="w-px">
+            <RuiSwitch
+              color="primary"
+              data-testid="module-switch"
+              :data-key="row.identifier"
+              :disabled="loading"
+              :model-value="row.enabled"
+              hide-details
+              class="mr-2"
+              @update:model-value="switchModule(row.identifier, $event)"
+            />
+          </td>
+        </tr>
+      </tbody>
+    </RuiTable>
 
     <QueriedAddressDialog
       v-if="manageModule"
       :module="manageModule"
       @close="manageModule = undefined"
     />
-  </RuiCard>
+  </TableFrame>
 </template>

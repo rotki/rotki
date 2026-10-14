@@ -4,7 +4,7 @@ import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import SettingMultiSelect from '@/modules/settings/controls/SettingMultiSelect.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/settings/types/user-settings';
-import AppImage from '@/modules/shell/components/AppImage.vue';
+import IconMark from '@/modules/shell/components/IconMark.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -36,11 +36,9 @@ const [DefineServiceItem, ReuseServiceItem] = createReusableTemplate<{ item: Ser
 <template>
   <DefineServiceItem #default="{ item, size }">
     <div class="flex items-center gap-2">
-      <AppImage
+      <IconMark
         :src="item.icon"
         :size="size"
-        class="icon-bg"
-        fit="contain"
       />
       <span>{{ item.name }}</span>
     </div>
@@ -68,11 +66,14 @@ const [DefineServiceItem, ReuseServiceItem] = createReusableTemplate<{ item: Ser
       :success-message="t('general_settings.external_service_setting.suppress_missing_key.success')"
       :error-message="t('general_settings.external_service_setting.suppress_missing_key.error')"
     >
-      <template #selection="{ item }">
-        <ReuseServiceItem
-          :item="item"
-          size="1.25rem"
+      <template #selection.prepend="{ item }">
+        <IconMark
+          :src="item.icon"
+          size="24px"
         />
+      </template>
+      <template #selection="{ item }">
+        {{ item.name }}
       </template>
       <template #item="{ item }">
         <ReuseServiceItem

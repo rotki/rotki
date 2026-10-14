@@ -30,10 +30,6 @@ const navigation = computed<{ id: string; label: string }[]>(() => [
         {{ t('settings.security_settings.title') }}
       </template>
 
-      <template #subtitle>
-        {{ t('settings.security_settings.subtitle') }}
-      </template>
-
       <ChangePassword />
       <PasswordConfirmationSetting />
       <AutoLogoutSetting />

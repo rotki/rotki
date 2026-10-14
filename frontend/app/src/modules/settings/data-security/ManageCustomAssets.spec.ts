@@ -29,11 +29,11 @@ vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
 
 /** Stands in for the library uploader, exposing the reset the component calls after an import. */
 const FileUploadStub = defineComponent({
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'error'],
   name: 'RuiFileUpload',
   props: {
     accept: { default: undefined, type: String },
-    errorMessages: { default: undefined, type: String },
+    errorMessages: { default: (): string[] => [], type: Array },
     hint: { default: undefined, type: String },
     modelValue: { default: undefined, type: File },
     uploaded: { default: false, type: Boolean },
@@ -149,7 +149,7 @@ describe('manageCustomAssets import', () => {
     await importPicked(wrapper);
 
     expect(uploader(wrapper).props('uploaded')).toBe(false);
-    expect(uploader(wrapper).props('errorMessages')).toBe('bad archive');
+    expect(uploader(wrapper).props('errorMessages')).toEqual(['bad archive']);
     expect(removeFile).toHaveBeenCalledOnce();
   });
 
@@ -161,7 +161,7 @@ describe('manageCustomAssets import', () => {
 
     await pick(wrapper, ZIP);
 
-    expect(uploader(wrapper).props('errorMessages')).toBe('');
+    expect(uploader(wrapper).props('errorMessages')).toEqual([]);
   });
 
   it('should drop the done mark once another archive is picked', async () => {

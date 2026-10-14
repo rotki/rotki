@@ -167,8 +167,6 @@ const modeLabel = computed<string>(() => get(modeLabels)[mode]);
       </span>
     </div>
     <div class="overflow-x-auto">
-      <!-- table-fixed, because auto layout sizes the columns from their content: the values differ
-           per mode, so the columns slid sideways on every switch. -->
       <table class="w-full min-w-168 table-fixed text-left font-mono text-xs">
         <colgroup>
           <col class="w-40" />
@@ -214,8 +212,6 @@ const modeLabel = computed<string>(() => get(modeLabels)[mode]);
             :key="line.field"
             class="h-9 border-b border-default last:border-b-0"
           >
-            <!-- Fixed row height and a reserved footer below: a chip is taller than a bare value,
-                 so without them the card resizes on every mode switch and the page jumps. -->
             <th
               scope="row"
               class="whitespace-nowrap px-4 align-middle font-medium text-rui-text-secondary"
@@ -239,8 +235,6 @@ const modeLabel = computed<string>(() => get(modeLabels)[mode]);
               >
                 {{ t('backend_settings.settings.mcp_server.privacy_mode.preview.not_sent') }}
               </span>
-              <!-- No wrapping anywhere in here: a cell that breaks onto a second line would undo
-                   the fixed row height and bring back the jump on mode switch. -->
               <span
                 v-else-if="value.kind === 'hash'"
                 class="rounded-sm bg-rui-grey-200 px-1.5 py-0.5 text-rui-text-secondary dark:bg-rui-grey-800"

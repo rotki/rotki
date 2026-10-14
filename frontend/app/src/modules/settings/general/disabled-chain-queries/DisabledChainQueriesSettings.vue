@@ -93,9 +93,25 @@ watch(writeError, (message) => {
     <div
       v-if="rules.length === 0"
       data-testid="disabled-chain-queries-empty"
-      class="text-rui-text-secondary text-caption border border-dashed border-default rounded-md p-4 text-center"
+      class="flex flex-col items-center gap-3 text-rui-text-secondary text-xs border border-dashed border-rui-divider rounded-rui-control p-4 text-center"
     >
       {{ t('general_settings.disabled_chain_queries.empty') }}
+      <RuiButton
+        variant="outlined"
+        color="primary"
+        size="sm"
+        :disabled="loading"
+        data-testid="rule-add"
+        @click="openCreate()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-plus"
+            size="16"
+          />
+        </template>
+        {{ t('general_settings.disabled_chain_queries.add_rule') }}
+      </RuiButton>
     </div>
 
     <div
@@ -158,10 +174,11 @@ watch(writeError, (message) => {
       </div>
     </div>
 
-    <div>
+    <div v-if="rules.length > 0">
       <RuiButton
         variant="outlined"
         color="primary"
+        size="sm"
         :disabled="loading"
         data-testid="rule-add"
         @click="openCreate()"
@@ -169,7 +186,7 @@ watch(writeError, (message) => {
         <template #prepend>
           <RuiIcon
             name="lu-plus"
-            size="18"
+            size="16"
           />
         </template>
         {{ t('general_settings.disabled_chain_queries.add_rule') }}

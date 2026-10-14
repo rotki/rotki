@@ -25,12 +25,14 @@ describe('settings/data-security/PasswordConfirmationSetting.vue', () => {
   });
 
   beforeEach(() => {
+    vi.useFakeTimers();
     updateFrontendSetting.mockReset();
     updateFrontendSetting.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
     wrapper?.unmount();
+    vi.useRealTimers();
   });
 
   function createWrapper(): VueWrapper<SettingInstance> {
@@ -45,16 +47,18 @@ describe('settings/data-security/PasswordConfirmationSetting.vue', () => {
     return wrapper.find<HTMLInputElement>('[data-testid=password-confirmation-interval-input] input');
   }
 
-  function saveButton(): DOMWrapper<HTMLButtonElement> {
-    return wrapper.find<HTMLButtonElement>('[data-testid=save-password-confirmation-settings]');
-  }
-
   function errorMessage(): string {
     return wrapper.find('[data-testid=password-confirmation-interval-input] .details .text-rui-error').text();
   }
 
   function toggle(): DOMWrapper<HTMLInputElement> {
     return wrapper.find<HTMLInputElement>('[data-testid=enable-password-confirmation-toggle] input');
+  }
+
+  /** Lets the debounced interval write run. */
+  async function settle(): Promise<void> {
+    await vi.runAllTimersAsync();
+    await flushPromises();
   }
 
   /** The confirm dialog is teleported to the body, so it is reached through the document. */
@@ -65,20 +69,11 @@ describe('settings/data-security/PasswordConfirmationSetting.vue', () => {
     await flushPromises();
   }
 
-  it('should not offer to save while nothing has changed', () => {
-    wrapper = createWrapper();
-
-    expect(saveButton().attributes('disabled')).toBeDefined();
-  });
-
-  it('should persist a changed interval in seconds', async () => {
+  it('should persist a changed interval in seconds without a save step', async () => {
     wrapper = createWrapper();
 
     await intervalInput().setValue('14');
-    expect(saveButton().attributes('disabled')).toBeUndefined();
-
-    await saveButton().trigger('click');
-    await flushPromises();
+    await settle();
 
     expect(updateFrontendSetting).toHaveBeenCalledWith({
       enablePasswordConfirmation: true,
@@ -86,57 +81,60 @@ describe('settings/data-security/PasswordConfirmationSetting.vue', () => {
     });
   });
 
-  it('should reject an interval outside the allowed range', async () => {
+  it('should write once for a burst of typing', async () => {
+    wrapper = createWrapper();
+
+    await intervalInput().setValue('1');
+    await intervalInput().setValue('12');
+    await settle();
+
+    expect(updateFrontendSetting).toHaveBeenCalledTimes(1);
+    expect(updateFrontendSetting).toHaveBeenCalledWith(expect.objectContaining({
+      passwordConfirmationInterval: 12 * SECONDS_PER_DAY,
+    }));
+  });
+
+  it('should reject and not save an interval outside the allowed range', async () => {
     wrapper = createWrapper();
 
     await intervalInput().setValue('9999');
+    await settle();
 
     expect(errorMessage()).toBe('password_confirmation_setting.validation.range');
-    expect(saveButton().attributes('disabled')).toBeDefined();
+    expect(updateFrontendSetting).not.toHaveBeenCalled();
   });
 
-  it('should reject an empty interval', async () => {
+  it('should reject and not save an empty interval', async () => {
     wrapper = createWrapper();
 
     await intervalInput().setValue('');
+    await settle();
 
     expect(errorMessage()).toBe('password_confirmation_setting.validation.range');
-    expect(saveButton().attributes('disabled')).toBeDefined();
+    expect(updateFrontendSetting).not.toHaveBeenCalled();
   });
 
   it('should not disable the confirmation until the warning is accepted', async () => {
     wrapper = createWrapper();
 
     await toggle().setValue(false);
+    await settle();
 
     // The interval field follows the setting, so it staying editable is what proves nothing changed.
     expect(intervalInput().attributes('disabled')).toBeUndefined();
-    expect(saveButton().attributes('disabled')).toBeDefined();
+    expect(updateFrontendSetting).not.toHaveBeenCalled();
   });
 
-  it('should disable the confirmation once the warning is accepted', async () => {
+  it('should save the disabled confirmation once the warning is accepted', async () => {
     wrapper = createWrapper();
 
     await toggle().setValue(false);
     await confirmDisable();
+    await settle();
 
     expect(intervalInput().attributes('disabled')).toBeDefined();
-
-    await saveButton().trigger('click');
-    await flushPromises();
-
     expect(updateFrontendSetting).toHaveBeenCalledWith(expect.objectContaining({
       enablePasswordConfirmation: false,
     }));
-  });
-
-  it('should not save an invalid interval even if the button is reached', async () => {
-    wrapper = createWrapper();
-
-    await intervalInput().setValue('9999');
-    await saveButton().trigger('click');
-    await flushPromises();
-
-    expect(updateFrontendSetting).not.toHaveBeenCalled();
   });
 });

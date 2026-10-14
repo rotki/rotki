@@ -7,7 +7,6 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <SettingSwitch
     setting="enableAliasNames"
-    class="mt-4"
     :debounce="1500"
     :label="t('frontend_settings.alias_names.label')"
     :error-message="t('frontend_settings.alias_names.validation.error')"

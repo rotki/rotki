@@ -14,9 +14,6 @@ const { t } = useI18n({ useScope: 'global' });
     <template #title>
       {{ t('general_settings.nft_setting.title') }}
     </template>
-    <template #subtitle>
-      {{ t('general_settings.nft_setting.subtitle.include_nfts') }}
-    </template>
 
     <SettingsItem setting-key="nftsInNetValue">
       <template #subtitle>

@@ -67,8 +67,8 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
     :id="anchorId('rpcNodes')"
     class="mt-4 md:h-full md:flex md:flex-col md:min-h-0"
   >
-    <div class="pb-5 border-b border-default flex flex-wrap gap-4 items-center justify-between">
-      <SettingCategoryHeader>
+    <div class="pb-4 border-b border-rui-divider flex items-start gap-4 justify-between">
+      <SettingCategoryHeader class="flex-1">
         <template #title>
           {{ t('general_settings.rpc_node_setting.title') }}
         </template>
@@ -76,10 +76,11 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
           {{ t('general_settings.rpc_node_setting.subtitle') }}
         </template>
       </SettingCategoryHeader>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2 shrink-0">
         <RuiButton
           v-if="canAddNode"
           color="primary"
+          size="sm"
           data-testid="add-node"
           @click="addNodeClick()"
         >
@@ -107,7 +108,7 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
           data-testid="rpc-settings-rail"
         >
           <div>
-            <div class="px-3 pb-2 text-xs font-medium uppercase tracking-wider text-rui-text-secondary">
+            <div class="px-3 pb-2 text-xs font-medium text-rui-text-secondary">
               {{ t('general_settings.rpc_node_setting.groups.evm') }}
             </div>
             <RuiTabs
@@ -128,7 +129,7 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
             </RuiTabs>
           </div>
           <div>
-            <div class="px-3 pb-2 text-xs font-medium uppercase tracking-wider text-rui-text-secondary">
+            <div class="px-3 pb-2 text-xs font-medium text-rui-text-secondary">
               {{ t('general_settings.rpc_node_setting.groups.other') }}
             </div>
             <RuiTabs
@@ -177,7 +178,7 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
         </div>
       </template>
 
-      <div class="flex-1 min-w-0 md:overflow-y-auto">
+      <div class="flex-1 min-w-0 md:overflow-y-auto md:pb-(--rotki-dock-inset)">
         <RuiDivider
           v-if="!isMdAndUp"
           class="mb-4"

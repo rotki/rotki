@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { useAssetStatisticState } from '@/modules/settings/use-asset-statistic-state';
-import { useSettingModel } from '@/modules/settings/use-setting-model';
+/**
+ * The balance source in a menu of its own.
+ *
+ * @remarks
+ * Kept for premium bundles that predate `StatisticsGraphSettings`' `source` prop; newer ones offer
+ * the source in that one menu.
+ */
+import AssetBalanceSourceOptions from '@/modules/settings/AssetBalanceSourceOptions.vue';
+import { useAssetBalanceSourceSetting } from '@/modules/settings/use-asset-balance-source-setting';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
 const { asset } = defineProps<{
@@ -11,39 +18,14 @@ const emit = defineEmits<{
   preference: [preference?: 'events' | 'snapshot'];
 }>();
 
-const {
-  getPreference,
-  name,
-  rememberStateForAsset,
-  suppressIfPerAsset,
-  modelUseHistoricalAssetBalances,
-} = useAssetStatisticState(() => asset);
-
 const { t } = useI18n({ useScope: 'global' });
 
-const { model } = useSettingModel('useHistoricalAssetBalances');
-
-async function persistSource(value: boolean | undefined): Promise<void> {
-  await suppressIfPerAsset(async () => {
-    set(model, value ?? false);
-  });
-}
-
-watch(modelUseHistoricalAssetBalances, () => {
-  if (!asset || !get(rememberStateForAsset)) {
-    return;
-  }
-
-  emit('preference', getPreference(asset));
-});
-
-watchImmediate(() => asset, (asset) => {
-  if (!asset || !get(rememberStateForAsset)) {
-    return;
-  }
-
-  emit('preference', getPreference(asset));
-});
+const {
+  modelUseHistoricalAssetBalances,
+  name,
+  persistSource,
+  rememberStateForAsset,
+} = useAssetBalanceSourceSetting(() => asset, preference => emit('preference', preference));
 </script>
 
 <template>
@@ -62,38 +44,13 @@ watchImmediate(() => asset, (asset) => {
       </MenuTooltipButton>
     </template>
 
-    <div class="p-4">
-      <RuiCardHeader class="p-0 mb-2">
-        <template #header>
-          {{ t('statistics_graph_settings.source.title') }}
-        </template>
-      </RuiCardHeader>
-      <RuiRadioGroup
-        v-model="modelUseHistoricalAssetBalances"
-        color="primary"
-        :hint="t('statistics_graph_settings.source.warning')"
-        size="sm"
-        @update:model-value="persistSource($event)"
-      >
-        <RuiRadio
-          :label="t('statistics_graph_settings.source.snapshot')"
-          :value="false"
-        />
-        <!-- eslint-disable vue/prefer-true-attribute-shorthand -- `value` is the radio payload, not a boolean prop, so the shorthand would pass an empty string -->
-        <RuiRadio
-          :label="t('statistics_graph_settings.source.historical_events_processing')"
-          :value="true"
-        />
-        <!-- eslint-enable vue/prefer-true-attribute-shorthand -->
-      </RuiRadioGroup>
-      <RuiCheckbox
-        v-if="asset"
-        v-model="rememberStateForAsset"
-        hide-details
-        class="mt-3"
-        color="primary"
-        :label="t('statistics_graph_settings.source.remember_state_for_asset', { asset: name })"
-      />
-    </div>
+    <AssetBalanceSourceOptions
+      v-model:source="modelUseHistoricalAssetBalances"
+      v-model:remember="rememberStateForAsset"
+      class="p-4"
+      :asset="asset"
+      :name="name"
+      @update:source="persistSource($event)"
+    />
   </RuiMenu>
 </template>

@@ -38,9 +38,11 @@ const {
   debounce?: number;
 }>();
 
-defineSlots<{
-  selection: (props: { item: TOption }) => any;
-  item: (props: { item: TOption }) => any;
+const slots = defineSlots<{
+  'selection': (props: { item: TOption }) => any;
+  /** The chip's leading icon slot: an icon placed here sits in the chip's own circle at its edge. */
+  'selection.prepend'?: (props: { item: TOption }) => any;
+  'item': (props: { item: TOption }) => any;
 }>();
 
 const { error: writeError, model, pending, success: writeSuccess } = useSettingModel(setting, { debounce });
@@ -98,35 +100,39 @@ watch(writeError, (message) => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-2">
+  <div class="flex flex-col gap-1">
     <div
       v-if="bulkActions"
-      class="flex gap-2"
+      class="flex flex-wrap items-center justify-between gap-x-2"
     >
-      <RuiButton
-        variant="text"
-        size="sm"
-        color="primary"
-        :disabled="pending || allSelected"
-        @click="selectAll()"
-      >
-        {{ bulkActions.selectLabel }}
-      </RuiButton>
-      <RuiButton
-        variant="text"
-        size="sm"
-        color="primary"
-        :disabled="pending || noneSelected"
-        @click="clearSelection()"
-      >
-        {{ bulkActions.clearLabel }}
-      </RuiButton>
+      <span class="text-sm font-medium text-rui-text">{{ label }}</span>
+      <div class="flex gap-1 -mr-2">
+        <RuiButton
+          variant="text"
+          size="sm"
+          color="primary"
+          :disabled="pending || allSelected"
+          @click="selectAll()"
+        >
+          {{ bulkActions.selectLabel }}
+        </RuiButton>
+        <RuiButton
+          variant="text"
+          size="sm"
+          color="primary"
+          :disabled="pending || noneSelected"
+          @click="clearSelection()"
+        >
+          {{ bulkActions.clearLabel }}
+        </RuiButton>
+      </div>
     </div>
     <RuiAutoComplete
       v-bind="$attrs"
       v-model="selected"
       :options="normalised"
       :label="label"
+      :label-placement="bulkActions ? 'hidden' : undefined"
       key-attr="value"
       text-attr="label"
       :success-messages="success"
@@ -134,6 +140,15 @@ watch(writeError, (message) => {
       chips
       auto-select-first
     >
+      <template
+        v-if="slots['selection.prepend']"
+        #selection.prepend="{ item }"
+      >
+        <slot
+          name="selection.prepend"
+          :item="item.raw"
+        />
+      </template>
       <template #selection="{ item }">
         <slot
           name="selection"
