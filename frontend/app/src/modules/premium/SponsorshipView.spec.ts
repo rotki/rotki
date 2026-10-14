@@ -95,7 +95,8 @@ describe('sponsorship-view', () => {
     wrapper = createWrapper({ drawer: true });
 
     const appImage = wrapper.findComponent({ name: 'AppImage' });
-    expect(appImage.classes()).toContain('size-20');
+    expect(appImage.classes()).toContain('size-16');
+    expect(wrapper.find('[data-testid=sponsorship-version]').exists()).toBe(true);
   });
 
   it('should apply non-drawer classes when drawer prop is false', () => {

@@ -86,6 +86,7 @@ watchImmediate(modelValue, (value: PremiumDevice | undefined) => {
     :title="t('premium_devices.form.edit_title')"
     :loading="loading"
     :action="{ primary: t('common.actions.save') }"
+    :layout="{ autoHeight: true, divide: true, maxWidth: '560px' }"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="modelValue = undefined"

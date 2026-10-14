@@ -1418,19 +1418,16 @@
       "auth_failed": "Échec de l'autorisation avec Monerium",
       "authorizing": "Autorisation auprès de Monerium",
       "connect": "Connecter",
-      "connected_as": "Connecté en tant que {email}",
       "description": "Utilisé pour enrichir les transactions Monerium sur rotki avec les informations bancaires correspondantes.",
       "disconnect": "Déconnecter",
       "disconnected": "Déconnexion de Monerium effectuée.",
       "error": "OAuth Monerium",
-      "instructions": "Connectez Monerium pour garder vos données rotki synchronisées avec votre compte.",
       "opening_browser": "Ouverture du navigateur pour terminer l'autorisation Monerium...",
       "refresh_token": "Jeton d'actualisation",
       "submit_token": "Envoyer les jetons",
       "success": "OAuth Monerium",
       "token_required": "Les jetons d'accès et d'actualisation sont requis.",
       "unknown_email": "email inconnu",
-      "warning": "Autorisez Monerium afin que rotki puisse enrichir vos transactions. Les jetons d'accès sont stockés localement et utilisés en lecture seule.",
       "website_url_missing": "L'URL du site web pour OAuth Monerium n'est pas configurée."
     },
     "opensea": {
@@ -2270,7 +2267,6 @@
     "actions": {
       "delete": "Supprimer la Clé",
       "replace": "Remplacer la Clé",
-      "setup": "Configurer",
       "sync": "Autoriser la synchronisation des données avec le serveur rotki"
     },
     "delete_confirmation": {
@@ -2285,9 +2281,7 @@
       "api_key": "Clé API",
       "api_secret": "Secret API"
     },
-    "get": "Passer à premium",
-    "premium_active": "@:premium_settings.title est activé",
-    "subtitle": "@:premium_settings.title est un service d'abonnement optionnel qui donne accès aux analyses, graphiques et débloque de nombreuses fonctionnalités supplémentaires. Pour plus d'informations sur ce qui est disponible, visitez le site web {0}."
+    "get": "Passer à premium"
   },
   "price_accuracy_hint": {
     "tooltip": "Ces prix sont basés sur le taux de change actuel des valeurs USD historiques"

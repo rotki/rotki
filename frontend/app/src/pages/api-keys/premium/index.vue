@@ -11,14 +11,13 @@ import {
   type PremiumCredentialsFormState,
   premiumCredentialsSchema,
 } from '@/modules/premium/premium-credentials-form';
-import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
+import PremiumCredentialFields from '@/modules/premium/settings/PremiumCredentialFields.vue';
+import PremiumSubscriptionCard from '@/modules/premium/settings/PremiumSubscriptionCard.vue';
+import PremiumSyncCard from '@/modules/premium/settings/PremiumSyncCard.vue';
+import PremiumUpsellCard from '@/modules/premium/settings/PremiumUpsellCard.vue';
 import { usePremiumOperations } from '@/modules/premium/use-premium-operations';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
-import AutomaticSyncSetting from '@/modules/shell/cloud-sync/AutomaticSyncSetting.vue';
-import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
-import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
@@ -33,7 +32,8 @@ defineOptions({
 
 const { t } = useI18n({ useScope: 'global' });
 
-const edit = ref<boolean>(true);
+/** Whether an active subscription's key is being replaced; without one the fields always show. */
+const replacing = ref<boolean>(false);
 const error = ref<string>();
 
 const { username } = storeToRefs(useSessionAuthStore());
@@ -41,19 +41,7 @@ const { premium } = storeToRefs(usePremiumStore());
 const { deletePremium, setup } = usePremiumOperations();
 const { show } = useConfirmStore();
 const { setMessage } = useMessageStore();
-
-const { currentTier } = usePremiumHelper();
 const { openUrl, premiumUserLoggedIn } = useInterop();
-const { allowed: cloudBackupAllowed } = useFeatureAccess(PremiumFeature.CLOUD_BACKUP);
-
-const mainActionText = computed<string>(() => {
-  if (!get(premium))
-    return t('premium_settings.actions.setup');
-  else if (!get(edit))
-    return t('premium_settings.actions.replace');
-
-  return t('common.actions.save');
-});
 
 const form = useForm<PremiumCredentialsFormState, PremiumCredentialsFormState>({
   initial: emptyPremiumCredentialsForm,
@@ -62,22 +50,12 @@ const form = useForm<PremiumCredentialsFormState, PremiumCredentialsFormState>({
   transform: (state): PremiumCredentialsFormState => ({ ...state }),
 });
 
-function cancelEdit(): void {
-  set(edit, false);
-  form.reset();
-}
-
 function reset(): void {
-  set(edit, false);
+  set(replacing, false);
   form.reset();
 }
 
-async function setupPremium(): Promise<void> {
-  if (get(premium) && !get(edit)) {
-    set(edit, true);
-    return;
-  }
-
+async function saveCredentials(): Promise<void> {
   set(error, undefined);
   if (!form.validate())
     return;
@@ -96,7 +74,7 @@ async function setupPremium(): Promise<void> {
   reset();
 }
 
-async function remove() {
+async function remove(): Promise<void> {
   if (!get(premium))
     return;
 
@@ -109,11 +87,11 @@ async function remove() {
   reset();
 }
 
-function showDeleteConfirmation() {
+function showDeleteConfirmation(): void {
   show(
     {
       message: t('premium_settings.delete_confirmation.message'),
-      primaryAction: t('common.actions.delete'),
+      primaryAction: t('premium_settings.actions.delete'),
       secondaryAction: t('common.actions.cancel'),
       title: t('premium_settings.delete_confirmation.title'),
     },
@@ -151,10 +129,6 @@ watch(error, (errorMessage) => {
     });
   }
 });
-
-onMounted(() => {
-  set(edit, !get(premium) && !get(edit));
-});
 </script>
 
 <template>
@@ -164,133 +138,46 @@ onMounted(() => {
       t('navigation_menu.api_keys_sub.premium'),
     ]"
   >
-    <RuiCard>
-      <div class="flex flex-col gap-2">
-        <div class="flex flex-row-reverse">
-          <HintMenuIcon>
-            <i18n-t
-              scope="global"
-              tag="div"
-              keypath="premium_settings.subtitle"
-            >
-              <ExternalLink
-                color="primary"
-                :text="t('premium_settings.title')"
-                premium
-              />
-            </i18n-t>
-          </HintMenuIcon>
-        </div>
-
-        <RuiRevealableTextField
-          v-model.trim="form.state.apiKey"
-          data-testid="premium-api-key"
-          variant="outlined"
-          color="primary"
-          :disabled="premium && !edit"
-          :error-messages="form.errors('apiKey')"
-          :label="t('premium_settings.fields.api_key')"
-          @blur="form.touch('apiKey')"
-        />
-
-        <RuiRevealableTextField
-          v-model.trim="form.state.apiSecret"
-          data-testid="premium-api-secret"
-          variant="outlined"
-          color="primary"
-          :disabled="premium && !edit"
-          :error-messages="form.errors('apiSecret')"
-          :label="t('premium_settings.fields.api_secret')"
-          @blur="form.touch('apiSecret')"
-        />
-      </div>
-
-      <RuiAlert
-        v-if="premium"
-        type="success"
+    <div class="flex flex-col gap-6">
+      <PremiumUpsellCard
+        v-if="!premium"
+        @activate="saveCredentials()"
       >
-        {{ t('premium_settings.premium_active') }}
-      </RuiAlert>
+        <template #credentials>
+          <PremiumCredentialFields
+            v-model:api-key="form.state.apiKey"
+            v-model:api-secret="form.state.apiSecret"
+            :api-key-errors="form.errors('apiKey')"
+            :api-secret-errors="form.errors('apiSecret')"
+            @blur="form.touch($event)"
+          />
+        </template>
+      </PremiumUpsellCard>
 
-      <div
-        v-if="premium"
-        class="flex items-center justify-between mt-4 px-2"
-      >
-        <div class="flex items-center gap-3">
-          <span class="text-rui-text-secondary text-body-2">
-            {{ t('premium_settings.current_plan_label') }} <span class="font-bold text-rui-text">{{ currentTier || '—' }}</span>
-          </span>
-        </div>
-        <ExternalLink
-          :url="externalLinks.manageSubscriptions"
-          :text="t('premium_settings.manage_or_upgrade')"
-          color="primary"
-        />
-      </div>
-
-      <AutomaticSyncSetting
-        class="mt-6"
-        :disabled="!premium || edit || !cloudBackupAllowed"
-      />
-
-      <RuiAlert
-        v-if="premium && !cloudBackupAllowed"
-        type="info"
-        class="mt-4"
-      >
-        <i18n-t
-          scope="global"
-          tag="span"
-          keypath="premium_settings.cloud_backup_unavailable"
-        >
-          <template #link>
-            <ExternalLink
-              :url="externalLinks.manageSubscriptions"
-              :text="t('premium_settings.cloud_backup_upgrade_link')"
-              color="primary"
-            />
-          </template>
-        </i18n-t>
-      </RuiAlert>
-
-      <template #footer>
-        <div class="flex gap-2">
-          <template v-if="premium">
-            <RuiButton
-              v-if="edit"
-              class="min-w-28"
-              color="primary"
-              variant="outlined"
-              @click="cancelEdit()"
-            >
-              {{ t('common.actions.cancel') }}
-            </RuiButton>
-
-            <RuiButton
-              v-else
-              class="min-w-28"
-              variant="outlined"
-              color="primary"
-              type="submit"
-              data-testid="premium-delete"
-              @click="showDeleteConfirmation()"
-            >
-              {{ t('premium_settings.actions.delete') }}
-            </RuiButton>
-          </template>
-
-          <RuiButton
-            class="min-w-28"
-            color="primary"
-            type="submit"
-            data-testid="premium-setup"
-            @click="setupPremium()"
+      <template v-else>
+        <div class="grid lg:grid-cols-3 gap-6">
+          <PremiumSubscriptionCard
+            class="lg:col-span-2"
+            :editing="replacing"
+            @replace="replacing = true"
+            @cancel="reset()"
+            @save="saveCredentials()"
+            @remove="showDeleteConfirmation()"
           >
-            {{ mainActionText }}
-          </RuiButton>
+            <template #credentials>
+              <PremiumCredentialFields
+                v-model:api-key="form.state.apiKey"
+                v-model:api-secret="form.state.apiSecret"
+                :api-key-errors="form.errors('apiKey')"
+                :api-secret-errors="form.errors('apiSecret')"
+                @blur="form.touch($event)"
+              />
+            </template>
+          </PremiumSubscriptionCard>
+          <PremiumSyncCard :disabled="replacing" />
         </div>
+        <PremiumDeviceList />
       </template>
-    </RuiCard>
-    <PremiumDeviceList v-if="premium" />
+    </div>
   </TablePageLayout>
 </template>
