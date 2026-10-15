@@ -48,8 +48,10 @@ class ActivityRetryTracker:
         self.database = database
         self._lock = Lock()
         self._pending: dict[ActivityCheck, bool] = {}  # check -> was explicitly submitted
-        # None values invalidate responses for checks removed while a retry is running.
-        self._in_flight: dict[ActivityCheck, bool | None] | None = None
+        # The checks of the retry that is running, None if there is none
+        self._in_flight: dict[ActivityCheck, bool] | None = None
+        # Checks the user removed while the retry is running, so their responses are ignored
+        self._removed_in_flight: set[ActivityCheck] = set()
         # address -> what the user submitted it with. Only for addresses with a pending check.
         self._submissions: dict[ChecksumEvmAddress, SingleBlockchainAccountData[ChecksumEvmAddress]] = {}  # noqa: E501
         self._due_ts: Timestamp = Timestamp(0)
@@ -57,10 +59,8 @@ class ActivityRetryTracker:
 
     def _load(self) -> None:
         with self.database.conn.read_ctx() as cursor:
-            raw = self.database.get_static_cache(cursor=cursor, name=_STATE_KEY)
-
-        if raw is None:
-            return
+            if (raw := self.database.get_static_cache(cursor=cursor, name=_STATE_KEY)) is None:
+                return
 
         try:
             data = json.loads(raw)
@@ -70,8 +70,7 @@ class ActivityRetryTracker:
                 for entry in data['checks']
             }
             self._due_ts = Timestamp(int(data['due_ts']))
-            # absent in the state written before submissions were stored
-            self._submissions = {
+            self._submissions = {  # absent in the state written before submissions were stored
                 (address := ChecksumEvmAddress(entry['address'])): SingleBlockchainAccountData(
                     address=address,
                     label=entry['label'],
@@ -80,9 +79,7 @@ class ActivityRetryTracker:
             }
         except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
             log.error('Dropping unreadable pending EVM activity checks %s due to %s', raw, e)
-            self._pending = {}
-            self._submissions = {}
-            self._due_ts = Timestamp(0)
+            self._pending, self._submissions, self._due_ts = {}, {}, Timestamp(0)
 
     @contextmanager
     def _locked(self, write_cursor: DBCursor | None = None) -> Iterator[DBCursor]:
@@ -101,10 +98,7 @@ class ActivityRetryTracker:
                 self._lock.release()
 
     def _write_state(self, write_cursor: DBCursor) -> None:
-        checks = {
-            check: submitted for check, submitted in (self._in_flight or {}).items()
-            if submitted is not None
-        } | self._pending
+        checks = (self._in_flight or {}) | self._pending
         # forget the submissions that no check refers to anymore
         referenced = {address for address, _ in checks}
         self._submissions = {
@@ -141,24 +135,22 @@ class ActivityRetryTracker:
         A given submission marks the checks of its address as explicitly submitted, and is
         stored together with them from the very first moment, so that it survives an
         interruption of the operation that recorded the failure."""
-        submitted = submitted or submission is not None
         if len(failures) == 0:
             return
 
+        submitted = submitted or submission is not None
         with self._locked() as write_cursor:
             for check in failures:
-                if (
-                    self._in_flight is not None and check in self._in_flight and
-                    self._in_flight[check] is None
-                ):
+                if check in self._removed_in_flight:
                     continue  # removed during the request: ignore its late failure
                 if submission is not None and check[0] == submission.address:
                     self._submissions[submission.address] = submission
                 # a submitted check stays submitted even if a later failure is a detection one
-                self._pending[check] = submitted or self._pending.get(check, False) or bool(
-                    (self._in_flight or {}).get(check),
+                self._pending[check] = (
+                    submitted or self._pending.get(check, False) or
+                    (self._in_flight or {}).get(check, False)
                 )
-            self._schedule_if_needed()
+            self._set_deadline_if_unset()
             self._write_state(write_cursor)
 
     def get_submission(
@@ -169,10 +161,10 @@ class ActivityRetryTracker:
         with self._lock:
             return self._submissions.get(address)
 
-    def _schedule_if_needed(self) -> None:
-        """Schedule a retry if there is no deadline. An existing deadline is kept even if it is
+    def _set_deadline_if_unset(self) -> None:
+        """Set the retry deadline if there is none. An existing deadline is kept even if it is
         overdue, so that new failures can't postpone a retry that is already due. A retry
-        that takes all pending checks consumes the deadline, so its failures schedule anew."""
+        that takes all pending checks consumes the deadline, so its failures set a new one."""
         if self._due_ts == 0:
             self._due_ts = Timestamp(ts_now() + EVMLIKE_ACCOUNTS_DETECTION_RETRY)
 
@@ -185,16 +177,14 @@ class ActivityRetryTracker:
         """Forget the pending checks of an address, e.g. after the user removed it. Only
         the check of the given chain if there is one, otherwise all of its checks."""
         with self._locked(write_cursor):
-            dropped = [
-                check for check in self._pending
+            in_flight = self._in_flight or {}
+            for check in [
+                check for check in self._pending | in_flight
                 if check[0] == address and (chain is None or check[1] == chain)
-            ]
-            for check in dropped:
-                del self._pending[check]
-            if self._in_flight is not None:
-                for check in self._in_flight:
-                    if check[0] == address and (chain is None or check[1] == chain):
-                        self._in_flight[check] = None
+            ]:
+                self._pending.pop(check, None)
+                if in_flight.pop(check, None) is not None:
+                    self._removed_in_flight.add(check)  # its response is still on its way
             self._clear_due_if_empty()
             self._write_state(write_cursor)
 
@@ -204,15 +194,13 @@ class ActivityRetryTracker:
 
     def has_pending(self) -> bool:
         with self._lock:
-            return len(self._pending) != 0 or any(
-                submitted is not None for submitted in (self._in_flight or {}).values()
-            )
+            return len(self._pending) != 0 or len(self._in_flight or {}) != 0
 
     def is_retry_pending(self, check: ActivityCheck) -> bool:
         """Whether an in-flight retry is still wanted. Check inside the account write
         transaction so that removal cannot land between this check and account addition."""
         with self._lock:
-            return self._in_flight is not None and self._in_flight.get(check) is not None
+            return check in (self._in_flight or {})
 
     @contextmanager
     def rechecking(
@@ -249,18 +237,16 @@ class ActivityRetryTracker:
             with self._locked() as write_cursor:
                 if not completed:
                     for check, submitted in (self._in_flight or {}).items():
-                        if submitted is not None:
-                            self._pending.setdefault(check, submitted)
+                        self._pending.setdefault(check, submitted)
                     # the interrupted retry didn't happen, so keep its original deadline
                     if previous_due_ts != 0 and (self._due_ts == 0 or previous_due_ts < self._due_ts):  # noqa: E501
                         self._due_ts = previous_due_ts
                 self._in_flight = None
+                self._removed_in_flight.clear()
                 self._clear_due_if_empty()
                 self._write_state(write_cursor)
 
     def _clear_due_if_empty(self) -> None:
         """Must be called with the lock held"""
-        if len(self._pending) == 0 and not any(
-            submitted is not None for submitted in (self._in_flight or {}).values()
-        ):
+        if len(self._pending) == 0 and len(self._in_flight or {}) == 0:
             self._due_ts = Timestamp(0)
