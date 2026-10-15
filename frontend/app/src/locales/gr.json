@@ -172,6 +172,18 @@
       }
     }
   },
+  "backend_mappings": {
+    "trade_location": {
+      "banks": "Τράπεζες",
+      "bonds": "Ομόλογα",
+      "collectibles": "Συλλεκτικά",
+      "commodities": "Εμπορεύματα",
+      "equities": "Μετοχές",
+      "etf": "ETF",
+      "external": "Εξωτερικά",
+      "realestate": "Ακίνητα"
+    }
+  },
   "collapsed_pending_tasks": {
     "cancel_task": "Ακύρωση εργασίας",
     "cancel_task_info": "Αυτή η ενέργεια θα αφήσει την εκτελούμενη διεργασία ({title}) σε ημιτελή κατάσταση, είστε σίγουροι ότι θέλετε να την ακυρώσετε;",

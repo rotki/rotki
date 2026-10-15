@@ -341,6 +341,18 @@
   "back_button": {
     "tooltip": "Navegar a la página anterior."
   },
+  "backend_mappings": {
+    "trade_location": {
+      "banks": "Bancos",
+      "bonds": "Bonos",
+      "collectibles": "Coleccionables",
+      "commodities": "Materias primas",
+      "equities": "Acciones",
+      "etf": "ETF",
+      "external": "Externo",
+      "realestate": "Bienes raíces"
+    }
+  },
   "backend_settings": {
     "title": "Ajustes del servicio"
   },

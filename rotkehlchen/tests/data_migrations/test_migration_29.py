@@ -70,3 +70,44 @@ def test_migration_29_removes_the_zero_hash_funding_event(database: DBHandler) -
         assert cursor.execute(
             'SELECT group_identifier, sequence_index FROM history_events ORDER BY sequence_index, group_identifier',  # noqa: E501
         ).fetchall() == [('other', 0), (zero_hash_group, 1)]
+
+
+@pytest.mark.parametrize('data_migration_version', [28])
+def test_migration_29_adds_traditional_finance_locations(database: DBHandler) -> None:
+    """Fresh DBs have the Bonds, ETF and Collectibles locations, and the migration adds
+    them to existing DBs so that events can use them."""
+    new_locations = (Location.BONDS, Location.ETF, Location.COLLECTIBLES)
+    location_query = 'SELECT location, seq FROM location WHERE seq >= 62 ORDER BY seq'
+    expected_rows = [(location.serialize_for_db(), location.value) for location in new_locations]
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(location_query).fetchall() == expected_rows
+
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'DELETE FROM location WHERE location=?',
+            [(location.serialize_for_db(),) for location in new_locations],
+        )
+
+    run_single_migration(database=database, migration=29)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(location_query).fetchall() == expected_rows
+
+    history_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        for location in new_locations:
+            history_db.add_history_event(write_cursor=write_cursor, event=HistoryEvent(
+                group_identifier=f'{location}_event',
+                sequence_index=0,
+                timestamp=TimestampMS(1762300800000),
+                location=location,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_USDC,
+                amount=ONE,
+            ))
+
+    with database.conn.read_ctx() as cursor:
+        assert {Location.deserialize_from_db(row[0]) for row in cursor.execute(
+            'SELECT location FROM history_events',
+        )} == set(new_locations)
