@@ -1280,9 +1280,13 @@
     },
     "trade_location": {
       "banks": "Банки",
+      "bonds": "Облигации",
+      "collectibles": "Предметы коллекционирования",
       "commodities": "Товары",
       "equities": "Акции",
-      "external": "Внешние"
+      "etf": "ETF",
+      "external": "Внешние",
+      "realestate": "Недвижимость"
     }
   },
   "backend_settings": {

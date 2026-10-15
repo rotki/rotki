@@ -1617,9 +1617,13 @@
     },
     "trade_location": {
       "banks": "Banks",
+      "bonds": "Bonds",
+      "collectibles": "Collectibles",
       "commodities": "Commodities",
       "equities": "Equities",
-      "external": "External"
+      "etf": "ETFs",
+      "external": "External",
+      "realestate": "Real Estate"
     }
   },
   "backend_reload": {

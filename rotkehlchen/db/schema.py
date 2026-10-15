@@ -126,6 +126,12 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('{', 59);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('|', 60);
 /* CoinEx */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('}', 61);
+/* Bonds */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('~', 62);
+/* ETF */
+INSERT OR IGNORE INTO location(location, seq) VALUES (char(127), 63);
+/* Collectibles */
+INSERT OR IGNORE INTO location(location, seq) VALUES (char(128), 64);
 """
 
 # Custom enum table for Balance categories (asset/liability)

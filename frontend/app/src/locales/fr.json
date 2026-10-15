@@ -973,9 +973,13 @@
     },
     "trade_location": {
       "banks": "Banques",
-      "commodities": "Marchandises",
+      "bonds": "Obligations",
+      "collectibles": "Objets de collection",
+      "commodities": "Matières premières",
       "equities": "Actions",
-      "external": "Externe"
+      "etf": "ETF",
+      "external": "Externe",
+      "realestate": "Immobilier"
     }
   },
   "backend_settings": {

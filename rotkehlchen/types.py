@@ -815,6 +815,9 @@ class Location(DBCharEnumMixIn):
     GATE = 59
     BIT2ME = 60
     COINEX = 61
+    BONDS = 62
+    ETF = 63
+    COLLECTIBLES = 64
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> EVM_LOCATIONS_TYPE:

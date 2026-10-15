@@ -861,9 +861,13 @@
     },
     "trade_location": {
       "banks": "银行",
+      "bonds": "债券",
+      "collectibles": "收藏品",
       "commodities": "商品",
       "equities": "股票",
-      "external": "外部"
+      "etf": "ETF",
+      "external": "外部",
+      "realestate": "房地产"
     }
   },
   "backend_settings": {

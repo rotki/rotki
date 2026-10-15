@@ -29,6 +29,8 @@ def data_migration_29(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
     them, so they all got the same group identifier and only the first one ever queried
     was saved. Remove that event, since it is saved again under its own group identifier
     by the next sync, unless it was customized.
+
+    Also add the Bonds, ETF and Collectibles locations.
     """
     @progress_step(description='Resetting Hyperliquid Core history query ranges')
     def _reset_hyperliquid_core_history_ranges(rotki: Rotkehlchen) -> None:
@@ -54,6 +56,14 @@ def data_migration_29(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                     HISTORY_MAPPING_KEY_STATE,
                     HistoryMappingState.CUSTOMIZED.serialize_for_db(),
                 ),
+            )
+
+    @progress_step(description='Adding the Bonds, ETF and Collectibles locations')
+    def _add_traditional_finance_locations(rotki: Rotkehlchen) -> None:
+        with rotki.data.db.user_write() as write_cursor:
+            write_cursor.executemany(
+                'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
+                [('~', 62), (chr(127), 63), (chr(128), 64)],
             )
 
     perform_userdb_migration_steps(rotki, progress_handler, should_vacuum=False)
