@@ -6,7 +6,8 @@ import {
   type FailedHistoricalAssetPriceResponse,
   NoPrice,
 } from '@rotki/common';
-import { getOr, map as mapResult, type Result } from 'plainfp/result';
+import { startPromise } from '@shared/utils';
+import { getOr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { HistoricPrices } from '@/modules/assets/prices/price-types';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
@@ -14,7 +15,8 @@ import { SECONDS_PER_HOUR } from '@/modules/core/common/constraints';
 import { createItemCache } from '@/modules/core/common/use-item-cache';
 import { onSessionCleared } from '@/modules/core/session/session-lifecycle';
 import { useSetting } from '@/modules/settings/use-setting';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseHistoricPriceCacheReturn {
@@ -46,6 +48,26 @@ interface UseHistoricPriceCacheReturn {
  */
 let batchSequence = 0;
 
+/**
+ * The umbrella row the batches in flight share, so the dock shows one "Prices" row with the batches
+ * as its children instead of one row per batch, each reporting the same progress.
+ *
+ * @remarks
+ * Batches arrive one at a time from the debounced item cache, so unlike a known list the umbrella
+ * opens with the first batch and closes when the last one in flight settles. It runs on
+ * {@link UMBRELLA_LANE}, never the batches' own lane, which it would otherwise throttle while waiting
+ * on them. Module-scoped for the same reason as {@link batchSequence}.
+ */
+let wave: { id: ActivityId; pending: number; close: () => void; closing?: ReturnType<typeof setTimeout> } | undefined;
+let waveSequence = 0;
+
+/**
+ * How long the umbrella stays open after its last batch settles. The item cache sends batches one
+ * after another with a debounce between them, so closing at once would open a new umbrella, and a
+ * new row, for every batch again.
+ */
+const WAVE_GRACE_MS = 3000;
+
 export const useHistoricPriceCache = createSharedComposable((): UseHistoricPriceCacheReturn => {
   const currencySymbol = useSetting('currencySymbol');
   const historicCachePriceStore = useHistoricCachePriceStore();
@@ -56,6 +78,49 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
   const { t } = useI18n({ useScope: 'global' });
 
   const createKey = (fromAsset: string, timestamp: number | string): string => `${fromAsset}#${timestamp}`;
+
+  /** Joins the umbrella in flight, opening one first when none is, and returns its id as the parent. */
+  function joinWave(): ActivityId {
+    if (!wave) {
+      let close!: () => void;
+      const settled = new Promise<void>((resolve) => {
+        close = resolve;
+      });
+      const id = makeActivityId(ActivityKind.PRICES, ActivityPart.HISTORIC, ActivityPart.BATCH, 'all', ++waveSequence);
+      wave = { close, id, pending: 0 };
+      startPromise(submitTask({
+        id,
+        kind: ActivityKind.PRICES,
+        lane: UMBRELLA_LANE,
+        rerunnable: false,
+        run: async (): Promise<Result<void, TaskError>> => {
+          await settled;
+          return ok(undefined);
+        },
+        subtitle: t('task_center.activity.prices.historic_batches', { toAsset: get(currencySymbol) }),
+        title: t('task_center.group.prices'),
+      }));
+    }
+    clearTimeout(wave.closing);
+    wave.pending += 1;
+    return wave.id;
+  }
+
+  /** Leaves the umbrella, closing it a grace period after its last batch has settled. */
+  function leaveWave(id: ActivityId): void {
+    const current = wave;
+    if (current?.id !== id)
+      return;
+    current.pending -= 1;
+    if (current.pending > 0)
+      return;
+    current.closing = setTimeout(() => {
+      if (wave !== current || current.pending > 0)
+        return;
+      current.close();
+      wave = undefined;
+    }, WAVE_GRACE_MS);
+  }
 
   async function fetchHistoricPrices(keys: string[]): ReturnType<Parameters<typeof createItemCache<BigNumber>>[0]> {
     const assetsTimestamp = keys.map((key) => {
@@ -73,9 +138,11 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
       2,
     );
 
+    const parent = joinWave();
     const outcome = await submitTask<HistoricPrices>({
       id: makeActivityId(ActivityKind.PRICES, ActivityPart.HISTORIC, ActivityPart.BATCH, ++batchSequence),
       kind: ActivityKind.PRICES,
+      parent,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<HistoricPrices, TaskError>> => mapResult(
         await runTask<HistoricPrices>(
@@ -88,7 +155,7 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
       ),
       subtitle: description,
       title: t('task_center.group.prices'),
-    });
+    }).finally(() => leaveWave(parent));
 
     const response = HistoricPrices.parse(getOr(outcome, { assets: {}, targetAsset: '' }));
 

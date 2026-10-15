@@ -192,12 +192,16 @@ describe('useHistoricPriceCache', () => {
     vi.advanceTimersByTime(2500);
     await flushPromises();
 
-    const ids = orchestrator.snapshot()
-      .map(activity => activity.id)
-      .filter(id => id.startsWith(`${ActivityKind.PRICES}:${ActivityPart.HISTORIC}:${ActivityPart.BATCH}:`));
+    const prefix = `${ActivityKind.PRICES}:${ActivityPart.HISTORIC}:${ActivityPart.BATCH}:`;
+    const umbrellaPrefix = `${prefix}all:`;
+    const batches = orchestrator.snapshot()
+      .filter(activity => activity.id.startsWith(prefix) && !activity.id.startsWith(umbrellaPrefix));
+    const ids = batches.map(activity => activity.id);
 
     expect(ids).toHaveLength(2);
     expect(new Set(ids).size).toBe(2);
+    // Each batch sits under an umbrella row, so the dock lists one "Prices" row rather than one per batch.
+    batches.forEach(batch => expect(batch.parent?.startsWith(umbrellaPrefix)).toBe(true));
     expect(orchestrator.statusOfPrefix(ActivityKind.PRICES, ActivityPart.HISTORIC).everCompleted).toBe(true);
   });
 
