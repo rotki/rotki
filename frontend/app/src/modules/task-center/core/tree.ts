@@ -1,5 +1,5 @@
-import type { Activity, ActivityId, ActivitySteps } from './types';
 import { INDETERMINATE, isTerminalStatus } from './status';
+import { type Activity, type ActivityId, ActivityKind, type ActivitySteps } from './types';
 
 /**
  * The activity tree, read off `Activity.parent`.
@@ -163,6 +163,47 @@ function subtreeUnits(children: ReadonlyMap<ActivityId, Activity[]>, root: Activ
 export function subtreeSteps(children: ReadonlyMap<ActivityId, Activity[]>, root: Activity): ActivitySteps {
   const units = subtreeUnits(children, root);
   return { current: units.filter(unit => isTerminalStatus(unit.status)).length, total: units.length };
+}
+
+/** Kinds whose steps are not a count of things done: an account sync's are seconds of the queried range. */
+const UNCOUNTED_KINDS: ReadonlySet<string> = new Set<string>([ActivityKind.TX_SYNC]);
+
+function hasCountedSteps(unit: Activity): unit is Activity & { steps: ActivitySteps } {
+  return unit.steps !== undefined && unit.steps.total > 0 && !UNCOUNTED_KINDS.has(unit.kind);
+}
+
+/**
+ * The work a subtree's units report between them, when they all count the same thing.
+ *
+ * @remarks
+ * A redecode over one chain is one unit, so {@link subtreeSteps} reads "0 of 1" for the whole run
+ * while its bar fills; the chain's decode counts transactions, and "420 of 1331" says how far along it
+ * is. Summed only when every unit is of one kind and reports steps: a unit still queued has no total
+ * yet, and mixed kinds count different things, so either falls back to counting units.
+ *
+ * @param children - direct children by parent id, as {@link ActivityTree.children} builds them
+ * @param root - the activity whose subtree is counted
+ * @returns the units' steps summed, or `undefined` when they cannot be added up
+ */
+export function subtreeWork(children: ReadonlyMap<ActivityId, Activity[]>, root: Activity): ActivitySteps | undefined {
+  const units = subtreeUnits(children, root);
+  const kind = units[0]?.kind;
+  if (units.length === 0 || units.some(unit => unit.kind !== kind))
+    return undefined;
+
+  const counted = units.filter(hasCountedSteps);
+  if (counted.length !== units.length)
+    return undefined;
+
+  return counted.reduce<ActivitySteps>(
+    (sum, unit) => ({ current: sum.current + unit.steps.current, total: sum.total + unit.steps.total }),
+    { current: 0, total: 0 },
+  );
+}
+
+/** How far along summed work is, 0-100, in the same units as its text. */
+export function workPercentage(work: ActivitySteps): number {
+  return Math.round((Math.min(work.current, work.total) / work.total) * 100);
 }
 
 /**

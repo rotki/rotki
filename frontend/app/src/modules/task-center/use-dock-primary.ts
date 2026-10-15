@@ -12,7 +12,8 @@ interface UseDockPrimaryReturn {
    * The count the pill shows for {@link primary}.
    *
    * @remarks
-   * A job with children counts its subtree's leaves. A single activity has no leaves to count, so it
+   * A job with children counts the work its units report when they all count the same thing (see
+   * `subtreeWork`), and its subtree's leaves otherwise. A single activity has no leaves to count, so it
    * uses the steps it reports itself: counted as one leaf it would read "0 of 1" beside a percentage
    * that says otherwise. `undefined` for an unranked job, or a ranked one that reports no steps.
    */
@@ -78,7 +79,7 @@ export function useDockPrimary(
       return undefined;
 
     const hasChildren = (toValue(children).get(job.activity.id)?.length ?? 0) > 0;
-    const count = hasChildren ? job.steps : job.activity.steps;
+    const count = hasChildren ? job.work ?? job.steps : job.activity.steps;
     return count && count.total > 0 ? count : undefined;
   });
 

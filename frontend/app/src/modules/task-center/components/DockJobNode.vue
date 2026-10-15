@@ -6,7 +6,7 @@ import DockOutcomeSummary from '@/modules/task-center/components/DockOutcomeSumm
 import DockSkippedGroup from '@/modules/task-center/components/DockSkippedGroup.vue';
 import DockSyncHint from '@/modules/task-center/components/DockSyncHint.vue';
 import { isTerminalStatus, needsAttention, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
-import { someInSubtree, subtreeLeaves, subtreeProgress, subtreeSteps } from '@/modules/task-center/core/tree';
+import { someInSubtree, subtreeLeaves, subtreeProgress, subtreeSteps, subtreeWork, workPercentage } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, ActivityKind, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
 import { arrangeChildren, type DockChildEntry } from '@/modules/task-center/dock-children';
 import { type JobBreakdownEntry, useJobBreakdown } from '@/modules/task-center/use-job-breakdown';
@@ -102,11 +102,22 @@ const breakdown = computed<JobBreakdownEntry[]>(() => (depth === 0 ? get(jobBrea
 /** The sync hint explains a history refresh, so it sits under that job, and only while it runs. */
 const showSyncHint = computed<boolean>(() => depth === 0 && activity.kind === ActivityKind.HISTORY_SYNC && !isTerminalStatus(activity.status));
 
-/** A parent counts the units it is named by, so its bar and its "3 of 5" agree. See `subtreeUnits`. */
-const steps = computed<ActivitySteps | undefined>(() => (get(isParent) ? subtreeSteps(children, activity) : undefined));
+/** The work a parent's units count between them, such as the transactions a redecode's chains decode. See `subtreeWork`. */
+const work = computed<ActivitySteps | undefined>(() => (get(isParent) ? subtreeWork(children, activity) : undefined));
 
-/** A parent rolls its units up, giving each its fractional progress. */
-const percentage = computed<number>(() => (get(isParent) ? subtreeProgress(children, activity) : activity.percentage));
+/**
+ * A parent counts the work its units report when they all count it the same way, and the units it
+ * is named by otherwise, so its bar and its "3 of 5" agree. See `subtreeUnits`.
+ */
+const steps = computed<ActivitySteps | undefined>(() => (get(isParent) ? get(work) ?? subtreeSteps(children, activity) : undefined));
+
+/** A parent rolls its units up, giving each its fractional progress, or fills from the work it counts. */
+const percentage = computed<number>(() => {
+  if (!get(isParent))
+    return activity.percentage;
+  const counted = get(work);
+  return counted ? workPercentage(counted) : subtreeProgress(children, activity);
+});
 
 /**
  * A parent completes once its children settle, however they settled, so its own COMPLETE would

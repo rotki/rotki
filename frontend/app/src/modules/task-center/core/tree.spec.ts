@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTree, someInSubtree, subtreeLeaves, subtreeProgress, subtreeSteps } from './tree';
+import { buildTree, someInSubtree, subtreeLeaves, subtreeProgress, subtreeSteps, subtreeWork, workPercentage } from './tree';
 import { type Activity, type ActivityId, ActivityKind, ActivitySourceType, ActivityStatus, makeActivityId } from './types';
 
 function activity(id: string, status: ActivityStatus, parent?: string, startedAt?: number): Activity {
@@ -263,5 +263,64 @@ describe('subtreeProgress', () => {
 
     // Two leaves: one whole, one half. The two intermediate rows count for nothing.
     expect(subtreeProgress(children, roots[0])).toBe(75);
+  });
+});
+
+describe('subtreeWork', () => {
+  function redecode(): Activity {
+    return { ...activity('redecode', ActivityStatus.RUNNING), id: makeActivityId(ActivityKind.REDECODE, 'all'), kind: ActivityKind.REDECODE };
+  }
+
+  function decode(chain: string, status: ActivityStatus, steps?: { current: number; total: number }): Activity {
+    return {
+      ...activity(chain, status),
+      id: makeActivityId(ActivityKind.TX_DECODING, chain),
+      kind: ActivityKind.TX_DECODING,
+      parent: makeActivityId(ActivityKind.REDECODE, 'all'),
+      steps,
+    };
+  }
+
+  it('should count a one-chain redecode in transactions, where its unit tally reads 0 of 1', () => {
+    const root = redecode();
+    const { children } = buildTree([root, decode('eth', ActivityStatus.RUNNING, { current: 420, total: 1331 })], byId);
+
+    expect(subtreeSteps(children, root)).toEqual({ current: 0, total: 1 });
+    expect(subtreeWork(children, root)).toEqual({ current: 420, total: 1331 });
+    expect(workPercentage({ current: 420, total: 1331 })).toBe(32);
+  });
+
+  it('should add up the transactions of every chain', () => {
+    const root = redecode();
+    const { children } = buildTree([
+      root,
+      decode('eth', ActivityStatus.COMPLETE, { current: 1331, total: 1331 }),
+      decode('gno', ActivityStatus.RUNNING, { current: 10, total: 69 }),
+    ], byId);
+
+    expect(subtreeWork(children, root)).toEqual({ current: 1341, total: 1400 });
+  });
+
+  /** A queued chain has no total yet, so a sum would understate the work and jump once it starts. */
+  it('should fall back to counting units while a chain has no count yet', () => {
+    const root = redecode();
+    const { children } = buildTree([
+      root,
+      decode('eth', ActivityStatus.RUNNING, { current: 10, total: 100 }),
+      decode('gno', ActivityStatus.PENDING),
+    ], byId);
+
+    expect(subtreeWork(children, root)).toBeUndefined();
+  });
+
+  /** An account sync's steps are seconds of the queried range, which add up to nothing a reader can use. */
+  it('should not add up the steps of an account sync', () => {
+    const activities = [
+      activity('umbrella', ActivityStatus.RUNNING),
+      { ...activity('eth', ActivityStatus.RUNNING, 'umbrella'), steps: { current: 86400, total: 604800 } },
+    ];
+    const { children, roots } = buildTree(activities, byId);
+
+    expect(subtreeWork(children, roots[0])).toBeUndefined();
   });
 });
