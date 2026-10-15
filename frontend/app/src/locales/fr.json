@@ -352,9 +352,6 @@
         }
       },
       "force_sync": {
-        "error": {
-
-        },
         "success": {
           "message": "L'opération de synchronisation des données a été complétée avec succès.",
           "title": "Synchronisation forcée"
