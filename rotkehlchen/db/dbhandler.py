@@ -815,6 +815,7 @@ class DBHandler:
             DBCacheStatic.GNOSIS_PAY_SAFE_MIGRATION,
             DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
             DBCacheStatic.ETHERSCAN_API_KEY_TIER,
+            DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
@@ -830,6 +831,7 @@ class DBHandler:
             name: Literal[
                 DBCacheStatic.DOCKER_DEVICE_INFO,
                 DBCacheStatic.ETHERSCAN_API_KEY_TIER,
+                DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
                 DBCacheStatic.GNOSIS_PAY_SAFE_MIGRATION,
                 DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
                 DBCacheStatic.STALE_BALANCES_FROM_TS,

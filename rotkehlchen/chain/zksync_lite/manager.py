@@ -30,7 +30,12 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
+from rotkehlchen.errors.misc import (
+    NotERC20Conformant,
+    RecoverableRemoteError,
+    RemoteError,
+    remote_error_for_status,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.evm_event import (
     BRIDGE_EXTRA_DATA_KEY,
@@ -147,10 +152,10 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
         https://web.archive.org/web/20230926085214/https://docs.zksync.io/apiv02-docs/#
 
         May raise:
-        - RemoteError if there are any problems with reaching their server or if
-        an unexpected response is returned
+        - RecoverableRemoteError (a RemoteError) if the server can't be reached, keeps
+        rate limiting us or responds with a 408 or 5xx error. These may go away by themselves.
+        - RemoteError if an unexpected response is returned
         """
-        result: dict[str, Any] = {}
         query_str = 'https://api.zksync.io/api/v0.2/' + url
         if options:
             query_str += f'?{urlencode(options)}'
@@ -163,15 +168,9 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             try:
                 response = self.session.get(query_str, timeout=timeout)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'ZKSync Lite API request failed due to {e!s}') from e
+                raise RecoverableRemoteError(f'ZKSync Lite API request failed due to {e!s}') from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                if backoff >= backoff_limit:
-                    raise RemoteError(
-                        'Getting zksync lite too many requests error '
-                        'even after we incrementally backed off',
-                    )
-
                 log.debug(
                     f'Got too many requests error from zksync lite. Will '
                     f'backoff for {backoff} seconds.',
@@ -181,7 +180,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 continue
 
             if response.status_code != HTTPStatus.OK:
-                raise RemoteError(
+                raise remote_error_for_status(response.status_code)(
                     f'ZKSync Lite API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
@@ -195,7 +194,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                     f'JSON response: {response.text}',
                 ) from e
 
-            if (result := json_ret.get('result')) is None:  # type: ignore  # this if checks None
+            if (result := json_ret.get('result')) is None:
                 raise RemoteError(
                     f'Unexpected format of ZKSync lite response for request {response.url}. '
                     f'Missing a result in response. Response was: {response.text}',
@@ -204,7 +203,9 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             # success, break out of the loop and return result
             return result
 
-        return result
+        raise RecoverableRemoteError(
+            'Getting zksync lite too many requests error even after we incrementally backed off',
+        )
 
     def _get_cached_or_query_eligibility(self, address: ChecksumEvmAddress) -> dict[str, Any]:
         """Return sunset eligibility data from cache or query the eligibility API.

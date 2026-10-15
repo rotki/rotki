@@ -181,6 +181,7 @@ class TaskManager:
             self._maybe_update_snapshot_balances,
             *([self._maybe_process_historical_balances] if is_accounting_update_enabled() else []),
             self._maybe_detect_evm_accounts,
+            self._maybe_retry_failed_evm_detections,
             self._maybe_update_ilk_cache,
             self._maybe_query_produced_blocks,
             self._maybe_query_withdrawals,
@@ -800,6 +801,19 @@ class TaskManager:
             method=self.chains_aggregator.detect_evm_accounts,
             progress_handler=None,
             chains=self.database.get_chains_to_detect_evm_accounts(),
+        )]
+
+    def _maybe_retry_failed_evm_detections(self) -> list[Task] | None:
+        """Schedule a retry of only the EVM activity checks that failed with a recoverable
+        error (e.g. rate limiting) in the last detection, once their retry delay has passed."""
+        if self.chains_aggregator.should_retry_activity_checks() is False:
+            return None
+
+        return [self.task_supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name='Retry failed EVM accounts detection',
+            exception_is_error=True,
+            method=self.chains_aggregator.retry_failed_activity_checks,
         )]
 
     def _maybe_update_ilk_cache(self) -> list[Task] | None:

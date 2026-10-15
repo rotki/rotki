@@ -1,3 +1,6 @@
+from http import HTTPStatus
+
+
 class SystemPermissionError(Exception):
     pass
 
@@ -41,6 +44,22 @@ class RemoteError(Exception):
         """
         self.error_code = error_code
         super().__init__(message)
+
+
+class RecoverableRemoteError(RemoteError):
+    """Raised when a remote query failed for a reason that is expected to go away by itself
+    shortly, such as rate limiting, a timeout, a connection problem or a 408/5xx response."""
+
+
+def remote_error_for_status(status_code: int) -> type[RemoteError]:
+    """Return the error class for a failed HTTP response. Server errors and request
+    timeouts (408) are expected to clear up by themselves, so they are recoverable."""
+    if (
+            status_code == HTTPStatus.REQUEST_TIMEOUT or
+            status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
+    ):
+        return RecoverableRemoteError
+    return RemoteError
 
 
 class APIKeyNotAvailable(RemoteError):

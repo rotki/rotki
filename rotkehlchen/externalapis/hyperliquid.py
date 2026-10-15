@@ -17,7 +17,11 @@ from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnknownCounterpartyMapping, WrongAssetType
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import (
+    RecoverableRemoteError,
+    RemoteError,
+    remote_error_for_status,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.counterparty_mappings import get_asset_id_by_counterparty
@@ -289,14 +293,14 @@ class HyperliquidAPI:
                     timeout=timeout,
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Failed to query hyperliquid info due to {e}') from e
+                raise RecoverableRemoteError(f'Failed to query hyperliquid info due to {e}') from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 attempts += 1
                 if attempts >= min_attempts and (
                     not wait_for_rate_limit or slept >= HYPERLIQUID_RATE_LIMIT_WINDOW
                 ):
-                    raise RemoteError(
+                    raise RecoverableRemoteError(
                         f'Hyperliquid API request {response.url} failed with HTTP status code '
                         f'{response.status_code} and text {response.text} after waiting '
                         f'{slept} seconds for the rate limit for payload {payload}',
@@ -317,7 +321,7 @@ class HyperliquidAPI:
                 continue
 
             if response.status_code != HTTPStatus.OK:
-                raise RemoteError(
+                raise remote_error_for_status(response.status_code)(
                     f'Failed to query hyperliquid info with status code '
                     f'{response.status_code} and text {response.text}',
                 )

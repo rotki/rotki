@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.concurrency import cancellable_sleep
-from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
+from rotkehlchen.errors.misc import ChainNotSupported, RecoverableRemoteError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -133,7 +133,9 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
                 continue
 
             if time_until_reset >= backoff_limit:
-                raise RemoteError(
+                # A per minute limit resets soon enough for a later retry, a daily one doesn't
+                error_cls = RecoverableRemoteError if display_name == 'Per minute' else RemoteError
+                raise error_cls(
                     f'{display_name} rate limit reached for {self.name} on '
                     f'{chain_id.name.capitalize()} with {time_until_reset} seconds until reset '
                     f'while max backoff is {backoff_limit} seconds.',
@@ -149,7 +151,7 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
             f'{msg} Expected rate limit headers with no remaining requests but got: '
             f'{response.headers}. Response body: {response.text}.',
         )
-        raise RemoteError(f'{msg} Check logs for details.')
+        raise RecoverableRemoteError(f'{msg} Check logs for details.')
 
     def get_l1_fee(
             self,
