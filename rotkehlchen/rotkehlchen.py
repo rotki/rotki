@@ -99,6 +99,7 @@ from rotkehlchen.externalapis.jupiter import Jupiter
 from rotkehlchen.externalapis.kraken import Kraken
 from rotkehlchen.externalapis.monerium import Monerium
 from rotkehlchen.externalapis.moralis import Moralis
+from rotkehlchen.externalapis.nuthatch import Nuthatch
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
@@ -662,6 +663,16 @@ class Rotkehlchen:
         self.etherscan = etherscan
         self.blockscout = blockscout
         self.routescan = routescan
+        self.nuthatch = Nuthatch(
+            database=self.data.db,
+            msg_aggregator=self.msg_aggregator,
+            indexer_stats=self.indexer_stats,
+        )
+        self.chains_aggregator.enable_nuthatch_indexer(
+            nuthatch=self.nuthatch,
+            schedule_watch_sync=self.schedule_nuthatch_watch_sync,
+        )
+        self.schedule_nuthatch_watch_sync()
         Inquirer().inject_evm_managers([
             (chain.to_chain_id(), self.chains_aggregator.get_chain_manager(chain))
             for chain in EVM_CHAINS_WITH_TRANSACTIONS
@@ -925,6 +936,26 @@ class Rotkehlchen:
         data['standalone'] = [x for x in account_data if x.address not in address_to_xpub_mappings]
         return data
 
+    def schedule_nuthatch_watch_sync(self) -> None:
+        """Bring a nuthatch nest's watched accounts in line with rotki's, in the background so
+        that a nest that is down never holds up an account change."""
+        self.task_supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name='Sync nuthatch nest watched accounts',
+            exception_is_error=False,
+            method=self._sync_nuthatch_watched,
+        )
+
+    def _sync_nuthatch_watched(self) -> None:
+        try:
+            self.nuthatch.sync_watched()
+        except RemoteError as e:
+            log.warning(
+                'Could not sync the nuthatch nest watched accounts, will retry at the next '
+                'account change or login: %s',
+                e,
+            )
+
     def add_evm_accounts(
             self,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
@@ -981,6 +1012,9 @@ class Rotkehlchen:
                     'INSERT OR IGNORE INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)',
                     [(address, CONTRACT_TAG_NAME) for address in evm_contract_addresses],
                 )
+
+        if len(added_accounts) != 0:
+            self.schedule_nuthatch_watch_sync()
 
         return (
             added_accounts,
@@ -1060,6 +1094,9 @@ class Rotkehlchen:
                 write_cursor=write_cursor,
                 account_data=[x.to_blockchain_account_data(chain) for x in account_data],
             )
+
+        if chain in EVM_CHAINS_WITH_TRANSACTIONS:
+            self.schedule_nuthatch_watch_sync()
 
     def edit_single_blockchain_accounts(
             self,
@@ -1564,8 +1601,16 @@ class Rotkehlchen:
         if settings.active_modules is not None:
             self.chains_aggregator.process_new_modules_list(settings.active_modules)
 
+        nest_ordered_before = self.nuthatch.ordered_chains()
         with self.data.db.user_write() as cursor:
             self.data.db.set_settings(cursor, settings)
+        # A nest set up after the accounts were added, or newly ordered on a chain, has not been
+        # told about them yet.
+        if (
+            settings.nuthatch_api_endpoint is not None or
+            not self.nuthatch.ordered_chains() <= nest_ordered_before
+        ):
+            self.schedule_nuthatch_watch_sync()
         if settings.submit_usage_analytics is not None and self.indexer_stats is not None:
             self.indexer_stats.discard()
 
