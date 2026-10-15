@@ -627,7 +627,10 @@ class MoneriumOAuthClient:
         log.debug('Finished refresh of monerium ouath token')
 
     def _notify_reauthentication_required(self) -> None:
-        notify_reauthentication_required(database=self.database, service='monerium')
+        notify_reauthentication_required(
+            msg_aggregator=self.database.msg_aggregator,
+            service='monerium',
+        )
 
     @staticmethod
     def _is_invalid_grant_refresh_response(response: requests.Response) -> bool:

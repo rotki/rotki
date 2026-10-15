@@ -16,7 +16,7 @@ from rotkehlchen.chain.mixins.rpc_nodes import NodeStatus
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.concurrency import exception_of, spawn, wait
 from rotkehlchen.db.bitcointx import DBBitcoinTx
-from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
@@ -46,6 +46,9 @@ from rotkehlchen.errors.misc import (
     RemoteError,
 )
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.gnosispay import GnosisPay
+from rotkehlchen.externalapis.monerium import Monerium
+from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
     GNOSIS_PAY_CAPABILITY,
@@ -81,6 +84,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.manager import ChainManagerWithNodesMixin
     from rotkehlchen.chain.solana.rpc import Signature
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.externalapis.utils import ReauthService
     from rotkehlchen.fval import FVal
     from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.types import (
@@ -1273,6 +1277,9 @@ class TransactionsService:
                     indexer_source=indexer_source,
                 )
 
+        # Checked before decoding: if the credentials stop working during decoding, the
+        # service already notifies the user on its own and we should not repeat it.
+        services_without_credentials = self._services_without_credentials(chain=chain)
         events = chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
             tx_hashes=[tx_ref],
             send_ws_notifications=True,
@@ -1280,8 +1287,8 @@ class TransactionsService:
             delete_customized=delete_custom,
         )
         self._maybe_notify_missing_credentials_after_decode(
-            chain=chain,
             events=events,
+            services_without_credentials=services_without_credentials,
         )
         with self.rotkehlchen.data.db.user_write() as write_cursor:
             if table_exists(write_cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
@@ -1291,39 +1298,75 @@ class TransactionsService:
                     chain_id=chain_manager.node_inquirer.chain_id,
                 )
 
-    def _maybe_notify_missing_credentials_after_decode(
+    def _services_without_credentials(
             self,
             chain: SUPPORTED_EVM_CHAINS_TYPE,
-            events: list[Any],
-    ) -> None:
-        has_gnosis_pay, has_monerium = False, False
-        for event in events:
-            if chain == SupportedBlockchain.GNOSIS and event.counterparty == CPT_GNOSIS_PAY:
-                has_gnosis_pay = True
-                break
-            elif event.counterparty == CPT_MONERIUM:
-                has_monerium = True
-                break
-        else:
-            return
-
+    ) -> set[ReauthService]:
+        """Return the services that could enrich decoded events but have no credentials"""
+        services: set[ReauthService] = set()
         if (
-            has_gnosis_pay and
+            chain == SupportedBlockchain.GNOSIS and
             has_premium_capability(self.rotkehlchen.premium, GNOSIS_PAY_CAPABILITY) and
             self.rotkehlchen.data.db.get_external_service_credentials(
                 service_name=ExternalService.GNOSIS_PAY,
             ) is None
         ):
-            self.rotkehlchen.msg_aggregator.add_missing_key_message(ExternalService.GNOSIS_PAY)
-        elif (
-            has_monerium and
+            services.add('gnosispay')
+
+        if (
             has_premium_capability(self.rotkehlchen.premium, MONERIUM_CAPABILITY) and
             (
                 self.rotkehlchen.monerium is None or
                 not self.rotkehlchen.monerium.oauth_client.is_authenticated()
             )
         ):
-            self.rotkehlchen.msg_aggregator.add_missing_key_message(ExternalService.MONERIUM)
+            services.add('monerium')
+
+        return services
+
+    def _maybe_notify_missing_credentials_after_decode(
+            self,
+            events: list[Any],
+            services_without_credentials: set[ReauthService],
+    ) -> None:
+        """Ask the user to sign in if decoding left events that only the API can enrich.
+
+        Every redecode can hit this, so these are sent as reminders, which the frontend
+        shows on a backed off schedule.
+
+        Gnosis Pay credentials are kept when they expire, so missing ones mean the user
+        never connected. Monerium credentials are deleted when they expire, so the last
+        orders query, which only runs while signed in, tells the two cases apart.
+        """
+        if 'gnosispay' in services_without_credentials and any(
+            event.counterparty == CPT_GNOSIS_PAY and
+            GnosisPay.is_gnosis_pay_event_unenriched(event_notes=event.notes)
+            for event in events
+        ):
+            notify_reauthentication_required(
+                msg_aggregator=self.rotkehlchen.msg_aggregator,
+                service='gnosispay',
+                reason='not_connected',
+                reminder=True,
+            )
+
+        if 'monerium' in services_without_credentials and any(
+            event.counterparty == CPT_MONERIUM and
+            not Monerium.is_monerium_event_edited(event_notes=event.notes)
+            for event in events
+        ):
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                connected_before = self.rotkehlchen.data.db.get_static_cache(
+                    cursor=cursor,
+                    name=DBCacheStatic.LAST_MONERIUM_QUERY_TS,
+                ) is not None
+
+            notify_reauthentication_required(
+                msg_aggregator=self.rotkehlchen.msg_aggregator,
+                service='monerium',
+                reason='expired' if connected_before else 'not_connected',
+                reminder=True,
+            )
 
     def _decode_given_evmlike_tx(self, tx_ref: EVMTxHash, delete_custom: bool) -> None:
         with self.rotkehlchen.data.db.user_write() as write_cursor:

@@ -29,7 +29,7 @@ from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
 from rotkehlchen.tests.utils.ethereum import txreceipt_to_data
 from rotkehlchen.tests.utils.factories import make_ethereum_transaction
 from rotkehlchen.tests.utils.premium import MockResponse
-from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -533,6 +533,11 @@ def test_invalid_grant_refresh_clears_credentials(
             name=DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
             value=json.dumps(credentials),
         )
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_MONERIUM_QUERY_TS,
+            value=Timestamp(1),
+        )
 
     client = MoneriumOAuthClient(database=database, session=requests.Session())
     with (
@@ -546,8 +551,13 @@ def test_invalid_grant_refresh_clears_credentials(
             cursor=cursor,
             name=DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
         ) is None
+        # kept so that a later request to sign in says the session expired
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_MONERIUM_QUERY_TS,
+        ) == 1
     assert client.is_authenticated() is False
     assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(  # type: ignore[union-attr]
         message_type=WSMessageType.MONERIUM_SESSIONKEY_EXPIRED,
-        data={'error': 'Please sign in with Monerium again to refresh your data'},
+        data={'error': 'Please sign in with Monerium again to refresh your data', 'reason': 'expired', 'reminder': False},  # noqa: E501
     )

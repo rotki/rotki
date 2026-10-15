@@ -4880,6 +4880,9 @@
       "title": "CSV Import Result: {sourceName}"
     },
     "deserialization_error": "We could not deserialize {count} assets for your accounts, please check the application logs for more information.",
+    "gnosis_pay_not_connected": {
+      "title": "Gnosis Pay not connected"
+    },
     "gnosis_pay_safe_migration": {
       "message_new": "Gnosis Pay replaced your Safe in its security migration. You track only the previous Safe. Add the new active Safe {address} to track future activity.",
       "message_old": "Gnosis Pay replaced your Safe in its security migration. You track only the new Safe. Add the previous Safe {address} to keep its historical activity.",
@@ -4919,6 +4922,9 @@
         "message": "rotki cannot query {location} data because you don't have {service} API key configured, or the API key you are using isn't authorized for {location}. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app. Read the docs {docs} for more information.",
         "title": "{service} API key for {location}"
       }
+    },
+    "monerium_not_connected": {
+      "title": "Monerium not connected"
     },
     "monerium_session_key_expired": {
       "title": "Monerium session key expired"

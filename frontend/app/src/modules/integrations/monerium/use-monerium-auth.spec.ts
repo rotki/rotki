@@ -17,6 +17,12 @@ vi.mock('@/modules/integrations/monerium/use-monerium-api', () => ({
   })),
 }));
 
+const forgetSignInReminder = vi.fn<(integration: 'gnosis_pay' | 'monerium') => void>();
+
+vi.mock('@/modules/integrations/use-integration-sign-in-reminder', () => ({
+  useIntegrationSignInReminder: vi.fn().mockImplementation(() => ({ forgetSignInReminder })),
+}));
+
 vi.mock('@/modules/auth/use-session-auth-store', () => ({
   useSessionAuthStore: vi.fn().mockImplementation(() => ({ logged })),
 }));
@@ -173,6 +179,7 @@ describe('useMoneriumOAuth', () => {
       expect(completeOAuthApi).toHaveBeenCalledWith('access', 'refresh', 7200);
       expect(result).toEqual(apiResult);
       expect(get(status)?.authenticated).toBe(true);
+      expect(forgetSignInReminder).toHaveBeenCalledExactlyOnceWith('monerium');
     });
 
     it('should default expiresIn to 3600 seconds when not provided', async () => {
@@ -198,6 +205,7 @@ describe('useMoneriumOAuth', () => {
       await flushPromises();
 
       await expect(completeOAuth('a', 'r')).rejects.toThrow('oauth failed');
+      expect(forgetSignInReminder).not.toHaveBeenCalled();
     });
   });
 
