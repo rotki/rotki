@@ -1606,7 +1606,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             submission=submission,
         )
         if len(active_chains) == 0:
-            return [], [], False
+            return [], [(chain, account) for chain in failed_to_query_chains], False
 
         new_tracked_chains, new_failed_chains = self.track_evm_address(
             account, active_chains, is_retry=is_retry,
@@ -1685,11 +1685,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 submission=(account_data or {}).get(account) or SingleBlockchainAccountData(address=account),  # noqa: E501
             )
 
+            failed_accounts += new_failed_accounts
             if had_activity is True:
                 added_accounts += new_accounts
-                failed_accounts += new_failed_accounts
             elif had_activity is False and len(chains_with_valid_addresses) != 0:
-                no_activity_accounts += [(chain, account) for chain in chains_with_valid_addresses]
+                no_activity_accounts += [  # a failed check doesn't mean there is no activity
+                    (chain, account) for chain in chains_with_valid_addresses
+                    if (chain, account) not in new_failed_accounts
+                ]
 
         return (
             added_accounts,
@@ -1779,8 +1782,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             allowed_chains = set(self.database.get_chains_to_detect_evm_accounts())
             for (address, chain), submitted in pending.items():
                 if (
-                    chain in allowed_chains and  # the user may have excluded it since it failed
-                    (submitted or address in tracked) and  # untracked only if the user added it
+                    # explicit submissions check every chain, so the detection exclusions
+                    # only apply to autodetected checks (the user may have excluded the chain
+                    # since it failed)
+                    (submitted or (chain in allowed_chains and address in tracked)) and
                     address not in self.accounts.get(chain)
                 ):
                     chains_by_address[address].append(chain)

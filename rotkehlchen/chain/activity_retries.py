@@ -170,8 +170,11 @@ class ActivityRetryTracker:
             return self._submissions.get(address)
 
     def _schedule_if_needed(self) -> None:
-        if self._due_ts <= (now := ts_now()):  # no retry is scheduled yet
-            self._due_ts = Timestamp(now + EVMLIKE_ACCOUNTS_DETECTION_RETRY)
+        """Schedule a retry if there is no deadline. An existing deadline is kept even if it is
+        overdue, so that new failures can't postpone a retry that is already due. A retry
+        that takes all pending checks consumes the deadline, so its failures schedule anew."""
+        if self._due_ts == 0:
+            self._due_ts = Timestamp(ts_now() + EVMLIKE_ACCOUNTS_DETECTION_RETRY)
 
     def drop_address(
             self,
@@ -219,16 +222,20 @@ class ActivityRetryTracker:
         """Keep checks durable until the operation finishes. On interruption they remain
         pending; on completion only newly recorded failures remain. Removal invalidates
         in-flight checks so neither a late success nor a late failure can add them back."""
+        previous_due_ts = Timestamp(0)
         with self._locked():
             if self._in_flight is not None or len(self._pending) == 0:
                 pending = {}
             else:
+                previous_due_ts = self._due_ts
                 selected = self._pending.keys() if checks is None else self._pending.keys() & set(checks)  # noqa: E501
                 pending = {check: self._pending[check] for check in selected}
                 if len(pending) != 0:
                     self._in_flight = dict(pending)
                     for check in pending:
                         del self._pending[check]
+                    if len(self._pending) == 0:  # this recheck is the scheduled retry
+                        self._due_ts = Timestamp(0)
 
         if len(pending) == 0:
             yield {}
@@ -244,6 +251,9 @@ class ActivityRetryTracker:
                     for check, submitted in (self._in_flight or {}).items():
                         if submitted is not None:
                             self._pending.setdefault(check, submitted)
+                    # the interrupted retry didn't happen, so keep its original deadline
+                    if previous_due_ts != 0 and (self._due_ts == 0 or previous_due_ts < self._due_ts):  # noqa: E501
+                        self._due_ts = previous_due_ts
                 self._in_flight = None
                 self._clear_due_if_empty()
                 self._write_state(write_cursor)
