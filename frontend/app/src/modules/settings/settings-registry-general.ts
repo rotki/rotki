@@ -34,6 +34,7 @@ export const generalRegistry = {
     search: { category: SettingsCategoryIds.TOKENS_BALANCES, titleKey: msg.$t('general_settings.labels.btc_derivation_gap') },
   }),
   btcMempoolApi: general('btcMempoolApi'),
+  nuthatchApiEndpoint: general('nuthatchApiEndpoint'),
   connectTimeout: general('connectTimeout', {
     anchor: SettingsHighlightIds.CONNECT_TIMEOUT,
     search: {

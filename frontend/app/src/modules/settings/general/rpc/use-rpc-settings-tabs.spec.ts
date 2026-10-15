@@ -138,7 +138,7 @@ describe('useRpcSettingsTabs', () => {
       const evmKeys = result.evmRailOptions.value.map(o => o.key);
       const otherKeys = result.otherRailOptions.value.map(o => o.key);
       expect(evmKeys).toEqual(['eth', 'optimism', 'base']);
-      expect(otherKeys).toEqual([Blockchain.SOLANA, 'btc_mempool_space', Blockchain.KSM, Blockchain.DOT, 'eth_consensus_layer']);
+      expect(otherKeys).toEqual([Blockchain.SOLANA, 'btc_mempool_space', Blockchain.KSM, Blockchain.DOT, 'eth_consensus_layer', 'nuthatch_nest']);
     });
 
     it('should expose Solana as the first other-group entry', () => {
@@ -164,6 +164,7 @@ describe('useRpcSettingsTabs', () => {
         Blockchain.KSM,
         Blockchain.DOT,
         'eth_consensus_layer',
+        'nuthatch_nest',
       ]);
     });
 
@@ -192,6 +193,7 @@ describe('useRpcSettingsTabs', () => {
       [Blockchain.KSM],
       [Blockchain.DOT],
       ['eth_consensus_layer'],
+      ['nuthatch_nest'],
     ])('should be false on single-value endpoint %s', (key) => {
       const { result } = mountWithComposable();
       result.selectTab(key);
