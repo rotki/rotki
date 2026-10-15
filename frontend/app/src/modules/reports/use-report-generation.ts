@@ -17,6 +17,22 @@ interface UseReportGenerationReturn {
 }
 
 /**
+ * The backend's report percentage, held to 0-100.
+ *
+ * @remarks
+ * The backend can report more than 100 (rotki/rotki#13354: overlapping or cancelled runs leave its
+ * progress fields mixed), which the dock showed as "120 of 100".
+ *
+ * @returns the clamped percentage, or undefined when the value is not a number
+ */
+export function clampProgress(value: string): number | undefined {
+  const progress = Number.parseFloat(value);
+  if (!Number.isFinite(progress))
+    return undefined;
+  return Math.min(100, Math.max(0, progress));
+}
+
+/**
  * Generates / exports a P&L report as native PNL_REPORT orchestrator activities. The orchestrator
  * owns liveness, cancellation and (for generation) re-run; the report page keeps its own richer
  * progress store (the textual `processingState`), and the polled percentage is also pushed onto
@@ -54,10 +70,10 @@ export function useReportGeneration(): UseReportGenerationReturn {
     const interval = setInterval(() => {
       getProgress()
         .then((progress) => {
-          set(reportProgress, progress);
-          const current = Number.parseInt(progress.totalProgress);
-          if (Number.isFinite(current))
-            pushProgress(activityId, { current, total: 100 });
+          const current = clampProgress(progress.totalProgress);
+          set(reportProgress, { ...progress, totalProgress: current === undefined ? progress.totalProgress : String(current) });
+          if (current !== undefined)
+            pushProgress(activityId, { current: Math.floor(current), total: 100 });
         })
         .catch(() => {
           clearInterval(interval);
