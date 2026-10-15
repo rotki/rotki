@@ -58,7 +58,7 @@ describe('useWrappedStatistics', () => {
     expect(mockLoggerError).toHaveBeenCalledWith(error);
   });
 
-  it('should skip fetching when a request is already in progress', async () => {
+  it('should run a fetch asked for during another once, after it', async () => {
     let resolveFetch: (value: WrapStatisticsResult) => void = () => {};
     mockFetchWrapStatistics.mockReturnValue(new Promise<WrapStatisticsResult>((resolve) => {
       resolveFetch = resolve;
@@ -67,10 +67,12 @@ describe('useWrappedStatistics', () => {
 
     const first = fetchData();
     await fetchData();
+    await fetchData();
     expect(mockFetchWrapStatistics).toHaveBeenCalledTimes(1);
 
     resolveFetch(statistics());
     await first;
+    expect(mockFetchWrapStatistics).toHaveBeenCalledTimes(2);
   });
 
   it('should refetch when refreshing transitions from true to false', async () => {
