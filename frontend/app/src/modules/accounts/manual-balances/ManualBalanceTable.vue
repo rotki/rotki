@@ -77,6 +77,12 @@ function edit(balance: ManualBalanceWithPrice): void {
   emit('edit', prepareForEdit(balance));
 }
 
+/** A tag in a row narrows the table to that tag, the same as picking it in the filter bar. */
+function filterByTag(tag: string): void {
+  if (!get(tags).includes(tag))
+    set(tags, [...get(tags), tag]);
+}
+
 const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [{
   align: 'center',
   cellClass: 'py-2 w-[120px]',
@@ -188,6 +194,8 @@ watchDebounced(
           <TagDisplay
             :tags="row.tags"
             small
+            clickable
+            @select="filterByTag($event)"
           />
         </div>
       </template>
