@@ -103,6 +103,9 @@ DEFAULT_CHAINS_TO_SKIP_DETECTION: Final = (
 )
 DEFAULT_DISABLED_CHAIN_QUERIES: Final[Mapping[SupportedBlockchain, frozenset[str]]] = {}
 DEFAULT_BEACON_RPC: Final = 'https://ethereum-beacon-api.publicnode.com'
+# Where `nuthatch dev` listens by default. It is only asked once the user puts Nuthatch in an
+# indexer order.
+DEFAULT_NUTHATCH_API_ENDPOINT: Final = 'http://127.0.0.1:8288'
 
 LIST_KEYS: Final = (
     'current_price_oracles',
@@ -155,6 +158,7 @@ STRING_KEYS: Final = (
     'ksm_rpc_endpoint',
     'dot_rpc_endpoint',
     'beacon_rpc_endpoint',
+    'nuthatch_api_endpoint',
     'btc_mempool_api',
     'date_display_format',
     'frontend_settings',
@@ -169,6 +173,7 @@ STRING_KEYS_REMOVE_IF_EMPTY: Final = frozenset({
     'ksm_rpc_endpoint',
     'dot_rpc_endpoint',
     'beacon_rpc_endpoint',
+    'nuthatch_api_endpoint',
     'btc_mempool_api',
 })
 FVAL_KEYS: Final = (
@@ -190,6 +195,7 @@ CachedDBSettingsFieldNames = Literal[
     'ksm_rpc_endpoint',
     'dot_rpc_endpoint',
     'beacon_rpc_endpoint',
+    'nuthatch_api_endpoint',
     'btc_mempool_api',
     'main_currency',
     'date_display_format',
@@ -270,6 +276,7 @@ class DBSettings:
     ksm_rpc_endpoint: str = ''
     dot_rpc_endpoint: str = ''
     beacon_rpc_endpoint: str = DEFAULT_BEACON_RPC
+    nuthatch_api_endpoint: str = DEFAULT_NUTHATCH_API_ENDPOINT
     btc_mempool_api: str = ''
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
@@ -357,6 +364,7 @@ class ModifiableDBSettings(NamedTuple):
     ksm_rpc_endpoint: str | None = None
     dot_rpc_endpoint: str | None = None
     beacon_rpc_endpoint: str | None = None
+    nuthatch_api_endpoint: str | None = None
     main_currency: AssetWithOracles | None = None
     date_display_format: str | None = None
     submit_usage_analytics: bool | None = None
