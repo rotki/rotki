@@ -30,7 +30,12 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import NotERC20Conformant, RecoverableRemoteError, RemoteError
+from rotkehlchen.errors.misc import (
+    NotERC20Conformant,
+    RecoverableRemoteError,
+    RemoteError,
+    remote_error_for_status,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.evm_event import (
     BRIDGE_EXTRA_DATA_KEY,
@@ -148,7 +153,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
 
         May raise:
         - RecoverableRemoteError (a RemoteError) if the server can't be reached, keeps
-        rate limiting us or responds with a 5xx error. These may go away by themselves.
+        rate limiting us or responds with a 408 or 5xx error. These may go away by themselves.
         - RemoteError if an unexpected response is returned
         """
         query_str = 'https://api.zksync.io/api/v0.2/' + url
@@ -175,12 +180,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 continue
 
             if response.status_code != HTTPStatus.OK:
-                error_cls = (
-                    RecoverableRemoteError
-                    if response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
-                    else RemoteError
-                )
-                raise error_cls(
+                raise remote_error_for_status(response.status_code)(
                     f'ZKSync Lite API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',

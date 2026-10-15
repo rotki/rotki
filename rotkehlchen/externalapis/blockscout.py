@@ -19,6 +19,7 @@ from rotkehlchen.errors.misc import (
     IndexerRangeNotCovered,
     RecoverableRemoteError,
     RemoteError,
+    remote_error_for_status,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
@@ -399,8 +400,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 )
 
             if response.status_code != 200:
-                error_cls = RecoverableRemoteError if response.status_code >= 500 else RemoteError
-                raise error_cls(
+                raise remote_error_for_status(response.status_code)(
                     f'Blockscout API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',

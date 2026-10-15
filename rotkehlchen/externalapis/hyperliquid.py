@@ -17,7 +17,11 @@ from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnknownCounterpartyMapping, WrongAssetType
-from rotkehlchen.errors.misc import RecoverableRemoteError, RemoteError
+from rotkehlchen.errors.misc import (
+    RecoverableRemoteError,
+    RemoteError,
+    remote_error_for_status,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.counterparty_mappings import get_asset_id_by_counterparty
@@ -317,12 +321,7 @@ class HyperliquidAPI:
                 continue
 
             if response.status_code != HTTPStatus.OK:
-                error_cls = (
-                    RecoverableRemoteError
-                    if response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
-                    else RemoteError
-                )
-                raise error_cls(
+                raise remote_error_for_status(response.status_code)(
                     f'Failed to query hyperliquid info with status code '
                     f'{response.status_code} and text {response.text}',
                 )

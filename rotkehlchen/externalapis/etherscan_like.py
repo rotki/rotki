@@ -19,7 +19,12 @@ from rotkehlchen.db.constants import TX_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RecoverableRemoteError, RemoteError, RequestTooLargeError
+from rotkehlchen.errors.misc import (
+    RecoverableRemoteError,
+    RemoteError,
+    RequestTooLargeError,
+    remote_error_for_status,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import get_earliest_ts
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -400,12 +405,7 @@ class EtherscanLikeApi(ABC):
             elif response.status_code == HTTPStatus.REQUEST_URI_TOO_LONG:
                 raise RequestTooLargeError(f'Failed to query {chain_id} due to: request URI too long')  # noqa: E501
             elif response.status_code != 200:
-                error_cls = (
-                    RecoverableRemoteError
-                    if response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
-                    else RemoteError
-                )
-                raise error_cls(
+                raise remote_error_for_status(response.status_code)(
                     f'{self.name} API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',

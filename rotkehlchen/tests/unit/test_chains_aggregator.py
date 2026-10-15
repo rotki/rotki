@@ -50,7 +50,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from rotkehlchen.chain.base.manager import BaseManager
     from rotkehlchen.chain.gnosis.manager import GnosisManager
@@ -677,26 +677,20 @@ def test_zksync_lite_failure_is_retried_only_if_recoverable(
     assert ((address, SupportedBlockchain.ZKSYNC_LITE) in blockchain._activity_retries._pending) is is_retried  # noqa: E501
 
 
-@pytest.mark.parametrize(('status_code', 'expected_error'), [
-    (HTTPStatus.TOO_MANY_REQUESTS, RecoverableRemoteError),
-    (HTTPStatus.BAD_GATEWAY, RecoverableRemoteError),
-    (HTTPStatus.BAD_REQUEST, RemoteError),
-])
-def test_zksync_lite_query_api_error_classification(
-        blockchain: ChainsAggregator,
-        status_code: HTTPStatus,
-        expected_error: type[RemoteError],
-) -> None:
-    """Connection problems, exhausted 429 backoff and 5xx are recoverable, 4xx is not"""
-    response = MagicMock(status_code=status_code, text='err', url='https://api.zksync.io')
+def test_zksync_lite_query_api_error_classification(blockchain: ChainsAggregator) -> None:
+    """Connection problems and an exhausted 429 backoff are recoverable"""
+    response = MagicMock(
+        status_code=HTTPStatus.TOO_MANY_REQUESTS,
+        text='err',
+        url='https://api.zksync.io',
+    )
     with (
         patch.object(blockchain.zksync_lite.session, 'get', return_value=response),
         patch('rotkehlchen.chain.zksync_lite.manager.cancellable_sleep'),
-        pytest.raises(RemoteError) as excinfo,
+        pytest.raises(RecoverableRemoteError),
     ):
         blockchain.zksync_lite._query_api(url='tokens')
 
-    assert type(excinfo.value) is expected_error
     with (
         patch.object(
             blockchain.zksync_lite.session, 'get',
@@ -705,6 +699,61 @@ def test_zksync_lite_query_api_error_classification(
         pytest.raises(RecoverableRemoteError),
     ):
         blockchain.zksync_lite._query_api(url='tokens')
+
+
+@pytest.mark.parametrize('client', ['etherscan', 'blockscout', 'hyperliquid', 'zksync_lite'])
+@pytest.mark.parametrize(('status_code', 'expected_error'), [
+    (HTTPStatus.REQUEST_TIMEOUT, RecoverableRemoteError),
+    (HTTPStatus.BAD_GATEWAY, RecoverableRemoteError),
+    (HTTPStatus.BAD_REQUEST, RemoteError),
+])
+def test_activity_clients_http_error_classification(
+        blockchain: ChainsAggregator,
+        client: str,
+        status_code: HTTPStatus,
+        expected_error: type[RemoteError],
+) -> None:
+    """A 408 request timeout and 5xx are recoverable in every activity client, other 4xx not"""
+    node_inquirer = blockchain.ethereum.node_inquirer
+    query: Callable[[], Any]
+    match client:
+        case 'etherscan':
+            session, method, query = node_inquirer.etherscan.session, 'get', partial(
+                node_inquirer.etherscan._query,
+                chain_id=ChainID.ETHEREUM,
+                module='proxy',
+                action='eth_blockNumber',
+            )
+        case 'blockscout':
+            session, method, query = node_inquirer.blockscout.session, 'request', partial(
+                node_inquirer.blockscout._query_and_process,
+                chain_id=ChainID.ETHEREUM,
+                endpoint='proxy.eth_blockNumber',
+                query_str='https://eth.blockscout.com/api',
+            )
+        case 'hyperliquid':
+            session, method, query = (hyperliquid := HyperliquidAPI()).session, 'post', partial(
+                hyperliquid._send_info,
+                payload={'type': 'userRole'},
+                wait_for_rate_limit=False,
+            )
+        case _:
+            session, method, query = blockchain.zksync_lite.session, 'get', partial(
+                blockchain.zksync_lite._query_api,
+                url='tokens',
+            )
+
+    with (
+        patch.object(session, method, return_value=MagicMock(
+            status_code=status_code,
+            text='err',
+            url='https://example.com',
+        )),
+        pytest.raises(RemoteError) as excinfo,
+    ):
+        query()
+
+    assert type(excinfo.value) is expected_error
 
 
 @pytest.mark.parametrize('submitted', [False, True])
