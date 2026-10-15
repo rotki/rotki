@@ -142,7 +142,11 @@ class ActivityRetryTracker:
         with self._locked() as write_cursor:
             for check in failures:
                 if check in self._removed_in_flight:
-                    continue  # removed during the request: ignore its late failure
+                    if not submitted:
+                        continue  # removed during the request: ignore its late failure
+                    # the user explicitly submitted the address again after removing it, so
+                    # this is a fresh check and not a late result of the old retry
+                    self._removed_in_flight.discard(check)
                 if submission is not None and check[0] == submission.address:
                     self._submissions[submission.address] = submission
                 # a submitted check stays submitted even if a later failure is a detection one

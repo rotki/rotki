@@ -14,7 +14,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
-from rotkehlchen.chain.activity_retries import ActivityRetryTracker
+from rotkehlchen.chain.activity_retries import ActivityCheck, ActivityRetryTracker
 from rotkehlchen.chain.aggregator import ChainsAggregator, _module_name_to_class
 from rotkehlchen.chain.evm.constants import LAST_SPAM_TXS_CACHE
 from rotkehlchen.chain.evm.types import (
@@ -905,6 +905,34 @@ def test_removal_during_activity_retry_is_respected(
     assert blockchain._activity_retries.has_pending() is False
     assert ActivityRetryTracker(blockchain.database).has_pending() is False
     assert restarted.has_pending() is True
+
+
+def test_resubmission_during_activity_retry_is_not_suppressed(
+        blockchain: ChainsAggregator,
+) -> None:
+    """Removing the last tracked chain during a retry only suppresses the late result of that
+    retry. A fresh explicit submission of the same address is still recorded for retry."""
+    tracker = blockchain._activity_retries
+    check: ActivityCheck = (address := make_evm_address(), SupportedBlockchain.HYPERLIQUID)
+    tracker.record_failures([check], submitted=True)
+    with tracker.rechecking():
+        with blockchain.database.user_write() as cursor:
+            tracker.drop_address(cursor, address)
+
+        tracker.record_failures([check])  # late failure of the old retry is ignored
+        assert tracker.has_pending() is False
+
+        tracker.record_failures([check], submission=SingleBlockchainAccountData(
+            address=address, label='again', tags=None,
+        ))  # fresh submission is kept
+        assert tracker.is_retry_pending(check) is False  # late success of old retry can't re-add
+
+        tracker.record_failures([check])  # another late failure of the old retry changes nothing
+        assert tracker._pending == {check: True}
+
+    assert tracker._pending == {check: True}
+    assert tracker.get_submission(address).label == 'again'  # type: ignore[union-attr]
+    assert ActivityRetryTracker(blockchain.database)._pending == {check: True}
 
 
 @pytest.mark.parametrize('full_detection', [False, True])
