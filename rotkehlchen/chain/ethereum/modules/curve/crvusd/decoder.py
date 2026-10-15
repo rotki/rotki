@@ -21,6 +21,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -133,8 +134,9 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
         for tx_log in context.all_logs:
             if (
                 tx_log.address != collateral_token.evm_address or
-                bytes_to_address(tx_log.topics[2]) != amm_address or
-                tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER
+                tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
+                len(tx_log.topics) < 3 or
+                bytes_to_address(tx_log.topics[2]) != amm_address
             ):
                 continue
 
@@ -142,7 +144,11 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
                 token_amount=int.from_bytes(tx_log.data[0:32]),
                 token=collateral_token,
             )
-            if self.base.is_tracked(bytes_to_address(tx_log.topics[1])):
+            # The controller wraps native ETH sent by the user and forwards the WETH to the AMM
+            if (
+                (sender := bytes_to_address(tx_log.topics[1])) == controller_address or
+                self.base.is_tracked(sender)
+            ):
                 collateral_sent = transfer_amount
             else:
                 borrowed_collateral_amount = transfer_amount
@@ -169,8 +175,11 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.address == amm_address and
-                event.asset == collateral_token and
+                event.address in {amm_address, controller_address} and
+                (
+                    event.asset == collateral_token or
+                    (event.asset == A_ETH and collateral_token == A_WETH)
+                ) and
                 event.amount == collateral_sent
             ):
                 event.event_type = HistoryEventType.DEPOSIT

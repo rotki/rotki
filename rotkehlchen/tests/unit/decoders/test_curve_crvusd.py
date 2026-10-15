@@ -359,3 +359,45 @@ def test_peg_keeper_update_withdraw(
         counterparty=CPT_CURVE,
         address=string_to_evm_address('0x9201da0D97CaAAff53f01B2fB56767C7072dE340'),
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xfEe1dCAf98c023e906edC9C6D75bb8bB1763aa00']])
+@pytest.mark.parametrize('crvusd_controller', ['0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635'], indirect=True)  # noqa: E501
+def test_borrow_with_weth_collateral(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        crvusd_controller: ChecksumEvmAddress,
+) -> None:
+    """Regression test: a WETH collateral log with fewer than 3 topics (WETH Deposit)
+    must not crash the leveraged borrow detection."""
+    tx_hash = deserialize_evm_tx_hash('0xe0b22a98fcd5cdd1e8d991ce5c04caf0cadb4a030cb26903f2c150dc73b97580')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address = ethereum_accounts[0]
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1760138579000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.074531395131486305'),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+        asset=A_ETH,
+        amount=FVal(deposit_amount := '1.25'),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} WETH into a leveraged Curve position',
+        counterparty=CPT_CURVE,
+        address=crvusd_controller,
+        extra_data={'controller_address': crvusd_controller},
+    )]
