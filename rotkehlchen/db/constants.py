@@ -36,6 +36,7 @@ class InternalTxSource(DBIntEnumMixIn):
     ETHERSCAN = 1
     BLOCKSCOUT = 2
     ROUTESCAN = 3
+    NUTHATCH = 4
 
 
 # -- history_events_mappings values --

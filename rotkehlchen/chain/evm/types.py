@@ -140,6 +140,7 @@ class EvmIndexer(SerializableEnumNameMixin):
     ETHERSCAN = auto()
     BLOCKSCOUT = auto()
     ROUTESCAN = auto()
+    NUTHATCH = auto()
 
     def to_internal_tx_source(self) -> InternalTxSource:
         """Map the indexer to the source enum persisted for its internal tx rows."""
@@ -150,6 +151,7 @@ EVM_INDEXER_TO_INTERNAL_TX_SOURCE: Final[dict[EvmIndexer, InternalTxSource]] = {
     EvmIndexer.ETHERSCAN: InternalTxSource.ETHERSCAN,
     EvmIndexer.BLOCKSCOUT: InternalTxSource.BLOCKSCOUT,
     EvmIndexer.ROUTESCAN: InternalTxSource.ROUTESCAN,
+    EvmIndexer.NUTHATCH: InternalTxSource.NUTHATCH,
 }
 
 

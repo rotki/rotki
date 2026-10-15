@@ -231,6 +231,11 @@ class IndexerRangeNotCovered(RemoteError):
         super().__init__(message, cause=FailureCause.UNSUPPORTED)
 
 
+class TimestampLookupUnsupported(RemoteError):
+    """Raised when an indexer never answers a block by timestamp on a chain. That says nothing
+    about how far its history reaches, so it does not make the indexer stale for a range."""
+
+
 class BlockscoutIncompleteResponse(RemoteError):
     """Raised when Blockscout reports that the requested data is not fully indexed yet."""
 
