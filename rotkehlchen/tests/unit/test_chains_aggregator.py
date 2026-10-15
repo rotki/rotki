@@ -542,6 +542,21 @@ def test_hyperliquid_activity_checks_core(
         ) is expected
 
 
+def _track(
+        blockchain: ChainsAggregator,
+        address: ChecksumEvmAddress,
+        chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE = SupportedBlockchain.ETHEREUM,
+) -> None:
+    """Start tracking the address on the given chain, without any activity check"""
+    with blockchain.database.user_write() as write_cursor:
+        blockchain.modify_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=chain,
+            accounts=[address],
+            append_or_remove='append',
+        )
+
+
 @pytest.mark.parametrize(('error', 'is_retried'), [
     (RecoverableRemoteError('rate limited'), True),
     (RemoteError('malformed response'), False),  # permanent errors wait for the full detection
@@ -554,13 +569,7 @@ def test_detect_evm_accounts_retries_only_failed_pairs(
 ) -> None:
     """Only recoverable failures are retried, and only for the failed (address, chain) pairs.
     The timestamp of the full detection is not touched by the failures."""
-    with blockchain.database.user_write() as write_cursor:
-        blockchain.modify_blockchain_accounts(
-            write_cursor=write_cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
-            accounts=[(address := make_evm_address())],
-            append_or_remove='append',
-        )
+    _track(blockchain, address := make_evm_address())
 
     with patch.object(
         blockchain.hyperliquid.node_inquirer,
@@ -629,25 +638,23 @@ def test_recoverable_failure_outside_detection_is_not_retried_immediately(
     assert blockchain._activity_retries._due_ts >= ts_now() + EVMLIKE_ACCOUNTS_DETECTION_RETRY - 10
 
 
-def test_retry_skips_chains_excluded_from_detection_since_the_failure(
+@pytest.mark.parametrize('submitted', [False, True])
+def test_retry_detection_exclusions_only_apply_to_autodetected_checks(
         blockchain: ChainsAggregator,
+        submitted: bool,
 ) -> None:
-    with blockchain.database.user_write() as write_cursor:
-        blockchain.modify_blockchain_accounts(
-            write_cursor=write_cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
-            accounts=[(address := make_evm_address())],
-            append_or_remove='append',
+    """A chain excluded from autodetection since the failure is skipped by the retry of an
+    autodetected check. Adding an account checks every chain, also the excluded ones, so a
+    submitted check is retried regardless. Either way nothing is left pending."""
+    _track(blockchain, address := make_evm_address())  # so only the exclusion can skip it
+    blockchain._activity_retries.record_failures(
+        [(address, SupportedBlockchain.HYPERLIQUID)], submitted=submitted,
+    )
+    with patch.object(blockchain.database, 'get_chains_to_detect_evm_accounts', return_value=[]):
+        assert _retry_with_core_active(blockchain) == (
+            [(SupportedBlockchain.HYPERLIQUID, address)] if submitted else []
         )
 
-    blockchain._activity_retries.record_failures([(address, SupportedBlockchain.HYPERLIQUID)])
-    with (
-        patch.object(blockchain.database, 'get_chains_to_detect_evm_accounts', return_value=[]),
-        patch.object(blockchain, 'check_chains_and_add_accounts') as check_mock,
-    ):
-        assert blockchain.retry_failed_activity_checks() == []
-
-    assert check_mock.call_count == 0
     assert blockchain._activity_retries.has_pending() is False
 
 
@@ -695,17 +702,12 @@ def test_untracked_submitted_address_is_retried(blockchain: ChainsAggregator) ->
     assert address in blockchain.accounts.get(SupportedBlockchain.HYPERLIQUID)
 
 
-def test_retry_does_not_readd_removed_untracked_address(blockchain: ChainsAggregator) -> None:
-    """A pending check of an address that was tracked, and that the user removed
-    everywhere, must not bring it back"""
-    with blockchain.database.user_write() as write_cursor:
-        blockchain.modify_blockchain_accounts(
-            write_cursor=write_cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
-            accounts=[(address := make_evm_address())],
-            append_or_remove='append',
-        )
-
+def test_removing_an_account_drops_its_pending_retries(blockchain: ChainsAggregator) -> None:
+    """Removing the address from the last chain it is tracked on drops its pending checks,
+    even submitted ones, both in memory and in the DB, so a later retry can't bring it back.
+    For a removal while the retry is in flight, see
+    test_removal_during_activity_retry_is_respected"""
+    _track(blockchain, address := make_evm_address())
     blockchain._activity_retries.record_failures(
         [(address, SupportedBlockchain.HYPERLIQUID)], submitted=True,
     )
@@ -725,8 +727,7 @@ def test_retry_does_not_readd_removed_untracked_address(blockchain: ChainsAggreg
 
 
 def test_pending_activity_retries_survive_restart(blockchain: ChainsAggregator) -> None:
-    """The pending checks and their due time are read back from the DB, and an unreadable
-    value is dropped instead of breaking the login."""
+    """The pending checks and their due time are read back from the DB"""
     address = make_evm_address()
     blockchain._activity_retries.record_failures(
         [(address, SupportedBlockchain.HYPERLIQUID)], submitted=True,
@@ -737,14 +738,6 @@ def test_pending_activity_retries_survive_restart(blockchain: ChainsAggregator) 
     assert restarted._pending == {(address, SupportedBlockchain.HYPERLIQUID): True}
     assert restarted._due_ts == due_ts
     assert restarted.is_due() is False
-
-    with blockchain.database.user_write() as write_cursor:
-        blockchain.database.set_static_cache(
-            write_cursor=write_cursor,
-            name=DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
-            value='{"due_ts": 1, "checks": [{"address": "0x1", "chain": "NOPE"}]}',
-        )
-    assert ActivityRetryTracker(blockchain.database).has_pending() is False
 
 
 def _blocked_core_activity(started: Event, release: Event, result: bool | RemoteError, **kwargs: Any) -> bool:  # noqa: E501
@@ -762,13 +755,7 @@ def test_removal_during_activity_retry_is_respected(
 ) -> None:
     """Removal invalidates both a late positive response and a late recoverable failure."""
     address = make_evm_address()
-    with blockchain.database.user_write() as cursor:
-        blockchain.modify_blockchain_accounts(
-            write_cursor=cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
-            accounts=[address],
-            append_or_remove='append',
-        )
+    _track(blockchain, address)
     blockchain._activity_retries.record_failures(
         [(address, SupportedBlockchain.HYPERLIQUID)], submitted=True,
     )
@@ -809,13 +796,7 @@ def test_cancelled_activity_retry_remains_durable(
 ) -> None:
     address = make_evm_address()
     if full_detection:
-        with blockchain.database.user_write() as cursor:
-            blockchain.modify_blockchain_accounts(
-                write_cursor=cursor,
-                blockchain=SupportedBlockchain.ETHEREUM,
-                accounts=[address],
-                append_or_remove='append',
-            )
+        _track(blockchain, address)
     blockchain._activity_retries.record_failures(
         [(address, SupportedBlockchain.HYPERLIQUID)], submitted=True,
     )
@@ -1004,32 +985,38 @@ def test_submission_is_durable_when_adding_is_interrupted(blockchain: ChainsAggr
     assert _saved_metadata(blockchain, address) == (['Core only'], set())
 
 
-def test_pending_state_without_submissions_is_still_loaded(blockchain: ChainsAggregator) -> None:
-    """The state persisted before submissions were stored must not be dropped"""
+@pytest.mark.parametrize('readable', [True, False])
+def test_activity_retry_state_loads_from_raw_db_value(
+        blockchain: ChainsAggregator,
+        readable: bool,
+) -> None:
+    """A state persisted before submissions were stored is still loaded, without a submission.
+    An unreadable state is dropped instead of breaking the login."""
     address = make_evm_address()
+    check = (
+        f'{{"address": "{address}", "chain": "{SupportedBlockchain.HYPERLIQUID.value}", "submitted": true}}'  # noqa: E501
+        if readable else '{"address": "0x1", "chain": "NOPE"}'
+    )
     with blockchain.database.user_write() as write_cursor:
         blockchain.database.set_static_cache(
             write_cursor=write_cursor,
             name=DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
-            value=f'{{"due_ts": 1, "checks": [{{"address": "{address}", "chain": "{SupportedBlockchain.HYPERLIQUID.value}", "submitted": true}}]}}',  # noqa: E501
+            value=f'{{"due_ts": 1, "checks": [{check}]}}',
         )
 
     restarted = ActivityRetryTracker(blockchain.database)
-    assert restarted._pending == {(address, SupportedBlockchain.HYPERLIQUID): True}
-    assert restarted.get_submission(address) is None
+    assert restarted._pending == (
+        {(address, SupportedBlockchain.HYPERLIQUID): True} if readable else {}
+    )
+    assert restarted._submissions == {}
 
 
 def test_detected_account_save_skips_removed_accounts(blockchain: ChainsAggregator) -> None:
     """An account removed between tracking and saving must stay absent from the DB and
     from the detected-account result sent to the frontend."""
     address = make_evm_address()
+    _track(blockchain, address, chain=SupportedBlockchain.HYPERLIQUID)
     with blockchain.database.user_write() as cursor:
-        blockchain.modify_blockchain_accounts(
-            write_cursor=cursor,
-            blockchain=SupportedBlockchain.HYPERLIQUID,
-            accounts=[address],
-            append_or_remove='append',
-        )
         blockchain.remove_single_blockchain_accounts(
             write_cursor=cursor,
             blockchain=SupportedBlockchain.HYPERLIQUID,
@@ -1059,52 +1046,33 @@ def test_add_accounts_reports_failed_checks_without_activity(blockchain: ChainsA
     assert {chain for chain, _ in no_activity} == set(SUPPORTED_EVM_EVMLIKE_CHAINS) - {SupportedBlockchain.HYPERLIQUID}  # noqa: E501
 
 
-def test_submitted_retry_ignores_detection_exclusions(blockchain: ChainsAggregator) -> None:
-    """Adding an account checks every chain, also those excluded from autodetection, so their
-    failures are retried too. Autodetected checks of excluded chains are not, see
-    test_retry_skips_chains_excluded_from_detection_since_the_failure."""
-    with _only_hyperliquid_check_fails(blockchain):
-        blockchain.add_accounts_to_all_evm([(address := make_evm_address())])
-
-    with patch.object(blockchain.database, 'get_chains_to_detect_evm_accounts', return_value=[]):
-        assert _retry_with_core_active(blockchain) == [(SupportedBlockchain.HYPERLIQUID, address)]
-
-
-def test_new_failures_do_not_postpone_a_due_retry(blockchain: ChainsAggregator) -> None:
+@pytest.mark.parametrize('full_detection', [False, True])
+def test_new_failures_do_not_postpone_a_due_retry(
+        blockchain: ChainsAggregator,
+        full_detection: bool,
+) -> None:
     """A retry that is already due, e.g. delayed because the scheduler is busy, stays due when
-    other checks fail before it runs. Only a retry that ran and failed again is pushed back."""
+    other checks fail before it runs. That includes a full detection, which only rechecks
+    tracked addresses and so skips a pending untracked submitted one. Only a retry that ran
+    and failed again is pushed back."""
     tracker = blockchain._activity_retries
     tracker.record_failures([(make_evm_address(), SupportedBlockchain.HYPERLIQUID)], submitted=True)  # noqa: E501
     tracker._due_ts = (due_ts := Timestamp(ts_now() - 1))
-    tracker.record_failures([(make_evm_address(), SupportedBlockchain.HYPERLIQUID)], submitted=True)  # noqa: E501
+    if full_detection:
+        _track(blockchain, new_address := make_evm_address())
+        with _only_hyperliquid_check_fails(blockchain):
+            blockchain.detect_evm_accounts(chains=[SupportedBlockchain.HYPERLIQUID])
+    else:
+        tracker.record_failures([(new_address := make_evm_address(), SupportedBlockchain.HYPERLIQUID)], submitted=True)  # noqa: E501
+
+    assert (new_address, SupportedBlockchain.HYPERLIQUID) in tracker._pending
     assert tracker._due_ts == due_ts
     assert blockchain.should_retry_activity_checks() is True
 
+    pending = set(tracker._pending)
     with _only_hyperliquid_check_fails(blockchain):
         assert blockchain.retry_failed_activity_checks() == []
 
-    assert len(tracker._pending) == 2
+    assert set(tracker._pending) == pending  # all failed again, so all are kept
     assert tracker._due_ts >= ts_now() + EVMLIKE_ACCOUNTS_DETECTION_RETRY - 10
     assert blockchain.should_retry_activity_checks() is False
-
-
-def test_full_detection_does_not_postpone_checks_it_skips(blockchain: ChainsAggregator) -> None:
-    """A full detection only rechecks tracked addresses. Its failures must not push back the
-    due retry of the pending checks it didn't take, such as an untracked submitted address."""
-    tracker = blockchain._activity_retries
-    tracker.record_failures([(make_evm_address(), SupportedBlockchain.HYPERLIQUID)], submitted=True)  # noqa: E501
-    tracker._due_ts = (due_ts := Timestamp(ts_now() - 1))
-    with blockchain.database.user_write() as write_cursor:
-        blockchain.modify_blockchain_accounts(
-            write_cursor=write_cursor,
-            blockchain=SupportedBlockchain.ETHEREUM,
-            accounts=[(tracked := make_evm_address())],
-            append_or_remove='append',
-        )
-
-    with _only_hyperliquid_check_fails(blockchain):
-        blockchain.detect_evm_accounts(chains=[SupportedBlockchain.HYPERLIQUID])
-
-    assert (tracked, SupportedBlockchain.HYPERLIQUID) in tracker._pending
-    assert tracker._due_ts == due_ts
-    assert blockchain.should_retry_activity_checks() is True
