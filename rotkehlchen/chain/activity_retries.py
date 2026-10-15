@@ -50,8 +50,14 @@ class ActivityRetryTracker:
         self._pending: dict[ActivityCheck, bool] = {}  # check -> was explicitly submitted
         # The checks of the retry that is running, None if there is none
         self._in_flight: dict[ActivityCheck, bool] | None = None
-        # Checks the user removed while the retry is running, so their responses are ignored
+        # Checks the user removed while the retry is running, so the late results of that retry
+        # are ignored
         self._removed_in_flight: set[ActivityCheck] = set()
+        self._removal_generation = 0
+        # (address, chain) -> generation of its last removal. Never cleared (one int per removed
+        # address and chain, and no request survives a restart), since an explicit request may
+        # outlive the retry that was running when the user removed the address.
+        self._removed_at: dict[tuple[str, SupportedBlockchain], int] = {}
         # address -> what the user submitted it with. Only for addresses with a pending check.
         self._submissions: dict[ChecksumEvmAddress, SingleBlockchainAccountData[ChecksumEvmAddress]] = {}  # noqa: E501
         self._due_ts: Timestamp = Timestamp(0)
@@ -125,28 +131,40 @@ class ActivityRetryTracker:
             }),
         )
 
+    @property
+    def removal_generation(self) -> int:
+        """Capture this when an explicit check starts and give it to record_failures, so that
+        a removal that happens while the request is in flight can be told apart from one that
+        happened before it started."""
+        with self._lock:
+            return self._removal_generation
+
     def record_failures(
             self,
             failures: Collection[ActivityCheck],
             submitted: bool = False,
             submission: SingleBlockchainAccountData[ChecksumEvmAddress] | None = None,
+            started_at: int | None = None,
     ) -> None:
         """Remember failed checks and schedule their retry if none is scheduled yet.
         A given submission marks the checks of its address as explicitly submitted, and is
         stored together with them from the very first moment, so that it survives an
-        interruption of the operation that recorded the failure."""
+        interruption of the operation that recorded the failure.
+        started_at is the removal generation when the failed request started. A removed check
+        only accepts failures of explicit requests that started after the removal."""
         if len(failures) == 0:
             return
 
         submitted = submitted or submission is not None
         with self._locked() as write_cursor:
             for check in failures:
-                if check in self._removed_in_flight:
-                    if not submitted:
-                        continue  # removed during the request: ignore its late failure
-                    # the user explicitly submitted the address again after removing it, so
-                    # this is a fresh check and not a late result of the old retry
-                    self._removed_in_flight.discard(check)
+                if (
+                    submitted and started_at is not None and
+                    started_at < self._removed_at.get(check, 0)
+                ):
+                    continue  # explicit request that started before the address was removed
+                if check in self._removed_in_flight and (not submitted or started_at is None):
+                    continue  # late failure of the retry the check was removed from
                 if submission is not None and check[0] == submission.address:
                     self._submissions[submission.address] = submission
                 # a submitted check stays submitted even if a later failure is a detection one
@@ -182,13 +200,18 @@ class ActivityRetryTracker:
         the check of the given chain if there is one, otherwise all of its checks."""
         with self._locked(write_cursor):
             in_flight = self._in_flight or {}
+            self._removal_generation += 1
+            for removed_chain in SUPPORTED_EVM_EVMLIKE_CHAINS:
+                if chain is None or removed_chain == chain:
+                    self._removed_at[address, removed_chain] = self._removal_generation
             for check in [
                 check for check in self._pending | in_flight
                 if check[0] == address and (chain is None or check[1] == chain)
             ]:
                 self._pending.pop(check, None)
                 if in_flight.pop(check, None) is not None:
-                    self._removed_in_flight.add(check)  # its response is still on its way
+                    # its response is still on its way
+                    self._removed_in_flight.add(check)
             self._clear_due_if_empty()
             self._write_state(write_cursor)
 
