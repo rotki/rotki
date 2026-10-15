@@ -6152,6 +6152,9 @@
       "empty_name": "Please provide a tag name"
     }
   },
+  "tag_display": {
+    "filter_by": "Filter by {tag}"
+  },
   "tag_manager": {
     "confirmation": {
       "message": "Are you sure you want to delete {tagToDelete}? This will also remove all mappings of this tag.",
