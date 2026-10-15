@@ -6356,7 +6356,6 @@
       "stop_all": "Tümünü durdur",
       "stop_all_info": "Bu işlem {count} yenileme veya senkronizasyonu durdurur. Şimdiye kadar alınan veriler korunur; yeniden çalıştırdığınızda kalanı tamamlanır. | Bu işlem {count} yenileme ve senkronizasyonu durdurur. Şimdiye kadar alınan veriler korunur; yeniden çalıştırdığınızda kalanı tamamlanır.",
       "stop_all_kept": "Verilerinizi değiştiren {count} görev çalışmaya devam edecek; durdurulması verilerin yarım yazılmış kalmasına neden olabilir. | Verilerinizi değiştiren {count} görev çalışmaya devam edecek; durdurulmaları verilerin yarım yazılmış kalmasına neden olabilir.",
-      "stop_info": "Bu işlem {title} görevini durdurur ve yarım bırakır.",
       "title": {
         "attention": "İlginizi bekliyor",
         "finished": "Tamamlandı",

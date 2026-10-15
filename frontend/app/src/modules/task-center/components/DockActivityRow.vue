@@ -167,12 +167,28 @@ const showsIcon = computed<boolean>(() => (get(subject)?.chain !== undefined || 
  */
 const iconColumn = computed<boolean>(() => get(showsIcon) || (get(nested) && !get(linkedAddress)));
 
+/**
+ * Whether the row is asking to confirm a stop. The question lives in the row rather than a dialog,
+ * so it goes away with the work: once the activity settles there is nothing left to stop.
+ */
+const confirmingStop = ref<boolean>(false);
+
 const cancellable = computed<boolean>(() => activity.cancellable && !isTerminalStatus(activity.status));
 
 const hasButtons = computed<boolean>(() => get(cancellable) || get(retryable) || dismissible);
 
 /** A settled child with nothing but its name is one line, so it takes less room than a row that has more to say. */
 const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !get(reasonLine) && !get(rowSteps));
+
+function stop(): void {
+  set(confirmingStop, false);
+  emit('cancel', activity);
+}
+
+watch(cancellable, (canCancel) => {
+  if (!canCancel)
+    set(confirmingStop, false);
+});
 </script>
 
 <template>
@@ -320,6 +336,30 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
           </div>
         </slot>
         <slot name="details" />
+        <div
+          v-if="confirmingStop && cancellable"
+          class="flex items-center gap-1 mt-1 pl-2 rounded bg-rui-warning/10"
+          data-testid="activity-stop-confirm"
+        >
+          <span class="flex-1 min-w-0 text-xs leading-4">{{ t('task_dock.panel.stop_confirm') }}</span>
+          <RuiButton
+            variant="text"
+            size="sm"
+            data-testid="activity-keep-running"
+            @click="confirmingStop = false"
+          >
+            {{ t('task_dock.panel.keep_running') }}
+          </RuiButton>
+          <RuiButton
+            variant="text"
+            color="error"
+            size="sm"
+            data-testid="activity-stop"
+            @click="stop()"
+          >
+            {{ t('task_dock.panel.stop') }}
+          </RuiButton>
+        </div>
       </div>
     </div>
 
@@ -334,7 +374,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
         {{ elapsed }}
       </span>
       <RuiTooltip
-        v-if="cancellable"
+        v-if="cancellable && !confirmingStop"
         :options="{ placement: 'top' }"
         :open-delay="400"
       >
@@ -346,7 +386,7 @@ const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity
             icon
             :aria-label="t('task_dock.panel.stop')"
             data-testid="cancel-activity"
-            @click="emit('cancel', activity)"
+            @click="confirmingStop = true"
           >
             <RuiIcon
               name="lu-x"

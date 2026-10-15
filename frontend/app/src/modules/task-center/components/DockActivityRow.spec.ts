@@ -381,11 +381,39 @@ describe('dockActivityRow', () => {
   });
 
   describe('its controls', () => {
-    it('should emit cancel for work that can be cancelled', async () => {
+    it('should ask in the row, then emit cancel once the user confirms', async () => {
       const wrapper = createWrapper();
       await wrapper.find('[data-testid=cancel-activity]').trigger('click');
 
+      expect(wrapper.emitted('cancel')).toBeUndefined();
+      expect(wrapper.find('[data-testid=cancel-activity]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=activity-stop-confirm]').text()).toContain('task_dock.panel.stop_confirm');
+
+      await wrapper.find('[data-testid=activity-stop]').trigger('click');
+
       expect(wrapper.emitted('cancel')).toHaveLength(1);
+      expect(wrapper.find('[data-testid=activity-stop-confirm]').exists()).toBe(false);
+    });
+
+    it('should put the cancel control back when the user keeps the work running', async () => {
+      const wrapper = createWrapper();
+      await wrapper.find('[data-testid=cancel-activity]').trigger('click');
+      await wrapper.find('[data-testid=activity-keep-running]').trigger('click');
+
+      expect(wrapper.emitted('cancel')).toBeUndefined();
+      expect(wrapper.find('[data-testid=activity-stop-confirm]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=cancel-activity]').exists()).toBe(true);
+    });
+
+    it('should drop the question once the work settles on its own', async () => {
+      const wrapper = createWrapper();
+      await wrapper.find('[data-testid=cancel-activity]').trigger('click');
+
+      await wrapper.setProps({ activity: activity({ status: ActivityStatus.COMPLETE }) });
+      await wrapper.setProps({ activity: activity() });
+
+      expect(wrapper.find('[data-testid=activity-stop-confirm]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=cancel-activity]').exists()).toBe(true);
     });
 
     it('should name the cancel icon button "Stop" for assistive technology, as the panel\'s Stop all', () => {
