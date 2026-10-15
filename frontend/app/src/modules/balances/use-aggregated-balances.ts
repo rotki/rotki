@@ -13,6 +13,7 @@ import { useAggregationContext } from '@/modules/balances/aggregation/use-aggreg
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
@@ -39,6 +40,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { balances: blockchainBalances, exchangeBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { manualBalanceByLocation } = useManualBalanceData();
   const { tradeLocations } = useLocations();
+  const { banks: bankLocations } = storeToRefs(useLocationStore());
   const { matchChain } = useSupportedChains();
 
   const context = useAggregationContext();
@@ -107,8 +109,18 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     return summarizeBalances([source], context);
   });
 
+  /**
+   * One exchange's balances, or every exchange's together.
+   *
+   * @remarks
+   * Bank balances share the exchange balance map, so "every exchange" leaves the bank locations out;
+   * otherwise a bank account would show up, and count, as an exchange.
+   */
   function getExchangeBalances(exchange?: string): AssetBalanceWithPriceAndChains[] {
-    return summarizeBalances([fromExchanges(get(exchangeBalances), exchange)], context);
+    const balances = exchange
+      ? get(exchangeBalances)
+      : Object.fromEntries(Object.entries(get(exchangeBalances)).filter(([location]) => !get(bankLocations).includes(location)));
+    return summarizeBalances([fromExchanges(balances, exchange)], context);
   }
 
   const useLocationBreakdown = (location: MaybeRefOrGetter<string>): ComputedRef<AssetBalanceWithPriceAndChains[]> =>
