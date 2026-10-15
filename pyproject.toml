@@ -19,7 +19,7 @@ license = {file = "LICENSE.md"}
 dynamic = ["version"]
 
 dependencies = [
-    "web3==7.16.0",
+    "web3==8.0.0",
     "eth-typing==5.2.1",
     "content-hash==2.0.0",
     "rotki-pysqlcipher3==2026.8.3",
@@ -38,7 +38,7 @@ dependencies = [
     "py-machineid==0.8.0",
     "more-itertools==10.6.0",  # for peekable iterators
     "regex==2025.11.3",  # used for unicode information in detection of spam tokens
-    "eth-abi==5.2.0",
+    "eth-abi==6.0.0",
     "eth-utils==5.3.1",
     "cytoolz==1.1.0",  # 1.0.1's native extension re-enables the GIL under Python 3.14t
     # For the rest api
@@ -50,7 +50,7 @@ dependencies = [
     # the asyncio api server (uvicorn serving REST via the a2wsgi bridge + native /ws)
     "uvicorn==0.47.0",
     "a2wsgi==1.10.10",
-    "websockets==15.0.1",  # uvicorn's websocket protocol backend (also a solana dep)
+    "websockets==17.2",  # uvicorn's websocket protocol backend
     # for fuzzy search of assets
     "polyleven==0.11",
     # We used to only use this for packaging, but now use it for the version comparison functionality
@@ -555,10 +555,10 @@ exclude-newer = "1 week"
 exclude-newer-package = { mypy = "2026-10-02T00:00:00Z" }
 exclude-dependencies = [
     # Rotki only uses HTTP/WebSocket providers. Windows IPC is the only Web3 path using pywin32.
-    { package = { name = "web3", version = "7.16.0" }, dependencies = ["pywin32"] },
+    { package = { name = "web3", version = "8.0.0" }, dependencies = ["pywin32"] },
     # Rotki runs an MCP server. Only MCP's Windows stdio client uses pywin32.
     { package = { name = "mcp", version = "1.28.1" }, dependencies = ["pywin32"] },
 ]
 
 [tool.uv.sources]
-eth-account = { git = "https://github.com/rotki/eth-account.git", rev = "ca1dd054e50667e8955ea89c841bb4bf2af567db" }
+eth-account = { git = "https://github.com/rotki/eth-account.git", rev = "586a0788274d0490071a9912df731224e0c873dd" }
