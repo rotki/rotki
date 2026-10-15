@@ -22,6 +22,31 @@ interface UseNetValueChartConfigReturn {
   chartOption: ComputedRef<EChartsOption>;
 }
 
+/**
+ * Time axis labels that name their month and never draw over each other.
+ *
+ * @remarks
+ * ECharts adds a bold label at each month and year boundary on top of its regular ticks, so a
+ * boundary a day or two from a tick drew both labels in one spot ("Jul" over "3"). A day tick now
+ * carries its month and an overlapping label is dropped, so whichever survives still dates itself.
+ * The first and last data points are not labelled: their exact time ("10:00") read as noise.
+ */
+const TIME_AXIS_LABEL = {
+  formatter: {
+    day: '{MMM} {d}',
+    hour: '{HH}:{mm}',
+    millisecond: '{HH}:{mm}:{ss}',
+    minute: '{HH}:{mm}',
+    month: '{MMM}',
+    second: '{HH}:{mm}:{ss}',
+    year: '{yyyy}',
+  },
+  hideOverlap: true,
+  show: true,
+  showMaxLabel: false,
+  showMinLabel: false,
+} satisfies XAXisComponentOption['axisLabel'];
+
 export function useNetValueChartConfig(
   chartData: MaybeRefOrGetter<NetValueChartData>,
   zoomRange: MaybeRefOrGetter<NetValueZoomRange | undefined> = () => undefined,
@@ -118,7 +143,7 @@ export function useNetValueChartConfig(
 
   const createAxisConfig = (): AxisConfig => ({
     xAxis: {
-      axisLabel: { show: true },
+      axisLabel: TIME_AXIS_LABEL,
       axisLine: { show: false },
       axisTick: { show: false },
       type: 'time',

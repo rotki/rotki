@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The dates under the dashboard net value graph no longer draw on top of each other. Every date now names its month, for example "Jul 17" instead of "17".
 * :feature:`-` rotki is now available in Turkish. Pick Türkçe in the language selector on the login screen or under Settings > Interface-only.
 * :bug:`-` When the asset database update fails during login, the login screen now shows the reason the backend gave instead of a generic sentence. Failed token detection no longer raises a popup, since its row in the task centre already reports it, and failures such as a backup that could not be created, RPC nodes that could not connect or history mappings that could not load are now filed as errors in the notification area instead of as information.
 * :feature:`-` Backend errors and warnings are now grouped in the notification area by what went wrong and where, for example every unreadable kucoin balance in one entry with a count, and titled accordingly. Rejected API keys now pop up with a link to the keys that need replacing, and rejected premium keys raise the premium row in the action center.
