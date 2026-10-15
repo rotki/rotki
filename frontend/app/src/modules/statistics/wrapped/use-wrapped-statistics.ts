@@ -19,9 +19,14 @@ export function useWrappedStatistics(
   const loading = shallowRef<boolean>(false);
   const summary = ref<WrapStatisticsResult | null>();
 
+  /** A fetch asked for while one runs: the range changed under it, so it runs again after. */
+  let refetch = false;
+
   async function fetchData(): Promise<void> {
-    if (get(loading))
+    if (get(loading)) {
+      refetch = true;
       return;
+    }
 
     try {
       const endVal = toValue(end);
@@ -40,6 +45,11 @@ export function useWrappedStatistics(
     }
     finally {
       set(loading, false);
+    }
+
+    if (refetch) {
+      refetch = false;
+      await fetchData();
     }
   }
 
