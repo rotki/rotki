@@ -837,8 +837,7 @@
       },
       "force_sync": {
         "error": {
-          "message": "Senkronizasyon sırasında hata oluştu: {error}",
-          "title": "Zorunlu senkronizasyon"
+
         },
         "success": {
           "message": "Veri senkronizasyonu başarıyla tamamlandı.",
@@ -2067,8 +2066,6 @@
       "no": "Hayır",
       "ok": "Tamam",
       "proceed": "Devam et",
-      "pull": "Çek",
-      "push": "Gönder",
       "retry": "Tekrar dene",
       "save": "Kaydet",
       "search": "Ara",
@@ -6036,7 +6033,6 @@
       "message": "Yükleme şu nedenle tamamlanamadı: {reason}",
       "title": "Veritabanı senkronizasyonu denemesi başarısız oldu"
     },
-    "last_data_upload": "Son Premium veritabanı senkronizasyonu",
     "menu_tooltip": "Son Premium veritabanı senkronizasyonunun zamanını görüntüleyin ve manuel senkronizasyon yapın.",
     "setting": {
       "ask_user_upon_size_discrepancy": {
@@ -6055,10 +6051,7 @@
       "title": "Zorla gönder | Zorla çek"
     },
     "upload_progress": {
-      "chunk": "Parça {current}/{total}",
-      "compressing": "Veritabanı sıkıştırılıyor...",
-      "encrypting": "Veritabanı şifreleniyor...",
-      "uploading": "Veritabanı yükleniyor..."
+
     }
   },
   "table_filter": {

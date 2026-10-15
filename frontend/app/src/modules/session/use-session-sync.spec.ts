@@ -129,24 +129,47 @@ describe('useSync', () => {
       expect(logout).toHaveBeenCalledOnce();
     });
 
-    it('should not log out on a successful upload sync', async () => {
+    it('should leave a successful upload sync to its dock row', async () => {
       set(sync.syncAction, SYNC_UPLOAD);
       runTaskResult.mockResolvedValue(ok(true));
       const logout = vi.fn(async (): Promise<void> => {});
 
       await sync.forceSync(logout);
 
-      expect(mockNotifyInfo).toHaveBeenCalledOnce();
+      expect(mockNotifyInfo).not.toHaveBeenCalled();
       expect(logout).not.toHaveBeenCalled();
     });
 
-    it('should notify a failure when the task succeeds but returns false', async () => {
+    it('should fail the task when the backend refuses the sync', async () => {
       runTaskResult.mockResolvedValue(ok(false));
+      const outcomes: unknown[] = [];
+      submitTask.mockImplementationOnce(async (spec) => {
+        const outcome = await spec.run({ cancelled: () => false, report: () => {}, runTask: runTaskResult });
+        outcomes.push(outcome);
+        return outcome;
+      });
+      const logout = vi.fn(async (): Promise<void> => {});
+
+      await sync.forceSync(logout);
+
+      expect(outcomes).toEqual([expect.objectContaining({ ok: false })]);
+      expect(mockNotifyError).not.toHaveBeenCalled();
+      expect(mockNotifyInfo).not.toHaveBeenCalled();
+      expect(logout).not.toHaveBeenCalled();
+    });
+
+    it('should mark a manual sync active while it runs', async () => {
+      const seen: boolean[] = [];
+      runTaskResult.mockImplementationOnce(async () => {
+        seen.push(get(sync.manualSyncActive));
+        return ok(true);
+      });
+      set(sync.syncAction, SYNC_UPLOAD);
 
       await sync.forceSync(vi.fn(async (): Promise<void> => {}));
 
-      expect(mockNotifyError).toHaveBeenCalledOnce();
-      expect(mockNotifyInfo).not.toHaveBeenCalled();
+      expect(seen).toEqual([true]);
+      expect(get(sync.manualSyncActive)).toBe(false);
     });
 
     it('should leave a failed task to its dock row and keep the session', async () => {

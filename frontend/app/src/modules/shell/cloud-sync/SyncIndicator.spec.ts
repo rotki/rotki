@@ -4,8 +4,9 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref, shallowRef } from 'vue';
 import { SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
+import SyncButtons from '@/modules/shell/cloud-sync/SyncButtons.vue';
+import SyncConfirmation from '@/modules/shell/cloud-sync/SyncConfirmation.vue';
 import SyncIndicator from '@/modules/shell/cloud-sync/SyncIndicator.vue';
-import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
 let cloudBackupAllowed: Ref<boolean>;
@@ -81,13 +82,12 @@ function createWrapper(): VueWrapper {
     global: {
       plugins: [createCustomPinia()],
       stubs: {
-        AskUserUponSizeDiscrepancySetting: true,
-        ConfirmDialog: true,
         DateDisplay: true,
         MenuTooltipButton: true,
+        RuiMenu: { template: '<div id="balances-saved-dropdown"><slot name="activator" :attrs="{}" /><slot /></div>' },
         SyncButtons: true,
+        SyncConfirmation: true,
         SyncSettings: true,
-        SyncUploadStatusAlert: true,
       },
     },
   });
@@ -106,37 +106,42 @@ describe('modules/shell/cloud-sync/SyncIndicator.vue', () => {
     premium = ref<boolean>(true);
   });
 
-  it('should keep the confirmed action disabled until the box is ticked', async () => {
+  it('should show the sync buttons until a sync asks for confirmation', async () => {
     const wrapper = createWrapper();
-    const dialog = wrapper.findComponent(ConfirmDialog);
 
-    expect(dialog.props('disabled')).toBe(true);
+    expect(wrapper.findComponent(SyncButtons).exists()).toBe(true);
+    expect(wrapper.findComponent(SyncConfirmation).exists()).toBe(false);
 
-    set(confirmChecked, true);
+    set(displaySyncConfirmation, true);
     await flushPromises();
 
-    expect(dialog.props('disabled')).toBe(false);
+    expect(wrapper.findComponent(SyncButtons).exists()).toBe(false);
+    expect(wrapper.findComponent(SyncConfirmation).exists()).toBe(true);
   });
 
-  it('should sync nothing while the dialog only sits there', () => {
+  it('should sync nothing while the confirmation only sits there', async () => {
+    set(displaySyncConfirmation, true);
     createWrapper();
+    await flushPromises();
 
     expect(forceSync).not.toHaveBeenCalled();
   });
 
-  it('should sync when the dialog is confirmed', async () => {
+  it('should sync when the confirmation is confirmed', async () => {
+    set(displaySyncConfirmation, true);
     const wrapper = createWrapper();
 
-    wrapper.findComponent(ConfirmDialog).vm.$emit('confirm');
+    wrapper.findComponent(SyncConfirmation).vm.$emit('confirm');
     await flushPromises();
 
     expect(forceSync).toHaveBeenCalledOnce();
   });
 
-  it('should sync nothing when the dialog is cancelled', async () => {
+  it('should sync nothing when the confirmation is cancelled', async () => {
+    set(displaySyncConfirmation, true);
     const wrapper = createWrapper();
 
-    wrapper.findComponent(ConfirmDialog).vm.$emit('cancel');
+    wrapper.findComponent(SyncConfirmation).vm.$emit('cancel');
     await flushPromises();
 
     expect(cancelSync).toHaveBeenCalledOnce();

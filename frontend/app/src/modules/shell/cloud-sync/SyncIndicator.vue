@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
-import AskUserUponSizeDiscrepancySetting from '@/modules/settings/general/AskUserUponSizeDiscrepancySetting.vue';
 import SyncButtons from '@/modules/shell/cloud-sync/SyncButtons.vue';
+import SyncConfirmation from '@/modules/shell/cloud-sync/SyncConfirmation.vue';
 import SyncSettings from '@/modules/shell/cloud-sync/SyncSettings.vue';
-import SyncUploadStatusAlert from '@/modules/shell/cloud-sync/SyncUploadStatusAlert.vue';
 import { useSyncIndicator } from '@/modules/shell/cloud-sync/use-sync-indicator';
-import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
-import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 import { useLinks } from '@/modules/shell/layout/use-links';
 
@@ -18,23 +16,18 @@ const { lastDataUpload } = storeToRefs(useSessionMetadataStore());
 const { href, onLinkClick } = useLinks();
 
 const {
-  cancelForceSync,
   cancelSync,
-  clearUploadStatus,
   cloudBackupAllowed,
   confirmChecked,
-  currentProgressText,
   displaySyncConfirmation,
   icon,
   isDownload,
   isSyncing,
-  message,
   modelSyncSettingMenuOpen,
   modelVisible,
   pending,
   performSync,
   showConfirmation,
-  textChoice,
   tooltip,
   uploadProgress,
   uploadProgressIcon,
@@ -76,7 +69,7 @@ const {
             </template>
             <RuiIcon
               v-if="uploadStatus"
-              name="lu-cloud-off-fill"
+              name="lu-cloud-off"
               color="warning"
             />
             <RuiIcon
@@ -91,29 +84,31 @@ const {
             />
             <RuiIcon
               v-else-if="premiumSync"
-              name="lu-cloud-sync-fill"
+              name="lu-cloud-sync-auto"
             />
             <RuiIcon
               v-else
-              name="lu-cloud-fill"
+              name="lu-cloud"
             />
           </RuiBadge>
         </MenuTooltipButton>
       </template>
-      <div class="p-4 w-[20rem] max-w-[calc(100vw-1rem)] flex flex-col gap-4">
-        <div class="flex items-start justify-between">
-          <div>
-            <div class="font-medium">
-              {{ t('sync_indicator.last_data_upload') }}
+      <div class="p-4 w-80 max-w-[calc(100vw-1rem)] flex flex-col gap-4">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex flex-col gap-0.5">
+            <div class="font-medium text-rui-text">
+              {{ t('premium_settings.sync.title') }}
             </div>
-            <div class="text-rui-text-secondary">
-              <DateDisplay
+            <div
+              class="text-sm text-rui-text-secondary"
+              data-testid="sync-last-upload"
+            >
+              {{ t('premium_settings.sync.last_upload') }}:
+              <TimeAgoDisplay
                 v-if="lastDataUpload"
                 :timestamp="lastDataUpload"
               />
-              <span v-else>
-                {{ t('common.never') }}
-              </span>
+              <span v-else>{{ t('common.never') }}</span>
             </div>
           </div>
           <SyncSettings
@@ -121,75 +116,57 @@ const {
             :disabled="!cloudBackupAllowed"
           />
         </div>
-        <RuiAlert
+        <div
           v-if="!cloudBackupAllowed"
-          type="info"
-          outlined
-          class="border border-rui-info"
+          class="text-sm text-rui-text-secondary"
+          data-testid="sync-unavailable"
         >
-          <div class="text-sm">
-            {{ t('sync_indicator.cloud_backup_unavailable') }}
-          </div>
-          <div class="flex flex-row-reverse -mb-1">
-            <RuiButton
-              variant="text"
-              color="primary"
-              size="sm"
-              :href="href"
-              @click="onLinkClick()"
-            >
-              {{ t('sync_indicator.cloud_backup_upgrade') }}
-            </RuiButton>
-          </div>
-        </RuiAlert>
-        <RuiAlert
-          v-else-if="uploadProgress"
-          type="info"
-          outlined
-          class="border border-rui-info"
-        >
-          <div class="flex flex-col gap-2">
-            <div class="font-medium leading-5">
-              {{ currentProgressText }}
-            </div>
-            <RuiProgress
-              v-if="uploadProgress.type === 'uploading'"
-              color="primary"
-              :value="(uploadProgress.currentChunk / uploadProgress.totalChunks) * 100"
-              show-label
-            />
-            <div
-              v-if="uploadProgress.type === 'uploading'"
-              class="text-rui-text-secondary text-sm"
-            >
-              {{
-                t('sync_indicator.upload_progress.chunk', {
-                  current: uploadProgress.currentChunk,
-                  total: uploadProgress.totalChunks,
-                })
-              }}
-            </div>
-          </div>
-          <div
-            v-if="pending && uploadProgress"
-            class="flex flex-row-reverse -mb-1"
+          {{ t('sync_indicator.cloud_backup_unavailable') }}
+          <a
+            class="text-rui-primary underline"
+            :href="href"
+            @click="onLinkClick()"
           >
-            <RuiButton
-              variant="text"
-              color="primary"
-              data-testid="cancel-force-sync"
-              @click="cancelForceSync()"
-            >
-              {{ t('common.actions.cancel') }}
-            </RuiButton>
-          </div>
-        </RuiAlert>
-        <SyncUploadStatusAlert
+            {{ t('sync_indicator.cloud_backup_upgrade') }}
+          </a>
+        </div>
+        <div
+          v-else-if="isSyncing"
+          class="flex items-center gap-2 text-sm text-rui-text-secondary"
+          data-testid="sync-running"
+        >
+          <RuiProgress
+            variant="indeterminate"
+            circular
+            size="14"
+            thickness="2"
+            color="primary"
+          />
+          {{ t('sync_indicator.status.running') }}
+        </div>
+        <div
           v-else-if="uploadStatus"
-          :message="uploadStatus.message"
-          @clear="clearUploadStatus()"
+          class="flex items-start gap-2 text-sm text-rui-warning"
+          data-testid="sync-last-failed"
+        >
+          <RuiIcon
+            name="lu-triangle-alert"
+            size="14"
+            class="shrink-0 mt-0.5"
+          />
+          {{ t('sync_indicator.status.failed') }}
+        </div>
+        <SyncConfirmation
+          v-if="displaySyncConfirmation"
+          v-model:checked="confirmChecked"
+          :download="isDownload"
+          :syncing="isSyncing"
+          :size-discrepancy="!!uploadStatus"
+          @cancel="cancelSync()"
+          @confirm="performSync()"
         />
         <SyncButtons
+          v-else
           :pending="pending"
           :disabled="!cloudBackupAllowed"
           @action="showConfirmation($event)"
@@ -215,41 +192,8 @@ const {
         :href="href"
         @click="onLinkClick()"
       >
-        <RuiIcon name="lu-cloud-fill" />
+        <RuiIcon name="lu-cloud" />
       </MenuTooltipButton>
     </RuiBadge>
   </template>
-
-  <ConfirmDialog
-    confirm-type="warning"
-    :display="displaySyncConfirmation"
-    :title="t('sync_indicator.upload_confirmation.title', textChoice)"
-    :message="message"
-    :disabled="!confirmChecked"
-    :primary-action="t('sync_indicator.upload_confirmation.action', textChoice)"
-    :loading="isSyncing"
-    :secondary-action="t('common.actions.cancel')"
-    @cancel="cancelSync()"
-    @confirm="performSync()"
-  >
-    <div
-      v-if="isDownload"
-      class="font-medium mt-3"
-      v-text="t('sync_indicator.upload_confirmation.message_download_relogin')"
-    />
-    <RuiCheckbox
-      v-model="confirmChecked"
-      class="mt-2"
-      color="primary"
-      hide-details
-    >
-      {{ t('sync_indicator.upload_confirmation.confirm_check') }}
-    </RuiCheckbox>
-
-    <AskUserUponSizeDiscrepancySetting
-      v-if="uploadStatus"
-      dialog
-      confirm
-    />
-  </ConfirmDialog>
 </template>

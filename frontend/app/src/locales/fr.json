@@ -353,8 +353,7 @@
       },
       "force_sync": {
         "error": {
-          "message": "Une erreur est survenue lors de la synchronisation : {error}",
-          "title": "Synchronisation forcée"
+
         },
         "success": {
           "message": "L'opération de synchronisation des données a été complétée avec succès.",
@@ -909,8 +908,6 @@
       "install": "Installer",
       "next": "Suivant",
       "no": "Non",
-      "pull": "Tirer",
-      "push": "Pousser",
       "save": "Enregistrer",
       "search": "Rechercher",
       "skip": "Sauter",
@@ -2679,7 +2676,6 @@
       "message": "Nous n'avons pas pu terminer le téléchargement car {reason}",
       "title": "Échec de la synchronisation de la base de données"
     },
-    "last_data_upload": "Dernière synchronisation de la base de données premium",
     "menu_tooltip": "Voir l'heure de la dernière synchronisation de la base de données premium et effectuer une synchronisation manuelle.",
     "upload_confirmation": {
       "action": "Pousser | Tirer",

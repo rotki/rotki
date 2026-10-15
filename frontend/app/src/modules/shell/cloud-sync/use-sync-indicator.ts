@@ -6,7 +6,6 @@ import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 import { useSync } from '@/modules/session/use-session-sync';
 import { ActivityKind } from '@/modules/task-center/core/types';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 /** How often the cloud icon alternates while a sync is in flight, in milliseconds. */
@@ -16,19 +15,13 @@ const ICON_TICK = 600;
 const ANIMATED_PHASES = ['compressing', 'uploading'];
 
 interface UseSyncIndicatorReturn {
-  /** Cancels a running force sync and clears whatever status it left behind. */
-  cancelForceSync: () => Promise<void>;
   /** Abandons the pending confirmation without syncing. */
   cancelSync: () => void;
-  /** Forgets the outcome of the last upload, and any progress it left behind. */
-  clearUploadStatus: () => void;
   /** Whether the user's plan includes cloud backup. */
   cloudBackupAllowed: Ref<boolean>;
   /** Two-way binding for the confirmation's acknowledgement checkbox. */
   confirmChecked: Ref<boolean>;
-  /** What the upload is currently doing, as a sentence. */
-  currentProgressText: ComputedRef<string>;
-  /** Whether the confirmation dialog is showing. */
+  /** Whether the menu shows the confirmation in place of the sync buttons. */
   displaySyncConfirmation: Ref<boolean>;
   /** The animated cloud icon for the direction being synced. */
   icon: ComputedRef<RuiIcons>;
@@ -36,8 +29,6 @@ interface UseSyncIndicatorReturn {
   isDownload: ComputedRef<boolean>;
   /** Whether a sync is running. */
   isSyncing: ComputedRef<boolean>;
-  /** The confirmation's body text, which differs by direction. */
-  message: ComputedRef<string>;
   /** Whether the menu is open. */
   modelVisible: Ref<boolean>;
   /** Whether the sync settings submenu is open, which pins the menu open. */
@@ -47,15 +38,13 @@ interface UseSyncIndicatorReturn {
   /** Runs the confirmed sync, logging out afterwards when it replaced the local database. */
   performSync: () => Promise<void>;
   /**
-   * Opens the confirmation for a direction.
+   * Opens the confirmation for a direction, in place inside the open menu.
    *
    * @remarks
    * A sync overwrites one side wholesale, so nothing runs until {@link UseSyncIndicatorReturn.performSync}
-   * is called from the confirmed dialog.
+   * is called from the confirmation. Closing the menu abandons it.
    */
   showConfirmation: (action: SyncAction) => void;
-  /** Pluralisation choice for the confirmation's title and action, by direction. */
-  textChoice: ComputedRef<number>;
   /** The activator's tooltip, which reports a failed upload ahead of anything else. */
   tooltip: ComputedRef<string>;
   /** How far the running upload has got, or undefined when none is running. */
@@ -67,8 +56,8 @@ interface UseSyncIndicatorReturn {
 }
 
 /**
- * Drives the cloud sync menu: its icons and tooltip, the confirmation before a sync, and cancelling
- * one that is running.
+ * Drives the cloud sync menu: its icons and tooltip and the confirmation before a sync. A running
+ * sync reports, and is cancelled, from its row in the dock.
  *
  * @returns the menu state and the actions its controls call
  */
@@ -91,21 +80,12 @@ export function useSyncIndicator(): UseSyncIndicatorReturn {
     uploadProgress,
     uploadStatus,
   } = useSync();
-  const { cancelActivity } = useNativeTask();
   const { useIsActive } = useTaskCenter();
   const { logout } = useLogout();
 
   const isSyncing = useIsActive(ActivityKind.SYNC);
 
   const isDownload = computed<boolean>(() => get(syncAction) === SYNC_DOWNLOAD);
-
-  const textChoice = computed<number>(() => (get(syncAction) === SYNC_UPLOAD ? 1 : 2));
-
-  const message = computed<string>(() =>
-    get(syncAction) === SYNC_UPLOAD
-      ? t('sync_indicator.upload_confirmation.message_upload')
-      : t('sync_indicator.upload_confirmation.message_download'),
-  );
 
   const { counter, pause, resume } = useInterval(ICON_TICK, {
     controls: true,
@@ -115,15 +95,15 @@ export function useSyncIndicator(): UseSyncIndicatorReturn {
   const icon = computed<RuiIcons>(() => {
     const tick = get(counter) % 2 === 0;
     if (get(isDownload))
-      return tick ? 'lu-cloud-download-2-fill' : 'lu-cloud-download-fill';
+      return tick ? 'lu-cloud-download-2' : 'lu-cloud-download';
 
-    return tick ? 'lu-cloud-upload-2-fill' : 'lu-cloud-upload-fill';
+    return tick ? 'lu-cloud-upload-2' : 'lu-cloud-upload';
   });
 
   const uploadProgressIcon = computed<RuiIcons>(() => {
     const progress = get(uploadProgress);
     if (!progress)
-      return 'lu-cloud-fill';
+      return 'lu-cloud';
 
     const tick = get(counter) % 2 === 0;
 
@@ -133,9 +113,9 @@ export function useSyncIndicator(): UseSyncIndicatorReturn {
       case 'encrypting':
         return 'lu-shield';
       case 'uploading':
-        return tick ? 'lu-cloud-upload-2-fill' : 'lu-cloud-upload-fill';
+        return tick ? 'lu-cloud-upload-2' : 'lu-cloud-upload';
       default:
-        return 'lu-cloud-fill';
+        return 'lu-cloud';
     }
   });
 
@@ -153,24 +133,7 @@ export function useSyncIndicator(): UseSyncIndicatorReturn {
     return t('sync_indicator.menu_tooltip');
   });
 
-  const currentProgressText = computed<string>(() => {
-    if (!isDefined(uploadProgress))
-      return '';
-
-    switch (get(uploadProgress).type) {
-      case 'compressing':
-        return t('sync_indicator.upload_progress.compressing');
-      case 'encrypting':
-        return t('sync_indicator.upload_progress.encrypting');
-      case 'uploading':
-        return t('sync_indicator.upload_progress.uploading');
-      default:
-        return '';
-    }
-  });
-
   function showConfirmation(action: SyncAction): void {
-    set(modelVisible, false);
     showSyncConfirmation(action);
   }
 
@@ -181,11 +144,6 @@ export function useSyncIndicator(): UseSyncIndicatorReturn {
     set(pending, true);
     await forceSync(logout);
     set(pending, false);
-  }
-
-  async function cancelForceSync(): Promise<void> {
-    cancelActivity(ActivityKind.SYNC);
-    await nextTick(() => clearUploadStatus());
   }
 
   const runCounter = computed<boolean>(() => {
@@ -208,27 +166,29 @@ export function useSyncIndicator(): UseSyncIndicatorReturn {
       pause();
   }
 
+  /** The confirmation lives in the menu, so closing the menu before confirming abandons it. */
+  function abandonConfirmationOnClose(visible: boolean): void {
+    if (!visible && !get(pending))
+      cancelSync();
+  }
+
   watch(isSyncing, stopSyncWhenItFinishes);
+  watch(modelVisible, abandonConfirmationOnClose);
   watchImmediate(runCounter, animateWhileWorking);
 
   return {
-    cancelForceSync,
     cancelSync,
-    clearUploadStatus,
     cloudBackupAllowed,
     confirmChecked,
-    currentProgressText,
     displaySyncConfirmation,
     icon,
     isDownload,
     isSyncing,
-    message,
     modelSyncSettingMenuOpen,
     modelVisible,
     pending: readonly(pending),
     performSync,
     showConfirmation,
-    textChoice,
     tooltip,
     uploadProgress,
     uploadProgressIcon,

@@ -278,8 +278,6 @@
       "finish": "Terminar",
       "install": "Instalar",
       "next": "Siguiente",
-      "pull": "Descargar",
-      "push": "Subir",
       "save": "Guardar",
       "search": "Buscar",
       "skip": "Saltar",
@@ -733,7 +731,6 @@
     "snapshot_title": "Última instantanea de balances"
   },
   "sync_indicator": {
-    "last_data_upload": "Última sincronización premium de la base de datos",
     "upload_confirmation": {
       "action": "Subir | Descargar",
       "confirm_check": "Comprendo",

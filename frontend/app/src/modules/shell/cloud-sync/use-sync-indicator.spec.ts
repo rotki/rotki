@@ -5,7 +5,6 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref, shallowRef } from 'vue';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
-import { ActivityKind } from '@/modules/task-center/core/types';
 import { useSyncIndicator } from './use-sync-indicator';
 
 let cloudBackupAllowed: Ref<boolean>;
@@ -18,14 +17,12 @@ let isSyncing: Ref<boolean>;
 let scope: ReturnType<typeof effectScope>;
 
 const {
-  cancelActivity,
   cancelSync,
   clearUploadStatus,
   forceSync,
   logout,
   showSyncConfirmation,
 } = vi.hoisted(() => ({
-  cancelActivity: vi.fn(),
   cancelSync: vi.fn(),
   clearUploadStatus: vi.fn(),
   forceSync: vi.fn(async () => Promise.resolve()),
@@ -56,10 +53,6 @@ vi.mock('@/modules/premium/use-feature-access', async () => {
     useFeatureAccess: (): Record<string, unknown> => ({ allowed: cloudBackupAllowed }),
   };
 });
-
-vi.mock('@/modules/task-center/use-native-task', () => ({
-  useNativeTask: (): Record<string, unknown> => ({ cancelActivity }),
-}));
 
 vi.mock('@/modules/task-center/use-task-center', () => ({
   useTaskCenter: (): Record<string, unknown> => ({ useIsActive: (): Ref<boolean> => isSyncing }),
@@ -110,12 +103,24 @@ describe('modules/shell/cloud-sync/useSyncIndicator', () => {
       expect(forceSync).not.toHaveBeenCalled();
     });
 
-    it('should close the menu when it opens the confirmation', () => {
+    it('should keep the menu open, since the confirmation shows inside it', () => {
       const { modelVisible, showConfirmation } = indicator();
       set(modelVisible, true);
       showConfirmation(SYNC_UPLOAD);
 
-      expect(get(modelVisible)).toBe(false);
+      expect(get(modelVisible)).toBe(true);
+    });
+
+    it('should abandon the confirmation when the menu closes before confirming', async () => {
+      const { modelVisible, showConfirmation } = indicator();
+      set(modelVisible, true);
+      showConfirmation(SYNC_UPLOAD);
+
+      set(modelVisible, false);
+      await nextTick();
+
+      expect(cancelSync).toHaveBeenCalledOnce();
+      expect(forceSync).not.toHaveBeenCalled();
     });
 
     it('should sync nothing when the confirmation is cancelled', () => {
@@ -166,31 +171,20 @@ describe('modules/shell/cloud-sync/useSyncIndicator', () => {
     });
   });
 
-  describe('the confirmation wording', () => {
+  describe('the confirmation direction', () => {
     it.each([
-      [SYNC_UPLOAD, 1, 'sync_indicator.upload_confirmation.message_upload', false],
-      [SYNC_DOWNLOAD, 2, 'sync_indicator.upload_confirmation.message_download', true],
-    ])('should describe a %s', (action, choice, expectedMessage, download) => {
+      [SYNC_UPLOAD, false],
+      [SYNC_DOWNLOAD, true],
+    ])('should tell whether a %s replaces the local database', (action, download) => {
       set(syncAction, action);
 
-      const { isDownload, message, textChoice } = indicator();
+      const { isDownload } = indicator();
 
-      expect(get(textChoice)).toBe(choice);
-      expect(get(message)).toBe(expectedMessage);
       expect(get(isDownload)).toBe(download);
     });
   });
 
-  describe('cancelling a running sync', () => {
-    it('should cancel the sync activity and clear what it left behind', async () => {
-      const { cancelForceSync } = indicator();
-      await cancelForceSync();
-      await flushPromises();
-
-      expect(cancelActivity).toHaveBeenCalledWith(ActivityKind.SYNC);
-      expect(clearUploadStatus).toHaveBeenCalledOnce();
-    });
-
+  describe('a running sync', () => {
     it('should abandon the pending sync when a running one finishes', async () => {
       set(isSyncing, true);
       indicator();
@@ -236,26 +230,6 @@ describe('modules/shell/cloud-sync/useSyncIndicator', () => {
     });
   });
 
-  describe('the progress text', () => {
-    it('should be empty while nothing is uploading', () => {
-      const { currentProgressText } = indicator();
-
-      expect(get(currentProgressText)).toBe('');
-    });
-
-    it.each([
-      ['compressing', 'sync_indicator.upload_progress.compressing'],
-      ['encrypting', 'sync_indicator.upload_progress.encrypting'],
-      ['uploading', 'sync_indicator.upload_progress.uploading'],
-    ] as const)('should name the %s phase', (type, expected) => {
-      set(uploadProgress, progressOf(type));
-
-      const { currentProgressText } = indicator();
-
-      expect(get(currentProgressText)).toBe(expected);
-    });
-  });
-
   describe('the animated icons', () => {
     it('should point the arrow down for a download and up for an upload', () => {
       set(syncAction, SYNC_DOWNLOAD);
@@ -271,7 +245,7 @@ describe('modules/shell/cloud-sync/useSyncIndicator', () => {
     it('should show a still cloud while nothing is uploading', () => {
       const { uploadProgressIcon } = indicator();
 
-      expect(get(uploadProgressIcon)).toBe('lu-cloud-fill');
+      expect(get(uploadProgressIcon)).toBe('lu-cloud');
     });
 
     it('should not animate the encrypting phase', () => {
@@ -297,10 +271,9 @@ describe('modules/shell/cloud-sync/useSyncIndicator', () => {
     it('should fall back to a still cloud for a phase it does not know', () => {
       set(uploadProgress, createMock<DatabaseUploadProgress>());
 
-      const { currentProgressText, uploadProgressIcon } = indicator();
+      const { uploadProgressIcon } = indicator();
 
-      expect(get(uploadProgressIcon)).toBe('lu-cloud-fill');
-      expect(get(currentProgressText)).toBe('');
+      expect(get(uploadProgressIcon)).toBe('lu-cloud');
     });
 
     it('should hold the icon still once the upload finishes', async () => {
