@@ -6252,6 +6252,7 @@
         "daily": "Filling daily prices for {asset}",
         "exchange_rates": "Updating exchange rates for {currency}",
         "historic": "Looking up {fromAsset} to {toAsset} on {date}",
+        "historic_batches": "Fetching historic rates to {toAsset}",
         "latest": "Updating {count} asset | Updating {count} assets",
         "manual_add": "Saving a manual price for {asset}",
         "manual_remove": "Removing the manual price for {asset}"
