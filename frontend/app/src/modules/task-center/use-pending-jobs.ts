@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue';
 import { INDETERMINATE } from './core/status';
-import { someInSubtree, subtreeProgress, subtreeSteps } from './core/tree';
+import { someInSubtree, subtreeProgress, subtreeSteps, subtreeWork, workPercentage } from './core/tree';
 import { type Activity, type ActivityId, ActivityStatus, type ActivitySteps, WaitingReason } from './core/types';
 import { useTaskCenter } from './use-task-center';
 
@@ -14,6 +14,8 @@ export interface PendingJob {
   readonly steps: ActivitySteps;
   /** 0-100, or -1 when no leaf in the subtree can be quantified. See {@link subtreeProgress}. */
   readonly percentage: number;
+  /** The work its units count between them, when they all count the same thing. See {@link subtreeWork}. */
+  readonly work?: ActivitySteps;
 }
 
 interface UsePendingJobsReturn {
@@ -52,11 +54,16 @@ export function usePendingJobs(): UsePendingJobsReturn {
   const jobs = computed<PendingJob[]>(() => {
     const tree = get(children);
 
-    return get(model).roots.filter(root => someInSubtree(tree, root, isRunning) || isHeldBack(root)).map(activity => ({
-      activity,
-      percentage: subtreeProgress(tree, activity),
-      steps: subtreeSteps(tree, activity),
-    }));
+    return get(model).roots.filter(root => someInSubtree(tree, root, isRunning) || isHeldBack(root)).map((activity) => {
+      const hasChildren = (tree.get(activity.id)?.length ?? 0) > 0;
+      const work = hasChildren ? subtreeWork(tree, activity) : undefined;
+      return {
+        activity,
+        percentage: work ? workPercentage(work) : subtreeProgress(tree, activity),
+        steps: subtreeSteps(tree, activity),
+        work,
+      };
+    });
   });
 
   const steps = computed<ActivitySteps>(() => get(jobs).reduce<ActivitySteps>(
