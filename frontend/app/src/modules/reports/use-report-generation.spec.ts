@@ -1,7 +1,7 @@
 import { err, ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
-import { useReportGeneration } from '@/modules/reports/use-report-generation';
+import { clampProgress, useReportGeneration } from '@/modules/reports/use-report-generation';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -190,5 +190,18 @@ describe('useReportGeneration', () => {
 
       expect(result).toEqual({});
     });
+  });
+});
+
+describe('clampProgress', () => {
+  it('should hold the percentage to 0-100, since the backend can report more', () => {
+    expect(clampProgress('137.82')).toBe(100);
+    expect(clampProgress('-3')).toBe(0);
+    expect(clampProgress('42.5')).toBe(42.5);
+  });
+
+  it('should give nothing for a value that is not a number', () => {
+    expect(clampProgress('')).toBeUndefined();
+    expect(clampProgress('n/a')).toBeUndefined();
   });
 });
