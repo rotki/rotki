@@ -99,7 +99,7 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
   const { fetchCounts, issueCount: internalConflictsCount } = useInternalTxConflicts();
   const dataIssuesEnabled = isAccountingUpdateEnabled();
   const { actionableCount: dataIssuesCount, refreshSummary } = useDataIssuesSummary();
-  const { fetchUndecodedTransactionsBreakdown, undecodedCount } = useUndecodedTransactionsCount();
+  const { decodeMissing, decoding, fetchUndecodedTransactionsBreakdown, undecodedCount } = useUndecodedTransactionsCount();
   const { row: trackedAccounts } = useTrackedAccountsRow();
 
   const movementsIgnoredOnly = computed<boolean>(() => get(unmatchedMovementsCount) === 0 && get(ignoredMovementsCount) > 0);
@@ -185,8 +185,10 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
       description: t('transactions.alerts.issues.undecoded.description'),
       icon: 'lu-scroll-text',
       id: HISTORY_ISSUE_IDS.UNDECODED,
+      loading: get(decoding),
       urgency: ActionUrgency.TODO,
-      target: { kind: 'dialog', options: { type: DIALOG_TYPES.DECODING_STATUS } },
+      // decodes in place; the task dock shows the progress by chain
+      target: { kind: 'run', run: decodeMissing },
       title: t('transactions.alerts.issues.undecoded.title'),
     }),
   ]);

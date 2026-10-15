@@ -58,8 +58,6 @@ function resolveDialogState(options: DialogShowOptions): OpenDialogState | undef
       return buildTransactionForm();
     case DIALOG_TYPES.MISSING_RULES:
       return { data: options.data, type: DIALOG_TYPES.MISSING_RULES };
-    case DIALOG_TYPES.DECODING_STATUS:
-      return { data: { persistent: Boolean(options.persistent) }, type: DIALOG_TYPES.DECODING_STATUS };
     case DIALOG_TYPES.ADD_MISSING_RULE:
       return undefined;
   }

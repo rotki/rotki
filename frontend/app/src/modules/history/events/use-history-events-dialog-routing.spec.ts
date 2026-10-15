@@ -37,7 +37,6 @@ describe('modules/history/events/use-history-events-dialog-routing', () => {
 
   it.each([
     ['openCustomizedEventDuplicatesDialog', DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES],
-    ['openDecodingStatusDialog', DIALOG_TYPES.DECODING_STATUS],
     ['openInternalTxConflictsDialog', DIALOG_TYPES.INTERNAL_TX_CONFLICTS],
     ['openMatchAssetMovementsDialog', DIALOG_TYPES.MATCH_ASSET_MOVEMENTS],
     ['openMatchBridgesDialog', DIALOG_TYPES.MATCH_BRIDGE_TRANSACTIONS],

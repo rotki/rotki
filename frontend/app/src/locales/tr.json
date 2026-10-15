@@ -6860,23 +6860,9 @@
       }
     },
     "events_decoding": {
-      "actions": {
-        "redecode_missing_events": "Eksik olayları yeniden çözümle"
-      },
       "confirmation": "Bu eylem, özelleştirilmiş olanlar dışındaki tüm olayları yeniden çözümleyecek ve işlenecek işlem sayısına bağlı olarak uzun sürebilir. Devam etmek istediğinizden emin misiniz?",
-      "decoded": {
-        "false": "Bazı işlemlerin işlenmesi gerekiyor.",
-        "not_started": "Çözümleme süreci, işlemlerin sorgulanması tamamlandıktan sonra devam edecek.",
-        "true": "Tüm işlemler işlendi."
-      },
-      "fetching": "İşlem çözümleme durumu kontrol ediliyor",
-      "preparing": "İşlemler çözümleniyor, lütfen bekleyin...",
-      "progress": "İlerleme",
       "redecode": "Yeniden çözümle",
-      "redecode_all": "Tüm işlemleri yeniden çözümle",
-      "title": "İşlem çözümleme durumu",
-      "transactions_processed": "{processed} / {total} işlem işlendi",
-      "undecoded_transactions": "Çözümlenmemiş işlemler"
+      "redecode_all": "Tüm işlemleri yeniden çözümle"
     },
     "filter": {
       "account": "Hesaba göre filtrele",

@@ -2904,19 +2904,8 @@
       }
     },
     "events_decoding": {
-      "actions": {
-        "redecode_missing_events": "Recoder les événements manquants"
-      },
       "confirmation": "Cette action recodera tous les événements sauf les personnalisés, et peut prendre beaucoup de temps en fonction du nombre d'transactions à traiter. Êtes-vous sûr de vouloir continuer?",
-      "decoded": {
-        "false": "Certains transactions nécessitent d'être recodés.",
-        "true": "Tous les transactions ont été recodés."
-      },
-      "progress": "Progression",
-      "redecode_all": "Recoder tous les transactions EVM",
-      "title": "État du recodage des transactions EVM",
-      "transactions_processed": "{processed} / {total} transactions traités",
-      "undecoded_transactions": "Transactions non recodés"
+      "redecode_all": "Recoder tous les transactions EVM"
     },
     "filter": {
       "account": "Filtrer par compte"

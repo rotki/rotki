@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActionUrgency } from '@/modules/core/action-center/types';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { HISTORY_ISSUE_IDS, type useHistoryEventIssues as UseHistoryEventIssues } from '@/modules/history/events/actions-center/use-history-event-issues';
@@ -11,6 +11,8 @@ const state = {
   autoMatchLoading: ref(false),
   bridgeAutoMatchLoading: ref(false),
   dataIssuesCount: ref(0),
+  decodeMissing: vi.fn<() => void>(),
+  decoding: ref(false),
   fetchCounts: vi.fn<() => Promise<void>>(),
   fetchCustomizedEventDuplicates: vi.fn<() => Promise<void>>(),
   fetchUndecodedTransactionsBreakdown: vi.fn<() => Promise<void>>(),
@@ -112,6 +114,8 @@ vi.mock('@/modules/history/data-issues/use-data-issues-summary', () => ({
 
 vi.mock('@/modules/history/events/tx/use-undecoded-transactions-count', () => ({
   useUndecodedTransactionsCount: (): object => ({
+    decodeMissing: state.decodeMissing,
+    decoding: state.decoding,
     fetchUndecodedTransactionsBreakdown: state.fetchUndecodedTransactionsBreakdown,
     undecodedCount: state.undecodedCount,
   }),
@@ -142,6 +146,7 @@ describe('useHistoryEventIssues', () => {
     set(state.autoMatchLoading, false);
     set(state.bridgeAutoMatchLoading, false);
     set(state.dataIssuesCount, 0);
+    set(state.decoding, false);
     vi.stubEnv('VITE_ACCOUNTING_UPDATE', '');
     set(state.internalConflictsCount, 0);
     set(state.manualReviewCount, 0);
@@ -244,6 +249,27 @@ describe('useHistoryEventIssues', () => {
       kind: 'duplicates',
       status: DuplicateHandlingStatus.AUTO_FIX,
     });
+  });
+
+  it('should redecode in place from the undecoded row', () => {
+    const { issues } = useHistoryEventIssues();
+    const undecoded = get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.UNDECODED);
+
+    assert(undecoded?.target.kind === 'run', 'the undecoded row should run in place');
+    undecoded.target.run();
+
+    expect(state.decodeMissing).toHaveBeenCalledOnce();
+  });
+
+  it('should show the undecoded row as loading while decoding runs', () => {
+    const { issues } = useHistoryEventIssues();
+    const undecodedLoading = (): boolean | undefined => get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.UNDECODED)?.loading;
+
+    expect(undecodedLoading()).toBe(false);
+
+    set(state.decoding, true);
+
+    expect(undecodedLoading()).toBe(true);
   });
 
   it('should stay pending until a scan lands and while the history syncs', async () => {

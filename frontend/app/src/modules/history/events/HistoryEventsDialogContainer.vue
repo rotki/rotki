@@ -6,7 +6,6 @@ import {
   BridgePotentialMatchesDialog,
   CustomizedEventDuplicatesDialog,
   HistoryEventFormDialog,
-  HistoryEventsDecodingStatusDialog,
   InternalTxConflictsDialog,
   MatchAssetMovementsDialog,
   MatchBridgeTransactionsDialog,
@@ -23,7 +22,6 @@ const accountingRuleToEdit = defineModel<AccountingRuleEntry | undefined>('accou
 const { eventHandlers, selectedEventIds } = defineProps<{
   eventHandlers: DialogEventHandlers;
   loading?: boolean;
-  refreshing?: boolean;
   sectionLoading?: boolean;
   selectedEventIds: number[];
 }>();
@@ -38,7 +36,6 @@ const {
   bridgeSubject,
   closeDialog,
   currentDialog,
-  decodingStatusPersistent,
   modelAddTransaction,
   modelBridgeMatchesOpen,
   modelDialogOpen,
@@ -96,15 +93,6 @@ defineExpose({
       @redecode="eventHandlers.onRedecodeTransaction?.($event)"
       @add="show({ data: $event, type: DIALOG_TYPES.ADD_MISSING_RULE })"
       @dismiss="closeDialog()"
-    />
-
-    <HistoryEventsDecodingStatusDialog
-      v-if="currentDialog.type === DIALOG_TYPES.DECODING_STATUS"
-      v-model="modelDialogOpen"
-      :refreshing="refreshing"
-      :persistent="decodingStatusPersistent"
-      @redecode-all-events="eventHandlers.onRedecodeAllEvents?.()"
-      @reset-undecoded-transactions="eventHandlers.onResetUndecodedTransactions?.()"
     />
 
     <AccountingRuleFormDialog

@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
+import type { Ref, WritableComputedRef } from 'vue';
 import type { DialogState } from '@/modules/history/events/dialog-manager/types';
 import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
@@ -42,8 +42,6 @@ export interface UseHistoryEventsDialogContainerReturn {
   modelDialogOpen: WritableComputedRef<boolean>;
   /** `v-model` for the add-transaction form, which the manager stores rather than the component. */
   modelAddTransaction: WritableComputedRef<AddTransactionHashPayload | undefined>;
-  /** Whether the decoding status dialog refuses to close on a click outside. */
-  decodingStatusPersistent: ComputedRef<boolean>;
   /** The movement whose potential matches are being shown, if any. */
   movementSubject: Readonly<Ref<UnmatchedAssetMovement | undefined>>;
   /** `v-model` for the movement potential-matches dialog. */
@@ -102,11 +100,6 @@ export function useHistoryEventsDialogContainer(
     set: () => closeDialog(),
   });
 
-  const decodingStatusPersistent = computed<boolean>(() => {
-    const dialog = get(currentDialog);
-    return dialog.type === DIALOG_TYPES.DECODING_STATUS ? (dialog.data?.persistent ?? false) : false;
-  });
-
   const modelAddTransaction = computed({
     get: () => {
       const dialog = get(currentDialog);
@@ -158,7 +151,6 @@ export function useHistoryEventsDialogContainer(
     bridgeSubject: bridge.subject,
     closeDialog,
     currentDialog,
-    decodingStatusPersistent,
     modelAddTransaction,
     modelBridgeMatchesOpen: bridge.modelOpen,
     modelDialogOpen,

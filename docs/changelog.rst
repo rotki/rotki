@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` The transaction decoding status dialog is removed from the history page menu, since the task panel already shows decoding progress by chain. The "undecoded transactions" row in the action center now starts decoding directly instead of opening the dialog, and redecoding everything stays available from the redecode button above the events table.
 * :feature:`-` Premium database backups now show up in the task panel, including the automatic ones rotki runs in the background, so their progress and the reason a backup failed sit with the rest of the background work. The sync menu's buttons are now called Back up and Restore, and confirming either one happens inside the menu.
 * :bug:`-` When the selected month has no upcoming events, the calendar's upcoming events list now keeps to the selected accounts instead of showing events for every account.
 * :bug:`-` The dates under the dashboard net value graph no longer draw on top of each other. Every date now names its month, for example "Jul 17" instead of "17".

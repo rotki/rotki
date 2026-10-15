@@ -6,7 +6,6 @@ import HistoryRefreshButton from '@/modules/history/refresh/HistoryRefreshButton
 defineProps<{
   processing: boolean;
   loading: boolean;
-  includeEvmEvents: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -62,28 +61,6 @@ const menuOpen = ref<boolean>(false);
           <RuiIcon name="lu-ellipsis-vertical" />
         </RuiButton>
       </RuiBadge>
-    </template>
-
-    <template v-if="includeEvmEvents">
-      <RuiButton
-        variant="list"
-        @click="emit('show:dialog', { type: DIALOG_TYPES.DECODING_STATUS })"
-      >
-        <template #prepend>
-          <RuiBadge
-            :model-value="loading"
-            color="primary"
-            dot
-            placement="top"
-            offset-y="4"
-            offset-x="-4"
-          >
-            <RuiIcon name="lu-scroll-text" />
-          </RuiBadge>
-        </template>
-
-        {{ t('transactions.events_decoding.title') }}
-      </RuiButton>
     </template>
 
     <RuiButton
