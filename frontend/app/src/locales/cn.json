@@ -5694,6 +5694,12 @@
       "unsupported": "{provider} 不支持 {chains}。"
     }
   },
+  "rui": {
+    "file_upload": {
+      "too_many": "只能选择一个文件",
+      "wrong_type": "只允许 {accept} 文件"
+    }
+  },
   "settings": {
     "go_to_section": "前往该部分",
     "not_saved": "设置未保存",

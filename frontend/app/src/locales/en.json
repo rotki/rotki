@@ -5838,6 +5838,12 @@
       "unsupported": "{provider} does not serve {chains}."
     }
   },
+  "rui": {
+    "file_upload": {
+      "too_many": "Only one file must be selected",
+      "wrong_type": "Only {accept} files are allowed"
+    }
+  },
   "settings": {
     "go_to_section": "Go to section",
     "not_saved": "Setting not saved",
