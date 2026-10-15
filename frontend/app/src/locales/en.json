@@ -5653,6 +5653,7 @@
       "stale_details": "Missing price and missing acquisition details are only kept for the most recently generated report. Re-generate this report to inspect them."
     },
     "binance_markets_alert": "The following Binance exchange(s) do not have market pairs configured: \n{exchanges}.\n\n Please configure market pairs before generating a report.",
+    "cancel_generation": "Stop generating",
     "csv_export_error": "There was an error with export",
     "download_failed": "Download of report is not possible",
     "error": {
