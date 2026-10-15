@@ -5,15 +5,12 @@ import type { RefreshTransactionsParams } from '@/modules/history/events/tx/type
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
 import { type NotificationAction, Priority, Severity } from '@rotki/common';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 
 interface UseHistoryEventsDialogHandlersDeps {
   /** Fetches event data and refreshes associated locations/labels. */
   fetchDataAndLocations: () => Promise<void>;
   /** Forces EVM transaction redecoding for the given payload. */
   forceRedecodeEvmEvents: (data: PullLocationTransactionPayload) => Promise<void>;
-  /** Checks missing events and triggers redecoding with confirmation dialog. */
-  redecodeAllEvents: () => void;
   /** Refreshes transactions with the given parameters. */
   refreshTransactions: (params?: RefreshTransactionsParams) => Promise<void>;
   /** Checks for missing events and redecodes them. */
@@ -21,12 +18,11 @@ interface UseHistoryEventsDialogHandlersDeps {
 }
 
 export function useHistoryEventsDialogHandlers(deps: UseHistoryEventsDialogHandlersDeps): DialogEventHandlers {
-  const { checkMissingEventsAndRedecode, fetchDataAndLocations, forceRedecodeEvmEvents, redecodeAllEvents, refreshTransactions } = deps;
+  const { checkMissingEventsAndRedecode, fetchDataAndLocations, forceRedecodeEvmEvents, refreshTransactions } = deps;
 
   const { t } = useI18n({ useScope: 'global' });
   const router = useRouter();
   const { notify } = useNotifications();
-  const { resetUndecodedTransactionsStatus } = useDecodingStatusStore();
 
   const handleTransactionRedecode = async (txRef: LocationAndTxRef): Promise<void> => {
     await forceRedecodeEvmEvents({ transactions: [txRef] });
@@ -34,7 +30,6 @@ export function useHistoryEventsDialogHandlers(deps: UseHistoryEventsDialogHandl
 
   return {
     onHistoryEventSaved: fetchDataAndLocations,
-    onRedecodeAllEvents: redecodeAllEvents,
     onRedecodeTransaction: handleTransactionRedecode,
     onRepullExchangeEvents: async (exchanges: Exchange[]): Promise<void> => {
       await refreshTransactions({
@@ -71,9 +66,6 @@ export function useHistoryEventsDialogHandlers(deps: UseHistoryEventsDialogHandl
         severity: Severity.INFO,
         title: t('actions.repulling_transaction.task.title'),
       });
-    },
-    onResetUndecodedTransactions: (): void => {
-      resetUndecodedTransactionsStatus();
     },
     onTransactionAdded: handleTransactionRedecode,
   };

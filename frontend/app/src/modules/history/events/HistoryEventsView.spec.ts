@@ -125,7 +125,7 @@ function stub(name: string, emits: string[] = [], props: string[] = []): DefineC
   });
 }
 
-const ViewButtonsStub = stub('HistoryEventsViewButtons', ['refresh', 'show:dialog'], ['includeEvmEvents', 'loading', 'processing']);
+const ViewButtonsStub = stub('HistoryEventsViewButtons', ['refresh', 'show:dialog'], ['loading', 'processing']);
 const TableActionsStub = stub('HistoryEventsTableActions', ['redecode', 'selection:action', 'update:action', 'update:locationLabels'], ['fields', 'hideRedecodeButtons', 'ignoreStatus', 'processing', 'selection']);
 const FiltersChipsStub = stub('HistoryEventsFiltersChips', ['refresh'], ['duplicateHandlingStatus', 'groupIdentifiers']);
 const VirtualTableStub = stub('HistoryEventsVirtualTable', ['clear-filters', 'refresh', 'refresh:block-event', 'set-page', 'show:dialog', 'update-event-ids'], ['duplicateHandlingStatus', 'hasActiveFilters', 'highlight', 'processing', 'source']);
@@ -388,12 +388,6 @@ describe('modules/history/events/HistoryEventsView', () => {
       await nextTick();
 
       expect(refreshAll).toHaveBeenCalledWith(true, true);
-    });
-
-    it('should be told whether evm events are included', () => {
-      const view = mountView({ mainPage: true });
-
-      expect(view.findComponent(ViewButtonsStub).props('includeEvmEvents')).toBe(true);
     });
   });
 });

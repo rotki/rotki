@@ -26,10 +26,6 @@ vi.mock('@/modules/history/events/dialog-components', async () => {
     BridgePotentialMatchesDialog: stubDialog('BridgePotentialMatchesDialog', ['matched', 'pinned']),
     CustomizedEventDuplicatesDialog: stubDialog('CustomizedEventDuplicatesDialog'),
     HistoryEventFormDialog: stubDialog('HistoryEventFormDialog', ['refresh']),
-    HistoryEventsDecodingStatusDialog: stubDialog('HistoryEventsDecodingStatusDialog', [
-      'redecode-all-events',
-      'reset-undecoded-transactions',
-    ]),
     InternalTxConflictsDialog: stubDialog('InternalTxConflictsDialog'),
     MatchAssetMovementsDialog: stubDialog('MatchAssetMovementsDialog', ['find-match', 'refresh']),
     MatchBridgeTransactionsDialog: stubDialog('MatchBridgeTransactionsDialog', ['find-match']),
@@ -49,7 +45,6 @@ const container = {
   bridgeSubject: ref<UnmatchedBridgeTransaction | undefined>(),
   closeDialog: vi.fn(),
   currentDialog: ref<DialogState>({ type: 'closed' }),
-  decodingStatusPersistent: ref<boolean>(false),
   modelAddTransaction: ref<unknown>(),
   modelBridgeMatchesOpen: ref<boolean>(false),
   modelDialogOpen: ref<boolean>(true),
@@ -82,9 +77,7 @@ describe('modules/history/events/HistoryEventsDialogContainer', () => {
 
   const eventHandlers: DialogEventHandlers = {
     onHistoryEventSaved: vi.fn(),
-    onRedecodeAllEvents: vi.fn(),
     onRedecodeTransaction: vi.fn(),
-    onResetUndecodedTransactions: vi.fn(),
     onTransactionAdded: vi.fn(),
   };
 
@@ -104,7 +97,6 @@ describe('modules/history/events/HistoryEventsDialogContainer', () => {
     vi.clearAllMocks();
     set(container.bridgeSubject, undefined);
     set(container.currentDialog, { type: 'closed' });
-    set(container.decodingStatusPersistent, false);
     set(container.modelBridgeMatchesOpen, false);
     set(container.modelDialogOpen, true);
     set(container.modelMovementMatchesOpen, false);
@@ -130,7 +122,6 @@ describe('modules/history/events/HistoryEventsDialogContainer', () => {
     [DIALOG_TYPES.TRANSACTION_FORM, 'TransactionFormDialog'],
     [DIALOG_TYPES.REPULLING_TRANSACTION, 'RepullingTransactionFormDialog'],
     [DIALOG_TYPES.MISSING_RULES, 'MissingRulesDialog'],
-    [DIALOG_TYPES.DECODING_STATUS, 'HistoryEventsDecodingStatusDialog'],
     [DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES, 'CustomizedEventDuplicatesDialog'],
     [DIALOG_TYPES.INTERNAL_TX_CONFLICTS, 'InternalTxConflictsDialog'],
     [DIALOG_TYPES.MATCH_ASSET_MOVEMENTS, 'MatchAssetMovementsDialog'],
@@ -145,16 +136,6 @@ describe('modules/history/events/HistoryEventsDialogContainer', () => {
 
     expect(rendered).toStrictEqual(expect.arrayContaining([expected, ...ALWAYS_RENDERED]));
     expect(rendered).toHaveLength(ALWAYS_RENDERED.length + 1);
-  });
-
-  it('should give the decoding status dialog what the composable decided about persistence', () => {
-    set(container.currentDialog, createMock<DialogState>({ type: DIALOG_TYPES.DECODING_STATUS }));
-    set(container.decodingStatusPersistent, true);
-    const view = mountContainer({ refreshing: true });
-
-    const dialog = view.findComponent(stubs.HistoryEventsDecodingStatusDialog);
-    expect(dialog.attributes('persistent')).toBeDefined();
-    expect(dialog.attributes('refreshing')).toBeDefined();
   });
 
   describe('where each dialog reports to', () => {
@@ -198,19 +179,6 @@ describe('modules/history/events/HistoryEventsDialogContainer', () => {
       });
       expect(eventHandlers.onRedecodeTransaction).toHaveBeenCalledWith({ location: 'ethereum', txRef: '0xabc' });
       expect(container.closeDialog).toHaveBeenCalledTimes(1);
-    });
-
-    it('should route the decoding status actions to their handlers', async () => {
-      set(container.currentDialog, createMock<DialogState>({ type: DIALOG_TYPES.DECODING_STATUS }));
-      const view = mountContainer();
-      const dialog = view.findComponent(stubs.HistoryEventsDecodingStatusDialog);
-
-      dialog.vm.$emit('redecode-all-events');
-      dialog.vm.$emit('reset-undecoded-transactions');
-      await nextTick();
-
-      expect(eventHandlers.onRedecodeAllEvents).toHaveBeenCalledTimes(1);
-      expect(eventHandlers.onResetUndecodedTransactions).toHaveBeenCalledTimes(1);
     });
 
     it('should report an accounting rule change to the page', async () => {

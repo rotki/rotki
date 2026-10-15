@@ -6722,23 +6722,9 @@
       }
     },
     "events_decoding": {
-      "actions": {
-        "redecode_missing_events": "重新解码缺失事件"
-      },
       "confirmation": "此操作将重新解码除自定义事件以外的所有事件，根据待处理交易的数量可能耗时较长。确定要继续吗？",
-      "decoded": {
-        "false": "有部分交易需要处理。",
-        "not_started": "交易查询完成后将继续解码。",
-        "true": "所有交易均已处理。"
-      },
-      "fetching": "正在检查交易解码状态",
-      "preparing": "正在解码交易，请稍候...",
-      "progress": "进度",
       "redecode": "重新解码",
-      "redecode_all": "重新解码所有交易",
-      "title": "交易解码状态",
-      "transactions_processed": "已处理 {processed} / {total} 笔交易",
-      "undecoded_transactions": "未解码交易"
+      "redecode_all": "重新解码所有交易"
     },
     "filter": {
       "account": "按账户筛选",

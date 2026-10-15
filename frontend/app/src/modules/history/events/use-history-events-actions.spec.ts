@@ -135,7 +135,6 @@ describe('useHistoryEventsActions', () => {
         ...options,
         mainPage: ref(true),
         shouldFetchEventsRegularly: ref(true),
-        showDialog: vi.fn(),
       }));
 
       useHistoryStore().signalEventsModified();
@@ -153,7 +152,7 @@ describe('useHistoryEventsActions', () => {
       const refetch = vi.fn<() => Promise<void>>(async () => new Promise<void>((resolve) => {
         resolvers.push(resolve);
       }));
-      const actions = useHistoryEventsActions({ ...createOptions(), refetch, mainPage: ref(false), showDialog: vi.fn() });
+      const actions = useHistoryEventsActions({ ...createOptions(), refetch, mainPage: ref(false) });
       return {
         finish: (): void => resolvers.shift()?.(),
         read: actions.fetch.dataAndLocations,

@@ -6916,23 +6916,9 @@
       }
     },
     "events_decoding": {
-      "actions": {
-        "redecode_missing_events": "Redecode missing events"
-      },
       "confirmation": "This action will redecode all the events except the customized ones, and may take a long time depending on the amount of transactions to process. Are you sure you want to continue?",
-      "decoded": {
-        "false": "Some transactions need to be processed.",
-        "not_started": "The decoding process will continue after transaction querying is done.",
-        "true": "All transactions have been processed."
-      },
-      "fetching": "Checking transaction decoding status",
-      "preparing": "Decoding transactions, please wait...",
-      "progress": "Progress",
       "redecode": "Redecode",
-      "redecode_all": "Redecode All Transactions",
-      "title": "Transaction decoding status",
-      "transactions_processed": "{processed} / {total} transactions processed",
-      "undecoded_transactions": "Undecoded transactions"
+      "redecode_all": "Redecode All Transactions"
     },
     "filter": {
       "account": "Filter by account",

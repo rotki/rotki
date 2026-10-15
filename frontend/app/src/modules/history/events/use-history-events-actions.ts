@@ -42,8 +42,6 @@ interface UseHistoryEventsActionsOptions {
   mainPage?: MaybeRefOrGetter<boolean>;
   /** When provided, enables periodic auto-fetching of events. */
   shouldFetchEventsRegularly?: Ref<boolean>;
-  /** Opens a dialog (e.g. decoding status) when redecoding all events. */
-  showDialog?: (options: { type: 'decodingStatus'; persistent?: boolean }) => Promise<void>;
 }
 
 interface UseHistoryEventsActionsReturn {
@@ -75,7 +73,6 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     mainPage,
     onlyChains,
     shouldFetchEventsRegularly,
-    showDialog,
   } = options;
 
   const { t } = useI18n({ useScope: 'global' });
@@ -215,9 +212,6 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   function redecodeAllEvents(): void {
-    if (showDialog)
-      startPromise(showDialog({ persistent: true, type: 'decodingStatus' }));
-
     show({
       message: t('transactions.events_decoding.confirmation'),
       title: t('transactions.events_decoding.redecode_all'),
@@ -269,7 +263,6 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     checkMissingEventsAndRedecode,
     fetchDataAndLocations,
     forceRedecodeEvmEvents,
-    redecodeAllEvents,
     refreshTransactions,
   });
 

@@ -106,29 +106,6 @@ describe('useHistoryEventsDialogContainer', () => {
     });
   });
 
-  describe('the decoding status dialog', () => {
-    it('should not be persistent by default', () => {
-      set(currentDialog, { data: { persistent: false }, type: DIALOG_TYPES.DECODING_STATUS });
-      const { container } = mountContainer();
-
-      expect(get(container.decodingStatusPersistent)).toBe(false);
-    });
-
-    it('should be persistent when the manager asked for it', () => {
-      set(currentDialog, { data: { persistent: true }, type: DIALOG_TYPES.DECODING_STATUS });
-      const { container } = mountContainer();
-
-      expect(get(container.decodingStatusPersistent)).toBe(true);
-    });
-
-    it('should not be persistent while a different dialog is open', () => {
-      set(currentDialog, { data: undefined, type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
-      const { container } = mountContainer();
-
-      expect(get(container.decodingStatusPersistent)).toBe(false);
-    });
-  });
-
   describe('the add transaction form', () => {
     it('should read the payload the manager holds', () => {
       const data = { associatedAddress: '0x1', blockchain: 'eth', txRef: '0xabc' };

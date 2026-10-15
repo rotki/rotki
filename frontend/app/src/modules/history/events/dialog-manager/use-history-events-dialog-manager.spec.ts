@@ -50,12 +50,6 @@ describe('useHistoryEventsDialogManager', () => {
     });
   });
 
-  it('should carry the persistent flag into the decoding-status dialog', async () => {
-    const { currentDialog, show } = useHistoryEventsDialogManager();
-    await show({ persistent: true, type: DIALOG_TYPES.DECODING_STATUS });
-    expect(get(currentDialog)).toEqual({ data: { persistent: true }, type: DIALOG_TYPES.DECODING_STATUS });
-  });
-
   it('should open dataless dialogs', async () => {
     const { currentDialog, show } = useHistoryEventsDialogManager();
     await show({ type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });

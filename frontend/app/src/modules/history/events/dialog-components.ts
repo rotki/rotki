@@ -35,11 +35,6 @@ export const HistoryEventFormDialog = lazyDialog(
   async () => import('@/modules/history/events/HistoryEventFormDialog.vue'),
 );
 
-// No placeholder: the status dialog is small enough that one would only flash.
-export const HistoryEventsDecodingStatusDialog: Component = defineAsyncComponent(
-  async () => import('@/modules/history/events/HistoryEventsDecodingStatusDialog.vue'),
-);
-
 export const RepullingTransactionFormDialog = lazyDialog(
   async () => import('@/modules/history/events/tx/RepullingTransactionFormDialog.vue'),
 );

@@ -5,10 +5,14 @@ import { computed } from 'vue';
 import { useUndecodedTransactionsCount } from '@/modules/history/events/tx/use-undecoded-transactions-count';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 
-const state = vi.hoisted((): { processing: boolean } => ({ processing: false }));
+const state = vi.hoisted(() => ({
+  checkMissingEventsAndRedecode: vi.fn<() => Promise<void>>(async () => {}),
+  processing: false,
+}));
 
 vi.mock('@/modules/history/events/tx/use-history-transaction-decoding', () => ({
   useHistoryTransactionDecoding: (): Record<string, unknown> => ({
+    checkMissingEventsAndRedecode: state.checkMissingEventsAndRedecode,
     fetchUndecodedTransactionsBreakdown: vi.fn().mockResolvedValue(undefined),
   }),
 }));
@@ -67,5 +71,11 @@ describe('useUndecodedTransactionsCount', () => {
 
     const { undecodedCount } = useUndecodedTransactionsCount(() => false);
     expect(get(undecodedCount)).toBe(8);
+  });
+
+  it('should decode what is missing in the background', () => {
+    const { decodeMissing } = useUndecodedTransactionsCount();
+    decodeMissing();
+    expect(state.checkMissingEventsAndRedecode).toHaveBeenCalledOnce();
   });
 });

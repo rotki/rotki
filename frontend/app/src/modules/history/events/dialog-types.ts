@@ -13,7 +13,6 @@ export const DIALOG_TYPES = {
   ADD_MISSING_RULE: 'addMissingRule',
   ADD_TRANSACTION: 'addTransaction',
   CUSTOMIZED_EVENT_DUPLICATES: 'customizedEventDuplicates',
-  DECODING_STATUS: 'decodingStatus',
   EVENT_FORM: 'eventForm',
   INTERNAL_TX_CONFLICTS: 'internalTxConflicts',
   MATCH_ASSET_MOVEMENTS: 'matchAssetMovements',
@@ -29,7 +28,6 @@ export type DialogShowOptions =
   | { type: typeof DIALOG_TYPES.ADD_MISSING_RULE; data: AccountingRuleIdentifier }
   | { type: typeof DIALOG_TYPES.ADD_TRANSACTION }
   | { type: typeof DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES }
-  | { type: typeof DIALOG_TYPES.DECODING_STATUS; persistent?: boolean }
   | { type: typeof DIALOG_TYPES.EVENT_FORM; data: GroupEventData | StandaloneEventData }
   | { type: typeof DIALOG_TYPES.INTERNAL_TX_CONFLICTS }
   | { type: typeof DIALOG_TYPES.MATCH_ASSET_MOVEMENTS }
@@ -50,6 +48,4 @@ export interface DialogEventHandlers {
   onRepullTransactions?: (result: RepullingTransactionResult) => void | Promise<void>;
   onRepullExchangeEvents?: (exchanges: Exchange[]) => Promise<void>;
   onRedecodeTransaction?: (payload: LocationAndTxRef) => void | Promise<void>;
-  onRedecodeAllEvents?: () => void | Promise<void>;
-  onResetUndecodedTransactions?: () => void | Promise<void>;
 }

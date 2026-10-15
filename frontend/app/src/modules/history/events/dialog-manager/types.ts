@@ -8,7 +8,6 @@ import type {
 
 export type DialogState =
   | { type: typeof DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES; data: undefined }
-  | { type: typeof DIALOG_TYPES.DECODING_STATUS; data: { persistent: boolean } }
   | { type: typeof DIALOG_TYPES.EVENT_FORM; data: GroupEventData | StandaloneEventData }
   | { type: typeof DIALOG_TYPES.INTERNAL_TX_CONFLICTS; data: undefined }
   | { type: typeof DIALOG_TYPES.MATCH_ASSET_MOVEMENTS; data: undefined }

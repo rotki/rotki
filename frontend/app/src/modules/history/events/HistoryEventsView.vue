@@ -88,7 +88,6 @@ const {
   highlightedIdentifiers,
   highlightTypes,
   identifiers,
-  includes,
   action,
   locationLabels,
   onActionChanged,
@@ -202,7 +201,6 @@ useHistoryEventsDialogRouting(dialogContainer);
         <HistoryEventsViewButtons
           :processing="processing"
           :loading="anyEventsDecoding"
-          :include-evm-events="includes.evmEvents"
           @refresh="actions.refresh.all(true, $event)"
           @show:dialog="dialogContainer?.show($event)"
         />
@@ -282,7 +280,6 @@ useHistoryEventsDialogRouting(dialogContainer);
           ref="dialogContainer"
           v-model:accounting-rule-to-edit="modelAccountingRuleToEdit"
           :loading="processing"
-          :refreshing="refreshing"
           :section-loading="sectionLoading"
           :event-handlers="actions.dialogHandlers"
           :selected-event-ids="selectedEventIds"
