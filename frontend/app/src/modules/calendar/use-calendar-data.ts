@@ -61,19 +61,23 @@ export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendar
     };
   });
 
+  /** The account filter as the API takes it, shared by the month query and the upcoming-events fallback. */
+  const accountFilter = computed<NonNullable<CalendarEventRequestPayload['accounts']>>(() =>
+    get(accounts).map((account) => {
+      const chain = account.chain;
+      return {
+        address: getAccountAddress(account),
+        ...(chain !== 'ALL' && isBlockchain(chain) ? { blockchain: chain } : {}),
+      };
+    }),
+  );
+
   const requestParams = computed<Record<string, unknown>>(() => {
     const params: Writeable<Partial<CalendarEventRequestPayload>> = {};
-    const accountsVal = get(accounts);
+    const filter = get(accountFilter);
 
-    if (accountsVal.length > 0) {
-      params.accounts = accountsVal.map((account) => {
-        const chain = account.chain;
-        return {
-          address: getAccountAddress(account),
-          ...(chain !== 'ALL' && isBlockchain(chain) ? { blockchain: chain } : {}),
-        };
-      });
-    }
+    if (filter.length > 0)
+      params.accounts = filter;
 
     return params;
   });
@@ -154,12 +158,14 @@ export function useCalendarData(accounts: Ref<BlockchainAccount[]>): UseCalendar
       set(upcomingEvents, upcomingEventsData.slice(0, 5));
     }
     else {
+      const filter = get(accountFilter);
       const data = await fetchCalendarEvents({
         ascending: [true],
         fromTimestamp: today.add(1, 'day').startOf('day').unix(),
         limit: 5,
         offset: 0,
         orderByAttributes: ['timestamp'],
+        ...(filter.length > 0 ? { accounts: filter } : {}),
       });
       set(upcomingEvents, data.data);
     }

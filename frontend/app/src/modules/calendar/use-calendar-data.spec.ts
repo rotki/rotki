@@ -278,5 +278,18 @@ describe('useCalendarData', () => {
       expect(fetchCalendarEvents).toHaveBeenCalled();
       expect(get(upcomingEvents)).toEqual(apiResponse.data);
     });
+
+    it('should keep the account filter when fetching the fresh batch', async () => {
+      const accounts = ref<BlockchainAccount[]>([makeAccount('0xabc', 'eth')]);
+      createCalendarData(accounts);
+      await flushPromises();
+
+      set(state, { data: [], found: 0, limit: 10, total: 1 });
+      await flushPromises();
+
+      expect(fetchCalendarEvents).toHaveBeenCalledWith(expect.objectContaining({
+        accounts: [{ address: '0xabc', blockchain: 'eth' }],
+      }));
+    });
   });
 });
