@@ -13,8 +13,9 @@ import { fillsFrame } from '@/modules/shell/components/icon-mark-shape';
  *
  * A logo that fills the circle by itself (a full-bleed square, or one with its own disc) is cropped
  * to it and reads as a disc in its own colours. A glyph on a transparent ground gets a backing so it
- * reads as a circle too: a faint tint on a light page, darker than whatever surface it sits on
- * (a white table row or a grey tile alike), white on a dark one so its dark strokes stay
+ * reads as a circle too: a faint tint ringed by a hairline on a light page, darker than whatever
+ * surface it sits on (a white table row or a grey tile alike) and drawn to the same size as a logo
+ * that fills its circle, white on a dark one so its dark strokes stay
  * visible, or black for a logo drawn for dark pages (`backing="dark"`).
  *
  * Only for raster or SVG logos: generated text icons, blockies and line icons are already drawn for
@@ -58,8 +59,8 @@ const frameClass = computed<string>(() => {
   if (get(fills))
     return '';
   return backing === 'dark'
-    ? 'bg-rui-neutral-950/[0.06] dark:bg-black'
-    : 'bg-rui-neutral-950/[0.06] dark:bg-white';
+    ? 'bg-rui-neutral-950/[0.06] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)] dark:bg-black dark:shadow-none'
+    : 'bg-rui-neutral-950/[0.06] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)] dark:bg-white dark:shadow-none';
 });
 
 watch(() => src, () => {
