@@ -832,4 +832,31 @@ describe('useAggregatedBalances', () => {
       }]);
     });
   });
+
+  describe('getExchangeBalances', () => {
+    beforeEach(() => {
+      useLocationStore().$patch({
+        allLocations: {
+          kraken: { image: 'kraken.svg' },
+          qonto: { image: 'qonto.svg', isBank: true },
+        },
+      });
+      const { exchangeBalances } = storeToRefs(useBalancesStore());
+      set(exchangeBalances, {
+        kraken: { BTC: createTestBalance(1, 40000) },
+        qonto: { EUR: createTestBalance(500, 500) },
+      });
+    });
+
+    it('should leave bank balances out of every exchange together', () => {
+      const { getExchangeBalances } = useAggregatedBalances();
+      expect(getExchangeBalances().map(row => row.asset)).toEqual(['BTC']);
+    });
+
+    it('should still read a single location as asked', () => {
+      const { getExchangeBalances } = useAggregatedBalances();
+      expect(getExchangeBalances('kraken').map(row => row.asset)).toEqual(['BTC']);
+      expect(getExchangeBalances('qonto').map(row => row.asset)).toEqual(['EUR']);
+    });
+  });
 });
