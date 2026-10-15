@@ -68,8 +68,8 @@ test.describe.serial('task dock', () => {
     await dock.expectStopAllOffered(true);
 
     await dock.stopAll();
-    await dock.expectDialog('Stop all', 'This stops 2 refreshes and syncs.');
-    await dock.dismissDialog();
+    await dock.expectStopAllPrompt('This stops 2 refreshes and syncs.');
+    await dock.keepAllRunning();
 
     await dock.expectRow(AIRDROPS, 'running');
     await dock.expectRow(ALL_BALANCES, 'running');
@@ -87,9 +87,9 @@ test.describe.serial('task dock', () => {
     await dock.expectRow(PNL_REPORT, 'running');
 
     await dock.stopAll();
-    await dock.expectDialog('Stop all', 'This stops 2 refreshes and syncs.');
-    await dock.expectDialog('Stop all', KEPT_RUNNING);
-    await dock.confirmDialog();
+    await dock.expectStopAllPrompt('This stops 2 refreshes and syncs.');
+    await dock.expectStopAllPrompt(KEPT_RUNNING);
+    await dock.confirmStopAll();
 
     await held.expectCancelled(['airdrops', 'balances']);
     await dock.expectRow(AIRDROPS, 'cancelled');
@@ -105,8 +105,8 @@ test.describe.serial('task dock', () => {
     await dock.expectRowMeter(PNL_REPORT, '64 of 100');
 
     await dock.cancelRow(PNL_REPORT);
-    await dock.expectDialog('Stop', 'leaves it unfinished');
-    await dock.confirmDialog();
+    await dock.expectRowStopPrompt(PNL_REPORT, 'It stays unfinished.');
+    await dock.confirmRowStop(PNL_REPORT);
 
     await held.expectCancelled(['airdrops', 'balances', 'pnl']);
     await dock.expectRow(PNL_REPORT, 'cancelled');

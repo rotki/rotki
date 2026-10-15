@@ -129,6 +129,7 @@ describe('dockJobNode', () => {
       const wrapper = mountTree(running());
 
       await wrapper.find('[data-testid=cancel-activity]').trigger('click');
+      await wrapper.find('[data-testid=activity-stop]').trigger('click');
 
       expect(wrapper.emitted('cancel')).toHaveLength(1);
     });
@@ -138,6 +139,7 @@ describe('dockJobNode', () => {
 
       await wrapper.find('[aria-expanded]').trigger('click');
       await wrapper.findAll('[data-testid=cancel-activity]').at(-1)?.trigger('click');
+      await wrapper.find('[data-testid=activity-stop]').trigger('click');
 
       expect(wrapper.emitted('cancel')).toHaveLength(1);
     });

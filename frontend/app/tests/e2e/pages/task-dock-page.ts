@@ -3,16 +3,14 @@ import { TIMEOUT_MEDIUM } from '../helpers/constants';
 
 type RowStatus = 'cancelled' | 'complete' | 'failed' | 'pending' | 'running' | 'skipped';
 
-/** The corner task dock: its pill, its panel, and the Stop all confirmation it raises. */
+/** The corner task dock: its pill, its panel, and the stop confirmations it asks in place. */
 export class TaskDockPage {
   private readonly pill: Locator;
   private readonly panel: Locator;
-  private readonly dialog: Locator;
 
   constructor(private readonly page: Page) {
     this.pill = page.getByTestId('task-dock-pill');
     this.panel = page.getByTestId('task-dock-panel');
-    this.dialog = page.getByTestId('confirm-dialog');
   }
 
   /**
@@ -58,28 +56,37 @@ export class TaskDockPage {
       await expect(button).toBeHidden({ timeout: TIMEOUT_MEDIUM });
   }
 
+  /** Asks to stop all, leaving the footer's question open. */
   async stopAll(): Promise<void> {
     await this.panel.getByTestId('dock-stop-all').click();
-    await expect(this.dialog).toBeVisible({ timeout: TIMEOUT_MEDIUM });
+    await expect(this.panel.getByTestId('dock-stop-all-confirm')).toBeVisible({ timeout: TIMEOUT_MEDIUM });
   }
 
+  async expectStopAllPrompt(message: string | RegExp): Promise<void> {
+    await expect(this.panel.getByTestId('dock-stop-all-confirm')).toContainText(message);
+  }
+
+  async keepAllRunning(): Promise<void> {
+    await this.panel.getByTestId('dock-keep-running').click();
+    await expect(this.panel.getByTestId('dock-stop-all-confirm')).toBeHidden({ timeout: TIMEOUT_MEDIUM });
+  }
+
+  async confirmStopAll(): Promise<void> {
+    await this.panel.getByTestId('dock-stop-all-confirmed').click();
+    await expect(this.panel.getByTestId('dock-stop-all-confirm')).toBeHidden({ timeout: TIMEOUT_MEDIUM });
+  }
+
+  /** Asks to stop one row, leaving the row's question open. */
   async cancelRow(label: string): Promise<void> {
     await this.row(label).getByTestId('cancel-activity').click();
-    await expect(this.dialog).toBeVisible({ timeout: TIMEOUT_MEDIUM });
+    await expect(this.row(label).getByTestId('activity-stop-confirm')).toBeVisible({ timeout: TIMEOUT_MEDIUM });
   }
 
-  async expectDialog(title: string, message: string | RegExp): Promise<void> {
-    await expect(this.dialog.getByTestId('dialog-title')).toHaveText(title);
-    await expect(this.dialog).toContainText(message);
+  async expectRowStopPrompt(label: string, message: string | RegExp): Promise<void> {
+    await expect(this.row(label).getByTestId('activity-stop-confirm')).toContainText(message);
   }
 
-  async dismissDialog(): Promise<void> {
-    await this.dialog.getByTestId('button-cancel').click();
-    await expect(this.dialog).toBeHidden({ timeout: TIMEOUT_MEDIUM });
-  }
-
-  async confirmDialog(): Promise<void> {
-    await this.dialog.getByTestId('button-confirm').click();
-    await expect(this.dialog).toBeHidden({ timeout: TIMEOUT_MEDIUM });
+  async confirmRowStop(label: string): Promise<void> {
+    await this.row(label).getByTestId('activity-stop').click();
   }
 }

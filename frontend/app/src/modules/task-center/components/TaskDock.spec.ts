@@ -14,8 +14,7 @@ import {
 } from '@/modules/task-center/core/types';
 
 const activities = ref<Activity[]>([]);
-const confirmCancel = vi.fn<(activity: Activity) => void>();
-const confirmCancelAll = vi.fn<(targets: Activity[], keptRunning: number) => void>();
+const cancel = vi.fn<(activity: Activity) => Promise<void>>(async () => {});
 const rerun = vi.fn<(activity: Activity) => void>();
 
 vi.mock('@/modules/task-center/use-task-center', () => ({
@@ -25,12 +24,8 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
   },
 }));
 
-vi.mock('@/modules/task-center/use-cancel-confirmation', () => ({
-  useCancelConfirmation: (): { confirmCancel: typeof confirmCancel; confirmCancelAll: typeof confirmCancelAll } => ({ confirmCancel, confirmCancelAll }),
-}));
-
 vi.mock('@/modules/task-center/use-task-controller', () => ({
-  useTaskController: (): { rerun: typeof rerun } => ({ rerun }),
+  useTaskController: (): { cancel: typeof cancel; rerun: typeof rerun } => ({ cancel, rerun }),
 }));
 
 vi.mock('@/modules/settings/use-setting', () => ({
@@ -105,10 +100,26 @@ describe('taskDock', () => {
 
       await wrapper.find('[data-testid=dock-stop-all]').trigger('click');
 
-      expect(confirmCancelAll).toHaveBeenCalledOnce();
-      const [targets, keptRunning] = confirmCancelAll.mock.calls[0] ?? [];
-      expect(targets?.map(target => target.kind).sort()).toEqual([ActivityKind.BLOCKCHAIN_BALANCES, ActivityKind.HISTORY_SYNC]);
-      expect(keptRunning).toBe(1);
+      expect(cancel).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-testid=dock-stop-all-confirm]').text())
+        .toContain('task_dock.panel.stop_all_info::2 task_dock.panel.stop_all_kept::1');
+
+      await wrapper.find('[data-testid=dock-stop-all-confirmed]').trigger('click');
+
+      expect(cancel.mock.calls.map(([target]) => target.kind).sort()).toEqual([ActivityKind.BLOCKCHAIN_BALANCES, ActivityKind.HISTORY_SYNC]);
+      expect(wrapper.find('[data-testid=dock-stop-all-confirm]').exists()).toBe(false);
+    });
+
+    it('should stop nothing when the user keeps the jobs running', async () => {
+      set(activities, [...refresh(ActivityStatus.RUNNING), activity(ActivityKind.BLOCKCHAIN_BALANCES, 'eth', ActivityStatus.RUNNING)]);
+      const wrapper = createWrapper();
+
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+      await wrapper.find('[data-testid=dock-stop-all]').trigger('click');
+      await wrapper.find('[data-testid=dock-keep-running]').trigger('click');
+
+      expect(cancel).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-testid=dock-stop-all]').exists()).toBe(true);
     });
 
     it('should not offer stop all when only one of the running jobs is safe to interrupt', async () => {
@@ -284,14 +295,18 @@ describe('taskDock', () => {
     expect(wrapper.find('[data-testid=task-dock-panel]').exists()).toBe(false);
   });
 
-  it('should ask for confirmation before cancelling a row', async () => {
+  it('should ask in the row before cancelling it', async () => {
     set(activities, [activity(ActivityKind.TX_SYNC, 'ethereum', ActivityStatus.RUNNING)]);
     const wrapper = createWrapper();
 
     await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
     await wrapper.find('[data-testid=cancel-activity]').trigger('click');
 
-    expect(confirmCancel).toHaveBeenCalledOnce();
+    expect(cancel).not.toHaveBeenCalled();
+
+    await wrapper.find('[data-testid=activity-stop]').trigger('click');
+
+    expect(cancel).toHaveBeenCalledOnce();
   });
 
   describe('once the run settles', () => {

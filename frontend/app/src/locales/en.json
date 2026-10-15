@@ -6393,7 +6393,7 @@
       "stop_all": "Stop all",
       "stop_all_info": "This stops {count} refresh or sync. What it already fetched is kept, and running it again finishes the rest. | This stops {count} refreshes and syncs. What they already fetched is kept, and running them again finishes the rest.",
       "stop_all_kept": "{count} task that changes your data keeps running, since stopping it could leave the data half-written. | {count} tasks that change your data keep running, since stopping them could leave the data half-written.",
-      "stop_info": "This stops {title} and leaves it unfinished.",
+      "stop_confirm": "Stop it? It stays unfinished.",
       "title": {
         "attention": "Needs attention",
         "finished": "Finished",
