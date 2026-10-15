@@ -19,7 +19,7 @@ from rotkehlchen.db.constants import TX_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError, RequestTooLargeError
+from rotkehlchen.errors.misc import RecoverableRemoteError, RemoteError, RequestTooLargeError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import get_earliest_ts
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -197,7 +197,7 @@ class EtherscanLikeApi(ABC):
         May raise RemoteError if the rate limit is exceeded even after backing off.
         """
         if current_backoff >= backoff_limit:
-            raise RemoteError(
+            raise RecoverableRemoteError(
                 f'Getting {self.name} too many requests error '
                 f'even after we incrementally backed off while querying {chain_id}',
             )
@@ -386,7 +386,7 @@ class EtherscanLikeApi(ABC):
             try:
                 response = self.session.get(url=api_url, params=params, timeout=timeout)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'{self.name} API request failed due to {e!s}') from e
+                raise RecoverableRemoteError(f'{self.name} API request failed due to {e!s}') from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 self._rate_limiter.shrink_after_429()
@@ -400,7 +400,12 @@ class EtherscanLikeApi(ABC):
             elif response.status_code == HTTPStatus.REQUEST_URI_TOO_LONG:
                 raise RequestTooLargeError(f'Failed to query {chain_id} due to: request URI too long')  # noqa: E501
             elif response.status_code != 200:
-                raise RemoteError(
+                error_cls = (
+                    RecoverableRemoteError
+                    if response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
+                    else RemoteError
+                )
+                raise error_cls(
                     f'{self.name} API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
@@ -427,7 +432,7 @@ class EtherscanLikeApi(ABC):
                         if still_overloaded:
                             # A previous query already used up its retries on this. Fail fast
                             # so an outage does not add a backoff to every query.
-                            raise RemoteError(
+                            raise RecoverableRemoteError(
                                 f'{self.name} is still overloaded while querying {chain_id}. '
                                 f'Not retrying. Response was: {response.text}',
                             )
@@ -486,7 +491,7 @@ class EtherscanLikeApi(ABC):
             f'due to backing off longer than the max backoff of {backoff_limit} seconds.'
         )
         log.error(msg)
-        raise RemoteError(msg)
+        raise RecoverableRemoteError(msg)
 
     @overload
     def _query_rpc_method(

@@ -43,6 +43,11 @@ class RemoteError(Exception):
         super().__init__(message)
 
 
+class RecoverableRemoteError(RemoteError):
+    """Raised when a remote query failed for a reason that is expected to go away by itself
+    shortly, such as rate limiting, a timeout, a connection problem or a 5xx response."""
+
+
 class APIKeyNotAvailable(RemoteError):
     """Raised when an API key required for a query is not available."""
 

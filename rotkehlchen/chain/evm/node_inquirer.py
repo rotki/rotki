@@ -61,6 +61,7 @@ from rotkehlchen.errors.misc import (
     NoAvailableIndexers,
     NotERC20Conformant,
     NotERC721Conformant,
+    RecoverableRemoteError,
     RemoteError,
     RequestTooLargeError,
 )
@@ -2136,6 +2137,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 isinstance(e, (IndexerRangeNotCovered, ChainNotSupported)) for _, e in errors
         ):
             raise IndexerRangeNotCovered(message)
+
+        # If any indexer failed with an error that may heal by itself (rate limit, timeout,
+        # 5xx) let callers know that trying again later can help.
+        if any(isinstance(e, RecoverableRemoteError) for _, e in errors):
+            raise RecoverableRemoteError(message)
 
         raise RemoteError(message)
 

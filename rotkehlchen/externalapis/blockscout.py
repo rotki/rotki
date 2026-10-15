@@ -17,6 +17,7 @@ from rotkehlchen.errors.misc import (
     BlockscoutIncompleteResponse,
     ChainNotSupported,
     IndexerRangeNotCovered,
+    RecoverableRemoteError,
     RemoteError,
 )
 from rotkehlchen.errors.serialization import DeserializationError
@@ -350,7 +351,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                     **request_kwargs,
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
+                raise RecoverableRemoteError(f'Querying {query_str} failed due to {e!s}') from e
 
             if response.status_code == 429:
                 self._rate_limiter.shrink_after_429()
@@ -361,7 +362,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                         f'{response.text} after {retries_num} retries'
                     )
                     log.debug(msg)
-                    raise RemoteError(msg)
+                    raise RecoverableRemoteError(msg)
 
                 # Rate limited. Try incremental backoff
                 sleep_seconds = backoff_in_seconds * (retries_num - times + 1)
@@ -398,7 +399,8 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 )
 
             if response.status_code != 200:
-                raise RemoteError(
+                error_cls = RecoverableRemoteError if response.status_code >= 500 else RemoteError
+                raise error_cls(
                     f'Blockscout API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',

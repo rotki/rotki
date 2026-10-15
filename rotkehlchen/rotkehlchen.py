@@ -905,7 +905,10 @@ class Rotkehlchen:
             failed_accounts,
             no_activity_accounts,
             evm_contract_addresses,
-        ) = self.chains_aggregator.add_accounts_to_all_evm(accounts=[entry.address for entry in account_data])  # noqa: E501
+        ) = self.chains_aggregator.add_accounts_to_all_evm(
+            accounts=[entry.address for entry in account_data],
+            account_data=account_data_map,
+        )
         with self.data.db.user_write() as write_cursor:
             for chain, address in added_accounts:
                 account_data_entry = account_data_map[address]
