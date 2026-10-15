@@ -836,9 +836,6 @@
         }
       },
       "force_sync": {
-        "error": {
-
-        },
         "success": {
           "message": "The data sync operation was completed successfully.",
           "title": "Forced sync"

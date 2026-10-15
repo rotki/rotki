@@ -832,9 +832,6 @@
         }
       },
       "force_sync": {
-        "error": {
-
-        },
         "success": {
           "message": "数据同步操作成功完成。",
           "title": "强制同步"
@@ -5911,9 +5908,6 @@
       "message_download_relogin": "执行拉取后，需要手动重新登录。",
       "message_upload": "强制推送会覆盖 rotki 服务器上之前同步的所有数据。被覆盖的数据无法恢复，此操作也无法撤销。执行此操作时请务必小心，因为它可能导致意外的数据丢失。继续即表示你了解此操作的风险。",
       "title": "强制推送 | 强制拉取"
-    },
-    "upload_progress": {
-
     }
   },
   "table_filter": {

@@ -836,9 +836,6 @@
         }
       },
       "force_sync": {
-        "error": {
-
-        },
         "success": {
           "message": "Veri senkronizasyonu başarıyla tamamlandı.",
           "title": "Zorunlu senkronizasyon"
@@ -6049,9 +6046,6 @@
       "message_download_relogin": "Çekme işleminden sonra manuel olarak yeniden giriş yapmanız gerekecek.",
       "message_upload": "Zorla gönderdiğinizde rotki sunucusunda bulunan, daha önce senkronize edilmiş tüm verilerin üzerine yazılır. Üzerine yazılan veriler kurtarılamaz ve bu işlem geri alınamaz. İstenmeyen veri kaybına yol açabileceğinden bu işlemi yaparken lütfen dikkatli olun. Devam ederek bu işlemin risklerini anladığınızı kabul etmiş olursunuz.",
       "title": "Zorla gönder | Zorla çek"
-    },
-    "upload_progress": {
-
     }
   },
   "table_filter": {
