@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ImportSourceType } from '@/modules/core/common/upload-types';
+import { RuiFileUpload } from '@rotki/ui-library';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { z, type ZodType } from 'zod';
 import { msg } from '@/message-key';
@@ -13,7 +14,6 @@ import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
-import FileUpload from '@/modules/user-data/FileUpload.vue';
 import { useImportDataApi } from '@/modules/user-data/use-import-data-api';
 
 const { source } = defineProps<{ source: ImportSourceType }>();
@@ -28,6 +28,7 @@ interface ImportState {
   dateInputFormat: string | undefined;
 }
 
+const uploader = useTemplateRef<InstanceType<typeof RuiFileUpload>>('uploader');
 const useCustomTimezone = ref<boolean>(false);
 const timezone = ref<string>();
 const uploaded = ref(false);
@@ -79,11 +80,23 @@ const { useIsActive } = useTaskCenter();
 const loading = useIsActive(ActivityKind.CSV_IMPORT, source);
 const { importDataFrom, importFile } = useImportDataApi();
 
-/** An import only counts as done when the task both settled and reported a completed import. */
+/**
+ * An import only counts as done when the task both settled and reported a completed import.
+ *
+ * @remarks
+ * A completed import empties the uploader through its own `removeFile`, which also resets the
+ * hidden input, so the same file cannot be imported twice by accident yet can still be picked
+ * again on purpose. A failure keeps the file, so the parsing options can be changed and retried.
+ *
+ * @param outcome - what the import task settled on
+ * @returns whether the import completed
+ */
 function applyOutcome(outcome: Result<boolean, TaskError>): boolean {
   if (!isErr(outcome)) {
-    if (outcome.value)
+    if (outcome.value) {
+      get(uploader)?.removeFile();
       set(uploaded, true);
+    }
 
     return outcome.value;
   }
@@ -156,6 +169,20 @@ async function uploadFile(): Promise<boolean> {
   return applyOutcome(outcome);
 }
 
+/**
+ * Drops the last import's outcome once another file is picked, so it is never shown beside a
+ * file it was not about.
+ *
+ * @param picked - the uploader's new value, empty when the file was removed rather than picked
+ */
+function onFileChange(picked: File | File[] | undefined): void {
+  if (!picked)
+    return;
+
+  set(uploaded, false);
+  set(errorMessage, '');
+}
+
 function changeShouldCustomDateFormat(): void {
   form.state.dateInputFormat = form.state.dateInputFormat === undefined
     ? DateFormat.DateMonthYearHourMinuteSecond
@@ -183,14 +210,25 @@ const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'))
       novalidate
       @submit.stop.prevent="form.submit()"
     >
-      <FileUpload
+      <RuiFileUpload
+        ref="uploader"
         v-model="file"
-        v-model:error-message="errorMessage"
+        accept=".csv"
         :loading="loading"
         :uploaded="uploaded"
-        :source="source"
-        @update:uploaded="uploaded = $event"
+        :error-messages="errorMessage"
+        :upload-text="t('file_upload.dropzone.prefix')"
+        :click-to-upload-text="t('file_upload.dropzone.choose')"
+        :replace-text="t('file_upload.dropzone.replace')"
+        @update:model-value="onFileChange($event)"
       />
+      <div
+        v-if="uploaded"
+        class="text-body-2 text-rui-success"
+        data-testid="import-complete"
+      >
+        {{ t('file_upload.import_complete') }}
+      </div>
       <RuiSwitch
         v-if="!isRotkiCustomImport"
         color="primary"

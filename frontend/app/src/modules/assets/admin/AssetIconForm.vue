@@ -6,7 +6,6 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
-import FileUpload from '@/modules/user-data/FileUpload.vue';
 
 const { identifier, refreshable = false } = defineProps<{
   identifier: string;
@@ -136,11 +135,13 @@ defineExpose({
           :show-chain="false"
         />
       </RuiCard>
-      <FileUpload
+      <RuiFileUpload
         v-model="icon"
         class="grow"
-        source="icon"
-        file-filter=".png, .svg, .jpeg, .jpg, .webp"
+        accept=".png,.svg,.jpeg,.jpg,.webp"
+        :upload-text="t('file_upload.dropzone.prefix')"
+        :click-to-upload-text="t('file_upload.dropzone.choose')"
+        :replace-text="t('file_upload.dropzone.replace')"
       />
     </div>
     <div

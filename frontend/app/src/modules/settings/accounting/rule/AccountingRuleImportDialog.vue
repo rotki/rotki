@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useAccountingSettings } from '@/modules/settings/accounting/use-accounting-settings';
-import FileUpload from '@/modules/user-data/FileUpload.vue';
 
 const model = defineModel<boolean>({ required: true });
 
@@ -15,7 +14,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const importFileUploader = useTemplateRef<InstanceType<typeof FileUpload>>('importFileUploader');
 const importFile = ref<File>();
 
 const { importJSON } = useAccountingSettings();
@@ -44,7 +42,6 @@ async function importData() {
   if (success) {
     set(model, false);
     set(importFile, undefined);
-    get(importFileUploader)?.removeFile();
     emit('refresh');
   }
 }
@@ -59,11 +56,12 @@ async function importData() {
       <template #header>
         {{ t('accounting_settings.rule.import') }}
       </template>
-      <FileUpload
-        ref="importFileUploader"
+      <RuiFileUpload
         v-model="importFile"
-        source="json"
-        file-filter=".json"
+        accept=".json"
+        :upload-text="t('file_upload.dropzone.prefix')"
+        :click-to-upload-text="t('file_upload.dropzone.choose')"
+        :replace-text="t('file_upload.dropzone.replace')"
       />
       <template #footer>
         <div class="grow" />

@@ -2100,18 +2100,12 @@
     }
   },
   "file_upload": {
-    "click_to_upload": "Нажмите для загрузки",
     "date_input_format": {
       "hint": "Используйте это, если формат даты в вашем файле: {format}",
       "placeholder": "Введите пользовательский формат даты",
       "switch_label": "Использовать пользовательский формат даты для разбора файла"
     },
-    "drag_and_drop": "{button} или перетащите",
-    "import_complete": "Импорт успешно завершен.",
-    "loading": "Загрузка",
-    "many_files_selected": "Должен быть выбран только один файл",
-    "only_files": "Разрешены только файлы {fileFilter}",
-    "replace_file": "Заменить файл"
+    "import_complete": "Импорт успешно завершен."
   },
   "frontend_settings": {
     "abbreviate_number": {

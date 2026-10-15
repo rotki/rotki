@@ -29,7 +29,7 @@ export class ImportPage {
 
   async uploadFile(sourceKey: string, csvFileName: string): Promise<void> {
     const container = this.page.locator(`[data-testid=import-source][data-key="${sourceKey}"]`);
-    const fileInput = container.locator('[data-testid=file-input]');
+    const fileInput = container.locator('[data-id=file-input]');
     const filePath = path.resolve(BACKEND_TEST_DATA, csvFileName);
     await fileInput.setInputFiles(filePath);
   }

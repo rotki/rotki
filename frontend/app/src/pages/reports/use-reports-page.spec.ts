@@ -9,13 +9,12 @@ interface RouteState {
   query: Record<string, string>;
 }
 
-const { exportData, generate, importData, onResetUploader, pushMock, replaceMock, routeState } = vi.hoisted(() => {
+const { exportData, generate, importData, pushMock, replaceMock, routeState } = vi.hoisted(() => {
   const routeState: RouteState = { name: '/reports/', query: {} };
   return {
     exportData: vi.fn(async (): Promise<void> => {}),
     generate: vi.fn(async (): Promise<void> => {}),
     importData: vi.fn(async (): Promise<void> => {}),
-    onResetUploader: vi.fn(),
     // `router.push` resolves; a mock returning undefined would break the `startPromise` wrapper.
     pushMock: vi.fn(async (): Promise<void> => {}),
     replaceMock: vi.fn(async (): Promise<void> => {}),
@@ -55,7 +54,7 @@ vi.mock('@/modules/task-center/use-task-center', async () => {
 
 describe('pages/reports/useReportsPage', () => {
   function setup(): ReturnType<typeof useReportsPage> {
-    return withSetup(() => useReportsPage({ onResetUploader })).result;
+    return withSetup(() => useReportsPage()).result;
   }
 
   beforeEach(() => {
@@ -135,7 +134,6 @@ describe('pages/reports/useReportsPage', () => {
       expect(importData).toHaveBeenCalledTimes(1);
       expect(get(modelImportDataDialog)).toBe(false);
       expect(get(modelReportDebugData)).toBeUndefined();
-      expect(onResetUploader).toHaveBeenCalledTimes(1);
     });
 
     it('should import before clearing, so the file is still there when it is read', async () => {

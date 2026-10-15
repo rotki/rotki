@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import FileUpload from '@/modules/user-data/FileUpload.vue';
-
 const model = defineModel<boolean>({ required: true });
 
 const balanceFile = defineModel<File>('balanceFile');
@@ -54,9 +52,12 @@ const complete = logicAnd(balanceFile, locationFile);
             class="py-2"
             data-testid="snapshot-import-balance-file"
           >
-            <FileUpload
+            <RuiFileUpload
               v-model="balanceFile"
-              source="csv"
+              accept=".csv"
+              :upload-text="t('file_upload.dropzone.prefix')"
+              :click-to-upload-text="t('file_upload.dropzone.choose')"
+              :replace-text="t('file_upload.dropzone.replace')"
             />
           </div>
           <div class="text-caption">
@@ -71,9 +72,12 @@ const complete = logicAnd(balanceFile, locationFile);
             class="py-2"
             data-testid="snapshot-import-location-file"
           >
-            <FileUpload
+            <RuiFileUpload
               v-model="locationFile"
-              source="csv"
+              accept=".csv"
+              :upload-text="t('file_upload.dropzone.prefix')"
+              :click-to-upload-text="t('file_upload.dropzone.choose')"
+              :replace-text="t('file_upload.dropzone.replace')"
             />
           </div>
           <div class="text-caption">

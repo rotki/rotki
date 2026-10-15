@@ -3433,18 +3433,12 @@
     }
   },
   "file_upload": {
-    "click_to_upload": "点击上传",
     "date_input_format": {
       "hint": "如果文件中的日期格式为：{format}，请使用此选项",
       "placeholder": "输入自定义日期格式",
       "switch_label": "使用自定义日期格式来解析你的文件"
     },
-    "drag_and_drop": "{button}或拖放文件",
     "import_complete": "导入成功。",
-    "loading": "加载中",
-    "many_files_selected": "只能选择一个文件",
-    "only_files": "只允许 {fileFilter} 文件",
-    "replace_file": "替换文件",
     "timezone": {
       "hint": "用于文件中未包含时区信息的日期，默认为 UTC。",
       "label": "时区",

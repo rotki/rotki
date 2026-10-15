@@ -97,7 +97,7 @@ describe('pages/reports/index', () => {
         provide: libraryDefaults,
         stubs: {
           ErrorScreen: { props: ['message', 'error', 'title', 'subtitle'], template: '<div data-testid="error-stub"><slot name="bottom" /></div>' },
-          FileUpload: { props: ['modelValue', 'source', 'fileFilter'], template: '<div data-testid="upload-stub" />' },
+          RuiFileUpload: { props: ['modelValue', 'accept'], template: '<div data-testid="upload-stub" />' },
           ProgressScreen: { props: ['progress'], template: '<div data-testid="progress-stub"><slot name="message" /><slot /></div>' },
           ReportGenerator: { emits: ['generate', 'export-data', 'import-data'], template: '<div data-testid="generator-stub" />' },
           ReportsTable: { template: '<div data-testid="table-stub" />' },

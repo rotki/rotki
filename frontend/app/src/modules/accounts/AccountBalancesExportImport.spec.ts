@@ -1,38 +1,27 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type VNode } from 'vue';
+import { defineComponent } from 'vue';
 import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExportImport.vue';
 
-const { exportAccounts, importAccounts, removeFile } = vi.hoisted(() => ({
+const { exportAccounts, importAccounts } = vi.hoisted(() => ({
   exportAccounts: vi.fn(),
   importAccounts: vi.fn(async () => {}),
-  /** Only stands in for the uploader's own reset; whether it is reached depends on the dialog. */
-  removeFile: vi.fn(),
 }));
 
 vi.mock('@/modules/accounts/import-export/use-account-import-export', () => ({
   useAccountImportExport: (): Record<string, unknown> => ({ exportAccounts, importAccounts }),
 }));
 
-/** Exposes `removeFile` under the name the component calls on its uploader ref. */
-vi.mock('@/modules/user-data/FileUpload.vue', async () => {
-  const { defineComponent, h } = await import('vue');
-  return {
-    __esModule: true,
-    default: defineComponent({
-      emits: ['update:modelValue'],
-      name: 'FileUpload',
-      props: { modelValue: { default: undefined, type: Object } },
-      setup(_props, { expose }): () => VNode {
-        expose({ removeFile });
-        return () => h('div');
-      },
-    }),
-  };
-});
-
 const MenuStub = defineComponent({
   template: '<div><slot name="activator" :attrs="{}" /><slot /></div>',
+});
+
+/** Stands in for the library uploader, which only holds the chosen file through its model. */
+const FileUploadStub = defineComponent({
+  emits: ['update:modelValue'],
+  name: 'RuiFileUpload',
+  props: { accept: { default: undefined, type: String }, modelValue: { default: undefined, type: Object } },
+  template: '<div />',
 });
 
 function createWrapper(): VueWrapper<any> {
@@ -42,6 +31,7 @@ function createWrapper(): VueWrapper<any> {
         ExternalLink: true,
         RuiCard: { template: '<div><slot name="header" /><slot /><slot name="footer" /></div>' },
         RuiDialog: { props: ['modelValue'], template: '<div v-if="modelValue"><slot /></div>' },
+        RuiFileUpload: FileUploadStub,
         RuiMenu: MenuStub,
       },
     },
@@ -57,7 +47,7 @@ function button(wrapper: VueWrapper<any>, id: string): VueWrapper<any> {
 }
 
 function uploader(wrapper: VueWrapper<any>): VueWrapper<any> {
-  return wrapper.findComponent({ name: 'FileUpload' });
+  return wrapper.findComponent(FileUploadStub);
 }
 
 const CSV = new File(['address,chain'], 'accounts.csv', { type: 'text/csv' });
@@ -86,15 +76,15 @@ describe('accountBalancesExportImport', () => {
 
   describe('importing', () => {
     it('should stay closed until it is asked for', () => {
-      expect(createWrapper().findComponent({ name: 'FileUpload' }).exists()).toBe(false);
+      expect(uploader(createWrapper()).exists()).toBe(false);
     });
 
-    it('should open on request', async () => {
+    it('should open on request, taking only csv files', async () => {
       const wrapper = createWrapper();
 
       await openImport(wrapper);
 
-      expect(uploader(wrapper).exists()).toBe(true);
+      expect(uploader(wrapper).props('accept')).toBe('.csv');
     });
 
     /** There is nothing to import until a file has been chosen. */
