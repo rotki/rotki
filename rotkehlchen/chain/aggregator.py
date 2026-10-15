@@ -1424,7 +1424,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                         avax_manager.get_avax_balance(address) != ZERO
                     )
                 except (requests.exceptions.RequestException, Web3Exception) as e:
-                    log.error('Failed to check %s activity in avalanche due to %s', address, e)
+                    self._activity_check_failed(
+                        address=address,
+                        chain=chain,
+                        error=RecoverableRemoteError(f'Avalanche node query failed due to {e!s}'),
+                        submission=submission,
+                    )
                     return None
 
             if chain == SupportedBlockchain.ZKSYNC_LITE:
@@ -1434,7 +1439,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                         url=f'accounts/{address}/transactions',
                         options=options,
                     )
-                except RemoteError:
+                except RemoteError as e:
+                    self._activity_check_failed(
+                        address=address,
+                        chain=chain,
+                        error=e,
+                        submission=submission,
+                    )
                     return None
 
                 return bool(response.get('list', None))  # falsy -> None or no transactions

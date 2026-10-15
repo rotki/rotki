@@ -1,11 +1,14 @@
 import datetime
 from contextlib import ExitStack, contextmanager
 from functools import partial
+from http import HTTPStatus
 from threading import Event
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
+from web3.exceptions import Web3Exception
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
@@ -636,6 +639,72 @@ def test_recoverable_failure_outside_detection_is_not_retried_immediately(
     assert (address, SupportedBlockchain.HYPERLIQUID) in blockchain._activity_retries._pending
     assert blockchain.should_retry_activity_checks() is False
     assert blockchain._activity_retries._due_ts >= ts_now() + EVMLIKE_ACCOUNTS_DETECTION_RETRY - 10
+
+
+@pytest.mark.parametrize('error', [
+    requests.exceptions.ConnectionError('down'),
+    Web3Exception('node error'),
+])
+def test_avalanche_transient_failure_is_retried(
+        blockchain: ChainsAggregator,
+        error: Exception,
+) -> None:
+    """Avalanche node failures are recoverable and remembered for the retry"""
+    with patch.object(blockchain.avalanche, 'w3', MagicMock(**{'eth.get_transaction_count.side_effect': error})):  # noqa: E501
+        assert blockchain._check_single_chain_activity(
+            address=(address := make_evm_address()),
+            chain=SupportedBlockchain.AVALANCHE,
+        ) is None
+
+    assert (address, SupportedBlockchain.AVALANCHE) in blockchain._activity_retries._pending
+
+
+@pytest.mark.parametrize(('error', 'is_retried'), [
+    (RecoverableRemoteError('rate limited'), True),
+    (RemoteError('malformed response'), False),
+])
+def test_zksync_lite_failure_is_retried_only_if_recoverable(
+        blockchain: ChainsAggregator,
+        error: RemoteError,
+        is_retried: bool,
+) -> None:
+    with patch.object(blockchain.zksync_lite, '_query_api', side_effect=error):
+        assert blockchain._check_single_chain_activity(
+            address=(address := make_evm_address()),
+            chain=SupportedBlockchain.ZKSYNC_LITE,
+        ) is None
+
+    assert ((address, SupportedBlockchain.ZKSYNC_LITE) in blockchain._activity_retries._pending) is is_retried  # noqa: E501
+
+
+@pytest.mark.parametrize(('status_code', 'expected_error'), [
+    (HTTPStatus.TOO_MANY_REQUESTS, RecoverableRemoteError),
+    (HTTPStatus.BAD_GATEWAY, RecoverableRemoteError),
+    (HTTPStatus.BAD_REQUEST, RemoteError),
+])
+def test_zksync_lite_query_api_error_classification(
+        blockchain: ChainsAggregator,
+        status_code: HTTPStatus,
+        expected_error: type[RemoteError],
+) -> None:
+    """Connection problems, exhausted 429 backoff and 5xx are recoverable, 4xx is not"""
+    response = MagicMock(status_code=status_code, text='err', url='https://api.zksync.io')
+    with (
+        patch.object(blockchain.zksync_lite.session, 'get', return_value=response),
+        patch('rotkehlchen.chain.zksync_lite.manager.cancellable_sleep'),
+        pytest.raises(RemoteError) as excinfo,
+    ):
+        blockchain.zksync_lite._query_api(url='tokens')
+
+    assert type(excinfo.value) is expected_error
+    with (
+        patch.object(
+            blockchain.zksync_lite.session, 'get',
+            side_effect=requests.exceptions.ConnectionError('down'),
+        ),
+        pytest.raises(RecoverableRemoteError),
+    ):
+        blockchain.zksync_lite._query_api(url='tokens')
 
 
 @pytest.mark.parametrize('submitted', [False, True])
