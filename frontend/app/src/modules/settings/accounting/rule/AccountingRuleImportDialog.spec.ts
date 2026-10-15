@@ -10,7 +10,6 @@ import AccountingRuleImportDialog from '@/modules/settings/accounting/rule/Accou
 const { spies } = vi.hoisted(() => ({
   spies: {
     importJSON: vi.fn<(file: File) => Promise<ActionStatus | null>>(),
-    removeFile: vi.fn<() => void>(),
   },
 }));
 
@@ -19,13 +18,9 @@ vi.mock('@/modules/settings/accounting/use-accounting-settings', () => ({
 }));
 
 const FileUploadStub = defineComponent({
-  name: 'FileUpload',
-  props: { modelValue: { default: undefined, type: File } },
+  name: 'RuiFileUpload',
+  props: { accept: { default: undefined, type: String }, modelValue: { default: undefined, type: File } },
   emits: ['update:modelValue'],
-  setup(_props, { expose }) {
-    expose({ removeFile: spies.removeFile });
-    return {};
-  },
   template: '<div />',
 });
 
@@ -41,8 +36,8 @@ describe('accountingRuleImportDialog', () => {
       global: {
         plugins: [pinia],
         stubs: {
-          FileUpload: FileUploadStub,
           RuiDialog: { template: '<div><slot /></div>' },
+          RuiFileUpload: FileUploadStub,
         },
       },
       props: { loading: false, modelValue: true },
@@ -67,6 +62,12 @@ describe('accountingRuleImportDialog', () => {
 
   afterEach(() => {
     wrapper?.unmount();
+  });
+
+  it('should take only json files', () => {
+    wrapper = createWrapper();
+
+    expect(wrapper.findComponent(FileUploadStub).props('accept')).toBe('.json');
   });
 
   it('should not offer the import until a file is chosen', async () => {
@@ -106,7 +107,6 @@ describe('accountingRuleImportDialog', () => {
 
       expect(wrapper.emitted('update:modelValue')).toEqual([[false]]);
       expect(wrapper.emitted('refresh')).toHaveLength(1);
-      expect(spies.removeFile).toHaveBeenCalledOnce();
       expect(wrapper.findComponent(FileUploadStub).props('modelValue')).toBeUndefined();
     });
   });
@@ -125,7 +125,6 @@ describe('accountingRuleImportDialog', () => {
       });
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
       expect(wrapper.emitted('refresh')).toBeUndefined();
-      expect(spies.removeFile).not.toHaveBeenCalled();
       expect(wrapper.findComponent(FileUploadStub).props('modelValue')?.name).toBe('rules.json');
     });
 

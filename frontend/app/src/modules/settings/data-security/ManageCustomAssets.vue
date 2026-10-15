@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { assert, Priority, Severity } from '@rotki/common';
+import { RuiFileUpload } from '@rotki/ui-library';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { isActionable } from '@/modules/core/tasks/task-result';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { ActivityPart } from '@/modules/task-center/core/types';
 import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
-import FileUpload from '@/modules/user-data/FileUpload.vue';
 
+const uploader = useTemplateRef<InstanceType<typeof RuiFileUpload>>('uploader');
 const zip = ref<File>();
 const importError = ref<string>('');
 const uploading = ref<boolean>(false);
@@ -21,6 +22,24 @@ const { exportCustomAssets, importCustomAssets } = useAssets();
 const importDisabled = computed<boolean>(() => !get(zip));
 const exporting = useIsActive(ActivityKind.ASSETS, ActivityPart.EXPORT);
 
+/**
+ * Drops the last import's outcome once another file is picked, so it is never shown beside a
+ * file it was not about.
+ *
+ * @param file - the uploader's new value, empty when the file was removed rather than picked
+ */
+function onFileChange(file: File | File[] | undefined): void {
+  if (!file)
+    return;
+
+  set(importError, '');
+  set(uploaded, false);
+}
+
+/**
+ * Imports the picked archive, then empties the uploader whatever the outcome. The uploader's own
+ * `removeFile` resets the hidden input too, so picking the same archive again still registers.
+ */
 async function importZip(): Promise<void> {
   const file = get(zip);
   assert(file);
@@ -31,7 +50,7 @@ async function importZip(): Promise<void> {
   else set(importError, result.message);
 
   set(uploading, false);
-  set(zip, undefined);
+  get(uploader)?.removeFile();
 }
 
 /**
@@ -103,15 +122,18 @@ async function exportZip(): Promise<void> {
     <template #subtitle>
       {{ t('manage_user_assets.import.subtitle') }}
     </template>
-    <FileUpload
+    <RuiFileUpload
+      ref="uploader"
       v-model="zip"
-      source="zip"
-      file-filter=".zip"
+      accept=".zip"
       class="bg-white dark:bg-transparent"
       :uploaded="uploaded"
-      :error-message="importError"
-      @update:uploaded="uploaded = $event"
-      @update:error-message="importError = $event"
+      :error-messages="importError"
+      :hint="uploaded ? t('file_upload.import_complete') : undefined"
+      :upload-text="t('file_upload.dropzone.prefix')"
+      :click-to-upload-text="t('file_upload.dropzone.choose')"
+      :replace-text="t('file_upload.dropzone.replace')"
+      @update:model-value="onFileChange($event)"
     />
     <div class="flex justify-end">
       <RuiButton
@@ -119,6 +141,7 @@ async function exportZip(): Promise<void> {
         class="mt-4"
         :disabled="importDisabled"
         :loading="uploading"
+        data-testid="user-assets-import"
         @click="importZip()"
       >
         {{ t('common.actions.import') }}

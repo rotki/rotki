@@ -6,7 +6,6 @@ import ReportsTable from '@/modules/reports/ReportsTable.vue';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
 import ErrorScreen from '@/modules/shell/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
-import FileUpload from '@/modules/user-data/FileUpload.vue';
 import { useReportsPage } from '@/pages/reports/use-reports-page';
 
 definePage({
@@ -22,8 +21,6 @@ const reportsStore = useReportsStore();
 const { reportError } = storeToRefs(reportsStore);
 const { clearError } = reportsStore;
 
-const reportDebugDataUploader = useTemplateRef<InstanceType<typeof FileUpload>>('reportDebugDataUploader');
-
 const {
   exportData,
   generate,
@@ -32,9 +29,7 @@ const {
   isRunning,
   modelImportDataDialog,
   modelReportDebugData,
-} = useReportsPage({
-  onResetUploader: () => get(reportDebugDataUploader)?.removeFile(),
-});
+} = useReportsPage();
 
 const processingState = computed(() => reportsStore.processingState);
 const progress = computed(() => reportsStore.progress);
@@ -94,11 +89,12 @@ const progress = computed(() => reportsStore.progress);
         <template #header>
           {{ t('profit_loss_reports.debug.import_data_dialog.title') }}
         </template>
-        <FileUpload
-          ref="reportDebugDataUploader"
+        <RuiFileUpload
           v-model="modelReportDebugData"
-          source="json"
-          file-filter=".json"
+          accept=".json"
+          :upload-text="t('file_upload.dropzone.prefix')"
+          :click-to-upload-text="t('file_upload.dropzone.choose')"
+          :replace-text="t('file_upload.dropzone.replace')"
         />
         <template #footer>
           <div class="grow" />

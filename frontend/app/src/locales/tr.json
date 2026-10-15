@@ -3457,18 +3457,12 @@
     }
   },
   "file_upload": {
-    "click_to_upload": "Yüklemek için tıklayın",
     "date_input_format": {
       "hint": "Dosyanızdaki tarih biçimi şu ise bunu kullanın: {format}",
       "placeholder": "Özel tarih biçimi girin",
       "switch_label": "Dosyanızı ayrıştırmak için özel tarih biçimi kullan"
     },
-    "drag_and_drop": "{button} veya sürükleyip bırakın",
     "import_complete": "İçe aktarma başarıyla tamamlandı.",
-    "loading": "Yükleniyor",
-    "many_files_selected": "Yalnızca bir dosya seçilmelidir",
-    "only_files": "Yalnızca {fileFilter} dosyalarına izin verilir",
-    "replace_file": "Dosyayı değiştirin",
     "timezone": {
       "hint": "Dosyadaki saat dilimi bilgisi içermeyen tarihler için kullanılır. Varsayılan değer UTC'dir.",
       "label": "Saat dilimi",

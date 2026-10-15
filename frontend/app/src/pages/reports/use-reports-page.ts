@@ -14,11 +14,6 @@ import { useReportsPageActions } from '@/pages/reports/use-reports-page-actions'
  */
 const REGENERATE_QUERY = 'regenerate';
 
-interface UseReportsPageOptions {
-  /** Clears the file the debug-data uploader is holding; owned by the page, which owns the ref. */
-  onResetUploader: () => void;
-}
-
 interface UseReportsPageReturn {
   exportData: (period: ProfitLossReportPeriod) => Promise<void>;
   generate: (period: ProfitLossReportPeriod) => Promise<void>;
@@ -30,9 +25,7 @@ interface UseReportsPageReturn {
   navigateToReport: (reportId: number) => void;
 }
 
-export function useReportsPage(options: UseReportsPageOptions): UseReportsPageReturn {
-  const { onResetUploader } = options;
-
+export function useReportsPage(): UseReportsPageReturn {
   const { useIsActive } = useTaskCenter();
   const { getPath } = useInterop();
 
@@ -88,7 +81,6 @@ export function useReportsPage(options: UseReportsPageOptions): UseReportsPageRe
   async function handleImportComplete(): Promise<void> {
     await importData();
     set(modelImportDataDialog, false);
-    onResetUploader();
     set(modelReportDebugData, undefined);
   }
 

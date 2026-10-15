@@ -1,13 +1,12 @@
 import { Priority, Severity } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type VNode } from 'vue';
+import { defineComponent } from 'vue';
 import AddressBookManagementMore from '@/modules/accounts/address-book/AddressBookManagementMore.vue';
 
-const { importAddressBook, notify, removeFile } = vi.hoisted(() => ({
+const { importAddressBook, notify } = vi.hoisted(() => ({
   importAddressBook: vi.fn<(file: File) => Promise<number>>(async () => 0),
   notify: vi.fn(),
-  removeFile: vi.fn(),
 }));
 
 vi.mock('@/modules/accounts/address-book/use-address-book-import', () => ({
@@ -18,20 +17,12 @@ vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   useNotificationDispatcher: (): Record<string, unknown> => ({ notify }),
 }));
 
-vi.mock('@/modules/user-data/FileUpload.vue', async () => {
-  const { defineComponent, h } = await import('vue');
-  return {
-    __esModule: true,
-    default: defineComponent({
-      emits: ['update:modelValue'],
-      name: 'FileUpload',
-      props: { modelValue: { default: undefined, type: Object } },
-      setup(_props, { expose }): () => VNode {
-        expose({ removeFile });
-        return () => h('div');
-      },
-    }),
-  };
+/** Stands in for the library uploader, which only holds the chosen file through its model. */
+const FileUploadStub = defineComponent({
+  emits: ['update:modelValue'],
+  name: 'RuiFileUpload',
+  props: { modelValue: { default: undefined, type: Object } },
+  template: '<div />',
 });
 
 const MenuStub = defineComponent({
@@ -45,6 +36,7 @@ function createWrapper(): VueWrapper<any> {
         ExternalLink: true,
         RuiCard: { template: '<div><slot name="header" /><slot /><slot name="footer" /></div>' },
         RuiDialog: { props: ['modelValue'], template: '<div v-if="modelValue"><slot /></div>' },
+        RuiFileUpload: FileUploadStub,
         RuiMenu: MenuStub,
       },
     },
@@ -63,7 +55,7 @@ const CSV = new File(['address,name'], 'address-book.csv', { type: 'text/csv' })
 
 async function importFile(wrapper: VueWrapper<any>): Promise<void> {
   await button(wrapper, 'address-book-import').trigger('click');
-  wrapper.findComponent({ name: 'FileUpload' }).vm.$emit('update:modelValue', CSV);
+  wrapper.findComponent(FileUploadStub).vm.$emit('update:modelValue', CSV);
   await nextTick();
   await button(wrapper, 'address-book-import-confirm').trigger('click');
   await flushPromises();

@@ -3458,18 +3458,17 @@
     }
   },
   "file_upload": {
-    "click_to_upload": "Click to upload",
     "date_input_format": {
       "hint": "Use this if date format in your file is: {format}",
       "placeholder": "Input custom date format",
       "switch_label": "Use custom date format to parse your file"
     },
-    "drag_and_drop": "{button} or drag and drop",
+    "dropzone": {
+      "choose": "choose a file",
+      "prefix": "Drag and drop or",
+      "replace": "replace file"
+    },
     "import_complete": "Import was completed successfully.",
-    "loading": "Loading",
-    "many_files_selected": "Only one file must be selected",
-    "only_files": "Only {fileFilter} files are allowed",
-    "replace_file": "Replace file",
     "timezone": {
       "hint": "Used for dates in the file that do not include timezone information. Defaults to UTC.",
       "label": "Timezone",

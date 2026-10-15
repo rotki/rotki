@@ -2,6 +2,7 @@ import type { StubInstance } from '@test/utils/component-vm';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { err, ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent } from 'vue';
 import { DateFormat } from '@/modules/core/common/date-format';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
@@ -9,6 +10,7 @@ import '@test/i18n';
 const submitTask = vi.fn();
 const useIsActive = vi.fn();
 const getPath = vi.fn();
+const removeFile = vi.fn<() => void>();
 
 vi.mock('@/modules/task-center/use-native-task', () => ({
   useNativeTask: vi.fn().mockImplementation(() => ({ submitTask })),
@@ -31,13 +33,20 @@ vi.mock('@/modules/user-data/use-import-data-api', () => ({
 
 const ImportSource = (await import('@/modules/user-data/ImportSource.vue')).default;
 
-/** Declares the two props the upload outcome is read through, which `inputStub` does not carry. */
-const fileUploadStub: Record<string, unknown> = {
-  emits: ['update:modelValue', 'update:errorMessage', 'update:uploaded'],
-  name: 'FileUpload',
-  props: ['modelValue', 'errorMessage', 'uploaded', 'loading', 'source'],
+/**
+ * The library uploader, declaring the two props the upload outcome is read through, which
+ * `inputStub` does not carry, and exposing the reset the component calls after an import.
+ */
+const fileUploadStub = defineComponent({
+  emits: ['update:modelValue'],
+  name: 'RuiFileUpload',
+  props: ['modelValue', 'errorMessages', 'uploaded', 'loading', 'accept'],
+  setup(_props, { expose }) {
+    expose({ removeFile });
+    return {};
+  },
   template: '<div />',
-};
+});
 
 function inputStub(name: string): Record<string, unknown> {
   return {
@@ -67,7 +76,7 @@ describe('importSource', () => {
       global: {
         stubs: {
           DateFormatHelp: true,
-          FileUpload: fileUploadStub,
+          RuiFileUpload: fileUploadStub,
           RuiSwitch: {
             emits: ['update:modelValue'],
             name: 'RuiSwitch',
@@ -96,8 +105,17 @@ describe('importSource', () => {
     return wrapper.findComponent<StubInstance>('[data-testid=button-import]').props('disabled');
   }
 
+  function upload(): VueWrapper<StubInstance> {
+    return wrapper.findComponent<StubInstance>({ name: 'RuiFileUpload' });
+  }
+
   async function attachFile(): Promise<void> {
-    wrapper.findComponent<StubInstance>({ name: 'FileUpload' }).vm.$emit('update:modelValue', new File(['a'], 'a.csv'));
+    upload().vm.$emit('update:modelValue', new File(['a'], 'a.csv'));
+    await vi.advanceTimersToNextTimerAsync();
+  }
+
+  async function submit(): Promise<void> {
+    await wrapper.find('form').trigger('submit');
     await vi.advanceTimersToNextTimerAsync();
   }
 
@@ -215,15 +233,32 @@ describe('importSource', () => {
     expect(importDisabled()).toBe(false);
   });
 
+  it('should take only csv files', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(upload().props('accept')).toBe('.csv');
+  });
+
   it('should mark the upload done only when the task reports a completed import', async () => {
     submitTask.mockResolvedValue(ok(true));
     wrapper = createWrapper();
     await attachFile();
 
-    await wrapper.find('form').trigger('submit');
-    await vi.advanceTimersToNextTimerAsync();
+    await submit();
 
-    expect(wrapper.findComponent<StubInstance>({ name: 'FileUpload' }).props('uploaded')).toBe(true);
+    expect(upload().props('uploaded')).toBe(true);
+    expect(wrapper.find('[data-testid=import-complete]').exists()).toBe(true);
+  });
+
+  it('should empty the uploader once the import completes', async () => {
+    submitTask.mockResolvedValue(ok(true));
+    wrapper = createWrapper();
+    await attachFile();
+
+    await submit();
+
+    expect(removeFile).toHaveBeenCalledOnce();
   });
 
   it('should leave the upload undone when the task settles on a failed import', async () => {
@@ -231,23 +266,44 @@ describe('importSource', () => {
     wrapper = createWrapper();
     await attachFile();
 
-    await wrapper.find('form').trigger('submit');
-    await vi.advanceTimersToNextTimerAsync();
+    await submit();
 
-    expect(wrapper.findComponent<StubInstance>({ name: 'FileUpload' }).props('uploaded')).toBe(false);
+    expect(upload().props('uploaded')).toBe(false);
+    expect(wrapper.find('[data-testid=import-complete]').exists()).toBe(false);
   });
 
-  it('should surface an actionable task error on the upload field', async () => {
+  it('should surface an actionable task error on the upload field and keep the file', async () => {
     submitTask.mockResolvedValue(err(TaskFailed({ message: 'bad csv' })));
     wrapper = createWrapper();
     await attachFile();
 
-    await wrapper.find('form').trigger('submit');
-    await vi.advanceTimersToNextTimerAsync();
+    await submit();
 
-    const upload = wrapper.findComponent<StubInstance>({ name: 'FileUpload' });
-    expect(upload.props('uploaded')).toBe(false);
-    expect(upload.props('errorMessage')).toBe('bad csv');
+    expect(upload().props('uploaded')).toBe(false);
+    expect(upload().props('errorMessages')).toBe('bad csv');
+    expect(removeFile).not.toHaveBeenCalled();
+  });
+
+  it('should drop the last error once another file is picked', async () => {
+    submitTask.mockResolvedValue(err(TaskFailed({ message: 'bad csv' })));
+    wrapper = createWrapper();
+    await attachFile();
+    await submit();
+
+    await attachFile();
+
+    expect(upload().props('errorMessages')).toBe('');
+  });
+
+  it('should drop the done mark once another file is picked', async () => {
+    submitTask.mockResolvedValue(ok(true));
+    wrapper = createWrapper();
+    await attachFile();
+    await submit();
+
+    await attachFile();
+
+    expect(upload().props('uploaded')).toBe(false);
   });
 
   it('should hide both switches for a rotki custom import', async () => {
@@ -255,7 +311,7 @@ describe('importSource', () => {
       global: {
         stubs: {
           DateFormatHelp: true,
-          FileUpload: fileUploadStub,
+          RuiFileUpload: fileUploadStub,
           RuiSwitch: {
             emits: ['update:modelValue'],
             name: 'RuiSwitch',

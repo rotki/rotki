@@ -1479,10 +1479,7 @@
       "placeholder": "Saisir le format de date personnalisé",
       "switch_label": "Utiliser le format de date personnalisé pour analyser votre fichier"
     },
-    "import_complete": "L'importation a été effectuée avec succès.",
-    "loading": "Chargement",
-    "many_files_selected": "Un seul fichier doit être sélectionné",
-    "only_files": "Seuls les fichiers {fileFilter} sont autorisés"
+    "import_complete": "L'importation a été effectuée avec succès."
   },
   "frontend_settings": {
     "subtitle": {

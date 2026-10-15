@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import type { ComponentExposed } from 'vue-component-type-helpers';
 import { externalLinks } from '@shared/external-links';
 import { useAccountImportExport } from '@/modules/accounts/import-export/use-account-import-export';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
-import FileUpload from '@/modules/user-data/FileUpload.vue';
 
-const importFileUploader = useTemplateRef<ComponentExposed<typeof FileUpload>>('uploader');
 const importFile = ref<File>();
 const importDialogOpen = ref<boolean>(false);
 const loading = ref<boolean>(false);
@@ -22,7 +19,6 @@ async function doImport() {
   set(importDialogOpen, false);
   await importAccounts(file);
   set(importFile, undefined);
-  get(importFileUploader)?.removeFile();
   set(loading, false);
 }
 </script>
@@ -73,11 +69,12 @@ async function doImport() {
         <template #header>
           {{ t('blockchain_balances.import_blockchain_accounts') }}
         </template>
-        <FileUpload
-          ref="uploader"
+        <RuiFileUpload
           v-model="importFile"
-          source="csv"
-          file-filter=".csv"
+          accept=".csv"
+          :upload-text="t('file_upload.dropzone.prefix')"
+          :click-to-upload-text="t('file_upload.dropzone.choose')"
+          :replace-text="t('file_upload.dropzone.replace')"
         />
         <div class="mt-2 text-caption text-rui-text-secondary">
           <i18n-t
