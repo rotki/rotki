@@ -4,7 +4,8 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Final, Literal, NotRequired, TypedDict
+from threading import Lock
+from typing import TYPE_CHECKING, Any, Final, Literal, NotRequired, TypedDict, get_args
 
 import requests
 
@@ -40,6 +41,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -74,8 +76,33 @@ def asset_from_hyperliquid(symbol: str) -> Asset:
 HYPERLIQUID_MIN_PAGE_CAP: Final = 500
 # The REST weight limit is per minute, so keep retrying rate limited requests for that long.
 HYPERLIQUID_RATE_LIMIT_WINDOW: Final = 60
+# All `/info` requests share one allowance of 1200 weight per minute per IP. Pace them at 900
+# per minute (15 per second) and allow a burst of 120, so that even the first minute stays
+# at 1020, leaving room for requests from elsewhere and for the extra weight of long pages.
+# https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits
+HYPERLIQUID_WEIGHT_PER_SECOND: Final = 15
+HYPERLIQUID_WEIGHT_BURST: Final = 120
+HYPERLIQUID_DEFAULT_REQUEST_WEIGHT: Final = 20
+HYPERLIQUID_REQUEST_WEIGHTS: Final = {
+    'l2Book': 2,
+    'allMids': 2,
+    'clearinghouseState': 2,
+    'spotClearinghouseState': 2,
+    'orderStatus': 2,
+    'exchangeStatus': 2,
+    'userRole': 60,
+}
+# Time range queries cost 1 extra weight for every this many items returned. That is only known
+# from the response, so only the base weight is acquired before sending and the extra is charged
+# afterwards, without waiting.
+HYPERLIQUID_ITEMS_PER_EXTRA_WEIGHT: Final = 20
+# Roles of accounts whose balances and history can be queried in Core
+HYPERLIQUID_CORE_ACCOUNT_ROLES: Final = ('user', 'vault', 'subAccount')
+# `agent` wallets only sign for another account, and `missing` has never been seen by Core
+HYPERLIQUID_CORE_NON_ACCOUNT_ROLES: Final = ('agent', 'missing')
 USDC_SYMBOL: Final = 'USDC'
 HistoryQueryType = Literal['userFunding', 'userNonFundingLedgerUpdates', 'userFillsByTime']
+HYPERLIQUID_LISTING_QUERIES: Final = frozenset(get_args(HistoryQueryType))
 
 
 class FundingDelta(TypedDict):
@@ -155,12 +182,32 @@ class ParsedFillEntry:
     extra_data: dict[str, Any]
 
 
+def create_weight_limiter() -> TokenBucket:
+    """Create a limiter for the weight of Hyperliquid `/info` requests, where one token
+    is one unit of weight."""
+    return TokenBucket(
+        rps=HYPERLIQUID_WEIGHT_PER_SECOND,
+        capacity=HYPERLIQUID_WEIGHT_BURST,
+    )
+
+
 class HyperliquidAPI:
     """Client for Hyperliquid `info` endpoint balances and user history APIs."""
 
-    def __init__(self) -> None:
+    def __init__(
+            self,
+            session: requests.Session | None = None,
+            rate_limiter: TokenBucket | None = None,
+            listing_lock: Lock | None = None,
+    ) -> None:
+        """The session, weight limiter and listing lock can be shared between clients to reuse
+        the connection and to account all requests against the same allowance. The metadata
+        caches are always per client so a long lived owner does not hold on to stale
+        market/DEX metadata."""
         self.base_url = 'https://api.hyperliquid.xyz'
-        self.session = create_session()
+        self.session = session if session is not None else create_session()
+        self.rate_limiter = rate_limiter if rate_limiter is not None else create_weight_limiter()
+        self.listing_lock = listing_lock if listing_lock is not None else Lock()
         self.arb_usdc = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
         self._spot_market_to_base_symbol: dict[int, str] | None = None
         self._discovered_dex_names: list[str] | None = None
@@ -178,9 +225,9 @@ class HyperliquidAPI:
         try:
             data = self._query_list(payload={'type': 'perpDexs'}, query_name='perpDexs')
         except RemoteError as e:
+            # Not cached so that a later call can recover from a temporary failure
             log.debug(f'Failed to auto-discover Hyperliquid DEXs due to {e}')
-            self._discovered_dex_names = []
-            return self._discovered_dex_names
+            return []
 
         discovered_names: set[str] = set()
         for entry in data:
@@ -199,7 +246,21 @@ class HyperliquidAPI:
         return self._discovered_dex_names
 
     def _post_info(self, payload: dict[str, Any], wait_for_rate_limit: bool = False) -> Any:
-        """Query hyperliquid info endpoint.
+        """Query hyperliquid info endpoint. Queries whose weight depends on the number of
+        items returned go one at a time, since their weight is only charged once the response
+        arrives, and overlapping ones could together owe more than the limiter has accounted.
+
+        May raise:
+            - RemoteError
+        """
+        if payload.get('type') not in HYPERLIQUID_LISTING_QUERIES:
+            return self._send_info(payload=payload, wait_for_rate_limit=wait_for_rate_limit)
+
+        with self.listing_lock:
+            return self._send_info(payload=payload, wait_for_rate_limit=wait_for_rate_limit)
+
+    def _send_info(self, payload: dict[str, Any], wait_for_rate_limit: bool) -> Any:
+        """Send a single info request, paced by the weight limiter.
 
         A rate limited request is retried with a growing backoff up to the configured query
         retry limit. With `wait_for_rate_limit` it keeps retrying for at least the length of
@@ -211,11 +272,16 @@ class HyperliquidAPI:
         May raise:
             - RemoteError
         """
+        base_weight = HYPERLIQUID_REQUEST_WEIGHTS.get(
+            str(payload.get('type')),
+            HYPERLIQUID_DEFAULT_REQUEST_WEIGHT,
+        )
         cached_settings = CachedSettings()
         timeout = cached_settings.get_timeout_tuple()
         min_attempts = max(1, cached_settings.get_query_retry_limit())
         backoff = slept = attempts = 0
         while True:
+            self.rate_limiter.acquire(base_weight)  # every request, retries included
             try:
                 response = self.session.post(
                     url=f'{self.base_url}/info',
@@ -262,6 +328,11 @@ class HyperliquidAPI:
                 raise RemoteError(
                     f'Failed to decode hyperliquid JSON response: {response.text[:200]}',
                 ) from e
+
+            if isinstance(data, list):
+                # Charge the weight for the items returned without waiting, so that the
+                # next request is the one that gets paced by it.
+                self.rate_limiter.charge(len(data) // HYPERLIQUID_ITEMS_PER_EXTRA_WEIGHT)
 
             return data
 
@@ -318,6 +389,43 @@ class HyperliquidAPI:
             payload['dex'] = dex_name
 
         return self._query_dict(payload=payload, query_name=account_type)
+
+    def has_core_activity(self, address: ChecksumEvmAddress) -> bool:
+        """Check whether the address is a queryable account in Hyperliquid Core.
+
+        The `userRole` info query returns the role `missing` for addresses that have never
+        interacted with Hyperliquid Core. The roles `user`, `vault` and `subAccount` are
+        accounts whose balances and history can be queried. The role `agent` is an API/signing
+        wallet whose trading account is another address, so querying it returns nothing and
+        it does not count as active.
+
+        Example request and responses:
+        POST https://api.hyperliquid.xyz/info {"type": "userRole", "user": "<address>"}
+        - Known user:    {"role": "user"}
+        - Known vault:   {"role": "vault"}
+        - Agent wallet:  {"role": "agent", "data": {"user": "<trading account address>"}}
+        - Unknown:       {"role": "missing"}
+
+        Note that Hyperliquid creates a Core account for any address that has received funds,
+        so an address that only received a transfer is reported as active.
+
+        `userRole` has a weight of 60, which the shared request weight limiter accounts for.
+        https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-a-users-role
+        https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits
+
+        May raise:
+            - RemoteError
+        """
+        result = self._query_dict(
+            payload={'type': 'userRole', 'user': address},
+            query_name='userRole',
+        )
+        if (role := result.get('role')) in HYPERLIQUID_CORE_ACCOUNT_ROLES:
+            return True
+        if role in HYPERLIQUID_CORE_NON_ACCOUNT_ROLES:
+            return False
+
+        raise RemoteError(f'Hyperliquid userRole returned unexpected role {role!r} for {address}')
 
     def query_balances(
             self,

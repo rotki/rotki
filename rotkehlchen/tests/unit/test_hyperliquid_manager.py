@@ -1,5 +1,8 @@
+import time
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from threading import Lock
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
@@ -18,7 +21,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import IncompleteTransactionsQuery, RemoteError
-from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
+from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI, create_weight_limiter
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -29,6 +32,7 @@ from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, Timestam
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
 
 ADDRESS = string_to_evm_address('0x000000000000000000000000000000000000dEaD')
@@ -66,9 +70,18 @@ def _batch_query(
     return MagicMock(side_effect=query)
 
 
+def _bare_manager() -> HyperliquidManager:
+    """A manager without the EVM machinery, but with the shared Core API resources"""
+    manager = HyperliquidManager.__new__(HyperliquidManager)
+    manager._http_session = MagicMock()
+    manager._rate_limiter = create_weight_limiter()
+    manager._listing_lock = Lock()
+    return manager
+
+
 def _manager_with_db(database: DBHandler) -> tuple[HyperliquidManager, MagicMock]:
     """Return a manager on the given database and its mocked `add_error`."""
-    manager = HyperliquidManager.__new__(HyperliquidManager)
+    manager = _bare_manager()
     manager.node_inquirer = MagicMock(database=database)
     manager.transactions = MagicMock(msg_aggregator=MagicMock(add_error=(add_error := MagicMock())))  # noqa: E501
     return manager, add_error
@@ -223,7 +236,7 @@ def test_force_refetch_transactions_also_refetches_hyperliquid_core_history() ->
 
 
 def test_query_transactions_also_queries_proprietary_history() -> None:
-    manager = HyperliquidManager.__new__(HyperliquidManager)
+    manager = _bare_manager()
     addresses = [string_to_evm_address('0x000000000000000000000000000000000000dEaD')]
 
     with (
@@ -255,7 +268,7 @@ def test_incomplete_evm_query_wins_over_failed_proprietary_history() -> None:
     query_proprietary_history rather than replacing the incomplete query error, which the
     frontend uses to mark the addresses failed.
     """
-    manager = HyperliquidManager.__new__(HyperliquidManager)
+    manager = _bare_manager()
     db = MagicMock()
     db.conn.read_ctx.side_effect = _dummy_ctx
     manager.node_inquirer = MagicMock(database=db)
@@ -450,3 +463,28 @@ def test_refetch_saves_distinct_entries_without_ids_at_the_same_time(database: D
         ) == 2
 
     assert len(set(_stored_group_identifiers(database))) == 2
+
+
+def test_concurrent_first_use_shares_the_session_limiter_and_lock(
+        blockchain: ChainsAggregator,
+) -> None:
+    """Clients requested concurrently by history, balances and detection must all share one
+    session, weight limiter and listing lock. Otherwise the aggregate request weight is not
+    accounted for and the list queries are not serialized."""
+    def slow(factory: Any) -> Any:
+        def create() -> Any:
+            time.sleep(0.05)  # widen the window in which a lazy initialization could race
+            return factory()
+        return create
+
+    with (
+        patch('rotkehlchen.chain.hyperliquid.manager.create_session', slow(MagicMock)),
+        patch('rotkehlchen.chain.hyperliquid.manager.create_weight_limiter', slow(create_weight_limiter)),  # noqa: E501
+    ):
+        manager = HyperliquidManager(node_inquirer=blockchain.hyperliquid.node_inquirer)
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            apis = list(executor.map(lambda _: manager.api, range(10)))
+
+    assert len({id(api.session) for api in apis}) == 1
+    assert len({id(api.rate_limiter) for api in apis}) == 1
+    assert len({id(api.listing_lock) for api in apis}) == 1

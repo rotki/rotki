@@ -261,7 +261,7 @@ def _bypass_rate_limiter(monkeypatch: pytest.MonkeyPatch) -> None:
     test_rate_limiter.py overrides this fixture so its tests exercise the
     real acquire()/widen()/shrink behaviour.
     """
-    monkeypatch.setattr(TokenBucket, 'acquire', lambda self: None)
+    monkeypatch.setattr(TokenBucket, 'acquire', lambda self, weight=1: None)
     for client in (Coingecko, Cryptocompare, Defillama):
         monkeypatch.setattr(client, '_maybe_probe', lambda self: None)
 

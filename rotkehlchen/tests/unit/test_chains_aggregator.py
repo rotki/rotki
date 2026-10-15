@@ -21,6 +21,8 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.externalapis.etherscan_like import HasChainActivity
+from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -492,3 +494,36 @@ def test_query_balances_partial_chain_failure(blockchain: ChainsAggregator) -> N
         failing_chains.update({SupportedBlockchain.ETHEREUM, SupportedBlockchain.ETHEREUM_BEACONCHAIN})  # noqa: E501
         with pytest.raises(RemoteError):  # so does all queried chains failing
             chains_aggregator.query_balances(ignore_cache=True)
+
+
+@pytest.mark.parametrize(('evm_result', 'core_result', 'expected'), [
+    (HasChainActivity.NONE, True, True),  # no HyperEVM activity but active in Core
+    (HasChainActivity.NONE, False, False),
+    (HasChainActivity.NONE, RemoteError('core'), None),
+    (HasChainActivity.TRANSACTIONS, RemoteError('core'), True),  # HyperEVM is enough
+    (RemoteError('evm'), True, True),  # HyperEVM lookup failed but Core is active
+    (RemoteError('evm'), False, None),  # a HyperEVM failure is not mistaken for inactivity
+    (RemoteError('evm'), RemoteError('core'), None),
+])
+def test_hyperliquid_activity_checks_core(
+        blockchain: ChainsAggregator,
+        evm_result: HasChainActivity | RemoteError,
+        core_result: bool | RemoteError,
+        expected: bool | None,
+) -> None:
+    with (
+        patch.object(
+            blockchain.hyperliquid.node_inquirer,
+            'has_activity',
+            side_effect=[evm_result],
+        ),
+        patch.object(
+            HyperliquidAPI,
+            'has_core_activity',
+            side_effect=[core_result],
+        ),
+    ):
+        assert blockchain._check_single_chain_activity(
+            address=make_evm_address(),
+            chain=SupportedBlockchain.HYPERLIQUID,
+        ) is expected

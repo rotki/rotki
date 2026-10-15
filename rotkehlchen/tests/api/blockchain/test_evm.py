@@ -755,7 +755,7 @@ def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_ser
             gnosis_addresses=[addy],
             scroll_addresses=[addy],
             binance_sc_addresses=[addy],
-            hyperliquid_addresses=[addy],
+            hyperliquid_core_addresses=[addy],  # no HyperEVM activity, only Core
             monad_addresses=[addy],
         )
 
