@@ -64,19 +64,28 @@ class TokenBucket:
         self.tokens = min(self.capacity, self.tokens + (now - self.last_refill) * self.rps)
         self.last_refill = now
 
-    def acquire(self) -> None:
-        """Block until a token is available, then consume one. Sleeping is a
+    def charge(self, weight: int) -> None:
+        """Consume `weight` tokens without waiting, for a cost only known after the work is
+        done. The balance may go negative, in which case the next acquire waits until it has
+        refilled, so the debt is paid by whoever comes next instead of by the current caller."""
+        with self._lock:
+            self._refill()
+            self.tokens -= weight
+
+    def acquire(self, weight: int = 1) -> None:
+        """Block until `weight` tokens are available, then consume them. Sleeping is a
         cancellation checkpoint, so a cancelled task does not wait for a token.
         The explicit checkpoint covers the fast path: with a full bucket a
-        cancelled request loop would otherwise never sleep and keep querying."""
+        cancelled request loop would otherwise never sleep and keep querying.
+        A weight above the capacity is capped to it, since it could never be satisfied."""
         checkpoint()
         while True:
             with self._lock:
                 self._refill()
-                if self.tokens >= 1:
-                    self.tokens -= 1
+                if self.tokens >= (needed := min(weight, self.capacity)):
+                    self.tokens -= needed
                     return
-                wait_s = (1 - self.tokens) / self.rps
+                wait_s = (needed - self.tokens) / self.rps
 
             cancellable_sleep(wait_s)
 

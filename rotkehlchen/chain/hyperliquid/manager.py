@@ -1,5 +1,6 @@
 import logging
 from collections import Counter, defaultdict
+from threading import Lock
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
@@ -12,11 +13,12 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
+from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI, create_weight_limiter
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
+from rotkehlchen.utils.network import create_session
 
 from .accountant import HyperliquidAccountingAggregator
 from .decoding.decoder import HyperliquidTransactionDecoder
@@ -26,9 +28,12 @@ from .transactions import HyperliquidTransactions
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
+    from requests import Session
+
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.premium.premium import Premium
     from rotkehlchen.types import ChecksumEvmAddress, Timestamp
+    from rotkehlchen.utils.rate_limiter import TokenBucket
 
     from .node_inquirer import HyperliquidInquirer
 
@@ -70,6 +75,26 @@ class HyperliquidManager(EvmManager):
             ),
         )
         self.node_inquirer: HyperliquidInquirer
+        # Created eagerly: history, balances and detection may request clients concurrently
+        # and lazy initialization would hand each of them its own session, limiter and lock.
+        self._http_session: Session = create_session()
+        self._rate_limiter: TokenBucket = create_weight_limiter()
+        self._listing_lock: Lock = Lock()
+
+    @property
+    def api(self) -> HyperliquidAPI:
+        """A Core API client for one operation (balances, history, account detection).
+
+        Only the connection, the request weight limiter and the lock serializing list queries
+        are shared between clients, so all queries are paced against the same allowance. Market
+        and DEX metadata is cached per client, so that each operation sees newly listed markets
+        and deployed DEXes.
+        """
+        return HyperliquidAPI(
+            session=self._http_session,
+            rate_limiter=self._rate_limiter,
+            listing_lock=self._listing_lock,
+        )
 
     def query_balances(
             self,
@@ -89,7 +114,7 @@ class HyperliquidManager(EvmManager):
                 )
                 del assets[sthype]
 
-        api = HyperliquidAPI()
+        api = self.api
         main_currency = CachedSettings().main_currency
         for address in addresses:
             try:
@@ -221,7 +246,7 @@ class HyperliquidManager(EvmManager):
         A range is only marked as queried once all of its history has been queried, so a
         range that failed midway is queried again in a future sync.
         """
-        api = HyperliquidAPI()
+        api = self.api
         ranges = DBQueryRanges(self.node_inquirer.database)
         history_db = DBHistoryEvents(self.node_inquirer.database)
 
@@ -278,7 +303,7 @@ class HyperliquidManager(EvmManager):
         """
         return self._save_history_batches(
             history_db=DBHistoryEvents(self.node_inquirer.database),
-            batches=HyperliquidAPI().iter_history_event_batches(
+            batches=self.api.iter_history_event_batches(
                 address=address,
                 start_ts=start_ts,
                 end_ts=end_ts,

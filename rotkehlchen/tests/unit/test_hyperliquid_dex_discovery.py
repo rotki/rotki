@@ -1,7 +1,13 @@
-from unittest.mock import call, patch
+import time
+from http import HTTPStatus
+from unittest.mock import MagicMock, call, patch
+
+import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.concurrency import spawn, wait
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import EntryContext, HyperliquidAPI, ParsedFillEntry
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -220,3 +226,103 @@ def test_parse_fill_entry_omits_dex_for_non_hip3_fills() -> None:
 
     assert parsed is not None
     assert 'dex' not in parsed.extra_data
+
+
+def test_dex_discovery_failure_is_not_cached() -> None:
+    """A temporary failure must not disable HIP-3 discovery for the lifetime of the client"""
+    api = HyperliquidAPI()
+    with patch.object(api, '_post_info', side_effect=[RemoteError('timeout'), [{'name': 'xyz'}]]):
+        assert api._discover_available_dex_names() == []
+        assert api._discover_available_dex_names() == ['xyz']
+
+
+def test_requests_are_charged_their_weight() -> None:
+    """All `/info` requests go through the shared weight limiter, with extra weight for each
+    20 items returned by list queries"""
+    limiter = MagicMock()
+    api = HyperliquidAPI(rate_limiter=limiter)
+    response = MagicMock(status_code=HTTPStatus.OK)
+    with patch.object(api.session, 'post', return_value=response):
+        response.json.return_value = {}
+        api._post_info({'type': 'userRole'})
+        api._post_info({'type': 'clearinghouseState'})
+        api._post_info({'type': 'perpDexs'})
+        response.json.return_value = [{}] * 45
+        api._post_info({'type': 'userFills'})
+
+    assert [c.args[0] for c in limiter.acquire.call_args_list] == [60, 2, 20, 20]
+    assert [c.args[0] for c in limiter.charge.call_args_list] == [2]  # per 20 items returned
+
+
+def test_shared_session_and_limiter_but_separate_metadata() -> None:
+    session, limiter = requests.Session(), MagicMock()
+    first = HyperliquidAPI(session=session, rate_limiter=limiter)
+    second = HyperliquidAPI(session=session, rate_limiter=limiter)
+    assert first.session is second.session is session
+    assert first.rate_limiter is second.rate_limiter is limiter
+    first._discovered_dex_names = ['xyz']
+    assert second._discovered_dex_names is None
+
+
+def test_rate_limited_retries_are_charged_again() -> None:
+    limiter = MagicMock()
+    api = HyperliquidAPI(rate_limiter=limiter)
+    limited = MagicMock(status_code=HTTPStatus.TOO_MANY_REQUESTS, headers={'retry-after': '1'})
+    ok = MagicMock(status_code=HTTPStatus.OK, json=MagicMock(return_value={}))
+    with (
+        patch.object(api.session, 'post', side_effect=[limited, limited, ok]),
+        patch('rotkehlchen.externalapis.hyperliquid.cancellable_sleep'),
+    ):
+        api._post_info({'type': 'userRole'})
+
+    assert [c.args[0] for c in limiter.acquire.call_args_list] == [60, 60, 60]
+
+
+def test_list_queries_are_charged_for_their_actual_size() -> None:
+    """A list query only acquires its base weight, and the extra for the items it returned
+    is charged afterwards, so an empty page costs 20 and not the worst case page weight"""
+    limiter = MagicMock()
+    api = HyperliquidAPI(rate_limiter=limiter)
+    response = MagicMock(status_code=HTTPStatus.OK)
+    with patch.object(api.session, 'post', return_value=response):
+        response.json.return_value = []
+        api._post_info({'type': 'userFillsByTime'})
+        response.json.return_value = [{}] * 45
+        api._post_info({'type': 'userFillsByTime'})
+
+    assert [c.args[0] for c in limiter.acquire.call_args_list] == [20, 20]
+    assert [c.args[0] for c in limiter.charge.call_args_list] == [0, 2]
+
+
+def test_empty_paged_queries_do_not_wait_on_a_fresh_limiter() -> None:
+    """The three requests of a history sync of an address without history don't wait"""
+    api = HyperliquidAPI()
+    response = MagicMock(status_code=HTTPStatus.OK, json=MagicMock(return_value=[]))
+    with patch.object(api.session, 'post', return_value=response), patch(
+        'rotkehlchen.utils.rate_limiter.cancellable_sleep',
+    ) as sleep_mock:
+        for query in ('userFunding', 'userNonFundingLedgerUpdates', 'userFillsByTime'):
+            api._post_info({'type': query})
+
+    sleep_mock.assert_not_called()
+
+
+def test_list_queries_do_not_overlap() -> None:
+    """Their weight is charged after the response, so only one may be in flight at a time, while
+    other queries are not held up by it"""
+    api = HyperliquidAPI()
+    in_flight, max_in_flight = [0], [0]
+
+    def post(**kwargs: object) -> MagicMock:
+        in_flight[0] += 1
+        max_in_flight[0] = max(max_in_flight[0], in_flight[0])
+        time.sleep(0.05)
+        in_flight[0] -= 1
+        return MagicMock(status_code=HTTPStatus.OK, json=MagicMock(return_value=[]))
+
+    with patch.object(api.session, 'post', side_effect=post):
+        wait([spawn(api._post_info, {'type': 'userFillsByTime'}) for _ in range(3)])
+        assert max_in_flight[0] == 1
+        max_in_flight[0] = 0
+        wait([spawn(api._post_info, {'type': 'spotMeta'}) for _ in range(3)])
+        assert max_in_flight[0] > 1

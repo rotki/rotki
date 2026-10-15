@@ -1410,19 +1410,45 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 return bool(response.get('list', None))  # falsy -> None or no transactions
 
             evm_manager = cast('EvmManager', chain_manager)
-            chain_activity = evm_manager.node_inquirer.has_activity(
-                chain_id=chain.to_chain_id(),
-                account=address,
-            )
+            try:
+                chain_activity = evm_manager.node_inquirer.has_activity(
+                    chain_id=chain.to_chain_id(),
+                    account=address,
+                )
+            except RemoteError as e:
+                if chain != SupportedBlockchain.HYPERLIQUID:
+                    raise
+
+                # A positive Core result is enough, but if Core is inactive or also fails
+                # the HyperEVM failure must not be mistaken for inactivity.
+                if self._has_hyperliquid_core_activity(address) is True:
+                    return True
+
+                log.error('%s when checking if %s is active at %s', e, address, chain)
+                return None
+
             only_token_spam = (
                 chain_activity == HasChainActivity.TOKENS and
                 evm_manager.transactions.address_has_been_spammed(address=address)
             )
+            if (
+                chain == SupportedBlockchain.HYPERLIQUID and
+                (only_token_spam or chain_activity == HasChainActivity.NONE)
+            ):  # no HyperEVM activity. Check Hyperliquid Core too
+                return self._has_hyperliquid_core_activity(address)
         except RemoteError as e:
             log.error('%s when checking if %s is active at %s', e, address, chain)
             return None
         else:
             return not (only_token_spam or chain_activity == HasChainActivity.NONE)
+
+    def _has_hyperliquid_core_activity(self, address: ChecksumEvmAddress) -> bool | None:
+        """Check Hyperliquid Core activity. Returns None if the query failed."""
+        try:
+            return self.hyperliquid.api.has_core_activity(address=address)
+        except RemoteError as e:
+            log.error('%s when checking if %s is active at Hyperliquid Core', e, address)
+            return None
 
     def check_single_address_activity(
             self,
