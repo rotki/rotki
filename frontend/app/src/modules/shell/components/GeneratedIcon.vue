@@ -54,6 +54,11 @@ const text = computed<string>(() => {
 /**
  * A hue taken from the identifier, so one asset always gets the same colour, neighbours in a stack
  * tell apart at a glance, and a token bridged to another chain gets its own.
+ *
+ * @remarks
+ * The tint is applied in OKLCH, where one lightness looks equally light at every hue, so no
+ * placeholder fades into the row or jumps out of it. A pastel fill cannot hold an edge against a
+ * white row, so in light mode a hairline of the same hue draws the circle.
  */
 const hue = computed<number>(() => {
   let hash = 0;
@@ -88,7 +93,7 @@ const customIconSize = computed(() => {
     :style="{ ...wrapperStyle, ...textStyle, '--generated-hue': hue }"
     class="flex items-center justify-center rounded-full whitespace-nowrap tracking-normal font-semibold uppercase"
     :class="tinted
-      ? 'bg-[hsl(var(--generated-hue)_65%_91%)] text-[hsl(var(--generated-hue)_55%_32%)] dark:bg-[hsl(var(--generated-hue)_35%_26%)] dark:text-[hsl(var(--generated-hue)_70%_82%)]'
+      ? 'bg-[oklch(90%_0.05_var(--generated-hue))] text-[oklch(42%_0.11_var(--generated-hue))] shadow-[inset_0_0_0_1px_oklch(78%_0.07_var(--generated-hue))] dark:bg-[oklch(46%_0.08_var(--generated-hue))] dark:text-[oklch(93%_0.06_var(--generated-hue))] dark:shadow-none'
       : 'bg-rui-grey-200 dark:bg-rui-grey-300 text-rui-grey-600 dark:text-rui-grey-700 border border-rui-grey-300 dark:border-rui-grey-400'"
     data-testid="generated-icon"
   >

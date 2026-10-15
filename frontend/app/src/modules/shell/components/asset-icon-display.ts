@@ -125,3 +125,40 @@ export function badgeSize(
 
   return `${(Number.parseInt(iconSize) * percentage) / 100}px`;
 }
+
+/** Space left between a badge and the edge of the notch cut for it, in px. */
+const BADGE_CUTOUT_GAP = 1;
+
+interface BadgeCorners {
+  topLeft: boolean;
+  bottomRight: boolean;
+}
+
+/**
+ * A css mask that cuts a round notch out of the icon under each corner badge.
+ *
+ * @remarks
+ * The badges sit inside the icon's own box, so a parent with `overflow: hidden` cannot clip them.
+ * Notching the icon, rather than ringing the badge, keeps the badge readable without covering the
+ * icon or growing the box. The notch edge is softened by half a pixel because Chrome does not
+ * antialias a gradient mask.
+ *
+ * @param badge - the badge size, as a css length
+ * @param corners - which corners carry a badge
+ * @returns the `mask` value, or `undefined` when no corner has a badge
+ */
+export function badgeCutoutMask(badge: string, corners: BadgeCorners): string | undefined {
+  const center = `calc(${badge} / 2)`;
+  const hole = `calc(${badge} / 2 + ${BADGE_CUTOUT_GAP}px)`;
+  const edge = `calc(${badge} / 2 + ${BADGE_CUTOUT_GAP + 0.5}px)`;
+  const notch = (x: string, y: string): string =>
+    `radial-gradient(circle at ${x} ${y}, transparent ${hole}, #000 ${edge})`;
+
+  const layers: string[] = [];
+  if (corners.topLeft)
+    layers.push(notch(center, center));
+  if (corners.bottomRight)
+    layers.push(notch(`calc(100% - ${center})`, `calc(100% - ${center})`));
+
+  return layers.length > 0 ? layers.join(', ') : undefined;
+}

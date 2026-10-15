@@ -14,6 +14,7 @@ import {
   assetChain,
   assetTooltip,
   type AssetTooltip,
+  badgeCutoutMask,
   badgeSize,
   displayAssetText,
   visibleProtocol,
@@ -143,10 +144,19 @@ const tooltipOptions = computed(() => ({
 }));
 
 /** Both badges share one size, so a chain and a protocol read as the same kind of mark. */
-const usedChainIconSize = computed<string>(() => badgeSize(chainIconSize, size, 45));
+const usedChainIconSize = computed<string>(() => badgeSize(chainIconSize, size, 40));
 const usedProtocolIconSize = computed<string>(() => get(usedChainIconSize));
 
-const chainIconMargin = computed(() => `-${get(usedChainIconSize)}`);
+const chainBadge = computed<string | undefined>(() => (showChain ? get(chain) : undefined));
+const protocolBadge = computed<string | undefined>(() => (hideProtocol ? undefined : get(protocol)));
+
+const iconMaskStyle = computed<{ mask?: string; maskComposite?: string }>(() => {
+  const mask = badgeCutoutMask(get(usedChainIconSize), {
+    bottomRight: !!get(chainBadge),
+    topLeft: !!get(protocolBadge),
+  });
+  return mask ? { mask, maskComposite: 'intersect' } : {};
+});
 
 const placeholderStyle = computed(() => {
   const prop = `calc(${padding} + ${padding} + ${size})`;
@@ -198,23 +208,22 @@ const { copied, copy } = useCopy(() => identifier);
         @click="emit('click')"
       >
         <div
-          v-if="showChain && chain"
-          class="rounded-full! overflow-hidden! bg-white z-1 absolute flex items-center justify-center -bottom-1 -right-1 ring-2 ring-rui-surface"
-          :style="{ marginTop: chainIconMargin, marginLeft: chainIconMargin }"
+          v-if="chainBadge"
+          class="rounded-full! overflow-hidden! bg-white z-1 absolute flex items-center justify-center bottom-0 right-0"
         >
           <EvmChainIcon
-            :chain="chain"
+            :chain="chainBadge"
             :size="usedChainIconSize"
           />
         </div>
 
         <div
-          v-if="protocol && !hideProtocol"
-          class="z-1 absolute flex items-center justify-center -top-1 -left-1 rounded-full overflow-hidden bg-white ring-2 ring-rui-surface"
+          v-if="protocolBadge"
+          class="z-1 absolute flex items-center justify-center top-0 left-0 rounded-full overflow-hidden bg-white"
           :class="{ blur: !shouldShowAmount }"
         >
           <CounterpartyDisplay
-            :counterparty="protocol"
+            :counterparty="protocolBadge"
             :size="usedProtocolIconSize"
             icon
           />
@@ -226,7 +235,7 @@ const { copied, copy } = useCopy(() => identifier);
             'rounded-full! overflow-hidden!': circle,
             'blur': !shouldShowAmount,
           }"
-          :style="{ padding }"
+          :style="{ padding, ...iconMaskStyle }"
         >
           <GeneratedIcon
             v-if="blockie"

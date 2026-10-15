@@ -4,6 +4,7 @@ import { HYPERLIQUID_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/
 import {
   assetChain,
   assetTooltip,
+  badgeCutoutMask,
   badgeSize,
   displayAssetText,
   visibleProtocol,
@@ -132,5 +133,27 @@ describe('badgeSize', () => {
   /** An explicit size is the caller overriding the scale deliberately. */
   it('should let the caller override it', () => {
     expect(badgeSize('9px', '24px', 50)).toBe('9px');
+  });
+});
+
+describe('badgeCutoutMask', () => {
+  it('should leave the icon unmasked without badges', () => {
+    expect(badgeCutoutMask('9px', { bottomRight: false, topLeft: false })).toBeUndefined();
+  });
+
+  it('should notch the top left corner for a protocol badge', () => {
+    expect(badgeCutoutMask('9px', { bottomRight: false, topLeft: true })).toBe(
+      'radial-gradient(circle at calc(9px / 2) calc(9px / 2), transparent calc(9px / 2 + 1px), #000 calc(9px / 2 + 1.5px))',
+    );
+  });
+
+  it('should notch the bottom right corner for a chain badge', () => {
+    expect(badgeCutoutMask('9px', { bottomRight: true, topLeft: false })).toBe(
+      'radial-gradient(circle at calc(100% - calc(9px / 2)) calc(100% - calc(9px / 2)), transparent calc(9px / 2 + 1px), #000 calc(9px / 2 + 1.5px))',
+    );
+  });
+
+  it('should layer one notch per badge', () => {
+    expect(badgeCutoutMask('9px', { bottomRight: true, topLeft: true })?.split('radial-gradient')).toHaveLength(3);
   });
 });

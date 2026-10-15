@@ -77,6 +77,21 @@ describe('modules/shell/components/IconMark', () => {
     expect(wrapper.find('[data-testid=icon-mark]').classes()).toContain('dark:bg-black');
   });
 
+  it('should ring a backed glyph so its circle shows on a light page', async () => {
+    const wrapper = createWrapper();
+    await wrapper.find('img').trigger('load');
+
+    expect(wrapper.find('[data-testid=icon-mark]').classes()).toContain('shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)]');
+  });
+
+  it('should leave a logo that fills the frame unringed', async () => {
+    vi.mocked(fillsFrame).mockReturnValue(true);
+    const wrapper = createWrapper();
+    await wrapper.find('img').trigger('load');
+
+    expect(wrapper.find('[data-testid=icon-mark]').classes()).not.toContain('shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)]');
+  });
+
   it('should size the frame from the size prop', () => {
     const wrapper = createWrapper({ size: '2rem' });
 
