@@ -107,6 +107,27 @@ describe('useNetValueChartConfig', () => {
     });
   });
 
+  describe('x axis labels', () => {
+    function xAxisLabel(): unknown {
+      const option = useNetValueChartConfig(() => chartData());
+      const xAxis = get(option.chartOption).xAxis;
+      const axis = Array.isArray(xAxis) ? xAxis[0] : xAxis;
+      return axis?.axisLabel;
+    }
+
+    it('should drop labels that would draw over each other', () => {
+      expect(xAxisLabel()).toMatchObject({ hideOverlap: true });
+    });
+
+    it('should name the month on a day tick', () => {
+      expect(xAxisLabel()).toMatchObject({ formatter: { day: '{MMM} {d}', month: '{MMM}', year: '{yyyy}' } });
+    });
+
+    it('should leave the first and last data points unlabelled', () => {
+      expect(xAxisLabel()).toMatchObject({ showMaxLabel: false, showMinLabel: false });
+    });
+  });
+
   describe('y axis min/max', () => {
     function yAxisMin(zeroBased: boolean): (value: { min: number; max: number }) => unknown {
       state.graphZeroBased = zeroBased;
