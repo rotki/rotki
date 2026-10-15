@@ -25,6 +25,11 @@ const i18nIgnoreKeys = [
      retired ones. Regenerate: `pnpm run generate:premium-keys`. */
   ...premiumComponentKeys,
   ...translationKeys(),
+  /* Read by `RuiFileUpload` from ui-library 3.0, whose `translationKeys()` lists them; 2.26.1 still
+     hardcodes these errors in English. Kept so the translations are live once 3.0 lands; drop these
+     two entries then. */
+  'rui.file_upload.too_many',
+  'rui.file_upload.wrong_type',
 ];
 
 export default rotki({

@@ -5832,6 +5832,12 @@
       "unsupported": "{provider}, {chains} için hizmet vermiyor."
     }
   },
+  "rui": {
+    "file_upload": {
+      "too_many": "Yalnızca bir dosya seçilmelidir",
+      "wrong_type": "Yalnızca {accept} dosyalarına izin verilir"
+    }
+  },
   "settings": {
     "go_to_section": "Bölüme git",
     "not_saved": "Ayar kaydedilmedi",

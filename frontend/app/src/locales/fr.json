@@ -2610,6 +2610,12 @@
     "weight": "Poids",
     "weight_hint": "Poids du nœud {weight}/100 (lors de l'ajustement du poids d'un nœud public, les autres nœuds seront ajustés en conséquence)"
   },
+  "rui": {
+    "file_upload": {
+      "too_many": "Un seul fichier doit être sélectionné",
+      "wrong_type": "Seuls les fichiers {accept} sont autorisés"
+    }
+  },
   "settings": {
     "not_saved": "Paramètre non enregistré",
     "saved": "Paramètre enregistré"
