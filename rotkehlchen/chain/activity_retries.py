@@ -142,16 +142,18 @@ class ActivityRetryTracker:
     def record_failures(
             self,
             failures: Collection[ActivityCheck],
+            started_at: int | None,
             submitted: bool = False,
             submission: SingleBlockchainAccountData[ChecksumEvmAddress] | None = None,
-            started_at: int | None = None,
     ) -> None:
         """Remember failed checks and schedule their retry if none is scheduled yet.
         A given submission marks the checks of its address as explicitly submitted, and is
         stored together with them from the very first moment, so that it survives an
         interruption of the operation that recorded the failure.
-        started_at is the removal generation when the failed request started. A removed check
-        only accepts failures of explicit requests that started after the removal."""
+        started_at is the removal generation when the failed request started, None for the
+        ones that are not explicit submissions (retries and detection). It has no default so
+        that no explicit caller can forget it, which would skip the removal guard. A removed
+        check only accepts failures of explicit requests that started after the removal."""
         if len(failures) == 0:
             return
 

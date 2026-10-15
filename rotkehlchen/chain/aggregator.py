@@ -1406,8 +1406,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             address: ChecksumEvmAddress,
             chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
+            started_at: int | None,
             submission: SingleBlockchainAccountData[ChecksumEvmAddress] | None = None,
-            started_at: int | None = None,
     ) -> bool | None:
         """Checks whether address is active in the given chain.
         Returns True if active, False if not and None if we couldn't query the chain.
@@ -1465,7 +1465,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
                 # A positive Core result is enough, but if Core is inactive or also fails
                 # the HyperEVM failure must not be mistaken for inactivity.
-                if self._has_hyperliquid_core_activity(address, submission, started_at) is True:
+                if self._has_hyperliquid_core_activity(address, started_at, submission) is True:
                     return True
 
                 self._activity_check_failed(
@@ -1485,7 +1485,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 chain == SupportedBlockchain.HYPERLIQUID and
                 (only_token_spam or chain_activity == HasChainActivity.NONE)
             ):  # no HyperEVM activity. Check Hyperliquid Core too
-                return self._has_hyperliquid_core_activity(address, submission, started_at)
+                return self._has_hyperliquid_core_activity(address, started_at, submission)
         except RemoteError as e:
             self._activity_check_failed(
                 address=address,
@@ -1503,8 +1503,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             address: ChecksumEvmAddress,
             chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
             error: RemoteError,
+            started_at: int | None,
             submission: SingleBlockchainAccountData[ChecksumEvmAddress] | None = None,
-            started_at: int | None = None,
     ) -> None:
         """Log a failed activity check and remember it if retrying soon can help.
         Only errors that are explicitly recoverable (rate limits, timeouts, 5xx) are remembered.
@@ -1514,14 +1514,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         log.error('%s when checking if %s is active at %s', error, address, chain)
         if isinstance(error, RecoverableRemoteError):
             self._activity_retries.record_failures(
-                [(address, chain)], submission=submission, started_at=started_at,
+                [(address, chain)], started_at=started_at, submission=submission,
             )
 
     def _has_hyperliquid_core_activity(
             self,
             address: ChecksumEvmAddress,
+            started_at: int | None,
             submission: SingleBlockchainAccountData[ChecksumEvmAddress] | None = None,
-            started_at: int | None = None,
     ) -> bool | None:
         """Check Hyperliquid Core activity. Returns None if the query failed."""
         try:
@@ -1540,8 +1540,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             address: ChecksumEvmAddress,
             chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE],
+            started_at: int | None,
             submission: SingleBlockchainAccountData[ChecksumEvmAddress] | None = None,
-            started_at: int | None = None,
     ) -> tuple[list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE], list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE]]:
         """Checks whether address is active in the given chains.
         Returns a list of active chains and a list of chains where we couldn't query info
@@ -1555,7 +1555,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         active_chains = []
         failed_to_query_chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = []
         tasks = {
-            chain: spawn(self._check_single_chain_activity, address, chain, submission, started_at)
+            chain: spawn(
+                self._check_single_chain_activity,
+                address, chain, started_at, submission,
+            )
             for chain in chains
         }
         wait(list(tasks.values()))
@@ -1608,9 +1611,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             account: ChecksumEvmAddress,
             chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE],
+            started_at: int | None,
             is_retry: bool = False,
             submission: SingleBlockchainAccountData[ChecksumEvmAddress] | None = None,
-            started_at: int | None = None,
     ) -> tuple[
             list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
             list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
@@ -1774,6 +1777,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 new_added_accounts, _, _ = self.check_chains_and_add_accounts(
                     account=account,
                     chains=chains_to_check,
+                    started_at=None,
                 )
                 added_accounts += new_added_accounts
 
@@ -1823,6 +1827,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     account=address,
                     chains=chains,
                     is_retry=True,
+                    started_at=None,
                 )
                 added_accounts += new_added_accounts
 

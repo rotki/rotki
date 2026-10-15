@@ -542,6 +542,7 @@ def test_hyperliquid_activity_checks_core(
         assert blockchain._check_single_chain_activity(
             address=make_evm_address(),
             chain=SupportedBlockchain.HYPERLIQUID,
+            started_at=None,
         ) is expected
 
 
@@ -634,6 +635,7 @@ def test_recoverable_failure_outside_detection_is_not_retried_immediately(
         assert blockchain._check_single_chain_activity(
             address=(address := make_evm_address()),
             chain=SupportedBlockchain.HYPERLIQUID,
+            started_at=None,
         ) is None
 
     assert (address, SupportedBlockchain.HYPERLIQUID) in blockchain._activity_retries._pending
@@ -654,6 +656,7 @@ def test_avalanche_transient_failure_is_retried(
         assert blockchain._check_single_chain_activity(
             address=(address := make_evm_address()),
             chain=SupportedBlockchain.AVALANCHE,
+            started_at=None,
         ) is None
 
     assert (address, SupportedBlockchain.AVALANCHE) in blockchain._activity_retries._pending
@@ -672,6 +675,7 @@ def test_zksync_lite_failure_is_retried_only_if_recoverable(
         assert blockchain._check_single_chain_activity(
             address=(address := make_evm_address()),
             chain=SupportedBlockchain.ZKSYNC_LITE,
+            started_at=None,
         ) is None
 
     assert ((address, SupportedBlockchain.ZKSYNC_LITE) in blockchain._activity_retries._pending) is is_retried  # noqa: E501
@@ -767,6 +771,7 @@ def test_retry_detection_exclusions_only_apply_to_autodetected_checks(
     _track(blockchain, address := make_evm_address())  # so only the exclusion can skip it
     blockchain._activity_retries.record_failures(
         [(address, SupportedBlockchain.HYPERLIQUID)], submitted=submitted,
+        started_at=None,
     )
     with patch.object(blockchain.database, 'get_chains_to_detect_evm_accounts', return_value=[]):
         assert _retry_with_core_active(blockchain) == (
@@ -828,6 +833,7 @@ def test_removing_an_account_drops_its_pending_retries(blockchain: ChainsAggrega
     _track(blockchain, address := make_evm_address())
     blockchain._activity_retries.record_failures(
         [(address, SupportedBlockchain.HYPERLIQUID)], submitted=True,
+        started_at=None,
     )
     with blockchain.database.user_write() as write_cursor:
         blockchain.remove_single_blockchain_accounts(
@@ -849,6 +855,7 @@ def test_pending_activity_retries_survive_restart(blockchain: ChainsAggregator) 
     address = make_evm_address()
     blockchain._activity_retries.record_failures(
         [(address, SupportedBlockchain.HYPERLIQUID)], submitted=True,
+        started_at=None,
     )
     due_ts = blockchain._activity_retries._due_ts
 
@@ -876,6 +883,7 @@ def test_removal_during_activity_retry_is_respected(
     _track(blockchain, address)
     blockchain._activity_retries.record_failures(
         [(address, SupportedBlockchain.HYPERLIQUID)], submitted=True,
+        started_at=None,
     )
     started, release = Event(), Event()
     with (
@@ -915,13 +923,13 @@ def test_resubmission_during_activity_retry_is_not_suppressed(
     tracker = blockchain._activity_retries
     check: ActivityCheck = (address := make_evm_address(), SupportedBlockchain.HYPERLIQUID)
     submission = SingleBlockchainAccountData(address=address, label='again', tags=None)
-    tracker.record_failures([check], submitted=True)
+    tracker.record_failures([check], submitted=True, started_at=None)
     with tracker.rechecking():
         pre_removal = tracker.removal_generation  # explicit submission started before removal
         with blockchain.database.user_write() as cursor:
             tracker.drop_address(cursor, address)
 
-        tracker.record_failures([check])  # late failure of the old retry
+        tracker.record_failures([check], started_at=None)  # late failure of the old retry
         tracker.record_failures([check], submission=submission, started_at=pre_removal)
         assert tracker.has_pending() is False
 
@@ -938,7 +946,7 @@ def test_pre_removal_failure_after_retry_finished_is_ignored(blockchain: ChainsA
     """The explicit request can outlive the retry, so the removal must outlive it too."""
     tracker = blockchain._activity_retries
     check: ActivityCheck = (address := make_evm_address(), SupportedBlockchain.HYPERLIQUID)
-    tracker.record_failures([check], submitted=True)
+    tracker.record_failures([check], submitted=True, started_at=None)
     with tracker.rechecking():
         pre_removal = tracker.removal_generation
         with blockchain.database.user_write() as cursor:
@@ -956,7 +964,7 @@ def test_pre_removal_failure_on_chain_outside_retry_is_ignored(
     """The explicit add checks every chain, not only the ones of the running retry."""
     tracker = blockchain._activity_retries
     check: ActivityCheck = (address := make_evm_address(), SupportedBlockchain.HYPERLIQUID)
-    tracker.record_failures([check], submitted=True)
+    tracker.record_failures([check], submitted=True, started_at=None)
     with tracker.rechecking():
         pre_removal = tracker.removal_generation
         with blockchain.database.user_write() as cursor:
@@ -982,6 +990,8 @@ def test_removal_during_explicit_add_is_respected(blockchain: ChainsAggregator) 
         patch('rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.has_activity', return_value=HasChainActivity.NONE),  # noqa: E501
         patch('rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.is_contract', return_value=False),  # noqa: E501
         patch.object(blockchain.zksync_lite, '_query_api', return_value={'list': []}),
+        patch.object(blockchain.avalanche, 'w3', MagicMock(**{'eth.get_transaction_count.return_value': 0})),  # noqa: E501
+        patch.object(blockchain.avalanche, 'get_avax_balance', return_value=ZERO),
         patch.object(HyperliquidAPI, 'has_core_activity', side_effect=partial(
             _blocked_core_activity, started, release, RecoverableRemoteError('unavailable'),
         )),
@@ -999,6 +1009,7 @@ def test_removal_during_explicit_add_is_respected(blockchain: ChainsAggregator) 
             release.set()
             task.join(10)
         assert task.dead
+        result_of(task)  # a crash of the add must not make the test pass vacuously
 
     assert blockchain._activity_retries.has_pending() is False
     assert ActivityRetryTracker(blockchain.database).has_pending() is False
@@ -1008,7 +1019,7 @@ def test_removal_again_after_resubmission_ignores_old_retry(blockchain: ChainsAg
     """Remove, resubmit, remove again during one retry: its late failure is still ignored."""
     tracker = blockchain._activity_retries
     check: ActivityCheck = (address := make_evm_address(), SupportedBlockchain.HYPERLIQUID)
-    tracker.record_failures([check], submitted=True)
+    tracker.record_failures([check], submitted=True, started_at=None)
     with tracker.rechecking():
         with blockchain.database.user_write() as cursor:
             tracker.drop_address(cursor, address)
@@ -1022,7 +1033,7 @@ def test_removal_again_after_resubmission_ignores_old_retry(blockchain: ChainsAg
         with blockchain.database.user_write() as cursor:
             tracker.drop_address(cursor, address)
 
-        tracker.record_failures([check])  # late failure of the old retry
+        tracker.record_failures([check], started_at=None)  # late failure of the old retry
         assert tracker.has_pending() is False
 
 
@@ -1035,8 +1046,8 @@ def test_removal_during_earlier_account_of_batch_is_respected(
     _track(blockchain, address)
     started, release = Event(), Event()
 
-    def core_activity(address: ChecksumEvmAddress, **kwargs: Any) -> bool:
-        if address == other:
+    def core_activity(**kwargs: Any) -> bool:
+        if kwargs['address'] == other:
             return _blocked_core_activity(started, release, False)
         raise RecoverableRemoteError('unavailable')
 
@@ -1044,6 +1055,8 @@ def test_removal_during_earlier_account_of_batch_is_respected(
         patch('rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.has_activity', return_value=HasChainActivity.NONE),  # noqa: E501
         patch('rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.is_contract', return_value=False),  # noqa: E501
         patch.object(blockchain.zksync_lite, '_query_api', return_value={'list': []}),
+        patch.object(blockchain.avalanche, 'w3', MagicMock(**{'eth.get_transaction_count.return_value': 0})),  # noqa: E501
+        patch.object(blockchain.avalanche, 'get_avax_balance', return_value=ZERO),
         patch.object(HyperliquidAPI, 'has_core_activity', side_effect=core_activity),
     ):
         task = spawn(blockchain.add_accounts_to_all_evm, [other, address])
@@ -1059,8 +1072,11 @@ def test_removal_during_earlier_account_of_batch_is_respected(
             release.set()
             task.join(10)
         assert task.dead
+        result_of(task)  # a crash of the add must not make the test pass vacuously
 
-    assert blockchain._activity_retries.has_pending() is False
+    assert not any(
+        check[0] == address for check in blockchain._activity_retries._pending
+    )
 
 
 @pytest.mark.parametrize('full_detection', [False, True])
@@ -1073,6 +1089,7 @@ def test_cancelled_activity_retry_remains_durable(
         _track(blockchain, address)
     blockchain._activity_retries.record_failures(
         [(address, SupportedBlockchain.HYPERLIQUID)], submitted=True,
+        started_at=None,
     )
     due_ts = blockchain._activity_retries._due_ts
     operation = (
@@ -1104,6 +1121,7 @@ def test_activity_retry_scheduler_after_restart(task_manager: TaskManager) -> No
     with patch('rotkehlchen.chain.activity_retries.ts_now', return_value=ts_now() - 2 * EVMLIKE_ACCOUNTS_DETECTION_RETRY):  # noqa: E501
         blockchain._activity_retries.record_failures(
             [(address, SupportedBlockchain.HYPERLIQUID)], submitted=True,
+            started_at=None,
         )
     blockchain._activity_retries = ActivityRetryTracker(blockchain.database)
     assert task_manager._maybe_detect_evm_accounts() is None
@@ -1330,14 +1348,14 @@ def test_new_failures_do_not_postpone_a_due_retry(
     tracked addresses and so skips a pending untracked submitted one. Only a retry that ran
     and failed again is pushed back."""
     tracker = blockchain._activity_retries
-    tracker.record_failures([(make_evm_address(), SupportedBlockchain.HYPERLIQUID)], submitted=True)  # noqa: E501
+    tracker.record_failures([(make_evm_address(), SupportedBlockchain.HYPERLIQUID)], submitted=True, started_at=None)  # noqa: E501
     tracker._due_ts = (due_ts := Timestamp(ts_now() - 1))
     if full_detection:
         _track(blockchain, new_address := make_evm_address())
         with _only_hyperliquid_check_fails(blockchain):
             blockchain.detect_evm_accounts(chains=[SupportedBlockchain.HYPERLIQUID])
     else:
-        tracker.record_failures([(new_address := make_evm_address(), SupportedBlockchain.HYPERLIQUID)], submitted=True)  # noqa: E501
+        tracker.record_failures([(new_address := make_evm_address(), SupportedBlockchain.HYPERLIQUID)], submitted=True, started_at=None)  # noqa: E501
 
     assert (new_address, SupportedBlockchain.HYPERLIQUID) in tracker._pending
     assert tracker._due_ts == due_ts
