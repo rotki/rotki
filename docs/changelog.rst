@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` A profit and loss report can now be stopped while it is being generated, from a Stop generating button under the progress bar. It asks once in place before stopping.
 * :feature:`-` The transaction decoding status dialog is removed from the history page menu, since the task panel already shows decoding progress by chain. The "undecoded transactions" row in the action center now starts decoding directly instead of opening the dialog, and redecoding everything stays available from the redecode button above the events table.
 * :feature:`-` Premium database backups now show up in the task panel, including the automatic ones rotki runs in the background, so their progress and the reason a backup failed sit with the rest of the background work. The sync menu's buttons are now called Back up and Restore, and confirming either one happens inside the menu.
 * :bug:`-` When the selected month has no upcoming events, the calendar's upcoming events list now keeps to the selected accounts instead of showing events for every account.

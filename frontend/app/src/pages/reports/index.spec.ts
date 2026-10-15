@@ -1,4 +1,8 @@
+import type { Activity } from '@/modules/task-center/core/types';
+import type { useTaskCenter } from '@/modules/task-center/use-task-center';
+import type { useTaskController } from '@/modules/task-center/use-task-controller';
 import type { useReportsPage } from '@/pages/reports/use-reports-page';
+import { createMock } from '@test/utils/create-mock';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
@@ -15,17 +19,31 @@ interface PageState {
   modelReportDebugData?: Ref<File | undefined>;
 }
 
-const { clearError, exportData, generate, handleImportComplete, pageState, storeState } = vi.hoisted(() => {
+const { cancel, clearError, exportData, generate, handleImportComplete, pageState, reportActivity, storeState } = await vi.hoisted(async () => {
+  const { shallowRef: shallowRefFn } = await import('vue');
+  const { ok } = await import('plainfp/result');
   const pageState: PageState = { isRunning: false };
   return {
+    cancel: vi.fn<ReturnType<typeof useTaskController>['cancel']>(async () => ok(undefined)),
     clearError: vi.fn(),
     exportData: vi.fn(async (): Promise<void> => {}),
     generate: vi.fn(async (): Promise<void> => {}),
     handleImportComplete: vi.fn(async (): Promise<void> => {}),
     pageState,
+    reportActivity: shallowRefFn<Activity>(),
     storeState: { error: '', message: '', processingState: '', progress: '' },
   };
 });
+
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  useTaskCenter: (): Pick<ReturnType<typeof useTaskCenter>, 'useActivity'> => ({
+    useActivity: () => computed<Activity | undefined>(() => get(reportActivity)),
+  }),
+}));
+
+vi.mock('@/modules/task-center/use-task-controller', () => ({
+  useTaskController: (): Pick<ReturnType<typeof useTaskController>, 'cancel'> => ({ cancel }),
+}));
 
 /**
  * The page is a seam over `useReportsPage`, so the composable is mocked and the assertions are
@@ -116,6 +134,7 @@ describe('pages/reports/index', () => {
     storeState.message = '';
     storeState.processingState = '';
     storeState.progress = '';
+    set(reportActivity, undefined);
   });
 
   afterEach(() => {
@@ -182,6 +201,60 @@ describe('pages/reports/index', () => {
 
       expect(wrapper.findComponent(ErrorScreen).exists()).toBe(false);
       expect(wrapper.find('[data-testid=progress-stub]').exists()).toBe(true);
+    });
+  });
+
+  describe('stopping a running report', () => {
+    beforeEach(() => {
+      pageState.isRunning = true;
+      set(reportActivity, createMock<Activity>({ cancellable: true }));
+    });
+
+    async function askToStop(): Promise<void> {
+      await wrapper.find('[data-testid=report-generation-cancel]').trigger('click');
+    }
+
+    it('should ask in place before stopping', async () => {
+      wrapper = mountPage();
+
+      await askToStop();
+
+      expect(wrapper.find('[data-testid=report-generation-stop-confirm]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=report-generation-cancel]').exists()).toBe(false);
+      expect(cancel).not.toHaveBeenCalled();
+    });
+
+    it('should stop the report once confirmed', async () => {
+      wrapper = mountPage();
+      await askToStop();
+
+      await wrapper.find('[data-testid=report-generation-stop]').trigger('click');
+
+      expect(cancel).toHaveBeenCalledExactlyOnceWith(get(reportActivity));
+      expect(wrapper.find('[data-testid=report-generation-stop-confirm]').exists()).toBe(false);
+    });
+
+    it('should keep running and bring the button back on keep running', async () => {
+      wrapper = mountPage();
+      await askToStop();
+
+      await wrapper.find('[data-testid=report-generation-keep-running]').trigger('click');
+
+      expect(cancel).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-testid=report-generation-cancel]').exists()).toBe(true);
+    });
+
+    it('should drop the question once the report can no longer be stopped', async () => {
+      wrapper = mountPage();
+      await askToStop();
+
+      set(reportActivity, createMock<Activity>({ cancellable: false }));
+      await nextTick();
+      set(reportActivity, createMock<Activity>({ cancellable: true }));
+      await nextTick();
+
+      expect(wrapper.find('[data-testid=report-generation-stop-confirm]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=report-generation-cancel]').exists()).toBe(true);
     });
   });
 
