@@ -28,47 +28,64 @@ const { loadingBalancesAndDetection: loading } = useBalancesLoading();
 </script>
 
 <template>
-  <div class="flex justify-between gap-1">
-    <RuiTooltip
-      :open-delay="400"
-      class="w-full"
-    >
-      <template #activator>
-        <RuiButton
-          :variant="uploadStatus ? 'default' : 'outlined'"
-          color="primary"
-          class="w-full"
-          :disabled="!premium || pending || loading || disabled"
-          @click="action(UPLOAD)"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-cloud-upload-fill" />
-          </template>
-          {{ t('common.actions.push') }}
-        </RuiButton>
-      </template>
-      <span>{{ t('sync_buttons.upload_tooltip') }}</span>
-    </RuiTooltip>
+  <div class="flex flex-col gap-2">
+    <div class="grid grid-cols-2 gap-2">
+      <RuiTooltip
+        :open-delay="400"
+        class="w-full"
+      >
+        <template #activator>
+          <RuiButton
+            :variant="uploadStatus ? 'default' : 'outlined'"
+            color="primary"
+            class="w-full"
+            data-testid="sync-upload"
+            :disabled="!premium || pending || loading || disabled"
+            @click="action(UPLOAD)"
+          >
+            <template #prepend>
+              <RuiIcon
+                name="lu-cloud-upload"
+                size="16"
+              />
+            </template>
+            {{ t('sync_buttons.upload') }}
+          </RuiButton>
+        </template>
+        <span>{{ t('sync_buttons.upload_tooltip') }}</span>
+      </RuiTooltip>
 
-    <RuiTooltip
-      :open-delay="400"
-      class="w-full"
+      <RuiTooltip
+        :open-delay="400"
+        class="w-full"
+      >
+        <template #activator>
+          <RuiButton
+            variant="outlined"
+            color="primary"
+            class="w-full"
+            data-testid="sync-download"
+            :disabled="!premium || pending || !!uploadStatus || loading || disabled"
+            @click="action(DOWNLOAD)"
+          >
+            <template #prepend>
+              <RuiIcon
+                name="lu-cloud-download"
+                size="16"
+              />
+            </template>
+            {{ t('sync_buttons.download') }}
+          </RuiButton>
+        </template>
+        <span>{{ t('sync_buttons.download_tooltip') }}</span>
+      </RuiTooltip>
+    </div>
+    <div
+      v-if="loading && !pending && !disabled"
+      class="text-xs text-rui-text-secondary"
+      data-testid="sync-waiting"
     >
-      <template #activator>
-        <RuiButton
-          variant="outlined"
-          color="primary"
-          class="w-full"
-          :disabled="!premium || pending || !!uploadStatus || loading || disabled"
-          @click="action(DOWNLOAD)"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-cloud-download-fill" />
-          </template>
-          {{ t('common.actions.pull') }}
-        </RuiButton>
-      </template>
-      <span>{{ t('sync_buttons.download_tooltip') }}</span>
-    </RuiTooltip>
+      {{ t('sync_buttons.waiting_for_balances') }}
+    </div>
   </div>
 </template>

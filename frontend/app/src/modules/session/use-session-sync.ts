@@ -1,9 +1,9 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/messaging/types';
-import type { TaskError } from '@/modules/core/tasks/task-result';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { err, flatMap, isErr, ok, type Result } from 'plainfp/result';
 import { api } from '@/modules/core/api/rotki-api';
 import { serializer } from '@/modules/core/messaging/use-dynamic-messages';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useSyncApi } from '@/modules/session/api/use-sync-api';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
@@ -11,7 +11,7 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export const useSync = createSharedComposable(() => {
   const { statusOf, submitTask } = useNativeTask();
-  const { notifyError, notifyInfo } = useNotifications();
+  const { notifyInfo } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const syncAction = ref<SyncAction>(SYNC_DOWNLOAD);
   const displaySyncConfirmation = ref(false);
@@ -21,6 +21,11 @@ export const useSync = createSharedComposable(() => {
   });
   const uploadStatusAlreadyHandled = useSessionStorage<boolean>('rotki.upload_status.handled', false);
   const uploadProgress = ref<DatabaseUploadProgress>();
+  /**
+   * Whether a sync the user started is running, so upload progress feeds its row and an
+   * automatic backup is not opened beside it.
+   */
+  const manualSyncActive = ref<boolean>(false);
 
   const showSyncConfirmation = (action: SyncAction): void => {
     set(syncAction, action);
@@ -42,30 +47,30 @@ export const useSync = createSharedComposable(() => {
     if (action === SYNC_UPLOAD)
       set(displaySyncConfirmation, false);
 
+    set(manualSyncActive, true);
     const outcome = await submitTask<boolean>({
       id: makeActivityId(ActivityKind.SYNC),
       kind: ActivityKind.SYNC,
       rerunnable: false,
-      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
+      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => flatMap(
         await runTask<boolean>(
           async () => useSyncApi().forceSync(action),
         ),
-        result => result,
+        (synced): Result<boolean, TaskError> => (synced
+          ? ok(true)
+          : err(TaskFailed({ message: t('sync_indicator.activity.refused') }))),
       ),
+      subtitle: action === SYNC_UPLOAD ? t('sync_indicator.activity.upload') : t('sync_indicator.activity.download'),
       title: t('task_center.group.sync'),
-    });
+    }).finally(() => set(manualSyncActive, false));
 
-    if (isErr(outcome))
+    // The dock row reports failures, refusals and finished backups.
+    if (isErr(outcome) || action !== SYNC_DOWNLOAD)
       return;
 
-    if (!outcome.value) {
-      notifyError(t('actions.session.force_sync.error.title'), t('actions.session.force_sync.error.message', { error: '' }));
-      return;
-    }
-
+    // A restore replaces this database and logs out, taking the dock with it, so it says so first.
     notifyInfo(t('actions.session.force_sync.success.title'), t('actions.session.force_sync.success.message'));
-    if (action === SYNC_DOWNLOAD)
-      await logout();
+    await logout();
   };
 
   const clearUploadStatus = (): void => {
@@ -79,6 +84,7 @@ export const useSync = createSharedComposable(() => {
     confirmChecked,
     displaySyncConfirmation,
     forceSync,
+    manualSyncActive,
     showSyncConfirmation,
     syncAction,
     uploadProgress,

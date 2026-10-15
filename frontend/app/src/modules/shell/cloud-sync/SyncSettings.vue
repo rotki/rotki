@@ -23,11 +23,12 @@ const { isMdAndUp } = useBreakpoint();
         variant="text"
         icon
         size="sm"
-        class="!p-2"
+        class="-mr-1.5 -mt-1"
+        :aria-label="t('sync_indicator.setting.title')"
         v-bind="attrs"
       >
         <RuiIcon
-          size="20"
+          size="16"
           name="lu-settings"
         />
       </RuiButton>

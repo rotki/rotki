@@ -837,8 +837,7 @@
       },
       "force_sync": {
         "error": {
-          "message": "There was an error while performing the sync: {error}",
-          "title": "Forced Sync"
+
         },
         "success": {
           "message": "The data sync operation was completed successfully.",
@@ -2068,8 +2067,6 @@
       "no": "No",
       "ok": "OK",
       "proceed": "Proceed",
-      "pull": "Pull",
-      "push": "Push",
       "retry": "Retry",
       "save": "Save",
       "search": "Search",
@@ -5475,6 +5472,10 @@
     "manage_or_upgrade": "Manage or upgrade subscription",
     "premium_active": "@:premium_settings.title is active",
     "subtitle": "@:premium_settings.title is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
+    "sync": {
+      "last_upload": "Last upload",
+      "title": "Data sync"
+    },
     "title": "rotki Premium",
     "validation": {
       "api_key": {
@@ -6057,39 +6058,46 @@
     }
   },
   "sync_buttons": {
-    "download_tooltip": "Pull the saved data from the server and replace your local database",
-    "upload_tooltip": "Push your local database to the server and replace all data there"
+    "download": "Restore",
+    "download_tooltip": "Replace this database with your backup from the rotki server",
+    "upload": "Back up",
+    "upload_tooltip": "Upload this database to the rotki server, replacing the backup there",
+    "waiting_for_balances": "Available once balances and token detection finish loading."
   },
   "sync_indicator": {
+    "activity": {
+      "automatic": "Backing up automatically",
+      "download": "Restoring from the server backup",
+      "failed": "The backup did not complete",
+      "refused": "The rotki server did not accept the sync",
+      "upload": "Backing up this database"
+    },
     "cloud_backup_unavailable": "Cloud backup is not available for your current plan. Upgrade to enable cloud sync.",
     "cloud_backup_upgrade": "Upgrade plan",
     "db_upload_result": {
       "message": "We could not complete the upload because {reason}",
       "title": "Database sync attempt unsuccessful"
     },
-    "last_data_upload": "Last premium database sync",
-    "menu_tooltip": "View the time of the last premium database sync and perform manual sync.",
+    "menu_tooltip": "Data sync: last upload, back up or restore",
     "setting": {
       "ask_user_upon_size_discrepancy": {
         "confirm_label": "Force-push whenever a size discrepancy occurs.",
         "label": "Force-push when a size discrepancy occurs during automatic database sync.",
-        "title": "Automatic database sync."
+        "title": "Automatic database sync"
       },
-      "title": "Sync setting"
+      "title": "Sync settings"
+    },
+    "status": {
+      "failed": "The last backup did not complete. The task panel has the details.",
+      "running": "A sync is running. Its progress is in the task panel."
     },
     "upload_confirmation": {
-      "action": "Push | Pull",
-      "confirm_check": "I understand",
-      "message_download": "By force pulling, your local database will be replaced with data pulled from the rotki server. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action.",
-      "message_download_relogin": "After performing the pull, a manual re-login will be required.",
-      "message_upload": "By force pushing, any previous synced data residing in the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action.",
-      "title": "Force Push | Force Pull"
-    },
-    "upload_progress": {
-      "chunk": "Chunk {current} of {total}",
-      "compressing": "Compressing database...",
-      "encrypting": "Encrypting database...",
-      "uploading": "Uploading database..."
+      "action": "Back up | Restore",
+      "confirm_check": "I understand this cannot be undone",
+      "message_download": "The backup on the rotki server replaces this database. Anything not in that backup is lost.",
+      "message_download_relogin": "You are logged out afterwards and log in again to load it.",
+      "message_upload": "This database replaces the backup on the rotki server. The previous backup is lost.",
+      "title": "Overwrite the server backup? | Replace this database?"
     }
   },
   "table_filter": {

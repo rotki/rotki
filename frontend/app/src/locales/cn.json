@@ -833,8 +833,7 @@
       },
       "force_sync": {
         "error": {
-          "message": "执行同步时出错：{error}",
-          "title": "强制同步"
+
         },
         "success": {
           "message": "数据同步操作成功完成。",
@@ -2047,8 +2046,6 @@
       "no": "否",
       "ok": "确定",
       "proceed": "继续",
-      "pull": "拉取",
-      "push": "推送",
       "retry": "重试",
       "save": "保存",
       "search": "搜索",
@@ -5898,7 +5895,6 @@
       "message": "无法完成上传，原因：{reason}",
       "title": "数据库同步失败"
     },
-    "last_data_upload": "上次高级版数据库同步",
     "menu_tooltip": "查看上次高级版数据库同步的时间，并手动同步。",
     "setting": {
       "ask_user_upon_size_discrepancy": {
@@ -5917,10 +5913,7 @@
       "title": "强制推送 | 强制拉取"
     },
     "upload_progress": {
-      "chunk": "分块 {current} / {total}",
-      "compressing": "正在压缩数据库...",
-      "encrypting": "正在加密数据库...",
-      "uploading": "正在上传数据库..."
+
     }
   },
   "table_filter": {

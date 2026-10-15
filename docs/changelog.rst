@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Premium database backups now show up in the task panel, including the automatic ones rotki runs in the background, so their progress and the reason a backup failed sit with the rest of the background work. The sync menu's buttons are now called Back up and Restore, and confirming either one happens inside the menu.
 * :bug:`-` When the selected month has no upcoming events, the calendar's upcoming events list now keeps to the selected accounts instead of showing events for every account.
 * :bug:`-` The dates under the dashboard net value graph no longer draw on top of each other. Every date now names its month, for example "Jul 17" instead of "17".
 * :feature:`-` rotki is now available in Turkish. Pick Türkçe in the language selector on the login screen or under Settings > Interface-only.
