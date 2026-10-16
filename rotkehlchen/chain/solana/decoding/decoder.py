@@ -171,6 +171,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
     def _get_tx_not_decoded_filter_query(
             self,
             limit: int | None,
+            retry_deferred: bool = False,  # pylint: disable=unused-argument  # nothing is deferred
     ) -> SolanaTransactionsNotDecodedFilterQuery:
         return SolanaTransactionsNotDecodedFilterQuery.make(limit=limit)
 

@@ -672,6 +672,7 @@ class TransactionsService:
             if decoded_count > 0:
                 chain_manager.transactions_decoder.get_and_decode_undecoded_transactions(  # type: ignore[attr-defined]
                     send_ws_notifications=True,
+                    retry_deferred=True,  # requested by the user, and counted above
                 )
 
         return {'result': {'decoded_tx_number': decoded_count}, 'message': '', 'status_code': HTTPStatus.OK}  # noqa: E501

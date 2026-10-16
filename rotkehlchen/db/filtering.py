@@ -320,6 +320,19 @@ class DBTransactionsPendingDecodingFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBTransactionsExcludedHashesFilter(DBFilter):
+    """Leaves out the given transactions of an evm undecoded transactions query, which
+    joins the transactions as `C`"""
+    tx_hashes: Sequence[EVMTxHash]
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        if len(self.tx_hashes) == 0:
+            return [], []
+
+        return [f"C.tx_hash NOT IN ({','.join('?' * len(self.tx_hashes))})"], list(self.tx_hashes)
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEvmTransactionHashFilter(DBFilter):
     tx_hash: EVMTxHash | None = None
 

@@ -15,6 +15,7 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ERC20_PROPERTIES
+from rotkehlchen.chain.evm.token_query_failures import is_token_query_forced
 from rotkehlchen.chain.solana.utils import is_solana_token_nft
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
@@ -537,6 +538,10 @@ def _get_or_create_token(
     Note3: If encounter is None, it will broadcast the `NEW_TOKEN_DETECTED` message by default.
 
     May raise:
+    - TokenQueryFailed if a chain_inquirer is given but the nodes could not be reached to
+       query the token details. Nothing is saved then, not even with fallbacks. Unless the
+       transaction being decoded is forced, see track_token_query_failures, in which case the
+       token is handled as non conformant, or created with empty details if it is an ERC721.
     - NotERC20Conformant if token_kind is ERC20 and a chain_inquirer is given but the given
        address does not conform to the ERC20 spec
     - NotERC721Conformant if token_kind is ERC721 and a chain_inquirer is given but the given
@@ -590,8 +595,15 @@ def _get_or_create_token(
                     token_kind=token_kind,
                 )
             except TokenQueryFailed as e:
+                if not is_token_query_forced():
+                    raise  # nothing is saved, so the token is queried again when seen again
+
                 log.warning('Could not query the details of token %s due to %s', address, e)
                 query_failed, missing = True, frozenset(ERC20_PROPERTIES)
+                if token_kind == TokenKind.ERC721:  # created with empty details, as before
+                    name = '' if name is None else name
+                    symbol = '' if symbol is None else symbol
+                    decimals, missing = 0, frozenset()
 
             if None not in (fallback_name, fallback_symbol, fallback_decimals):
                 # fallbacks only replace what the chain did not return

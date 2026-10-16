@@ -40,6 +40,7 @@ from rotkehlchen.chain.evm.contracts import (
 )
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2_CHAINIDS_WITH_L1_FEES
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
+from rotkehlchen.chain.evm.token_query_failures import record_token_query_failure
 from rotkehlchen.chain.evm.types import (
     DEFAULT_EVM_INDEXER_ORDER,
     DEFAULT_INDEXERS_ORDER,
@@ -1430,7 +1431,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             properties: tuple[str, ...],
             address: ChecksumEvmAddress,
     ) -> list[tuple[bool, bytes]]:
-        """Query the given properties of a token contract.
+        """Query the given properties of a token contract. A failure to reach the nodes is
+        recorded in the token query failures of the transaction being decoded, if any.
 
         May raise:
         - TokenQueryFailed if the nodes could not be reached
@@ -1443,6 +1445,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 calls=[(address, contract.encode(method_name=prop)) for prop in properties],
             )
         except RemoteError as e:
+            record_token_query_failure(address)
             raise TokenQueryFailed(f'Failed to query token {address} due to {e!s}') from e
 
         return output

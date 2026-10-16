@@ -212,9 +212,14 @@ class TransactionDecoder[
             self._reload_single_decoder(cursor, decoder)
 
     @abstractmethod
-    def _get_tx_not_decoded_filter_query(self, limit: int | None) -> T_TxNotDecodedFilterQuery:
+    def _get_tx_not_decoded_filter_query(
+            self,
+            limit: int | None,
+            retry_deferred: bool = False,
+    ) -> T_TxNotDecodedFilterQuery:
         """Return a filter query for loading txs that still need decoding for this chain using
-        the specified limit.
+        the specified limit. Chains may leave out txs whose decoding was recently deferred,
+        unless retry_deferred is True.
         """
 
     def count_undecoded_transactions(self) -> int:
@@ -227,16 +232,21 @@ class TransactionDecoder[
             self,
             limit: int | None = None,
             send_ws_notifications: bool = False,
+            retry_deferred: bool = False,
     ) -> list[T_TxHash]:
         """Checks the DB for up to `limit` undecoded transactions and decodes them.
         If a list of addresses is provided then only the transactions involving those
-        addresses are decoded.
+        addresses are decoded. retry_deferred also includes the transactions whose decoding
+        was recently deferred, for requests of the user.
 
         This is protected by concurrent access from a lock"""
         with self.undecoded_tx_query_lock:
             log.debug(f'Starting task to process undecoded transactions for {self.chain_name} with {limit=}')  # noqa: E501
             hashes = self.dbtx.get_transaction_hashes_not_decoded(
-                filter_query=self._get_tx_not_decoded_filter_query(limit=limit),
+                filter_query=self._get_tx_not_decoded_filter_query(
+                    limit=limit,
+                    retry_deferred=retry_deferred,
+                ),
             )
             if len(hashes) != 0:
                 log.debug('Will decode %s transactions for %s', len(hashes), self.chain_name)
