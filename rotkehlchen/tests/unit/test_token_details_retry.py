@@ -1,9 +1,9 @@
 """Tests for querying again the details of tokens that are missing them.
 
 The seam: retry_missing_token_details picks the erc20 tokens whose name is their identifier
-or NULL, asks the node inquirer of their chain for the details in chunks and saves them when
-all of them came back, as long as nobody else changed the token in the meantime. Their
-transactions are not redecoded.
+or NULL, asks the node inquirer of their chain for the details in chunks and, for the ones
+whose query answered, saves what came back and gives a name to the ones without it, as long as
+nobody else changed the token in the meantime. Their transactions are not redecoded.
 """
 from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any, Final
@@ -154,8 +154,10 @@ def test_token_creation_with_missing_details(
 
 def test_which_tokens_are_retried(database: DBHandler) -> None:
     """Placeholders of normal erc20 tokens on chains with accounts are queried, also the ones
-    with a NULL name that older versions saved, and only updated when all the details were
-    found. Spam tokens, nfts and tokens of chains without accounts are not queried."""
+    with a NULL name that older versions saved. An answered query is final: the details found
+    are saved, the missing ones keep their value, and a token without a name gets its symbol
+    or `<chain_id>:<address>` as name. Spam tokens, nfts and tokens of chains without accounts
+    are not queried."""
     found, not_found, partial, null_name = (_create_placeholder(database, i) for i in (1, 2, 3, 4))
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         write_cursor.execute('UPDATE assets SET name=NULL WHERE identifier=?', (null_name.identifier,))  # noqa: E501
@@ -176,8 +178,8 @@ def test_which_tokens_are_retried(database: DBHandler) -> None:
 
     assert sorted(queried) == sorted(x.evm_address for x in (found, not_found, partial, null_name))
     assert _details(found) == _details(null_name) == ('Found', 'SYM', 6)
-    assert _details(not_found) == (not_found.identifier, '', 18)
-    assert _details(partial) == (partial.identifier, '', 18)  # never partial details
+    assert _details(not_found) == (f'1:{not_found.evm_address}', '', 18)
+    assert _details(partial) == ('Partial', 'PRT', 18)  # decimals() reverted, so they are kept
     assert _details(other_chain)[0] == other_chain.identifier
     assert _get_cursor(database) == ''  # reached the end
     with database.conn.read_ctx() as cursor:
@@ -254,17 +256,24 @@ def test_token_changed_while_querying_is_not_overwritten(
     assert _details(token) == (token.identifier if keep_name else 'User Name', 'USR', 8)
 
 
-def test_repair_on_access_does_not_overwrite_with_defaults(
+@pytest.mark.parametrize(('output', 'details'), [
+    (_output(decimals=None), ('Token', 'TKN', 6)),
+    (_output(name=None, decimals=8), ('TKN', 'TKN', 8)),
+    (_output(decimals=None, symbol=None, name=None), (f'1:{_address(1)}', '', 6)),
+])
+def test_repair_on_access_saves_what_came_back(
         database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
+        output: list[tuple[bool, bytes]],
+        details: tuple[str, str, int],
 ) -> None:
-    """Accessing a placeholder with an inquirer queries it, but a failed or partial query
-    must not write None or the default decimals over what the token has"""
+    """Accessing a placeholder with an inquirer queries it. A failed query changes nothing.
+    An answered one is final: what came back is saved, the missing decimals keep their value
+    and are never replaced by the default, and a missing name is replaced by the symbol or
+    `<chain_id>:<address>`, so the token is no longer a placeholder."""
     token = _create_placeholder(database, 1, decimals=6)
-    for multicall_kwargs in (
-        {'side_effect': RemoteError('down')},
-        {'return_value': _output(decimals=None, symbol=None)},
-    ):
+
+    def access(multicall_kwargs: dict[str, Any]) -> tuple[str, str | None, int | None]:
         ethereum_inquirer.contract_info_erc20_cache.remove(token.evm_address)
         with patch.object(ethereum_inquirer, 'multicall_2', **multicall_kwargs):
             get_or_create_evm_token(
@@ -273,17 +282,10 @@ def test_repair_on_access_does_not_overwrite_with_defaults(
                 chain_id=ChainID.ETHEREUM,
                 evm_inquirer=ethereum_inquirer,
             )
-        assert _details(token) == (token.identifier, '', 6)
+        return _details(token)
 
-    ethereum_inquirer.contract_info_erc20_cache.remove(token.evm_address)
-    with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output()):
-        get_or_create_evm_token(
-            userdb=database,
-            evm_address=token.evm_address,
-            chain_id=ChainID.ETHEREUM,
-            evm_inquirer=ethereum_inquirer,
-        )
-    assert _details(token) == ('Token', 'TKN', 6)
+    assert access({'side_effect': RemoteError('down')}) == (token.identifier, '', 6)
+    assert access({'return_value': output}) == details
 
 
 @pytest.mark.parametrize(('error', 'raises'), [
@@ -322,10 +324,13 @@ def test_cursor_advances_and_wraps(database: DBHandler) -> None:
 
     def infos(addresses: list[ChecksumEvmAddress]) -> dict[str, Any]:
         queried.append(addresses)
-        return {}  # nothing can be updated, as if the tokens were permanently broken
+        return {}
 
     chains_aggregator, _ = _chains_aggregator(database=database, infos=infos)
-    with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_BATCH_SIZE', 2):
+    with (  # nothing is saved, so the tokens stay placeholders as if they always failed
+        patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_BATCH_SIZE', 2),
+        patch('rotkehlchen.tasks.assets._save_found_token_details'),
+    ):
         retry_missing_token_details(chains_aggregator)
         assert _get_cursor(database) == tokens[1].identifier
         retry_missing_token_details(chains_aggregator)
@@ -378,12 +383,42 @@ def test_querying_stops_when_the_nodes_are_down(database: DBHandler) -> None:
     with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_CHUNK_SIZE', 2):
         retry_missing_token_details(chains_aggregator)
 
+    # only the tokens whose query answered are done, not the ones of the outage
+    assert [_details(x)[0] for x in addresses] == [
+        *(f'1:{x}' for x in addresses[:2]),
+        *(evm_address_to_identifier(x, ChainID.ETHEREUM) for x in addresses[2:]),
+    ]
     assert TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES == 3
     assert [x.args[0] for x in node_inquirer.get_multiple_erc20_contracts_info.call_args_list] == [
         addresses[:2],
         addresses[2:4], [addresses[2]], [addresses[3]],
         addresses[4:], [addresses[4]],  # third failure in a row
     ]
+
+
+@pytest.mark.parametrize(('found', 'details'), [
+    ({'name': 'Token', 'symbol': 'TKN'}, ('Token', 'TKN', 6)),  # decimals() failed
+    ({'symbol': 'TKN', 'decimals': 8}, ('TKN', 'TKN', 8)),  # name() failed
+    ({'decimals': 8}, (f'1:{_address(1)}', '', 8)),  # name() and symbol() failed
+])
+def test_answered_query_is_final(
+        database: DBHandler,
+        found: dict[str, Any],
+        details: tuple[str, str, int],
+) -> None:
+    """The details found are saved and the missing decimals keep their value, never the
+    default. A missing name is replaced by the symbol or `<chain_id>:<address>`, so the token is
+    no longer a placeholder and is not queried again."""
+    token = _create_placeholder(database, 1, decimals=6)
+    chains_aggregator, node_inquirer = _chains_aggregator(
+        database=database,
+        infos=lambda _: {token.evm_address: found},
+    )
+    retry_missing_token_details(chains_aggregator)
+    assert _details(token) == details
+
+    retry_missing_token_details(chains_aggregator)
+    assert node_inquirer.get_multiple_erc20_contracts_info.call_count == 1
 
 
 def test_get_multiple_erc20_contracts_info(ethereum_inquirer: EthereumInquirer) -> None:

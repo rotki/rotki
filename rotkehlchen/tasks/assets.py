@@ -9,6 +9,7 @@ from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     check_if_spam_token,
     get_or_create_evm_token,
+    name_for_answered_token,
 )
 from rotkehlchen.chain.base.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_BASE,
@@ -23,7 +24,7 @@ from rotkehlchen.chain.ethereum.modules.spark.constants import (
     SPARK_DATA_PROVIDER as SPARK_DATA_PROVIDER_ETH,
 )
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
-from rotkehlchen.chain.evm.constants import ERC20_PROPERTIES, EVM_ADDRESS_REGEX, ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX, ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import (
@@ -348,10 +349,11 @@ def _warn_decimals_change(
         ).fetchone()[0] == 0:
             return
 
+    symbol = info.get('symbol') or token.saved[1]
     database.msg_aggregator.add_warning(
-        f'The decimals of token {info["symbol"]} ({token.identifier}) were found to be '
-        f'{info["decimals"]} instead of {token.saved[2]}. Redecode its transactions to fix '
-        'the amounts of its existing events.',
+        f'The decimals of token {f"{symbol} ({token.identifier})" if symbol else token.identifier} '  # noqa: E501
+        f'were found to be {info["decimals"]} instead of {token.saved[2]}. Redecode its '
+        'transactions to fix the amounts of its existing events.',
     )
 
 
@@ -360,30 +362,38 @@ def _save_found_token_details(
         token: TokenMissingDetails,
         info: dict[str, Any],
 ) -> None:
-    """Save the queried details of a token that was missing them, only if all of them came
-    back. The token is read again under the token lock and the details are only written if it
-    still has the ones it had when selected, since a user edit, an asset update or a decoder
-    may have changed it while it was queried.
+    """Save the details of a token that was missing them, after its query answered. The info
+    only has the properties the contract returned, never defaults, and may be empty. What came
+    back is saved, the missing symbol and decimals keep their value, and a missing name is
+    replaced so the token is not selected again. See name_for_answered_token for why an
+    answered query is final. The token is read again under the token lock and the details are
+    only written if it still has the ones it had when selected, since a user edit, an asset
+    update or a decoder may have changed it while it was queried.
     """
-    if any(prop not in info for prop in ERC20_PROPERTIES):
-        log.debug('Token %s details came back incomplete: %s', token.identifier, info)
-        return
+    if 'name' not in info:
+        info = {**info, 'name': name_for_answered_token(
+            symbol=info.get('symbol'),
+            chain_id=token.chain_id,
+            address=token.address,
+        )}
 
     with database.get_or_create_token_lock, GlobalDBHandler().conn.write_ctx() as write_cursor:
         if write_cursor.execute(TOKEN_DETAILS_QUERY, (token.identifier,)).fetchone() != token.saved:  # noqa: E501
             log.debug('Token %s was changed or deleted while it was queried', token.identifier)
             return
 
-        for query, value in (
-            ('UPDATE assets SET name=? WHERE identifier=?', info['name']),
-            ('UPDATE common_asset_details SET symbol=? WHERE identifier=?', info['symbol']),
-            ('UPDATE evm_tokens SET decimals=? WHERE identifier=?', info['decimals']),
+        for prop, query in (
+            ('name', 'UPDATE assets SET name=? WHERE identifier=?'),
+            ('symbol', 'UPDATE common_asset_details SET symbol=? WHERE identifier=?'),
+            ('decimals', 'UPDATE evm_tokens SET decimals=? WHERE identifier=?'),
         ):
-            write_cursor.execute(query, (value, token.identifier))
+            if prop in info:
+                write_cursor.execute(query, (info[prop], token.identifier))
 
     AssetResolver.clean_memory_cache(token.identifier)  # so the token is loaded from the DB
-    log.debug('Saved the queried details of token %s', token.identifier)
-    if info['decimals'] != token.saved[2]:  # TODO: confirm whether a warning or only a log line
+    log.debug('Saved the queried details of token %s: %s', token.identifier, info)
+    # TODO: confirm whether a warning or only a log line
+    if 'decimals' in info and info['decimals'] != token.saved[2]:
         _warn_decimals_change(database=database, token=token, info=info)
 
 
@@ -392,15 +402,17 @@ def _query_tokens_one_by_one(
         node_inquirer: EvmNodeInquirer,
         chunk: list[TokenMissingDetails],
         failed_in_row: int,
-) -> tuple[dict[ChecksumEvmAddress, dict[str, Any]], int]:
+) -> tuple[dict[ChecksumEvmAddress, dict[str, Any]], set[ChecksumEvmAddress], int]:
     """Query the tokens of a chunk that failed one at a time, so a token that makes the query
     fail does not take the rest of the chunk with it. Stops when
     TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES queries fail in a row, counting the ones that
     failed before, since the nodes are probably down.
 
-    Returns the details found and the number of queries that failed in a row.
+    Returns the details found, the addresses whose query answered and the number of queries
+    that failed in a row.
     """
     infos: dict[ChecksumEvmAddress, dict[str, Any]] = {}
+    answered: set[ChecksumEvmAddress] = set()
     for token in chunk:
         try:
             infos |= node_inquirer.get_multiple_erc20_contracts_info([token.address])
@@ -412,9 +424,10 @@ def _query_tokens_one_by_one(
             if (failed_in_row := failed_in_row + 1) == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES:
                 break
         else:
+            answered.add(token.address)
             failed_in_row = 0
 
-    return infos, failed_in_row
+    return infos, answered, failed_in_row
 
 
 def _retry_chain_token_details(
@@ -423,9 +436,9 @@ def _retry_chain_token_details(
         node_inquirer: EvmNodeInquirer,
         tokens: list[TokenMissingDetails],
 ) -> None:
-    """Query in chunks the details of the given tokens of a chain and save the ones that came
-    back complete. A failed chunk is queried again one token at a time, and querying the chain
-    stops when TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES single queries fail in a row.
+    """Query in chunks the details of the given tokens of a chain and save them for the ones
+    whose query answered. A failed chunk is queried again one token at a time, and querying
+    the chain stops when TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES single queries fail in a row.
     """
     failed_in_row = 0
     for chunk in get_chunks(tokens, TOKEN_DETAILS_RETRY_CHUNK_SIZE):
@@ -436,18 +449,22 @@ def _retry_chain_token_details(
                 'Failed to query token details at %s due to %s. Querying them one by one',
                 chain_id.to_name(), e,
             )
-            infos, failed_in_row = _query_tokens_one_by_one(
+            infos, answered, failed_in_row = _query_tokens_one_by_one(
                 chain_id=chain_id,
                 node_inquirer=node_inquirer,
                 chunk=chunk,
                 failed_in_row=failed_in_row,
             )
         else:
-            failed_in_row = 0
+            answered, failed_in_row = {x.address for x in chunk}, 0
 
-        for token in chunk:
-            if (info := infos.get(token.address)) is not None:
-                _save_found_token_details(database=database, token=token, info=info)
+        for token in chunk:  # a token with no details came back is not in the infos
+            if token.address in answered:
+                _save_found_token_details(
+                    database=database,
+                    token=token,
+                    info=infos.get(token.address, {}),
+                )
 
         if failed_in_row == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES:
             log.error('Stopping token details retry at %s as the nodes fail', chain_id.to_name())

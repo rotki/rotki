@@ -148,6 +148,35 @@ def _query_or_get_given_token_info(
     return name, symbol, decimals, token_kind, missing
 
 
+def name_for_answered_token(
+        symbol: str | None,
+        chain_id: ChainID,
+        address: ChecksumEvmAddress,
+) -> str:
+    """Return the name to save for a token already in the DB whose details query answered
+    without a name.
+
+    The details are queried in a single eth_call to the multicall contract (tryAggregate), so
+    decimals(), symbol() and name() run in the same execution at the same block, and each
+    one reports its own success. These are cheap getters, so when the query answers but one of
+    them failed, the contract reverted on it or does not have it. That is its final answer,
+    and querying again would return the same. Only a failure of the whole query, which raises
+    TokenQueryFailed, is retried.
+
+    So once the query answered the token is done: the details that came back are saved, and
+    the missing decimals and symbol keep the value they had, which is never replaced with a
+    default, since a caller may have given the right one. The name can't be kept though: a
+    token whose name is its identifier is a placeholder, and placeholders are selected to be
+    queried again. Instead of keeping state to remember which tokens not to query again, the
+    name is set to the symbol, or to `<chain_id>:<address>` if the symbol is missing too.
+
+    This only applies to tokens that already exist. A new token whose contract does not
+    return a name or a symbol is still not ERC20 conformant and is not created, since that is
+    what keeps contracts that emit transfer-like logs from being saved as tokens.
+    """
+    return symbol or f'{chain_id.value}:{address}'
+
+
 def edit_token_and_clean_cache(
         token: EvmToken | SolanaToken,
         name: str | None,
@@ -172,7 +201,8 @@ def edit_token_and_clean_cache(
         object.__setattr__(token, 'name', name)
         updated_fields = True
     elif token.name == token.identifier and chain_inquirer is not None:
-        # query the chain. Only complete details are saved, not the defaults of a failed query
+        # query the chain. A failed query saves nothing. An answered one saves what came back
+        # and never the defaults of what did not. See name_for_answered_token
         try:
             *on_chain_details, _, missing = _query_or_get_given_token_info(
                 chain_inquirer=chain_inquirer,
@@ -185,11 +215,22 @@ def edit_token_and_clean_cache(
         except TokenQueryFailed as e:
             log.warning('Could not query the details of token %s due to %s', token.identifier, e)
         else:
-            if len(missing) == 0:
-                for attribute, value in zip(('name', 'symbol', 'decimals'), on_chain_details, strict=True):  # noqa: E501
-                    if value is not None:
-                        object.__setattr__(token, attribute, value)
-                        updated_fields = True
+            given = {
+                attribute for attribute, value in zip(('name', 'symbol', 'decimals'), (name, symbol, decimals), strict=True)  # noqa: E501
+                if value is not None
+            }
+            for attribute, value in zip(('name', 'symbol', 'decimals'), on_chain_details, strict=True):  # noqa: E501
+                if value is not None and (attribute not in missing or attribute in given):
+                    object.__setattr__(token, attribute, value)
+                    updated_fields = True
+
+            if isinstance(token, EvmToken) and token.name == token.identifier:
+                object.__setattr__(token, 'name', name_for_answered_token(
+                    symbol=token.symbol,
+                    chain_id=token.chain_id,
+                    address=token.evm_address,
+                ))
+                updated_fields = True
 
     if symbol is not None and token.symbol != symbol:
         object.__setattr__(token, 'symbol', symbol)
