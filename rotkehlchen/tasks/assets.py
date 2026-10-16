@@ -366,12 +366,12 @@ def _save_found_token_details(
     may have changed it while it was queried.
     """
     if any(prop not in info for prop in ERC20_PROPERTIES):
-        log.debug(f'Token {token.identifier} details came back incomplete: {info}')
+        log.debug('Token %s details came back incomplete: %s', token.identifier, info)
         return
 
     with database.get_or_create_token_lock, GlobalDBHandler().conn.write_ctx() as write_cursor:
         if write_cursor.execute(TOKEN_DETAILS_QUERY, (token.identifier,)).fetchone() != token.saved:  # noqa: E501
-            log.debug(f'Token {token.identifier} was changed or deleted while it was queried')
+            log.debug('Token %s was changed or deleted while it was queried', token.identifier)
             return
 
         for query, value in (
@@ -382,7 +382,7 @@ def _save_found_token_details(
             write_cursor.execute(query, (value, token.identifier))
 
     AssetResolver.clean_memory_cache(token.identifier)  # so the token is loaded from the DB
-    log.debug(f'Saved the queried details of token {token.identifier}')
+    log.debug('Saved the queried details of token %s', token.identifier)
     if info['decimals'] != token.saved[2]:  # TODO: confirm whether a warning or only a log line
         _warn_decimals_change(database=database, token=token, info=info)
 
@@ -406,8 +406,8 @@ def _query_tokens_one_by_one(
             infos |= node_inquirer.get_multiple_erc20_contracts_info([token.address])
         except RemoteError as e:
             log.warning(
-                f'Failed to query the details of token {token.address} '
-                f'at {chain_id.to_name()} due to {e}',
+                'Failed to query the details of token %s at %s due to %s',
+                token.address, chain_id.to_name(), e,
             )
             if (failed_in_row := failed_in_row + 1) == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES:
                 break
@@ -433,8 +433,8 @@ def _retry_chain_token_details(
             infos = node_inquirer.get_multiple_erc20_contracts_info([x.address for x in chunk])
         except RemoteError as e:
             log.warning(
-                f'Failed to query token details at {chain_id.to_name()} due to {e}. '
-                'Querying them one by one',
+                'Failed to query token details at %s due to %s. Querying them one by one',
+                chain_id.to_name(), e,
             )
             infos, failed_in_row = _query_tokens_one_by_one(
                 chain_id=chain_id,
@@ -450,7 +450,7 @@ def _retry_chain_token_details(
                 _save_found_token_details(database=database, token=token, info=info)
 
         if failed_in_row == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES:
-            log.error(f'Stopping token details retry at {chain_id.to_name()} since the nodes fail')
+            log.error('Stopping token details retry at %s as the nodes fail', chain_id.to_name())
             break
 
 
