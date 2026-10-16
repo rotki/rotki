@@ -672,6 +672,7 @@ class TransactionsService:
             if decoded_count > 0:
                 chain_manager.transactions_decoder.get_and_decode_undecoded_transactions(  # type: ignore[attr-defined]
                     send_ws_notifications=True,
+                    retry_deferred=True,  # the deferred txs are in the count, so retry them
                 )
 
         return {'result': {'decoded_tx_number': decoded_count}, 'message': '', 'status_code': HTTPStatus.OK}  # noqa: E501
@@ -1280,11 +1281,15 @@ class TransactionsService:
         # Checked before decoding: if the credentials stop working during decoding, the
         # service already notifies the user on its own and we should not repeat it.
         services_without_credentials = self._services_without_credentials(chain=chain)
+        # retry_deferred since the nodes may be back, so the tokens whose query failed recently
+        # are queried again. Otherwise the redecode deletes the tx events and defers it without
+        # reaching the nodes
         events = chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
             tx_hashes=[tx_ref],
             send_ws_notifications=True,
             ignore_cache=True,
             delete_customized=delete_custom,
+            retry_deferred=True,
         )
         self._maybe_notify_missing_credentials_after_decode(
             events=events,

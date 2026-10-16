@@ -62,10 +62,18 @@ from rotkehlchen.chain.evm.decoding.weth.constants import (
     CHAINS_WITHOUT_NATIVE_ETH,
 )
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder
+from rotkehlchen.chain.evm.token_query_failures import (
+    TokenQueryFailures,
+    track_token_query_failures,
+)
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsNotDecodedFilterQuery
+from rotkehlchen.db.filtering import (
+    DBTransactionsExcludedHashesFilter,
+    EvmEventFilterQuery,
+    EvmTransactionsNotDecodedFilterQuery,
+)
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import (
@@ -90,7 +98,7 @@ from rotkehlchen.types import (
     Location,
     TokenKind,
 )
-from rotkehlchen.utils.misc import bytes_to_address, from_wei
+from rotkehlchen.utils.misc import bytes_to_address, from_wei, ts_now
 
 from .constants import (
     CPT_ACCOUNT_DELEGATION,
@@ -413,11 +421,28 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
     def _get_tx_not_decoded_filter_query(
             self,
             limit: int | None,
+            retry_deferred: bool = False,
     ) -> EvmTransactionsNotDecodedFilterQuery:
-        return EvmTransactionsNotDecodedFilterQuery.make(
+        """Leave out the transactions deferred recently since a token query failed, unless
+        retry_deferred. See _defer_on_token_query_failure."""
+        filter_query = EvmTransactionsNotDecodedFilterQuery.make(
             limit=limit,
             chain_id=self.evm_inquirer.chain_id,
         )
+        if retry_deferred is False and len(deferred := self.database.pending_txs_tracker.get_token_query_deferred_hashes(  # noqa: E501
+            blockchain=self.evm_inquirer.blockchain,
+            now=ts_now(),
+        )) != 0:
+            filter_query.filters.append(DBTransactionsExcludedHashesFilter(
+                and_op=True,
+                tx_hashes=deferred,
+            ))
+        return filter_query
+
+    def _prepare_retry_of_deferred(self) -> None:
+        """Query again the tokens whose query failed recently, since the nodes may be back.
+        A failure in this run still stops the next queries of that token."""
+        self.evm_inquirer.forget_token_query_failures()
 
     def _reload_single_decoder(self, cursor: DBCursor, decoder: EvmDecoderInterface) -> None:
         """Reload data for a single decoder"""
@@ -575,11 +600,65 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         Decodes an evm transaction and its receipt and saves result in the DB.
         If write_buffer is given the DB write is deferred into it instead.
 
+        If a token query fails to reach the nodes while decoding, nothing is written and the
+        transaction is left undecoded to be retried later. See _defer_on_token_query_failure.
+
         Returns
         - the list of decoded events
         - a flag which is True if balances refresh is needed
         - A list of decoders to reload or None if no need
         """
+        with track_token_query_failures() as token_query_failures:
+            return self._decode_transaction_logs(
+                transaction=transaction,
+                tx_receipt=tx_receipt,
+                token_query_failures=token_query_failures,
+                write_buffer=write_buffer,
+            )
+
+    def _defer_on_token_query_failure(
+            self,
+            transaction: EvmTransaction,
+            token_query_failures: TokenQueryFailures,
+    ) -> bool:
+        """Check before writing the events of a transaction whether a token query failed to
+        reach the nodes while decoding it. Its events may then be missing transfers or use
+        wrong decimals, so the transaction is recorded as deferred and the caller writes
+        nothing, which leaves it undecoded for the periodic decoding to retry it. It stays
+        undecoded for as long as its token queries fail, so its events are never written with
+        a transfer missing or with default decimals.
+
+        Returns whether the caller should write nothing.
+        """
+        if len(token_query_failures.addresses) == 0:
+            self.database.pending_txs_tracker.clear_token_query_deferral(
+                blockchain=self.evm_inquirer.blockchain,
+                tx_hash=transaction.tx_hash,
+            )
+            return False
+
+        self.database.pending_txs_tracker.defer_for_token_query(
+            blockchain=self.evm_inquirer.blockchain,
+            tx_hash=transaction.tx_hash,
+            now=ts_now(),
+        )
+        log.warning(
+            'Not decoding %s transaction %s since the details of tokens %s could not be '
+            'queried. It will be decoded once the nodes respond.',
+            self.evm_inquirer.chain_name,
+            transaction.tx_hash,
+            sorted(token_query_failures.addresses),
+        )
+        return True
+
+    def _decode_transaction_logs(
+            self,
+            transaction: EvmTransaction,
+            tx_receipt: EvmTxReceipt,
+            token_query_failures: TokenQueryFailures,
+            write_buffer: list[tuple[list[EvmEvent], str, int]] | None = None,
+    ) -> tuple[list[EvmEvent], bool, set[str] | None]:
+        """Decode the transaction and its receipt and save the result. See _decode_transaction"""
         log.debug(f'Starting decoding of transaction {transaction.tx_hash!s} logs at {self.evm_inquirer.chain_name}')  # noqa: E501
         # The caller (_get_or_decode_transaction_events -> _maybe_load_or_purge_events_from_db)
         # already resolved and cached the db_id on the transaction, so avoid opening a read
@@ -647,6 +726,9 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
             decoding_output = self.decode_by_address_rules(context)
             if decoding_output.stop_processing is True:
+                if self._defer_on_token_query_failure(transaction, token_query_failures):
+                    return [], False, None
+
                 self._write_new_tx_events_to_the_db(
                     events=[],
                     action_id=transaction.identifier,
@@ -785,6 +867,9 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 counterparty=CPT_ACCOUNT_DELEGATION,
             ))
 
+        if self._defer_on_token_query_failure(transaction, token_query_failures):
+            return [], False, None
+
         self._write_new_tx_events_to_the_db(
             events=events,
             action_id=transaction.identifier,
@@ -800,6 +885,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             events: list[EvmEvent] | None = None,
             send_ws_notifications: bool = False,
             delete_customized: bool = False,
+            retry_deferred: bool = False,
     ) -> tuple[bool, list[EvmEvent]]:
         refresh_balances, new_events = super()._decode_transaction_hashes(
             ignore_cache=ignore_cache,
@@ -807,6 +893,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             events=events,
             send_ws_notifications=send_ws_notifications,
             delete_customized=delete_customized,
+            retry_deferred=retry_deferred,
         )
         self._post_process(
             refresh_balances=refresh_balances,

@@ -114,6 +114,14 @@ class NotERC721Conformant(Exception):
     """An address is not conforming to the ERC721 standard"""
 
 
+class TokenQueryFailed(NotERC20Conformant, NotERC721Conformant):
+    """The details of a token could not be queried because the nodes could not be reached.
+
+    It is a subclass of the non conformant errors so that callers that only care about not
+    getting the token keep working, while the ones that need to retry can tell it apart.
+    """
+
+
 class NotSPLConformant(Exception):
     """An address is not conforming to the solana SPL token standard"""
 

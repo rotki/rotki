@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
 )
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, TokenQueryFailed
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
@@ -234,22 +234,39 @@ def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> Non
                 encounter=encounter,
             )
             if (staking_address := vault.get('staking')) is not None:  # check if the vault has a staking contract where the user can deposit vault tokens. Shares are 1:1  # noqa: E501
-                get_or_create_evm_token(
-                    userdb=db,
-                    evm_address=deserialize_evm_address(staking_address),
-                    evm_inquirer=ethereum_inquirer,
-                    chain_id=chain_id,
-                    protocol=CPT_YEARN_STAKING,
-                    underlying_tokens=[UnderlyingToken(
-                        address=vault_token.evm_address,
-                        token_kind=TokenKind.ERC20,
-                        weight=ONE,
-                    )],
-                    fallback_name=f'Yearn staking {vault_token.name}',  # fallback in case for the vaults that aren't ERC20  # noqa: E501
-                    fallback_symbol=f'YG-{vault_token.symbol}',
-                    fallback_decimals=18,
-                    encounter=encounter,
-                )
+                staking_token_address = deserialize_evm_address(staking_address)
+                staking_underlying_tokens = [UnderlyingToken(
+                    address=vault_token.evm_address,
+                    token_kind=TokenKind.ERC20,
+                    weight=ONE,
+                )]
+                try:
+                    get_or_create_evm_token(
+                        userdb=db,
+                        evm_address=staking_token_address,
+                        evm_inquirer=ethereum_inquirer,
+                        chain_id=chain_id,
+                        protocol=CPT_YEARN_STAKING,
+                        underlying_tokens=staking_underlying_tokens,
+                        fallback_name=f'Yearn staking {vault_token.name}',  # fallback in case for the vaults that aren't ERC20  # noqa: E501
+                        fallback_symbol=f'YG-{vault_token.symbol}',
+                        fallback_decimals=18,
+                        encounter=encounter,
+                    )
+                except TokenQueryFailed as e:
+                    # save it without querying, so it is known as a yearn staking token, with
+                    # the identifier as name. That makes it a placeholder whose details are
+                    # filled in by the token details retry task once the nodes respond.
+                    log.warning('Could not query yearn staking token %s due to %s. Saving it without its details', staking_address, e)  # noqa: E501
+                    get_or_create_evm_token(
+                        userdb=db,
+                        evm_address=staking_token_address,
+                        chain_id=chain_id,
+                        protocol=CPT_YEARN_STAKING,
+                        underlying_tokens=staking_underlying_tokens,
+                        decimals=vault_token.decimals,  # shares are 1:1 with the vault
+                        encounter=encounter,
+                    )
 
         except (KeyError, DeserializationError) as e:
             msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)

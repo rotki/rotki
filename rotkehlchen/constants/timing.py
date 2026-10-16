@@ -28,4 +28,9 @@ EVMLIKE_ACCOUNTS_DETECTION_RETRY: Final = HOUR_IN_SECONDS  # when some chain che
 ENS_AVATARS_REFRESH: Final = DAY_IN_SECONDS
 SPAM_ASSETS_DETECTION_REFRESH: Final = HOUR_IN_SECONDS * 6
 OWNED_ASSETS_UPDATE: Final = HOUR_IN_SECONDS
+TOKEN_DETAILS_RETRY: Final = HOUR_IN_SECONDS
+# How long the token contract of an address is not queried again after its query failed to
+# reach the nodes. Shorter than TOKEN_QUERY_DEFERRAL_RETRY_AFTER, so that the periodic
+# decoding queries the token again when it retries a transaction deferred by that failure.
+TOKEN_QUERY_FAILURE_COOLDOWN: Final = 300
 AAVE_V3_ASSETS_UPDATE: Final = WEEK_IN_SECONDS

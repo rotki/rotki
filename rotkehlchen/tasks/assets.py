@@ -1,13 +1,16 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     check_if_spam_token,
     get_or_create_evm_token,
+    mark_token_without_decimals,
+    name_for_answered_token,
 )
 from rotkehlchen.chain.base.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_BASE,
@@ -49,7 +52,7 @@ from rotkehlchen.chain.scroll.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_SCRL,
 )
 from rotkehlchen.constants.misc import ONE
-from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
     HISTORY_BASE_ENTRY_FIELDS,
@@ -71,6 +74,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CHAINID_TO_SUPPORTED_BLOCKCHAIN,
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_LOCATIONS,
     SPAM_PROTOCOL,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
@@ -83,6 +87,7 @@ from rotkehlchen.utils.misc import get_chunks, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from threading import Semaphore
 
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -98,6 +103,16 @@ SYMBOL_AND_NAME_ASSETS_QUERY = (
     'SELECT C.symbol, A.name, A.identifier, B.chain FROM evm_tokens as B LEFT JOIN '
     'common_asset_details AS C ON C.identifier = B.identifier JOIN assets as A on '
     'A.identifier=B.identifier WHERE B.PROTOCOL IS NOT ? ORDER BY C.symbol'
+)
+# tokens of each chain the token details retry goes through per run
+TOKEN_DETAILS_RETRY_BATCH_SIZE: Final = 50
+TOKEN_DETAILS_RETRY_CHUNK_SIZE: Final = 25
+# single token queries that can fail in a row before the nodes are considered down
+TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES: Final = 3
+TOKEN_DETAILS_QUERY: Final = (
+    'SELECT A.name, C.symbol, B.decimals FROM assets AS A JOIN evm_tokens AS B '
+    'ON A.identifier=B.identifier LEFT JOIN common_asset_details AS C '
+    'ON C.identifier=A.identifier WHERE A.identifier=?'
 )
 MULTISEND_SPAM_THRESHOLD = 50
 KNOWN_FALSE_POSITIVES: Final = (
@@ -276,6 +291,269 @@ def _batch_query_properties(
         address: (values[0][idx], values[1][idx], values[2][idx])
         for idx, address in enumerate(addresses)
     }
+
+
+class TokenMissingDetails(NamedTuple):
+    """An erc20 token missing its details, with the (name, symbol, decimals) it has saved"""
+    identifier: str
+    chain_id: ChainID
+    address: ChecksumEvmAddress
+    saved: tuple[str | None, str | None, int]
+
+
+def _get_tokens_missing_details(
+        chain_id: ChainID,
+        after_identifier: str,
+) -> list[TokenMissingDetails]:
+    """Get up to TOKEN_DETAILS_RETRY_BATCH_SIZE erc20 tokens of the given chain whose name is
+    their identifier, which is what is saved when the details could not be queried, or NULL,
+    which older versions saved when repairing them failed. Both show the identifier as name.
+    Spam tokens are skipped. Tokens are returned ordered by identifier, starting after the
+    given one, with the details they have now, to detect a change while they are queried.
+    """
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        return [
+            TokenMissingDetails(
+                identifier=identifier,
+                chain_id=chain_id,
+                address=address,
+                saved=(name, symbol, decimals),
+            ) for identifier, address, name, symbol, decimals in cursor.execute(
+                'SELECT A.identifier, B.address, A.name, C.symbol, B.decimals FROM '
+                'assets AS A JOIN evm_tokens AS B ON A.identifier=B.identifier LEFT JOIN '
+                'common_asset_details AS C ON C.identifier=A.identifier '
+                'WHERE (A.name IS NULL OR A.name=A.identifier) '
+                'AND B.token_kind=? AND B.protocol IS NOT ? AND A.identifier>? '
+                'AND B.chain=? ORDER BY A.identifier LIMIT ?',
+                (
+                    TokenKind.ERC20.serialize_for_db(),
+                    SPAM_PROTOCOL,
+                    after_identifier,
+                    chain_id.serialize_for_db(),
+                    TOKEN_DETAILS_RETRY_BATCH_SIZE,
+                ),
+            )
+        ]
+
+
+def _warn_decimals_change(
+        database: DBHandler,
+        token: TokenMissingDetails,
+        info: dict[str, Any],
+) -> None:
+    """Warn the user that the decimals of a token with events changed, since the amounts of
+    its events were calculated with the old ones and its transactions are not redecoded."""
+    with database.conn.read_ctx() as cursor:
+        if cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE asset=?', (token.identifier,),
+        ).fetchone()[0] == 0:
+            return
+
+    symbol = info.get('symbol') or token.saved[1]
+    database.msg_aggregator.add_warning(
+        f'The decimals of token {f"{symbol} ({token.identifier})" if symbol else token.identifier} '  # noqa: E501
+        f'were found to be {info["decimals"]} instead of {token.saved[2]}. Redecode its '
+        'transactions to fix the amounts of its existing events.',
+    )
+
+
+def _save_found_token_details(
+        database: DBHandler,
+        decoding_lock: Semaphore,
+        token: TokenMissingDetails,
+        info: dict[str, Any],
+) -> None:
+    """Save the details of a token that was missing them, after its query answered. The info
+    only has the properties the contract returned, never defaults, and may be empty. What came
+    back is saved, the missing symbol and decimals keep their value, and a missing name is
+    replaced so the token is not selected again. See name_for_answered_token for why an
+    answered query is final. The token is read again under the token lock and the details are
+    only written if it still has the ones it had when selected, since a user edit, an asset
+    update or a decoder may have changed it while it was queried.
+
+    The decoding_lock of the chain decoder is held, taken before the token lock as decoding
+    does, so that a decoding running meanwhile has written its events before the decimals
+    change and the warning counts them. Otherwise it could write events made with the old
+    decimals after the check, and the user would not be warned about them.
+    """
+    if 'name' not in info:
+        info = {**info, 'name': name_for_answered_token(
+            symbol=info.get('symbol') or token.saved[1],
+            chain_id=token.chain_id,
+            address=token.address,
+        )}
+
+    with decoding_lock:
+        with database.get_or_create_token_lock, GlobalDBHandler().conn.write_ctx() as write_cursor:
+            if write_cursor.execute(TOKEN_DETAILS_QUERY, (token.identifier,)).fetchone() != token.saved:  # noqa: E501
+                log.debug('Token %s was changed or deleted while it was queried', token.identifier)
+                return
+
+            for prop, query in (
+                ('name', 'UPDATE assets SET name=? WHERE identifier=?'),
+                ('symbol', 'UPDATE common_asset_details SET symbol=? WHERE identifier=?'),
+                ('decimals', 'UPDATE evm_tokens SET decimals=? WHERE identifier=?'),
+            ):
+                if prop in info:
+                    write_cursor.execute(query, (info[prop], token.identifier))
+
+            if 'decimals' not in info:
+                mark_token_without_decimals(write_cursor, token.identifier)
+
+        AssetResolver.clean_memory_cache(token.identifier)  # so the token is loaded from the DB
+        log.debug('Saved the queried details of token %s: %s', token.identifier, info)
+        # TODO: confirm whether a warning or only a log line
+        if 'decimals' in info and info['decimals'] != token.saved[2]:
+            _warn_decimals_change(database=database, token=token, info=info)
+
+
+def _query_tokens_one_by_one(
+        chain_id: ChainID,
+        node_inquirer: EvmNodeInquirer,
+        chunk: list[TokenMissingDetails],
+        failed_in_row: int,
+) -> tuple[dict[ChecksumEvmAddress, dict[str, Any]], set[ChecksumEvmAddress], int, int]:
+    """Query the tokens of a chunk that failed one at a time, so a token that makes the query
+    fail does not take the rest of the chunk with it. Stops when
+    TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES queries fail in a row, counting the ones that
+    failed before, since the nodes are probably down.
+
+    Returns the details found, the addresses whose query answered, the number of tokens of
+    the chunk that were queried and the number of queries that failed in a row.
+    """
+    infos: dict[ChecksumEvmAddress, dict[str, Any]] = {}
+    answered: set[ChecksumEvmAddress] = set()
+    queried = 0
+    for token in chunk:
+        queried += 1
+        try:
+            infos |= node_inquirer.get_multiple_erc20_contracts_info([token.address])
+        except RemoteError as e:
+            log.warning(
+                'Failed to query the details of token %s at %s due to %s',
+                token.address, chain_id.to_name(), e,
+            )
+            if (failed_in_row := failed_in_row + 1) == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES:
+                break
+        else:
+            answered.add(token.address)
+            failed_in_row = 0
+
+    return infos, answered, queried, failed_in_row
+
+
+def _retry_chain_token_details(
+        database: DBHandler,
+        chain_id: ChainID,
+        node_inquirer: EvmNodeInquirer,
+        decoding_lock: Semaphore,
+        tokens: list[TokenMissingDetails],
+) -> int:
+    """Query in chunks the details of the given tokens of a chain and save them for the ones
+    whose query answered. A failed chunk is queried again one token at a time, and querying
+    the chain stops when TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES single queries fail in a row.
+    The decoding_lock of the chain decoder is only taken to save, not while the nodes are
+    queried, so a slow or failing query does not hold back the decoding.
+
+    Returns the number of tokens that were queried, which are always the first ones.
+    """
+    failed_in_row, queried = 0, 0
+    for chunk in get_chunks(tokens, TOKEN_DETAILS_RETRY_CHUNK_SIZE):
+        try:
+            infos = node_inquirer.get_multiple_erc20_contracts_info([x.address for x in chunk])
+        except RemoteError as e:
+            log.warning(
+                'Failed to query token details at %s due to %s. Querying them one by one',
+                chain_id.to_name(), e,
+            )
+            infos, answered, chunk_queried, failed_in_row = _query_tokens_one_by_one(
+                chain_id=chain_id,
+                node_inquirer=node_inquirer,
+                chunk=chunk,
+                failed_in_row=failed_in_row,
+            )
+            queried += chunk_queried
+        else:
+            answered, failed_in_row = {x.address for x in chunk}, 0
+            queried += len(chunk)
+
+        for token in chunk:  # a token with no details came back is not in the infos
+            if token.address in answered:
+                _save_found_token_details(
+                    database=database,
+                    decoding_lock=decoding_lock,
+                    token=token,
+                    info=infos.get(token.address, {}),
+                )
+
+        if failed_in_row == TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES:
+            log.error('Stopping token details retry at %s as the nodes fail', chain_id.to_name())
+            break
+
+    return queried
+
+
+def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
+    """Query again the details of erc20 tokens saved with their identifier or NULL as name,
+    which is what is saved when their details could not be queried, and fill them in. The
+    transactions of the tokens are not redecoded.
+
+    Every run goes through the next TOKEN_DETAILS_RETRY_BATCH_SIZE such tokens of each chain
+    with accounts, in chunks, with a cursor per chain so that a chain whose nodes fail can't
+    hold back the others. The identifier of the last token is saved before querying so that
+    tokens that keep failing can't block the rest. If querying a chain stops early because
+    the nodes fail, its cursor is moved back to the last token queried, so the next run starts
+    with the tokens that were never tried.
+    """
+    with chains_aggregator.database.conn.write_ctx() as write_cursor:
+        chains_aggregator.database.set_static_cache(  # remember last task ran
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
+            value=ts_now(),
+        )
+
+    # only chains where the user has accounts can be expected to have working nodes
+    for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
+        if len(chains_aggregator.accounts.get(blockchain := chain_id.to_blockchain())) == 0:
+            continue
+
+        with chains_aggregator.database.conn.read_ctx() as cursor:
+            cursor_identifier = chains_aggregator.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.TOKEN_DETAILS_RETRY_CURSOR,
+                blockchain=blockchain.serialize(),
+            ) or ''
+
+        tokens = _get_tokens_missing_details(chain_id=chain_id, after_identifier=cursor_identifier)
+        if len(tokens) == 0 and cursor_identifier == '':
+            continue  # no placeholders on this chain
+
+        with chains_aggregator.database.conn.write_ctx() as write_cursor:
+            chains_aggregator.database.set_dynamic_cache(  # wraps when the batch is not full
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.TOKEN_DETAILS_RETRY_CURSOR,
+                value=tokens[-1].identifier if len(tokens) == TOKEN_DETAILS_RETRY_BATCH_SIZE else '',  # noqa: E501
+                blockchain=blockchain.serialize(),
+            )
+
+        if len(tokens) == 0:
+            continue
+
+        evm_manager = chains_aggregator.get_evm_manager(chain_id=chain_id)
+        if (queried := _retry_chain_token_details(
+            database=chains_aggregator.database,
+            chain_id=chain_id,
+            node_inquirer=evm_manager.node_inquirer,
+            decoding_lock=evm_manager.transactions_decoder.undecoded_tx_query_lock,
+            tokens=tokens,
+        )) < len(tokens):  # stopped early, so the next run starts with the ones not queried
+            with chains_aggregator.database.conn.write_ctx() as write_cursor:
+                chains_aggregator.database.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.TOKEN_DETAILS_RETRY_CURSOR,
+                    value=tokens[queried - 1].identifier if queried != 0 else cursor_identifier,
+                    blockchain=blockchain.serialize(),
+                )
 
 
 def _update_lending_protocol_underlying_assets(

@@ -1392,6 +1392,8 @@ class CacheType(Enum):
     STAKEDAO_V2_VAULTS = auto()
     SUPERFLUID_TOKEN_LIST_VERSION = auto()
     SUPERFLUID_SUPER_TOKENS = auto()
+    # evm tokens whose contract did not return decimals. See mark_token_without_decimals
+    TOKEN_WITHOUT_DECIMALS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1463,6 +1465,7 @@ UniqueCacheType = Literal[
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
 
 GeneralCacheType = Literal[
+    CacheType.TOKEN_WITHOUT_DECIMALS,
     CacheType.CURVE_LP_TOKENS,
     CacheType.CURVE_POOL_TOKENS,
     CacheType.VELODROME_POOL_ADDRESS,

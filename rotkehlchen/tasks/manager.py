@@ -19,6 +19,7 @@ from rotkehlchen.constants.timing import (
     HOUR_IN_SECONDS,
     OWNED_ASSETS_UPDATE,
     SPAM_ASSETS_DETECTION_REFRESH,
+    TOKEN_DETAILS_RETRY,
 )
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
@@ -39,6 +40,7 @@ from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.tasks.assets import (
     autodetect_spam_assets_in_db,
     maybe_detect_new_tokens,
+    retry_missing_token_details,
     update_aave_v3_underlying_assets,
     update_owned_assets,
     update_spark_underlying_assets,
@@ -191,6 +193,7 @@ class TaskManager:
             self._maybe_update_owned_assets,
             self._maybe_update_aave_v3_underlying_assets,
             self._maybe_update_spark_underlying_assets,
+            self._maybe_retry_missing_token_details,
             self._maybe_create_calendar_reminder,
             self._maybe_trigger_calendar_reminder,
             self._maybe_delete_past_calendar_events,
@@ -922,6 +925,25 @@ class TaskManager:
             task_name='Update Spark underlying assets in globaldb',
             exception_is_error=True,
             method=update_spark_underlying_assets,
+            chains_aggregator=self.chains_aggregator,
+        )]
+
+    def _maybe_retry_missing_token_details(self) -> list[Task] | None:
+        """Retry querying the details of tokens that were stored without them because the
+        query failed when they were first seen. Not while history is fetched, to not add to
+        the load of the nodes.
+        """
+        if self.history_processing_coordinator.is_history_fetching():
+            return None
+
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS, TOKEN_DETAILS_RETRY, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
+            return None
+
+        return [self.task_supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name='Retry missing token details',
+            exception_is_error=True,
+            method=retry_missing_token_details,
             chains_aggregator=self.chains_aggregator,
         )]
 

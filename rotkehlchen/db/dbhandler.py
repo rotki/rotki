@@ -864,6 +864,7 @@ class DBHandler:
                 DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
                 DBCacheStatic.LAST_DB_UPGRADE,
                 DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
             ],
     ) -> Timestamp | None:
         ...
@@ -1076,6 +1077,15 @@ class DBHandler:
     ) -> Timestamp | None:
         ...
 
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
+            name: Literal[DBCacheDynamic.TOKEN_DETAILS_RETRY_CURSOR],
+            **kwargs: Unpack[BlockchainArgType],
+    ) -> str | None:
+        ...
+
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
@@ -1279,6 +1289,16 @@ class DBHandler:
             write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
             value: Timestamp,
+            **kwargs: Unpack[BlockchainArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.TOKEN_DETAILS_RETRY_CURSOR],
+            value: str,
             **kwargs: Unpack[BlockchainArgType],
     ) -> None:
         ...

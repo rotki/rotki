@@ -197,6 +197,7 @@ class HistoryQueryingManager:
         step = self._increase_progress(step, total_steps)
 
         incomplete_chains: list[str] = []  # reported once after the loop, not once per chain
+        deferred_chains: list[str] = []  # chains with txs left undecoded since token queries failed  # noqa: E501
         for blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
             str_blockchain = str(blockchain)
             self.processing_state_name = f'Querying {str_blockchain} transactions history'
@@ -230,7 +231,14 @@ class HistoryQueryingManager:
             step = self._increase_progress(step, total_steps)
 
             self.processing_state_name = f'Decoding {str_blockchain} raw transactions'
-            evm_manager.transactions_decoder.get_and_decode_undecoded_transactions(limit=None)
+            decoded_hashes = evm_manager.transactions_decoder.get_and_decode_undecoded_transactions(  # noqa: E501
+                limit=None,
+                retry_deferred=True,
+            )
+            # only count the deferred txs among the ones just tried, since the deferral of a
+            # tx deleted meanwhile is never cleared
+            if not set(self.db.pending_txs_tracker.get_token_query_deferred_hashes(blockchain)).isdisjoint(decoded_hashes):  # noqa: E501
+                deferred_chains.append(str_blockchain)
             step = self._increase_progress(step, total_steps)
 
         if len(incomplete_chains) != 0:
@@ -241,6 +249,13 @@ class HistoryQueryingManager:
             )
             self.msg_aggregator.add_error(msg)
             empty_or_error += '\n' + msg
+
+        if len(deferred_chains) != 0:
+            self.msg_aggregator.add_warning(
+                f'Some {", ".join(deferred_chains)} transactions could not be decoded since '
+                'the details of their tokens could not be queried from the nodes. The report '
+                'may be missing them until the nodes respond.',
+            )
 
         # include eth2 staking events
         eth2 = self.chains_aggregator.get_module('eth2')
