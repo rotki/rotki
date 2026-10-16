@@ -284,7 +284,9 @@ jobs:
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
 
       - name: Append architecture to latest-mac.yml
-        run: mv dist/latest-mac.yml dist/latest-mac-${{ matrix.os.arch }}.yml
+        env:
+          ARCH: ${{ matrix.os.arch }}
+        run: mv dist/latest-mac.yml "dist/latest-mac-${ARCH}.yml"
 
       - name: upload latest-mac.yml
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -453,9 +455,9 @@ jobs:
 
       - name: Prepare
         id: prepare
-        run: |
-          platform=${{ matrix.platform.name }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+        env:
+          platform: ${{ matrix.platform.name }}
+        run: echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
 
       - name: Docker meta
         id: meta

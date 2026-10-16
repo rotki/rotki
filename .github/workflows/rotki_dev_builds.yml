@@ -274,9 +274,9 @@ jobs:
 
       - name: Prepare
         id: prepare
-        run: |
-          platform=${{ matrix.platform.name }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+        env:
+          platform: ${{ matrix.platform.name }}
+        run: echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
 
       - name: Docker meta
         id: meta
