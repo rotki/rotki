@@ -88,9 +88,9 @@ jobs:
 
       - name: Setup Rust
         if: steps.rust-cache.outputs.cache-hit != 'true'
-        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87  # stable
-        with:
-          toolchain: 1.91
+        run: |
+          rustup toolchain install 1.91 --profile minimal --no-self-update
+          rustup default 1.91
 
       - name: Build Rust services
         if: steps.rust-cache.outputs.cache-hit != 'true'
