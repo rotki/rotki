@@ -158,24 +158,22 @@ def wait_until_all_nodes_connected(
         timeout: int = NODE_CONNECTION_TIMEOUT,
 ):
     """Wait until all ethereum nodes are connected or until a timeout is hit"""
-    connected = [False] * len(connect_at_start)
+    # the indexers entry has no endpoint and never enters rpc_mapping
+    nodes = [x for x in connect_at_start if x.node_info.endpoint != '']
+    task_prefix = evm_inquirer._connect_task_prefix(evm_inquirer.chain_name)
     deadline = time.monotonic() + timeout
-    while not all(connected):
-        if time.monotonic() >= deadline:
-            names = [
-                str(x) for idx, x in enumerate(connect_at_start) if not connected[idx]
-            ]
+    while True:
+        connecting = evm_inquirer.task_supervisor.has_task(task_prefix)
+        missing = [x for x in nodes if x.node_info not in evm_inquirer.rpc_mapping]
+        if len(missing) == 0:
+            return
+        if not connecting or time.monotonic() >= deadline:
             log.warning(
-                'Did not connect to nodes: %s due to timeout of %s. Connected to %s',
-                ','.join(names),
-                NODE_CONNECTION_TIMEOUT,
-                connected,
+                'Did not connect to nodes: %s. Connected to %s',
+                ','.join(str(x) for x in missing),
+                [x for x in nodes if x not in missing],
             )
             return
-
-        for idx, weighted_node in enumerate(connect_at_start):
-            if weighted_node.node_info in evm_inquirer.rpc_mapping:
-                connected[idx] = True
 
         time.sleep(0.1)
 
