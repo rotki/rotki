@@ -161,11 +161,6 @@ def wait_until_all_nodes_connected(
     # the indexers entry has no endpoint and never enters rpc_mapping
     nodes = [x for x in connect_at_start if x.node_info.endpoint != '']
     task_prefix = evm_inquirer._connect_task_prefix(evm_inquirer.chain_name)
-    # the inquirer fixtures start no connection, so nothing would ever connect while we wait
-    if not evm_inquirer.task_supervisor.has_task(task_prefix):
-        evm_inquirer.connect_to_multiple_nodes([
-            x for x in nodes if x.node_info not in evm_inquirer.rpc_mapping
-        ])
     deadline = time.monotonic() + timeout
     while True:
         connecting = evm_inquirer.task_supervisor.has_task(task_prefix)
