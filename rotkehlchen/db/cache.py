@@ -46,6 +46,31 @@ class DBCacheStatic(Enum):
     LAST_INTERNAL_TX_CONFLICTS_REPULL_TS: Final = 'last_internal_tx_conflicts_repull_ts'
     BEACONCHAIN_VALIDATOR_QUERY_LIMIT: Final = 'beaconchain_validator_query_limit'
     ETHERSCAN_API_KEY_TIER: Final = 'etherscan_api_key_tier'
+    # Produced blocks a nuthatch nest stored without their MEV reward, for beaconcha.in to be
+    # asked about, as a JSON list.
+    NUTHATCH_MEV_RECHECK: Final = 'nuthatch_mev_recheck'
+    # Produced-block ranges a nuthatch nest served, with when, as a JSON list, so they are asked
+    # about again while the nest may still learn their relay records.
+    NUTHATCH_PRODUCED_RANGES: Final = 'nuthatch_produced_ranges'
+    # The tracked validators a nuthatch nest's produced blocks were last matched against, as a
+    # JSON list: one added since needs the addresses' history asked about again.
+    NUTHATCH_PRODUCED_VALIDATORS: Final = 'nuthatch_produced_validators'
+    # When a nuthatch nest was last asked about produced blocks.
+    NUTHATCH_PRODUCED_LAST_RUN: Final = 'nuthatch_produced_last_run'
+    # Validators removed in rotki that a nuthatch nest has yet to be told to stop watching, as a
+    # JSON list.
+    NUTHATCH_PENDING_UNWATCH_VALIDATORS: Final = 'nuthatch_pending_unwatch_validators'
+    # Each validator's proposals a nuthatch nest has proven, as a JSON object of validator index
+    # to [first block, last block, last block's timestamp]. Blocks before the first are not
+    # covered by the nest, whatever the validator did there.
+    NUTHATCH_VALIDATOR_COVERAGE: Final = 'nuthatch_validator_coverage'
+    # Validator ranges a nuthatch nest proved, with when, as a JSON list of [validator, first
+    # block, last block, served at], asked about again while a block in them lacks its reward or
+    # the nest may still learn its relay record.
+    NUTHATCH_VALIDATOR_RANGES: Final = 'nuthatch_validator_ranges'
+    # Produced blocks booked from a nuthatch nest's proof of their proposer, as a JSON list: what
+    # no other source may book to another validator.
+    NUTHATCH_PROVEN_BLOCKS: Final = 'nuthatch_proven_blocks'
 
 
 class LabeledLocationArgsType(TypedDict):
@@ -125,6 +150,10 @@ class DBCacheDynamic(Enum):
     WITHDRAWALS_IDX: Final = 'ethwithdrawalsidx_{address}', _deserialize_int_from_str
     EXTRA_INTERNAL_TX: Final = f'{EXTRAINTERNALTXPREFIX}_{{chain_id}}_{{receiver}}_{{tx_hash}}', string_to_evm_address  # noqa: E501
     LAST_PRODUCED_BLOCKS_QUERY_TS: Final = 'last_produced_blocks_query_ts_{index}', _deserialize_timestamp_from_str  # noqa: E501
+    # No longer written: a nest's answers once moved validators on, and are dropped where found.
+    NEST_PRODUCED_BLOCKS_QUERY_TS: Final = 'nest_produced_blocks_query_ts_{index}', _deserialize_timestamp_from_str  # noqa: E501
+    # The block a nuthatch nest has been asked about the address's produced blocks through.
+    NEST_PRODUCED_BLOCKS_THROUGH: Final = 'nest_produced_blocks_through_{address}', _deserialize_int_from_str  # noqa: E501
     BINANCE_PAIR_LAST_ID: Final = '{location}_{location_name}_{queried_pair}', _deserialize_int_from_str  # noqa: E501  # notice that location is added because it can be either binance or binance_us
     BINANCE_PAIR_LAST_QUERY_TS: Final = '{location}_{location_name}_{queried_pair}_last_query_ts', _deserialize_timestamp_from_str  # noqa: E501
     LAST_BTC_TX_BLOCK: Final = 'last_btc_tx_block_{address}', _deserialize_int_from_str
