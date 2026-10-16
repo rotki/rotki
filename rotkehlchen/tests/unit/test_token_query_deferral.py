@@ -297,6 +297,44 @@ def test_placeholder_repair_failure_defers(
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('forced', [False, True])
+def test_deferring_decoder_error_is_not_reported(
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        forced: bool,
+) -> None:
+    """A decoder that lets TokenQueryFailed out, like velodrome creating a pool token with
+    fallbacks, does not show the user a decoding error while the tx is deferred, since it is
+    retried later. Once forced, the tx is decoded without the token, so the error is shown."""
+    def rule(context: DecoderContext) -> EvmDecodingOutput:  # pylint: disable=unused-argument
+        get_or_create_evm_token(
+            userdb=database,
+            evm_address=TOKEN_ADDRESS,
+            chain_id=ChainID.ETHEREUM,
+            evm_inquirer=ethereum_inquirer,
+        )
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    tx_hash = _add_transaction(database, ethereum_accounts[0], [EvmTxReceiptLog(
+        log_index=0,
+        data=b'',
+        address=(protocol_address := make_evm_address()),
+        topics=[b'\x01' * 32],
+    )])
+    database.msg_aggregator.consume_errors()
+    decoder = ethereum_transaction_decoder
+    with patch.dict(decoder.rules.address_mappings, {protocol_address: (rule,)}):
+        _decode_periodically(decoder, ethereum_inquirer, (now := ts_now()), NODES_DOWN)
+        if forced:
+            _decode_periodically(decoder, ethereum_inquirer, Timestamp(now + TOKEN_QUERY_DEFERRAL_MAX_DURATION + TOKEN_QUERY_DEFERRAL_RETRY_AFTER + 1), NODES_DOWN)  # noqa: E501
+
+    assert _is_decoded(database, tx_hash) is forced
+    assert len(database.msg_aggregator.consume_errors()) == (1 if forced else 0)
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
 def test_known_token_decodes_during_an_outage(
         database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
