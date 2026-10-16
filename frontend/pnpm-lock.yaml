@@ -279,8 +279,8 @@ catalogs:
       specifier: 1.0.11
       version: 1.0.11
     dotenv:
-      specifier: 17.4.2
-      version: 17.4.2
+      specifier: 18.0.6
+      version: 18.0.6
     echarts:
       specifier: 6.1.0
       version: 6.1.0
@@ -468,7 +468,7 @@ importers:
         version: 3.4.2
       dotenv:
         specifier: 'catalog:'
-        version: 17.4.2
+        version: 18.0.6
       eslint:
         specifier: 'catalog:'
         version: 10.12.0(jiti@2.7.0)(supports-color@10.2.2)
@@ -670,7 +670,7 @@ importers:
         version: 1.0.11
       dotenv:
         specifier: 'catalog:'
-        version: 17.4.2
+        version: 18.0.6
       electron:
         specifier: 'catalog:'
         version: 43.7.5(supports-color@10.2.2)
@@ -3848,9 +3848,10 @@ packages:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
     engines: {node: '>=12'}
 
-  dotenv@17.4.2:
-    resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
+  dotenv@18.0.6:
+    resolution: {integrity: sha512-ZMVmohV6CvAJtj++pZNyggluUt6hbRdQAxc2+Z635RL6/AG/ruXv5lHnybUFoxMPL/yrTL/tsF4paZu2l7RA6Q==}
     engines: {node: '>=12'}
+    hasBin: true
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -10203,7 +10204,7 @@ snapshots:
 
   dotenv@16.6.1: {}
 
-  dotenv@17.4.2: {}
+  dotenv@18.0.6: {}
 
   dunder-proto@1.0.1:
     dependencies:

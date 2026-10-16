@@ -86,7 +86,7 @@ catalog:
   dayjs: 1.11.23
   dexie: 4.4.6
   dmg-license: 1.0.11
-  dotenv: 17.4.2
+  dotenv: 18.0.6
   echarts: 6.1.0
   electron: 43.7.5
   electron-builder: 26.15.3
