@@ -139,6 +139,33 @@ jobs:
         with:
           category: "/language:${{ matrix.language }}"
 
+  # Each base branch scan saves a full overlay-base database per language (about 320 MB for
+  # javascript, 125 MB for python) under its commit, and a pull request scan restores only the
+  # newest. Nothing removed the rest, so they filled half the repository's 10 GB cache budget.
+  # Two per series stay, so a pull request scan that started before this one still finds a base.
+  prune-codeql-caches:
+    name: 'Prune CodeQL overlay caches'
+    needs: [ 'code-analyze' ]
+    if: ${{ github.event_name == 'push' && !cancelled() && needs.code-analyze.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write  # delete the superseded cache entries
+    steps:
+      - name: Keep the two newest overlay-base databases per series
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH_REF: ${{ github.ref }}
+        # A key ends in <commit>-<run id>-<attempt>; everything before that names the series.
+        run: |
+          ids=$(gh cache list --ref "$BRANCH_REF" --key codeql-overlay-base-database- --limit 100 \
+            --json id,key,createdAt \
+            --jq 'group_by(.key | split("-") | .[:-3] | join("-")) | map(sort_by(.createdAt) | reverse | .[2:]) | flatten | .[].id')
+          for id in $ids; do
+            gh cache delete "$id"
+          done
+          echo "Deleted $(echo "$ids" | grep -c . || true) superseded overlay-base databases"
+
   lint-frontend:
     name: 'Frontend checks'
     needs: [ 'check-changes', 'check-typos' ]
