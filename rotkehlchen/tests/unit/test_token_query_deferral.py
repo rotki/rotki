@@ -33,11 +33,14 @@ from rotkehlchen.db.pending_transactions import (
 )
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryFailed
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.ethereum import txreceipt_to_data
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
+    CacheType,
     ChainID,
     EvmTransaction,
     SupportedBlockchain,
@@ -456,6 +459,9 @@ def test_failed_query_never_saves_a_token(
         )
     else:
         assert token is None
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:  # a failed query says nothing of decimals
+        assert globaldb_get_general_cache_values(cursor, (CacheType.TOKEN_WITHOUT_DECIMALS,)) == []
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])

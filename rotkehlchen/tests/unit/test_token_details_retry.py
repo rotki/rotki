@@ -22,6 +22,7 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryFailed
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -32,6 +33,7 @@ from rotkehlchen.tasks.assets import (
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
+    CacheType,
     ChainID,
     Location,
     SupportedBlockchain,
@@ -111,6 +113,15 @@ def _get_cursor(database: DBHandler) -> str | None:
         )
 
 
+def _without_decimals() -> set[str]:
+    """The tokens marked as having no decimals in their contract"""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        return set(globaldb_get_general_cache_values(
+            cursor=cursor,
+            key_parts=(CacheType.TOKEN_WITHOUT_DECIMALS,),
+        ))
+
+
 def _details(token: EvmToken | ChecksumEvmAddress) -> tuple[str, str | None, int | None]:
     identifier = token.identifier if isinstance(token, EvmToken) else evm_address_to_identifier(
         address=token,
@@ -119,11 +130,13 @@ def _details(token: EvmToken | ChecksumEvmAddress) -> tuple[str, str | None, int
     return (token := EvmToken(identifier)).name, token.symbol, token.decimals
 
 
-@pytest.mark.parametrize(('multicall_kwargs', 'create_kwargs', 'error', 'details'), [
-    pytest.param({'side_effect': RemoteError('down')}, {}, TokenQueryFailed, None, id='unreachable'),  # noqa: E501
-    pytest.param({'return_value': _output(name=None)}, FALLBACKS, None, ('Fallback', 'TKN', 6), id='partial'),  # fallbacks only fill what is missing  # noqa: E501
-    pytest.param({'return_value': _output(decimals=None)}, FALLBACKS | {'symbol': 'GIV'}, None, ('Token', 'GIV', 18), id='partial-given'),  # noqa: E501
-    pytest.param({'return_value': [(False, b'')] * 3}, {}, NotERC20Conformant, None, id='no-methods'),  # noqa: E501
+@pytest.mark.parametrize(('multicall_kwargs', 'create_kwargs', 'error', 'details', 'marked'), [
+    pytest.param({'side_effect': RemoteError('down')}, {}, TokenQueryFailed, None, False, id='unreachable'),  # noqa: E501
+    pytest.param({'return_value': _output(name=None)}, FALLBACKS, None, ('Fallback', 'TKN', 6), False, id='partial'),  # fallbacks only fill what is missing  # noqa: E501
+    pytest.param({'return_value': _output(decimals=None)}, FALLBACKS | {'symbol': 'GIV'}, None, ('Token', 'GIV', 18), True, id='partial-given'),  # noqa: E501
+    pytest.param({'return_value': _output(decimals=None)}, {}, None, ('Token', 'TKN', 18), True, id='no-decimals'),  # noqa: E501
+    pytest.param({'return_value': _output(decimals=None)}, {'decimals': 8}, None, ('Token', 'TKN', 8), False, id='decimals-given'),  # noqa: E501
+    pytest.param({'return_value': [(False, b'')] * 3}, {}, NotERC20Conformant, None, False, id='no-methods'),  # noqa: E501
 ])
 def test_token_creation_with_missing_details(
         database: DBHandler,
@@ -132,9 +145,11 @@ def test_token_creation_with_missing_details(
         create_kwargs: dict[str, Any],
         error: type[Exception] | None,
         details: tuple[str, str, int] | None,
+        marked: bool,
 ) -> None:
     """A failed query is told apart from a non conformant contract, and when the query
-    succeeded the fallbacks only fill the details the chain did not return"""
+    succeeded the fallbacks only fill the details the chain did not return. A token created
+    without decimals from the chain or the caller is marked as such."""
     with (
         patch.object(ethereum_inquirer, 'multicall_2', **multicall_kwargs),
         pytest.raises(error) if error is not None else nullcontext() as raised,
@@ -150,6 +165,7 @@ def test_token_creation_with_missing_details(
     assert raised is None or type(raised.value) is error  # a failed query is not non conformant
     if details is not None:
         assert _details(address) == details
+    assert _without_decimals() == ({evm_address_to_identifier(address, ChainID.ETHEREUM)} if marked else set())  # noqa: E501
 
 
 def test_which_tokens_are_retried(database: DBHandler) -> None:
@@ -180,6 +196,7 @@ def test_which_tokens_are_retried(database: DBHandler) -> None:
     assert _details(found) == _details(null_name) == ('Found', 'SYM', 6)
     assert _details(not_found) == (f'1:{not_found.evm_address}', '', 18)
     assert _details(partial) == ('Partial', 'PRT', 18)  # decimals() reverted, so they are kept
+    assert _without_decimals() == {not_found.identifier, partial.identifier}
     assert _details(other_chain)[0] == other_chain.identifier
     assert _get_cursor(database) == ''  # reached the end
     with database.conn.read_ctx() as cursor:
@@ -256,16 +273,17 @@ def test_token_changed_while_querying_is_not_overwritten(
     assert _details(token) == (token.identifier if keep_name else 'User Name', 'USR', 8)
 
 
-@pytest.mark.parametrize(('output', 'details'), [
-    (_output(decimals=None), ('Token', 'TKN', 6)),
-    (_output(name=None, decimals=8), ('TKN', 'TKN', 8)),
-    (_output(decimals=None, symbol=None, name=None), (f'1:{_address(1)}', '', 6)),
+@pytest.mark.parametrize(('output', 'details', 'marked'), [
+    (_output(decimals=None), ('Token', 'TKN', 6), True),
+    (_output(name=None, decimals=8), ('TKN', 'TKN', 8), False),
+    (_output(decimals=None, symbol=None, name=None), (f'1:{_address(1)}', '', 6), True),
 ])
 def test_repair_on_access_saves_what_came_back(
         database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
         output: list[tuple[bool, bytes]],
         details: tuple[str, str, int],
+        marked: bool,
 ) -> None:
     """Accessing a placeholder with an inquirer queries it. A failed query changes nothing.
     An answered one is final: what came back is saved, the missing decimals keep their value
@@ -285,7 +303,9 @@ def test_repair_on_access_saves_what_came_back(
         return _details(token)
 
     assert access({'side_effect': RemoteError('down')}) == (token.identifier, '', 6)
+    assert _without_decimals() == set()  # a failed query says nothing about the decimals
     assert access({'return_value': output}) == details
+    assert _without_decimals() == ({token.identifier} if marked else set())
 
 
 @pytest.mark.parametrize(('error', 'raises'), [
@@ -396,15 +416,16 @@ def test_querying_stops_when_the_nodes_are_down(database: DBHandler) -> None:
     ]
 
 
-@pytest.mark.parametrize(('found', 'details'), [
-    ({'name': 'Token', 'symbol': 'TKN'}, ('Token', 'TKN', 6)),  # decimals() failed
-    ({'symbol': 'TKN', 'decimals': 8}, ('TKN', 'TKN', 8)),  # name() failed
-    ({'decimals': 8}, (f'1:{_address(1)}', '', 8)),  # name() and symbol() failed
+@pytest.mark.parametrize(('found', 'details', 'marked'), [
+    ({'name': 'Token', 'symbol': 'TKN'}, ('Token', 'TKN', 6), True),  # decimals() failed
+    ({'symbol': 'TKN', 'decimals': 8}, ('TKN', 'TKN', 8), False),  # name() failed
+    ({'decimals': 8}, (f'1:{_address(1)}', '', 8), False),  # name() and symbol() failed
 ])
 def test_answered_query_is_final(
         database: DBHandler,
         found: dict[str, Any],
         details: tuple[str, str, int],
+        marked: bool,
 ) -> None:
     """The details found are saved and the missing decimals keep their value, never the
     default. A missing name is replaced by the symbol or `<chain_id>:<address>`, so the token is
@@ -416,6 +437,7 @@ def test_answered_query_is_final(
     )
     retry_missing_token_details(chains_aggregator)
     assert _details(token) == details
+    assert _without_decimals() == ({token.identifier} if marked else set())
 
     retry_missing_token_details(chains_aggregator)
     assert node_inquirer.get_multiple_erc20_contracts_info.call_count == 1

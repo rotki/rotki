@@ -9,6 +9,7 @@ from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     check_if_spam_token,
     get_or_create_evm_token,
+    mark_token_without_decimals,
     name_for_answered_token,
 )
 from rotkehlchen.chain.base.modules.aave.v3.constants import (
@@ -389,6 +390,9 @@ def _save_found_token_details(
         ):
             if prop in info:
                 write_cursor.execute(query, (info[prop], token.identifier))
+
+        if 'decimals' not in info:
+            mark_token_without_decimals(write_cursor, token.identifier)
 
     AssetResolver.clean_memory_cache(token.identifier)  # so the token is loaded from the DB
     log.debug('Saved the queried details of token %s: %s', token.identifier, info)

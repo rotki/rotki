@@ -44,6 +44,7 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -51,6 +52,7 @@ from rotkehlchen.types import (
     EVM_TOKEN_KINDS_TYPE,
     SOLANA_TOKEN_KINDS_TYPE,
     SPAM_PROTOCOL,
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
@@ -68,6 +70,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
     from rotkehlchen.chain.solana.rpc import Signature
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -177,6 +180,28 @@ def name_for_answered_token(
     return symbol or f'{chain_id.value}:{address}'
 
 
+def mark_token_without_decimals(write_cursor: DBCursor, identifier: str) -> None:
+    """Record in the global DB general cache that the saved decimals of an evm token did not
+    come from the chain nor from the caller saving it: its details query answered without
+    decimals, and they were not given. It is kept under the TOKEN_WITHOUT_DECIMALS key with
+    the token identifier as value, and the timestamp is the last time it was seen so. A query
+    that failed to reach the nodes says nothing about the contract, so it never marks.
+
+    The decimals saved for such a token did not come from the chain. They are the default 18,
+    a fallback of the caller, or the ones a placeholder already had, so the amounts of its
+    events may be wrong. Since an answered query is final (see name_for_answered_token) the
+    token is not queried again and nothing else would remember that its decimals are a guess.
+    The mark keeps these tokens queryable, so they can be listed later, for example to warn the
+    user about them or to fix their decimals from another source, without querying the
+    details of every token again. It is never used to decide whether to query a token.
+    """
+    globaldb_set_general_cache_values(
+        write_cursor=write_cursor,
+        key_parts=(CacheType.TOKEN_WITHOUT_DECIMALS,),
+        values=(identifier,),
+    )
+
+
 def edit_token_and_clean_cache(
         token: EvmToken | SolanaToken,
         name: str | None,
@@ -223,6 +248,10 @@ def edit_token_and_clean_cache(
                 if value is not None and (attribute not in missing or attribute in given):
                     object.__setattr__(token, attribute, value)
                     updated_fields = True
+
+            if 'decimals' in missing and 'decimals' not in given:
+                with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                    mark_token_without_decimals(write_cursor, token.identifier)
 
             if isinstance(token, EvmToken) and token.name == token.identifier:
                 object.__setattr__(token, 'name', name_for_answered_token(
@@ -620,7 +649,7 @@ def _get_or_create_token(
         else:
             asset_exists = False
 
-        query_failed = False
+        query_failed, without_decimals = False, False
         if None in (name, symbol, decimals, token_kind) and chain_inquirer is not None:
             given = frozenset(
                 prop for prop, value in zip(('name', 'symbol', 'decimals'), (name, symbol, decimals), strict=True)  # noqa: E501
@@ -645,6 +674,8 @@ def _get_or_create_token(
                     name = '' if name is None else name
                     symbol = '' if symbol is None else symbol
                     decimals, missing = 0, frozenset()
+            else:
+                without_decimals = 'decimals' in missing and 'decimals' not in given
 
             if None not in (fallback_name, fallback_symbol, fallback_decimals):
                 # fallbacks only replace what the chain did not return
@@ -733,6 +764,10 @@ def _get_or_create_token(
                 # at this point the newly detected asset has just been added to the DB
                 if is_spam_token:
                     userdb.add_to_ignored_assets(write_cursor=write_cursor, asset=token)
+
+        if without_decimals:
+            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                mark_token_without_decimals(write_cursor, token.identifier)
 
     return token
 
