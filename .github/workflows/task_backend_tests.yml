@@ -104,11 +104,18 @@ jobs:
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
-      - name: Cache rotkehlchen test directory
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      # The tests persist data here between runs (the global DB among it). Under one constant
+      # key the cache was written once and never again, so every run restored a copy frozen in
+      # May 2025. The nightly run now saves a fresh one per test group, and every run restores
+      # the newest; the bare key is the old entry, kept as the last fallback.
+      - name: Restore rotkehlchen test directory
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.cache/.rotkehlchen-test-dir
-          key: ${{ runner.os }}-testdir
+          key: ${{ runner.os }}-testdir-${{ matrix.test-group }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-testdir-${{ matrix.test-group }}-
+            ${{ runner.os }}-testdir
 
       - name: Setup minupnpc
         if: runner.os == 'Windows'
@@ -170,6 +177,15 @@ jobs:
             uv run pytest --dead-fixtures
           fi
         shell: bash
+
+      # Only the nightly run saves, so pull requests restore a fresh directory without each
+      # writing a copy of their own.
+      - name: Save rotkehlchen test directory
+        if: ${{ !cancelled() && github.event_name == 'schedule' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.cache/.rotkehlchen-test-dir
+          key: ${{ runner.os }}-testdir-${{ matrix.test-group }}-${{ github.run_id }}
 
       - name: Upload coverage artifacts
         if: ${{ inputs.collect_coverage }}
