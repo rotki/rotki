@@ -5398,11 +5398,8 @@
       "search_asset_to_see_graph_description": "Miktarının, fiyatının ve değerinin zaman içinde nasıl değiştiğini görmek için varlıklarınızdan birini seçin.",
       "select_asset": "Varlık ara",
       "series": {
-        "amount": "Miktar",
         "price": "Fiyat",
-        "snapshot_amount": "Anlık görüntü miktarı",
-        "snapshot_value": "{currency} cinsinden anlık görüntü değeri",
-        "value": "{currency} cinsinden değer"
+        "snapshot_amount": "Anlık görüntü miktarı"
       },
       "show_all": "{count} öğenin tümünü göster",
       "show_less": "Daha az göster",

@@ -5260,11 +5260,8 @@
       "search_asset_to_see_graph_description": "选择你的一项资产，查看其数量、价格和价值随时间的变化。",
       "select_asset": "搜索资产",
       "series": {
-        "amount": "数量",
         "price": "价格",
-        "snapshot_amount": "快照数量",
-        "snapshot_value": "快照价值（{currency}）",
-        "value": "价值（{currency}）"
+        "snapshot_amount": "快照数量"
       },
       "show_all": "显示全部 {count} 项",
       "show_less": "收起",
