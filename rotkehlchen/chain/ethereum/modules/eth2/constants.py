@@ -17,6 +17,8 @@ UNRECORDED_MEV_RETRY_WINDOW: Final = 30 * DAY_IN_SECONDS
 # Ethereum's first Dencun block. From it on, each execution block commits to the beacon root of
 # its parent, so a nuthatch nest can prove who proposed a block; before it, it cannot.
 DENCUN_BLOCK: Final = 19_426_587
+# The first block with withdrawals; none can be missed before it.
+SHAPELLA_BLOCK: Final = 17_034_870
 
 BEACONCHAIN_MAX_EPOCH: Final = 9223372036854775807  # This is INT64 MAX. Beacon node API actually returns 18446744073709551615 which is UINT64 MAX # noqa: E501
 

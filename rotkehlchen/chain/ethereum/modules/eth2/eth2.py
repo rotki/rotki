@@ -59,6 +59,7 @@ from .constants import (
     DENCUN_BLOCK,
     MAX_EFFECTIVE_BALANCE,
     MIN_EFFECTIVE_BALANCE,
+    SHAPELLA_BLOCK,
     UNKNOWN_VALIDATOR_INDEX,
 )
 from .structures import (
@@ -578,8 +579,9 @@ class Eth2(EthereumModule):
                 if not period.from_value < e.first_block <= period.to_value:
                     log.error(f'Failed to query ethereum withdrawals for {address} through {source.name}: {e!s}')  # noqa: E501
                     continue
-                # noted before asking, since the source records its progress as it goes
-                if uncovered_before is not None:
+                # noted before asking, since the source records its progress as it goes. A
+                # history starting by Shapella misses no withdrawal.
+                if uncovered_before is not None and e.first_block > SHAPELLA_BLOCK:
                     uncovered_before.append(e.first_block)
                 try:
                     return source.get_withdrawals(
