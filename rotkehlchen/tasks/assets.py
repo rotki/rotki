@@ -321,7 +321,6 @@ def _get_tokens_missing_details(
                 address=address,
                 attempts=0,
                 saved=(name, symbol, decimals),
-                persisted=False,
             )) for identifier, chain, address, name, symbol, decimals in cursor.execute(
                 'SELECT A.identifier, B.chain, B.address, A.name, C.symbol, B.decimals FROM '
                 'assets AS A JOIN evm_tokens AS B ON A.identifier=B.identifier LEFT JOIN '

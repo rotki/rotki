@@ -69,9 +69,6 @@ class TokenDetailsRetryMark(NamedTuple):
     given: Mapping[str, Any] = {}  # never mutated
     # runs in a row that postponed it instead of counting an attempt
     postponed: int = 0
-    # whether it is saved in the global DB. A token with its identifier as name that is not
-    # marked is retried with a mark that is not saved, having the details it was selected with.
-    persisted: bool = True
 
 
 class SavedDetails(NamedTuple):
@@ -234,30 +231,6 @@ def _delete_mark(write_cursor: DBCursor, chain_id: ChainID, address: ChecksumEvm
     return write_cursor.rowcount != 0
 
 
-def _is_current(cursor: DBCursor, mark: TokenDetailsRetryMark) -> bool:
-    """Whether the mark is still the one of the token, so that the result of querying it can be
-    written. While it was queried the token may have been edited by the user, deleted, which
-    removes its bookkeeping, or marked again by a decoder that saw it."""
-    if _is_given_up(cursor=cursor, chain_id=mark.chain_id, address=mark.address):
-        return False
-
-    stored = globaldb_get_unique_cache_value(
-        cursor=cursor,
-        key_parts=_mark_key_parts(chain_id=mark.chain_id, address=mark.address),
-    )
-    if mark.persisted is False:  # its identifier as name and not marked, with the same details
-        return stored is None and _read_token_details(
-            write_cursor=cursor,
-            identifier=evm_address_to_identifier(address=mark.address, chain_id=mark.chain_id),
-        ) == mark.saved
-
-    return stored is not None and _deserialize_mark(
-        chain_id=mark.chain_id,
-        address=mark.address,
-        value=stored,
-    ) == mark
-
-
 def remove_token_details_retry_mark(
         chain_id: ChainID,
         address: ChecksumEvmAddress,
@@ -300,12 +273,11 @@ def stop_token_details_retry(chain_id: ChainID, address: ChecksumEvmAddress) -> 
 def postpone_token_details_retry(marks: list[TokenDetailsRetryMark]) -> None:
     """Move marks to the back of the queue without counting an attempt, since nothing answered
     and it can be an outage. If that goes on for TOKEN_DETAILS_RETRY_MAX_POSTPONES runs it is
-    the token that fails, for example if it is the only one left on its chain, so it counts.
-    A mark that changed while it was queried is left as it is now."""
+    the token that fails, for example if it is the only one left on its chain, so it counts."""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         for mark in marks:
-            if not _is_current(cursor=write_cursor, mark=mark):
-                continue
+            if _is_given_up(cursor=write_cursor, chain_id=mark.chain_id, address=mark.address):
+                continue  # the user edited it while it was queried
 
             if (postponed := mark.postponed + 1) >= TOKEN_DETAILS_RETRY_MAX_POSTPONES:
                 _count_attempt(write_cursor=write_cursor, mark=mark)
@@ -351,11 +323,12 @@ def _count_attempt(write_cursor: DBCursor, mark: TokenDetailsRetryMark) -> None:
 
 def count_token_details_retry_attempt(mark: TokenDetailsRetryMark) -> None:
     """Count a retry that found the details incomplete, creating the mark if the token was
-    not marked. When the attempts run out the token is given up. A mark that changed while it
-    was queried is left as it is now."""
+    not marked. When the attempts run out the token is given up."""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        if _is_current(cursor=write_cursor, mark=mark):
-            _count_attempt(write_cursor=write_cursor, mark=mark)
+        if _is_given_up(cursor=write_cursor, chain_id=mark.chain_id, address=mark.address):
+            return  # the user edited it while it was queried
+
+        _count_attempt(write_cursor=write_cursor, mark=mark)
 
 
 def _read_token_details(write_cursor: DBCursor, identifier: str) -> TokenDetails | None:
