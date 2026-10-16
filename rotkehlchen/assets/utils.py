@@ -13,7 +13,7 @@ from rotkehlchen.assets.asset import (
     UnderlyingToken,
     WrongAssetType,
 )
-from rotkehlchen.assets.details_retry import get_token_details_retry_mark, mark_token_details_retry
+from rotkehlchen.assets.details_retry import mark_token_details_retry
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
@@ -176,11 +176,8 @@ def edit_token_and_clean_cache(
         - InputError if there is an error while editing the token
     """
     updated_fields = False
-    renamed_placeholder = False
 
     if name is not None and token.name != name:
-        # a placeholder renamed by the caller still has the rest of its details to repair
-        renamed_placeholder = isinstance(token, EvmToken) and token.name == token.identifier
         object.__setattr__(token, 'name', name)
         updated_fields = True
     elif token.name == token.identifier and chain_inquirer is not None:
@@ -239,26 +236,6 @@ def edit_token_and_clean_cache(
     if updated_fields is True:
         if isinstance(token, EvmToken):
             GlobalDBHandler.edit_evm_token(token)
-            if (
-                renamed_placeholder and
-                get_token_details_retry_mark(token.chain_id, token.evm_address) is None and
-                token.token_kind == TokenKind.ERC20 and
-                token.protocol != SPAM_PROTOCOL and
-                len(still_missing := frozenset(ERC20_PROPERTIES) - {'name'} - {
-                    prop for prop, value in (('symbol', symbol), ('decimals', decimals))
-                    if value is not None
-                }) != 0
-            ):  # the background task only picks up tokens whose name is their identifier
-                mark_token_details_retry(
-                    chain_id=token.chain_id,
-                    address=token.evm_address,
-                    saved=(
-                        token.name,
-                        token.symbol,
-                        DEFAULT_TOKEN_DECIMALS if token.decimals is None else token.decimals,
-                    ),
-                    missing=still_missing,
-                )
         else:
             GlobalDBHandler.edit_solana_token(token)
 

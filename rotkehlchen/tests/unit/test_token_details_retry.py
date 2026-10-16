@@ -64,7 +64,6 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
-    from pathlib import Path
 
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -589,7 +588,7 @@ def test_cursor_advances_and_wraps(database: DBHandler) -> None:
         retry_missing_token_details(chains_aggregator)
         assert _get_cursor(database) == ''  # only the last token was left, so it wrapped
         retry_missing_token_details(chains_aggregator)
-        assert _get_cursor(database) == ''  # all are marked now, so none is picked by name
+        assert _get_cursor(database) == tokens[1].identifier
 
     # broken tokens did not block the ones after them. They got marked when their details
     # were not found, so they are also retried from the marks until they are given up.
@@ -1169,131 +1168,3 @@ def test_stale_cleanup_keeps_the_mark_of_a_token_deleted_and_seen_again(
     _create_placeholder(database, 1)  # exists now: the mark is the one of a created token
     details_retry.remove_token_details_retry_mark(chain_id=ChainID.ETHEREUM, address=token.evm_address, only_created=True)  # noqa: E501
     assert _marks() == {}
-
-
-def test_marked_placeholder_outside_the_marks_page_keeps_its_mark(database: DBHandler) -> None:
-    """A placeholder that has a mark is retried with that mark, also when the mark is beyond
-    the page of marks loaded for the chain, instead of with a fresh one that has no attempts
-    and has every detail considered missing."""
-    token = _create_placeholder(database, 1)
-    mark_token_details_retry(
-        chain_id=ChainID.ETHEREUM,
-        address=token.evm_address,
-        saved=(token.identifier, None, 18),
-        missing=frozenset({'symbol'}),
-    )
-    count_token_details_retry_attempt(get_token_details_retry_marks(ChainID.ETHEREUM, 1)[0])
-    for idx in range(2, 5):  # older marks fill the page before the one of the placeholder
-        mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=_address(idx), saved=None)
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            write_cursor.execute('UPDATE unique_cache SET last_queried_ts=? WHERE key LIKE ?', (idx, f'%{_address(idx)}'))  # noqa: E501
-
-    chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=lambda _: {})
-    with (
-        patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_BATCH_SIZE', 2),
-        patch('rotkehlchen.tasks.assets.redecode_token_txs'),
-        patch('rotkehlchen.tasks.assets.redecode_created_tokens_txs'),
-    ):
-        retry_missing_token_details(chains_aggregator)
-
-    queried = [a for call in node_inquirer.get_multiple_erc20_contracts_info.call_args_list for a in call.args[0]]  # noqa: E501
-    assert queried.count(token.evm_address) <= 1
-    mark = next(m for m in get_token_details_retry_marks(ChainID.ETHEREUM, 100) if m.address == token.evm_address)  # noqa: E501
-    assert mark.missing == frozenset({'symbol'})  # not reset to every detail
-    assert mark.attempts >= 1  # kept the attempt that was counted
-
-
-def test_renamed_placeholder_keeps_its_other_details_retryable(
-        database: DBHandler,
-        ethereum_inquirer: EthereumInquirer,
-) -> None:
-    """A decoder giving a name to an unmarked placeholder takes it out of the ones the task
-    picks by name, so the details that were not given have to be marked for retrying."""
-    token = _create_placeholder(database, 1)
-    assert _marks() == {}
-
-    get_or_create_evm_token(
-        userdb=database,
-        evm_address=token.evm_address,
-        chain_id=ChainID.ETHEREUM,
-        name='Decoder Name',
-        evm_inquirer=ethereum_inquirer,
-    )
-
-    assert _details(token)[0] == 'Decoder Name'
-    assert _marks() == {token.evm_address: (0, ('Decoder Name', '', 18))}
-    assert next(iter(get_token_details_retry_marks(ChainID.ETHEREUM, 1))).missing == frozenset({'symbol', 'decimals'})  # noqa: E501
-
-
-def test_asset_update_replacing_a_token_clears_its_retry_bookkeeping(
-        database: DBHandler,
-        tmp_path: Path,
-) -> None:
-    """The asset update replaces the evm tokens in bulk, so the given up key of a token that
-    it removes has to go too, or the token seen again could not be marked."""
-    from rotkehlchen.globaldb.asset_updates.manager import _replace_assets_from_db
-
-    kept, removed = _create_placeholder(database, 1), _create_placeholder(database, 2)
-    for token in (kept, removed):
-        stop_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address)
-
-    source = tmp_path / 'source.db'
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        cursor.execute(f"VACUUM INTO '{source}'")
-    import sqlite3
-    with sqlite3.connect(source) as connection:  # the update drops one of the tokens
-        connection.execute('PRAGMA foreign_keys = ON')
-        connection.execute('DELETE FROM assets WHERE identifier=?', (removed.identifier,))
-
-    _replace_assets_from_db(connection=GlobalDBHandler().conn, sourcedb_path=source)
-
-    assert is_token_details_retry_given_up(ChainID.ETHEREUM, removed.evm_address) is False
-    assert is_token_details_retry_given_up(ChainID.ETHEREUM, kept.evm_address) is True
-
-
-def test_renaming_a_marked_placeholder_keeps_its_mark(
-        database: DBHandler,
-        ethereum_inquirer: EthereumInquirer,
-) -> None:
-    """The mark of a placeholder says which details are protected, so a rename by a decoder
-    must not make them retryable again."""
-    token = _create_placeholder(database, 1, decimals=6)
-    mark_token_details_retry(
-        chain_id=ChainID.ETHEREUM,
-        address=token.evm_address,
-        saved=(token.identifier, None, 6),
-        missing=frozenset({'symbol'}),
-    )
-
-    get_or_create_evm_token(
-        userdb=database,
-        evm_address=token.evm_address,
-        chain_id=ChainID.ETHEREUM,
-        name='Decoder Name',
-        evm_inquirer=ethereum_inquirer,
-    )
-
-    assert next(iter(get_token_details_retry_marks(ChainID.ETHEREUM, 1))).missing == frozenset({'symbol'})  # noqa: E501
-
-
-def test_asset_update_changing_a_token_keeps_its_retry_mark(
-        database: DBHandler,
-        tmp_path: Path,
-) -> None:
-    """An update that corrects a retained token keeps its pending recovery, which is what
-    flags its transactions for redecoding."""
-    import sqlite3
-
-    from rotkehlchen.globaldb.asset_updates.manager import _replace_assets_from_db
-
-    token = _create_placeholder(database, 1)
-    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=(token.identifier, None, 18))  # noqa: E501
-    source = tmp_path / 'source.db'
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        cursor.execute(f"VACUUM INTO '{source}'")
-    with sqlite3.connect(source) as connection:
-        connection.execute('UPDATE evm_tokens SET decimals=6 WHERE identifier=?', (token.identifier,))  # noqa: E501
-
-    _replace_assets_from_db(connection=GlobalDBHandler().conn, sourcedb_path=source)
-
-    assert set(_marks()) == {token.evm_address}

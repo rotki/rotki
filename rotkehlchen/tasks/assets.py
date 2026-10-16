@@ -328,17 +328,14 @@ def _get_tokens_missing_details(
                 'WHERE (A.name IS NULL OR A.name=A.identifier) '
                 'AND B.token_kind=? '
                 'AND B.protocol IS NOT ? AND A.identifier>? '
-                # tokens edited by the user or given up are left as they are, and marked ones
-                # are loaded with their mark so their attempts and missing details are kept
-                'AND NOT EXISTS (SELECT 1 FROM unique_cache WHERE key=? || B.chain || B.address '
-                'OR key=? || B.chain || B.address) '
+                # tokens edited by the user or given up are left as they are
+                'AND NOT EXISTS (SELECT 1 FROM unique_cache WHERE key=? || B.chain || B.address) '
                 f"AND B.chain IN ({','.join('?' * len(chain_ids))}) ORDER BY A.identifier LIMIT ?",
                 (
                     TokenKind.ERC20.serialize_for_db(),
                     SPAM_PROTOCOL,
                     after_identifier,
                     CacheType.TOKEN_DETAILS_GIVEN_UP.serialize(),
-                    CacheType.TOKEN_DETAILS_RETRY.serialize(),
                     *(chain_id.serialize_for_db() for chain_id in chain_ids),
                     TOKEN_DETAILS_RETRY_BATCH_SIZE,
                 ),

@@ -17,10 +17,8 @@ from rotkehlchen.db.settings import DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOU
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.globaldb.utils import initialize_globaldb
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType
 from rotkehlchen.utils.misc import is_production
 from rotkehlchen.utils.network import query_file
 
@@ -56,23 +54,6 @@ def executeall(cursor: DBCursor, statements: str) -> None:
         if statement == '':
             continue
         cursor.execute(statement)
-
-
-def _clear_token_details_retry_keys(
-        write_cursor: DBCursor,
-        tokens: list[tuple[int, str]],
-) -> None:
-    """Remove the retry bookkeeping of evm tokens, given as (chain, address), that the update
-    removes. A given up key is permanent, so it would otherwise keep a token seen
-    again after the update from being marked while its details query fails."""
-    write_cursor.executemany(
-        'DELETE FROM unique_cache WHERE key=?',
-        [
-            (compute_cache_key((cache_type, str(chain), address)),)
-            for chain, address in tokens
-            for cache_type in (CacheType.TOKEN_DETAILS_RETRY, CacheType.TOKEN_DETAILS_GIVEN_UP)
-        ],
-    )
 
 
 def _replace_assets_from_db_cursor(
@@ -123,14 +104,6 @@ def _replace_assets_from_db_cursor(
 
         for table, schema in schemas.items():
             script_parts.append(f'CREATE TABLE IF NOT EXISTS {table} ({schema};')
-
-    _clear_token_details_retry_keys(  # only tokens the replacement removes. Retained ones may
-        write_cursor=write_cursor,  # still have to be recovered and redecoded, even if changed
-        tokens=write_cursor.execute(
-            'SELECT chain, address FROM evm_tokens EXCEPT '
-            'SELECT chain, address FROM other_db.evm_tokens',
-        ).fetchall(),
-    )
 
     # Always do the delete and insert
     for table in required_tables:
