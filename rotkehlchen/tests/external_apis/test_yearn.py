@@ -2,10 +2,11 @@ import datetime
 import json
 from http import HTTPStatus
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+from eth_abi import encode
 from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import EvmToken
@@ -19,15 +20,19 @@ from rotkehlchen.chain.ethereum.modules.yearn.utils import (
     query_yearn_vaults,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
     globaldb_get_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.tasks.assets import retry_missing_token_details
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import CacheType, ChainID
+from rotkehlchen.types import CacheType, ChainID, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -75,6 +80,54 @@ def test_yearn_api_addresses_are_checksummed(database, ethereum_inquirer):
     )) is not None
     assert token.protocol == CPT_YEARN_V2
     assert token.underlying_tokens[0].address == underlying_address
+
+
+def test_staking_token_saved_when_the_nodes_fail(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+) -> None:
+    """A staking token whose details can't be queried is still saved as a yearn staking
+    token, with the decimals of its vault and the identifier as name, so its transactions
+    decode as staking. The token details retry task fills in its details later."""
+    vault_address, underlying_address, staking_address = (make_evm_address() for _ in range(3))
+
+    def mock_yearn_api(url, timeout):  # pylint: disable=unused-argument
+        if f'{YDAEMON_API}/count' in url:
+            return MockResponse(HTTPStatus.OK, '{"numberOfVaults":1}')
+
+        return MockResponse(HTTPStatus.OK, json.dumps([{
+            'address': vault_address,
+            'version': '0.4.6',
+            'decimals': 6,
+            'name': 'USDC yVault',
+            'symbol': 'yvUSDC',
+            'token': {'address': underlying_address, 'decimals': 6, 'name': 'USD Coin', 'symbol': 'USDC'},  # noqa: E501
+            'staking': staking_address,
+        }]))
+
+    with (
+        patch.object(requests, 'get', wraps=mock_yearn_api),
+        patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('nodes down')),
+    ):
+        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+
+    token = EvmToken(identifier := evm_address_to_identifier(staking_address, ChainID.ETHEREUM))
+    assert (token.name, token.decimals, token.protocol) == (identifier, 6, CPT_YEARN_STAKING)
+    assert [x.address for x in token.underlying_tokens or []] == [vault_address]
+
+    chains_aggregator = MagicMock()
+    chains_aggregator.database = database
+    chains_aggregator.accounts.get.side_effect = lambda chain: ['account'] if chain == SupportedBlockchain.ETHEREUM else []  # noqa: E501
+    chains_aggregator.get_evm_manager.return_value.node_inquirer = ethereum_inquirer
+    with patch.object(ethereum_inquirer, 'multicall_2', return_value=[
+        (True, encode([abi_type], [value]))
+        for abi_type, value in (('uint8', 6), ('string', 'yvUSDC-gauge'), ('string', 'yvUSDC gauge'))  # noqa: E501
+    ]):
+        retry_missing_token_details(chains_aggregator)
+
+    token = EvmToken(identifier)
+    assert (token.name, token.symbol, token.decimals) == ('yvUSDC gauge', 'yvUSDC-gauge', 6)
+    assert token.protocol == CPT_YEARN_STAKING
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
