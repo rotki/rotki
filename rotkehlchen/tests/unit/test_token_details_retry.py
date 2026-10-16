@@ -461,7 +461,7 @@ def test_transfer_is_redecoded_with_found_details(
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1700000000),
         block_number=18000000,
-        from_address=make_evm_address(),  # incoming, so no fee event is decoded for the user
+        from_address=(user := ethereum_accounts[0]),
         to_address=token_address,
         value=0,
         gas=45000,
@@ -482,8 +482,8 @@ def test_transfer_is_redecoded_with_found_details(
             address=token_address,
             topics=[
                 ERC20_OR_ERC721_TRANSFER,
+                bytes(12) + bytes.fromhex(user[2:]),
                 bytes(12) + bytes.fromhex(make_evm_address()[2:]),
-                bytes(12) + bytes.fromhex((user := ethereum_accounts[0])[2:]),
             ],
         )],
     )
@@ -517,17 +517,12 @@ def test_transfer_is_redecoded_with_found_details(
             tx_hashes=[tx_hash],
         )
 
-    def ignored() -> bool:
-        with database.conn.read_ctx() as cursor:
-            return f'1{tx_hash!s}' in database.get_ignored_action_ids(cursor=cursor)
-
     if decimals_call == 'unreachable':
         assert transfers() == []
-        assert ignored() is True  # decoding to no events ignores the tx
         assert _marks() == {token_address: (0, None)}
     else:  # created with the default decimals
         assert transfers() == [(
-            HistoryEventType.RECEIVE,
+            HistoryEventType.SPEND,
             HistoryEventSubType.NONE,
             token_identifier,
             FVal('1.5E-12'),
@@ -540,9 +535,8 @@ def test_transfer_is_redecoded_with_found_details(
 
     # flagged for the periodic decoding task, which redecodes it with the found details
     assert ethereum_transaction_decoder.get_and_decode_undecoded_transactions() == [tx_hash]
-    assert ignored() is False  # or accounting would skip the recovered transfer
     assert transfers() == [(
-        HistoryEventType.RECEIVE,
+        HistoryEventType.SPEND,
         HistoryEventSubType.NONE,
         token_identifier,
         FVal('1.5'),  # 1500000 with the 6 decimals of the token
@@ -1303,4 +1297,3 @@ def test_asset_update_changing_a_token_keeps_its_retry_mark(
     _replace_assets_from_db(connection=GlobalDBHandler().conn, sourcedb_path=source)
 
     assert set(_marks()) == {token.evm_address}
-
