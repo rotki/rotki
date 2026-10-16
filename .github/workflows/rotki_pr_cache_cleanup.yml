@@ -1,0 +1,36 @@
+name: PR cache cleanup
+
+# A closed pull request's caches can never be restored again, yet they count against the
+# repository's 10 GB cache budget until they age out, evicting the base branch caches every
+# other PR restores from. pull_request_target because a fork PR's own token is read-only and
+# cannot delete caches; this job checks out and runs no PR code.
+on:  # zizmor: ignore[dangerous-triggers] no checkout, no PR code, only the cache API
+  pull_request_target:
+    types: [ closed ]
+
+permissions: { }
+
+jobs:
+  delete-caches:
+    name: 'Delete the PR caches'
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'rotki/rotki' }}
+    permissions:
+      # Deleting caches needs write access to Actions.
+      actions: write
+    steps:
+      - name: Delete caches saved under the PR merge ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_REF: refs/pull/${{ github.event.pull_request.number }}/merge
+        run: |
+          ids=$(gh cache list --ref "$PR_REF" --limit 100 --json id --jq '.[].id')
+          if [ -z "$ids" ]; then
+            echo "No caches under $PR_REF"
+            exit 0
+          fi
+          for id in $ids; do
+            gh cache delete "$id"
+          done
+          echo "Deleted $(echo "$ids" | wc -l) caches under $PR_REF"
