@@ -58,10 +58,11 @@ if TYPE_CHECKING:
 # the threading bootstrap frames and silently gets the REAL time instead of the frozen
 # one. Greenlets had detached stacks so this never triggered before the gevent removal,
 # but now every business-logic task runs on a thread and must see the frozen clock.
-# Thread timeout machinery is unaffected as CPython threading uses time.monotonic,
-# which freezegun does not patch.
+# freezegun also patches time.monotonic, so asyncio is ignored: on a frozen clock uvicorn's
+# event loop never wakes and every APIServer.stop() waits out its join timeout.
 freezegun.configure(default_ignore_list=[
-    entry for entry in freezegun.config.DEFAULT_IGNORE_LIST if entry != 'threading'
+    *(entry for entry in freezegun.config.DEFAULT_IGNORE_LIST if entry != 'threading'),
+    'asyncio',
 ])
 
 
