@@ -1,18 +1,12 @@
 from copy import deepcopy
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
-from unittest.mock import patch
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
-from rotkehlchen.assets.details_retry import (
-    get_token_details_retry_marks,
-    mark_token_details_retry,
-)
-from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -23,7 +17,6 @@ from rotkehlchen.constants.resolver import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.tasks.assets import _get_tokens_missing_details
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -46,7 +39,6 @@ from rotkehlchen.types import ChainID, Location, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
-    from rotkehlchen.concurrency.tasks import Task
 
 
 def assert_token_entry_exists_in_result(
@@ -807,84 +799,3 @@ def test_adding_evm_token_with_underlying_token(
             'weight': '50',
         },
     ]
-
-
-@pytest.mark.parametrize('start_with_logged_in_user', [True])
-@pytest.mark.parametrize('marked', [False, True])
-def test_editing_token_stops_details_retry(
-        rotkehlchen_api_server: APIServer,
-        marked: bool,
-) -> None:
-    """A token edited by the user keeps what the user saved, even if its name is still its
-    identifier, instead of being replaced by queried details. The events of a token that was
-    marked may have amounts of wrong decimals, so its transactions are redecoded."""
-    token = get_or_create_evm_token(
-        userdb=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
-        evm_address=make_evm_address(),
-        chain_id=ChainID.ETHEREUM,
-    )
-    if marked:
-        mark_token_details_retry(
-            chain_id=ChainID.ETHEREUM,
-            address=token.evm_address,
-            saved=(token.identifier, '', 18),
-        )
-    assert [(identifier, mark.address, mark.saved) for identifier, mark in _get_tokens_missing_details(  # noqa: E501
-        chain_ids=[ChainID.ETHEREUM],
-        after_identifier='',
-    )] == [(token.identifier, token.evm_address, (token.identifier, None, 18))]
-
-    edited: dict[str, Any] = token.to_dict()
-    del edited['identifier']
-    del edited['forked']
-    edited['symbol'], edited['decimals'] = 'USR', 8
-    with patch('rotkehlchen.api.services.assets.redecode_token_txs') as redecode:
-        assert_proper_response(requests.patch(
-            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
-            json=edited,
-        ))
-
-    assert _get_tokens_missing_details(chain_ids=[ChainID.ETHEREUM], after_identifier='') == []
-    assert get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10) == []
-    assert redecode.call_count == (1 if marked else 0)
-    if marked:
-        assert redecode.call_args.kwargs['address'] == token.evm_address
-
-
-@pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_adding_token_redecodes_its_transactions(rotkehlchen_api_server: APIServer) -> None:
-    """A token added by the user may have been seen before it existed, for example one that
-    could not be created because its details could not be queried, so the transactions with
-    logs of its contract are redecoded in a task and the token is not retried anymore."""
-    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=(address := make_evm_address()), saved=None)  # noqa: E501
-    added: dict[str, Any] = EvmToken.initialize(
-        address=address,
-        chain_id=ChainID.ETHEREUM,
-        token_kind=TokenKind.ERC20,
-        name='User Token',
-        symbol='USR',
-        decimals=8,
-    ).to_dict()
-    del added['identifier']
-    del added['forked']
-    supervisor, tasks = rotkehlchen_api_server.rest_api.rotkehlchen.task_supervisor, []
-    original_spawn_and_track = supervisor.spawn_and_track
-
-    def spawn_and_track(**kwargs: Any) -> Task:
-        tasks.append(task := original_spawn_and_track(**kwargs))
-        return task
-
-    with (
-        patch('rotkehlchen.api.services.assets.redecode_created_tokens_txs') as redecode,
-        patch.object(supervisor, 'spawn_and_track', side_effect=spawn_and_track),
-    ):
-        assert_proper_sync_response_with_result(requests.put(
-            api_url_for(rotkehlchen_api_server, 'allassetsresource'),
-            json=added,
-        ))
-        assert len(tasks) == 1  # the slow logs query does not run in the request
-        tasks[0].join(timeout=10)
-
-    assert get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10) == []
-    redecode.assert_called_once()
-    assert redecode.call_args.kwargs['addresses'] == [address]

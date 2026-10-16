@@ -52,7 +52,6 @@ from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin, _is_rate_limit_error
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.timing import TOKEN_QUERY_FAILURE_COOLDOWN
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
@@ -91,7 +90,7 @@ from rotkehlchen.types import (
     TokenKind,
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
-from rotkehlchen.utils.misc import from_wei, get_chunks, ts_now
+from rotkehlchen.utils.misc import from_wei, get_chunks
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
@@ -314,9 +313,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # keeps which of the properties were not returned by the contract.
         self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, tuple[dict[str, Any], frozenset[str]]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
         self.contract_info_erc721_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
-        # When the token contract query of an address failed to reach the nodes. Used to not
-        # query it again until TOKEN_QUERY_FAILURE_COOLDOWN passes.
-        self.token_query_failures: LRUCacheWithRemove[ChecksumEvmAddress, Timestamp] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
         # cache used by is_safe_proxy_or_eoa
         self._known_accounts_cache: LRUCacheWithRemove[ChecksumEvmAddress, bool] = LRUCacheWithRemove(maxsize=50)  # noqa: E501
         # tracks the request length that failed to proactively use smaller chunks per node type
@@ -1433,21 +1429,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             abi: ABI,
             properties: tuple[str, ...],
             address: ChecksumEvmAddress,
-            ignore_failure_cooldown: bool = False,
     ) -> list[tuple[bool, bytes]]:
-        """Query the given properties of a token contract. After a failure the address is not
-        queried again until TOKEN_QUERY_FAILURE_COOLDOWN passes, unless ignore_failure_cooldown.
+        """Query the given properties of a token contract.
 
         May raise:
-        - TokenQueryFailed if the nodes could not be reached now or in the cooldown period
+        - TokenQueryFailed if the nodes could not be reached
         """
-        if (
-                ignore_failure_cooldown is False and
-                (failed_at := self.token_query_failures.get(address)) is not None and
-                ts_now() - failed_at < TOKEN_QUERY_FAILURE_COOLDOWN
-        ):
-            raise TokenQueryFailed(f'Skipping query of token {address} that recently failed')
-
         contract = EvmContract(address=address, abi=abi, deployed_block=0)
         try:
             # Output contains call status and result
@@ -1456,17 +1443,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 calls=[(address, contract.encode(method_name=prop)) for prop in properties],
             )
         except RemoteError as e:
-            self.token_query_failures.add(address, ts_now())
             raise TokenQueryFailed(f'Failed to query token {address} due to {e!s}') from e
 
-        self.token_query_failures.remove(address)
         return output
 
-    def get_erc20_contract_info(
-            self,
-            address: ChecksumEvmAddress,
-            ignore_failure_cooldown: bool = False,
-    ) -> dict[str, Any]:
+    def get_erc20_contract_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
         """
         Query an erc20 contract address and return basic information as:
         - Decimals
@@ -1478,19 +1459,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         - BadFunctionCallOutput: If there is an error calling a bad address
         - NotERC20Conformant
         - TokenQueryFailed if the nodes could not be reached
-
-        ignore_failure_cooldown queries the nodes even if the address failed recently, for
-        queries requested by the user.
         """
-        return self.get_erc20_contract_info_and_missing(
-            address=address,
-            ignore_failure_cooldown=ignore_failure_cooldown,
-        )[0]
+        return self.get_erc20_contract_info_and_missing(address=address)[0]
 
     def get_erc20_contract_info_and_missing(
             self,
             address: ChecksumEvmAddress,
-            ignore_failure_cooldown: bool = False,
     ) -> tuple[dict[str, Any], frozenset[str]]:
         """Same as get_erc20_contract_info but also returns which of the ERC20_PROPERTIES the
         contract did not return, since their values in the info are only defaults."""
@@ -1501,7 +1475,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             abi=self.contracts.erc20_abi,
             properties=ERC20_PROPERTIES,
             address=address,
-            ignore_failure_cooldown=ignore_failure_cooldown,
         )
         result = (
             self._process_and_create_erc20_info(output=output, address=address),
@@ -1562,7 +1535,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         )
         result: dict[ChecksumEvmAddress, dict[str, Any]] = {}
         for idx, address in enumerate(addresses):
-            self.token_query_failures.remove(address)  # the nodes can be reached again
             self.contract_info_erc20_cache.remove(address)  # may have the details before a fix
             token_output = output[idx * ERC20_PROPERTIES_NUM:(idx + 1) * ERC20_PROPERTIES_NUM]
             if len(info := {
