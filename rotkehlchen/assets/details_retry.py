@@ -19,6 +19,7 @@ from rotkehlchen.globaldb.cache import (
     compute_cache_key,
     globaldb_get_unique_cache_value,
     globaldb_set_unique_cache_value,
+    globaldb_update_cache_last_ts,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -42,8 +43,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 # retries that can find the details incomplete before the token is left as it is
 TOKEN_DETAILS_RETRY_MAX_ATTEMPTS: Final = 5
-# runs that can postpone a token, since nothing answered, before one counts as an attempt
-TOKEN_DETAILS_RETRY_MAX_POSTPONES: Final = 24
 # (name, symbol, decimals) of a token as saved in the global DB
 TokenDetails = tuple[str | None, str | None, int]
 # index of each of the ERC20_PROPERTIES in TokenDetails
@@ -67,8 +66,6 @@ class TokenDetailsRetryMark(NamedTuple):
     missing: frozenset[str] = frozenset(ERC20_PROPERTIES)
     # details given by the caller of a token that could not be created. They are not queried.
     given: Mapping[str, Any] = {}  # never mutated
-    # runs in a row that postponed it instead of counting an attempt
-    postponed: int = 0
 
 
 class SavedDetails(NamedTuple):
@@ -112,10 +109,8 @@ def _serialize_mark(
         saved: TokenDetails | None,
         missing: frozenset[str] = frozenset(ERC20_PROPERTIES),
         given: Mapping[str, Any] | None = None,
-        postponed: int = 0,
 ) -> str:
     return rlk_jsondumps({
-        'postponed': postponed,
         'attempts': attempts,
         'saved': saved,
         'missing': sorted(missing),
@@ -177,7 +172,6 @@ def _deserialize_mark(
             saved=None if (saved := data['saved']) is None else tuple(saved),
             missing=frozenset(data['missing']),
             given=data['given'],
-            postponed=data.get('postponed', 0),
         )
     except (JSONDecodeError, KeyError) as e:
         log.error('Skipping malformed token details retry mark %s due to %s', address, e)
@@ -271,28 +265,13 @@ def stop_token_details_retry(chain_id: ChainID, address: ChecksumEvmAddress) -> 
 
 
 def postpone_token_details_retry(marks: list[TokenDetailsRetryMark]) -> None:
-    """Move marks to the back of the queue without counting an attempt, since nothing answered
-    and it can be an outage. If that goes on for TOKEN_DETAILS_RETRY_MAX_POSTPONES runs it is
-    the token that fails, for example if it is the only one left on its chain, so it counts."""
+    """Move marks to the back of the queue without counting an attempt"""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         for mark in marks:
-            if _is_given_up(cursor=write_cursor, chain_id=mark.chain_id, address=mark.address):
-                continue  # the user edited it while it was queried
-
-            if (postponed := mark.postponed + 1) >= TOKEN_DETAILS_RETRY_MAX_POSTPONES:
-                _count_attempt(write_cursor=write_cursor, mark=mark)
-                continue
-
-            globaldb_set_unique_cache_value(  # also moves it to the back of the queue
+            globaldb_update_cache_last_ts(
                 write_cursor=write_cursor,
-                key_parts=_mark_key_parts(chain_id=mark.chain_id, address=mark.address),
-                value=_serialize_mark(
-                    attempts=mark.attempts,
-                    saved=mark.saved,
-                    missing=mark.missing,
-                    given=mark.given,
-                    postponed=postponed,
-                ),
+                cache_type=CacheType.TOKEN_DETAILS_RETRY,
+                key_parts=(str(mark.chain_id.serialize_for_db()), mark.address),
             )
 
 
