@@ -4,10 +4,10 @@ The seam: while EVMTransactionDecoder._decode_transaction decodes a transaction,
 that raises TokenQueryFailed because of a RemoteError is recorded, and the decoder then writes
 nothing for that transaction, records it as deferred in the PendingTransactionsTracker and
 leaves it for the periodic decoding, which skips it until a cooldown passes. Explicit user
-requests retry it right away, and after TOKEN_QUERY_DEFERRAL_MAX_DURATION it is decoded
-anyway, as it was before the deferral existed.
+requests retry it right away. It stays undecoded for as long as its token queries fail, and a
+token whose query failed is not queried again for TOKEN_QUERY_FAILURE_COOLDOWN.
 """
-from contextlib import suppress
+from contextlib import nullcontext, suppress
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
@@ -23,14 +23,12 @@ from rotkehlchen.chain.evm.decoding.structures import DEFAULT_EVM_DECODING_OUTPU
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.token_query_failures import track_token_query_failures
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, TOKEN_QUERY_FAILURE_COOLDOWN
 from rotkehlchen.db.constants import TX_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.pending_transactions import (
-    TOKEN_QUERY_DEFERRAL_MAX_DURATION,
-    TOKEN_QUERY_DEFERRAL_RETRY_AFTER,
-)
+from rotkehlchen.db.pending_transactions import TOKEN_QUERY_DEFERRAL_RETRY_AFTER
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryFailed
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
@@ -171,6 +169,7 @@ def _decode_periodically(
     with (
         patch.object(inquirer, 'multicall_2', **multicall),
         patch('rotkehlchen.chain.evm.decoding.decoder.ts_now', return_value=now),
+        patch('rotkehlchen.chain.evm.node_inquirer.ts_now', return_value=now),
     ):
         return decoder.get_and_decode_undecoded_transactions()
 
@@ -297,17 +296,15 @@ def test_placeholder_repair_failure_defers(
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
-@pytest.mark.parametrize('forced', [False, True])
 def test_deferring_decoder_error_is_not_reported(
         database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
         ethereum_inquirer: EthereumInquirer,
         ethereum_transaction_decoder: EthereumTransactionDecoder,
-        forced: bool,
 ) -> None:
     """A decoder that lets TokenQueryFailed out, like velodrome creating a pool token with
     fallbacks, does not show the user a decoding error while the tx is deferred, since it is
-    retried later. Once forced, the tx is decoded without the token, so the error is shown."""
+    retried later."""
     def rule(context: DecoderContext) -> EvmDecodingOutput:  # pylint: disable=unused-argument
         get_or_create_evm_token(
             userdb=database,
@@ -326,12 +323,10 @@ def test_deferring_decoder_error_is_not_reported(
     database.msg_aggregator.consume_errors()
     decoder = ethereum_transaction_decoder
     with patch.dict(decoder.rules.address_mappings, {protocol_address: (rule,)}):
-        _decode_periodically(decoder, ethereum_inquirer, (now := ts_now()), NODES_DOWN)
-        if forced:
-            _decode_periodically(decoder, ethereum_inquirer, Timestamp(now + TOKEN_QUERY_DEFERRAL_MAX_DURATION + TOKEN_QUERY_DEFERRAL_RETRY_AFTER + 1), NODES_DOWN)  # noqa: E501
+        _decode_periodically(decoder, ethereum_inquirer, ts_now(), NODES_DOWN)
 
-    assert _is_decoded(database, tx_hash) is forced
-    assert len(database.msg_aggregator.consume_errors()) == (1 if forced else 0)
+    assert not _is_decoded(database, tx_hash)
+    assert database.msg_aggregator.consume_errors() == []
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
@@ -384,120 +379,118 @@ def test_nft_transfer_is_deferred(
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
-@pytest.mark.parametrize('nft', [False, True])
-def test_decoded_as_before_after_the_cap(
+def test_tx_stays_deferred_while_its_token_query_fails(
         database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
         ethereum_inquirer: EthereumInquirer,
         ethereum_transaction_decoder: EthereumTransactionDecoder,
-        nft: bool,
 ) -> None:
-    """A single token that keeps failing, alone on its chain, still stops deferring its tx
-    once TOKEN_QUERY_DEFERRAL_MAX_DURATION passes since the first deferral. It is then
-    decoded as before the deferral existed: the erc20 transfer is dropped, and the nft is
-    created with empty details."""
+    """A transaction is never decoded without the token whose query keeps failing, however
+    long it fails, since its transfer would then be lost for good. Once the nodes answer it is
+    decoded with the right amount."""
     user = ethereum_accounts[0]
-    tx_hash = _add_transaction(database, user, [_transfer_log(user, nft=nft)])
+    tx_hash = _add_transaction(database, user, [_transfer_log(user)])
     decoder = ethereum_transaction_decoder
-    _decode_periodically(decoder, ethereum_inquirer, (now := ts_now()), NODES_DOWN)
-    _decode_periodically(decoder, ethereum_inquirer, Timestamp(now + TOKEN_QUERY_DEFERRAL_MAX_DURATION), NODES_DOWN)  # noqa: E501
-    assert not _is_decoded(database, tx_hash)  # within the cap, which counts from the first
+    now = ts_now()
+    for later in (0, DAY_IN_SECONDS, 2 * DAY_IN_SECONDS):
+        assert _decode_periodically(decoder, ethereum_inquirer, Timestamp(now + later), NODES_DOWN) == [tx_hash]  # noqa: E501
+        assert not _is_decoded(database, tx_hash)
+        assert not _has_events(database, tx_hash)
+        assert _deferred(database) == [tx_hash]
 
-    _decode_periodically(decoder, ethereum_inquirer, Timestamp(now + TOKEN_QUERY_DEFERRAL_MAX_DURATION + TOKEN_QUERY_DEFERRAL_RETRY_AFTER + 1), NODES_DOWN)  # noqa: E501
+    assert _decode_periodically(decoder, ethereum_inquirer, Timestamp(now + 3 * DAY_IN_SECONDS), {'return_value': _erc20_output()}) == [tx_hash]  # noqa: E501
     assert _is_decoded(database, tx_hash)
+    assert _transfers(database, tx_hash) == [(
+        evm_address_to_identifier(address=TOKEN_ADDRESS, chain_id=ChainID.ETHEREUM),
+        FVal('1.5'),
+    )]
     assert _deferred(database) == []
-    if nft:
-        identifier = evm_address_to_identifier(
-            address=TOKEN_ADDRESS,
-            chain_id=ChainID.ETHEREUM,
-            token_type=TokenKind.ERC721,
-            collectible_id='5',
-        )
-        token = EvmToken(identifier)
-        assert (token.name, token.symbol, token.decimals) == ('', '', 0)
-        assert _transfers(database, tx_hash) == [(identifier, FVal(1))]
-    else:
-        assert _transfers(database, tx_hash) == []
-        assert get_evm_token(evm_address=TOKEN_ADDRESS, chain_id=ChainID.ETHEREUM) is None
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
-@pytest.mark.parametrize('forced', [False, True])
+def test_failed_token_is_not_queried_again_during_the_cooldown(
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    """Many transactions of a token seen while the nodes fail make a single query, and are
+    all deferred. Once the cooldown passes the token is queried again."""
+    user = ethereum_accounts[0]
+    tx_hashes = [_add_transaction(database, user, [_transfer_log(user)]) for _ in range(3)]
+    decoder, now = ethereum_transaction_decoder, ts_now()
+    with (
+        patch.object(ethereum_inquirer, 'multicall_2', **NODES_DOWN) as multicall,
+        patch('rotkehlchen.chain.evm.node_inquirer.ts_now', return_value=now),
+    ):
+        assert sorted(decoder.get_and_decode_undecoded_transactions()) == sorted(tx_hashes)
+    assert multicall.call_count == 1
+    assert sorted(_deferred(database)) == sorted(tx_hashes)
+
+    assert TOKEN_QUERY_FAILURE_COOLDOWN < TOKEN_QUERY_DEFERRAL_RETRY_AFTER
+    with (  # the txs are retried while the token is still in its cooldown
+        patch.object(ethereum_inquirer, 'multicall_2', return_value=_erc20_output()) as multicall,
+        patch('rotkehlchen.chain.evm.decoding.decoder.ts_now', return_value=Timestamp(now + TOKEN_QUERY_DEFERRAL_RETRY_AFTER + 1)),  # noqa: E501
+        patch('rotkehlchen.chain.evm.node_inquirer.ts_now', return_value=Timestamp(now + TOKEN_QUERY_FAILURE_COOLDOWN - 1)),  # noqa: E501
+    ):
+        assert len(decoder.get_and_decode_undecoded_transactions()) == 3
+    assert multicall.call_count == 0
+    assert sorted(_deferred(database)) == sorted(tx_hashes)
+
+    _decode_periodically(decoder, ethereum_inquirer, Timestamp(now + 2 * TOKEN_QUERY_DEFERRAL_RETRY_AFTER + 2), {'return_value': _erc20_output()})  # noqa: E501
+    assert all(_is_decoded(database, x) for x in tx_hashes)
+    assert _deferred(database) == []
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
 def test_one_failed_token_query_per_deferred_tx(
         database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
         ethereum_inquirer: EthereumInquirer,
         ethereum_transaction_decoder: EthereumTransactionDecoder,
-        forced: bool,
 ) -> None:
     """Once a token query of a transaction fails to reach the nodes the transaction is left
-    undecoded, so its other token queries don't go through the node failover again. A forced
-    transaction uses what the queries return, so each of its tokens is still queried."""
+    undecoded, so its other token queries don't go through the node failover again."""
     user = ethereum_accounts[0]
     logs = [_transfer_log(user), _transfer_log(user), _transfer_log(user)]
-    for log_index, (tx_log, address) in enumerate(zip(logs, (TOKEN_ADDRESS, TOKEN_ADDRESS, (other := make_evm_address())), strict=True)):  # noqa: E501
+    for log_index, (tx_log, address) in enumerate(zip(logs, (TOKEN_ADDRESS, TOKEN_ADDRESS, make_evm_address()), strict=True)):  # noqa: E501
         tx_log.log_index, tx_log.address = log_index, address
     tx_hash = _add_transaction(database, user, logs)
-    with (
-        patch.object(ethereum_inquirer, 'multicall_2', **NODES_DOWN) as multicall,
-        patch.object(database.pending_txs_tracker, 'is_token_query_deferral_expired', return_value=forced),  # noqa: E501
-    ):
+    with patch.object(ethereum_inquirer, 'multicall_2', **NODES_DOWN) as multicall:
         assert ethereum_transaction_decoder.get_and_decode_undecoded_transactions() == [tx_hash]
 
-    assert [x.kwargs['calls'][0][0] for x in multicall.call_args_list] == (
-        [TOKEN_ADDRESS, TOKEN_ADDRESS, other] if forced else [TOKEN_ADDRESS]
-    )
-    assert _is_decoded(database, tx_hash) is forced
+    assert [x.kwargs['calls'][0][0] for x in multicall.call_args_list] == [TOKEN_ADDRESS]
+    assert not _is_decoded(database, tx_hash)
 
 
 @pytest.mark.parametrize('token_kind', [TokenKind.ERC20, TokenKind.ERC721])
-@pytest.mark.parametrize('forced', [None, False, True])
+@pytest.mark.parametrize('decoding', [False, True])
 def test_failed_query_never_saves_a_token(
         database: DBHandler,
         ethereum_inquirer: EthereumInquirer,
         token_kind: TokenKind,
-        forced: bool | None,
+        decoding: bool,
 ) -> None:
-    """Outside of decoding (None) or while decoding, a failed query does not save the token,
-    even with fallbacks. Otherwise the retry would find it and never query it again. A forced
-    decoding does what was done before: fallbacks for erc20, empty details for erc721."""
-    with patch.object(ethereum_inquirer, 'multicall_2', **NODES_DOWN):
-        if forced is None:
-            with pytest.raises(TokenQueryFailed):
-                get_or_create_evm_token(
-                    userdb=database,
-                    evm_address=TOKEN_ADDRESS,
-                    chain_id=ChainID.ETHEREUM,
-                    token_kind=token_kind,  # type: ignore[arg-type]  # only evm kinds
-                    evm_inquirer=ethereum_inquirer,
-                    **FALLBACKS,
-                )
-        else:
-            with track_token_query_failures(forced=forced) as failures:
-                try:
-                    get_or_create_evm_token(
-                        userdb=database,
-                        evm_address=TOKEN_ADDRESS,
-                        chain_id=ChainID.ETHEREUM,
-                        token_kind=token_kind,  # type: ignore[arg-type]  # only evm kinds
-                        evm_inquirer=ethereum_inquirer,
-                        **FALLBACKS,
-                    )
-                except TokenQueryFailed:
-                    assert not forced
-                else:
-                    assert forced
-            assert failures.addresses == {TOKEN_ADDRESS}
-
-    token = get_evm_token(evm_address=TOKEN_ADDRESS, chain_id=ChainID.ETHEREUM, token_kind=token_kind)  # type: ignore[arg-type]  # noqa: E501
-    if forced is True:
-        assert token is not None
-        assert (token.name, token.symbol, token.decimals) == (
-            ('Fallback', 'FB', 18) if token_kind == TokenKind.ERC20 else ('', '', 0)
+    """Outside of decoding or while decoding, a failed query does not save the token, even
+    with fallbacks. Otherwise the retry would find it and never query it again."""
+    with (
+        patch.object(ethereum_inquirer, 'multicall_2', **NODES_DOWN),
+        track_token_query_failures() if decoding else nullcontext() as failures,
+        pytest.raises(TokenQueryFailed),
+    ):
+        get_or_create_evm_token(
+            userdb=database,
+            evm_address=TOKEN_ADDRESS,
+            chain_id=ChainID.ETHEREUM,
+            token_kind=token_kind,  # type: ignore[arg-type]  # only evm kinds
+            evm_inquirer=ethereum_inquirer,
+            **FALLBACKS,
         )
-    else:
-        assert token is None
 
+    if decoding:
+        assert failures is not None
+        assert failures.addresses == {TOKEN_ADDRESS}
+    assert get_evm_token(evm_address=TOKEN_ADDRESS, chain_id=ChainID.ETHEREUM, token_kind=token_kind) is None  # type: ignore[arg-type]  # noqa: E501
     with GlobalDBHandler().conn.read_ctx() as cursor:  # a failed query says nothing of decimals
         assert globaldb_get_general_cache_values(cursor, (CacheType.TOKEN_WITHOUT_DECIMALS,)) == []
 
@@ -548,4 +541,57 @@ def test_user_requests_retry_deferred_txs(
         ) == {'decoded_tx_number': 1}
 
     assert _is_decoded(database, tx_hash)
+    assert _deferred(database) == []
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('have_decoders', [True])
+def test_user_redecode_of_a_tx_ignores_the_cooldown(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Redecoding a single transaction queries its tokens again even inside the cooldown of a
+    failed query, since the nodes may be back, instead of deleting its events and deferring
+    it without trying the nodes."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    evm_manager = rotki.chains_aggregator.get_evm_manager(ChainID.ETHEREUM)
+    inquirer, user = evm_manager.node_inquirer, ethereum_accounts[0]
+    tx_hash = _add_transaction(database, user, [log := _transfer_log(user)])
+    with patch.object(inquirer, 'multicall_2', **NODES_DOWN):
+        evm_manager.transactions_decoder.get_and_decode_undecoded_transactions()
+    assert _deferred(database) == [tx_hash]
+
+    with database.conn.read_ctx() as cursor:
+        transaction = DBEvmTx(database).get_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.ETHEREUM),
+        )[0]
+    with (
+        patch.object(inquirer, 'multicall_2', return_value=_erc20_output()) as multicall,
+        patch.object(inquirer, 'get_transaction_by_hash', return_value=(transaction, txreceipt_to_data(EvmTxReceipt(  # noqa: E501
+            tx_hash=tx_hash,
+            chain_id=ChainID.ETHEREUM,
+            contract_address=None,
+            status=True,
+            tx_type=0,
+            logs=[log],
+        )))),
+        patch.object(evm_manager.transactions, '_query_internal_transactions_for_parent_hash', return_value=([], None, None)),  # noqa: E501
+    ):
+        assert assert_proper_response_with_result(
+            response=requests.put(
+                api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+                json={'async_query': False, 'chain': 'eth', 'tx_refs': [str(tx_hash)]},
+            ),
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=False,
+        ) is True
+
+    assert multicall.call_count == 1
+    assert _is_decoded(database, tx_hash)
+    assert _transfers(database, tx_hash) == [(
+        evm_address_to_identifier(TOKEN_ADDRESS, ChainID.ETHEREUM),
+        FVal('1.5'),
+    )]
     assert _deferred(database) == []

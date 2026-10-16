@@ -36,8 +36,6 @@ class DBCacheStatic(Enum):
     LAST_SPARK_ASSETS_UPDATE: Final = 'last_spark_assets_update'
     LAST_DB_UPGRADE: Final = 'last_db_upgrade'
     LAST_TOKEN_DETAILS_RETRY_TS: Final = 'last_token_details_retry_ts'
-    # identifier of the last token the details retry task went through
-    TOKEN_DETAILS_RETRY_CURSOR: Final = 'token_details_retry_cursor'
     DOCKER_DEVICE_INFO: Final = 'docker_device_info'
     MONERIUM_OAUTH_CREDENTIALS: Final = 'monerium_oauth_credentials'
     # Earliest timestamp from which balance caches are stale due to event modifications.
@@ -142,6 +140,8 @@ class DBCacheDynamic(Enum):
         '{blockchain}_last_balances_query_ts',
         _deserialize_timestamp_from_str,
     )
+    # identifier of the last token of the chain the details retry task went through
+    TOKEN_DETAILS_RETRY_CURSOR: Final = '{blockchain}_token_details_retry_cursor', lambda x: x
 
     @overload
     def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:

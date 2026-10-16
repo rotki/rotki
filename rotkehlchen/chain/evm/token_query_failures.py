@@ -22,8 +22,6 @@ if TYPE_CHECKING:
 
 @dataclass
 class TokenQueryFailures:
-    # when forced, the failures do not stop the transaction from being decoded
-    forced: bool
     addresses: set[ChecksumEvmAddress] = field(default_factory=set)
 
 
@@ -34,9 +32,9 @@ _token_query_failures: ContextVar[TokenQueryFailures | None] = ContextVar(
 
 
 @contextmanager
-def track_token_query_failures(forced: bool) -> Iterator[TokenQueryFailures]:
+def track_token_query_failures() -> Iterator[TokenQueryFailures]:
     """Record the token queries that fail to reach the nodes while in the context"""
-    reset_token = _token_query_failures.set(failures := TokenQueryFailures(forced=forced))
+    reset_token = _token_query_failures.set(failures := TokenQueryFailures())
     try:
         yield failures
     finally:
@@ -51,13 +49,4 @@ def record_token_query_failure(address: ChecksumEvmAddress) -> None:
 def is_token_query_deferring() -> bool:
     """Whether a token query already failed in the transaction being decoded, which is then
     left undecoded anyway, so its other token queries don't need to reach the nodes"""
-    return (
-        (failures := _token_query_failures.get()) is not None and
-        failures.forced is False and
-        len(failures.addresses) != 0
-    )
-
-
-def is_token_query_forced() -> bool:
-    """Whether the transaction being decoded is decoded even if token queries fail"""
-    return (failures := _token_query_failures.get()) is not None and failures.forced
+    return (failures := _token_query_failures.get()) is not None and len(failures.addresses) != 0

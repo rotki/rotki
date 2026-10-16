@@ -14,8 +14,7 @@ from rotkehlchen.assets.asset import (
     WrongAssetType,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ERC20_PROPERTIES
-from rotkehlchen.chain.evm.token_query_failures import is_token_query_forced
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.solana.utils import is_solana_token_nft
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
@@ -220,13 +219,16 @@ def edit_token_and_clean_cache(
     May raise:
         - InputError if there is an error while editing the token
     """
-    updated_fields = False
-
-    if name is not None and token.name != name:
-        object.__setattr__(token, 'name', name)
-        updated_fields = True
-    elif token.name == token.identifier and chain_inquirer is not None:
-        # query the chain. A failed query saves nothing. An answered one saves what came back
+    updated_fields, query_failed = False, False
+    if (
+            token.name == token.identifier and
+            chain_inquirer is not None and
+            None in (name, symbol, decimals) and
+            (name is None or isinstance(token, EvmToken))
+    ):
+        # query the chain for the details of the placeholder, also when the caller gives its
+        # name, since that takes it out of the placeholders and its decimals or symbol would
+        # never be queried. A failed query saves nothing. An answered one saves what came back
         # and never the defaults of what did not. See name_for_answered_token
         try:
             *on_chain_details, _, missing = _query_or_get_given_token_info(
@@ -239,6 +241,7 @@ def edit_token_and_clean_cache(
             )
         except TokenQueryFailed as e:
             log.warning('Could not query the details of token %s due to %s', token.identifier, e)
+            query_failed = True
         else:
             given = {
                 attribute for attribute, value in zip(('name', 'symbol', 'decimals'), (name, symbol, decimals), strict=True)  # noqa: E501
@@ -260,6 +263,12 @@ def edit_token_and_clean_cache(
                     address=token.evm_address,
                 ))
                 updated_fields = True
+
+    # after a failed query the given name is not saved, so the token stays a placeholder and
+    # is queried again when seen again or by the token details retry task
+    if name is not None and token.name != name and query_failed is False:
+        object.__setattr__(token, 'name', name)
+        updated_fields = True
 
     if symbol is not None and token.symbol != symbol:
         object.__setattr__(token, 'symbol', symbol)
@@ -609,9 +618,7 @@ def _get_or_create_token(
 
     May raise:
     - TokenQueryFailed if a chain_inquirer is given but the nodes could not be reached to
-       query the token details. Nothing is saved then, not even with fallbacks. Unless the
-       transaction being decoded is forced, see track_token_query_failures, in which case the
-       token is handled as non conformant, or created with empty details if it is an ERC721.
+       query the token details. Nothing is saved then, not even with fallbacks.
     - NotERC20Conformant if token_kind is ERC20 and a chain_inquirer is given but the given
        address does not conform to the ERC20 spec
     - NotERC721Conformant if token_kind is ERC721 and a chain_inquirer is given but the given
@@ -649,33 +656,23 @@ def _get_or_create_token(
         else:
             asset_exists = False
 
-        query_failed, without_decimals = False, False
+        without_decimals = False
         if None in (name, symbol, decimals, token_kind) and chain_inquirer is not None:
             given = frozenset(
                 prop for prop, value in zip(('name', 'symbol', 'decimals'), (name, symbol, decimals), strict=True)  # noqa: E501
                 if value is not None
             )
-            try:
-                name, symbol, decimals, token_kind, missing = _query_or_get_given_token_info(
-                    chain_inquirer=chain_inquirer,
-                    address=address,
-                    name=name,
-                    symbol=symbol,
-                    decimals=decimals,
-                    token_kind=token_kind,
-                )
-            except TokenQueryFailed as e:
-                if not is_token_query_forced():
-                    raise  # nothing is saved, so the token is queried again when seen again
-
-                log.warning('Could not query the details of token %s due to %s', address, e)
-                query_failed, missing = True, frozenset(ERC20_PROPERTIES)
-                if token_kind == TokenKind.ERC721:  # created with empty details, as before
-                    name = '' if name is None else name
-                    symbol = '' if symbol is None else symbol
-                    decimals, missing = 0, frozenset()
-            else:
-                without_decimals = 'decimals' in missing and 'decimals' not in given
+            # a TokenQueryFailed is let out. Nothing is saved, so the token is queried again
+            # when seen again
+            name, symbol, decimals, token_kind, missing = _query_or_get_given_token_info(
+                chain_inquirer=chain_inquirer,
+                address=address,
+                name=name,
+                symbol=symbol,
+                decimals=decimals,
+                token_kind=token_kind,
+            )
+            without_decimals = 'decimals' in missing and 'decimals' not in given
 
             if None not in (fallback_name, fallback_symbol, fallback_decimals):
                 # fallbacks only replace what the chain did not return
@@ -686,8 +683,6 @@ def _get_or_create_token(
 
             if None in (name, symbol, decimals, token_kind):
                 raise (
-                    TokenQueryFailed(f'Could not query the details of token {address}')
-                    if query_failed else
                     NotERC20Conformant(f'Token {address} is not ERC20 conformant')
                     if token_kind == TokenKind.ERC20 else
                     NotERC721Conformant(f'Token {address} is not ERC721 conformant')

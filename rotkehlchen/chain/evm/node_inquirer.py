@@ -56,6 +56,7 @@ from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin, _is_rate_limit_error
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.timing import TOKEN_QUERY_FAILURE_COOLDOWN
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
@@ -94,7 +95,7 @@ from rotkehlchen.types import (
     TokenKind,
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
-from rotkehlchen.utils.misc import from_wei, get_chunks
+from rotkehlchen.utils.misc import from_wei, get_chunks, ts_now
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
@@ -317,6 +318,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # keeps which of the properties were not returned by the contract.
         self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, tuple[dict[str, Any], frozenset[str]]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
         self.contract_info_erc721_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
+        # When the token contract query of an address last failed to reach the nodes. Used to
+        # not query it again until TOKEN_QUERY_FAILURE_COOLDOWN passes.
+        self.token_query_failures: LRUCacheWithRemove[ChecksumEvmAddress, Timestamp] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
         # cache used by is_safe_proxy_or_eoa
         self._known_accounts_cache: LRUCacheWithRemove[ChecksumEvmAddress, bool] = LRUCacheWithRemove(maxsize=50)  # noqa: E501
         # tracks the request length that failed to proactively use smaller chunks per node type
@@ -1439,14 +1443,29 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         one is recorded the nodes are not queried again for that transaction, since it is
         left undecoded anyway and each query would go through the whole node failover.
 
+        After a failure the address is not queried again for TOKEN_QUERY_FAILURE_COOLDOWN, so
+        that the many transactions of a token seen while the nodes fail don't each go through
+        the node failover. Those queries fail and are recorded as if the nodes were reached.
+        Requests of the user can skip the cooldown with forget_token_query_failures.
+
         May raise:
-        - TokenQueryFailed if the nodes could not be reached
+        - TokenQueryFailed if the nodes could not be reached, now or within the cooldown
         """
         if is_token_query_deferring():
             record_token_query_failure(address)
             raise TokenQueryFailed(
                 f'Not querying token {address} since a token query of the same '
                 'transaction failed to reach the nodes',
+            )
+
+        if (
+                (failed_at := self.token_query_failures.get(address)) is not None and
+                ts_now() - failed_at < TOKEN_QUERY_FAILURE_COOLDOWN
+        ):
+            record_token_query_failure(address)
+            raise TokenQueryFailed(
+                f'Not querying token {address} since its query failed to reach the nodes '
+                'recently',
             )
 
         contract = EvmContract(address=address, abi=abi, deployed_block=0)
@@ -1457,10 +1476,21 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 calls=[(address, contract.encode(method_name=prop)) for prop in properties],
             )
         except RemoteError as e:
+            self.token_query_failures.add(address, ts_now())
             record_token_query_failure(address)
             raise TokenQueryFailed(f'Failed to query token {address} due to {e!s}') from e
 
+        self.token_query_failures.remove(address)
         return output
+
+    def forget_token_query_failures(self, address: ChecksumEvmAddress | None = None) -> None:
+        """Let the token contract of the given address, or of all if None, be queried again
+        before TOKEN_QUERY_FAILURE_COOLDOWN passes, for requests of the user, since the nodes
+        may be back. See _query_token_contract."""
+        if address is None:
+            self.token_query_failures.clear()
+        else:
+            self.token_query_failures.remove(address)
 
     def get_erc20_contract_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
         """

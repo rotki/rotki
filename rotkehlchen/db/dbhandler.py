@@ -819,7 +819,6 @@ class DBHandler:
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
-            DBCacheStatic.TOKEN_DETAILS_RETRY_CURSOR,
         ):
             return value
 
@@ -837,7 +836,6 @@ class DBHandler:
                 DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
                 DBCacheStatic.STALE_BALANCES_FROM_TS,
                 DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
-                DBCacheStatic.TOKEN_DETAILS_RETRY_CURSOR,
             ],
     ) -> str | None:
         ...
@@ -1079,6 +1077,15 @@ class DBHandler:
     ) -> Timestamp | None:
         ...
 
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
+            name: Literal[DBCacheDynamic.TOKEN_DETAILS_RETRY_CURSOR],
+            **kwargs: Unpack[BlockchainArgType],
+    ) -> str | None:
+        ...
+
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
@@ -1282,6 +1289,16 @@ class DBHandler:
             write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
             value: Timestamp,
+            **kwargs: Unpack[BlockchainArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.TOKEN_DETAILS_RETRY_CURSOR],
+            value: str,
             **kwargs: Unpack[BlockchainArgType],
     ) -> None:
         ...

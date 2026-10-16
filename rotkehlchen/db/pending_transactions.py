@@ -3,8 +3,6 @@ from __future__ import annotations
 from threading import Lock
 from typing import TYPE_CHECKING, Final
 
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
-
 if TYPE_CHECKING:
     from rotkehlchen.types import EVMTxHash, SupportedBlockchain, Timestamp
 
@@ -19,8 +17,6 @@ UNRESOLVED_L1_FEE_RETRY_AFTER: Final = 600
 # How long to leave a transaction out of the periodic decoding after it was deferred since a
 # token query failed to reach the nodes, so an outage is not retried on every tick.
 TOKEN_QUERY_DEFERRAL_RETRY_AFTER: Final = 600
-# How long after its first deferral a transaction is decoded even if token queries fail
-TOKEN_QUERY_DEFERRAL_MAX_DURATION: Final = DAY_IN_SECONDS
 
 
 class PendingTransactionsTracker:
@@ -51,9 +47,9 @@ class PendingTransactionsTracker:
         self.l1_fee_failure_ts: dict[SupportedBlockchain, Timestamp] = {}
         # chain -> number of runs that probed a transaction with an unresolved L1 fee
         self.l1_fee_probes: dict[SupportedBlockchain, int] = {}
-        # chain -> tx hash -> timestamps of the first and the last time the transaction was
-        # left undecoded because a token query failed to reach the nodes
-        self.token_query_deferrals: dict[SupportedBlockchain, dict[EVMTxHash, tuple[Timestamp, Timestamp]]] = {}  # noqa: E501
+        # chain -> tx hash -> last time the transaction was left undecoded because a token
+        # query failed to reach the nodes
+        self.token_query_deferrals: dict[SupportedBlockchain, dict[EVMTxHash, Timestamp]] = {}
         self._token_query_deferrals_lock = Lock()
 
     def should_scan_receipts(self, blockchain: SupportedBlockchain, now: Timestamp) -> bool:
@@ -106,9 +102,7 @@ class PendingTransactionsTracker:
     ) -> None:
         """Signal that `tx_hash` was left undecoded since a token query failed"""
         with self._token_query_deferrals_lock:
-            deferrals = self.token_query_deferrals.setdefault(blockchain, {})
-            first_ts, _ = deferrals.get(tx_hash, (now, now))
-            deferrals[tx_hash] = (first_ts, now)
+            self.token_query_deferrals.setdefault(blockchain, {})[tx_hash] = now
 
     def clear_token_query_deferral(self, blockchain: SupportedBlockchain, tx_hash: EVMTxHash) -> None:  # noqa: E501
         """Signal that `tx_hash` was decoded"""
@@ -124,20 +118,6 @@ class PendingTransactionsTracker:
         that the periodic decoding should still skip, since they were deferred recently."""
         with self._token_query_deferrals_lock:
             return [
-                tx_hash for tx_hash, (_, last_ts) in self.token_query_deferrals.get(blockchain, {}).items()  # noqa: E501
+                tx_hash for tx_hash, last_ts in self.token_query_deferrals.get(blockchain, {}).items()  # noqa: E501
                 if now is None or now - last_ts <= TOKEN_QUERY_DEFERRAL_RETRY_AFTER
             ]
-
-    def is_token_query_deferral_expired(
-            self,
-            blockchain: SupportedBlockchain,
-            tx_hash: EVMTxHash,
-            now: Timestamp,
-    ) -> bool:
-        """Whether `tx_hash` was first deferred long enough ago to be decoded even if token
-        queries fail. State is in memory, so a restart only delays it."""
-        with self._token_query_deferrals_lock:
-            if (deferral := self.token_query_deferrals.get(blockchain, {}).get(tx_hash)) is None:
-                return False
-
-        return now - deferral[0] > TOKEN_QUERY_DEFERRAL_MAX_DURATION

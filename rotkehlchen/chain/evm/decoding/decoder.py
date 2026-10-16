@@ -439,6 +439,24 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             ))
         return filter_query
 
+    def get_and_decode_undecoded_transactions(
+            self,
+            limit: int | None = None,
+            send_ws_notifications: bool = False,
+            retry_deferred: bool = False,
+    ) -> list[EVMTxHash]:
+        """Same as the parent, but when the deferred transactions are retried for a request of
+        the user the token queries that failed recently are tried again too, since the nodes
+        may be back. A failure in this run still stops the next queries of that token."""
+        if retry_deferred:
+            self.evm_inquirer.forget_token_query_failures()
+
+        return super().get_and_decode_undecoded_transactions(
+            limit=limit,
+            send_ws_notifications=send_ws_notifications,
+            retry_deferred=retry_deferred,
+        )
+
     def _reload_single_decoder(self, cursor: DBCursor, decoder: EvmDecoderInterface) -> None:
         """Reload data for a single decoder"""
         super()._reload_single_decoder(cursor=cursor, decoder=decoder)
@@ -596,21 +614,14 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         If write_buffer is given the DB write is deferred into it instead.
 
         If a token query fails to reach the nodes while decoding, nothing is written and the
-        transaction is left undecoded to be retried later, unless it was first deferred more
-        than TOKEN_QUERY_DEFERRAL_MAX_DURATION ago. See _defer_on_token_query_failure.
+        transaction is left undecoded to be retried later. See _defer_on_token_query_failure.
 
         Returns
         - the list of decoded events
         - a flag which is True if balances refresh is needed
         - A list of decoders to reload or None if no need
         """
-        with track_token_query_failures(
-            forced=self.database.pending_txs_tracker.is_token_query_deferral_expired(
-                blockchain=self.evm_inquirer.blockchain,
-                tx_hash=transaction.tx_hash,
-                now=ts_now(),
-            ),
-        ) as token_query_failures:
+        with track_token_query_failures() as token_query_failures:
             return self._decode_transaction_logs(
                 transaction=transaction,
                 tx_receipt=tx_receipt,
@@ -626,12 +637,13 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         """Check before writing the events of a transaction whether a token query failed to
         reach the nodes while decoding it. Its events may then be missing transfers or use
         wrong decimals, so the transaction is recorded as deferred and the caller writes
-        nothing, which leaves it undecoded for the periodic decoding to retry it. A forced
-        transaction is decoded anyway and stops being deferred.
+        nothing, which leaves it undecoded for the periodic decoding to retry it. It stays
+        undecoded for as long as its token queries fail, so its events are never written with
+        a transfer missing or with default decimals.
 
         Returns whether the caller should write nothing.
         """
-        if len(token_query_failures.addresses) == 0 or token_query_failures.forced:
+        if len(token_query_failures.addresses) == 0:
             self.database.pending_txs_tracker.clear_token_query_deferral(
                 blockchain=self.evm_inquirer.blockchain,
                 tx_hash=transaction.tx_hash,

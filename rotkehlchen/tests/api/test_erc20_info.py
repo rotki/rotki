@@ -1,15 +1,20 @@
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import pytest
 import requests
+from eth_abi import encode
+from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_sync_response_with_result,
 )
+from rotkehlchen.types import ChainID
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -120,3 +125,32 @@ def test_query_token_with_info(
         contained_in_msg='seems to not be a deployed contract or not a valid erc20 token',
         status_code=HTTPStatus.CONFLICT,
     )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_query_token_info_ignores_the_failure_cooldown(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """A query of the user reaches the nodes even if the token failed to be queried moments
+    ago, which otherwise is not queried again until the cooldown passes"""
+    inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_evm_manager(
+        ChainID.ETHEREUM,
+    ).node_inquirer
+    address = to_checksum_address('0x' + '1' * 40)
+    with patch.object(inquirer, 'multicall_2', side_effect=[RemoteError('down'), [
+        (True, encode(['uint8'], [6])),
+        (True, encode(['string'], ['TKN'])),
+        (True, encode(['string'], ['Token'])),
+    ]]):
+        assert_error_response(
+            response=requests.get(
+                api_url_for(rotkehlchen_api_server, 'erc20tokeninfo'),
+                json={'address': address, 'evm_chain': 'ethereum'},
+            ),
+            contained_in_msg=f'Failed to query token {address}',
+            status_code=HTTPStatus.BAD_GATEWAY,
+        )
+        assert assert_proper_sync_response_with_result(requests.get(
+            api_url_for(rotkehlchen_api_server, 'erc20tokeninfo'),
+            json={'address': address, 'evm_chain': 'ethereum'},
+        )) == {'decimals': 6, 'symbol': 'TKN', 'name': 'Token'}

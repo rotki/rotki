@@ -19,7 +19,7 @@ from rotkehlchen.assets.utils import edit_token_and_clean_cache, get_or_create_e
 from rotkehlchen.concurrency import wait
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryFailed
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
@@ -59,6 +59,7 @@ def _create_placeholder(
         token_kind: TokenKind = TokenKind.ERC20,
         protocol: str | None = None,
         decimals: int | None = None,
+        symbol: str | None = None,
 ) -> EvmToken:
     """Create a token like the ones saved without querying its details"""
     token = get_or_create_evm_token(
@@ -68,6 +69,7 @@ def _create_placeholder(
         token_kind=token_kind,  # type: ignore[arg-type]  # only evm kinds are used here
         protocol=protocol,
         decimals=decimals,
+        symbol=symbol,
     )
     assert token.name == token.identifier
     return token
@@ -105,11 +107,12 @@ def _output(
 FALLBACKS: Final[dict[str, Any]] = {'fallback_name': 'Fallback', 'fallback_symbol': 'FB', 'fallback_decimals': 18}  # noqa: E501
 
 
-def _get_cursor(database: DBHandler) -> str | None:
+def _get_cursor(database: DBHandler, chain_id: ChainID = ChainID.ETHEREUM) -> str | None:
     with database.conn.read_ctx() as cursor:
-        return database.get_static_cache(
+        return database.get_dynamic_cache(
             cursor=cursor,
-            name=DBCacheStatic.TOKEN_DETAILS_RETRY_CURSOR,
+            name=DBCacheDynamic.TOKEN_DETAILS_RETRY_CURSOR,
+            blockchain=chain_id.to_blockchain().serialize(),
         )
 
 
@@ -293,6 +296,7 @@ def test_repair_on_access_saves_what_came_back(
 
     def access(multicall_kwargs: dict[str, Any]) -> tuple[str, str | None, int | None]:
         ethereum_inquirer.contract_info_erc20_cache.remove(token.evm_address)
+        ethereum_inquirer.forget_token_query_failures(token.evm_address)
         with patch.object(ethereum_inquirer, 'multicall_2', **multicall_kwargs):
             get_or_create_evm_token(
                 userdb=database,
@@ -306,6 +310,41 @@ def test_repair_on_access_saves_what_came_back(
     assert _without_decimals() == set()  # a failed query says nothing about the decimals
     assert access({'return_value': output}) == details
     assert _without_decimals() == ({token.identifier} if marked else set())
+
+
+def test_placeholder_named_by_a_decoder_is_repaired(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+) -> None:
+    """A decoder giving the name of a placeholder still gets the rest of its details queried,
+    since once renamed it is no longer a placeholder and they would never be. While the query
+    fails the name is not saved either, so it stays a placeholder that is queried again."""
+    token = _create_placeholder(database, 1)
+    assert token.decimals == 18
+
+    def access(multicall_kwargs: dict[str, Any]) -> tuple[str, str | None, int | None]:
+        ethereum_inquirer.contract_info_erc20_cache.remove(token.evm_address)
+        ethereum_inquirer.forget_token_query_failures(token.evm_address)
+        with patch.object(ethereum_inquirer, 'multicall_2', **multicall_kwargs):
+            get_or_create_evm_token(
+                userdb=database,
+                evm_address=token.evm_address,
+                chain_id=ChainID.ETHEREUM,
+                evm_inquirer=ethereum_inquirer,
+                name='Decoder Name',
+                protocol='some-protocol',
+            )
+        return _details(token)
+
+    assert access({'side_effect': RemoteError('down')}) == (token.identifier, '', 18)
+    assert EvmToken(token.identifier).protocol == 'some-protocol'  # the rest is still saved
+    with GlobalDBHandler().conn.read_ctx() as cursor:  # it is still selected to be queried
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=? AND name=identifier',
+            (token.identifier,),
+        ).fetchone()[0] == 1
+
+    assert access({'return_value': _output(decimals=6)}) == ('Decoder Name', 'TKN', 6)
 
 
 @pytest.mark.parametrize(('error', 'raises'), [
@@ -366,6 +405,27 @@ def test_cursor_advances_and_wraps(database: DBHandler) -> None:
     ]
 
 
+def test_cursor_wraps_after_an_exactly_full_batch(database: DBHandler) -> None:
+    """When the last batch of a chain is exactly full, the next run finds nothing after the
+    cursor and wraps it, so the tokens are queried again in the run after it"""
+    tokens = sorted((_create_placeholder(database, i) for i in (1, 2)), key=lambda x: x.identifier)
+    chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=lambda _: {})
+    with (  # nothing is saved, so the tokens stay placeholders as if they always failed
+        patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_BATCH_SIZE', 2),
+        patch('rotkehlchen.tasks.assets._save_found_token_details'),
+    ):
+        retry_missing_token_details(chains_aggregator)
+        assert _get_cursor(database) == tokens[1].identifier
+        retry_missing_token_details(chains_aggregator)
+        assert _get_cursor(database) == ''
+        retry_missing_token_details(chains_aggregator)
+
+    assert [x.args[0] for x in node_inquirer.get_multiple_erc20_contracts_info.call_args_list] == [
+        [x.evm_address for x in tokens],
+        [x.evm_address for x in tokens],
+    ]
+
+
 def test_token_failing_its_chunk_does_not_block_the_rest(database: DBHandler) -> None:
     """A token that makes the query of its whole chunk fail while the nodes work is isolated:
     the chunk is queried one token at a time and the rest of it is still found"""
@@ -387,6 +447,58 @@ def test_token_failing_its_chunk_does_not_block_the_rest(database: DBHandler) ->
         [x.evm_address for x in tokens],
         *([x.evm_address] for x in tokens),
     ]
+
+
+def test_tokens_not_queried_are_first_in_the_next_run(database: DBHandler) -> None:
+    """When querying stops early because single queries fail in a row, the cursor only moves
+    past the tokens that were queried, so the ones after them are queried in the next run
+    instead of starting again with the same failing tokens"""
+    *broken, healthy = [_create_placeholder(database, i) for i in (1, 2, 3, 4)]
+
+    def infos(queried: list[ChecksumEvmAddress]) -> dict[str, Any]:
+        if any(x.evm_address in queried for x in broken):
+            raise RemoteError('out of gas')
+        return {address: _info('Found') for address in queried}
+
+    chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=infos)
+    retry_missing_token_details(chains_aggregator)
+    assert _details(healthy)[0] == healthy.identifier  # not queried, the run stopped before it
+    assert _get_cursor(database) == broken[-1].identifier
+
+    retry_missing_token_details(chains_aggregator)
+    assert _details(healthy) == ('Found', 'SYM', 6)
+    assert _get_cursor(database) == ''  # it reached the end, so it wraps
+    assert [x.args[0] for x in node_inquirer.get_multiple_erc20_contracts_info.call_args_list] == [
+        [x.evm_address for x in (*broken, healthy)],
+        *([x.evm_address] for x in broken),
+        [healthy.evm_address],
+    ]
+
+
+def test_failing_chain_does_not_hold_back_the_others(database: DBHandler) -> None:
+    """Each chain goes through its own tokens with its own cursor, so a chain whose nodes fail
+    and that has more placeholders than a batch does not keep the tokens of the chains sorted
+    after it from being queried while its cursor only moves past the few it queried."""
+    failing = [_create_placeholder(database, i).evm_address for i in range(1, 7)]
+    other_chain = _create_placeholder(database, 7, ChainID.GNOSIS)
+    assert all(evm_address_to_identifier(x, ChainID.ETHEREUM) < other_chain.identifier for x in failing)  # noqa: E501
+
+    def infos(queried: list[ChecksumEvmAddress]) -> dict[str, Any]:
+        if any(x in failing for x in queried):
+            raise RemoteError('down')
+        return {address: _info('Found') for address in queried}
+
+    chains_aggregator, _ = _chains_aggregator(
+        database=database,
+        chains_with_accounts=(SupportedBlockchain.ETHEREUM, SupportedBlockchain.GNOSIS),
+        infos=infos,
+    )
+    with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_BATCH_SIZE', 5):
+        retry_missing_token_details(chains_aggregator)
+
+    assert _details(other_chain) == ('Found', 'SYM', 6)
+    assert _get_cursor(database) == evm_address_to_identifier(failing[2], ChainID.ETHEREUM)
+    assert _get_cursor(database, ChainID.GNOSIS) == ''
 
 
 def test_querying_stops_when_the_nodes_are_down(database: DBHandler) -> None:
@@ -416,21 +528,23 @@ def test_querying_stops_when_the_nodes_are_down(database: DBHandler) -> None:
     ]
 
 
-@pytest.mark.parametrize(('found', 'details', 'marked'), [
-    ({'name': 'Token', 'symbol': 'TKN'}, ('Token', 'TKN', 6), True),  # decimals() failed
-    ({'symbol': 'TKN', 'decimals': 8}, ('TKN', 'TKN', 8), False),  # name() failed
-    ({'decimals': 8}, (f'1:{_address(1)}', '', 8), False),  # name() and symbol() failed
+@pytest.mark.parametrize(('found', 'saved_symbol', 'details', 'marked'), [
+    ({'name': 'Token', 'symbol': 'TKN'}, None, ('Token', 'TKN', 6), True),  # decimals() failed
+    ({'symbol': 'TKN', 'decimals': 8}, None, ('TKN', 'TKN', 8), False),  # name() failed
+    ({'decimals': 8}, None, (f'1:{_address(1)}', '', 8), False),  # name() and symbol() failed
+    ({'decimals': 8}, 'SAV', ('SAV', 'SAV', 8), False),  # the saved symbol is kept and used as name  # noqa: E501
 ])
 def test_answered_query_is_final(
         database: DBHandler,
         found: dict[str, Any],
+        saved_symbol: str | None,
         details: tuple[str, str, int],
         marked: bool,
 ) -> None:
-    """The details found are saved and the missing decimals keep their value, never the
-    default. A missing name is replaced by the symbol or `<chain_id>:<address>`, so the token is
-    no longer a placeholder and is not queried again."""
-    token = _create_placeholder(database, 1, decimals=6)
+    """The details found are saved and the missing decimals and symbol keep their value, never
+    the default. A missing name is replaced by the symbol or `<chain_id>:<address>`, so the
+    token is no longer a placeholder and is not queried again."""
+    token = _create_placeholder(database, 1, decimals=6, symbol=saved_symbol)
     chains_aggregator, node_inquirer = _chains_aggregator(
         database=database,
         infos=lambda _: {token.evm_address: found},

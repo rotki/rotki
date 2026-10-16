@@ -721,6 +721,7 @@ class AssetsService:
             chain_id: SUPPORTED_CHAIN_IDS,
     ) -> dict[str, Any]:
         evm_manager: EvmManager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
+        evm_manager.node_inquirer.forget_token_query_failures(address)  # the nodes may be back
         try:
             info = evm_manager.node_inquirer.get_erc20_contract_info(address=address)
         except TokenQueryFailed as e:
