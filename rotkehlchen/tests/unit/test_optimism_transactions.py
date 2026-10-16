@@ -34,7 +34,7 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import from_wei, ts_now
+from rotkehlchen.utils.misc import from_wei, timestamp_to_date, ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -1182,6 +1182,40 @@ def test_pre_bedrock_not_covered_does_not_fail_sync(
             (OP_BEDROCK_UPGRADE, end_ts),
             (0, end_ts),
         ])
+
+
+def test_pre_bedrock_history_no_indexer_covers_is_told_once(
+        optimism_transactions: OptimismTransactions,
+) -> None:
+    """With blockscout and a free etherscan key nothing imports pre-Bedrock internal
+    transactions. The sync still succeeds, so the user is told which period of which address
+    was not imported, once for the sync, and not again on the next sync of the session."""
+    inquirer = optimism_transactions.evm_inquirer
+    blockscout, etherscan = inquirer.blockscout, inquirer.etherscan
+    told: list[str] = []
+    with ExitStack() as stack:
+        for attribute in ('get_blocknumber_by_time', 'get_transactions', 'get_token_transaction_data'):  # noqa: E501
+            stack.enter_context(patch.object(etherscan, attribute, side_effect=ChainNotSupported('free key')))  # noqa: E501
+        stack.enter_context(patch.dict(inquirer.available_indexers, {EvmIndexer.BLOCKSCOUT: blockscout, EvmIndexer.ETHERSCAN: etherscan}, clear=True))  # noqa: E501
+        stack.enter_context(patch.object(  # one block per second from Bedrock on
+            target=blockscout,
+            attribute='_query',
+            side_effect=lambda options, **kwargs: OP_BEDROCK_BLOCK + options['timestamp'] - OP_BEDROCK_UPGRADE,  # noqa: E501
+        ))
+        stack.enter_context(patch.object(EtherscanLikeApi, 'get_transactions', side_effect=lambda **kwargs: iter([[]])))  # noqa: E501
+        stack.enter_context(patch.object(blockscout, 'get_token_transaction_data', side_effect=lambda **kwargs: iter([[]])))  # noqa: E501
+        stack.enter_context(patch.object(optimism_transactions.msg_aggregator, 'add_warning', side_effect=lambda msg, **kwargs: told.append(msg)))  # noqa: E501
+        address = make_evm_address()
+        for _ in range(2):
+            optimism_transactions.query_chain(
+                from_timestamp=Timestamp(0),
+                to_timestamp=Timestamp(OP_BEDROCK_UPGRADE + 1_000_000),
+                addresses=[address],
+            )
+
+    assert len(told) == 1
+    assert str(address) in told[0]
+    assert f'before {timestamp_to_date(Timestamp(OP_BEDROCK_UPGRADE))}' in told[0]
 
 
 @pytest.mark.parametrize(('prefix', 'range_query', 'indexer_query'), [
