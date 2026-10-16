@@ -4,12 +4,14 @@ from unittest.mock import patch
 
 import pytest
 import requests
+from eth_abi import encode
 from freezegun import freeze_time
 
 from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
 from rotkehlchen.chain.ethereum.airdrops import AIRDROPS_REPO_BASE
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.ethereum.modules.gwei_names.constants import CPT_GNS
+from rotkehlchen.chain.ethereum.modules.safe.constants import CPT_SAFE, SAFENET_STAKING
 from rotkehlchen.chain.ethereum.modules.yearn.vesting.constants import CPT_YEARN_VESTING
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
@@ -30,6 +32,7 @@ from rotkehlchen.tasks.calendar import (
     BRIDGE_CALENDAR_COLOR,
     CRV_CALENDAR_COLOR,
     ENS_CALENDAR_COLOR,
+    SAFENET_CALENDAR_COLOR,
     YEARN_VESTING_CALENDAR_COLOR,
     CalendarReminderCreator,
 )
@@ -664,3 +667,140 @@ def test_yearn_vesting_calendar_reminders(
         reminders = calendar_db.query_reminder_entry(event_id=entry.identifier)['entries']
         assert len(reminders) == 1
         assert reminders[0].secs_before == 0
+
+
+@pytest.mark.freeze_time('2026-01-01 00:00:00 GMT')
+@pytest.mark.parametrize('ethereum_accounts', [['0x3F2489706588da1bbd8E8294562F67E1cfC444B5']])
+@pytest.mark.parametrize('claimed_onchain', [True, False])
+def test_safenet_withdrawal_calendar_reminders(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        claimed_onchain: bool,
+) -> None:
+    """Test that only the SafeNet withdrawals that were initiated but not claimed yet are
+    queried from the staking contract, and that they get a reminder at their claim time.
+    The calendar entry of a claimed withdrawal is removed."""
+    user_address = ethereum_accounts[0]
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        for sequence_index, (event_type, event_subtype, withdrawal_id) in enumerate((
+            (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE, 5),  # pending
+            (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE, 6),  # claimed below
+            (HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET, 6),
+        )):
+            events_db.add_history_event(write_cursor=write_cursor, event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=sequence_index,
+                timestamp=TimestampMS(0),
+                location=Location.ETHEREUM,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                asset=A_DAI,  # the asset is not used by the reminder creation
+                amount=ONE,
+                location_label=user_address,
+                counterparty=CPT_SAFE,
+                address=SAFENET_STAKING,
+                extra_data={'withdrawal_id': withdrawal_id},
+            ))
+
+    reminder_creator = CalendarReminderCreator(
+        database=database,
+        current_ts=ts_now(),
+        ethereum_inquirer=ethereum_inquirer,
+    )
+    calendar_db = DBCalendar(database)
+    reminder_creator.create_or_update_calendar_entry(  # entry of the already claimed withdrawal
+        name='Claim SafeNet withdrawal #6',
+        timestamp=Timestamp(ts_now() + DAY_IN_SECONDS),
+        description='',
+        counterparty=CPT_SAFE,
+        address=user_address,
+        blockchain=SupportedBlockchain.ETHEREUM,
+        color=SAFENET_CALENDAR_COLOR,
+    )
+    claimable_at = Timestamp(ts_now() + 2 * DAY_IN_SECONDS)
+    with patch.object(ethereum_inquirer, 'multicall', return_value=[
+        encode(['uint256', 'uint128', 'uint64', 'uint64'], [10**18, claimable_at, 0, 0]),
+    ]) as multicall_mock:
+        reminder_creator.maybe_create_safenet_withdrawal_reminders()
+
+    assert len(calls := multicall_mock.call_args.kwargs['calls']) == 1  # claimed id 6 not queried
+    assert calls[0][0] == SAFENET_STAKING
+    assert calls[0][1].endswith('5'.rjust(64, '0'))  # withdrawal id 5
+    assert calendar_db.query_calendar_entry(CalendarFilterQuery.make())['entries'] == [
+        CalendarEntry(
+            identifier=1,
+            name='Claim SafeNet withdrawal #5',
+            timestamp=claimable_at,
+            description=f'SafeNet withdrawal of 1 SAFE is claimable from {reminder_creator.timestamp_to_date(claimable_at)}',  # noqa: E501
+            counterparty=CPT_SAFE,
+            address=user_address,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            color=SAFENET_CALENDAR_COLOR,
+            auto_delete=True,
+        ),
+    ]
+    reminders = calendar_db.query_reminder_entry(event_id=1)['entries']
+    assert len(reminders) == 1
+    assert reminders[0].secs_before == 0
+
+    # The claim may not have been fetched locally yet. Only remove the reminder when the
+    # contract confirms the claim, keeping claimable but unclaimed withdrawals visible.
+    with patch.object(ethereum_inquirer, 'multicall', return_value=[
+        encode(
+            ['uint256', 'uint128', 'uint64', 'uint64'],
+            [0, 0, 0, 0] if claimed_onchain else [10**18, claimable_at, 0, 0],
+        ),
+    ]):
+        CalendarReminderCreator(
+            database=database,
+            current_ts=Timestamp(claimable_at + 1),
+            ethereum_inquirer=ethereum_inquirer,
+        ).maybe_create_safenet_withdrawal_reminders()
+
+    assert calendar_db.query_calendar_entry(CalendarFilterQuery.make())['entries_found'] == int(not claimed_onchain)  # noqa: E501
+    assert len(calendar_db.query_reminder_entry(event_id=1)['entries']) == int(not claimed_onchain)
+
+
+@pytest.mark.freeze_time('2026-01-01 00:00:00 GMT')
+@pytest.mark.parametrize('ethereum_accounts', [['0x3F2489706588da1bbd8E8294562F67E1cfC444B5']])
+def test_safenet_withdrawal_calendar_reminders_batching(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Test that the pending SafeNet withdrawals are queried in multicalls of at most 25"""
+    events_db = DBHistoryEvents(database)
+    with database.conn.write_ctx() as write_cursor:
+        for withdrawal_id in range(30):
+            events_db.add_history_event(write_cursor=write_cursor, event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(0),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,  # the asset is not used by the reminder creation
+                amount=ONE,
+                location_label=ethereum_accounts[0],
+                counterparty=CPT_SAFE,
+                address=SAFENET_STAKING,
+                extra_data={'withdrawal_id': withdrawal_id},
+            ))
+
+    claimable_at = Timestamp(ts_now() + DAY_IN_SECONDS)
+    encoded = encode(['uint256', 'uint128', 'uint64', 'uint64'], [10**18, claimable_at, 0, 0])
+    with patch.object(
+        ethereum_inquirer,
+        'multicall',
+        side_effect=lambda calls: [encoded] * len(calls),
+    ) as multicall_mock:
+        CalendarReminderCreator(
+            database=database,
+            current_ts=ts_now(),
+            ethereum_inquirer=ethereum_inquirer,
+        ).maybe_create_safenet_withdrawal_reminders()
+
+    assert [len(call.kwargs['calls']) for call in multicall_mock.call_args_list] == [25, 5]
+    assert DBCalendar(database).query_calendar_entry(CalendarFilterQuery.make())['entries_found'] == 30  # noqa: E501

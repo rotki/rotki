@@ -1,6 +1,9 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+
+if TYPE_CHECKING:
+    from eth_typing import ABI
 
 CPT_SAFE: Final = 'safe'
 SAFE_VESTING: Final = string_to_evm_address('0x96B71e2551915d98d22c448b040A3BC4801eA4ff')
@@ -14,6 +17,23 @@ UNLOCKED: Final = b'\x1b\xd2\xaa\xc5\xb8\xfb\xf8\xaa\xccK\x88\r\xbdr0\xd6/\xc2\x
 WITHDRAWN: Final = b'\xd3x\x90\xa7..]\xf4+\xee\x9b\xd2x\xd8\xb8\x96)}\xff\xeb\x08\xb2\xb2P?rl\xfb.;\x98&'  # noqa: E501
 ADDED_VESTING: Final = b"\xff'\x81\xf5\xafl\xf1\x15\xd1\x87\xdd\x0eN\xf5\x90\xf5\xd1(\x8b\x83\xef>\xb6s\x9ci\xdb\x99\xe7\x0c\x8bM"  # noqa: E501
 STAKE_INCREASED: Final = b'\x83[k\x05\xd0\x94\x16!^\x9dc\x88\x08\xffh\xa7[y\xbba\xe4\x85\x81!%\xe2\x99P\xd7"\xde^'  # noqa: E501
+WITHDRAWAL_INITIATED: Final = b'\xe7zF\r\xe0)V\xe5\xb7i\xdc\x1b\x86\xf3\xde\xdbdq\xa5\xa1H\x0b\x18\xe5\xe6\x0c\x02]8B\xa14'  # noqa: E501  # 0xe77a460de02956e5b769dc1b86f3dedb6471a5a1480b18e5e60c025d3842a134
 WITHDRAWAL_CLAIMED: Final = b'n\xe1\x93\x0b\x12I1sU\xda\x0c\xa0QR"a\xbf\x0cR\x87\x97\x9a\xe2\x90r#\xac\n\x03\x01{\xa6'  # noqa: E501
 
 SAFE_TOKEN_ID: Final = 'eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'
+
+SAFENET_STAKING_ABI: Final[ABI] = [{
+    'inputs': [
+        {'name': 'staker', 'type': 'address'},
+        {'name': 'withdrawalId', 'type': 'uint64'},
+    ],
+    'name': 'withdrawalNodes',
+    'outputs': [
+        {'name': 'amount', 'type': 'uint256'},
+        {'name': 'claimableAt', 'type': 'uint128'},
+        {'name': 'previous', 'type': 'uint64'},
+        {'name': 'next', 'type': 'uint64'},
+    ],
+    'stateMutability': 'view',
+    'type': 'function',
+}]
