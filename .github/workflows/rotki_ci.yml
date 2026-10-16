@@ -446,7 +446,7 @@ jobs:
       # `--with` keeps pyinstaller out of the project env (it is not a project dep).
       - name: Build the pyinstaller fixture bundle
         run: >
-          uv run --no-sync --with pyinstaller==${{ env.PYINSTALLER_VERSION }} pyinstaller
+          uv run --no-sync --with pyinstaller==$env:PYINSTALLER_VERSION pyinstaller
           --onedir --noconfirm --clean
           --name fake_bootloader_pyi
           --distpath target/pyi/dist

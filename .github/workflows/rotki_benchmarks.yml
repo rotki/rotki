@@ -71,9 +71,11 @@ jobs:
             --markdown bench-compare.md
 
       - name: Publish results to the run summary
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           cat bench-compare.md >> "$GITHUB_STEP_SUMMARY"
-          echo "${{ github.event.pull_request.number }}" > pr-number.txt
+          echo "$PR_NUMBER" > pr-number.txt
 
       - name: Upload raw results
         if: always()
@@ -169,14 +171,16 @@ jobs:
       - name: Check for benchmark regressions
         if: steps.harness.outputs.present == 'true'
         id: benchmark-alerts
+        env:
+          BRANCH: ${{ matrix.branch }}
         run: |
           ./.github/scripts/benchmark_alerts.py \
             --current gha-benchmark.json \
-            --data-js benchmark-data/macro/${{ matrix.branch }}/data.js \
-            --bench-name 'rotki backend macro benchmarks (${{ matrix.branch }})' \
+            --data-js "benchmark-data/macro/${BRANCH}/data.js" \
+            --bench-name "rotki backend macro benchmarks (${BRANCH})" \
             --threshold 1.2 \
-            --branch '${{ matrix.branch }}' \
-            --run-id '${{ github.run_id }}' \
+            --branch "$BRANCH" \
+            --run-id "$GITHUB_RUN_ID" \
             --output bench-alert.md
 
       - name: Upload raw results
