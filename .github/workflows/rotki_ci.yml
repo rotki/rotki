@@ -54,6 +54,7 @@ jobs:
                 run_tag: run frontend
                 implies: [e2e]
               - name: e2e
+                paths: [.github/workflows/task_e2e_tests.yml]
                 run_tag: run e2e
               - name: backend
                 paths:
