@@ -820,7 +820,6 @@ class DBHandler:
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
             DBCacheStatic.TOKEN_DETAILS_RETRY_CURSOR,
-            DBCacheStatic.TOKEN_DETAILS_REDECODE_CURSOR,
         ):
             return value
 
@@ -839,7 +838,6 @@ class DBHandler:
                 DBCacheStatic.STALE_BALANCES_FROM_TS,
                 DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
                 DBCacheStatic.TOKEN_DETAILS_RETRY_CURSOR,
-                DBCacheStatic.TOKEN_DETAILS_REDECODE_CURSOR,
             ],
     ) -> str | None:
         ...
