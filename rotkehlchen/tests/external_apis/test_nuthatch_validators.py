@@ -1125,6 +1125,39 @@ def test_withdrawals_are_asked_of_the_nest_through_its_head(nuthatch: Nuthatch) 
     ]
 
 
+def test_withdrawals_of_a_nest_starting_before_shapella_are_not_told_as_uncovered(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
+    """A nest whose history starts before Shapella misses no withdrawal: it is asked from its
+    first block, nobody is warned, and the query time is not put back."""
+    _validator(eth2)
+    asked: list[TimestampOrBlockRange] = []
+    now = ts_now()
+
+    def withdrawals(address: ChecksumEvmAddress, period: TimestampOrBlockRange) -> set[int]:
+        asked.append(period)
+        if period.from_value < 17_030_000:
+            raise HistoryStartsLater('history starts at block 17030000', first_block=17_030_000)
+        with eth2.database.user_write() as write_cursor:
+            eth2.database.set_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, value=now, address=address)  # noqa: E501
+        return set()
+
+    cached = CachedSettings()
+    nest_only = {**cached._evm_indexers_order_per_chain, ChainID.ETHEREUM: (EvmIndexer.NUTHATCH,)}
+    with (
+        patch.object(type(cached), '_evm_indexers_order_per_chain', nest_only),
+        patch.object(eth2.ethereum, '_get_indexers_in_order', return_value=[(EvmIndexer.NUTHATCH, nuthatch)]),  # noqa: E501
+        patch.object(eth2.ethereum, 'maybe_timestamp_to_block_range', side_effect=lambda period: TimestampOrBlockRange('blocks', 0, 26_200_000)),  # noqa: E501
+        patch.object(nuthatch, 'get_withdrawals', side_effect=withdrawals),
+        patch.object(eth2.beacon_inquirer, 'get_validator_data', return_value=[]),
+        patch.object(eth2.msg_aggregator, 'add_warning') as warning,
+    ):
+        eth2.query_single_address_withdrawals(WITHDRAWAL, now)
+
+    assert [(p.from_value, p.to_value) for p in asked] == [(0, 26_200_000), (17_030_000, 26_200_000)]  # noqa: E501
+    assert warning.call_count == 0
+    with eth2.database.conn.read_ctx() as cursor:
+        assert eth2.database.get_dynamic_cache(cursor=cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=WITHDRAWAL) is not None  # noqa: E501
+
+
 def test_withdrawals_go_nowhere_unchosen_when_the_ordered_nest_is_dropped(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
     """A nest ordered alone but dropped for the session leaves no indexer to ask: the address
     does not go to etherscan or blockscout, which the user did not choose."""
