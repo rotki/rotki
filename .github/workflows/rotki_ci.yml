@@ -688,3 +688,15 @@ jobs:
           fi
         env:
           RESULT: ${{ toJSON(needs.*.result) }}
+
+      # .codecov.yml sets manual_trigger, so the PR comment waits for this call instead of
+      # appearing after the first upload and rewriting itself as the rest land.
+      - name: Send coverage notifications
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && (needs.unittest-frontend.result != 'skipped' || needs.test-e2e.result != 'skipped') }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
+        with:
+          run_command: send-notifications
+          token: ${{ secrets.CODECOV_TOKEN }}
+          override_commit: ${{ github.event.pull_request.head.sha }}
+          override_pr: ${{ github.event.pull_request.number }}
+          fail_ci_if_error: false
