@@ -1,19 +1,22 @@
 import json
 import logging
 import operator
+import re
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Final, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 
 import requests
 
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError, TimestampLookupUnsupported
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -26,13 +29,14 @@ from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     ApiKey,
     ChainID,
+    Timestamp,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
 
     from requests import Response
 
@@ -44,7 +48,6 @@ if TYPE_CHECKING:
         EvmInternalTransaction,
         EvmTransaction,
         EVMTxHash,
-        Timestamp,
     )
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -63,14 +66,46 @@ PAGES_READ: Final = '_nuthatch_pages_read'
 TRACE_INDEX: Final = 'nuthatchTraceIndex'
 # The nest every request of the running query goes to. Set by Nuthatch._one_nest.
 PINNED_ENDPOINT: Final[ContextVar[str | None]] = ContextVar('nuthatch_endpoint', default=None)
+ENVELOPE: Final = frozenset({'status', 'message', 'result', 'generation'})
+# The answers whose refusal names the block the nest's history starts at, to ask again from.
+STAKING_ACTIONS: Final = frozenset({
+    'txsBeaconWithdrawal',
+    'nuthatchProducedBlocks',
+    'nuthatchValidatorBlocks',
+})
+HISTORY_STARTS: Final = re.compile(r'(?:history starts at|proposals are proven from) block (\d+)')
+NOT_PROVEN_YET: Final = re.compile(r'proposals are not proven from block \d+ yet')
+
+
+class HistoryStartsLater(RemoteError):
+    """The nest's history, or its proof of proposers, starts after the range asked about."""
+
+    def __init__(self, message: str, first_block: int) -> None:
+        super().__init__(message)
+        self.first_block = first_block
 
 
 class NuthatchPage(list):  # noqa: FURB189  # a real list, as the base's callers expect
-    """A page of rows, and the snapshot the nest cut it from."""
+    """A page of rows, the snapshot the nest cut it from, and the answer's other top-level
+    fields."""
 
-    def __init__(self, rows: list[dict[str, Any]], generation: str | None) -> None:
+    def __init__(
+            self,
+            rows: list[dict[str, Any]],
+            generation: str | None,
+            meta: dict[str, Any] | None = None,
+    ) -> None:
         super().__init__(rows)
         self.generation = generation
+        self.meta = meta or {}
+
+
+class ValidatorBlocks(NamedTuple):
+    """A validator's proposals the nest proved over [from_block, through]: every block it
+    proposed there, so an empty list is a proven empty interval."""
+    from_block: int
+    through: int
+    rows: list[dict[str, Any]]
 
 
 class Nuthatch(EtherscanLikeApi):
@@ -155,7 +190,11 @@ class Nuthatch(EtherscanLikeApi):
         if json_ret.get('status') != '0':
             if isinstance(rows := json_ret.get('result'), list):
                 generation = json_ret.get('generation')
-                return NuthatchPage(rows, generation if isinstance(generation, str) else None)
+                return NuthatchPage(
+                    rows=rows,
+                    generation=generation if isinstance(generation, str) else None,
+                    meta={k: v for k, v in json_ret.items() if k not in ENVELOPE},
+                )
             return False
 
         message = f'{self.name} cannot answer {action} on {chain_id.to_name()}: {result}'
@@ -165,6 +204,8 @@ class Nuthatch(EtherscanLikeApi):
                 'chainid' not in str(result)
         ):  # e.g. on a chain whose blocks can share a second
             raise TimestampLookupUnsupported(message)
+        if action in STAKING_ACTIONS and (starts := HISTORY_STARTS.search(str(result))) is not None:  # noqa: E501
+            raise HistoryStartsLater(message, first_block=int(starts.group(1)))
         if action == 'getLogs' and 'narrower range' in str(result):
             # the wording rotki's get_logs looks for before it halves the block range
             raise RemoteError(f'{message}. Please select a smaller result dataset')
@@ -366,12 +407,166 @@ class Nuthatch(EtherscanLikeApi):
         with self._one_nest():
             return super().has_activity(chain_id=chain_id, account=account)
 
+    def finalized_head(self) -> tuple[int, Timestamp]:
+        """The Ethereum block the nest's history is final through, and its timestamp. Produced
+        blocks are served through it and no further.
+
+        May raise:
+        - RemoteError if the nest cannot be reached, or has not read its Ethereum head yet
+        """
+        with self._one_nest():
+            ready = self._nest_call(self._endpoint(), 'GET', '/ready')
+            if isinstance(chains := ready.get('chains'), dict):  # a multichain nest
+                ready = chains.get(str(ChainID.ETHEREUM.value)) or {}
+            if not isinstance(head := ready.get('head'), int):
+                raise RemoteError(f'{self.name} has not read its Ethereum head yet')
+            return head, self.block_timestamp(head)
+
+    def block_timestamp(self, block_number: int) -> Timestamp:
+        """The timestamp of an Ethereum block, as the nest's RPC has it.
+
+        May raise:
+        - RemoteError if the nest cannot answer it
+        """
+        try:
+            block = self.get_block_by_number(chain_id=ChainID.ETHEREUM, block_number=block_number, full_transactions=False)  # noqa: E501
+        except DeserializationError as e:
+            raise RemoteError(f'{self.name} answered block {block_number} with {e!s}') from e
+        return Timestamp(block['timestamp'])
+
+    def get_withdrawals(
+            self,
+            address: ChecksumEvmAddress,
+            period: TimestampOrBlockRange,
+    ) -> set[int]:
+        """Etherscan's withdrawals query and storage, asked of one nest: the action and its
+        answer are Etherscan's.
+
+        May raise:
+        - HistoryStartsLater if the nest's history starts inside the range
+        - RemoteError if the nest cannot answer
+        - DeserializationError if a row cannot be read
+        """
+        with self._one_nest():
+            return Etherscan.get_withdrawals(self, address=address, period=period)  # type: ignore[arg-type]  # only base methods are used
+
+    def get_validated_blocks(
+            self,
+            address: ChecksumEvmAddress,
+            period: TimestampOrBlockRange,
+    ) -> list[dict[str, Any]]:
+        """The blocks `address` produced over `period`: those it was the fee recipient of, and the
+        relay-built ones whose builder paid it, each with the relays' record (nuthatch's
+        `nuthatchProducedBlocks`, a superset of Etherscan's `getminedblocks`).
+
+        May raise:
+        - RemoteError if the nest cannot answer the range, or relays disagree about a block
+        """
+        with self._one_nest():
+            options = self._process_timestamp_or_blockrange(
+                chain_id=ChainID.ETHEREUM,
+                period=period,
+                options={'sort': 'asc', 'address': address},
+            )
+            options.update({'page': '1', 'offset': str(self.pagination_limit)})
+            blocks: list[dict[str, Any]] = []
+            while True:
+                result = self._query(
+                    chain_id=ChainID.ETHEREUM,
+                    module='account',
+                    action='nuthatchProducedBlocks',
+                    options=options,
+                )
+                if not isinstance(result, list):
+                    raise RemoteError(f'{self.name} answered produced blocks with {result}')
+                if (conflict := next((r for r in result if r.get('mev') == 'conflict'), None)) is not None:  # noqa: E501
+                    raise RemoteError(f'Relays disagree about block {conflict.get("blockNumber")} produced by {address}')  # noqa: E501
+                blocks.extend(result)
+                if (new_options := self._maybe_paginate(result=result, options=options)) is None:
+                    return blocks
+                options = new_options
+
+    def get_validator_blocks(
+            self,
+            validator_index: int,
+            from_block: int,
+            to_block: int | None = None,
+    ) -> ValidatorBlocks:
+        """Every block `validator_index` proposed from `from_block` through `to_block`, or through
+        the last block the nest has proven when `to_block` is None. The nest proves each block's
+        proposer from the beacon header its successor commits to, so the answer covers the
+        validator, not any address. Every page is read and checked before anything is returned.
+
+        May raise:
+        - HistoryStartsLater if the nest's proof of proposers starts after `from_block`
+        - RemoteError if the nest cannot prove the interval, or answers rows of another validator
+        or pages that do not belong together
+        """
+        options: dict[str, Any] = {
+            'validator': str(validator_index),
+            'startblock': str(from_block),
+            'sort': 'asc',
+            'page': '1',
+            'offset': str(self.pagination_limit),
+        }
+        if to_block is not None:
+            options['endblock'] = str(to_block)
+        rows: list[dict[str, Any]] = []
+        through: int | None = None
+        snapshot: tuple[Any, Any] | None = None
+        with self._one_nest():
+            while True:
+                try:
+                    result = self._query(
+                        chain_id=ChainID.ETHEREUM,
+                        module='account',
+                        action='nuthatchValidatorBlocks',
+                        options=options,
+                    )
+                except RemoteError as e:
+                    # Only an open question can have nothing new for an answer; a range asked
+                    # about again that is no longer proven is a refusal, and stays to be asked.
+                    if through is None and to_block is None and NOT_PROVEN_YET.search(str(e)) is not None:  # noqa: E501
+                        return ValidatorBlocks(from_block=from_block, through=from_block - 1, rows=[])  # noqa: E501
+                    raise
+                if not isinstance(result, list):
+                    raise RemoteError(f'{self.name} answered the blocks of validator {validator_index} with {result}')  # noqa: E501
+                meta = getattr(result, 'meta', {})
+                try:
+                    page_through = int(meta['verifiedThrough'])
+                except (KeyError, TypeError, ValueError) as e:
+                    raise RemoteError(f'{self.name} did not say how far it proved the blocks of validator {validator_index}') from e  # noqa: E501
+                page_snapshot = (getattr(result, 'generation', None), meta.get('supportedFrom'))
+                if through is not None and (page_through != through or page_snapshot != snapshot):
+                    raise RemoteError(f'{self.name} answered the pages of validator {validator_index} from different proofs')  # noqa: E501
+                through, snapshot = page_through, page_snapshot
+                for row in result:
+                    try:
+                        proposer = int(row['proposerIndex'])
+                    except (KeyError, TypeError, ValueError) as e:
+                        raise RemoteError(f'{self.name} answered a block of validator {validator_index} without its proposer: {row}') from e  # noqa: E501
+                    if proposer != validator_index:
+                        raise RemoteError(f'{self.name} answered block {row.get("blockNumber")}, proposed by {proposer}, for validator {validator_index}')  # noqa: E501
+                rows.extend(result)
+                if (new_options := self._maybe_paginate(result=result, options=options)) is None:
+                    break
+                options = new_options
+
+        if to_block is not None and through < to_block:
+            raise RemoteError(f'{self.name} answered the blocks of validator {validator_index} through {to_block} having proved them only through {through}')  # noqa: E501
+        # `through` below `from_block` is a nest that has proven nothing new there yet.
+        return ValidatorBlocks(
+            from_block=from_block,
+            through=through if to_block is None else to_block,
+            rows=rows,
+        )
+
     def _nest_call(
             self,
             endpoint: str,
             method: Literal['GET', 'POST'],
             path: str,
-            body: dict[str, str] | None = None,
+            body: dict[str, str | int] | None = None,
     ) -> dict[str, Any]:
         """One call to the nest's own management API, outside the Etherscan-shaped `/api`.
 
@@ -410,7 +605,8 @@ class Nuthatch(EtherscanLikeApi):
     def sync_watched(self) -> None:
         """Tell the nest to watch every account rotki tracks on each chain it serves whose
         indexer order names it, comparing against that chain's own watched list. The nest is not
-        contacted while no chain's order names it. A removed account stays watched by the nest.
+        contacted while no chain's order names it. A removed account stays watched by the nest; a
+        removed validator does not.
 
         Runs as a background task after accounts change and at login. A nest that cannot be
         reached is left for the next run; nothing here may stop an account being added.
@@ -441,6 +637,54 @@ class Nuthatch(EtherscanLikeApi):
             )
         for address in sorted(missing):
             self._nest_call(endpoint, 'POST', '/api/watch', {'address': address})
+        if ChainID.ETHEREUM in chains:
+            self._sync_watched_validators(endpoint, listed)
+
+    def queue_unwatch_validators(self, indices: Sequence[int]) -> None:
+        """Remember validators the nest should stop watching, for the next sync to tell it."""
+        with self.db.conn.read_ctx() as cursor:
+            pending = set(json.loads(self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_PENDING_UNWATCH_VALIDATORS,
+            ) or '[]'))
+        pending.update(indices)
+        with self.db.user_write() as write_cursor:
+            self.db.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.NUTHATCH_PENDING_UNWATCH_VALIDATORS,
+                value=json.dumps(sorted(pending)),
+            )
+
+    def _sync_watched_validators(self, endpoint: str, listed: dict[str, Any]) -> None:
+        """Tell the nest to watch every validator rotki tracks, whatever is known of its
+        activation or withdrawal address, and to stop watching those rotki removed. `listed` is
+        the nest's answer to GET /api/watch.
+
+        May raise:
+        - RemoteError if the nest cannot be reached or refuses a change
+        """
+        try:
+            watched = {int(index) for index in listed.get('validators', [])}
+        except (TypeError, ValueError) as e:
+            raise RemoteError(f'{self.name} listed its watched validators as {listed.get("validators")}') from e  # noqa: E501
+        with self.db.conn.read_ctx() as cursor:
+            tracked = {row[0] for row in cursor.execute('SELECT validator_index FROM eth2_validators WHERE validator_index IS NOT NULL')}  # noqa: E501
+            pending = set(json.loads(self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_PENDING_UNWATCH_VALIDATORS,
+            ) or '[]'))
+        for index in sorted(tracked - watched):
+            self._nest_call(endpoint, 'POST', '/api/watch', {'validator': index})
+        for index in sorted(pending):
+            if index in watched and index not in tracked:
+                self._nest_call(endpoint, 'POST', '/api/unwatch', {'validator': index})
+            pending.discard(index)
+            with self.db.user_write() as write_cursor:
+                self.db.set_static_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheStatic.NUTHATCH_PENDING_UNWATCH_VALIDATORS,
+                    value=json.dumps(sorted(pending)),
+                )
 
     def get_l1_fee(
             self,

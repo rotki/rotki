@@ -2419,6 +2419,7 @@ class RestAPI:
         except (InputError, ModuleInactive) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
+        self.rotkehlchen.schedule_nuthatch_watch_sync()
         return {'result': True, 'message': ''}
 
     def edit_eth2_validator(self, validator_index: int, ownership_proportion: FVal) -> Response:
@@ -2443,6 +2444,8 @@ class RestAPI:
     ) -> Response:
         try:
             self.rotkehlchen.chains_aggregator.delete_eth2_validators(validators)
+            self.rotkehlchen.nuthatch.queue_unwatch_validators(validators)
+            self.rotkehlchen.schedule_nuthatch_watch_sync()
             result = OK_RESULT
             status_code = HTTPStatus.OK
         except InputError as e:

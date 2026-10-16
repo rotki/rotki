@@ -868,6 +868,13 @@ class DBHandler:
             DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
             DBCacheStatic.ETHERSCAN_API_KEY_TIER,
             DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
+            DBCacheStatic.NUTHATCH_MEV_RECHECK,
+            DBCacheStatic.NUTHATCH_PRODUCED_RANGES,
+            DBCacheStatic.NUTHATCH_PRODUCED_VALIDATORS,
+            DBCacheStatic.NUTHATCH_PENDING_UNWATCH_VALIDATORS,
+            DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE,
+            DBCacheStatic.NUTHATCH_VALIDATOR_RANGES,
+            DBCacheStatic.NUTHATCH_PROVEN_BLOCKS,
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
@@ -888,6 +895,13 @@ class DBHandler:
                 DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
                 DBCacheStatic.GNOSIS_PAY_SAFE_MIGRATION,
                 DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+                DBCacheStatic.NUTHATCH_MEV_RECHECK,
+                DBCacheStatic.NUTHATCH_PRODUCED_RANGES,
+                DBCacheStatic.NUTHATCH_PRODUCED_VALIDATORS,
+                    DBCacheStatic.NUTHATCH_PENDING_UNWATCH_VALIDATORS,
+                DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE,
+                DBCacheStatic.NUTHATCH_VALIDATOR_RANGES,
+                DBCacheStatic.NUTHATCH_PROVEN_BLOCKS,
                 DBCacheStatic.STALE_BALANCES_FROM_TS,
                 DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             ],
@@ -900,6 +914,7 @@ class DBHandler:
             cursor: DBCursor,
             name: Literal[
                 DBCacheStatic.LAST_BALANCE_SAVE,
+                DBCacheStatic.NUTHATCH_PRODUCED_LAST_RUN,
                 DBCacheStatic.LAST_DATA_UPLOAD_TS,
                 DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_TS,
@@ -1065,7 +1080,7 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
-            name: Literal[DBCacheDynamic.WITHDRAWALS_IDX],
+            name: Literal[DBCacheDynamic.WITHDRAWALS_IDX, DBCacheDynamic.NEST_PRODUCED_BLOCKS_THROUGH],  # noqa: E501
             **kwargs: Unpack[AddressArgType],
     ) -> int | None:
         ...
@@ -1083,7 +1098,10 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
-            name: Literal[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS],
+            name: Literal[
+                DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS,
+            ],
             **kwargs: Unpack[IndexArgType],
     ) -> Timestamp | None:
         ...
@@ -1281,7 +1299,7 @@ class DBHandler:
     def set_dynamic_cache(
             self,
             write_cursor: DBCursor,
-            name: Literal[DBCacheDynamic.WITHDRAWALS_IDX],
+            name: Literal[DBCacheDynamic.WITHDRAWALS_IDX, DBCacheDynamic.NEST_PRODUCED_BLOCKS_THROUGH],  # noqa: E501
             value: int,
             **kwargs: Unpack[AddressArgType],
     ) -> None:
@@ -1301,7 +1319,10 @@ class DBHandler:
     def set_dynamic_cache(
             self,
             write_cursor: DBCursor,
-            name: Literal[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS],
+            name: Literal[
+                DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS,
+            ],
             value: Timestamp,
             **kwargs: Unpack[IndexArgType],
     ) -> None:
