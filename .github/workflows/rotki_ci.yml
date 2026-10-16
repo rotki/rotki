@@ -351,9 +351,11 @@ jobs:
           rustup toolchain install 1.91 --profile minimal --component clippy --no-self-update
           rustup default 1.91
 
+      # Restore only: warm-rust-caches fills this key from the base branch.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
         with:
-          cache-on-failure: true
+          shared-key: rust-linux
+          save-if: false
           workspaces: |
             . -> target
 
@@ -385,9 +387,11 @@ jobs:
           rustup toolchain install 1.91 --profile minimal --component clippy,rustfmt --no-self-update
           rustup default 1.91
 
+      # Restore only: warm-rust-caches fills this key from the base branch.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
         with:
-          cache-on-failure: true
+          shared-key: rust-linux
+          save-if: false
           workspaces: |
             . -> target
 
@@ -431,9 +435,11 @@ jobs:
           rustup toolchain install 1.91 --profile minimal --no-self-update
           rustup default 1.91
 
+      # Restore only: warm-rust-caches-windows fills this key from the base branch.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
         with:
-          cache-on-failure: true
+          shared-key: starling-windows
+          save-if: false
           workspaces: |
             . -> target
 
@@ -478,6 +484,85 @@ jobs:
       - run: cargo test -p starling-core --locked --test process_tree_python_bundle -- --ignored
         env:
           RUSTFLAGS: -Dwarnings
+
+  # GitHub serves a pull request only its own caches and its base branch's, and the Rust jobs
+  # above run on pull requests alone, so each PR compiled every dependency from scratch and
+  # saved a copy no other PR could read. These two fill the caches the Rust jobs restore, from
+  # the base branch, on pushes that touch Rust. The key moves only with Cargo.lock and the
+  # toolchain, so a lookup that finds it skips the build: nothing is linted or tested again.
+  warm-rust-caches:
+    name: 'Warm Rust caches'
+    needs: [ 'check-changes' ]
+    if: ${{ github.event_name == 'push' && (needs.check-changes.outputs.colibri_tasks || needs.check-changes.outputs.starling_tasks) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      RUSTFLAGS: -Dwarnings  # matches the Rust jobs, whose artifacts are fingerprinted with it
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust
+        run: |
+          rustup toolchain install 1.91 --profile minimal --component clippy --no-self-update
+          rustup default 1.91
+
+      - name: Look up the Rust cache
+        id: rust-cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+        with:
+          shared-key: rust-linux
+          lookup-only: true
+          workspaces: |
+            . -> target
+
+      - name: Build what lint-colibri and lint-starling compile
+        if: steps.rust-cache.outputs.cache-hit != 'true'
+        run: |
+          cargo check -p colibri --locked
+          cargo clippy -p colibri --all-targets --locked
+          cargo test -p colibri --locked --no-run
+          cargo check --workspace --exclude colibri --locked
+          cargo clippy --workspace --exclude colibri --all-targets --locked
+          cargo test --workspace --exclude colibri --locked --no-run
+
+  warm-rust-caches-windows:
+    name: 'Warm Rust caches (windows)'
+    needs: [ 'check-changes' ]
+    if: ${{ github.event_name == 'push' && needs.check-changes.outputs.starling_tasks }}
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      RUSTFLAGS: -Dwarnings  # matches test-starling-windows
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust
+        shell: bash
+        run: |
+          rustup toolchain install 1.91 --profile minimal --no-self-update
+          rustup default 1.91
+
+      - name: Look up the Rust cache
+        id: rust-cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+        with:
+          shared-key: starling-windows
+          lookup-only: true
+          workspaces: |
+            . -> target
+
+      - name: Build what test-starling-windows compiles
+        if: steps.rust-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          cargo test -p starling-core --locked --test windows_lifecycle --no-run
+          cargo test -p starling-core --locked --test process_tree_python_bundle --no-run
 
   lint-backend:
     name: 'Backend lint'
