@@ -93,9 +93,9 @@ jobs:
     name: 'Code analyze frontend'
     needs: [ 'check-changes', 'check-typos' ]
     permissions:
-      actions: read
-      contents: read
-      security-events: write
+      actions: read  # codeql reads the workflow run it reports for
+      contents: read  # check out the code to analyze
+      security-events: write  # upload the codeql results
     if: ${{ needs.check-changes.outputs.frontend_tasks }}
     runs-on: ubuntu-latest
     steps:
@@ -289,9 +289,9 @@ jobs:
     name: 'Code analyze backend'
     needs: [ 'check-changes', 'check-typos' ]
     permissions:
-      actions: read
-      contents: read
-      security-events: write
+      actions: read  # codeql reads the workflow run it reports for
+      contents: read  # check out the code to analyze
+      security-events: write  # upload the codeql results
     if: ${{ needs.check-changes.outputs.backend_tasks }}
     runs-on: ubuntu-latest
     steps:
