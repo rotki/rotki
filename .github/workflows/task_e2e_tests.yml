@@ -312,6 +312,16 @@ jobs:
           flags: frontend_integration
           fail_ci_if_error: false
 
+      # Playwright splits shards by test count, not duration, so the per-test timings are what
+      # rebalancing the shards is decided from.
+      - name: Upload test timings
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        if: success() || failure()
+        with:
+          name: test-timings-shard-${{ matrix.shard }}
+          path: ./frontend/app/tests/e2e/results.json
+          retention-days: 14
+
       - name: Upload test artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         if: failure()
