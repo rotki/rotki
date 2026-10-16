@@ -1281,14 +1281,15 @@ class TransactionsService:
         # Checked before decoding: if the credentials stop working during decoding, the
         # service already notifies the user on its own and we should not repeat it.
         services_without_credentials = self._services_without_credentials(chain=chain)
-        # the nodes may be back, so query again the tokens whose query failed recently.
-        # Otherwise the redecode deletes the tx events and defers it without reaching the nodes
-        chain_manager.node_inquirer.forget_token_query_failures()
+        # retry_deferred since the nodes may be back, so the tokens whose query failed recently
+        # are queried again. Otherwise the redecode deletes the tx events and defers it without
+        # reaching the nodes
         events = chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
             tx_hashes=[tx_ref],
             send_ws_notifications=True,
             ignore_cache=True,
             delete_customized=delete_custom,
+            retry_deferred=True,
         )
         self._maybe_notify_missing_credentials_after_decode(
             events=events,

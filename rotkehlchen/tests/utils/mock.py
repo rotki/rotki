@@ -2,6 +2,7 @@ import json
 import re
 from contextlib import contextmanager
 from pathlib import Path
+from threading import Event, Semaphore
 from typing import Any, NamedTuple
 from unittest.mock import patch
 
@@ -14,6 +15,28 @@ original_requests_get = requests.get
 MOCK_WEB3_LAST_BLOCK_HEX = '0xf75bb9'
 
 MOCK_ROOT = Path(__file__).resolve().parent.parent / 'data' / 'mocks'
+
+
+class SignalingLock:
+    """A lock that tells when a task starts waiting for it. A test can hold the inner lock,
+    wait for the code under test to block on it, and change some state before releasing it,
+    to check what that code does while and after waiting."""
+
+    def __init__(self) -> None:
+        self.lock, self.waiting = Semaphore(), Event()
+
+    def acquire(self) -> bool:
+        self.waiting.set()
+        return self.lock.acquire()
+
+    def release(self) -> None:
+        self.lock.release()
+
+    def __enter__(self) -> bool:
+        return self.acquire()
+
+    def __exit__(self, *args: object) -> None:
+        self.release()
 
 
 class MockResponse:

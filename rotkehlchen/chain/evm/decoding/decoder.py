@@ -439,23 +439,10 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             ))
         return filter_query
 
-    def get_and_decode_undecoded_transactions(
-            self,
-            limit: int | None = None,
-            send_ws_notifications: bool = False,
-            retry_deferred: bool = False,
-    ) -> list[EVMTxHash]:
-        """Same as the parent, but when the deferred transactions are retried for a request of
-        the user the token queries that failed recently are tried again too, since the nodes
-        may be back. A failure in this run still stops the next queries of that token."""
-        if retry_deferred:
-            self.evm_inquirer.forget_token_query_failures()
-
-        return super().get_and_decode_undecoded_transactions(
-            limit=limit,
-            send_ws_notifications=send_ws_notifications,
-            retry_deferred=retry_deferred,
-        )
+    def _prepare_retry_of_deferred(self) -> None:
+        """Query again the tokens whose query failed recently, since the nodes may be back.
+        A failure in this run still stops the next queries of that token."""
+        self.evm_inquirer.forget_token_query_failures()
 
     def _reload_single_decoder(self, cursor: DBCursor, decoder: EvmDecoderInterface) -> None:
         """Reload data for a single decoder"""
@@ -898,6 +885,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             events: list[EvmEvent] | None = None,
             send_ws_notifications: bool = False,
             delete_customized: bool = False,
+            retry_deferred: bool = False,
     ) -> tuple[bool, list[EvmEvent]]:
         refresh_balances, new_events = super()._decode_transaction_hashes(
             ignore_cache=ignore_cache,
@@ -905,6 +893,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             events=events,
             send_ws_notifications=send_ws_notifications,
             delete_customized=delete_customized,
+            retry_deferred=retry_deferred,
         )
         self._post_process(
             refresh_balances=refresh_balances,

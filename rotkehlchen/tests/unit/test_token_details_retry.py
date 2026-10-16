@@ -16,7 +16,7 @@ from eth_utils import to_checksum_address
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import edit_token_and_clean_cache, get_or_create_evm_token
-from rotkehlchen.concurrency import wait
+from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
@@ -31,6 +31,7 @@ from rotkehlchen.tasks.assets import (
     retry_missing_token_details,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.mock import SignalingLock
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
     CacheType,
@@ -247,6 +248,42 @@ def test_warns_when_found_decimals_change(
         f'The decimals of token SYM ({token.identifier}) were found to be 6 instead of 18. '
         'Redecode its transactions to fix the amounts of its existing events.'
     )] if warns else [])
+
+
+def test_waits_for_the_decoding_before_changing_decimals(database: DBHandler) -> None:
+    """A decoding running when the found decimals are saved may still write events made with
+    the old ones. The details are saved holding the decoder lock, so those events are written
+    first and the user is warned about them."""
+    token = _create_placeholder(database, 1)
+    database.msg_aggregator.consume_warnings()
+    chains_aggregator, _ = _chains_aggregator(
+        database=database,
+        infos=lambda _: {token.evm_address: _info('Found')},
+    )
+    chains_aggregator.get_evm_manager.return_value.transactions_decoder.undecoded_tx_query_lock = (lock := SignalingLock())  # noqa: E501
+    lock.lock.acquire()  # held by a decoding that resolved the token with the old decimals
+    task = spawn(retry_missing_token_details, chains_aggregator)
+    assert lock.waiting.wait(timeout=10)
+    assert _details(token) == (token.identifier, '', 18)  # not saved yet
+    with database.user_write() as write_cursor:  # the decoding writes its events
+        DBHistoryEvents(database).add_history_event(write_cursor, HistoryEvent(
+            group_identifier='1',
+            sequence_index=0,
+            timestamp=TimestampMS(1),
+            location=Location.EXTERNAL,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=token,
+            amount=ONE,
+        ))
+    lock.release()
+    task.get()
+
+    assert _details(token) == ('Found', 'SYM', 6)
+    assert database.msg_aggregator.consume_warnings() == [(
+        f'The decimals of token SYM ({token.identifier}) were found to be 6 instead of 18. '
+        'Redecode its transactions to fix the amounts of its existing events.'
+    )]
 
 
 @pytest.mark.parametrize('keep_name', [False, True])

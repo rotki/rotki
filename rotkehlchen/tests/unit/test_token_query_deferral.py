@@ -22,6 +22,7 @@ from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_EVM_DECODING_OUTPUT
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.token_query_failures import track_token_query_failures
+from rotkehlchen.concurrency import spawn
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, TOKEN_QUERY_FAILURE_COOLDOWN
 from rotkehlchen.db.constants import TX_DECODED
@@ -37,6 +38,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.ethereum import txreceipt_to_data
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.mock import SignalingLock
 from rotkehlchen.types import (
     CacheType,
     ChainID,
@@ -594,4 +596,43 @@ def test_user_redecode_of_a_tx_ignores_the_cooldown(
         evm_address_to_identifier(TOKEN_ADDRESS, ChainID.ETHEREUM),
         FVal('1.5'),
     )]
+    assert _deferred(database) == []
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('redecode', [False, True])
+def test_user_retry_forgets_the_cooldown_once_it_has_the_lock(
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        redecode: bool,
+) -> None:
+    """A user retry that waits for a periodic decoding to release the decoder lock still
+    queries the nodes, even if that decoding failed a token query meanwhile. The cooldown is
+    forgotten while holding the lock, right before decoding."""
+    user, decoder = ethereum_accounts[0], ethereum_transaction_decoder
+    tx_hash = _add_transaction(database, user, [_transfer_log(user)])
+    with patch.object(ethereum_inquirer, 'multicall_2', **NODES_DOWN):
+        decoder.get_and_decode_undecoded_transactions()
+    assert _deferred(database) == [tx_hash]
+
+    with (
+        patch.object(decoder, 'undecoded_tx_query_lock', lock := SignalingLock()),
+        patch.object(ethereum_inquirer, 'multicall_2', return_value=_erc20_output()) as multicall,
+    ):
+        lock.lock.acquire()  # held by a periodic decoding
+        task = spawn(
+            decoder.decode_and_get_transaction_hashes,
+            tx_hashes=[tx_hash],
+            ignore_cache=True,
+            retry_deferred=True,
+        ) if redecode else spawn(decoder.get_and_decode_undecoded_transactions, retry_deferred=True)  # noqa: E501
+        assert lock.waiting.wait(timeout=10)
+        ethereum_inquirer.token_query_failures.add(TOKEN_ADDRESS, ts_now())  # the periodic one failed  # noqa: E501
+        lock.release()
+        task.get()
+
+    assert multicall.call_count == 1
+    assert _is_decoded(database, tx_hash)
     assert _deferred(database) == []

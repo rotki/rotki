@@ -87,6 +87,7 @@ from rotkehlchen.utils.misc import get_chunks, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from threading import Semaphore
 
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -358,6 +359,7 @@ def _warn_decimals_change(
 
 def _save_found_token_details(
         database: DBHandler,
+        decoding_lock: Semaphore,
         token: TokenMissingDetails,
         info: dict[str, Any],
 ) -> None:
@@ -368,6 +370,11 @@ def _save_found_token_details(
     answered query is final. The token is read again under the token lock and the details are
     only written if it still has the ones it had when selected, since a user edit, an asset
     update or a decoder may have changed it while it was queried.
+
+    The decoding_lock of the chain decoder is held, taken before the token lock as decoding
+    does, so that a decoding running meanwhile has written its events before the decimals
+    change and the warning counts them. Otherwise it could write events made with the old
+    decimals after the check, and the user would not be warned about them.
     """
     if 'name' not in info:
         info = {**info, 'name': name_for_answered_token(
@@ -376,27 +383,28 @@ def _save_found_token_details(
             address=token.address,
         )}
 
-    with database.get_or_create_token_lock, GlobalDBHandler().conn.write_ctx() as write_cursor:
-        if write_cursor.execute(TOKEN_DETAILS_QUERY, (token.identifier,)).fetchone() != token.saved:  # noqa: E501
-            log.debug('Token %s was changed or deleted while it was queried', token.identifier)
-            return
+    with decoding_lock:
+        with database.get_or_create_token_lock, GlobalDBHandler().conn.write_ctx() as write_cursor:
+            if write_cursor.execute(TOKEN_DETAILS_QUERY, (token.identifier,)).fetchone() != token.saved:  # noqa: E501
+                log.debug('Token %s was changed or deleted while it was queried', token.identifier)
+                return
 
-        for prop, query in (
-            ('name', 'UPDATE assets SET name=? WHERE identifier=?'),
-            ('symbol', 'UPDATE common_asset_details SET symbol=? WHERE identifier=?'),
-            ('decimals', 'UPDATE evm_tokens SET decimals=? WHERE identifier=?'),
-        ):
-            if prop in info:
-                write_cursor.execute(query, (info[prop], token.identifier))
+            for prop, query in (
+                ('name', 'UPDATE assets SET name=? WHERE identifier=?'),
+                ('symbol', 'UPDATE common_asset_details SET symbol=? WHERE identifier=?'),
+                ('decimals', 'UPDATE evm_tokens SET decimals=? WHERE identifier=?'),
+            ):
+                if prop in info:
+                    write_cursor.execute(query, (info[prop], token.identifier))
 
-        if 'decimals' not in info:
-            mark_token_without_decimals(write_cursor, token.identifier)
+            if 'decimals' not in info:
+                mark_token_without_decimals(write_cursor, token.identifier)
 
-    AssetResolver.clean_memory_cache(token.identifier)  # so the token is loaded from the DB
-    log.debug('Saved the queried details of token %s: %s', token.identifier, info)
-    # TODO: confirm whether a warning or only a log line
-    if 'decimals' in info and info['decimals'] != token.saved[2]:
-        _warn_decimals_change(database=database, token=token, info=info)
+        AssetResolver.clean_memory_cache(token.identifier)  # so the token is loaded from the DB
+        log.debug('Saved the queried details of token %s: %s', token.identifier, info)
+        # TODO: confirm whether a warning or only a log line
+        if 'decimals' in info and info['decimals'] != token.saved[2]:
+            _warn_decimals_change(database=database, token=token, info=info)
 
 
 def _query_tokens_one_by_one(
@@ -438,11 +446,14 @@ def _retry_chain_token_details(
         database: DBHandler,
         chain_id: ChainID,
         node_inquirer: EvmNodeInquirer,
+        decoding_lock: Semaphore,
         tokens: list[TokenMissingDetails],
 ) -> int:
     """Query in chunks the details of the given tokens of a chain and save them for the ones
     whose query answered. A failed chunk is queried again one token at a time, and querying
     the chain stops when TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES single queries fail in a row.
+    The decoding_lock of the chain decoder is only taken to save, not while the nodes are
+    queried, so a slow or failing query does not hold back the decoding.
 
     Returns the number of tokens that were queried, which are always the first ones.
     """
@@ -470,6 +481,7 @@ def _retry_chain_token_details(
             if token.address in answered:
                 _save_found_token_details(
                     database=database,
+                    decoding_lock=decoding_lock,
                     token=token,
                     info=infos.get(token.address, {}),
                 )
@@ -527,10 +539,12 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
         if len(tokens) == 0:
             continue
 
+        evm_manager = chains_aggregator.get_evm_manager(chain_id=chain_id)
         if (queried := _retry_chain_token_details(
             database=chains_aggregator.database,
             chain_id=chain_id,
-            node_inquirer=chains_aggregator.get_evm_manager(chain_id=chain_id).node_inquirer,
+            node_inquirer=evm_manager.node_inquirer,
+            decoding_lock=evm_manager.transactions_decoder.undecoded_tx_query_lock,
             tokens=tokens,
         )) < len(tokens):  # stopped early, so the next run starts with the ones not queried
             with chains_aggregator.database.conn.write_ctx() as write_cursor:

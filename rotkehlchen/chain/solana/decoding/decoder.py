@@ -175,6 +175,9 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
     ) -> SolanaTransactionsNotDecodedFilterQuery:
         return SolanaTransactionsNotDecodedFilterQuery.make(limit=limit)
 
+    def _prepare_retry_of_deferred(self) -> None:
+        """Nothing is deferred in solana"""
+
     def _load_transaction_context(
             self,
             cursor: DBCursor,

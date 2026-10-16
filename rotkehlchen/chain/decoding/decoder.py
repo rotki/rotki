@@ -241,6 +241,9 @@ class TransactionDecoder[
 
         This is protected by concurrent access from a lock"""
         with self.undecoded_tx_query_lock:
+            if retry_deferred:
+                self._prepare_retry_of_deferred()
+
             log.debug(f'Starting task to process undecoded transactions for {self.chain_name} with {limit=}')  # noqa: E501
             hashes = self.dbtx.get_transaction_hashes_not_decoded(
                 filter_query=self._get_tx_not_decoded_filter_query(
@@ -257,6 +260,13 @@ class TransactionDecoder[
 
             log.debug(f'Finished task to process undecoded transactions for {self.chain_name} with {limit=}')  # noqa: E501
             return hashes
+
+    @abstractmethod
+    def _prepare_retry_of_deferred(self) -> None:
+        """Called for requests of the user that retry the deferred transactions, holding
+        undecoded_tx_query_lock right before decoding, so that a periodic decoding that held
+        the lock can't defer them again in between. Drops the state that would defer the
+        transactions again without trying."""
 
     def _decode_undecoded_transaction_hashes(
             self,
@@ -277,6 +287,7 @@ class TransactionDecoder[
             tx_hashes: list[T_TxHash],
             send_ws_notifications: bool = False,
             delete_customized: bool = False,
+            retry_deferred: bool = False,
     ) -> list[T_Event]:
         """
         Thin wrapper around _decode_transaction_hashes that returns the decoded events.
@@ -293,6 +304,7 @@ class TransactionDecoder[
             events=events,
             send_ws_notifications=send_ws_notifications,
             delete_customized=delete_customized,
+            retry_deferred=retry_deferred,
         )
         return events
 
@@ -405,6 +417,7 @@ class TransactionDecoder[
             events: list[T_Event] | None = None,
             send_ws_notifications: bool = False,
             delete_customized: bool = False,
+            retry_deferred: bool = False,
     ) -> tuple[bool, list[T_Event]]:
         """Make sure that receipts are pulled + events decoded for the given transaction hashes.
         If delete_customized is True then also customized events are deleted before redecoding.
@@ -415,6 +428,8 @@ class TransactionDecoder[
         When ignore_cache is True the undecoded_tx_query_lock is acquired to
         prevent the undecoded-transactions periodic task from picking up the
         same tx while TX_DECODED is temporarily cleared during redecoding.
+        retry_deferred is for requests of the user and only applies with ignore_cache, since
+        it needs the lock. See _prepare_retry_of_deferred.
 
         May raise:
         - DeserializationError if there is a problem with contacting a remote to get receipts
@@ -425,6 +440,9 @@ class TransactionDecoder[
             self.undecoded_tx_query_lock.acquire()
 
         try:
+            if ignore_cache and retry_deferred:
+                self._prepare_retry_of_deferred()
+
             return self._do_decode_transaction_hashes(
                 ignore_cache=ignore_cache,
                 tx_hashes=tx_hashes,
