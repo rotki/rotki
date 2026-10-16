@@ -361,7 +361,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             return
 
         fallback_symbol = f'{token0.symbol}/{token1.symbol}' if symbol == '' else symbol
-        get_or_create_evm_token(  # this will not raise NotERC20Conformant because we give fallback info  # noqa: E501
+        get_or_create_evm_token(  # with fallback info this only raises if the nodes can't be reached  # noqa: E501
             userdb=self.base.database,
             evm_address=pool_address,
             chain_id=self.node_inquirer.chain_id,
