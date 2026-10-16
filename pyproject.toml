@@ -72,7 +72,7 @@ dependencies = [
     "protobuf==6.33.6",  # enforced due to dependabot reports
     "bitarray==3.8.2",  # pinned to check free-threaded Python support
     "pandas==3.0.3",
-    "mcp==1.28.1",
+    "mcp==1.30.0",
     "eth-account",
     # fints 5 depends on lxml, which enables the GIL in free-threaded Python.
     "fints==4.2.3",
