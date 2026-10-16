@@ -5555,6 +5555,7 @@
       "check_problematic_event": "Check this and prior events for discrepancies",
       "click_to_open_snapshot": "Click to open this snapshot",
       "current_balances_no_snapshot": "Current balances, as there is no snapshot yet",
+      "data_starts_on": "Data for {symbol} starts on {date}",
       "discrepancy": {
         "amount_from_current_balance": "Amount from current balance",
         "amount_from_last_event": "Amount from last event",
@@ -5592,9 +5593,14 @@
       "fetching_graph_daily_data": "Fetching graph daily data ({processed}/{total})",
       "fetching_graph_data": "Fetching graph data",
       "history_events_no_data": "No data can be shown from history events processing.",
+      "holdings_value": "Value of your holdings in {currency}",
+      "more_history_events": "This history is built from your events. Import or pull older events to extend it further back.",
+      "more_history_snapshot": "This history starts with your first balance snapshot. Switch the source to historical events to rebuild it from your events instead.",
       "negative_amount_detected": "Negative amount detected during historical processing.",
       "net_value": "Net value",
       "no_balance_snapshot_data_available": "No balance snapshot data available.",
+      "now": "Now",
+      "open_history_events": "Open history events",
       "others": "Others",
       "others_count": "{count} more",
       "range_selector": {
@@ -5604,25 +5610,27 @@
         "no_entries_available_before": "There are no entries available before",
         "start_date": "Start date"
       },
-      "search_asset_to_see_graph": "Search for an asset to see the graph",
-      "search_asset_to_see_graph_description": "Pick one of your assets to see how its amount, price and value changed over time.",
-      "select_asset": "Search for an asset",
+      "search_asset_to_see_graph": "Pick one of your assets to see how much you held and what it was worth",
+      "search_asset_to_see_graph_description": "Only assets you have held are listed.",
+      "select_asset": "Your assets",
       "series": {
-        "amount": "Amount",
         "price": "Price",
         "snapshot_amount": "Snapshot amount",
-        "snapshot_value": "Snapshot value in {currency}",
-        "value": "Value in {currency}"
+        "snapshot_value": "Snapshot value"
       },
       "show_all": "Show all {count}",
       "show_less": "Show less",
+      "snapshot_holdings_value": "Snapshot value of your holdings in {currency}",
       "snapshot_taken": "Snapshot taken",
       "some_prices_are_missing": "Some points are hidden because prices are missing.\nClick \"Fetch prices\" to try retrieving the prices.",
+      "source_events": "History events",
+      "source_snapshots": "Snapshots",
       "timeframe_custom": "Custom",
       "total": "Total",
       "value_distribution_by_asset": "Value distribution by asset",
       "value_distribution_by_location": "Value distribution by location",
-      "warnings": "{count} warning | {count} warnings"
+      "warnings": "{count} warning | {count} warnings",
+      "your_holdings": "Your {symbol} holdings"
     },
     "theme_manager": {
       "dark_theme": "Dark Theme",
