@@ -552,6 +552,15 @@ jobs:
     permissions:
       contents: read
 
+  warm-e2e-caches:
+    name: 'Warm e2e build caches'
+    if: ${{ github.event_name == 'push' }}
+    uses: ./.github/workflows/task_e2e_tests.yml
+    with:
+      build_only: true
+    permissions:
+      contents: read
+
   done:
     name: 'Success check'
     if: ${{ always() }}
