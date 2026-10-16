@@ -497,8 +497,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      RUSTFLAGS: -Dwarnings  # matches the Rust jobs, whose artifacts are fingerprinted with it
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -518,8 +516,12 @@ jobs:
           workspaces: |
             . -> target
 
+      # RUSTFLAGS goes on this step, not the job: rust-cache hashes every RUST* variable present
+      # when it runs into the key, and the Rust jobs set it only on their build steps.
       - name: Build what lint-colibri and lint-starling compile
         if: steps.rust-cache.outputs.cache-hit != 'true'
+        env:
+          RUSTFLAGS: -Dwarnings  # matches the Rust jobs, whose artifacts are fingerprinted with it
         run: |
           cargo check -p colibri --locked
           cargo clippy -p colibri --all-targets --locked
@@ -535,8 +537,6 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
-    env:
-      RUSTFLAGS: -Dwarnings  # matches test-starling-windows
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -557,9 +557,12 @@ jobs:
           workspaces: |
             . -> target
 
+      # On the step for the same reason as in warm-rust-caches.
       - name: Build what test-starling-windows compiles
         if: steps.rust-cache.outputs.cache-hit != 'true'
         shell: bash
+        env:
+          RUSTFLAGS: -Dwarnings  # matches test-starling-windows
         run: |
           cargo test -p starling-core --locked --test windows_lifecycle --no-run
           cargo test -p starling-core --locked --test process_tree_python_bundle --no-run
