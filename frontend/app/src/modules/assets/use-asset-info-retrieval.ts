@@ -87,12 +87,10 @@ interface UseAssetInfoRetrievalReturn {
   getAssetContractInfo: PlainAssetContractInfoReturn;
   getAssetField: (identifier: string | undefined, field: AssetStringField, options?: AssetResolutionOptions) => string;
   getAssetInfo: PlainAssetInfoReturn;
-  getTokenAddress: (identifier: string, options?: AssetResolutionOptions) => string;
   refetchAssetInfo: (key: string) => void;
   useAssetContractInfo: AssetContractInfoReturn;
   useAssetField: (identifier: MaybeRefOrGetter<string | undefined>, field: AssetStringField, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<string>;
   useAssetInfo: AssetInfoReturn;
-  useTokenAddress: (identifier: MaybeRefOrGetter<string>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<string>;
 }
 
 export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
@@ -200,17 +198,6 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   ): ComputedRef<AssetContractInfo | undefined> =>
     computed<AssetContractInfo | undefined>(() => getAssetContractInfo(toValue(identifier), toValue(options)));
 
-  const getTokenAddress = (
-    identifier: string,
-    options?: AssetResolutionOptions,
-  ): string => getAssetContractInfo(identifier, options)?.address ?? '';
-
-  const useTokenAddress = (
-    identifier: MaybeRefOrGetter<string>,
-    options?: MaybeRefOrGetter<AssetResolutionOptions>,
-  ): ComputedRef<string> =>
-    computed<string>(() => getTokenAddress(toValue(identifier), toValue(options)));
-
   const fetchTokenDetails = async (payload: EvmChainAddress): Promise<ERC20Token> => {
     const timedOut = Symbol('timed-out');
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -283,11 +270,9 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     getAssetContractInfo,
     getAssetField,
     getAssetInfo,
-    getTokenAddress,
     refetchAssetInfo: queueIdentifier,
     useAssetContractInfo,
     useAssetField,
     useAssetInfo,
-    useTokenAddress,
   };
 }

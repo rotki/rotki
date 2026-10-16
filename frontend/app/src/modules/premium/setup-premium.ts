@@ -1,5 +1,4 @@
 import * as VueUse from '@vueuse/core';
-import * as VueUseShared from '@vueuse/shared';
 import * as BigNumber from 'bignumber.js';
 import { BarChart, LineChart, PieChart } from 'echarts/charts';
 import {
@@ -44,9 +43,7 @@ export async function setupPremium(): Promise<void> {
   if (!window.Vue) {
     window.Vue = Vue;
     window.VueUse = VueUse;
-    window.VueUseShared = VueUseShared;
     window.VueEcharts = VChart;
-    window.ECharts = EChartsCore;
     window.zod = zod;
     window.bn = BigNumber;
     window.VueRouter = VueRouter;

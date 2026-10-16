@@ -3,7 +3,7 @@ import type { AssetBalanceWithPrice } from '../balances';
 import type { AssetInfoWithId } from '../data';
 import type { BigNumber } from '../numbers';
 import type { FrontendSettingsPayload, TimeUnit } from '../settings/frontend';
-import type { Theme, Themes } from '../settings/themes';
+import type { Themes } from '../settings/themes';
 import type {
   CommonQueryStatusData,
   FailedHistoricalAssetPriceResponse,
@@ -25,7 +25,6 @@ export interface StatisticsApi {
   ownedAssets: () => Promise<OwnedAssets>;
   timedBalances: (asset: string, start: number, end: number, collectionId?: number) => Promise<TimedBalances>;
   timedHistoricalBalances: (asset: string, start: number, end: number, collectionId?: number) => Promise<TimedAssetHistoricalBalances>;
-  fetchNetValue: () => Promise<void>;
   netValue: (startingData: number) => Ref<NetValue>;
   isQueryingDailyPrices: ComputedRef<boolean>;
   failedDailyPrices: Ref<Record<string, FailedHistoricalAssetPriceResponse>>;
@@ -37,7 +36,6 @@ export interface StatisticsApi {
 
 export interface DateUtilities {
   epoch: () => number;
-  epochToFormat: (epoch: number, format: string) => string;
   epochStartSubtract: (amount: number, unit: TimeUnit) => number;
   convertToTimestamp: (date: string, dateFormat?: string) => number;
 }
@@ -53,7 +51,6 @@ export interface BalancesApi {
 export interface AssetsApi {
   assetInfo: (identifier: MaybeRef<string>) => ComputedRef<AssetInfoWithId | null>;
   assetSymbol: (identifier: MaybeRef<string>) => ComputedRef<string>;
-  tokenAddress: (identifier: MaybeRef<string>) => ComputedRef<string>;
 }
 
 export interface DataUtilities {
@@ -69,12 +66,8 @@ export interface UserSettingsApi {
   thousandSeparator: Ref<string>;
   subscriptDecimals: Ref<boolean>;
   shouldShowAmount: Ref<boolean>;
-  shouldShowPercentage: Ref<boolean>;
   scrambleData: Ref<boolean>;
   scrambleMultiplier: Ref<number>;
-  selectedTheme: Ref<Theme>;
-  dateInputFormat: Ref<string>;
-  privacyMode: Ref<number>;
   graphZeroBased: Ref<boolean>;
   showGraphRangeSelector: Ref<boolean>;
   useHistoricalAssetBalances: Ref<boolean>;
@@ -88,7 +81,6 @@ export interface SettingsApi {
   user: UserSettingsApi;
   i18n: {
     t: (key: string, values?: Record<string, unknown>, choice?: number) => string;
-    te: (key: string) => boolean;
   };
 }
 
@@ -120,12 +112,6 @@ type GetGraphApi = () => NewGraphApi;
 
 export interface LoggerApi {
   error: (...args: any[]) => void;
-  warn: (...args: any[]) => void;
-  info: (...args: any[]) => void;
-  debug: (...args: any[]) => void;
-  trace: (...args: any[]) => void;
-  success: (...args: any[]) => void;
-  log: (...args: any[]) => void;
 }
 
 export interface PremiumApi {

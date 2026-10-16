@@ -12,7 +12,7 @@ import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
  * A bundle refuses to render below this rather than failing halfway through, so raising it is what
  * turns an incompatibility into a message instead of a broken page.
  */
-const PREMIUM_COMPONENTS_VERSION = 29;
+const PREMIUM_COMPONENTS_VERSION = 30;
 
 type PremiumLibrary = {
   install: (app: App) => void;
@@ -161,8 +161,6 @@ declare global {
     Vue: any;
     VueEcharts: any;
     VueUse: any;
-    VueUseShared: any;
-    ECharts: any;
     zod: any;
     bn: any;
     VueRouter: any;
