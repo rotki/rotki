@@ -335,6 +335,26 @@ def _get_tokens_missing_details(
         ]
 
 
+def _warn_decimals_change(
+        database: DBHandler,
+        token: TokenMissingDetails,
+        info: dict[str, Any],
+) -> None:
+    """Warn the user that the decimals of a token with events changed, since the amounts of
+    its events were calculated with the old ones and its transactions are not redecoded."""
+    with database.conn.read_ctx() as cursor:
+        if cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE asset=?', (token.identifier,),
+        ).fetchone()[0] == 0:
+            return
+
+    database.msg_aggregator.add_warning(
+        f'The decimals of token {info["symbol"]} ({token.identifier}) were found to be '
+        f'{info["decimals"]} instead of {token.saved[2]}. Redecode its transactions to fix '
+        'the amounts of its existing events.',
+    )
+
+
 def _save_found_token_details(
         database: DBHandler,
         token: TokenMissingDetails,
@@ -363,6 +383,8 @@ def _save_found_token_details(
 
     AssetResolver.clean_memory_cache(token.identifier)  # so the token is loaded from the DB
     log.debug(f'Saved the queried details of token {token.identifier}')
+    if info['decimals'] != token.saved[2]:  # TODO: confirm whether a warning or only a log line
+        _warn_decimals_change(database=database, token=token, info=info)
 
 
 def _query_tokens_one_by_one(

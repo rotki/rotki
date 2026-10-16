@@ -17,16 +17,27 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import edit_token_and_clean_cache, get_or_create_evm_token
 from rotkehlchen.concurrency import wait
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryFailed
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.assets import (
     TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES,
     retry_missing_token_details,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import SPAM_PROTOCOL, ChainID, SupportedBlockchain, TokenKind
+from rotkehlchen.types import (
+    SPAM_PROTOCOL,
+    ChainID,
+    Location,
+    SupportedBlockchain,
+    TimestampMS,
+    TokenKind,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -174,6 +185,46 @@ def test_which_tokens_are_retried(database: DBHandler) -> None:
             cursor=cursor,
             name=DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
         ) is not None
+
+
+@pytest.mark.parametrize(('has_events', 'found_decimals', 'warns'), [
+    (True, 6, True),
+    (False, 6, False),
+    (True, 18, False),
+])
+def test_warns_when_found_decimals_change(
+        database: DBHandler,
+        has_events: bool,
+        found_decimals: int,
+        warns: bool,
+) -> None:
+    """Events of a placeholder were calculated with its default decimals and its transactions
+    are not redecoded, so the user is told to redecode them when the decimals change"""
+    token = _create_placeholder(database, 1)
+    if has_events:
+        with database.user_write() as write_cursor:
+            DBHistoryEvents(database).add_history_event(write_cursor, HistoryEvent(
+                group_identifier='1',
+                sequence_index=0,
+                timestamp=TimestampMS(1),
+                location=Location.EXTERNAL,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=token,
+                amount=ONE,
+            ))
+    database.msg_aggregator.consume_warnings()
+    chains_aggregator, _ = _chains_aggregator(
+        database=database,
+        infos=lambda _: {token.evm_address: _info('Found', decimals=found_decimals)},
+    )
+    retry_missing_token_details(chains_aggregator)
+
+    assert _details(token) == ('Found', 'SYM', found_decimals)
+    assert database.msg_aggregator.consume_warnings() == ([(
+        f'The decimals of token SYM ({token.identifier}) were found to be 6 instead of 18. '
+        'Redecode its transactions to fix the amounts of its existing events.'
+    )] if warns else [])
 
 
 @pytest.mark.parametrize('keep_name', [False, True])
