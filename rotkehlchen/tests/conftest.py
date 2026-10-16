@@ -13,6 +13,7 @@ from contextlib import contextmanager, suppress
 from copy import deepcopy
 from enum import auto
 from functools import wraps
+from hashlib import sha256
 from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, Popen, check_output  # noqa: S404
@@ -217,6 +218,8 @@ def fixture_force_beacon_rpc_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def pytest_addoption(parser):
+    parser.addoption('--test-shards', type=int, default=1, help='Number of independent test jobs.')
+    parser.addoption('--test-shard', type=int, default=0, help='Zero-based test job index.')
     parser.addoption(
         '--initial-port',
         type=int,
@@ -399,6 +402,21 @@ def _fixture_profiler(request):
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    shard_count = config.getoption('--test-shards')
+    shard_index = config.getoption('--test-shard')
+    if shard_count < 1 or not 0 <= shard_index < shard_count:
+        raise pytest.UsageError('need --test-shards >= 1 and 0 <= --test-shard < --test-shards')
+
+    if shard_count > 1:
+        selected, deselected = [], []
+        for item in items:
+            if int(sha256(item.nodeid.encode()).hexdigest(), 16) % shard_count == shard_index:
+                selected.append(item)
+            else:
+                deselected.append(item)
+        config.hook.pytest_deselected(items=deselected)
+        items[:] = selected
+
     if is_accounting_update_enabled():
         return
 
