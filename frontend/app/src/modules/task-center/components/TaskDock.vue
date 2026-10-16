@@ -26,7 +26,7 @@ const { children, jobs } = usePendingJobs();
 const { canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable } = useDockPanel(jobs, children);
 const { cancel, rerun } = useTaskController();
 
-const now = useTimestamp({ interval: 1000 });
+const now = useTimestamp({ scheduler: tick => useIntervalFn(tick, 1000) });
 
 const { height: pillHeight } = useElementSize(pill, undefined, { box: 'border-box' });
 
