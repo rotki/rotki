@@ -17,6 +17,12 @@ use crate::types::{AssetType, ChainID};
 
 const SQLITE_SAFE_VARIABLE_LIMIT: usize = 900;
 const MAX_LEV_DISTANCE: usize = 100;
+/// Upper bound on the capacity reserved up front for the ranked results.
+///
+/// `limit` comes straight from the request, so reserving `limit + 1` slots let a caller ask for an
+/// allocation large enough to abort the process. The heap still holds up to `limit` entries; past
+/// this size it grows with the results actually found, which the database bounds.
+const MAX_PREALLOCATED_RESULTS: usize = 256;
 
 #[derive(Serialize)]
 #[serde(untagged)]
@@ -150,6 +156,11 @@ impl Ord for RankedSearchResult {
     }
 }
 
+/// A heap for at most `limit` ranked results, with room for one extra entry while one is replaced.
+fn search_heap(limit: usize) -> BinaryHeap<RankedSearchResult> {
+    BinaryHeap::with_capacity(limit.saturating_add(1).min(MAX_PREALLOCATED_RESULTS))
+}
+
 fn push_to_bounded_heap(
     heap: &mut BinaryHeap<RankedSearchResult>,
     item: RankedSearchResult,
@@ -272,7 +283,7 @@ pub async fn search_assets_levenshtein(
         .nft_handling
         == NftHandling::ShowOnly
     {
-        Ok(BinaryHeap::<RankedSearchResult>::with_capacity(limit + 1))
+        Ok(search_heap(limit))
     } else {
         async {
             let conn_guard = state.globaldb.conn.lock().await;
@@ -389,7 +400,7 @@ pub async fn search_assets_levenshtein(
                 .saturating_sub(static_bindings.len())
                 .max(1);
             let mut found_eth = false;
-            let mut heap = BinaryHeap::<RankedSearchResult>::with_capacity(limit + 1);
+            let mut heap = search_heap(limit);
             for candidate_chunk in candidate_ids.chunks(chunk_size) {
                 let placeholders: String = std::iter::repeat_n("?", candidate_chunk.len())
                     .collect::<Vec<_>>()
@@ -736,6 +747,55 @@ mod tests {
             body.get("message").and_then(|v| v.as_str()),
             Some("Either value or address need to be provided")
         );
+    }
+
+    /// Far past any real result count, but small enough that `limit + 1` does not overflow, so
+    /// reserving it fails in the allocator rather than in the addition.
+    const HUGE_LIMIT: usize = usize::MAX / 2;
+
+    #[test]
+    fn test_search_heap_reserves_at_most_the_preallocation_cap() {
+        assert_eq!(search_heap(10).capacity(), 11);
+        assert!(search_heap(usize::MAX).capacity() <= MAX_PREALLOCATED_RESULTS);
+    }
+
+    #[tokio::test]
+    async fn test_search_assets_with_huge_limit_does_not_reserve_it() {
+        let (state, _tmp_dirs) = create_test_state().await;
+        let (status, body) = call_search(
+            state,
+            AssetsLevenshteinSearch {
+                value: Some("eth".to_string()),
+                evm_chain: None,
+                asset_type: None,
+                address: None,
+                limit: HUGE_LIMIT,
+                nft_handling: NftHandling::Exclude,
+            },
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert!(!body["result"].as_array().unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_search_nfts_only_with_huge_limit_does_not_reserve_it() {
+        let (state, _tmp_dirs) = create_test_state().await;
+        let (status, _body) = call_search(
+            state,
+            AssetsLevenshteinSearch {
+                value: Some("eth".to_string()),
+                evm_chain: None,
+                asset_type: None,
+                address: None,
+                limit: HUGE_LIMIT,
+                nft_handling: NftHandling::ShowOnly,
+            },
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
     }
 
     #[tokio::test]
