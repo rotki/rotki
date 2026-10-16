@@ -21,8 +21,8 @@ jobs:
     timeout-minutes: 15
 
     permissions:
-      contents: read
-      pull-requests: write
+      contents: read  # check out both schema revisions
+      pull-requests: write  # post the schema diff comment
 
     steps:
       - name: Checkout
