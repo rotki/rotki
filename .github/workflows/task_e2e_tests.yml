@@ -2,6 +2,14 @@ name: E2E tests
 
 on:
   workflow_call:
+    inputs:
+      # GitHub serves a pull request only its own caches and those of its base branch. Nothing
+      # else runs these builds on a base branch, so without a build_only run there every PR
+      # compiled the Rust services and froze the core from scratch.
+      build_only:
+        description: 'Fill the Rust services and frozen core caches, and run nothing else.'
+        type: boolean
+        default: false
     secrets:
       CODECOV_TOKEN:
         required: false
@@ -13,6 +21,7 @@ permissions: { }
 jobs:
   build-frontend:
     name: 'Build Frontend'
+    if: ${{ !inputs.build_only }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -97,6 +106,7 @@ jobs:
         run: cargo build --release --locked -p colibri -p starling
 
       - name: Upload Rust binaries
+        if: ${{ !inputs.build_only }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: rust-binaries
@@ -161,6 +171,7 @@ jobs:
             pyinstaller --noconfirm --clean --distpath target/backend rotkehlchen.spec
 
       - name: Upload frozen core
+        if: ${{ !inputs.build_only }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: backend-binary
@@ -169,6 +180,7 @@ jobs:
 
   e2e:
     name: 'shard-${{ matrix.shard }}'
+    if: ${{ !inputs.build_only }}
     needs: [ build-frontend, build-rust-services, build-backend ]
     env:
       CI: true
