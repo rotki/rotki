@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Calendar reminders are now created for SafeNet staking withdrawals that have been initiated but not claimed yet, set to the moment they can be claimed. The reminder is removed once the withdrawal is claimed.
 * :feature:`-` Initiating a withdrawal from SafeNet staking is now decoded as an informational event. Before, the transaction only showed the gas spend. Redecode your SafeNet transactions to pick up the withdrawals you already initiated.
 * :bug:`-` The date format help now says that ``%I`` shows the 12-hour clock hour with a leading zero and ``%-I`` without one. Before, the two descriptions were swapped.
 * :feature:`-` Bonds, ETFs and Collectibles are now available as locations, for manual balances, balance snapshots and manually added history events.

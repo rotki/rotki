@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from itertools import batched
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -10,6 +11,11 @@ from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.ethereum.modules.gwei_names.constants import CPT_GNS
+from rotkehlchen.chain.ethereum.modules.safe.constants import (
+    CPT_SAFE,
+    SAFENET_STAKING,
+    SAFENET_STAKING_ABI,
+)
 from rotkehlchen.chain.ethereum.modules.yearn.vesting.constants import (
     CPT_YEARN_VESTING,
     VESTING_ESCROW_ABI,
@@ -59,6 +65,8 @@ AERO_VELO_CALENDAR_COLOR: Final = deserialize_hex_color_code('36cfc9')
 AIRDROP_CALENDAR_COLOR: Final = deserialize_hex_color_code('ffd966')
 BRIDGE_CALENDAR_COLOR: Final = deserialize_hex_color_code('fcceee')
 YEARN_VESTING_CALENDAR_COLOR: Final = deserialize_hex_color_code('0657f9')
+SAFENET_CALENDAR_COLOR: Final = deserialize_hex_color_code('12ff80')
+SAFENET_MULTICALL_BATCH_SIZE: Final = 25
 VESTING_SCHEDULE_METHODS: Final = ('recipient', 'start_time', 'end_time', 'cliff_length', 'disabled_at')  # noqa: E501
 L2_BRIDGE_REMINDER_LOCATIONS: Final = {
     Location.BASE: CPT_BASE,
@@ -578,6 +586,119 @@ class CalendarReminderCreator(CustomizableDateMixin):
             error_msg='Failed to create the yearn vesting milestone reminders',
         )
 
+    def maybe_create_safenet_withdrawal_reminders(self) -> None:
+        """Create reminders for the moment SafeNet staking withdrawals become claimable.
+
+        Pending withdrawals are the initiated ones (informational events) that have no claim
+        event with the same id. Only those are queried from the staking contract, which holds
+        the exact claim time of each withdrawal. Reminders of claimed withdrawals are removed.
+        """
+        if self.ethereum_inquirer is None or len(initiated := [
+            event for event in self.get_history_events(
+                event_types=[(HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE)],
+                counterparties=[CPT_SAFE],
+            ) if (
+                event.address == SAFENET_STAKING and
+                event.location_label is not None and
+                event.extra_data is not None and
+                'withdrawal_id' in event.extra_data
+            )
+        ]) == 0:
+            return
+
+        claimed_ids = {
+            (event.location_label, event.extra_data['withdrawal_id'])
+            for event in self.get_history_events(
+                event_types=[(HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET)],
+                counterparties=[CPT_SAFE],
+            ) if (
+                event.address == SAFENET_STAKING and
+                event.extra_data is not None and
+                'withdrawal_id' in event.extra_data
+            )
+        }
+        blockchain = SupportedBlockchain.ETHEREUM
+        tracked_accounts = self.blockchain_accounts.get(blockchain)
+        pending: list[tuple[EvmEvent, ChecksumAddress, int]] = []
+        for event in initiated:
+            staker = string_to_evm_address(event.location_label)  # type: ignore[arg-type]  # location_label checked above
+            withdrawal_id = event.extra_data['withdrawal_id']  # type: ignore[index]  # extra_data checked above
+            if staker not in tracked_accounts:
+                continue
+
+            if (event.location_label, withdrawal_id) in claimed_ids:
+                self.delete_calendar_entry(
+                    name=self._safenet_entry_name(withdrawal_id),
+                    counterparty=CPT_SAFE,
+                    address=staker,
+                    blockchain=blockchain,
+                )
+                continue
+
+            pending.append((event, staker, withdrawal_id))
+
+        if len(pending) == 0:
+            return
+
+        staking_contract = EvmContract(  # only used to encode/decode, the calls carry the address
+            address=SAFENET_STAKING,
+            abi=SAFENET_STAKING_ABI,
+            deployed_block=0,
+        )
+        results: list[Any] = []
+        try:
+            for batch in batched(pending, SAFENET_MULTICALL_BATCH_SIZE, strict=False):
+                results.extend(self.ethereum_inquirer.multicall(calls=[(
+                    SAFENET_STAKING,
+                    staking_contract.encode(
+                        method_name='withdrawalNodes',
+                        arguments=[staker, withdrawal_id],
+                    ),
+                ) for _, staker, withdrawal_id in batch]))
+        except RemoteError as e:
+            log.error('Failed to query SafeNet pending withdrawals for calendar reminders due to %s', e)  # noqa: E501
+            return
+
+        calendar_entries: list[int] = []
+        for (event, staker, withdrawal_id), result in zip(pending, results, strict=True):
+            amount, claimable_at, _, _ = staking_contract.decode(
+                result=result,
+                method_name='withdrawalNodes',
+                arguments=[staker, withdrawal_id],
+            )
+            if amount == 0:
+                self.delete_calendar_entry(
+                    name=self._safenet_entry_name(withdrawal_id),
+                    counterparty=CPT_SAFE,
+                    address=staker,
+                    blockchain=blockchain,
+                )
+                continue
+
+            if (timestamp := Timestamp(claimable_at)) <= self.current_ts:
+                continue  # already claimable
+
+            if (entry_id := self.create_or_update_calendar_entry(
+                name=self._safenet_entry_name(withdrawal_id),
+                timestamp=timestamp,
+                description=f'SafeNet withdrawal of {event.amount} SAFE is claimable from {self.timestamp_to_date(timestamp)}',  # noqa: E501
+                counterparty=CPT_SAFE,
+                address=staker,
+                blockchain=blockchain,
+                color=SAFENET_CALENDAR_COLOR,
+            )) is not None:
+                calendar_entries.append(entry_id)
+
+        self.maybe_create_reminders(
+            calendar_identifiers=calendar_entries,
+            secs_before=[0],
+            error_msg='Failed to add the SafeNet withdrawal claim reminders',
+        )
+
+    @staticmethod
+    def _safenet_entry_name(withdrawal_id: int) -> str:
+        return f'Claim SafeNet withdrawal #{withdrawal_id}'
+
     def maybe_create_airdrop_claim_reminder(self) -> None:
         """Create reminders for airdrop claim deadlines."""
         with self.database.conn.read_ctx() as read_cursor:
@@ -720,6 +841,7 @@ def maybe_create_calendar_reminders(
     reminder_creator.maybe_create_locked_crv_reminders()
     reminder_creator.maybe_create_locked_aero_vero_reminders()
     reminder_creator.maybe_create_yearn_vesting_reminders()
+    reminder_creator.maybe_create_safenet_withdrawal_reminders()
     reminder_creator.maybe_create_airdrop_claim_reminder()
     reminder_creator.maybe_create_l2_bridging_reminder()
 

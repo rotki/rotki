@@ -1,6 +1,9 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+
+if TYPE_CHECKING:
+    from eth_typing import ABI
 
 CPT_SAFE: Final = 'safe'
 SAFE_VESTING: Final = string_to_evm_address('0x96B71e2551915d98d22c448b040A3BC4801eA4ff')
@@ -18,3 +21,19 @@ WITHDRAWAL_INITIATED: Final = b'\xe7zF\r\xe0)V\xe5\xb7i\xdc\x1b\x86\xf3\xde\xdbd
 WITHDRAWAL_CLAIMED: Final = b'n\xe1\x93\x0b\x12I1sU\xda\x0c\xa0QR"a\xbf\x0cR\x87\x97\x9a\xe2\x90r#\xac\n\x03\x01{\xa6'  # noqa: E501
 
 SAFE_TOKEN_ID: Final = 'eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'
+
+SAFENET_STAKING_ABI: Final[ABI] = [{
+    'inputs': [
+        {'name': 'staker', 'type': 'address'},
+        {'name': 'withdrawalId', 'type': 'uint64'},
+    ],
+    'name': 'withdrawalNodes',
+    'outputs': [
+        {'name': 'amount', 'type': 'uint256'},
+        {'name': 'claimableAt', 'type': 'uint128'},
+        {'name': 'previous', 'type': 'uint64'},
+        {'name': 'next', 'type': 'uint64'},
+    ],
+    'stateMutability': 'view',
+    'type': 'function',
+}]
