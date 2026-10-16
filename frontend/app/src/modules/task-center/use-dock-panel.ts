@@ -73,7 +73,7 @@ export function useDockPanel(
   const { dismissed, dismissedFailure, failed, finished, flagged, state } = useTaskDock();
   const { rerun } = useTaskController();
 
-  const now = useTimestamp({ interval: 250 });
+  const now = useTimestamp({ scheduler: tick => useIntervalFn(tick, 250) });
 
   /** Jobs the panel has listed during this stretch of work, which stay listed however briefly they ran. */
   const shown = shallowRef<ReadonlySet<ActivityId>>(new Set());

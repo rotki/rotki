@@ -58,7 +58,7 @@ export function useActionCenterSnooze(): UseActionCenterSnoozeReturn {
   const changed = createEventHook<string>();
   const { t } = useI18n({ useScope: 'global' });
   const userId = useLoggedUserIdentifier();
-  const now = useNow({ interval: SNOOZE_TICK_MS });
+  const now = useNow({ scheduler: tick => useIntervalFn(tick, SNOOZE_TICK_MS) });
 
   const snoozes: Ref<Snoozes> = useLocalStorage<Snoozes>(() => `${get(userId)}.rotki_action_center_snoozed`, {});
 
