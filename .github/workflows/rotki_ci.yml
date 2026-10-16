@@ -32,6 +32,7 @@ jobs:
       e2e_tasks: ${{ steps.checker.outputs.e2e_tasks }}
       documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
       test_environment: ${{ steps.checker.outputs.backend_environment }}
+      codeql_languages: ${{ steps.codeql.outputs.languages }}
     permissions:
       contents: read
     steps:
@@ -75,6 +76,21 @@ jobs:
               - name: documentation
                 paths: [docs]
 
+      # One CodeQL analysis per language whose sources changed, fed to the code-analyze matrix.
+      - name: Pick CodeQL languages
+        id: codeql
+        env:
+          FRONTEND: ${{ steps.checker.outputs.frontend_tasks }}
+          BACKEND: ${{ steps.checker.outputs.backend_tasks }}
+          COLIBRI: ${{ steps.checker.outputs.colibri_tasks }}
+          STARLING: ${{ steps.checker.outputs.starling_tasks }}
+        run: |
+          languages=()
+          if [[ "$FRONTEND" == 'true' ]]; then languages+=(javascript); fi
+          if [[ "$BACKEND" == 'true' ]]; then languages+=(python); fi
+          if [[ "$COLIBRI" == 'true' || "$STARLING" == 'true' ]]; then languages+=(rust); fi
+          echo "languages=$(jq -cn '$ARGS.positional' --args "${languages[@]}")" >> "$GITHUB_OUTPUT"
+
   check-typos:
     name: 'Check Typos'
     runs-on: ubuntu-latest
@@ -89,33 +105,38 @@ jobs:
       - name: Run typos checker
         uses: crate-ci/typos@7f9d0819ca1c008ade73f4b41fa9d258d48f605b  # v1.51.1
 
-  code-analyze-frontend:
-    name: 'Code analyze frontend'
+  code-analyze:
+    name: 'Code analyze ${{ matrix.language }}'
     needs: [ 'check-changes', 'check-typos' ]
     permissions:
       actions: read  # codeql reads the workflow run it reports for
       contents: read  # check out the code to analyze
       security-events: write  # upload the codeql results
-    if: ${{ needs.check-changes.outputs.frontend_tasks }}
+    if: ${{ needs.check-changes.outputs.codeql_languages != '[]' }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(needs.check-changes.outputs.codeql_languages) }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
 
+      # None of the three needs a build: javascript and python are read from source, and rust
+      # is extracted through rust-analyzer.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
         with:
-          languages: 'javascript'
+          languages: ${{ matrix.language }}
+          build-mode: none
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
-
+      # The category keeps the existing javascript and python alert history attached.
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
         with:
-          category: "/language:javascript"
+          category: "/language:${{ matrix.language }}"
 
   lint-frontend:
     name: 'Frontend checks'
@@ -284,34 +305,6 @@ jobs:
 
       - name: Build html docs
         run: cd docs && uv run make html
-
-  code-analyze-backend:
-    name: 'Code analyze backend'
-    needs: [ 'check-changes', 'check-typos' ]
-    permissions:
-      actions: read  # codeql reads the workflow run it reports for
-      contents: read  # check out the code to analyze
-      security-events: write  # upload the codeql results
-    if: ${{ needs.check-changes.outputs.backend_tasks }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
-        with:
-          languages: 'python'
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
-        with:
-          category: "/language:python"
 
   lint-colibri:
     name: 'Colibri lint and test'
