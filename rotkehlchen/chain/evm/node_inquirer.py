@@ -40,7 +40,10 @@ from rotkehlchen.chain.evm.contracts import (
 )
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2_CHAINIDS_WITH_L1_FEES
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
-from rotkehlchen.chain.evm.token_query_failures import record_token_query_failure
+from rotkehlchen.chain.evm.token_query_failures import (
+    is_token_query_deferring,
+    record_token_query_failure,
+)
 from rotkehlchen.chain.evm.types import (
     DEFAULT_EVM_INDEXER_ORDER,
     DEFAULT_INDEXERS_ORDER,
@@ -1432,11 +1435,20 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             address: ChecksumEvmAddress,
     ) -> list[tuple[bool, bytes]]:
         """Query the given properties of a token contract. A failure to reach the nodes is
-        recorded in the token query failures of the transaction being decoded, if any.
+        recorded in the token query failures of the transaction being decoded, if any. Once
+        one is recorded the nodes are not queried again for that transaction, since it is
+        left undecoded anyway and each query would go through the whole node failover.
 
         May raise:
         - TokenQueryFailed if the nodes could not be reached
         """
+        if is_token_query_deferring():
+            record_token_query_failure(address)
+            raise TokenQueryFailed(
+                f'Not querying token {address} since a token query of the same '
+                'transaction failed to reach the nodes',
+            )
+
         contract = EvmContract(address=address, abi=abi, deployed_block=0)
         try:
             # Output contains call status and result

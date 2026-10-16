@@ -380,6 +380,35 @@ def test_decoded_as_before_after_the_cap(
         assert get_evm_token(evm_address=TOKEN_ADDRESS, chain_id=ChainID.ETHEREUM) is None
 
 
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('forced', [False, True])
+def test_one_failed_token_query_per_deferred_tx(
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        forced: bool,
+) -> None:
+    """Once a token query of a transaction fails to reach the nodes the transaction is left
+    undecoded, so its other token queries don't go through the node failover again. A forced
+    transaction uses what the queries return, so each of its tokens is still queried."""
+    user = ethereum_accounts[0]
+    logs = [_transfer_log(user), _transfer_log(user), _transfer_log(user)]
+    for log_index, (tx_log, address) in enumerate(zip(logs, (TOKEN_ADDRESS, TOKEN_ADDRESS, (other := make_evm_address())), strict=True)):  # noqa: E501
+        tx_log.log_index, tx_log.address = log_index, address
+    tx_hash = _add_transaction(database, user, logs)
+    with (
+        patch.object(ethereum_inquirer, 'multicall_2', **NODES_DOWN) as multicall,
+        patch.object(database.pending_txs_tracker, 'is_token_query_deferral_expired', return_value=forced),  # noqa: E501
+    ):
+        assert ethereum_transaction_decoder.get_and_decode_undecoded_transactions() == [tx_hash]
+
+    assert [x.kwargs['calls'][0][0] for x in multicall.call_args_list] == (
+        [TOKEN_ADDRESS, TOKEN_ADDRESS, other] if forced else [TOKEN_ADDRESS]
+    )
+    assert _is_decoded(database, tx_hash) is forced
+
+
 @pytest.mark.parametrize('token_kind', [TokenKind.ERC20, TokenKind.ERC721])
 @pytest.mark.parametrize('forced', [None, False, True])
 def test_failed_query_never_saves_a_token(

@@ -48,6 +48,16 @@ def record_token_query_failure(address: ChecksumEvmAddress) -> None:
         failures.addresses.add(address)
 
 
+def is_token_query_deferring() -> bool:
+    """Whether a token query already failed in the transaction being decoded, which is then
+    left undecoded anyway, so its other token queries don't need to reach the nodes"""
+    return (
+        (failures := _token_query_failures.get()) is not None and
+        failures.forced is False and
+        len(failures.addresses) != 0
+    )
+
+
 def is_token_query_forced() -> bool:
     """Whether the transaction being decoded is decoded even if token queries fail"""
     return (failures := _token_query_failures.get()) is not None and failures.forced
