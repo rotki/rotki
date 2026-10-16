@@ -532,7 +532,7 @@ def test_querying_stops_when_the_nodes_are_down(database: DBHandler) -> None:
     ({'name': 'Token', 'symbol': 'TKN'}, None, ('Token', 'TKN', 6), True),  # decimals() failed
     ({'symbol': 'TKN', 'decimals': 8}, None, ('TKN', 'TKN', 8), False),  # name() failed
     ({'decimals': 8}, None, (f'1:{_address(1)}', '', 8), False),  # name() and symbol() failed
-    ({'decimals': 8}, 'SAV', ('SAV', 'SAV', 8), False),  # the saved symbol is kept and used as name  # noqa: E501
+    ({'decimals': 8}, 'OLD', ('OLD', 'OLD', 8), False),  # the saved symbol is kept and used as name  # noqa: E501
 ])
 def test_answered_query_is_final(
         database: DBHandler,
