@@ -439,8 +439,10 @@ class Nuthatch(EtherscanLikeApi):
             address: ChecksumEvmAddress,
             period: TimestampOrBlockRange,
     ) -> set[int]:
-        """Etherscan's withdrawals query and storage, asked of one nest: the action and its
-        answer are Etherscan's.
+        """Etherscan's withdrawals query and storage, asked of one nest through its head: the
+        action and its answer are Etherscan's. A range's end is resolved against the nest's RPC,
+        which runs ahead of the blocks the nest has read, so it is cut at the head; the rest is
+        the next query's.
 
         May raise:
         - HistoryStartsLater if the nest's history starts inside the range
@@ -448,6 +450,12 @@ class Nuthatch(EtherscanLikeApi):
         - DeserializationError if a row cannot be read
         """
         with self._one_nest():
+            head, head_ts = self.finalized_head()
+            end = head if period.range_type == 'blocks' else head_ts
+            if period.to_value > end:
+                if period.from_value > end:
+                    return set()
+                period = TimestampOrBlockRange(period.range_type, period.from_value, end)
             return Etherscan.get_withdrawals(self, address=address, period=period)  # type: ignore[arg-type]  # only base methods are used
 
     def get_validated_blocks(

@@ -21,6 +21,7 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.nuthatch import HistoryStartsLater, Nuthatch, ValidatorBlocks
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
@@ -1103,6 +1104,25 @@ def test_withdrawals_before_the_nests_history_are_asked_from_its_start_and_told(
         assert eth2.database.get_dynamic_cache(cursor=cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=WITHDRAWAL) is None  # noqa: E501
     assert warning.call_count == 1
     assert '25870000' in warning.call_args.args[0]
+
+
+def test_withdrawals_are_asked_of_the_nest_through_its_head(nuthatch: Nuthatch) -> None:
+    """A range ending past the blocks the nest has read, as one resolved against its RPC's newest
+    block does, is asked only through the nest's head, which it would otherwise refuse whole. A
+    range starting past the head asks nothing."""
+    with (
+        patch.object(nuthatch, 'finalized_head', return_value=(26_205_915, Timestamp(1792165000))),
+        patch.object(Etherscan, 'get_withdrawals', return_value={5}) as etherscan,
+    ):
+        assert nuthatch.get_withdrawals(ADDRESS, TimestampOrBlockRange('blocks', 17_030_000, 26_205_964)) == {5}  # noqa: E501
+        assert nuthatch.get_withdrawals(ADDRESS, TimestampOrBlockRange('blocks', 26_205_920, 26_205_964)) == set()  # noqa: E501
+        assert nuthatch.get_withdrawals(ADDRESS, TimestampOrBlockRange('timestamps', 1700000000, 1792165600)) == {5}  # noqa: E501
+
+    periods = [call.kwargs['period'] for call in etherscan.call_args_list]
+    assert [(p.range_type, p.from_value, p.to_value) for p in periods] == [
+        ('blocks', 17_030_000, 26_205_915),
+        ('timestamps', 1700000000, 1792165000),
+    ]
 
 
 def test_withdrawals_go_nowhere_unchosen_when_the_ordered_nest_is_dropped(eth2, nuthatch: Nuthatch) -> None:  # noqa: E501
