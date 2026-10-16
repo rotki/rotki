@@ -8,7 +8,7 @@ import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const { setting } = defineProps<{
-  setting: 'ksmRpcEndpoint' | 'dotRpcEndpoint' | 'beaconRpcEndpoint' | 'btcMempoolApi';
+  setting: 'ksmRpcEndpoint' | 'dotRpcEndpoint' | 'beaconRpcEndpoint' | 'btcMempoolApi' | 'nuthatchApiEndpoint';
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

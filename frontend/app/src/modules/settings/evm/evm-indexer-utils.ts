@@ -5,6 +5,7 @@ import { PrioritizedListData, type PrioritizedListItemData } from '@/modules/set
 import {
   BLOCKSCOUT_PRIO_LIST_ITEM,
   ETHERSCAN_PRIO_LIST_ITEM,
+  NUTHATCH_PRIO_LIST_ITEM,
   type PrioritizedListId,
   ROUTESCAN_PRIO_LIST_ITEM,
 } from '@/modules/settings/types/prioritized-list-id';
@@ -34,12 +35,17 @@ const ALL_INDEXER_ITEMS: Array<PrioritizedListItemData<EvmIndexer>> = [
   ETHERSCAN_PRIO_LIST_ITEM,
   BLOCKSCOUT_PRIO_LIST_ITEM,
   ROUTESCAN_PRIO_LIST_ITEM,
+  NUTHATCH_PRIO_LIST_ITEM,
 ];
 
-/** Indexers of a chain absent from `CHAIN_SUPPORTED_INDEXERS`. */
-const ETHERSCAN_AND_BLOCKSCOUT_ITEMS: Array<PrioritizedListItemData<EvmIndexer>> = [
+/**
+ * Indexers of a chain absent from `CHAIN_SUPPORTED_INDEXERS`. A nuthatch nest is self-hosted, so it
+ * may index any chain.
+ */
+const GENERIC_CHAIN_ITEMS: Array<PrioritizedListItemData<EvmIndexer>> = [
   ETHERSCAN_PRIO_LIST_ITEM,
   BLOCKSCOUT_PRIO_LIST_ITEM,
+  NUTHATCH_PRIO_LIST_ITEM,
 ];
 
 /**
@@ -47,17 +53,17 @@ const ETHERSCAN_AND_BLOCKSCOUT_ITEMS: Array<PrioritizedListItemData<EvmIndexer>>
  * `ROUTESCAN_SUPPORTED_CHAINS`, `BLOCKSCOUT_SUPPORTED_CHAINS` and `DEFAULT_INDEXERS_ORDER`.
  */
 const CHAIN_SUPPORTED_INDEXERS = new Map<string, Array<PrioritizedListItemData<EvmIndexer>>>([
-  ['binance_sc', [ETHERSCAN_PRIO_LIST_ITEM]],
+  ['binance_sc', [ETHERSCAN_PRIO_LIST_ITEM, NUTHATCH_PRIO_LIST_ITEM]],
   ['eth', ALL_INDEXER_ITEMS],
-  ['monad', [ETHERSCAN_PRIO_LIST_ITEM]],
-  ['scroll', [BLOCKSCOUT_PRIO_LIST_ITEM]],
+  ['monad', [ETHERSCAN_PRIO_LIST_ITEM, NUTHATCH_PRIO_LIST_ITEM]],
+  ['scroll', [BLOCKSCOUT_PRIO_LIST_ITEM, NUTHATCH_PRIO_LIST_ITEM]],
 ]);
 
 function supportedIndexerItems(chainId: string | null): Array<PrioritizedListItemData<EvmIndexer>> {
   if (chainId === null)
     return ALL_INDEXER_ITEMS;
 
-  return CHAIN_SUPPORTED_INDEXERS.get(chainId) ?? ETHERSCAN_AND_BLOCKSCOUT_ITEMS;
+  return CHAIN_SUPPORTED_INDEXERS.get(chainId) ?? GENERIC_CHAIN_ITEMS;
 }
 
 const evmIndexerValues: string[] = Object.values(EvmIndexer);
