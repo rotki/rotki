@@ -7,7 +7,7 @@ import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue'
 
 /**
  * The asset graph's settings in one menu. With `source` it also offers where the balances come
- * from, which `AssetBalanceStatisticSourceSetting` offered in a menu of its own.
+ * from.
  */
 const { asset, source = false } = defineProps<{
   asset?: string;

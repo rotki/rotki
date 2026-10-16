@@ -24,13 +24,12 @@ import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balance
 import { rankOwnedAssets } from '@/modules/premium/rank-owned-assets';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
-import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 import { ActivityKind, ActivityPart, useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 export function assetsApi(): AssetsApi {
-  const { getAssetInfo, useAssetInfo, useTokenAddress } = useAssetInfoRetrieval();
+  const { getAssetInfo, useAssetInfo } = useAssetInfoRetrieval();
 
   return {
     assetInfo: useAssetInfo,
@@ -40,7 +39,6 @@ export function assetsApi(): AssetsApi {
 
       return getAssetInfo(get(identifier))?.symbol ?? '';
     }),
-    tokenAddress: (identifier: MaybeRef<string>) => useTokenAddress(identifier),
   };
 }
 
@@ -48,7 +46,6 @@ export function statisticsApi(): StatisticsApi {
   const { isAssetIgnored } = useAssetsStore();
 
   const { useNetValue } = useStatisticsStore();
-  const { fetchNetValue } = useStatisticsDataFetching();
   const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
   const { failedDailyPrices, historicalDailyPriceStatus } = useHistoricPriceCache();
   const {
@@ -75,7 +72,6 @@ export function statisticsApi(): StatisticsApi {
       cancelByPrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
     },
     failedDailyPrices,
-    fetchNetValue,
     historicalDailyPriceStatus,
     isQueryingDailyPrices: useIsActivePrefix(ActivityKind.PRICES, ActivityPart.DAILY),
     async locationValueDistribution(): Promise<LocationData> {
@@ -99,16 +95,12 @@ export function statisticsApi(): StatisticsApi {
 export function userSettings(): UserSettingsApi {
   return {
     currencySymbol: useSetting('currencySymbol'),
-    dateInputFormat: useSetting('dateInputFormat'),
     decimalSeparator: useSetting('decimalSeparator'),
     floatingPrecision: useSetting('floatingPrecision'),
     graphZeroBased: useSetting('graphZeroBased'),
-    privacyMode: useSetting('privacyMode'),
     scrambleData: useSetting('scrambleData'),
     scrambleMultiplier: useSetting('scrambleMultiplier'),
-    selectedTheme: useSetting('selectedTheme'),
     shouldShowAmount: useSetting('shouldShowAmount'),
-    shouldShowPercentage: useSetting('shouldShowPercentage'),
     showGraphRangeSelector: useSetting('showGraphRangeSelector'),
     subscriptDecimals: useSetting('subscriptDecimals'),
     thousandSeparator: useSetting('thousandSeparator'),

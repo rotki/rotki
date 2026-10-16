@@ -36,14 +36,10 @@ export function createPremiumApi(): PremiumApi {
     epochStartSubtract(amount: number, unit: TimeUnit): number {
       return dayjs().subtract(amount, unit).unix();
     },
-    epochToFormat(epoch: number, format: string): string {
-      return dayjs(epoch * 1000).format(format);
-    },
   };
 
   function createSettings(): SettingsApi {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- vue-i18n binds t and te to the composer it returns, so destructuring them is safe
-    const { t, te } = useI18n({ useScope: 'global' });
+    const { t } = useI18n({ useScope: 'global' });
     const { updateFrontendSetting } = useSettingsOperations();
     const { darkTheme, lightTheme } = useThemeSettings();
     return {
@@ -55,7 +51,6 @@ export function createPremiumApi(): PremiumApi {
       },
       i18n: {
         t,
-        te,
       },
       isDark: useRotkiTheme().isDark,
       themes(): Themes {
