@@ -1,6 +1,7 @@
 import base64
 import json
 from contextlib import ExitStack
+from threading import Semaphore
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
@@ -267,7 +268,10 @@ def patch_and_enter_before_unlock(
         stack.enter_context(settings_patch)
 
     if have_decoders is False:  # do not initialize the decoders at all -- saves time
-        no_decoder_patch = patch('rotkehlchen.chain.evm.decoding.decoder.EVMTransactionDecoder.__init__', side_effect=lambda **kwargs: None)  # noqa: E501
+        def init_without_decoders(self: Any, **kwargs: Any) -> None:
+            self.undecoded_tx_query_lock = Semaphore()  # waited on before flagging redecodes
+
+        no_decoder_patch = patch('rotkehlchen.chain.evm.decoding.decoder.EVMTransactionDecoder.__init__', new=init_without_decoders)  # noqa: E501
         stack.enter_context(no_decoder_patch)
 
     if use_custom_database is not None:

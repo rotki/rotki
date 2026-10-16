@@ -9,6 +9,8 @@ import requests
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.details_retry import (
+    _get_pending_redecodes,
+    apply_token_details_redecodes,
     get_token_details_retry_marks,
     mark_token_details_retry,
 )
@@ -21,6 +23,8 @@ from rotkehlchen.constants.resolver import (
     ethaddress_to_identifier,
     evm_address_to_identifier,
 )
+from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tasks.assets import _get_tokens_missing_details
@@ -817,7 +821,8 @@ def test_editing_token_stops_details_retry(
 ) -> None:
     """A token edited by the user keeps what the user saved, even if its name is still its
     identifier, instead of being replaced by queried details. The events of a token that was
-    marked may have amounts of wrong decimals, so its transactions are redecoded."""
+    marked may have amounts of wrong decimals, so a redecode of its transactions is recorded
+    for every user and applied in a task."""
     token = get_or_create_evm_token(
         userdb=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
         evm_address=make_evm_address(),
@@ -838,7 +843,7 @@ def test_editing_token_stops_details_retry(
     del edited['identifier']
     del edited['forked']
     edited['symbol'], edited['decimals'] = 'USR', 8
-    with patch('rotkehlchen.api.services.assets.redecode_token_txs') as redecode:
+    with patch('rotkehlchen.api.services.assets.apply_token_details_redecodes') as apply:
         assert_proper_response(requests.patch(
             api_url_for(rotkehlchen_api_server, 'allassetsresource'),
             json=edited,
@@ -846,17 +851,27 @@ def test_editing_token_stops_details_retry(
 
     assert _get_tokens_missing_details(chain_ids=[ChainID.ETHEREUM], after_identifier='') == []
     assert get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10) == []
-    assert redecode.call_count == (1 if marked else 0)
-    if marked:
-        assert redecode.call_args.kwargs['address'] == token.evm_address
+    assert apply.call_count == (1 if marked else 0)
+    assert [x[1:3] for x in _get_pending_redecodes(after_seq=0)] == ([(token.evm_address, False)] if marked else [])  # noqa: E501
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_adding_token_redecodes_its_transactions(rotkehlchen_api_server: APIServer) -> None:
+@pytest.mark.parametrize('task_fails', [False, True])
+@pytest.mark.parametrize('marked', [False, True])
+def test_adding_token_redecodes_its_transactions(
+        rotkehlchen_api_server: APIServer,
+        task_fails: bool,
+        marked: bool,
+) -> None:
     """A token added by the user may have been seen before it existed, for example one that
-    could not be created because its details could not be queried, so the transactions with
-    logs of its contract are redecoded in a task and the token is not retried anymore."""
-    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=(address := make_evm_address()), saved=None)  # noqa: E501
+    could not be created because its details could not be queried, so a redecode of the
+    transactions with logs of its contract is recorded with the token and applied in a task,
+    and the token is not retried anymore. If the task does not finish, the user DB has not
+    applied the redecode, so the periodic retry of token details applies it."""
+    if marked:  # seen while its details could not be queried. Otherwise seen as non conformant
+        mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=(address := make_evm_address()), saved=None)  # noqa: E501
+    else:
+        address = make_evm_address()
     added: dict[str, Any] = EvmToken.initialize(
         address=address,
         chain_id=ChainID.ETHEREUM,
@@ -874,8 +889,20 @@ def test_adding_token_redecodes_its_transactions(rotkehlchen_api_server: APIServ
         tasks.append(task := original_spawn_and_track(**kwargs))
         return task
 
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    def applied_seq() -> int:
+        with rotki.data.db.conn.read_ctx() as cursor:
+            return int(rotki.data.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.TOKEN_DETAILS_REDECODE_CURSOR,
+            ) or 0)
+
     with (
-        patch('rotkehlchen.api.services.assets.redecode_created_tokens_txs') as redecode,
+        patch(
+            'rotkehlchen.api.services.assets.apply_token_details_redecodes',
+            side_effect=RemoteError('interrupted') if task_fails else apply_token_details_redecodes,  # noqa: E501
+        ) as apply,
         patch.object(supervisor, 'spawn_and_track', side_effect=spawn_and_track),
     ):
         assert_proper_sync_response_with_result(requests.put(
@@ -885,6 +912,12 @@ def test_adding_token_redecodes_its_transactions(rotkehlchen_api_server: APIServ
         assert len(tasks) == 1  # the slow logs query does not run in the request
         tasks[0].join(timeout=10)
 
+    apply.assert_called_once()
     assert get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10) == []
-    redecode.assert_called_once()
-    assert redecode.call_args.kwargs['addresses'] == [address]
+    pending = _get_pending_redecodes(after_seq=0)
+    assert [x[1:3] for x in pending] == [(address, True)]
+    if task_fails:
+        assert applied_seq() == 0
+        apply_token_details_redecodes(rotki.chains_aggregator)  # what the periodic task does
+
+    assert applied_seq() == pending[0][3]

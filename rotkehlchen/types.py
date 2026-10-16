@@ -1394,6 +1394,7 @@ class CacheType(Enum):
     SUPERFLUID_SUPER_TOKENS = auto()
     TOKEN_DETAILS_RETRY = auto()  # evm tokens whose details have to be queried again
     TOKEN_DETAILS_GIVEN_UP = auto()  # evm tokens whose details are not queried again
+    TOKEN_DETAILS_REDECODE = auto()  # evm tokens whose transactions every user has to redecode
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1462,6 +1463,7 @@ UniqueCacheType = Literal[
     CacheType.SUPERFLUID_TOKEN_LIST_VERSION,
     CacheType.TOKEN_DETAILS_RETRY,
     CacheType.TOKEN_DETAILS_GIVEN_UP,
+    CacheType.TOKEN_DETAILS_REDECODE,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)

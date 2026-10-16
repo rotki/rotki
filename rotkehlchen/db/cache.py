@@ -38,6 +38,8 @@ class DBCacheStatic(Enum):
     LAST_TOKEN_DETAILS_RETRY_TS: Final = 'last_token_details_retry_ts'
     # identifier of the last token the details retry task went through
     TOKEN_DETAILS_RETRY_CURSOR: Final = 'token_details_retry_cursor'
+    # sequence number of the last token redecode of the global DB applied to this user DB
+    TOKEN_DETAILS_REDECODE_CURSOR: Final = 'token_details_redecode_cursor'
     DOCKER_DEVICE_INFO: Final = 'docker_device_info'
     MONERIUM_OAUTH_CREDENTIALS: Final = 'monerium_oauth_credentials'
     # Earliest timestamp from which balance caches are stale due to event modifications.

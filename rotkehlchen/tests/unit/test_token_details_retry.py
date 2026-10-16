@@ -5,8 +5,9 @@ _get_or_create_token marks it in the global DB cache. retry_missing_token_detail
 marked tokens and the ones whose name is their identifier, asks the node inquirer of their chain
 for the details in chunks and fills the details that were missing and came back, as long as
 nobody else changed them in the meantime.
-The transactions of tokens that got their details or were created that way are flagged for
-redecoding, and the periodic decoding task redecodes them.
+When the details of a token change, or it gets created, a redecode is recorded for it in the
+global DB, which every user DB applies by flagging the transactions of the token for redecoding,
+and the periodic decoding task redecodes them.
 """
 import time
 from contextlib import contextmanager, nullcontext
@@ -23,12 +24,14 @@ from rotkehlchen.assets.details_retry import (
     TOKEN_DETAILS_RETRY_MAX_ATTEMPTS,
     TOKEN_DETAILS_RETRY_MAX_POSTPONES,
     TokenDetailsRetryMark,
+    apply_token_details_redecodes,
     count_token_details_retry_attempt,
     get_token_details_retry_mark,
     get_token_details_retry_marks,
     is_token_details_retry_given_up,
     mark_token_details_retry,
     postpone_token_details_retry,
+    settle_created_token_marks,
     stop_token_details_retry,
 )
 from rotkehlchen.assets.resolver import AssetResolver
@@ -42,18 +45,20 @@ from rotkehlchen.concurrency import exception_of, spawn, wait
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.constants import TX_DECODED
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryFailed
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_set_unique_cache_value
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.assets import (
     TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES,
     retry_missing_token_details,
 )
+from rotkehlchen.tests.utils.database import mock_dbhandler_sync_globaldb_assets
 from rotkehlchen.tests.utils.ethereum import txreceipt_to_data
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
@@ -64,6 +69,7 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -73,9 +79,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.concurrency import Task
-    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.tasks.manager import TaskManager
-    from rotkehlchen.types import ChecksumEvmAddress
+    from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
 
 
 def _address(idx: int) -> ChecksumEvmAddress:
@@ -188,14 +193,108 @@ def _details(token: EvmToken) -> tuple[str, str | None, int | None]:
     return (token := EvmToken(token.identifier)).name, token.symbol, token.decimals
 
 
-def _give_up(address: ChecksumEvmAddress, saved: tuple[str, str | None, int] | None) -> None:
+def _give_up(
+        address: ChecksumEvmAddress,
+        saved: tuple[str, str | None, int] | None,
+        missing: frozenset[str] = frozenset({'name', 'symbol', 'decimals'}),
+) -> None:
     """Give up a token as if its attempts ran out"""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        globaldb_set_unique_cache_value(
+        details_retry._write_mark(
             write_cursor=write_cursor,
-            key_parts=details_retry._mark_key_parts(chain_id=ChainID.ETHEREUM, address=address, given_up=True),  # noqa: E501
-            value=details_retry._serialize_mark(attempts=TOKEN_DETAILS_RETRY_MAX_ATTEMPTS, saved=saved),  # noqa: E501
+            mark=TokenDetailsRetryMark(chain_id=ChainID.ETHEREUM, address=address, attempts=TOKEN_DETAILS_RETRY_MAX_ATTEMPTS, saved=saved, missing=missing),  # noqa: E501
+            given_up=True,
         )
+
+
+def _redecodes() -> dict[ChecksumEvmAddress, bool]:
+    """The tokens with a redecode recorded in the global DB, and whether they were created"""
+    return {address: created for _, address, created, _ in details_retry._get_pending_redecodes(after_seq=0)}  # noqa: E501
+
+
+def _redecode_seqs() -> dict[ChecksumEvmAddress, int]:
+    return {address: seq for _, address, _, seq in details_retry._get_pending_redecodes(after_seq=0)}  # noqa: E501
+
+
+def _applied_seq(database: DBHandler) -> int:
+    """The sequence number of the last redecode the user DB applied"""
+    with database.conn.read_ctx() as cursor:
+        return int(database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.TOKEN_DETAILS_REDECODE_CURSOR,
+        ) or 0)
+
+
+def _add_incoming_transfer(
+        database: DBHandler,
+        user: ChecksumEvmAddress,
+        token_address: ChecksumEvmAddress,
+) -> EVMTxHash:
+    """Add a not yet decoded transaction where the user receives 1500000 units of the token"""
+    transaction = EvmTransaction(
+        tx_hash=(tx_hash := make_evm_tx_hash()),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000000),
+        block_number=18000000,
+        from_address=make_evm_address(),  # incoming, so no fee event is decoded for the user
+        to_address=token_address,
+        value=0,
+        gas=45000,
+        gas_price=10000000000,
+        gas_used=45000,
+        input_data=b'',
+        nonce=0,
+    )
+    receipt = EvmTxReceipt(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        tx_type=0,
+        logs=[EvmTxReceiptLog(
+            log_index=0,
+            data=(1500000).to_bytes(32, 'big'),
+            address=token_address,
+            topics=[
+                ERC20_OR_ERC721_TRANSFER,
+                bytes(12) + bytes.fromhex(make_evm_address()[2:]),
+                bytes(12) + bytes.fromhex(user[2:]),
+            ],
+        )],
+    )
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(write_cursor, [transaction], relevant_address=user)
+        DBEvmTx(database).add_or_ignore_receipt_data(
+            write_cursor,
+            ChainID.ETHEREUM,
+            txreceipt_to_data(receipt),
+        )
+
+    return tx_hash
+
+
+def _transfers(
+        database: DBHandler,
+        tx_hash: EVMTxHash,
+) -> list[tuple[HistoryEventType, HistoryEventSubType, str, FVal]]:
+    with database.conn.read_ctx() as cursor:
+        return [
+            (x.event_type, x.event_subtype, x.asset.identifier, x.amount)
+            for x in DBHistoryEvents(database).get_history_events_internal(
+                cursor=cursor,
+                filter_query=EvmEventFilterQuery.make(tx_hashes=[tx_hash]),
+            )
+            if x.event_type != HistoryEventType.SPEND or x.event_subtype != HistoryEventSubType.FEE
+        ]
+
+
+def _is_decoded(database: DBHandler, tx_hash: EVMTxHash) -> bool:
+    with database.conn.read_ctx() as cursor:
+        return cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings AS M JOIN evm_transactions AS E '
+            'ON E.identifier=M.tx_id WHERE E.tx_hash=? AND M.value=?',
+            (tx_hash, TX_DECODED),
+        ).fetchone()[0] == 1
 
 
 @pytest.mark.parametrize(('multicall_kwargs', 'create_kwargs', 'error', 'mark'), [
@@ -253,8 +352,8 @@ def test_given_up_token_is_never_retried(
 ) -> None:
     """A token whose details stay incomplete is given up when the attempts run out, and is
     not marked again when it is seen again. If it is added later, for example by an asset
-    update, the transactions where it was seen are flagged for redecoding once. Tokens given
-    up because the user edited them are not."""
+    update, a redecode of the transactions where it was seen is recorded once. Tokens given
+    up because the user edited them don't need one."""
     def see_token() -> None:
         ethereum_inquirer.contract_info_erc20_cache.remove(address)
         with pytest.raises(NotERC20Conformant):
@@ -283,7 +382,7 @@ def test_given_up_token_is_never_retried(
     assert multicall.call_count == 1  # only the query of the new sighting
 
     edited = _create_placeholder(database, 2)
-    stop_token_details_retry(chain_id=ChainID.ETHEREUM, address=edited.evm_address)
+    assert stop_token_details_retry(chain_id=ChainID.ETHEREUM, address=edited.evm_address) is False
     get_or_create_evm_token(  # added later, for example by an asset update
         userdb=database,
         evm_address=address,
@@ -292,13 +391,11 @@ def test_given_up_token_is_never_retried(
         symbol='ADD',
         decimals=6,
     )
-    with patch('rotkehlchen.tasks.assets.redecode_created_tokens_txs') as redecode:
-        retry_missing_token_details(chains_aggregator)
-        retry_missing_token_details(chains_aggregator)  # flagged only once
-
-    assert [x.kwargs for x in redecode.call_args_list] == [
-        {'database': database, 'chain_id': ChainID.ETHEREUM, 'addresses': [address]},
-    ]
+    retry_missing_token_details(chains_aggregator)
+    assert _redecodes() == {address: True}
+    seqs = _redecode_seqs()
+    retry_missing_token_details(chains_aggregator)
+    assert _redecode_seqs() == seqs  # recorded only once
 
 
 def test_which_tokens_are_retried(database: DBHandler) -> None:
@@ -306,7 +403,7 @@ def test_which_tokens_are_retried(database: DBHandler) -> None:
     with a NULL name that older versions saved, and only updated when all the details were
     found. Marks of tokens found to be spam after being marked are dropped without a query,
     and so are the ones of tokens that could not be created but were added since, whose
-    transactions are flagged for redecoding instead."""
+    transactions have to be redecoded instead, like the ones of the tokens that were found."""
     found, not_found, null_name = (_create_placeholder(database, i) for i in (1, 2, 3))
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         write_cursor.execute('UPDATE assets SET name=NULL WHERE identifier=?', (null_name.identifier,))  # noqa: E501
@@ -332,16 +429,11 @@ def test_which_tokens_are_retried(database: DBHandler) -> None:
         return {x.evm_address: _info('Found') for x in (found, null_name)}
 
     chains_aggregator, _ = _chains_aggregator(database=database, infos=infos)
-    with (
-        patch('rotkehlchen.tasks.assets.redecode_token_txs'),
-        patch('rotkehlchen.tasks.assets.redecode_created_tokens_txs') as redecode,
-    ):
-        retry_missing_token_details(chains_aggregator)
+    retry_missing_token_details(chains_aggregator)
 
     assert sorted(queried) == sorted(x.evm_address for x in (found, not_found, null_name))
-    assert [x.kwargs for x in redecode.call_args_list] == [
-        {'database': database, 'chain_id': ChainID.ETHEREUM, 'addresses': [added]},
-    ]
+    assert _redecodes() == {added: True, found.evm_address: False, null_name.evm_address: False}
+    assert _applied_seq(database) == max(_redecode_seqs().values())  # applied by the run
     assert _details(_token(added)) == ('Added', 'ADD', 6)
     assert _details(found) == _details(null_name) == ('Found', 'SYM', 6)
     assert _details(not_found) == (not_found.identifier, '', 18)
@@ -469,56 +561,10 @@ def test_transfer_is_redecoded_with_found_details(
     """A transfer of a new token decoded while the nodes fail is missing from history, and
     one decoded while only decimals() fails has the amount of the default decimals. Once the
     token details are found the transaction is redecoded with them."""
-    token_address = _address(1)
-    transaction = EvmTransaction(
-        tx_hash=(tx_hash := make_evm_tx_hash()),
-        chain_id=ChainID.ETHEREUM,
-        timestamp=Timestamp(1700000000),
-        block_number=18000000,
-        from_address=make_evm_address(),  # incoming, so no fee event is decoded for the user
-        to_address=token_address,
-        value=0,
-        gas=45000,
-        gas_price=10000000000,
-        gas_used=45000,
-        input_data=b'',
-        nonce=0,
-    )
-    receipt = EvmTxReceipt(
-        tx_hash=tx_hash,
-        chain_id=ChainID.ETHEREUM,
-        contract_address=None,
-        status=True,
-        tx_type=0,
-        logs=[EvmTxReceiptLog(
-            log_index=0,
-            data=(1500000).to_bytes(32, 'big'),
-            address=token_address,
-            topics=[
-                ERC20_OR_ERC721_TRANSFER,
-                bytes(12) + bytes.fromhex(make_evm_address()[2:]),
-                bytes(12) + bytes.fromhex((user := ethereum_accounts[0])[2:]),
-            ],
-        )],
-    )
-    with database.user_write() as write_cursor:
-        DBEvmTx(database).add_transactions(write_cursor, [transaction], relevant_address=user)
-        DBEvmTx(database).add_or_ignore_receipt_data(
-            write_cursor,
-            ChainID.ETHEREUM,
-            txreceipt_to_data(receipt),
-        )
+    tx_hash = _add_incoming_transfer(database, user=ethereum_accounts[0], token_address=(token_address := _address(1)))  # noqa: E501
 
     def transfers() -> list[tuple[HistoryEventType, HistoryEventSubType, str, FVal]]:
-        with database.conn.read_ctx() as cursor:
-            return [
-                (x.event_type, x.event_subtype, x.asset.identifier, x.amount)
-                for x in DBHistoryEvents(database).get_history_events_internal(
-                    cursor=cursor,
-                    filter_query=EvmEventFilterQuery.make(tx_hashes=[tx_hash]),
-                )
-                if x.event_type != HistoryEventType.SPEND or x.event_subtype != HistoryEventSubType.FEE  # noqa: E501
-            ]
+        return _transfers(database, tx_hash)
 
     token_identifier = evm_address_to_identifier(address=token_address, chain_id=ChainID.ETHEREUM)
     with patch.object(
@@ -587,6 +633,23 @@ def test_progress_is_saved_when_the_query_fails(
 
     assert all(EvmToken(x.identifier).name == x.identifier for x in tokens)
     assert _get_cursor(database) == max(x.identifier for x in tokens)
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
+        ) is not None
+
+
+def test_last_run_is_saved_before_applying_redecodes(database: DBHandler) -> None:
+    """Applying the recorded redecodes waits for the decoders and scans the logs, so if it
+    fails the last run must be saved already, or the task would be due again at once"""
+    chains_aggregator, _ = _chains_aggregator(database=database, infos=lambda _: {})
+    with (
+        patch('rotkehlchen.tasks.assets.apply_token_details_redecodes', side_effect=ValueError('unexpected')),  # noqa: E501
+        pytest.raises(ValueError),
+    ):
+        retry_missing_token_details(chains_aggregator)
+
     with database.conn.read_ctx() as cursor:
         assert database.get_static_cache(
             cursor=cursor,
@@ -851,7 +914,13 @@ def _during_retry_transaction(func: Callable[[], None]) -> Iterator[None]:
 
         return result
 
-    with patch.object(details_retry, '_read_token_details', side_effect=read_then_start):
+    save_found_token_details = details_retry.save_found_token_details
+
+    def save_with_hook(*args: Any, **kwargs: Any) -> Any:
+        with patch.object(details_retry, '_read_token_details', side_effect=read_then_start):
+            return save_found_token_details(*args, **kwargs)
+
+    with patch('rotkehlchen.tasks.assets.save_found_token_details', side_effect=save_with_hook):
         yield
 
     wait(tasks)
@@ -919,40 +988,36 @@ def test_decoder_with_an_older_token_cannot_overwrite_the_found_details(
 
 
 @pytest.mark.parametrize('marked', [False, True])
-@pytest.mark.parametrize('nodes_answer', [True, False])
 def test_interrupted_redecode_is_done_in_the_next_run(
         database: DBHandler,
         marked: bool,
-        nodes_answer: bool,
 ) -> None:
-    """The mark is only removed once the transactions of a token whose details changed are
-    redecoded, and an unmarked token gets one with its old details for that, so that a stop
-    in between does not leave events calculated with the old decimals for good. It is done
-    however the nodes answer the next runs, or the token would run out of attempts."""
+    """The redecode of a token whose details changed is recorded in the same transaction that
+    writes them, so the mark can go at once. The user DB only saves that it applied it after
+    flagging the transactions, so a stop in between makes the next run flag them again, even if
+    the nodes don't answer anymore."""
     token = _create_placeholder(database, 1)
     if marked:
         mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=(token.identifier, None, 18))  # noqa: E501
     chains_aggregator, _ = _chains_aggregator(database=database, infos=lambda _: {token.evm_address: _info('Found')})  # noqa: E501
     with (
-        patch('rotkehlchen.tasks.assets.redecode_token_txs', side_effect=RemoteError('interrupted')),  # noqa: E501
+        patch.object(details_retry, '_flag_token_transactions', side_effect=RemoteError('interrupted')),  # noqa: E501
         pytest.raises(RemoteError),
     ):
         retry_missing_token_details(chains_aggregator)
 
     assert _details(token) == ('Found', 'SYM', 6)  # written already
-    assert _marks() == {token.evm_address: (0, (token.identifier, None, 18))}  # pending
+    assert _marks() == {}  # nothing is missing
+    assert _redecodes() == {token.evm_address: False}
+    assert _applied_seq(database) == 0  # pending
 
-    if not nodes_answer:
-        chains_aggregator, _ = _chains_aggregator(database=database, infos=lambda _: {})
+    chains_aggregator, _ = _chains_aggregator(database=database, infos=RemoteError('down'))
+    with patch.object(details_retry, '_flag_token_transactions') as flag:
+        retry_missing_token_details(chains_aggregator)
+        retry_missing_token_details(chains_aggregator)
 
-    with patch('rotkehlchen.assets.details_retry.redecode_token_txs') as redecode:
-        for _ in range(1 if nodes_answer else TOKEN_DETAILS_RETRY_MAX_ATTEMPTS):
-            retry_missing_token_details(chains_aggregator)
-
-    assert [x.kwargs['address'] for x in redecode.call_args_list] == [token.evm_address]
-    assert _details(token) == ('Found', 'SYM', 6)
-    if nodes_answer:
-        assert _marks() == {}
+    assert [x.kwargs['tokens'] for x in flag.call_args_list] == [{token.evm_address: False}]
+    assert _applied_seq(database) == _redecode_seqs()[token.evm_address]
 
 
 def test_created_tokens_are_redecoded_in_a_single_scan(
@@ -961,8 +1026,8 @@ def test_created_tokens_are_redecoded_in_a_single_scan(
 ) -> None:
     """The logs have no index on their address, so the tokens of a run that could not be created
     before, whether created by the retry, added since or given up, are all searched for with one
-    scan per chain. Their marks and attempts are cleared only after it, so an interruption
-    makes the next run do it again."""
+    scan per chain. Their marks and attempts are cleared in the transaction that records their
+    redecode, so an interrupted scan is done again by the next run."""
     created, added, given_up = _address(1), _address(2), _address(3)
     for address in (created, added):
         mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=address, saved=None)
@@ -978,22 +1043,21 @@ def test_created_tokens_are_redecoded_in_a_single_scan(
             decimals=6,
         )
     chains_aggregator, _ = _chains_aggregator(database=database, infos=lambda addresses: {x: _info('Chain') for x in addresses})  # noqa: E501
-    with patch('rotkehlchen.tasks.assets.redecode_created_tokens_txs', side_effect=RemoteError('interrupted')) as redecode:  # noqa: E501
+    with patch.object(details_retry, '_find_transactions', side_effect=RemoteError('interrupted')) as scan:  # noqa: E501
         with pytest.raises(RemoteError):
             retry_missing_token_details(chains_aggregator)
 
-        assert set(_marks()) == {created, added}  # not cleared yet
-        assert details_retry.get_given_up_tokens_added_since(ChainID.ETHEREUM) == [given_up]
+        assert _marks() == {}
+        assert _redecodes() == dict.fromkeys((created, added, given_up), True)
+        assert _applied_seq(database) == 0
 
-        redecode.side_effect = None
+        scan.reset_mock(side_effect=True)
+        scan.return_value = {}
         retry_missing_token_details(chains_aggregator)
 
-    assert [sorted(x.kwargs['addresses']) for x in redecode.call_args_list] == [
-        sorted([created, added, given_up]),
-        sorted([created, added, given_up]),
-    ]
-    assert _marks() == {}
-    assert details_retry.get_given_up_tokens_added_since(ChainID.ETHEREUM) == []
+    logs_scans = [x.kwargs['values'] for x in scan.call_args_list if 'evmtx_receipt_logs' in x.kwargs['select_query']]  # noqa: E501
+    assert [sorted(x) for x in logs_scans] == [sorted([created, added, given_up])]
+    assert _applied_seq(database) == max(_redecode_seqs().values())
     assert _details(_token(created)) == ('Chain', 'SYM', 6)
 
 
@@ -1121,20 +1185,42 @@ def test_task_scheduling(task_manager: TaskManager, database: DBHandler) -> None
     assert task_manager._maybe_retry_missing_token_details() is None  # just ran, not due again
 
 
-def test_cleanup_of_a_deleted_given_up_token_does_not_recreate_its_bookkeeping(
-        database: DBHandler,
-) -> None:
-    """The attempts of a given up token are cleared after redecoding, which can take long. If
-    the token is deleted meanwhile, which removes its bookkeeping, the stale cleanup must not
-    write it back, or the token could never be marked again when seen."""
+@pytest.mark.parametrize('persisted', [True, False])
+def test_stale_mark_does_not_recreate_bookkeeping(database: DBHandler, persisted: bool) -> None:
+    """Counting an attempt or postponing writes the mark the run loaded before querying. If the
+    token was deleted meanwhile, which removes its bookkeeping, or marked again by a decoder,
+    the stale mark must not be written back, nor become a permanent given up entry."""
     token = _create_placeholder(database, 1)
-    _give_up(token.evm_address, saved=None)
+    saved = (token.identifier, '', 18)
+    if persisted:
+        mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=saved)
+        stale = get_token_details_retry_mark(chain_id=ChainID.ETHEREUM, address=token.evm_address)
+        assert stale is not None
+        stale = stale._replace(attempts=TOKEN_DETAILS_RETRY_MAX_ATTEMPTS - 1)  # would give up
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            details_retry._write_mark(write_cursor=write_cursor, mark=stale)
+    else:  # a placeholder retried without a mark
+        stale = TokenDetailsRetryMark(chain_id=ChainID.ETHEREUM, address=token.evm_address, attempts=TOKEN_DETAILS_RETRY_MAX_ATTEMPTS - 1, saved=saved, persisted=False)  # noqa: E501
 
-    assert is_token_details_retry_given_up(chain_id=ChainID.ETHEREUM, address=token.evm_address)
+    def bookkeeping() -> tuple[bool, dict[ChecksumEvmAddress, tuple[int, Any]]]:
+        return is_token_details_retry_given_up(ChainID.ETHEREUM, token.evm_address), _marks()
+
     GlobalDBHandler.delete_asset_by_identifier(token.identifier)
-    assert is_token_details_retry_given_up(chain_id=ChainID.ETHEREUM, address=token.evm_address) is False  # noqa: E501
-    details_retry.clear_given_up_attempts(chain_id=ChainID.ETHEREUM, addresses=[token.evm_address])
-    assert is_token_details_retry_given_up(chain_id=ChainID.ETHEREUM, address=token.evm_address) is False  # noqa: E501
+    AssetResolver.clean_memory_cache(token.identifier)
+    count_token_details_retry_attempt(stale)
+    postpone_token_details_retry([stale])
+    assert bookkeeping() == (False, {})
+
+    # seen again by a decoder while its query fails, so marked as a token not created
+    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=None)
+    count_token_details_retry_attempt(stale)
+    postpone_token_details_retry([stale])
+    assert bookkeeping() == (False, {token.evm_address: (0, None)})
+
+    current = get_token_details_retry_mark(chain_id=ChainID.ETHEREUM, address=token.evm_address)
+    assert current is not None
+    count_token_details_retry_attempt(current)  # the current mark still counts
+    assert bookkeeping() == (False, {token.evm_address: (1, None)})
 
 
 @pytest.mark.parametrize(('decoder_given', 'raises', 'details', 'marks'), [
@@ -1160,33 +1246,33 @@ def test_token_seen_by_a_decoder_while_querying(
         return _output(decimals=6, symbol='ONCHAIN', name='On Chain')
 
     chains_aggregator, _ = _chains_aggregator(database=database, node_inquirer=ethereum_inquirer)
-    with (
-        patch.object(ethereum_inquirer, 'multicall_2', side_effect=query),
-        patch('rotkehlchen.tasks.assets.redecode_created_tokens_txs') as redecode,
-    ):
+    with patch.object(ethereum_inquirer, 'multicall_2', side_effect=query):
         retry_missing_token_details(chains_aggregator)
 
-    assert [x.kwargs['addresses'] for x in redecode.call_args_list] == [[address]]
+    assert _redecodes() == {address: True}
     assert _details(_token(address)) == details
     assert _marks() == marks
 
 
-def test_stale_cleanup_keeps_the_mark_of_a_token_deleted_and_seen_again(
+def test_settling_a_created_token_keeps_the_mark_of_one_deleted_and_seen_again(
         database: DBHandler,
 ) -> None:
-    """The mark of a created token is removed after its transactions are redecoded. If the
-    token is deleted and seen again meanwhile, with its query failing, the new mark of the
-    token that does not exist is the only way to recover it, so the cleanup must keep it."""
+    """The mark of a token not created when marked is removed once the token exists, recording
+    the redecode of the transactions that skipped it. If the token was deleted and seen again
+    with its query failing, the new mark of the token that does not exist is the only way to
+    recover it, so it is kept and nothing is recorded."""
     token = _create_placeholder(database, 1)
     GlobalDBHandler.delete_asset_by_identifier(token.identifier)
     AssetResolver.clean_memory_cache(token.identifier)  # what the endpoints do
     mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=None)
-    details_retry.remove_token_details_retry_mark(chain_id=ChainID.ETHEREUM, address=token.evm_address, only_created=True)  # noqa: E501
+    settle_created_token_marks(chain_id=ChainID.ETHEREUM, addresses=[token.evm_address])
     assert _marks() == {token.evm_address: (0, None)}
+    assert _redecodes() == {}
 
     _create_placeholder(database, 1)  # exists now: the mark is the one of a created token
-    details_retry.remove_token_details_retry_mark(chain_id=ChainID.ETHEREUM, address=token.evm_address, only_created=True)  # noqa: E501
+    settle_created_token_marks(chain_id=ChainID.ETHEREUM, addresses=[token.evm_address])
     assert _marks() == {}
+    assert _redecodes() == {token.evm_address: True}
 
 
 def test_marked_placeholder_outside_the_marks_page_keeps_its_mark(database: DBHandler) -> None:
@@ -1207,11 +1293,7 @@ def test_marked_placeholder_outside_the_marks_page_keeps_its_mark(database: DBHa
             write_cursor.execute('UPDATE unique_cache SET last_queried_ts=? WHERE key LIKE ?', (idx, f'%{_address(idx)}'))  # noqa: E501
 
     chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=lambda _: {})
-    with (
-        patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_BATCH_SIZE', 2),
-        patch('rotkehlchen.tasks.assets.redecode_token_txs'),
-        patch('rotkehlchen.tasks.assets.redecode_created_tokens_txs'),
-    ):
+    with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_BATCH_SIZE', 2):
         retry_missing_token_details(chains_aggregator)
 
     queried = [a for call in node_inquirer.get_multiple_erc20_contracts_info.call_args_list for a in call.args[0]]  # noqa: E501
@@ -1339,40 +1421,180 @@ def test_lone_token_failing_on_its_own_is_given_up_after_many_postponed_runs(
     assert is_token_details_retry_given_up(ChainID.ETHEREUM, address) is True
 
 
-@pytest.mark.parametrize('persisted', [True, False])
-def test_stale_mark_does_not_recreate_bookkeeping(database: DBHandler, persisted: bool) -> None:
-    """Counting an attempt or postponing writes the mark the run loaded before querying. If the
-    token was deleted meanwhile, which removes its bookkeeping, or marked again by a decoder,
-    the stale mark must not be written back, nor become a permanent given up entry."""
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_redecode_waits_for_the_decoder(
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    """A decoder may have loaded the old details of a token without having saved the
+    transaction as decoded yet. Flagging it then would do nothing, and the decoder would save
+    events calculated with the old details. So the redecode waits for the lock that every
+    decoding holds, and flags the transaction once the decoder saved it."""
+    tx_hash = _add_incoming_transfer(database, user=ethereum_accounts[0], token_address=(token_address := _address(1)))  # noqa: E501
+    _see_token(  # created with the default decimals
+        database, ethereum_inquirer, token_address,
+        multicall={'return_value': _output(decimals=None)}, raises=None,
+    )
+    chains_aggregator, _ = _chains_aggregator(database=database, node_inquirer=ethereum_inquirer)
+    chains_aggregator.get_evm_manager.return_value.transactions_decoder = ethereum_transaction_decoder  # noqa: E501
+    decoder_lock = ethereum_transaction_decoder.undecoded_tx_query_lock
+    decoder_lock.acquire()  # a decoder is decoding the transaction
+    try:
+        with patch.object(ethereum_inquirer, 'multicall_2', return_value=_output()):
+            task = spawn(retry_missing_token_details, chains_aggregator)
+            time.sleep(0.5)  # enough for it to finish if nothing stopped it
+
+        assert task.dead is False
+        assert _details(_token(token_address)) == ('Token', 'TKN', 6)  # written already
+        # what the decoder holding the lock saves, after having loaded the old details
+        ethereum_transaction_decoder.decode_transaction_hashes(ignore_cache=False, tx_hashes=[tx_hash])  # noqa: E501
+        assert _is_decoded(database, tx_hash) is True
+    finally:
+        decoder_lock.release()
+
+    wait([task])
+    assert exception_of(task) is None
+    assert _is_decoded(database, tx_hash) is False  # flagged after the decoder saved it
+    assert ethereum_transaction_decoder.get_and_decode_undecoded_transactions() == [tx_hash]
+    assert _transfers(database, tx_hash) == [(
+        HistoryEventType.RECEIVE,
+        HistoryEventSubType.NONE,
+        evm_address_to_identifier(address=token_address, chain_id=ChainID.ETHEREUM),
+        FVal('1.5'),
+    )]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_redecode_reaches_every_user(
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        user_data_dir: Path,
+        db_password: str,
+        sql_vm_instructions_cb: int,
+) -> None:
+    """The bookkeeping is in the global DB, shared by the users of the machine, while the
+    transactions of each are in their own user DB. A token fixed by the run of another user
+    still has its transactions redecoded for this user, when this user next applies the
+    recorded redecodes."""
+    token = _create_placeholder(database, 1)  # with the default decimals
+    tx_hash = _add_incoming_transfer(database, user=ethereum_accounts[0], token_address=token.evm_address)  # noqa: E501
+    ethereum_transaction_decoder.decode_transaction_hashes(ignore_cache=False, tx_hashes=[tx_hash])
+    assert [x[3] for x in _transfers(database, tx_hash)] == [FVal('1.5E-12')]
+
+    (other_user_dir := user_data_dir.parent / 'other_user').mkdir()
+    with mock_dbhandler_sync_globaldb_assets():
+        other_db = DBHandler(
+            user_data_dir=other_user_dir,
+            password=db_password,
+            msg_aggregator=MessagesAggregator(),
+            initial_settings=None,
+            sql_vm_instructions_cb=sql_vm_instructions_cb,
+            resume_from_backup=False,
+        )
+    try:
+        other_chains_aggregator, _ = _chains_aggregator(database=other_db, infos=lambda _: {token.evm_address: _info('Found')})  # noqa: E501
+        retry_missing_token_details(other_chains_aggregator)
+        assert _applied_seq(other_db) == _redecode_seqs()[token.evm_address]
+    finally:
+        other_db.logout()
+
+    assert _details(token) == ('Found', 'SYM', 6)
+    assert _is_decoded(database, tx_hash) is True  # not applied to this user yet
+    chains_aggregator, _ = _chains_aggregator(database=database)
+    chains_aggregator.get_evm_manager.return_value.transactions_decoder = ethereum_transaction_decoder  # noqa: E501
+    apply_token_details_redecodes(chains_aggregator)
+
+    assert ethereum_transaction_decoder.get_and_decode_undecoded_transactions() == [tx_hash]
+    assert [x[3] for x in _transfers(database, tx_hash)] == [FVal('1.5')]
+
+
+@pytest.mark.parametrize('before_creation', [False, True])
+def test_editing_a_given_up_token_redecodes_it(
+        database: DBHandler,
+        before_creation: bool,
+) -> None:
+    """A token given up when its attempts ran out may have events calculated with defaults or
+    fallbacks, which its given up entry records. A user edit replacing that entry records a
+    redecode of its transactions, searching its logs if it was given up before it could be
+    created. Nothing is pending afterwards, so a second edit records nothing."""
+    address = _address(1)
+    if not before_creation:
+        token = _create_placeholder(database, 1)
+    saved = None if before_creation else (token.identifier, None, 18)
+    _give_up(address, saved=saved)
+    assert is_token_details_retry_given_up(chain_id=ChainID.ETHEREUM, address=address)
+    if before_creation:  # added since, and edited before a run noticed it
+        _create_placeholder(database, 1)
+
+    assert stop_token_details_retry(chain_id=ChainID.ETHEREUM, address=address) is True
+    assert _redecodes() == {address: before_creation}
+    seqs = _redecode_seqs()
+    assert stop_token_details_retry(chain_id=ChainID.ETHEREUM, address=address) is False
+    assert _redecode_seqs() == seqs
+
+
+def test_given_up_token_corrected_by_an_asset_update_is_redecoded(
+        database: DBHandler,
+        tmp_path: Path,
+) -> None:
+    """A token given up with details that are only defaults is not queried again, but an asset
+    update may correct them. Its events were calculated with the defaults, so a run records a
+    redecode of its transactions, once. A change of a detail that was not missing does not."""
+    import sqlite3
+
+    from rotkehlchen.globaldb.asset_updates.manager import _replace_assets_from_db
+
+    token = _create_placeholder(database, 1, decimals=6)
+    _give_up(token.evm_address, saved=(token.identifier, None, 6), missing=frozenset({'symbol'}))
+    chains_aggregator, _ = _chains_aggregator(database=database, infos=lambda _: {})
+
+    def update(statement: str) -> None:
+        source = tmp_path / f'source_{statement.split()[1]}.db'  # the updated table
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(f"VACUUM INTO '{source}'")
+        with sqlite3.connect(source) as connection:
+            connection.execute(statement, (token.identifier,))
+        _replace_assets_from_db(connection=GlobalDBHandler().conn, sourcedb_path=source)
+        AssetResolver.clean_memory_cache(token.identifier)
+
+    update("UPDATE assets SET name='Updated Name' WHERE identifier=?")
+    retry_missing_token_details(chains_aggregator)
+    assert _redecodes() == {}
+
+    update("UPDATE common_asset_details SET symbol='UPD' WHERE identifier=?")
+    retry_missing_token_details(chains_aggregator)
+    assert _redecodes() == {token.evm_address: False}
+    seqs = _redecode_seqs()
+    retry_missing_token_details(chains_aggregator)
+    assert _redecode_seqs() == seqs  # recorded once
+    assert is_token_details_retry_given_up(chain_id=ChainID.ETHEREUM, address=token.evm_address)
+
+
+def test_marked_token_corrected_meanwhile_is_redecoded_without_the_nodes(
+        database: DBHandler,
+) -> None:
+    """A marked token whose missing decimals someone else corrected, for example an asset
+    update, had its events calculated with the defaults. A run settles it before querying, so
+    the redecode is recorded and the decimals stop being missing even if the nodes never answer
+    for it, instead of the token running out of attempts with stale events."""
     token = _create_placeholder(database, 1)
-    saved = (token.identifier, None, 18)
-    if persisted:
-        mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=saved)
-        for _ in range(TOKEN_DETAILS_RETRY_MAX_ATTEMPTS - 1):  # the next attempt gives it up
-            current = get_token_details_retry_mark(chain_id=ChainID.ETHEREUM, address=token.evm_address)  # noqa: E501
-            assert current is not None
-            count_token_details_retry_attempt(current)
-        stale = get_token_details_retry_mark(chain_id=ChainID.ETHEREUM, address=token.evm_address)
-        assert stale is not None
-    else:  # a placeholder retried without a mark
-        stale = TokenDetailsRetryMark(chain_id=ChainID.ETHEREUM, address=token.evm_address, attempts=TOKEN_DETAILS_RETRY_MAX_ATTEMPTS - 1, saved=saved, persisted=False)  # noqa: E501
-
-    def bookkeeping() -> tuple[bool, dict[ChecksumEvmAddress, tuple[int, Any]]]:
-        return is_token_details_retry_given_up(ChainID.ETHEREUM, token.evm_address), _marks()
-
-    GlobalDBHandler.delete_asset_by_identifier(token.identifier)
+    mark_token_details_retry(
+        chain_id=ChainID.ETHEREUM,
+        address=token.evm_address,
+        saved=(token.identifier, None, 18),
+        missing=frozenset({'symbol', 'decimals'}),
+    )
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        write_cursor.execute('UPDATE evm_tokens SET decimals=6 WHERE identifier=?', (token.identifier,))  # noqa: E501
     AssetResolver.clean_memory_cache(token.identifier)
-    count_token_details_retry_attempt(stale)
-    postpone_token_details_retry([stale])
-    assert bookkeeping() == (False, {})
 
-    # seen again by a decoder while its query fails, so marked as a token not created
-    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=None)
-    count_token_details_retry_attempt(stale)
-    postpone_token_details_retry([stale])
-    assert bookkeeping() == (False, {token.evm_address: (0, None)})
+    chains_aggregator, _ = _chains_aggregator(database=database, infos=lambda _: {})
+    retry_missing_token_details(chains_aggregator)
 
-    current = get_token_details_retry_mark(chain_id=ChainID.ETHEREUM, address=token.evm_address)
-    assert current is not None
-    count_token_details_retry_attempt(current)  # the current mark still counts
-    assert bookkeeping() == (False, {token.evm_address: (1, None)})
+    assert _redecodes() == {token.evm_address: False}
+    [mark] = get_token_details_retry_marks(chain_id=ChainID.ETHEREUM, limit=10)
+    assert (mark.saved, mark.missing) == ((token.identifier, None, 6), frozenset({'symbol'}))
+    assert mark.attempts == 1  # the symbol still came back missing

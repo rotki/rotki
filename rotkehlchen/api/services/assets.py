@@ -28,8 +28,7 @@ from rotkehlchen.assets.asset import (
     SolanaToken,
 )
 from rotkehlchen.assets.details_retry import (
-    redecode_created_tokens_txs,
-    redecode_token_txs,
+    apply_token_details_redecodes,
     stop_token_details_retry,
 )
 from rotkehlchen.assets.resolver import AssetResolver
@@ -265,25 +264,23 @@ class AssetsService:
                 'status_code': HTTPStatus.CONFLICT,
             }
         try:
-            GlobalDBHandler.add_asset(asset)
+            # The token and the redecode of the transactions decoded before it existed, which
+            # are missing its events, are saved in one transaction so the redecode can't be lost
+            with GlobalDBHandler().conn.write_ctx():
+                GlobalDBHandler.add_asset(asset)
+                if isinstance(asset, EvmToken):
+                    stop_token_details_retry(
+                        chain_id=asset.chain_id,
+                        address=asset.evm_address,
+                        added=True,
+                    )
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
         with self.rotkehlchen.data.db.user_write() as cursor:
             self.rotkehlchen.data.db.add_asset_identifiers(cursor, [asset.identifier])
         if isinstance(asset, EvmToken):
-            stop_token_details_retry(chain_id=asset.chain_id, address=asset.evm_address)
-            # transactions decoded before the token existed are missing its events. Finding
-            # them scans the logs of all transactions, so it is not done in the request.
-            self.rotkehlchen.task_supervisor.spawn_and_track(
-                after_seconds=None,
-                task_name=f'Redecode transactions of added token {asset.identifier}',
-                exception_is_error=True,
-                method=redecode_created_tokens_txs,
-                database=self.rotkehlchen.data.db,
-                chain_id=asset.chain_id,
-                addresses=[asset.evm_address],
-            )
+            self._apply_token_details_redecodes()
         if is_rebasing is not None:
             GlobalDBHandler.set_asset_flag(
                 identifier=asset.identifier,
@@ -297,6 +294,19 @@ class AssetsService:
             'status_code': HTTPStatus.OK,
         }
 
+    def _apply_token_details_redecodes(self) -> None:
+        """Flag for redecoding the transactions of tokens whose details changed in a task, since
+        finding the ones of created tokens scans the logs of all transactions, and it waits for
+        the decoders. Its progress is saved in the user DB, so if it does not finish the
+        periodic retry of token details does it."""
+        self.rotkehlchen.task_supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name='Redecode transactions of tokens whose details changed',
+            exception_is_error=True,
+            method=apply_token_details_redecodes,
+            chains_aggregator=self.rotkehlchen.chains_aggregator,
+        )
+
     def edit_user_asset(
             self,
             asset: AssetWithOracles,
@@ -304,25 +314,22 @@ class AssetsService:
     ) -> dict[str, Any]:
         try:
             # The edit and the stop of the details retry are one transaction, so that a retry
-            # can't fill the details the user did not touch between the two.
+            # can't fill the details the user did not touch between the two. The events of a
+            # token whose details were being retried may have used wrong decimals, so the stop
+            # records a redecode of its transactions in the same transaction.
             with GlobalDBHandler().conn.write_ctx():
                 GlobalDBHandler.edit_user_asset(asset)
-                was_marked = isinstance(asset, EvmToken) and stop_token_details_retry(  # keep what the user saved  # noqa: E501
+                redecode = isinstance(asset, EvmToken) and stop_token_details_retry(
                     chain_id=asset.chain_id,
                     address=asset.evm_address,
                 )
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
-        if was_marked and isinstance(asset, EvmToken):
-            # the events of a marked token may have used wrong decimals, so redecode them
-            redecode_token_txs(
-                database=self.rotkehlchen.data.db,
-                chain_id=asset.chain_id,
-                address=asset.evm_address,
-            )
-
         AssetResolver.clean_memory_cache(asset.identifier)
+        if redecode:  # after cleaning the cache, so the redecoding loads the edited token
+            self._apply_token_details_redecodes()
+
         self.rotkehlchen.icon_manager.failed_asset_ids.remove(asset.identifier)
         if is_rebasing is not None:
             GlobalDBHandler.set_asset_flag(
