@@ -325,10 +325,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: dtolnay/rust-toolchain@b2d072a15ba9e799dbc505c707140d9f33237405  # clippy
-        with:
-          toolchain: 1.91
-          components: clippy
+      - name: Setup Rust
+        run: |
+          rustup toolchain install 1.91 --profile minimal --component clippy --no-self-update
+          rustup default 1.91
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
         with:
@@ -359,10 +359,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: dtolnay/rust-toolchain@b2d072a15ba9e799dbc505c707140d9f33237405  # clippy
-        with:
-          toolchain: 1.91
-          components: clippy, rustfmt
+      - name: Setup Rust
+        run: |
+          rustup toolchain install 1.91 --profile minimal --component clippy,rustfmt --no-self-update
+          rustup default 1.91
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
         with:
@@ -404,9 +404,11 @@ jobs:
         with:
           env_file: .github/.env.ci
 
-      - uses: dtolnay/rust-toolchain@b2d072a15ba9e799dbc505c707140d9f33237405  # clippy
-        with:
-          toolchain: 1.91
+      - name: Setup Rust
+        shell: bash
+        run: |
+          rustup toolchain install 1.91 --profile minimal --no-self-update
+          rustup default 1.91
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
         with:
@@ -499,9 +501,9 @@ jobs:
 
       - name: Setup Rust
         if: steps.fdc-cache.outputs.cache-hit != 'true'
-        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87  # stable
-        with:
-          toolchain: 1.91
+        run: |
+          rustup toolchain install 1.91 --profile minimal --no-self-update
+          rustup default 1.91
 
       - name: Cache Rust dependencies
         if: steps.fdc-cache.outputs.cache-hit != 'true'
