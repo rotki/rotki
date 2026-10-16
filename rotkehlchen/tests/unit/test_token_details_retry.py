@@ -24,9 +24,11 @@ from rotkehlchen.assets.details_retry import (
     TOKEN_DETAILS_RETRY_MAX_POSTPONES,
     TokenDetailsRetryMark,
     count_token_details_retry_attempt,
+    get_token_details_retry_mark,
     get_token_details_retry_marks,
     is_token_details_retry_given_up,
     mark_token_details_retry,
+    postpone_token_details_retry,
     stop_token_details_retry,
 )
 from rotkehlchen.assets.resolver import AssetResolver
@@ -45,6 +47,7 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryFailed
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_set_unique_cache_value
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.assets import (
@@ -183,6 +186,16 @@ def _see_token(
 
 def _details(token: EvmToken) -> tuple[str, str | None, int | None]:
     return (token := EvmToken(token.identifier)).name, token.symbol, token.decimals
+
+
+def _give_up(address: ChecksumEvmAddress, saved: tuple[str, str | None, int] | None) -> None:
+    """Give up a token as if its attempts ran out"""
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=details_retry._mark_key_parts(chain_id=ChainID.ETHEREUM, address=address, given_up=True),  # noqa: E501
+            value=details_retry._serialize_mark(attempts=TOKEN_DETAILS_RETRY_MAX_ATTEMPTS, saved=saved),  # noqa: E501
+        )
 
 
 @pytest.mark.parametrize(('multicall_kwargs', 'create_kwargs', 'error', 'mark'), [
@@ -954,8 +967,7 @@ def test_created_tokens_are_redecoded_in_a_single_scan(
     for address in (created, added):
         mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=address, saved=None)
 
-    for _ in range(TOKEN_DETAILS_RETRY_MAX_ATTEMPTS):  # given up before it could be created
-        count_token_details_retry_attempt(TokenDetailsRetryMark(chain_id=ChainID.ETHEREUM, address=given_up, attempts=_, saved=None))  # noqa: E501
+    _give_up(given_up, saved=None)  # before it could be created
     for address in (added, given_up):  # added since, for example by an asset update
         get_or_create_evm_token(
             userdb=database,
@@ -1116,8 +1128,7 @@ def test_cleanup_of_a_deleted_given_up_token_does_not_recreate_its_bookkeeping(
     the token is deleted meanwhile, which removes its bookkeeping, the stale cleanup must not
     write it back, or the token could never be marked again when seen."""
     token = _create_placeholder(database, 1)
-    for _ in range(TOKEN_DETAILS_RETRY_MAX_ATTEMPTS):
-        count_token_details_retry_attempt(TokenDetailsRetryMark(chain_id=ChainID.ETHEREUM, address=token.evm_address, attempts=_, saved=None))  # noqa: E501
+    _give_up(token.evm_address, saved=None)
 
     assert is_token_details_retry_given_up(chain_id=ChainID.ETHEREUM, address=token.evm_address)
     GlobalDBHandler.delete_asset_by_identifier(token.identifier)
@@ -1326,3 +1337,42 @@ def test_lone_token_failing_on_its_own_is_given_up_after_many_postponed_runs(
         retry_missing_token_details(chains_aggregator)
     assert _marks() == {}
     assert is_token_details_retry_given_up(ChainID.ETHEREUM, address) is True
+
+
+@pytest.mark.parametrize('persisted', [True, False])
+def test_stale_mark_does_not_recreate_bookkeeping(database: DBHandler, persisted: bool) -> None:
+    """Counting an attempt or postponing writes the mark the run loaded before querying. If the
+    token was deleted meanwhile, which removes its bookkeeping, or marked again by a decoder,
+    the stale mark must not be written back, nor become a permanent given up entry."""
+    token = _create_placeholder(database, 1)
+    saved = (token.identifier, None, 18)
+    if persisted:
+        mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=saved)
+        for _ in range(TOKEN_DETAILS_RETRY_MAX_ATTEMPTS - 1):  # the next attempt gives it up
+            current = get_token_details_retry_mark(chain_id=ChainID.ETHEREUM, address=token.evm_address)  # noqa: E501
+            assert current is not None
+            count_token_details_retry_attempt(current)
+        stale = get_token_details_retry_mark(chain_id=ChainID.ETHEREUM, address=token.evm_address)
+        assert stale is not None
+    else:  # a placeholder retried without a mark
+        stale = TokenDetailsRetryMark(chain_id=ChainID.ETHEREUM, address=token.evm_address, attempts=TOKEN_DETAILS_RETRY_MAX_ATTEMPTS - 1, saved=saved, persisted=False)  # noqa: E501
+
+    def bookkeeping() -> tuple[bool, dict[ChecksumEvmAddress, tuple[int, Any]]]:
+        return is_token_details_retry_given_up(ChainID.ETHEREUM, token.evm_address), _marks()
+
+    GlobalDBHandler.delete_asset_by_identifier(token.identifier)
+    AssetResolver.clean_memory_cache(token.identifier)
+    count_token_details_retry_attempt(stale)
+    postpone_token_details_retry([stale])
+    assert bookkeeping() == (False, {})
+
+    # seen again by a decoder while its query fails, so marked as a token not created
+    mark_token_details_retry(chain_id=ChainID.ETHEREUM, address=token.evm_address, saved=None)
+    count_token_details_retry_attempt(stale)
+    postpone_token_details_retry([stale])
+    assert bookkeeping() == (False, {token.evm_address: (0, None)})
+
+    current = get_token_details_retry_mark(chain_id=ChainID.ETHEREUM, address=token.evm_address)
+    assert current is not None
+    count_token_details_retry_attempt(current)  # the current mark still counts
+    assert bookkeeping() == (False, {token.evm_address: (1, None)})
