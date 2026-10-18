@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 ALL_BALANCE_TYPES = (
     defaultdict[ChecksumEvmAddress, BalanceSheet] |
     dict[BTCAddress, Balance] |
+    dict[BTCAddress, BalanceSheet] |
     defaultdict[Eth2PubKey, BalanceSheet] |
     dict[SubstrateAddress, BalanceSheet] |
     dict[SolanaAddress, BalanceSheet]
@@ -52,6 +53,7 @@ class BlockchainBalances:
     eth2: defaultdict[Eth2PubKey, BalanceSheet] = field(init=False)
     btc: dict[BTCAddress, Balance] = field(init=False)
     bch: dict[BTCAddress, Balance] = field(init=False)
+    doge: dict[BTCAddress, BalanceSheet] = field(init=False)
     ksm: dict[SubstrateAddress, BalanceSheet] = field(init=False)
     dot: dict[SubstrateAddress, BalanceSheet] = field(init=False)
     avax: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
@@ -76,6 +78,10 @@ class BlockchainBalances:
 
     @overload
     def get(self, chain: Literal[SupportedBlockchain.SOLANA]) -> dict[SolanaAddress, BalanceSheet]:
+        ...
+
+    @overload
+    def get(self, chain: Literal[SupportedBlockchain.DOGECOIN]) -> dict[BTCAddress, BalanceSheet]:
         ...
 
     @overload
@@ -104,6 +110,10 @@ class BlockchainBalances:
 
     @overload
     def set(self, chain: Literal[SupportedBlockchain.SOLANA], balances: dict[SolanaAddress, BalanceSheet]) -> None:  # noqa: E501
+        ...
+
+    @overload
+    def set(self, chain: Literal[SupportedBlockchain.DOGECOIN], balances: dict[BTCAddress, BalanceSheet]) -> None:  # noqa: E501
         ...
 
     @overload

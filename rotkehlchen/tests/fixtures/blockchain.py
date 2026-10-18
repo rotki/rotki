@@ -21,6 +21,7 @@ from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
 from rotkehlchen.chain.binance_sc.transactions import BinanceSCTransactions
 from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
 from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
+from rotkehlchen.chain.dogecoin.manager import DogecoinManager
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -233,6 +234,11 @@ def fixture_bch_accounts() -> list[BTCAddress]:
     return []
 
 
+@pytest.fixture(name='doge_accounts')
+def fixture_doge_accounts() -> list[BTCAddress]:
+    return []
+
+
 @pytest.fixture(name='solana_accounts')
 def fixture_solana_accounts() -> list[SolanaAddress]:
     return []
@@ -307,6 +313,7 @@ def fixture_blockchain_accounts(
         avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
         bch_accounts: list[BTCAddress],
+        doge_accounts: list[BTCAddress],
         ksm_accounts: list[SubstrateAddress],
         dot_accounts: list[SubstrateAddress],
         solana_accounts: list[SolanaAddress],
@@ -329,6 +336,7 @@ def fixture_blockchain_accounts(
         avax=tuple(avax_accounts),
         btc=tuple(btc_accounts),
         bch=tuple(bch_accounts),
+        doge=tuple(doge_accounts),
         ksm=tuple(ksm_accounts),
         dot=tuple(dot_accounts),
         solana=tuple(solana_accounts),
@@ -1141,6 +1149,11 @@ def fixture_bitcoin_cash_manager(database):
     return BitcoinCashManager(database=database)
 
 
+@pytest.fixture(name='dogecoin_manager')
+def fixture_dogecoin_manager():
+    return DogecoinManager()
+
+
 @pytest.fixture(name='ethereum_modules')
 def fixture_ethereum_modules() -> list[str]:
     return []
@@ -1221,6 +1234,7 @@ def fixture_blockchain(
         zksync_lite_manager,
         bitcoin_manager,
         bitcoin_cash_manager,
+        dogecoin_manager,
         solana_manager,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
@@ -1265,6 +1279,7 @@ def fixture_blockchain(
         zksync_lite_manager=zksync_lite_manager,
         bitcoin_manager=bitcoin_manager,
         bitcoin_cash_manager=bitcoin_cash_manager,
+        dogecoin_manager=dogecoin_manager,
         solana_manager=solana_manager,
         msg_aggregator=messages_aggregator,
         database=database,

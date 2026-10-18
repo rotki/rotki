@@ -3436,6 +3436,13 @@ Getting all supported chains
                     "image": "bitcoin-cash.svg"
                 },
                 {
+                    "id": "doge",
+                    "name": "dogecoin",
+                    "type": "dogecoin",
+                    "native_token": "DOGE",
+                    "image": "dogecoin.svg"
+                },
+                {
                     "id": "ksm",
                     "name": "kusama",
                     "type": "substrate",
@@ -4047,7 +4054,7 @@ Querying onchain balances
 
 .. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Query on-chain balances for tracked accounts. Specify a blockchain to query only that chain. Available blockchains: ``BTC``, ``BCH``, ``ETH``, ``ETH2``, ``KSM``, ``DOT``, ``AVAX``, ``SOL``.
+   Query on-chain balances for tracked accounts. Specify a blockchain to query only that chain. Available blockchains: ``BTC``, ``BCH``, ``DOGE``, ``ETH``, ``ETH2``, ``KSM``, ``DOT``, ``AVAX``, ``SOL``.
 
    When addresses are provided, those addresses are read from the blockchain balances cache for the selected blockchain. Results include balances above the ``value_threshold`` if specified.
 
@@ -8540,7 +8547,7 @@ Getting blockchain account data
 .. http:get:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
-      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
+      Supported blockchains: ``"BTC", "BCH", "DOGE", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
 
    Doing a GET on the blockchains endpoint with a specific blockchain queries account data information for that blockchain.
 
@@ -10234,7 +10241,7 @@ Adding blockchain accounts
 .. http:put:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
-      Supported blockchains: ``"BTC", "BCH", "KSM", "DOT", "SOLANA"`` and all supported EVM chains.
+      Supported blockchains: ``"BTC", "BCH", "DOGE", "KSM", "DOT", "SOLANA"`` and all supported EVM chains.
 
       Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 
@@ -10604,7 +10611,7 @@ Editing blockchain account data
 .. http:patch:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
-      Supported blockchains: ``"BTC", "BCH", "KSM", "DOT", "SOLANA"`` and all supported EVM chains.
+      Supported blockchains: ``"BTC", "BCH", "DOGE", "KSM", "DOT", "SOLANA"`` and all supported EVM chains.
 
       Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 
@@ -10677,7 +10684,7 @@ Account operations by chain type
 .. http:patch:: /api/(version)/blockchains/type/(chain_type)/accounts
 
    .. note::
-      Supported blockchains types: ``EVM, BITCOIN, SUBSTRATE, SOLANA``
+      Supported blockchains types: ``EVM, BITCOIN, SUBSTRATE, SOLANA, DOGECOIN``
 
    .. note::
       This endpoint doesn't support ENS resolution
@@ -10712,7 +10719,7 @@ Account operations by chain type
       }
 
 
-   :reqjson string chain_type: The type of blockchain where the address was added. ``EVM``, ``BITCOIN`` or ``SUBSTRATE``
+   :reqjson string chain_type: The type of blockchain where the address was added. ``EVM``, ``BITCOIN``, ``SUBSTRATE``, ``SOLANA`` or ``DOGECOIN``
    :reqjson list[object] accounts: A list of account data to edit.
    :reqjsonarr string address: The address of the account to edit. It doesn't allow ENS names.
    :reqjsonarr string[optional] label: An optional label to edit for the account. Cannot be empty string.
@@ -10742,7 +10749,7 @@ Account operations by chain type
 .. http:delete:: /api/(version)/blockchains/type/(chain_type)/accounts
 
    .. note::
-      Supported blockchains types: ``EVM, BITCOIN, SUBSTRATE, SOLANA``
+      Supported blockchains types: ``EVM, BITCOIN, SUBSTRATE, SOLANA, DOGECOIN``
 
    .. note::
       This endpoint doesn't support ENS resolution
@@ -10764,7 +10771,7 @@ Account operations by chain type
 
       {"accounts": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]}
 
-   :reqjson string chain_type: The type of blockchain where the address was added. ``EVM``, ``BITCOIN`` or ``SUBSTRATE``
+   :reqjson string chain_type: The type of blockchain where the address was added. ``EVM``, ``BITCOIN``, ``SUBSTRATE``, ``SOLANA`` or ``DOGECOIN``
    :reqjson list[string] accounts: A list of accounts to delete for the given blockchain. Each account Can only an address. ENS is not supported.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
@@ -10794,7 +10801,7 @@ Removing blockchain accounts
 .. http:delete:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
-      Supported blockchains: ``"BTC", "BCH", "KSM", "DOT", "SOLANA"`` and all supported EVM chains.
+      Supported blockchains: ``"BTC", "BCH", "DOGE", "KSM", "DOT", "SOLANA"`` and all supported EVM chains.
 
       Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 

@@ -18,6 +18,7 @@ from rotkehlchen.constants.assets import (
     A_SOL,
     A_XDAI,
 )
+from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.types import ChainID, SupportedBlockchain
 
 
@@ -28,6 +29,7 @@ def test_supported_blockchain_native_token():
         SupportedBlockchain.ETHEREUM_BEACONCHAIN: A_ETH2,
         SupportedBlockchain.BITCOIN: A_BTC,
         SupportedBlockchain.BITCOIN_CASH: A_BCH,
+        SupportedBlockchain.DOGECOIN: A_DOGE,
         SupportedBlockchain.KUSAMA: A_KSM,
         SupportedBlockchain.AVALANCHE: A_AVAX,
         SupportedBlockchain.POLKADOT: A_DOT,

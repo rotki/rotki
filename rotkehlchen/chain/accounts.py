@@ -32,6 +32,7 @@ class BlockchainAccounts:
     ink: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     btc: tuple[BTCAddress, ...] = field(default_factory=tuple)
     bch: tuple[BTCAddress, ...] = field(default_factory=tuple)
+    doge: tuple[BTCAddress, ...] = field(default_factory=tuple)
     ksm: tuple[SubstrateAddress, ...] = field(default_factory=tuple)
     dot: tuple[SubstrateAddress, ...] = field(default_factory=tuple)
     avax: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)

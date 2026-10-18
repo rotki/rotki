@@ -141,6 +141,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
     from rotkehlchen.chain.bitcoin.manager import BitcoinCommonManager
     from rotkehlchen.chain.decoding.types import CounterpartyDetails
+    from rotkehlchen.chain.dogecoin.manager import DogecoinManager
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.chain.ethereum.modules.eth2.structures import (
@@ -306,6 +307,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             zksync_lite_manager: ZksyncLiteManager,
             bitcoin_manager: BitcoinManager,
             bitcoin_cash_manager: BitcoinCashManager,
+            dogecoin_manager: DogecoinManager,
             solana_manager: SolanaManager,
             msg_aggregator: MessagesAggregator,
             database: DBHandler,
@@ -337,6 +339,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.zksync_lite = zksync_lite_manager
         self.bitcoin = bitcoin_manager
         self.bitcoin_cash = bitcoin_cash_manager
+        self.dogecoin = dogecoin_manager
         self.solana = solana_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
@@ -349,6 +352,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.defi_lock = Semaphore()
         self.btc_lock = Semaphore()
         self.bch_lock = Semaphore()
+        self.doge_lock = Semaphore()
         self.eth_lock = Semaphore()
         self.ksm_lock = Semaphore()
         self.dot_lock = Semaphore()
@@ -1374,6 +1378,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_chain_manager(self, blockchain: Literal[SupportedBlockchain.SOLANA]) -> SolanaManager:
+        ...
+
+    @overload
+    def get_chain_manager(self, blockchain: Literal[SupportedBlockchain.DOGECOIN]) -> DogecoinManager:  # noqa: E501
         ...
 
     @overload
