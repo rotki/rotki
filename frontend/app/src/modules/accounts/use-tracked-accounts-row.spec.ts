@@ -33,6 +33,7 @@ describe('modules/accounts/use-tracked-accounts-row', () => {
       'add-bitcoin',
       'add-solana',
       'add-substrate',
+      'add-dogecoin',
       'add-exchange',
       'add-bank',
       'add-manual',

@@ -59,6 +59,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/accounts/dogecoin/': RouteRecordInfo<
+      '/accounts/dogecoin/',
+      '/accounts/dogecoin',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/accounts/evm/[[tab]]': RouteRecordInfo<
       '/accounts/evm/[[tab]]',
       '/accounts/evm/:tab?',
@@ -589,6 +596,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/accounts/bitcoin/index.vue': {
       routes:
         | '/accounts/bitcoin/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/accounts/dogecoin/index.vue': {
+      routes:
+        | '/accounts/dogecoin/'
       views:
         | never
       pathParamNames:

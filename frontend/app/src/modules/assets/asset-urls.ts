@@ -48,6 +48,11 @@ export const explorerUrls: AssetExplorerUrls = {
     block: 'https://mempool.space/block/',
     transaction: 'https://mempool.space/tx/',
   },
+  [Blockchain.DOGE]: {
+    address: 'https://sochain.com/doge/address/',
+    block: 'https://sochain.com/doge/block/',
+    transaction: 'https://sochain.com/doge/tx/',
+  },
   [Blockchain.DOT]: {
     address: 'https://polkadot.subscan.io/account/',
     block: 'https://polkadot.subscan.io/block',

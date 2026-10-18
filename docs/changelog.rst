@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`10259` Dogecoin addresses can now be tracked under Accounts, with their DOGE balances. The balances are queried from SoChain, or from Dogechain when SoChain can't answer. Neither needs an API key.
 * :bug:`-` Exporting accounting rules in the browser no longer downloads a file containing only ``false`` when the export fails. A failed automatic match of asset movements or bridge transactions, accounting rules export or reset, PnL debug data import, price delete, token details lookup or Gnosis Pay sign-in is now reported only by its row in the task centre, without a second popup.
 * :bug:`-` Logging out no longer resets preferences kept on this device. The login screen now stays in your language instead of switching to English, the pinned panel keeps its width, the remembered WalletConnect wallet is kept, and newly detected tokens your own limits keep are no longer deleted.
 * :bug:`-` Going back (Alt+Left, or Cmd+Left on macOS) while a dialog, the action center or the navigation drawer is open now closes it instead of leaving the page underneath. Before, it skipped every open dialog at once and landed on whatever page was visited earlier.

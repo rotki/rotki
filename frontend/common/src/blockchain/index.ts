@@ -3,6 +3,7 @@ export enum Blockchain {
   ETH2 = 'eth2',
   BTC = 'btc',
   BCH = 'bch',
+  DOGE = 'doge',
   KSM = 'ksm',
   DOT = 'dot',
   SOLANA = 'solana',

@@ -2476,6 +2476,7 @@
       },
       "categories": {
         "bitcoin": "Bitcoin Address",
+        "dogecoin": "Dogecoin Address",
         "evm": "EVM Address",
         "solana": "Solana Address",
         "substrate": "Substrate Address"
@@ -5056,6 +5057,7 @@
     "accounts": "Accounts",
     "accounts_sub": {
       "bitcoin": "Bitcoin @:navigation_menu.accounts",
+      "dogecoin": "Dogecoin @:navigation_menu.accounts",
       "evm": "EVM @:navigation_menu.accounts",
       "solana": "Solana @:navigation_menu.accounts",
       "substrate": "Substrate @:navigation_menu.accounts"
