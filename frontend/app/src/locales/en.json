@@ -882,6 +882,7 @@
         },
         "success": {
           "message": "The data sync operation was completed successfully.",
+          "message_download": "The data sync operation was completed successfully. The restored backup holds your data as of {date}.",
           "title": "Forced sync"
         }
       },

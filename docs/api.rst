@@ -532,7 +532,21 @@ Handling user creation, sign-in, log-out and querying
           "message": ""
       }
 
-   :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
+   :resjson bool result: The result field in this response is a simple boolean value indicating success or failure. A successful ``"download"`` instead returns an object, see below.
+
+   **Example Response** (successful download):
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"last_modify_ts": 1760882400},
+          "message": ""
+      }
+
+   :resjson int last_modify_ts: The last write timestamp of the restored database at the time it was uploaded, taken from the authenticated part of the backup so the server can not change it. ``null`` for a backup in the old format, which does not carry one.
    :statuscode 200: API key/secret deleted successfully
    :statuscode 400: Provided call is in some way malformed.
    :statuscode 401: The user does not have premium access.

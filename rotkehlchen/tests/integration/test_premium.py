@@ -937,13 +937,14 @@ def test_upload_skipped_when_backup_limit_is_zero(rotkehlchen_instance: Rotkehlc
         'maybe_upload_data_to_server',
     ) as upload_mock:
         assert rotkehlchen_instance.task_manager._maybe_schedule_db_upload() is None
-        success, message = rotkehlchen_instance.premium_sync_manager.sync_data(
+        success, message, restored_backup_ts = rotkehlchen_instance.premium_sync_manager.sync_data(
             action='upload',
             perform_migrations=False,
         )
 
     assert success is False
     assert message == 'Upload failed.'
+    assert restored_backup_ts is None
     upload_mock.assert_not_called()
 
 

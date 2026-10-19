@@ -75,8 +75,14 @@ def test_upload_db(rotkehlchen_api_server: APIServer) -> None:
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_pull_db(rotkehlchen_api_server: APIServer) -> None:
-    """Just a smoke test that the api works fine for this endpoint.
+@pytest.mark.parametrize(('legacy', 'restored_backup_ts'), [(True, None), (False, 1760882400)])
+def test_pull_db(
+        rotkehlchen_api_server: APIServer,
+        legacy: bool,
+        restored_backup_ts: Timestamp | None,
+) -> None:
+    """Just a smoke test that the api works fine for this endpoint, and that a forced
+    download returns the authenticated timestamp of the restored backup.
 
     Actual functionality tested in tests/integration/test_premium.py
     """
@@ -90,14 +96,14 @@ def test_pull_db(rotkehlchen_api_server: APIServer) -> None:
     patches.extend((
         create_patched_requests_get_for_premium(
             session=rotki.premium.session,
-            metadata_last_modify_ts=0,
+            metadata_last_modify_ts=restored_backup_ts or 0,
             metadata_data_hash=b'',
             metadata_data_size=9999999999,
             saved_data=b'foo',
         ), patch.object(
             rotki.premium_sync_manager.data,
             'decrypt_db',
-            return_value=RemoteBackup(legacy=True, last_modify_ts=None, user_db=b''),
+            return_value=RemoteBackup(legacy=legacy, last_modify_ts=restored_backup_ts, user_db=b''),  # noqa: E501
         ), patch.object(
             rotki.premium_sync_manager.data,
             'restore_db',
@@ -113,7 +119,7 @@ def test_pull_db(rotkehlchen_api_server: APIServer) -> None:
         task_id = assert_ok_async_response(response)
         result = wait_for_async_task(rotkehlchen_api_server, task_id)
         assert result['message'] == ''
-        assert result['result'] is True
+        assert result['result'] == {'last_modify_ts': restored_backup_ts}
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

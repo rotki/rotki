@@ -135,7 +135,7 @@ class PremiumSyncManager(LockableQueryMixIn):
             self,
             perform_migrations: bool,
             remote_metadata: RemoteMetadata | None,
-    ) -> tuple[bool, str]:
+    ) -> tuple[bool, str, Timestamp | None]:
         """
         Performs syncing of data from server and replaces local db. If perform_migrations
         is True then once pulled any needed migrations will be performed. Otherwise,
@@ -146,7 +146,9 @@ class PremiumSyncManager(LockableQueryMixIn):
         the same last_modify_ts. Only a pull the user forced passes None, and then the
         metadata is queried here.
 
-        Returns true for success and False for error/failure
+        Returns true for success and False for error/failure, an error message and the
+        authenticated last_modify_ts of the restored backup. That timestamp is None for a
+        legacy backup, which has none, and on failure.
 
         May raise:
         - PremiumAuthenticationError due to an UnableToDecryptRemoteData
@@ -157,7 +159,7 @@ class PremiumSyncManager(LockableQueryMixIn):
         match remote_metadata.
         """
         if self.premium is None:
-            return False, 'Pulling failed. User does not have active premium.'
+            return False, 'Pulling failed. User does not have active premium.', None
 
         try:
             if remote_metadata is None:
@@ -165,10 +167,10 @@ class PremiumSyncManager(LockableQueryMixIn):
             result = self.premium.pull_data()
         except (RemoteError, PremiumAuthenticationError) as e:
             log.debug('sync from server -- pulling failed.', error=str(e))
-            return False, f'Pulling failed: {e!s}'
+            return False, f'Pulling failed: {e!s}', None
 
         if result is None:
-            return False, 'No data found'
+            return False, 'No data found', None
 
         if not is_backup_format(result):
             with self.data.db.conn.read_ctx() as cursor:
@@ -196,7 +198,7 @@ class PremiumSyncManager(LockableQueryMixIn):
             self.data.restore_db(backup.user_db)
         except DataIntegrityError as e:
             log.error('sync from server -- downloaded db integrity check failed', error=str(e))
-            return False, str(e)
+            return False, str(e), None
 
         if backup.legacy is False:  # after the restore, since it replaced the whole DB
             with self.data.db.conn.write_ctx() as write_cursor:  # don't bump last_write_ts
@@ -213,7 +215,7 @@ class PremiumSyncManager(LockableQueryMixIn):
         if perform_migrations:
             self.migration_manager.maybe_migrate_data()
 
-        return True, ''
+        return True, '', backup.last_modify_ts
 
     def check_if_should_sync(self, force_upload: bool) -> bool:
         # if user has no premium do nothing
@@ -383,7 +385,9 @@ class PremiumSyncManager(LockableQueryMixIn):
             self,
             action: Literal['upload', 'download'],
             perform_migrations: bool,
-    ) -> tuple[bool, str]:
+    ) -> tuple[bool, str, Timestamp | None]:
+        """The timestamp is the authenticated last_modify_ts of a downloaded backup, always
+        None for an upload. See _sync_data_from_server_and_replace_local."""
         msg = ''
         if action == 'upload':
             if self.check_if_should_sync(force_upload=True) is False:
@@ -395,7 +399,7 @@ class PremiumSyncManager(LockableQueryMixIn):
                 msg = 'Upload failed.'
                 if error_msg is not None:
                     msg += f' {error_msg}'
-            return success, msg
+            return success, msg, None
 
         return self._sync_data_from_server_and_replace_local(
             perform_migrations=perform_migrations,
