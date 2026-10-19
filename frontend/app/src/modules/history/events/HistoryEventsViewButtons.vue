@@ -34,7 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
   <RuiButtonGroup color="primary">
     <RuiButton
       color="primary"
-      class="rounded-r-none [&>span]:hidden! lg:[&>span]:inline!"
+      class="[&>span]:hidden! lg:[&>span]:inline!"
       data-testid="history-events-add"
       @click="emit('show:dialog', { type: DIALOG_TYPES.EVENT_FORM, data: { type: 'add', nextSequenceId: '0' } })"
     >
@@ -50,7 +50,7 @@ const { t } = useI18n({ useScope: 'global' });
       <template #activator="{ attrs }">
         <RuiButton
           color="primary"
-          class="h-9 px-2.5 rounded-l-none border-l border-rui-primary-darker"
+          class="h-9 px-2.5"
           :aria-label="t('common.actions.more')"
           data-testid="history-events-add-menu"
           v-bind="attrs"
