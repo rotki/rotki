@@ -72,7 +72,7 @@ describe('modules/staking/components/StakingLocationTitle', () => {
   it('should name the current location on the switcher', () => {
     const wrapper = createWrapper();
 
-    expect(wrapper.find('[data-testid=staking-location-switch]').text()).toBe('Liquity');
+    expect(wrapper.find('[data-testid=staking-location-switch-name]').text()).toBe('Liquity');
   });
 
   it('should list every location and mark the current one', () => {
