@@ -44,7 +44,6 @@ const hidePagination = computed<boolean>(() => fitsEveryLimit(buckets.length));
       :cols="cols"
       :rows="rows"
       row-attr="id"
-      :hide-default-header="hidePagination"
       :hide-default-footer="hidePagination"
       dense
       outlined

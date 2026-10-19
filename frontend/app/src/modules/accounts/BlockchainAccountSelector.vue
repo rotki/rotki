@@ -152,7 +152,6 @@ function getAccount(account: AddressAccount): Account {
       :required="required"
       :clearable="!required"
       :dense="dense"
-      outlined
       :hint="field?.hint"
       :label="label"
       class="blockchain-account-selector"

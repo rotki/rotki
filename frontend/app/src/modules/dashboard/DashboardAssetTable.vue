@@ -131,7 +131,6 @@ watch(modelSearch, () => setPage(1));
       sticky-header
       single-expand
       dense
-      :hide-default-header="hidePagination"
       :hide-default-footer="hidePagination"
       class="rounded-t-none!"
       :class="{ 'border-t border-default': !hidePagination }"

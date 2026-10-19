@@ -60,7 +60,6 @@ function getRowClass(row: PotentialMatchRow): string {
       :item-class="getRowClass"
       dense
       outlined
-      hide-default-header
       :empty="{ label: emptyLabel }"
       :loading="loading"
     >

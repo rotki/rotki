@@ -39,11 +39,10 @@ const RuiDataTableStub = defineComponent({
   props: {
     empty: { default: undefined, type: Object },
     hideDefaultFooter: { default: false, type: Boolean },
-    hideDefaultHeader: { default: false, type: Boolean },
     rows: { default: () => [], type: Array },
   },
   setup(props, { slots }): () => VNode {
-    return () => h('div', { 'data-pagers': `${props.hideDefaultHeader ? 'no-top' : 'top'},${props.hideDefaultFooter ? 'no-bottom' : 'bottom'}` }, [
+    return () => h('div', { 'data-pager': props.hideDefaultFooter ? 'hidden' : 'shown' }, [
       ...props.rows.map(row => h('div', slots['item.value']?.({ row }))),
       h('div', slots['body.append']?.({})),
       ...(props.rows.length === 0 ? [h('div', { 'data-testid': 'empty' }, props.empty?.description)] : []),
@@ -194,20 +193,20 @@ describe('dashboardAssetTable', () => {
     expect(wrapper.find('[data-testid=search]').exists()).toBe(true);
   });
 
-  it('should hide both pagers while every rows-per-page option fits all rows, and show both once one does not', () => {
+  it('should hide the pager while every rows-per-page option fits all rows, and show it once one does not', () => {
     wrapper = createWrapper(createBalances(10));
-    expect(wrapper.get('[data-pagers]').attributes('data-pagers')).toBe('no-top,no-bottom');
+    expect(wrapper.get('[data-pager]').attributes('data-pager')).toBe('hidden');
 
     wrapper.unmount();
     wrapper = createWrapper(createBalances(11));
-    expect(wrapper.get('[data-pagers]').attributes('data-pagers')).toBe('top,bottom');
+    expect(wrapper.get('[data-pager]').attributes('data-pager')).toBe('shown');
   });
 
-  it('should keep both pagers when rows fit one page only at a raised limit, so the limit can come back down', async () => {
+  it('should keep the pager when rows fit one page only at a raised limit, so the limit can come back down', async () => {
     wrapper = createWrapper(createBalances(12));
     wrapper.findComponent(RuiDataTableStub).vm.$emit('update:pagination', { limit: 25, page: 1, total: 12 });
     await nextTick();
 
-    expect(wrapper.get('[data-pagers]').attributes('data-pagers')).toBe('top,bottom');
+    expect(wrapper.get('[data-pager]').attributes('data-pager')).toBe('shown');
   });
 });
