@@ -11,7 +11,6 @@ import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/Snap
 import SnapshotEditorToolbar from '@/modules/dashboard/snapshots/components/SnapshotEditorToolbar.vue';
 import SnapshotLocationsDrawer from '@/modules/dashboard/snapshots/components/SnapshotLocationsDrawer.vue';
 import SnapshotSummary from '@/modules/dashboard/snapshots/components/SnapshotSummary.vue';
-import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
 import {
   type Filters,
   isolateZeroValue,
@@ -20,7 +19,6 @@ import {
 import { useSnapshotDraft } from '@/modules/dashboard/snapshots/composables/use-snapshot-draft';
 import { useSnapshotList } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import { useSnapshotStore } from '@/modules/dashboard/snapshots/use-snapshot-store';
-import { convertUsdToFiat } from '@/modules/dashboard/snapshots/utils/snapshot-fx';
 import { getTotalValue } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 
@@ -78,23 +76,10 @@ const {
   undo,
 } = useSnapshotDraft(loaded);
 
-const { isUsd, loading: rateLoading, rate } = useHistoricFiatConversion(timestamp);
-
 const netWorth = computed<BigNumber>(() => {
   const current = get(draft);
   return current ? getTotalValue(current.locationDataSnapshot) : Zero;
 });
-
-const exportBalance = computed<BigNumber>(() => {
-  const value = get(netWorth);
-  return get(isUsd) ? value : convertUsdToFiat(value, get(rate));
-});
-
-/**
- * Skeletons the export dialog's balance while the historic rate resolves, as the list view does,
- * rather than showing a misleading converted-from-zero figure.
- */
-const exportBalanceLoading = computed<boolean>(() => !get(isUsd) && get(rateLoading));
 
 /** Snapshot timestamps oldest-first, used for prev/next navigation + the delta. */
 const orderedTimestamps = computed<number[]>(() => get(rows).map(row => row.timestamp).sort((a, b) => a - b));
@@ -376,8 +361,7 @@ useEventListener(window, 'beforeunload', warnBeforeUnload);
     <ExportSnapshotDialog
       v-model="exportDialog"
       :timestamp="timestamp"
-      :balance="exportBalance"
-      :loading="exportBalanceLoading"
+      :balance="netWorth"
     />
   </div>
 </template>
