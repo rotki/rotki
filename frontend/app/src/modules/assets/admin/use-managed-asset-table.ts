@@ -26,9 +26,9 @@ interface UseManagedAssetTableReturn {
    * Whether marking the selection as spam is unavailable.
    *
    * @remarks
-   * The action stays available while nothing is selected, because the button is what the user
-   * reaches for first. Once there is a selection it is only offered when at least one of the
-   * selected assets is of a type that can be spam.
+   * Unavailable while nothing is selected, like the ignore actions beside it. Once there is a
+   * selection it is only offered when at least one of the selected assets is of a type that can
+   * be spam.
    */
   spamDisabled: ComputedRef<boolean>;
 }
@@ -101,7 +101,7 @@ export function useManagedAssetTable(
   const spamDisabled = computed<boolean>(() => {
     const selectedIds = toValue(selected);
     if (selectedIds.length === 0)
-      return false;
+      return true;
 
     const assets = get(data);
     return !selectedIds.some((id) => {

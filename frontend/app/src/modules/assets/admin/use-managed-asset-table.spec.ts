@@ -112,12 +112,12 @@ describe('modules/assets/admin/useManagedAssetTable', () => {
   });
 
   describe('whether the selection can be marked as spam', () => {
-    it('should stay available while nothing is selected', () => {
-      set(collection, page([asset({ assetType: 'own chain', identifier: 'BTC' })]));
+    it('should be unavailable while nothing is selected', () => {
+      set(collection, page([asset({ assetType: EVM_TOKEN, identifier: 'eip155:1/erc20:0xABC' })]));
 
       const { spamDisabled } = table();
 
-      expect(get(spamDisabled)).toBe(false);
+      expect(get(spamDisabled)).toBe(true);
     });
 
     it('should be available when a selected asset is of a spammable type', () => {

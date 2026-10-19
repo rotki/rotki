@@ -15,6 +15,7 @@ import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
  */
 const pillParams = defineModel<PillParams>('pillParams', { required: true });
 const selected = defineModel<string[]>('selected', { required: true });
+const selectionMode = defineModel<boolean>('selectionMode', { required: true });
 const filtersModel = defineModel<Filters>('matches', { required: true });
 
 const { ignoredHandling, spamDisabled = false } = defineProps<{
@@ -34,19 +35,22 @@ const { t } = useI18n({ useScope: 'global' });
 
 const pillLabels = usePillBarLabels();
 
-const { clearSelection, disabledIgnoreActions } = useManagedAssetActions({
+const { clearSelection, disabledIgnoreActions, exitSelection } = useManagedAssetActions({
   ignoredHandling: () => ignoredHandling,
   onIgnoredStale: (): void => emit('refresh:ignored'),
   selected,
+  selectionMode,
 });
 </script>
 
 <template>
   <TableSelectionBar
-    v-if="selected.length > 0"
+    v-if="selectionMode"
     class="grow"
     :count="selected.length"
+    exitable
     @clear="clearSelection()"
+    @exit="exitSelection()"
   >
     <TableSelectionAction
       icon="lu-eye-off"
@@ -77,12 +81,34 @@ const { clearSelection, disabledIgnoreActions } = useManagedAssetActions({
       {{ t('asset_table.mark_spam') }}
     </TableSelectionAction>
   </TableSelectionBar>
-  <PillFilterBar
-    v-else
-    v-model:matches="filtersModel"
-    v-model:params="pillParams"
-    class="grow"
-    :fields="fields"
-    :labels="pillLabels"
-  />
+  <template v-else>
+    <RuiTooltip
+      :options="{ placement: 'top' }"
+      :open-delay="400"
+    >
+      <template #activator>
+        <RuiButton
+          variant="text"
+          data-testid="managed-assets-select"
+          @click="selectionMode = true"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-copy-check"
+              size="18"
+            />
+          </template>
+          {{ t('common.actions.select') }}
+        </RuiButton>
+      </template>
+      {{ t('asset_table.enter_selection_mode') }}
+    </RuiTooltip>
+    <PillFilterBar
+      v-model:matches="filtersModel"
+      v-model:params="pillParams"
+      class="grow"
+      :fields="fields"
+      :labels="pillLabels"
+    />
+  </template>
 </template>

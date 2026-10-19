@@ -6,18 +6,20 @@ import { useManagedAssetActions } from './use-managed-asset-actions';
 
 let ignoredHandling: Ref<IgnoredAssetsHandlingType>;
 let selected: Ref<string[]>;
+let selectionMode: Ref<boolean>;
 let onIgnoredStale: ReturnType<typeof vi.fn<() => void>>;
 let scope: ReturnType<typeof effectScope>;
 
 function actions(): ReturnType<typeof useManagedAssetActions> {
   scope = effectScope();
-  return scope.run(() => useManagedAssetActions({ ignoredHandling, onIgnoredStale, selected }))!;
+  return scope.run(() => useManagedAssetActions({ ignoredHandling, onIgnoredStale, selected, selectionMode }))!;
 }
 
 describe('modules/assets/admin/managed/useManagedAssetActions', () => {
   beforeEach(() => {
     ignoredHandling = shallowRef<IgnoredAssetsHandlingType>(IgnoredAssetHandlingType.NONE);
     selected = ref<string[]>(['eip155:1/erc20:0xABC']);
+    selectionMode = shallowRef<boolean>(true);
     onIgnoredStale = vi.fn<() => void>();
   });
 
@@ -83,11 +85,28 @@ describe('modules/assets/admin/managed/useManagedAssetActions', () => {
   });
 
   describe('the selection', () => {
-    it('should clear it', () => {
+    it('should clear it and stay in selection mode', () => {
       const { clearSelection } = actions();
       clearSelection();
 
       expect(get(selected)).toEqual([]);
+      expect(get(selectionMode)).toBe(true);
+    });
+
+    it('should drop it and leave selection mode on exit', () => {
+      const { exitSelection } = actions();
+      exitSelection();
+
+      expect(get(selected)).toEqual([]);
+      expect(get(selectionMode)).toBe(false);
+    });
+
+    it('should offer neither ignore action while nothing is selected', () => {
+      set(selected, []);
+
+      const { disabledIgnoreActions } = actions();
+
+      expect(get(disabledIgnoreActions)).toEqual({ ignore: true, unIgnore: true });
     });
   });
 });

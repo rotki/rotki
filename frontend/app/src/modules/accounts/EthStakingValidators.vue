@@ -47,6 +47,14 @@ const { getOwnershipPercentage, useTotal, useTotalAmount } = useEthValidatorUtil
 const totalValue = useTotal(rows);
 const totalAmount = useTotalAmount(rows);
 
+const selectionMode = shallowRef<boolean>(false);
+
+/** `undefined` outside selection mode, which is what makes the table drop its checkbox column. */
+const tableSelection = computed<number[] | undefined>({
+  get: () => (get(selectionMode) ? get(modelSelected) : undefined),
+  set: (value?: number[]) => set(modelSelected, value ?? []),
+});
+
 function edit(account: EthereumValidator) {
   emit('edit', editValidator(account));
 }
@@ -66,13 +74,14 @@ defineExpose({
       <EthStakingValidatorsToolbar
         v-model:filters="filters"
         v-model:selected="modelSelected"
+        v-model:selection-mode="selectionMode"
         :fields="fields"
         :deleting="accountOperation"
         @delete="deleteSelectedValidators()"
       />
     </template>
     <RuiDataTable
-      v-model="modelSelected"
+      v-model="tableSelection"
       v-model:sort.external="sort"
       v-model:pagination.external="pagination"
       dense
