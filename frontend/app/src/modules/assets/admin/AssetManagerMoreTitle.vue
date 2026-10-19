@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type AssetManagerMoreTool, useAssetManagerMore } from '@/modules/assets/admin/use-asset-manager-more';
+import BreadcrumbSwitchButton from '@/modules/shell/components/BreadcrumbSwitchButton.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
@@ -43,9 +44,7 @@ async function pick(tool: AssetManagerMoreTool): Promise<void> {
       :options="{ placement: 'bottom-start' }"
     >
       <template #activator="{ attrs }">
-        <button
-          type="button"
-          class="flex items-center gap-2 -mx-2 px-2 h-8 rounded-rui-control text-rui-text hover:bg-rui-hover transition-colors"
+        <BreadcrumbSwitchButton
           :aria-label="t('asset_management.more.switch_tool')"
           data-testid="asset-manager-more-switch"
           v-bind="attrs"
@@ -56,13 +55,8 @@ async function pick(tool: AssetManagerMoreTool): Promise<void> {
             size="16"
             class="text-rui-text-secondary"
           />
-          {{ current?.text }}
-          <RuiIcon
-            name="lu-chevron-down"
-            size="16"
-            class="text-rui-text-secondary"
-          />
-        </button>
+          <span data-testid="asset-manager-more-switch-name">{{ current?.text }}</span>
+        </BreadcrumbSwitchButton>
       </template>
       <div class="w-72 p-1 flex flex-col gap-0.5">
         <button

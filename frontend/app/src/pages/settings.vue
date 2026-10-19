@@ -2,6 +2,7 @@
 import { msg } from '@/message-key';
 import { type TabContent, tabKey } from '@/modules/core/common/tabs';
 import SettingsSearch from '@/modules/settings/SettingsSearch.vue';
+import BreadcrumbSwitchButton from '@/modules/shell/components/BreadcrumbSwitchButton.vue';
 import TabNavigation from '@/modules/shell/components/TabNavigation.vue';
 import { useNavTabs } from '@/modules/shell/layout/use-nav-tabs';
 
@@ -61,19 +62,12 @@ function isWithin(path: string, base: string): boolean {
           :options="{ placement: 'bottom-start' }"
         >
           <template #activator="{ attrs }">
-            <button
-              type="button"
-              class="flex items-center gap-2 -mx-2 px-2 h-8 rounded-rui-control text-rui-text hover:bg-rui-hover transition-colors"
+            <BreadcrumbSwitchButton
               data-testid="settings-section-switch"
               v-bind="attrs"
             >
               {{ current?.text }}
-              <RuiIcon
-                name="lu-chevron-down"
-                size="16"
-                class="text-rui-text-secondary"
-              />
-            </button>
+            </BreadcrumbSwitchButton>
           </template>
           <div class="w-60 p-1 flex flex-col">
             <RouterLink

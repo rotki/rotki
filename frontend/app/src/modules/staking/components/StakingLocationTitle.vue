@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { StakingLocation } from '@/pages/staking/staking-pages';
 import AppImage from '@/modules/shell/components/AppImage.vue';
+import BreadcrumbSwitchButton from '@/modules/shell/components/BreadcrumbSwitchButton.vue';
 import { type StakingInfo, useStakingLocations } from '@/pages/staking/use-staking-locations';
 
 const { location } = defineProps<{
@@ -65,9 +66,7 @@ watch(open, (isOpen) => {
       :options="{ placement: 'bottom-start' }"
     >
       <template #activator="{ attrs }">
-        <button
-          type="button"
-          class="flex items-center gap-2 -mx-2 px-2 h-8 rounded-rui-control text-rui-text hover:bg-rui-hover transition-colors"
+        <BreadcrumbSwitchButton
           :aria-label="t('staking_page.switch_location')"
           data-testid="staking-location-switch"
           v-bind="attrs"
@@ -78,13 +77,8 @@ watch(open, (isOpen) => {
             size="1.25rem"
             fit="contain"
           />
-          {{ current?.name }}
-          <RuiIcon
-            name="lu-chevron-down"
-            size="16"
-            class="text-rui-text-secondary"
-          />
-        </button>
+          <span data-testid="staking-location-switch-name">{{ current?.name }}</span>
+        </BreadcrumbSwitchButton>
       </template>
       <div class="w-64 p-2 flex flex-col gap-1">
         <RuiTextField
