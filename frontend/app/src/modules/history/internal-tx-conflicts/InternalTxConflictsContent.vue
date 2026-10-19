@@ -269,7 +269,6 @@ defineExpose({
             :disabled="isRunning || conflicts.length === 0"
             color="primary"
             hide-details
-            class="mt-0!"
             @update:model-value="toggleAllOnPage(conflicts)"
           />
         </template>
@@ -279,7 +278,6 @@ defineExpose({
             :disabled="isRunning"
             color="primary"
             hide-details
-            class="mt-0!"
             @update:model-value="toggleSelection(row)"
           />
         </template>
