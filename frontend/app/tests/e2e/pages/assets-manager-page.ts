@@ -120,7 +120,7 @@ export class AssetsManagerPage {
     await this.searchAsset(asset);
     const row = await this.findRowBySymbol(asset);
 
-    const switchInput = row.locator('td:nth-child(6) input');
+    const switchInput = row.locator('[data-testid=managed-asset-ignore-switch] input');
     // Wait for the switch to be enabled (not loading)
     await expect(switchInput).toBeEnabled();
     const isChecked = await switchInput.isChecked();
@@ -153,7 +153,7 @@ export class AssetsManagerPage {
     await this.searchAsset(asset);
     const row = await this.findRowBySymbol(asset);
 
-    const switchInput = row.locator('td:nth-child(6) input');
+    const switchInput = row.locator('[data-testid=managed-asset-ignore-switch] input');
     // Wait for the switch to be enabled (not loading)
     await expect(switchInput).toBeEnabled();
     const isChecked = await switchInput.isChecked();
