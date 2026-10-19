@@ -40,7 +40,10 @@ class BackupKdfParams(NamedTuple):
     lanes: int
 
 
-DEFAULT_BACKUP_KDF_PARAMS: Final = BackupKdfParams(time_cost=8, memory_kib=256 * 1024, lanes=8)
+# Below the caps that decrypt_backup accepts, so a later release can raise the cost and devices
+# one release behind still read its backups. Time any increase on ARM: the defaults take ~0.23s
+# on an Apple M2 against ~0.035s on a Ryzen 9 7940HS, and the caps ~6.35s on the M2.
+DEFAULT_BACKUP_KDF_PARAMS: Final = BackupKdfParams(time_cost=3, memory_kib=64 * 1024, lanes=4)
 
 
 def is_backup_format(data: bytes) -> bool:
@@ -164,7 +167,7 @@ def decrypt_backup(password: bytes, data: bytes) -> tuple[Timestamp, bytearray]:
     ) = _HEADER.unpack(header)
     # The header is only authenticated once the first chunk opens, so a crafted header could
     # make us run the KDF with any parameters. Cap that work before deriving anything. The
-    # defaults sit at these caps, so raising them needs higher caps released a version earlier.
+    # defaults sit below these caps, so the cost can go up to them with no reader change.
     if (
         version != BACKUP_VERSION or kdf != _KDF_ARGON2ID or
         not 1 <= time_cost <= 8 or
