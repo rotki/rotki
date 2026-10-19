@@ -25,6 +25,7 @@ vi.mock('@/modules/statistics/use-graph', async (): Promise<{ useGraph: () => un
     useGraph: (): unknown => ({
       baseColor: computed(() => state.baseColor),
       gradient: computed(() => ({ color: state.baseColor })),
+      secondaryColor: computed(() => '#3f3f46'),
     }),
   };
 });
@@ -78,7 +79,17 @@ describe('useNetValueChartConfig', () => {
     expect(zooms).toHaveLength(2);
     expect(zooms[0].type).toBe('slider');
     expect(zooms[1].type).toBe('inside');
-    expect(get(option.chartOption).grid).toMatchObject({ bottom: 56 });
+    expect(get(option.chartOption).grid).toMatchObject({ bottom: 48 });
+  });
+
+  it('should tint the slider range with the graph color and keep its handles neutral', () => {
+    state.showGraphRangeSelector = true;
+    const [slider] = dataZoom(useNetValueChartConfig(() => chartData()));
+    expect(slider).toMatchObject({
+      fillerColor: '#1234561f',
+      handleStyle: { borderColor: '#a1a1aa', color: '#ffffff' },
+      moveHandleSize: 0,
+    });
   });
 
   it('should persist the active zoom bounds from the range in seconds', () => {
