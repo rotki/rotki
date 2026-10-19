@@ -4427,10 +4427,6 @@
       "resolve": "重新拉取并解码",
       "resolve_selected": "处理所选（{count}）"
     },
-    "selection": {
-      "clear": "清除",
-      "selected": "已选择 {count} 项"
-    },
     "status": {
       "never": "从未"
     },

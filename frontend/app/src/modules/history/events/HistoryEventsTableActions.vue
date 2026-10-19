@@ -7,6 +7,7 @@ import type { SelectionState } from '@/modules/history/events/use-selection-mode
 import { type MatchedKeywordWithBehaviour, SavedFilterLocations } from '@/modules/core/table/filtering';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
+import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
 import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 import HistoryEventsExport from '@/modules/history/events/HistoryEventsExport.vue';
 import { useHistoryEventsPillBar } from '@/modules/history/events/use-history-events-pill-bar';
@@ -202,71 +203,43 @@ function handleToggleSelectAllMatching(): void {
         </RuiButton>
       </template>
 
-      <RuiButton
-        size="sm"
-        variant="outlined"
+      <TableSelectionAction
+        icon="lu-trash-2"
         color="error"
         :disabled="selection.selectedCount === 0"
         :title="t('transactions.events.selection_mode.delete_selected')"
         data-testid="selection-delete"
         @click="handleDelete()"
       >
-        <template #prepend>
-          <RuiIcon
-            name="lu-trash-2"
-            size="16"
-          />
-        </template>
         {{ t('common.actions.delete') }}
-      </RuiButton>
-      <RuiButton
-        size="sm"
-        variant="outlined"
+      </TableSelectionAction>
+      <TableSelectionAction
+        icon="lu-eye-off"
         :disabled="selection.selectedCount === 0 || !canIgnore || selection.selectAllMatching"
         :title="t('transactions.events.selection_mode.ignore')"
         data-testid="selection-ignore"
         @click="handleIgnore()"
       >
-        <template #prepend>
-          <RuiIcon
-            name="lu-eye-off"
-            size="16"
-          />
-        </template>
         {{ t('ignore_buttons.ignore') }}
-      </RuiButton>
-      <RuiButton
-        size="sm"
-        variant="outlined"
+      </TableSelectionAction>
+      <TableSelectionAction
+        icon="lu-eye"
         :disabled="selection.selectedCount === 0 || !canUnignore || selection.selectAllMatching"
         :title="t('transactions.events.selection_mode.unignore')"
         data-testid="selection-unignore"
         @click="handleUnignore()"
       >
-        <template #prepend>
-          <RuiIcon
-            name="lu-eye"
-            size="16"
-          />
-        </template>
         {{ t('ignore_buttons.unignore') }}
-      </RuiButton>
-      <RuiButton
-        size="sm"
-        variant="outlined"
+      </TableSelectionAction>
+      <TableSelectionAction
+        icon="lu-file-spreadsheet"
         :disabled="selection.selectedCount === 0 || selection.selectAllMatching"
         :title="t('transactions.events.selection_mode.create_rule')"
         data-testid="selection-create-rule"
         @click="handleCreateRule()"
       >
-        <template #prepend>
-          <RuiIcon
-            name="lu-file-spreadsheet"
-            size="16"
-          />
-        </template>
         {{ t('transactions.events.selection_mode.accounting_rule') }}
-      </RuiButton>
+      </TableSelectionAction>
     </TableSelectionBar>
     <template v-else>
       <RuiTooltip

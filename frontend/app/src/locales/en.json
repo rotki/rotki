@@ -4681,10 +4681,6 @@
       "resolve": "Repull and redecode",
       "resolve_selected": "Resolve Selected ({count})"
     },
-    "selection": {
-      "clear": "Clear",
-      "selected": "{count} selected"
-    },
     "status": {
       "never": "Never"
     },
@@ -6515,6 +6511,7 @@
     }
   },
   "table_selection": {
+    "actions": "Actions",
     "count": "{count} selected",
     "label": "Selection actions"
   },

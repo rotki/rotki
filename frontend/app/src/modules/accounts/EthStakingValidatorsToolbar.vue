@@ -7,6 +7,7 @@ import { SavedFilterLocations } from '@/modules/core/table/filtering';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
+import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
 import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 
 const filters = defineModel<Filters>('filters', { required: true });
@@ -48,22 +49,15 @@ function applyView(view: SavedView): void {
     :count="selected.length"
     @clear="selected = []"
   >
-    <RuiButton
-      size="sm"
-      variant="outlined"
+    <TableSelectionAction
+      icon="lu-trash-2"
       color="error"
       :loading="deleting"
       data-testid="validators-delete-selected"
       @click="emit('delete')"
     >
-      <template #prepend>
-        <RuiIcon
-          name="lu-trash-2"
-          size="16"
-        />
-      </template>
       {{ t('common.actions.delete') }}
-    </RuiButton>
+    </TableSelectionAction>
   </TableSelectionBar>
   <PillFilterBar
     v-model:matches="filters"

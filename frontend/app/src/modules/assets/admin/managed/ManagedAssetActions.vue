@@ -6,6 +6,7 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { useManagedAssetActions } from '@/modules/assets/admin/managed/use-managed-asset-actions';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
 import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 
 /**
@@ -47,55 +48,34 @@ const { clearSelection, disabledIgnoreActions } = useManagedAssetActions({
     :count="selected.length"
     @clear="clearSelection()"
   >
-    <RuiButton
-      size="sm"
-      variant="outlined"
+    <TableSelectionAction
+      icon="lu-eye-off"
       :disabled="disabledIgnoreActions.ignore"
       :title="t('ignore_buttons.ignore_tooltip')"
       data-testid="managed-assets-ignore"
       @click="emit('ignore', true)"
     >
-      <template #prepend>
-        <RuiIcon
-          name="lu-eye-off"
-          size="16"
-        />
-      </template>
       {{ t('ignore_buttons.ignore') }}
-    </RuiButton>
-    <RuiButton
-      size="sm"
-      variant="outlined"
+    </TableSelectionAction>
+    <TableSelectionAction
+      icon="lu-eye"
       :disabled="disabledIgnoreActions.unIgnore"
       :title="t('ignore_buttons.unignore_tooltip')"
       data-testid="managed-assets-unignore"
       @click="emit('ignore', false)"
     >
-      <template #prepend>
-        <RuiIcon
-          name="lu-eye"
-          size="16"
-        />
-      </template>
       {{ t('ignore_buttons.unignore') }}
-    </RuiButton>
-    <RuiButton
-      size="sm"
-      variant="outlined"
+    </TableSelectionAction>
+    <TableSelectionAction
+      icon="lu-trash-2"
       color="error"
       :disabled="spamDisabled"
       :title="t('asset_table.mark_spam_tooltip')"
       data-testid="managed-assets-mark-spam"
       @click="emit('mark-spam')"
     >
-      <template #prepend>
-        <RuiIcon
-          name="lu-trash-2"
-          size="16"
-        />
-      </template>
       {{ t('asset_table.mark_spam') }}
-    </RuiButton>
+    </TableSelectionAction>
   </TableSelectionBar>
   <PillFilterBar
     v-else

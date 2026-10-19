@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { provideTableSelectionCollapsed, useSelectionBarCollapse } from '@/modules/core/table/table-selection-collapse';
+
 const { count, exitable = false } = defineProps<{
   /** How many rows are selected. */
   count: number;
@@ -11,7 +13,11 @@ const emit = defineEmits<{
   exit: [];
 }>();
 
-defineSlots<{
+/**
+ * The default slot holds the bulk actions. Build them from `TableSelectionAction`, which turns
+ * into a menu entry when the bar is too narrow to show them in a row.
+ */
+const slots = defineSlots<{
   'default'?: () => any;
   /** Widens the selection past what the count says, such as to every row matching the filters. */
   'scope'?: () => any;
@@ -19,13 +25,20 @@ defineSlots<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const bar = useTemplateRef<HTMLDivElement>('bar');
+
+const collapsed = useSelectionBarCollapse(bar, () => !!slots.default);
+
+provideTableSelectionCollapsed(collapsed);
 </script>
 
 <template>
   <div
+    ref="bar"
     role="toolbar"
     :aria-label="t('table_selection.label')"
-    class="flex flex-wrap items-center gap-2 min-h-9.5 rounded-md bg-rui-primary/10 dark:bg-rui-primary/20 pl-3 pr-1 py-0.5"
+    class="flex items-center gap-2 min-w-0 min-h-9.5 whitespace-nowrap rounded-md bg-rui-primary/10 dark:bg-rui-primary/20 pl-3 pr-1 py-0.5"
     data-testid="table-selection-bar"
   >
     <slot name="select-all" />
@@ -51,7 +64,35 @@ const { t } = useI18n({ useScope: 'global' });
         vertical
         class="h-5 mx-1"
       />
-      <div class="flex flex-wrap items-center gap-2">
+      <RuiMenu
+        v-if="collapsed"
+        :options="{ placement: 'bottom-start' }"
+        close-on-content-click
+      >
+        <template #activator="{ attrs }">
+          <RuiButton
+            size="sm"
+            variant="outlined"
+            data-testid="table-selection-actions"
+            v-bind="attrs"
+          >
+            {{ t('table_selection.actions') }}
+            <template #append>
+              <RuiIcon
+                name="lu-chevron-down"
+                size="16"
+              />
+            </template>
+          </RuiButton>
+        </template>
+        <div class="flex flex-col py-1">
+          <slot />
+        </div>
+      </RuiMenu>
+      <div
+        v-else
+        class="flex items-center gap-2"
+      >
         <slot />
       </div>
     </template>

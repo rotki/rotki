@@ -3,6 +3,7 @@ import type { Filters } from '@/modules/assets/detection/use-newly-detected-filt
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
 import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 
@@ -50,36 +51,22 @@ const pillLabels = usePillBarLabels();
         {{ t('asset_table.newly_detected.select_all_matching', { count: found }) }}
       </RuiButton>
     </template>
-    <RuiButton
-      size="sm"
-      variant="outlined"
+    <TableSelectionAction
+      icon="lu-check"
       color="success"
       data-testid="accept-selected"
       @click="emit('accept')"
     >
-      <template #prepend>
-        <RuiIcon
-          name="lu-check"
-          size="16"
-        />
-      </template>
       {{ t('asset_table.newly_detected.accept_selected') }}
-    </RuiButton>
-    <RuiButton
-      size="sm"
-      variant="outlined"
+    </TableSelectionAction>
+    <TableSelectionAction
+      icon="lu-octagon-alert"
       color="error"
       data-testid="mark-selected-spam"
       @click="emit('mark-spam')"
     >
-      <template #prepend>
-        <RuiIcon
-          name="lu-octagon-alert"
-          size="16"
-        />
-      </template>
       {{ t('asset_table.newly_detected.mark_selected_as_spam') }}
-    </RuiButton>
+    </TableSelectionAction>
   </TableSelectionBar>
   <template v-else>
     <HintMenuIcon>
