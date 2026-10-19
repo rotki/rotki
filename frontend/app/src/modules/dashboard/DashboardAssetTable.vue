@@ -6,6 +6,7 @@ import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocol
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useValuePending } from '@/modules/balances/value-pending';
+import TableSearchField from '@/modules/core/table/TableSearchField.vue';
 import DashboardAssetWarnings from '@/modules/dashboard/DashboardAssetWarnings.vue';
 import DashboardExpandableTable from '@/modules/dashboard/DashboardExpandableTable.vue';
 import { useDashboardAssetData } from '@/modules/dashboard/use-dashboard-asset-data';
@@ -87,18 +88,9 @@ watch(modelSearch, () => setPage(1));
       {{ title }}
     </template>
     <template #details>
-      <RuiTextField
+      <TableSearchField
         v-if="searchable"
         v-model="modelSearch"
-        color="primary"
-        dense
-        prepend-icon="lu-search"
-        :placeholder="t('common.actions.search')"
-        :aria-label="t('common.actions.search')"
-        class="max-w-64 w-full [&_input]:py-1.5! [&_input]:text-sm! [&_input]:leading-5! [&_input::placeholder]:opacity-100! [&_input::placeholder]:text-rui-text-secondary! [&_svg]:size-4!"
-        hide-details
-        clearable
-        @click:clear="modelSearch = ''"
       />
 
       <VisibleColumnsSelector

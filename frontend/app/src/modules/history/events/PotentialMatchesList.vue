@@ -130,7 +130,7 @@ watchDebounced(onlyExpectedAssets, () => {
               color="primary"
               hide-details
               size="sm"
-              class="my-0! [&_span]:my-0! [&_label]:items-center!"
+              class="[&_span]:my-0! [&_label]:items-center!"
               :class="isPinned ? '[&_span]:text-caption!' : '[&_span]:text-sm!'"
             >
               {{ t('asset_movement_matching.dialog.only_expected_assets') }}
