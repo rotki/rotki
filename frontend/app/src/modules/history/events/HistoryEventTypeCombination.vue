@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
+import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
 import type { HistoryEventCategoryDetailWithId, HistoryEventCategoryDirection } from '@/modules/history/events/event-type';
 import { type MessageKey, msg } from '@/message-key';
 
@@ -24,6 +24,27 @@ const DIRECTION_KEYS: Record<HistoryEventCategoryDirection, MessageKey> = {
   out: msg.$t('backend_mappings.events.type_direction.directions.out'),
 };
 
+/**
+ * The circle behind a colored icon takes a soft tint of the same color, so the icon does not sit
+ * as a saturated stroke on a neutral grey disc.
+ */
+const TINTED_CIRCLE_CLASSES: Record<ContextColorsType, string> = {
+  error: 'bg-rui-error-soft',
+  info: 'bg-rui-info-soft',
+  primary: 'bg-rui-primary-soft',
+  secondary: 'bg-rui-secondary-soft',
+  success: 'bg-rui-success-soft',
+  warning: 'bg-rui-warning-soft',
+};
+
+const circleClass = computed<string>(() => {
+  if (highlight)
+    return 'bg-rui-primary-lighter/70 dark:bg-rui-primary-lighter text-rui-primary';
+  if (type.color)
+    return TINTED_CIRCLE_CLASSES[type.color];
+  return 'bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-grey-600 dark:text-rui-grey-400';
+});
+
 const directionIcon = computed<RuiIcons>(() => {
   switch (type.direction) {
     case 'in':
@@ -41,10 +62,9 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <div class="flex items-center gap-3">
     <div
-      class="shrink-0 bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-grey-600 dark:text-rui-grey-400 size-10 flex items-center justify-center rounded-full relative"
-      :class="{
-        'bg-rui-primary-lighter/70! dark:bg-rui-primary-lighter! text-rui-primary!': highlight,
-      }"
+      class="shrink-0 size-10 flex items-center justify-center rounded-full relative"
+      :class="circleClass"
+      data-testid="event-type-circle"
     >
       <RuiIcon
         size="20"
