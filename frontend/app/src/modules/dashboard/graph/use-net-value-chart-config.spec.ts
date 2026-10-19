@@ -5,11 +5,20 @@ import { get } from '@vueuse/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNetValueChartConfig } from '@/modules/dashboard/graph/use-net-value-chart-config';
 
-const state = vi.hoisted((): { graphZeroBased: boolean; showGraphRangeSelector: boolean; baseColor: string } => ({
+const state = vi.hoisted((): { graphZeroBased: boolean; showGraphRangeSelector: boolean; baseColor: string; isDark: boolean } => ({
   baseColor: '#123456',
   graphZeroBased: false,
+  isDark: false,
   showGraphRangeSelector: false,
 }));
+
+vi.mock('@rotki/ui-library', async (importOriginal) => {
+  const { computed } = await import('vue');
+  return {
+    ...await importOriginal<typeof import('@rotki/ui-library')>(),
+    useRotkiTheme: (): Record<string, unknown> => ({ isDark: computed(() => state.isDark) }),
+  };
+});
 
 vi.mock('@/modules/settings/use-setting', async (): Promise<{ useSetting: (key: string) => unknown }> => {
   const { computed } = await import('vue');
@@ -52,6 +61,7 @@ describe('useNetValueChartConfig', () => {
     state.graphZeroBased = false;
     state.showGraphRangeSelector = false;
     state.baseColor = '#123456';
+    state.isDark = false;
   });
 
   it('should map times and values into millisecond data points', () => {
@@ -90,6 +100,13 @@ describe('useNetValueChartConfig', () => {
       handleStyle: { borderColor: '#a1a1aa', color: '#ffffff' },
       moveHandleSize: 0,
     });
+  });
+
+  it('should fill the slider handles with a dark neutral in the dark theme', () => {
+    state.showGraphRangeSelector = true;
+    state.isDark = true;
+    const [slider] = dataZoom(useNetValueChartConfig(() => chartData()));
+    expect(slider).toMatchObject({ handleStyle: { borderColor: '#a1a1aa', color: '#27272a' } });
   });
 
   it('should persist the active zoom bounds from the range in seconds', () => {
