@@ -159,14 +159,26 @@ async function updatePrice(): Promise<void> {
             </dl>
             <AmountInput
               v-model="form.state.price"
-              :loading="fetchingPrice"
               :disabled="fetchingPrice"
               :label="t('common.price')"
               :hint="t('profit_loss_events.edit_price_warning')"
               :error-messages="form.errors('price')"
               data-testid="edit-historic-price-value"
               @blur="form.touch('price')"
-            />
+            >
+              <template
+                v-if="fetchingPrice"
+                #append
+              >
+                <RuiProgress
+                  circular
+                  variant="indeterminate"
+                  size="16"
+                  thickness="2"
+                  color="primary"
+                />
+              </template>
+            </AmountInput>
           </div>
 
           <template #footer>
