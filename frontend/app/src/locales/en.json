@@ -3032,7 +3032,7 @@
     },
     "user_backups": {
       "backup_button": "Create new Backup",
-      "delete_selected": "Delete selected Backups",
+      "enter_selection_mode": "Select backups to delete them together",
       "title": "User Database Backups"
     }
   },

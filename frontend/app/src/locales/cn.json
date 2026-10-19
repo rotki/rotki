@@ -2938,7 +2938,6 @@
     },
     "user_backups": {
       "backup_button": "创建新备份",
-      "delete_selected": "删除所选备份",
       "title": "用户数据库备份"
     }
   },

@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
+import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 import DatabaseBackups from '@/modules/settings/data-security/backups/DatabaseBackups.vue';
 import { useDatabaseBackups } from '@/modules/settings/data-security/backups/use-database-backups';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
 
 const { t } = useI18n({ useScope: 'global' });
+
+const selectionMode = shallowRef<boolean>(false);
 
 const {
   backup,
@@ -16,6 +20,11 @@ const {
   saving,
   showMassDeleteConfirmation,
 } = useDatabaseBackups();
+
+function exitSelection(): void {
+  set(modelSelected, []);
+  set(selectionMode, false);
+}
 </script>
 
 <template>
@@ -27,13 +36,29 @@ const {
         </template>
       </SettingCategoryHeader>
       <div class="flex flex-wrap gap-2">
-        <RuiButton
-          v-if="modelSelected.length > 0"
-          color="error"
-          @click="showMassDeleteConfirmation()"
+        <RuiTooltip
+          v-if="!selectionMode"
+          :options="{ placement: 'top' }"
+          :open-delay="400"
         >
-          {{ t('database_settings.user_backups.delete_selected') }}
-        </RuiButton>
+          <template #activator>
+            <RuiButton
+              variant="text"
+              :disabled="backups.length === 0"
+              data-testid="backups-select"
+              @click="selectionMode = true"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-copy-check"
+                  size="18"
+                />
+              </template>
+              {{ t('common.actions.select') }}
+            </RuiButton>
+          </template>
+          {{ t('database_settings.user_backups.enter_selection_mode') }}
+        </RuiTooltip>
         <RuiButton
           variant="outlined"
           color="primary"
@@ -58,8 +83,27 @@ const {
         </RuiButton>
       </div>
     </div>
+    <TableSelectionBar
+      v-if="selectionMode"
+      class="mb-3"
+      :count="modelSelected.length"
+      exitable
+      @clear="modelSelected = []"
+      @exit="exitSelection()"
+    >
+      <TableSelectionAction
+        icon="lu-trash-2"
+        color="error"
+        :disabled="modelSelected.length === 0"
+        data-testid="backups-delete-selected"
+        @click="showMassDeleteConfirmation()"
+      >
+        {{ t('common.actions.delete') }}
+      </TableSelectionAction>
+    </TableSelectionBar>
     <DatabaseBackups
       v-model:selected="modelSelected"
+      :selection-mode="selectionMode"
       :loading="loading"
       :items="backups"
       :directory="directory"
