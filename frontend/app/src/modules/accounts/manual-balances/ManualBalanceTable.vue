@@ -200,7 +200,7 @@ watchDebounced(
     >
       <template #item.label="{ row }">
         <div
-          class="font-medium truncate min-w-32 max-w-[28rem]"
+          class="font-medium truncate min-w-32 max-w-112"
           :title="row.label"
           data-testid="label"
         >

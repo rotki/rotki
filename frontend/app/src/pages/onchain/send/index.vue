@@ -14,7 +14,7 @@ defineOptions({
 </script>
 
 <template>
-  <div class="container max-w-[520px]!">
+  <div class="container max-w-130!">
     <TradeSendCard />
   </div>
 </template>

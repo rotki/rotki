@@ -38,7 +38,7 @@ watch(search, () => {
 </script>
 
 <template>
-  <div class="w-[450px] max-w-full">
+  <div class="w-112.5 max-w-full">
     <div class="p-4 border-b border-default">
       <RuiTextField
         v-model="search"
@@ -53,7 +53,7 @@ watch(search, () => {
     <div class="px-4 py-2 text-xs font-medium uppercase border-b border-default bg-rui-grey-50 dark:bg-rui-grey-900">
       {{ t('account_balances.detect_tokens.selection.select') }}
     </div>
-    <div class="h-[220px] overflow-y-auto">
+    <div class="h-55 overflow-y-auto">
       <div
         v-for="item in filtered"
         :key="item.id"

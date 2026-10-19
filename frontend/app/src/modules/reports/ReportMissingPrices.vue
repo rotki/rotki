@@ -134,7 +134,7 @@ onMounted(async () => {
       <template #item.price="{ row }">
         <AmountInput
           v-model="row.price"
-          class="text-left min-w-[120px]"
+          class="text-left min-w-30"
           dense
           :disabled="row.useRefreshedHistoricalPrice"
           :label="t('profit_loss_report.actionable.missing_prices.input_price')"

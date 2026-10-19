@@ -205,7 +205,7 @@ function unlink(): void {
     v-else
     data-testid="history-event-swap"
     :data-event-id="eventsProp[0]?.identifier"
-    class="h-[72px] flex items-center gap-4 border-b border-default px-4 group/row relative contain-content transition-colors hover:bg-rui-grey-100 dark:hover:bg-white/5"
+    class="h-18 flex items-center gap-4 border-b border-default px-4 group/row relative contain-content transition-colors hover:bg-rui-grey-100 dark:hover:bg-white/5"
     :class="[
       showCheckbox ? 'pl-16' : 'pl-6',
       { 'opacity-50': primaryEvent.ignoredInAccounting },

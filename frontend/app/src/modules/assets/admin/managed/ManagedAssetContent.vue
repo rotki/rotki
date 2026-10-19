@@ -98,7 +98,7 @@ onMounted(async () => {
           :open-delay="400"
           class="w-full"
           :options="{ placement: 'left' }"
-          :class-names="{ tooltip: 'max-w-[200px]' }"
+          :class-names="{ tooltip: 'max-w-50' }"
         >
           <template #activator>
             <RuiButton

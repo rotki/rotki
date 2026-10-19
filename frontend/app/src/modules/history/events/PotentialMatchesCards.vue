@@ -129,7 +129,7 @@ function eventLabel(row: PotentialMatchRow): string {
             />
             <RuiButton
               size="sm"
-              class="h-[30px]! py-0! min-w-24"
+              class="h-7.5! py-0! min-w-24"
               :color="isSelected(row) ? 'success' : 'primary'"
               :variant="isSelected(row) ? 'default' : 'outlined'"
               data-testid="potential-match-select"

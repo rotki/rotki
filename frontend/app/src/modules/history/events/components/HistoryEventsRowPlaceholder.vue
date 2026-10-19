@@ -9,7 +9,7 @@ const card = computed<boolean>(() => variant === 'card');
 <template>
   <div
     class="animate-pulse contain-content"
-    :class="card ? 'h-34 p-3 flex flex-col gap-2 border-b border-default' : 'h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6'"
+    :class="card ? 'h-34 p-3 flex flex-col gap-2 border-b border-default' : 'h-18 flex items-center gap-4 border-b border-default px-4 pl-6'"
   >
     <template v-if="card">
       <div class="h-14 flex items-center gap-3">

@@ -146,7 +146,7 @@ watchDebounced(onlyExpectedAssets, () => {
             <RuiButton
               :loading="loading"
               :size="isPinned ? 'sm' : 'xl'"
-              :class="isPinned ? '[&>span]:hidden! px-2.5! h-[38px]!' : 'ml-3 [&>span]:inline!'"
+              :class="isPinned ? '[&>span]:hidden! px-2.5! h-9.5!' : 'ml-3 [&>span]:inline!'"
               :aria-label="t('common.actions.search')"
               @click="emit('search')"
             >

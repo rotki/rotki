@@ -10,7 +10,7 @@ function goBack(): void {
 </script>
 
 <template>
-  <div class="flex items-center justify-center h-full w-full min-h-[300px] p-6">
+  <div class="flex items-center justify-center h-full w-full min-h-75 p-6">
     <div class="flex flex-col items-center text-center max-w-md">
       <RuiIcon
         name="lu-circle-alert"

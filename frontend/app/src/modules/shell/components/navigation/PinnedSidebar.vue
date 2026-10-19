@@ -98,7 +98,7 @@ function collapse(): void {
         @pointercancel="onPointerUp($event)"
       >
         <div
-          class="absolute left-1/2 -translate-x-1/2 top-0 h-full w-[2px] transition-colors pointer-events-none"
+          class="absolute left-1/2 -translate-x-1/2 top-0 h-full w-0.5 transition-colors pointer-events-none"
           :class="dragging ? 'bg-rui-primary' : 'group-hover:bg-rui-primary/30'"
         />
         <div

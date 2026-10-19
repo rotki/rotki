@@ -104,7 +104,7 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
       <template v-if="isMdAndUp">
         <div
           ref="railRef"
-          class="w-[220px] shrink-0 flex flex-col gap-4 md:overflow-y-auto md:pr-1 md:-mr-1"
+          class="w-55 shrink-0 flex flex-col gap-4 md:overflow-y-auto md:pr-1 md:-mr-1"
           data-testid="rpc-settings-rail"
         >
           <div>

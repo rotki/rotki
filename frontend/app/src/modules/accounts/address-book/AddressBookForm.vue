@@ -135,7 +135,7 @@ defineExpose({
         />
       </div>
       <div class="flex items-start gap-3">
-        <div class="mt-[1.625rem] shrink-0 rounded-full overflow-hidden size-8 bg-rui-grey-300 dark:bg-rui-grey-600">
+        <div class="mt-6.5 shrink-0 rounded-full overflow-hidden size-8 bg-rui-grey-300 dark:bg-rui-grey-600">
           <AppImage
             v-if="modelValue.address"
             :src="getBlockie(modelValue.address)"

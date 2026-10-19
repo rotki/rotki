@@ -135,7 +135,7 @@ const fallbackData = computed(() => {
         </template>
         <div
           v-else-if="name"
-          class="flex-1 max-w-[400px]"
+          class="flex-1 max-w-100"
         >
           <div class="font-medium text-truncate">
             {{ name }}

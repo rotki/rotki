@@ -56,7 +56,7 @@ const registryTitle = computed<string | undefined>(() => {
     v-bind="$attrs"
     class="flex flex-col md:flex-row pt-4 pb-1 gap-2 md:gap-8 lg:gap-10 border-b border-rui-divider"
   >
-    <div class="flex flex-col gap-1 w-full md:w-[200px] lg:w-[240px] xl:w-[280px] shrink-0 md:pt-1.5">
+    <div class="flex flex-col gap-1 w-full md:w-50 lg:w-60 xl:w-70 shrink-0 md:pt-1.5">
       <div
         v-if="$slots.title || registryTitle"
         class="text-sm font-medium text-rui-text"

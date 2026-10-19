@@ -24,7 +24,7 @@ const data: Sponsor = {
 </script>
 
 <template>
-  <div class="flex flex-wrap gap-1 gap-x-4 w-[400px] max-w-full mx-auto">
+  <div class="flex flex-wrap gap-1 gap-x-4 w-100 max-w-full mx-auto">
     <div class="flex items-center justify-center w-full gap-2">
       <AppImage
         fit="cover"

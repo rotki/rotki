@@ -49,7 +49,7 @@ defineExpose({
       {{ t('history_refresh_selection.back_to_chain') }}
     </RuiButton>
   </div>
-  <div class="h-[220px] overflow-y-auto">
+  <div class="h-55 overflow-y-auto">
     <template v-if="!selectedChain">
       <HistoryRefreshChainItem
         v-for="item in filtered"
