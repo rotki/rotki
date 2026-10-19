@@ -178,7 +178,6 @@ function showDeleteConfirmation(item: UserDbBackupWithId) {
     <template #body.append>
       <RowAppend
         :label-colspan="selectionMode ? 3 : 2"
-        class-name="[&>td]:px-4 [&>td]:py-2 text-sm"
         :label="t('common.total')"
         :right-patch-colspan="1"
       >

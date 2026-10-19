@@ -276,7 +276,6 @@ watchDebounced(
           :label-colspan="5"
           :label="t('common.total')"
           :right-patch-colspan="1"
-          class-name="[&>td]:px-4 [&>td]:py-2 text-sm"
         >
           <FiatDisplay
             v-if="state.totalValue"

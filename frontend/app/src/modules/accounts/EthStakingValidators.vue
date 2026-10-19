@@ -151,7 +151,7 @@ defineExpose({
           label-colspan="4"
           :label="t('common.total')"
           :right-patch-colspan="cols.length - 2"
-          class-name="[&>td]:px-4 [&>td]:h-11 text-sm"
+          variant="fixed"
         >
           <template #custom-columns>
             <td class="text-end">
