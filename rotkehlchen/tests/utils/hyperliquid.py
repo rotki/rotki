@@ -5,6 +5,8 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
+    from collections.abc import Collection
+
     from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.types import ChecksumEvmAddress, Timestamp
@@ -26,6 +28,7 @@ def query_history_events(
         address: ChecksumEvmAddress,
         start_ts: Timestamp,
         end_ts: Timestamp,
+        tracked_addresses: Collection[ChecksumEvmAddress] = (),
 ) -> list[HistoryBaseEntry]:
     """Query Hyperliquid Core history and return all its events sorted by time."""
     return sorted(
@@ -33,6 +36,7 @@ def query_history_events(
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
+            tracked_addresses=tracked_addresses,
         ) for event in batch),
         key=lambda event: (event.timestamp, event.group_identifier, event.sequence_index),
     )

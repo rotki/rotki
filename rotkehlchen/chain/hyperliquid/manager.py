@@ -17,7 +17,7 @@ from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI, create_weight_l
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location
+from rotkehlchen.types import Location, SupportedBlockchain
 from rotkehlchen.utils.network import create_session
 
 from .accountant import HyperliquidAccountingAggregator
@@ -235,6 +235,19 @@ class HyperliquidManager(EvmManager):
 
         return inserted
 
+    def _get_tracked_addresses(self) -> list[ChecksumEvmAddress]:
+        """All tracked Hyperliquid accounts, not only the ones being queried, so that a send
+        between two of them is recognized as a transfer whichever of them is queried first.
+        Only these have their Core history queried, so an account tracked on another chain
+        only would never get the matching side of the transfer."""
+        with self.node_inquirer.database.conn.read_ctx() as cursor:
+            return [
+                account.address for account in self.node_inquirer.database.get_blockchain_account_data(  # noqa: E501
+                    cursor=cursor,
+                    blockchain=SupportedBlockchain.HYPERLIQUID,
+                )
+            ]
+
     def query_proprietary_history(
             self,
             addresses: Sequence[ChecksumEvmAddress],
@@ -247,6 +260,7 @@ class HyperliquidManager(EvmManager):
         range that failed midway is queried again in a future sync.
         """
         api = self.api
+        tracked_addresses = self._get_tracked_addresses()
         ranges = DBQueryRanges(self.node_inquirer.database)
         history_db = DBHistoryEvents(self.node_inquirer.database)
 
@@ -268,6 +282,7 @@ class HyperliquidManager(EvmManager):
                             address=address,
                             start_ts=range_start,
                             end_ts=range_end,
+                            tracked_addresses=tracked_addresses,
                         ),
                     )
                 except RemoteError as e:
@@ -307,6 +322,7 @@ class HyperliquidManager(EvmManager):
                 address=address,
                 start_ts=start_ts,
                 end_ts=end_ts,
+                tracked_addresses=self._get_tracked_addresses(),
             ),
         )
 

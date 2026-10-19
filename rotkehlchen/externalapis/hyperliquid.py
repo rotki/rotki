@@ -3,6 +3,7 @@ import json
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import partial
 from http import HTTPStatus
 from threading import Lock
 from typing import TYPE_CHECKING, Any, Final, Literal, NotRequired, TypedDict, get_args
@@ -32,6 +33,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
+    deserialize_evm_address,
     deserialize_fval,
     deserialize_int_from_str,
     deserialize_timestamp_ms_from_intms,
@@ -48,10 +50,22 @@ from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Collection, Iterator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def counterparty_for_notes(value: Any) -> str:
+    """Return an address of a hyperliquid entry checksummed, for use in an event's notes.
+
+    Hyperliquid returns addresses lowercase. A value that is not an address is returned
+    as is, since it is only informational and must not fail the event.
+    """
+    try:
+        return deserialize_evm_address(str(value))
+    except DeserializationError:
+        return str(value)
 
 
 def asset_from_hyperliquid(symbol: str) -> Asset:
@@ -105,6 +119,7 @@ HYPERLIQUID_CORE_ACCOUNT_ROLES: Final = ('user', 'vault', 'subAccount')
 # `agent` wallets only sign for another account, and `missing` has never been seen by Core
 HYPERLIQUID_CORE_NON_ACCOUNT_ROLES: Final = ('agent', 'missing')
 USDC_SYMBOL: Final = 'USDC'
+HYPE_SYMBOL: Final = 'HYPE'
 HistoryQueryType = Literal['userFunding', 'userNonFundingLedgerUpdates', 'userFillsByTime']
 HYPERLIQUID_LISTING_QUERIES: Final = frozenset(get_args(HistoryQueryType))
 
@@ -125,6 +140,12 @@ class LedgerDelta(TypedDict, total=False):
     usdc: str
     amount: str
     coin: str
+    token: str
+    user: str
+    destination: str
+    fee: str
+    nativeTokenFee: str
+    feeToken: str
 
 
 class LedgerEntry(TypedDict, total=False):
@@ -608,10 +629,25 @@ class HyperliquidAPI:
         """
         if isinstance((tid := entry.get('tid')), int | str):
             return str(tid)
-        if isinstance((entry_hash := entry.get('hash')), str) and entry_hash != ZERO_32_BYTES_HEX:
+
+        entry_hash = entry.get('hash')
+        if not isinstance(entry_hash, str) or entry_hash == ZERO_32_BYTES_HEX:
+            entry_hash = None
+
+        delta = entry.get('delta')
+        if isinstance(delta, dict) and delta.get('type') == 'send' and entry_hash is not None:
+            # The sender and the recipient of a `send` are served the same ledger entry, and
+            # a group holds one event per sequence index, so the hash alone made the events
+            # of the second account a duplicate of the first one's and dropped them. Keep the
+            # two apart by account, as the funding payments that every account receives at
+            # the same times are.
+            return f'send_{address}_{entry_hash}'
+
+        if entry_hash is not None:
             return entry_hash
+
         if (
-            isinstance((delta := entry.get('delta')), dict) and
+            isinstance(delta, dict) and
             delta.get('type') == 'funding' and
             isinstance((coin := delta.get('coin')), str)
         ):
@@ -997,7 +1033,8 @@ class HyperliquidAPI:
             return None
 
         try:
-            if (amount := self._deserialize_amount(value=raw_amount, name=f'ledger {entry_type}')) == ZERO:  # noqa: E501
+            # a zero `send` can still have paid a fee, so it is kept for the fee events
+            if (amount := self._deserialize_amount(value=raw_amount, name=f'ledger {entry_type}')) == ZERO and entry_type != 'send':  # noqa: E501
                 return None
             if (token := delta.get('token')) is not None:
                 asset = self._asset_from_hyperliquid_token(token=token, prefer_spot_metadata=True)
@@ -1144,9 +1181,11 @@ class HyperliquidAPI:
             self,
             address: ChecksumEvmAddress,
             contexts: list[EntryContext],
+            tracked_addresses: Collection[ChecksumEvmAddress] = (),
     ) -> list[HistoryBaseEntry]:
         """Convert a page of ledger updates to rotki events."""
         events: list[HistoryBaseEntry] = []
+        tracked = {tracked_address.lower() for tracked_address in tracked_addresses}
         for context in contexts:
             if (parsed := self._parse_ledger_entry(context)) is None:
                 continue
@@ -1211,12 +1250,114 @@ class HyperliquidAPI:
                         notes='Hyperliquid liquidation',
                     ),
                 )
+            elif parsed.entry_type == 'send':
+                # A `send` moves spot tokens between two Core accounts, so it never touches
+                # HyperEVM and only shows up in the Core ledger. The recipient is sent the
+                # amount as is, while the sender also pays the fee, so the fee is only
+                # reported for the sender. When the other side is also tracked (or it is a
+                # send to oneself across dexes) the amount is a transfer, but the fee is
+                # still spent, so it is always its own event.
+                delta = parsed.context.entry['delta']
+                lower_address = address.lower()
+                is_sender = str(delta.get('user', '')).lower() == lower_address
+                is_recipient = str(delta.get('destination', '')).lower() == lower_address
+                if not is_sender and not is_recipient:
+                    log.error(
+                        'Hyperliquid send entry %s is neither from nor to %s. Skipping.',
+                        parsed.context.entry,
+                        address,
+                    )
+                    continue
+
+                counterparty = delta.get('destination') if is_sender else delta.get('user')
+                is_internal = (is_sender and is_recipient) or str(counterparty).lower() in tracked
+                if parsed.amount != ZERO:
+                    if is_sender:
+                        event_type = HistoryEventType.TRANSFER if is_internal else HistoryEventType.SPEND  # noqa: E501
+                        direction = 'to'
+                    else:
+                        event_type = HistoryEventType.TRANSFER if is_internal else HistoryEventType.RECEIVE  # noqa: E501
+                        direction = 'from'
+                    events.append(
+                        self._make_history_event(
+                            context=parsed.context,
+                            sequence_index=0,
+                            event_type=event_type,
+                            event_subtype=HistoryEventSubType.NONE,
+                            asset=parsed.asset,
+                            amount=abs(parsed.amount),
+                            location_label=address,
+                            notes=f'Hyperliquid spot send {direction} {counterparty_for_notes(counterparty)}',  # noqa: E501
+                        ),
+                    )
+
+                if is_sender:
+                    events.extend(self._create_send_fee_events(
+                        address=address,
+                        context=parsed.context,
+                    ))
             else:
                 log.warning(
                     f'Unknown hyperliquid ledger event type {parsed.entry_type!r} '
                     f'in entry {parsed.context.entry}. '
                     f'Skipping. This may indicate a new event type that needs handling.',
                 )
+
+        return events
+
+    def _create_send_fee_events(
+            self,
+            address: ChecksumEvmAddress,
+            context: EntryContext,
+    ) -> list[HistoryBaseEntry]:
+        """Create the fee events paid by the sender of a spot `send` entry.
+
+        The fee is charged in `feeToken`, USDC unless it says otherwise, or in HYPE via
+        `nativeTokenFee`, so only one of the two is paid. A fee that can't be read or
+        resolved is skipped with a warning instead of dropping the send itself.
+        """
+        delta = context.entry['delta']
+        events: list[HistoryBaseEntry] = []
+        for sequence_index, (fee_key, fee_token) in enumerate(
+                (('fee', delta.get('feeToken') or USDC_SYMBOL), ('nativeTokenFee', HYPE_SYMBOL)),
+                start=1,
+        ):
+            try:
+                if (fee_amount := self._deserialize_amount(
+                    value=delta.get(fee_key, '0'),
+                    name=f'send {fee_key}',
+                )) == ZERO:
+                    continue
+                fee_asset = self._asset_from_hyperliquid_token(
+                    token=fee_token,
+                    prefer_spot_metadata=True,
+                )
+            except (
+                DeserializationError,
+                UnknownAsset,
+                UnknownCounterpartyMapping,
+                WrongAssetType,
+            ) as e:
+                log.warning(
+                    'Failed to parse the %s of hyperliquid send entry %s due to %s. Skipping',
+                    fee_key,
+                    context.entry,
+                    e,
+                )
+                continue
+
+            events.append(
+                self._make_history_event(
+                    context=context,
+                    sequence_index=sequence_index,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=fee_asset,
+                    amount=fee_amount,
+                    location_label=address,
+                    notes='Hyperliquid spot send fee',
+                ),
+            )
 
         return events
 
@@ -1332,6 +1473,7 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            tracked_addresses: Collection[ChecksumEvmAddress] = (),
     ) -> Iterator[list[HistoryBaseEntry]]:
         """Query Hyperliquid Core history entries and yield the rotki events of each page.
 
@@ -1351,7 +1493,7 @@ class HyperliquidAPI:
         """
         query_type: HistoryQueryType
         for query_type, create_events in (
-            ('userNonFundingLedgerUpdates', self._create_ledger_events),
+            ('userNonFundingLedgerUpdates', partial(self._create_ledger_events, tracked_addresses=tracked_addresses)),  # noqa: E501
             ('userFunding', self._create_funding_events),
             ('userFillsByTime', self._create_fill_events),
         ):

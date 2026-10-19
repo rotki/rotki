@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from threading import Lock
 from typing import TYPE_CHECKING, Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 
@@ -129,6 +129,7 @@ def test_query_proprietary_history_failure_midway_keeps_saved_pages_but_not_the_
         address=ADDRESS,
         start_ts=Timestamp(0),
         end_ts=Timestamp(10),
+        tracked_addresses=ANY,
     )
     assert _stored_group_identifiers(database) == ['page1', 'page2']
     assert _queried_range(database) == (0, 10)
@@ -153,6 +154,7 @@ def test_query_proprietary_history_only_queries_the_missing_ranges(database: DBH
         address=ADDRESS,
         start_ts=Timestamp(11),
         end_ts=Timestamp(20),
+        tracked_addresses=ANY,
     )
     assert _queried_range(database) == (0, 20)
 
@@ -174,6 +176,7 @@ def test_refetch_proprietary_history_ignores_query_ranges(database: DBHandler) -
         address=ADDRESS,
         start_ts=Timestamp(0),
         end_ts=Timestamp(100),
+        tracked_addresses=ANY,
     )
     assert _queried_range(database) is None
 
