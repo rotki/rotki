@@ -99,7 +99,7 @@ function unlink(): void {
     v-if="isCard"
     data-testid="history-event-swap"
     :data-event-id="eventsProp[0]?.identifier"
-    class="h-46 p-3 flex flex-col gap-2 overflow-hidden border-b border-default bg-white dark:bg-dark-surface contain-content transition-all"
+    class="h-46 p-3 flex flex-col gap-2 overflow-hidden border-b border-default bg-rui-background contain-content transition-all"
     :class="[
       { 'opacity-50': primaryEvent.ignoredInAccounting },
       highlight && getHighlightClass(highlightType),

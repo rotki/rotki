@@ -133,7 +133,7 @@ function getAccount(account: AddressAccount): Account {
 
 <template>
   <div
-    class="bg-white dark:bg-dark-elevated"
+    class="bg-rui-surface"
     v-bind="getRootAttrs($attrs)"
   >
     <RuiAutoComplete

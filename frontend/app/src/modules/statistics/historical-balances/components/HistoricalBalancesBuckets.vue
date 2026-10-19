@@ -39,7 +39,7 @@ const hidePagination = computed<boolean>(() => fitsEveryLimit(buckets.length));
 </script>
 
 <template>
-  <div class="my-2 bg-white dark:bg-dark-elevated rounded-xl">
+  <div class="my-2 bg-rui-surface rounded-xl">
     <RuiDataTable
       :cols="cols"
       :rows="rows"

@@ -45,7 +45,7 @@ watch(adaptiveLanguage, async (language) => {
   <div
     v-if="!isPlayground"
     id="rotki"
-    class="overflow-clip text-rui-text! bg-rui-grey-50 dark:bg-dark-surface"
+    class="overflow-clip text-rui-text! bg-rui-grey-50 dark:bg-rui-background"
     :class="{ 'animations-disabled': !animationsEnabled }"
   >
     <slot />
