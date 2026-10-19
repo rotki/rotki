@@ -843,7 +843,8 @@
       },
       "success": {
         "action": "See pulled transactions",
-        "description": "{length} transactions re-pulled",
+        "description": "{length} transaction re-pulled | {length} transactions re-pulled",
+        "events_description": "{length} event re-pulled | {length} events re-pulled",
         "no_tx_description": "No transactions re-pulled"
       },
       "task": {

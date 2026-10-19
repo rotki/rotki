@@ -22,6 +22,7 @@ import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/m
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface RepullingTransactionResult {
+  newHistoryEventsCount: number;
   newTransactionsCount: number;
   newTransactions: Record<string, string[]>;
 }
