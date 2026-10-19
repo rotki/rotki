@@ -35,6 +35,7 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiButton
       color="primary"
       class="[&>span]:hidden! lg:[&>span]:inline!"
+      :aria-label="t('transactions.actions.add_event')"
       data-testid="history-events-add"
       @click="emit('show:dialog', { type: DIALOG_TYPES.EVENT_FORM, data: { type: 'add', nextSequenceId: '0' } })"
     >

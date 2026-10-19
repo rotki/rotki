@@ -72,6 +72,7 @@ const label = computed<string>(() => {
           v-if="canUnlink"
           data-testid="collapse-unlink"
           class="h-6! [&>span]:hidden! md:[&>span]:inline!"
+          :aria-label="t('transactions.events.actions.unlink')"
           variant="text"
           size="sm"
           color="warning"

@@ -70,7 +70,7 @@ function syncHistory(): void {
             }"
             color="primary"
             variant="outlined"
-            class="outline-0! px-2"
+            class="px-2"
             :aria-label="t('staking_page.refresh_menu.title')"
           >
             <RuiIcon name="lu-chevron-down" />

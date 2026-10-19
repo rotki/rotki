@@ -99,7 +99,6 @@ function choose(action: DashboardRefreshAction): void {
       >
         <template #activator>
           <RuiButton
-            class="outline-0!"
             variant="outlined"
             color="primary"
             size="sm"
@@ -127,7 +126,6 @@ function choose(action: DashboardRefreshAction): void {
       >
         <template #activator="{ attrs }">
           <RuiButton
-            class="outline-0!"
             icon
             variant="outlined"
             color="primary"
