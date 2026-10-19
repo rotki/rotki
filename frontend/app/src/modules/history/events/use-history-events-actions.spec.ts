@@ -124,8 +124,8 @@ describe('useHistoryEventsActions', () => {
   });
 
   describe('dialogHandlers.onRepullTransactions', () => {
-    function createResult(newTransactionsCount: number, newTransactions: Record<string, string[]> = {}): RepullingTransactionResult {
-      return { newTransactions, newTransactionsCount };
+    function createResult(newTransactionsCount: number, newTransactions: Record<string, string[]> = {}, newHistoryEventsCount: number = 0): RepullingTransactionResult {
+      return { newHistoryEventsCount, newTransactions, newTransactionsCount };
     }
 
     it('should call checkMissingEventsAndRedecode', async () => {
@@ -165,6 +165,32 @@ describe('useHistoryEventsActions', () => {
       }));
       expect(mockNotify.mock.calls[0][0].message).toContain('actions.repulling_transaction.success.description');
       expect(mockNotify.mock.calls[0][0].action).toBeDefined();
+    });
+
+    it('should report history events when only events were re-pulled', async () => {
+      const options = createOptions();
+      const { dialogHandlers } = useHistoryEventsActions(options);
+
+      await dialogHandlers.onRepullTransactions?.(createResult(0, {}, 3));
+
+      expect(mockNotify).toHaveBeenCalledWith({
+        action: undefined,
+        display: true,
+        message: 'actions.repulling_transaction.success.events_description::3',
+        severity: Severity.INFO,
+        title: 'actions.repulling_transaction.task.title',
+      });
+    });
+
+    it('should report both transactions and history events', async () => {
+      const options = createOptions();
+      const { dialogHandlers } = useHistoryEventsActions(options);
+
+      await dialogHandlers.onRepullTransactions?.(createResult(1, { eth: ['0xhash1'] }, 2));
+
+      expect(mockNotify.mock.calls[0][0].message).toBe(
+        'actions.repulling_transaction.success.description::1\nactions.repulling_transaction.success.events_description::2',
+      );
     });
 
     it('should create action that navigates to history events with tx hashes', async () => {
