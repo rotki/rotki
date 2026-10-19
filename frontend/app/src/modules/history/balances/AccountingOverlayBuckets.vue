@@ -169,7 +169,6 @@ const affectedIndex = computed<number>(() => {
             :asset="asset"
             :value="Zero"
             :timestamp="{ ms: timestamp }"
-            no-collection-parent
             class="text-xs text-rui-text-secondary tabular-nums"
           />
         </div>
@@ -194,7 +193,6 @@ const affectedIndex = computed<number>(() => {
             :asset="asset"
             :value="Zero"
             :timestamp="{ ms: timestamp }"
-            no-collection-parent
             class="text-xs text-rui-text-secondary tabular-nums"
           />
         </div>

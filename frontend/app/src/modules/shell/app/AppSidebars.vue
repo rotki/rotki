@@ -6,7 +6,7 @@ import HelpSidebar from '@/modules/shell/components/HelpSidebar.vue';
 import PinnedSidebar from '@/modules/shell/components/navigation/PinnedSidebar.vue';
 import { usePinnedPersistence } from '@/modules/shell/pinned/use-pinned-persistence';
 
-const { showAbout, showHelpBar, showNotesSidebar, showNotificationBar, showPinned }
+const { showAbout, showHelpBar, showNotesSidebar, showNotificationBar }
   = storeToRefs(useAreaVisibilityStore());
 
 // Restore the rail width + open tabs from localStorage and keep them in sync.
@@ -15,7 +15,7 @@ usePinnedPersistence();
 
 <template>
   <NotificationSidebar v-model="showNotificationBar" />
-  <PinnedSidebar v-model="showPinned" />
+  <PinnedSidebar />
   <UserNotesSidebar v-model="showNotesSidebar" />
   <HelpSidebar
     v-model="showHelpBar"

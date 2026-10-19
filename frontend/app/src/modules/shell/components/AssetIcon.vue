@@ -33,7 +33,6 @@ interface AssetIconProps {
   showChain?: boolean;
   /** Leaves out the token's protocol mark, for icons that already sit beside one of their own. */
   hideProtocol?: boolean;
-  flat?: boolean;
   resolutionOptions?: AssetResolutionOptions;
   chainIconSize?: string;
   forceChain?: string;
@@ -47,7 +46,6 @@ interface AssetIconProps {
 const {
   chainIconSize,
   circle,
-  flat = false,
   forceChain,
   hideProtocol = false,
   identifier,
@@ -241,7 +239,6 @@ const { copied, copy } = useCopy(() => identifier);
             v-if="blockie"
             :blockie="blockie"
             :size="size"
-            :flat="flat"
           />
 
           <GeneratedIcon
@@ -251,7 +248,6 @@ const { copied, copy } = useCopy(() => identifier);
             :asset="displayAsset"
             :identifier="mappedIdentifier"
             :size="size"
-            :flat="flat"
           />
 
           <GeneratedIcon
@@ -260,7 +256,6 @@ const { copied, copy } = useCopy(() => identifier);
             :asset="displayAsset"
             :identifier="mappedIdentifier"
             :size="size"
-            :flat="flat"
           />
 
           <IconMark

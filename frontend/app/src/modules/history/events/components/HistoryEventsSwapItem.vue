@@ -118,7 +118,6 @@ function unlink(): void {
 
         <HistoryEventType
           :event="primaryEvent"
-          :chain="chain"
           :group-location-label="groupLocationLabel"
           :highlight="highlight"
           :label="typeLabel"
@@ -231,7 +230,6 @@ function unlink(): void {
 
     <HistoryEventType
       :event="primaryEvent"
-      :chain="chain"
       :group-location-label="groupLocationLabel"
       :highlight="highlight"
       :label="typeLabel"

@@ -96,7 +96,6 @@ provideHistoryEventsRowContext(rowContext);
       v-model:sort="sort"
       v-model:pagination="pagination"
       :loading="loading"
-      :total="total"
       :found="found"
     />
 

@@ -49,7 +49,6 @@ async function navigateToAsset(asset: AssetBalance): Promise<void> {
             >
               <AssetIcon
                 no-tooltip
-                flat
                 :identifier="asset.asset"
                 :resolution-options="resolutionOptions"
                 size="24px"

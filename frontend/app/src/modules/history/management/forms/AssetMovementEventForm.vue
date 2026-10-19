@@ -113,7 +113,6 @@ defineExpose({
         v-model="state.timestamp"
         :label="t('common.datetime')"
         required
-        persistent-hint
         max-date="now"
         accuracy="millisecond"
         data-testid="datetime"

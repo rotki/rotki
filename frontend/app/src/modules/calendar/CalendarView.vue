@@ -146,7 +146,6 @@ onMounted(async () => {
     <CalendarFormDialog
       v-model="modelValue"
       :loading="isLoading"
-      :selected-date="modelSelectedDate"
       :edit-mode="editMode"
       @delete="deleteEvent()"
       @refresh="fetchData()"

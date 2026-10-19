@@ -65,7 +65,6 @@ defineExpose({
         class="md:col-span-2"
         :label="t('common.datetime')"
         required
-        persistent-hint
         max-date="now"
         accuracy="millisecond"
         data-testid="datetime"
