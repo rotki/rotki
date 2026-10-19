@@ -138,7 +138,6 @@ defineExpose({
       <AccountTopTokens
         :chains="getChains(row)"
         :row="row"
-        :loading="isRowLoading(row)"
       />
     </template>
     <template #item.value="{ row }">

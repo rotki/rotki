@@ -32,7 +32,6 @@ const { t } = useI18n({ useScope: 'global' });
       v-model="timestamp"
       :label="t('common.datetime')"
       required
-      persistent-hint
       max-date="now"
       accuracy="millisecond"
       :disabled="dateDisabled"

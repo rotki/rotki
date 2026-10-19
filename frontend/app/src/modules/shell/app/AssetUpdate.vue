@@ -81,7 +81,6 @@ const {
 
     <AssetConflictDialog
       v-if="modelShowConflictDialog"
-      v-model="modelShowConflictDialog"
       :conflicts="conflicts"
       @cancel="skip(false)"
       @resolve="updateAssets($event)"

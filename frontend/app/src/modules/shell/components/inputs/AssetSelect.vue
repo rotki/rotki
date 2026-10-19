@@ -148,7 +148,6 @@ function onUpdateModelValue(value: string): void {
             :identifier="item.identifier"
             size="20px"
             show-chain
-            flat
           />
           <span class="truncate text-sm text-rui-text">
             {{ item.isCustomAsset ? item.name : item.symbol }}

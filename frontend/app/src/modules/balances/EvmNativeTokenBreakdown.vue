@@ -137,7 +137,6 @@ function getAssets(location: string): AssetBalance[] {
       <IconTokenDisplay
         show-chain
         :assets="getAssets(row.location)"
-        :loading="false"
       />
     </template>
     <template #item.amount="{ row }">

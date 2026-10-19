@@ -8,10 +8,9 @@ import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 
-const { chains, row, loading } = defineProps<{
+const { chains, row } = defineProps<{
   chains: string[];
   row: BlockchainAccountBalance;
-  loading: boolean;
 }>();
 
 const { useBlockchainBalances } = useAggregatedBalances();
@@ -39,14 +38,12 @@ async function navigateToAsset(asset: AssetBalance): Promise<void> {
   <IconTokenDisplay
     v-if="assets.length > 1"
     :assets="assets"
-    :loading="loading"
   />
   <div
     v-else-if="assets.length === 1"
     class="flex items-center justify-end text-body-2"
   >
     <AssetIcon
-      flat
       :identifier="assets[0].asset"
       :resolution-options="{ collectionParent: false }"
       size="24px"

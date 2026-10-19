@@ -166,7 +166,6 @@ watchImmediate(route, (route) => {
     <AccountDialog
       v-model="account"
       :chain-ids="usedChainIds"
-      :show-all-chains-option="isAccountsTabSelected"
       @complete="refresh()"
     />
   </TablePageLayout>

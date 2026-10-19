@@ -79,7 +79,6 @@ onMounted(async () => {
       v-model:sort="sort"
       :assets="collection.data"
       :loading="loading"
-      :server-item-length="collection.found"
       :fields="fields"
       @edit="edit($event)"
       @delete-asset="showDeleteConfirmation($event)"

@@ -126,7 +126,6 @@ onMounted(async () => {
       :ignored-handling="modelIgnoredAssetsHandling"
       :collection="assets"
       :loading="loading"
-      :change="!loading"
       :fields="fields"
       @refresh="refetch()"
       @edit="edit($event)"

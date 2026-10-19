@@ -109,7 +109,6 @@ defineExpose({
         <HashLink
           class="my-2"
           location="eth2"
-          :show-icon="false"
           :text="row.publicKey.toString()"
         />
       </template>

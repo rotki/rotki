@@ -6,7 +6,6 @@ import { sortDesc } from '@/modules/core/common/data/bignumbers';
 const { chains } = defineProps<{
   chains: Record<string, Balance>;
   asset?: string;
-  loading?: boolean;
 }>();
 
 /** Chains shown as logos; the rest collapse into a count, so a widely held asset keeps a short row. */
@@ -30,7 +29,6 @@ const hiddenCount = computed<number>(() => Math.max(0, get(chainEntries).length 
         :chain-id="chainId"
         :chain-balance="chainBalance"
         :asset="asset"
-        :loading="loading"
       />
     </div>
     <div

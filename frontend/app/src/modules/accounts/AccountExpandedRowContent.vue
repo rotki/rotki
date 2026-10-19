@@ -53,7 +53,6 @@ defineExpose({
         :chains="chains"
         :tags="visibleTags"
         :group-id="getGroupId(row)"
-        :group="isXpubAccount(row) ? 'xpub' : undefined"
         :category="row.category"
         :selection-mode="selectionMode"
         @edit="emit('edit', $event)"

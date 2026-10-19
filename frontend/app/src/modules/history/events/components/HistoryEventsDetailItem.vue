@@ -128,7 +128,6 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
 
       <HistoryEventType
         :event="event"
-        :chain="chain"
         :group-location-label="groupLocationLabel"
         :linked-leg="linkedLeg"
         :highlight="!!highlightType"
@@ -187,7 +186,6 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
 
     <HistoryEventType
       :event="event"
-      :chain="chain"
       :group-location-label="groupLocationLabel"
       :linked-leg="linkedLeg"
       :highlight="!!highlightType"

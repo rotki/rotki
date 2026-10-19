@@ -136,7 +136,6 @@ watchImmediate(location, async () => {
         :filtered="filtered"
         :location="location"
         :loading="isLoading"
-        :blockchain="selectedChain"
         @edit="edit($event)"
         @refresh="fetchData()"
       />
