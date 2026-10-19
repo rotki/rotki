@@ -1,15 +1,3 @@
-@import '@fontsource/roboto/300.css' layer(base);
-@import '@fontsource/roboto/400.css' layer(base);
-@import '@fontsource/roboto/400-italic.css' layer(base);
-@import '@fontsource/roboto/500.css' layer(base);
-@import '@fontsource/roboto/600.css' layer(base);
-@import '@fontsource/roboto/700.css' layer(base);
-@import '@fontsource/roboto/900.css' layer(base);
-@import '@fontsource/roboto-mono/400.css' layer(base);
-@import '@fontsource/roboto-mono/500.css' layer(base);
-@import '@fontsource/roboto-mono/700.css' layer(base);
-@import 'flag-icons/css/flag-icons.min.css' layer(base);
-
 @import 'tailwindcss';
 @import '@rotki/ui-library/tailwind.css';
 

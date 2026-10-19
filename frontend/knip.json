@@ -39,8 +39,6 @@
         "tests/unit/**/*.ts"
       ],
       "ignoreDependencies": [
-        "@fontsource/roboto",
-        "@fontsource/roboto-mono",
         "@vueuse/math",
         "dmg-license"
       ],

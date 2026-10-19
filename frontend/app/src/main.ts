@@ -13,6 +13,9 @@ import { registerDevtools } from '@/plugins/devtools';
 import { createRuiPlugin } from '@/plugins/rui';
 import { router } from '@/router';
 
+import '@fontsource-variable/inter/opsz.css';
+import '@fontsource-variable/geist-mono';
+import 'flag-icons/css/flag-icons.min.css';
 import './main.css';
 
 const isDevelopment = checkIfDevelopment() && !import.meta.env.VITE_TEST;
