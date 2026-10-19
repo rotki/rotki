@@ -38,7 +38,8 @@ function confirmRefresh() {
           :disabled="processing"
           variant="outlined"
           color="primary"
-          class="outline-hidden! [&>span]:hidden! lg:[&>span]:inline!"
+          class="[&>span]:hidden! lg:[&>span]:inline!"
+          :aria-label="t('common.refresh')"
           @click="confirmRefresh()"
         >
           <template #prepend>

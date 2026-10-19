@@ -84,7 +84,7 @@ function toggleSelectAll(): void {
       <RuiButton
         variant="outlined"
         color="primary"
-        class="h-9 px-2.5 outline-hidden!"
+        class="h-9 px-2.5"
         :disabled="disabled"
         :aria-label="t('common.actions.more')"
         data-testid="refresh-selection-toggle"

@@ -58,7 +58,7 @@ async function refreshOnlyPrices(): Promise<void> {
           }"
           color="primary"
           variant="outlined"
-          class="outline-0! px-2"
+          class="px-2"
         >
           <RuiIcon name="lu-chevron-down" />
         </RuiButton>

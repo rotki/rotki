@@ -147,6 +147,7 @@ watchDebounced(onlyExpectedAssets, () => {
               :loading="loading"
               :size="isPinned ? 'sm' : 'xl'"
               :class="isPinned ? '[&>span]:hidden! px-2.5! h-[38px]!' : 'ml-3 [&>span]:inline!'"
+              :aria-label="t('common.actions.search')"
               @click="emit('search')"
             >
               <template #prepend>
