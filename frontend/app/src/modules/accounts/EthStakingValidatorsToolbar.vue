@@ -12,6 +12,7 @@ import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 
 const filters = defineModel<Filters>('filters', { required: true });
 const selected = defineModel<number[]>('selected', { required: true });
+const selectionMode = defineModel<boolean>('selectionMode', { required: true });
 
 const { deleting = false, fields } = defineProps<{
   fields: FieldDef[];
@@ -41,17 +42,26 @@ const pillState = computed<SavedViewState>(() => ({
 function applyView(view: SavedView): void {
   set(filters, view.matches);
 }
+
+function exitSelection(): void {
+  set(selected, []);
+  set(selectionMode, false);
+}
 </script>
 
 <template>
   <TableSelectionBar
-    v-if="selected.length > 0"
+    v-if="selectionMode"
+    class="flex-1"
     :count="selected.length"
+    exitable
     @clear="selected = []"
+    @exit="exitSelection()"
   >
     <TableSelectionAction
       icon="lu-trash-2"
       color="error"
+      :disabled="selected.length === 0"
       :loading="deleting"
       data-testid="validators-delete-selected"
       @click="emit('delete')"
@@ -59,20 +69,43 @@ function applyView(view: SavedView): void {
       {{ t('common.actions.delete') }}
     </TableSelectionAction>
   </TableSelectionBar>
-  <PillFilterBar
-    v-model:matches="filters"
-    class="flex-1 min-w-64"
-    :fields="fields"
-    :labels="pillLabels"
-  >
-    <template #views="{ disabled }">
-      <PillViewsMenu
-        :fields="fields"
-        :location="SavedFilterLocations.ETH_VALIDATORS"
-        :state="pillState"
-        :disabled="disabled"
-        @apply="applyView($event)"
-      />
-    </template>
-  </PillFilterBar>
+  <template v-else>
+    <RuiTooltip
+      :options="{ placement: 'top' }"
+      :open-delay="400"
+    >
+      <template #activator>
+        <RuiButton
+          variant="text"
+          data-testid="validators-select"
+          @click="selectionMode = true"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-copy-check"
+              size="18"
+            />
+          </template>
+          {{ t('common.actions.select') }}
+        </RuiButton>
+      </template>
+      {{ t('blockchain_balances.validators.enter_selection_mode') }}
+    </RuiTooltip>
+    <PillFilterBar
+      v-model:matches="filters"
+      class="flex-1 min-w-64"
+      :fields="fields"
+      :labels="pillLabels"
+    >
+      <template #views="{ disabled }">
+        <PillViewsMenu
+          :fields="fields"
+          :location="SavedFilterLocations.ETH_VALIDATORS"
+          :state="pillState"
+          :disabled="disabled"
+          @apply="applyView($event)"
+        />
+      </template>
+    </PillFilterBar>
+  </template>
 </template>

@@ -122,6 +122,12 @@ function createWrapper(): VueWrapper<any> {
   });
 }
 
+async function createSelectingWrapper(): Promise<VueWrapper<any>> {
+  const wrapper = createWrapper();
+  await wrapper.find('[data-testid=validators-select]').trigger('click');
+  return wrapper;
+}
+
 function deleteButton(wrapper: VueWrapper<any>): ReturnType<VueWrapper<any>['find']> {
   return wrapper.find('[data-testid=validators-delete-selected]');
 }
@@ -136,24 +142,24 @@ describe('ethStakingValidators', () => {
     set(rows, { data: [validator(1), validator(2)], found: 2, limit: 10, total: 2 });
   });
 
-  /** The bulk delete lives in the selection bar, which only shows while validators are picked. */
-  describe('deleting the selection', () => {
-    it('should offer no delete while nothing is selected', () => {
-      expect(deleteButton(createWrapper()).exists()).toBe(false);
-    });
-
-    it('should offer it once validators are picked', async () => {
+  describe('selection mode', () => {
+    it('should show neither checkboxes nor the bulk delete until the user presses select', () => {
       const wrapper = createWrapper();
 
-      set(modelSelected, ['1']);
-      await nextTick();
+      expect(wrapper.findComponent(TableStub).props('modelValue')).toBeUndefined();
+      expect(deleteButton(wrapper).exists()).toBe(false);
+    });
 
-      expect(deleteButton(wrapper).exists()).toBe(true);
+    it('should give the table a selection and offer a disabled delete once select is pressed', async () => {
+      const wrapper = await createSelectingWrapper();
+
+      expect(wrapper.findComponent(TableStub).props('modelValue')).toEqual([]);
+      expect(deleteButton(wrapper).attributes('disabled')).toBeDefined();
     });
 
     /** The selection is a list of keys, so the rows on screen are what resolves it. */
     it('should delete the picked validators out of the rows in view', async () => {
-      const wrapper = createWrapper();
+      const wrapper = await createSelectingWrapper();
       set(modelSelected, ['1']);
       await nextTick();
 
@@ -162,14 +168,27 @@ describe('ethStakingValidators', () => {
       expect(deleteSelected).toHaveBeenCalledWith(get(rows).data, ['1']);
     });
 
-    it('should let the selection be cleared', async () => {
-      const wrapper = createWrapper();
+    it('should clear the selection and stay in selection mode', async () => {
+      const wrapper = await createSelectingWrapper();
       set(modelSelected, ['1']);
       await nextTick();
 
       await wrapper.find('[data-testid=table-selection-clear]').trigger('click');
 
       expect(get(modelSelected)).toEqual([]);
+      expect(wrapper.find('[data-testid=table-selection-bar]').exists()).toBe(true);
+    });
+
+    it('should drop the selection and the checkboxes on done', async () => {
+      const wrapper = await createSelectingWrapper();
+      set(modelSelected, ['1']);
+      await nextTick();
+
+      await wrapper.find('[data-testid=table-selection-exit]').trigger('click');
+
+      expect(get(modelSelected)).toEqual([]);
+      expect(wrapper.findComponent(TableStub).props('modelValue')).toBeUndefined();
+      expect(wrapper.find('[data-testid=validators-select]').exists()).toBe(true);
     });
   });
 

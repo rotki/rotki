@@ -46,6 +46,14 @@ const emit = defineEmits<{
   'delete-asset': [asset: SupportedAsset];
 }>();
 
+const selectionMode = shallowRef<boolean>(false);
+
+/** `undefined` outside selection mode, which is what makes the table drop its checkbox column. */
+const tableSelection = computed<string[] | undefined>({
+  get: () => (get(selectionMode) ? get(selected) : undefined),
+  set: (value?: string[]) => set(selected, value ?? []),
+});
+
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
@@ -84,6 +92,7 @@ const { fetchIgnoredAssets } = useIgnoredAssetOperations();
       <ManagedAssetActions
         v-model:pill-params="pillParams"
         v-model:selected="selected"
+        v-model:selection-mode="selectionMode"
         v-model:matches="filtersModel"
         :ignored-handling="ignoredHandling"
         :fields="fields"
@@ -95,11 +104,10 @@ const { fetchIgnoredAssets } = useIgnoredAssetOperations();
     </template>
 
     <RuiDataTable
-      v-model="selected"
+      v-model="tableSelection"
       v-model:pagination.external="paginationModel"
       v-model:sort.external="sortModel"
       dense
-      :value="selected"
       :rows="data"
       :empty="emptyState"
       :loading="loading"

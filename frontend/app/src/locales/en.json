@@ -1392,6 +1392,7 @@
     },
     "delete_tooltip": "Delete the asset",
     "edit_tooltip": "Edit the asset",
+    "enter_selection_mode": "Select assets to ignore, unignore or mark them as spam together",
     "filter_by_ignored_status": "Filter by ignored status",
     "headers": {
       "started": "Started"
@@ -1973,7 +1974,8 @@
     "validator_index_label": "Ethereum validator No. {index}",
     "validators": {
       "auto_detection_info": "Validators are auto-detected from ETH deposits. Add the depositor address as an Ethereum account, decode its history events, then click refresh to update the list.",
-      "consolidated": "Consolidated into:"
+      "consolidated": "Consolidated into:",
+      "enter_selection_mode": "Select validators to delete them together"
     }
   },
   "bridge_matching": {
