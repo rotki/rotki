@@ -201,7 +201,7 @@ onBeforeMount(async () => {
         variant="outlined"
         color="primary"
         :size="buttonSize"
-        :class="{ 'h-[30px]': isPinned }"
+        :class="{ 'h-7.5': isPinned }"
         :disabled="ignoreLoading"
         :loading="ignoreLoading"
         data-testid="ignore-selected"
@@ -232,7 +232,7 @@ onBeforeMount(async () => {
             <RuiButton
               color="primary"
               :size="buttonSize"
-              :class="{ 'h-[30px] px-3!': isPinned }"
+              :class="{ 'h-7.5 px-3!': isPinned }"
               :disabled="!isAutoMatchAllowed || unmatchedTransactions.length === 0 || autoMatchLoading"
               :loading="autoMatchLoading"
               data-testid="auto-match"

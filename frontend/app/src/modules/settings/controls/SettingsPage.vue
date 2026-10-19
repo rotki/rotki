@@ -51,12 +51,12 @@ const showRail = computed<boolean>(() => navigation.length > 1);
   >
     <div
       v-if="navigation.length === 1"
-      class="hidden md:block w-[200px] lg:w-[240px]"
+      class="hidden md:block w-50 lg:w-60"
     />
     <template v-else-if="showRail">
       <div
         v-if="isMdAndUp"
-        class="w-[200px] lg:w-[240px] sticky top-0 bg-rui-grey-50 dark:bg-rui-background border-default border-b-0"
+        class="w-50 lg:w-60 sticky top-0 bg-rui-grey-50 dark:bg-rui-background border-default border-b-0"
       >
         <RuiTabs
           :vertical="isMdAndUp"

@@ -25,7 +25,7 @@ const { t } = useI18n({ useScope: 'global' });
           {{ dataDirectory }}
         </div>
       </template>
-      <span class="max-w-[280px] break-all">
+      <span class="max-w-70 break-all">
         {{ dataDirectory }}
       </span>
     </RuiTooltip>

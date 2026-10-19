@@ -97,7 +97,7 @@ function toggleSelectAll(): void {
       </RuiButton>
     </template>
 
-    <div class="w-[450px]">
+    <div class="w-112.5">
       <div class="p-4 border-b border-default">
         <RuiTextField
           v-model="modelSearch"

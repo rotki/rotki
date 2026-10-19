@@ -57,7 +57,7 @@ function description(directive: string): string {
       <template #subheader>
         {{ t('date_format_help.subtitle') }}
       </template>
-      <div class="max-h-[300px] overflow-y-scroll flex flex-col gap-2">
+      <div class="max-h-75 overflow-y-scroll flex flex-col gap-2">
         <div
           v-for="directive in directives"
           :key="directive"

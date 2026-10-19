@@ -51,11 +51,11 @@ const asset = computed<string>(() => snapshot?.assetIdentifier ?? '');
       <NftDetails
         v-if="isNft(asset)"
         :identifier="asset"
-        class="max-w-[640px]"
+        class="max-w-160"
       />
       <AssetDetails
         v-else
-        class="max-w-[640px]"
+        class="max-w-160"
         :asset="asset"
         :actions="{ hideMenu: true }"
         :resolution="{ enableAssociation: false }"

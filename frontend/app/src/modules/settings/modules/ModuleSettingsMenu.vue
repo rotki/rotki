@@ -127,7 +127,7 @@ onMounted(async () => {
       </RuiTooltip>
     </template>
 
-    <div class="w-[26rem] max-w-full p-4 flex flex-col gap-4">
+    <div class="w-104 max-w-full p-4 flex flex-col gap-4">
       <section
         v-for="row in rows"
         :key="row.identifier"

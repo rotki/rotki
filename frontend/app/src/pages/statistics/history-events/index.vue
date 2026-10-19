@@ -23,7 +23,7 @@ const { allowed } = useFeatureAccess(PremiumFeature.EVENT_ANALYSIS_VIEW);
     <WrappedContainer v-if="allowed" />
     <RuiCard
       v-else
-      class="max-w-[920px] mx-auto"
+      class="max-w-230 mx-auto"
     >
       <WrappedContainerPlaceholder />
     </RuiCard>

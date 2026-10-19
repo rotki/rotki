@@ -23,7 +23,7 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiButton
       size="sm"
       variant="text"
-      class="h-[26px]! py-0! shrink-0"
+      class="h-6.5! py-0! shrink-0"
       :loading="loading"
       data-testid="unmatched-resolution-undo"
       @click="emit('undo')"
@@ -34,7 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
       size="sm"
       variant="text"
       icon
-      class="h-[26px]! w-[26px]! shrink-0"
+      class="h-6.5! w-6.5! shrink-0"
       :aria-label="t('common.actions.dismiss')"
       data-testid="unmatched-resolution-dismiss"
       @click="emit('dismiss')"

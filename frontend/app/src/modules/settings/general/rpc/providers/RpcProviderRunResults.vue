@@ -91,7 +91,7 @@ function failureMessage(row: RpcSetupRow): string {
         class="flex items-center gap-2"
         data-testid="provider-progress"
       >
-        <div class="w-[18px] shrink-0">
+        <div class="w-4.5 shrink-0">
           <ChainIcon
             v-if="runningChain"
             :chain="runningChain"

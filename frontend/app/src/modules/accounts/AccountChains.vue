@@ -191,7 +191,7 @@ function reset() {
             </div>
             <div
               v-if="item.skipped"
-              class="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full bg-rui-error text-white p-[2px] border border-rui-surface z-3"
+              class="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full bg-rui-error text-white p-0.5 border border-rui-surface z-3"
               data-testid="account-chain-skipped"
               :data-chain="item.chain"
             >

@@ -135,7 +135,7 @@ onBeforeMount(() => {
       :class="{
         'transition-none!': pinnedDragging,
         'pl-14': isMini,
-        'pl-[300px]': expanded,
+        'pl-75': expanded,
       }"
       :style="{ paddingRight: pinnedPadding, paddingBottom: dockPadding }"
     >

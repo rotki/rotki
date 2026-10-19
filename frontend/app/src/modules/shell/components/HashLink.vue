@@ -214,7 +214,7 @@ const tags = useAccountTags(() => text);
 </script>
 
 <template>
-  <div class="group/hash-link flex shrink items-center gap-1.5 text-xs **:leading-6 min-h-[22px] min-w-0">
+  <div class="group/hash-link flex shrink items-center gap-1.5 text-xs **:leading-6 min-h-5.5 min-w-0">
     <LocationIcon
       v-if="showLocationIcon && location"
       icon

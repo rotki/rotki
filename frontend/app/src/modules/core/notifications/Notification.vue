@@ -47,7 +47,7 @@ const {
         'rounded-none!': popup,
       },
     ]"
-    class="p-2! pb-1.5! max-w-[400px]"
+    class="p-2! pb-1.5! max-w-100"
     no-padding
     :variant="popup ? 'flat' : 'outlined'"
     data-id="notification"

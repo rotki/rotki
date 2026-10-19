@@ -104,7 +104,7 @@ function redecode() {
       </RuiButton>
     </template>
 
-    <div class="w-[450px]">
+    <div class="w-112.5">
       <div class="p-4 border-b border-default">
         <RuiTextField
           v-model="search"
@@ -122,7 +122,7 @@ function redecode() {
       {{ t('history_redecode_selection.selection') }}
     </div>
 
-    <div class="h-[220px] overflow-y-auto">
+    <div class="h-55 overflow-y-auto">
       <HistoryRedecodeChainItem
         v-for="chain in filteredChains"
         :key="chain.id"

@@ -146,7 +146,7 @@ async function navigateToApiKeys(): Promise<void> {
           </RuiButton>
         </template>
         <div
-          class="max-h-[300px] overflow-y-auto"
+          class="max-h-75 overflow-y-auto"
           data-testid="chain-menu"
         >
           <RuiButton

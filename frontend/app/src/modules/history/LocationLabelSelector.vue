@@ -93,7 +93,7 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
     <div
       v-else
       class="flex items-center gap-2"
-      :class="{ 'py-[5px]': !dense }"
+      :class="{ 'py-1.25': !dense }"
     >
       <LocationIcon
         :item="item.location"

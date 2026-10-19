@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center justify-center h-full w-full min-h-[200px]">
+  <div class="flex items-center justify-center h-full w-full min-h-50">
     <RuiProgress
       circular
       variant="indeterminate"

@@ -25,7 +25,7 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiButton
       size="sm"
       variant="text"
-      class="h-[26px]! py-0! shrink-0"
+      class="h-6.5! py-0! shrink-0"
       data-testid="unmatched-confirm-cancel"
       @click="emit('cancel')"
     >
@@ -34,7 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiButton
       size="sm"
       color="warning"
-      class="h-[26px]! py-0! shrink-0"
+      class="h-6.5! py-0! shrink-0"
       :loading="loading"
       data-testid="unmatched-confirm-accept"
       @click="emit('confirm')"

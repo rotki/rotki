@@ -17,7 +17,7 @@ const { t } = useI18n({ useScope: 'global' });
     <h5 class="font-bold mb-3">
       {{ t('trade.bridge.connection_logs') }}
     </h5>
-    <div class="border border-default rounded-md p-4 max-h-[300px] overflow-y-auto bg-rui-grey-50 dark:bg-rui-grey-900">
+    <div class="border border-default rounded-md p-4 max-h-75 overflow-y-auto bg-rui-grey-50 dark:bg-rui-grey-900">
       <p
         v-for="(log, index) in logs"
         :key="index"
