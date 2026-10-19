@@ -70,7 +70,7 @@ const chain = computed<string | undefined>(() => {
           class="pl-0!"
           :location="chain"
           :text="connectedAddress"
-          copy-only
+          display-mode="copy"
           no-scramble
         />
         <RuiIcon

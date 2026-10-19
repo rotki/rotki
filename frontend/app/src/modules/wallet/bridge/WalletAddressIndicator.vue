@@ -100,7 +100,7 @@ onBeforeUnmount(() => {
           class="pl-0! flex-1"
           :location="chain"
           :text="connectedAddress"
-          copy-only
+          display-mode="copy"
         />
         <RuiButton
           variant="outlined"
