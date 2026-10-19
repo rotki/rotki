@@ -1,5 +1,20 @@
 """The payload that a premium backup encrypts: a JSON manifest, then one data block per entry.
 
+A backup is three layers. The user DB is zlib compressed, wrapped in this container, and the
+container is encrypted by crypto.encrypt_backup into the RKPBAK01 envelope. The container is
+laid out as:
+
+    magic            4 bytes  b'RKC1'
+    manifest length  4 bytes  big endian, at most MAX_MANIFEST_SIZE
+    manifest         n bytes  JSON, see below
+    entry data                one block per manifest entry, in manifest order, nothing after
+
+    {"container_version": 1, "entries": [
+        {"name": "user_db", "required": true, "compression": "zlib", "size": 48211233}
+    ]}
+
+size is the stored, so still compressed, byte count of the entry's block.
+
 New kinds of content are new entries, not a new backup format. An entry the reader does not
 know is skipped when optional and refused when required. Entries have logical names, never
 paths, so restoring one can't write anywhere but where the reader puts it.
@@ -40,7 +55,9 @@ class ContainerEntry(NamedTuple):
 
 def build_container(user_db: Buffer) -> list[Buffer]:
     """Returns the container for the given zlib compressed user DB, as consecutive segments
-    so that the compressed DB is not copied"""
+    so that the compressed DB is not copied: the magic, manifest length and manifest as one
+    segment, then the user DB itself. The segments are never joined, encrypt_backup reads
+    them chunk by chunk."""
     manifest = json.dumps(
         {
             'container_version': CONTAINER_VERSION,

@@ -284,6 +284,8 @@ class DataHandler:
         """Compress the plaintext DB at tempdbpath and encrypt it as a premium backup
         whose authenticated header carries last_modify_ts
 
+        zlib(DB) -> RKC1 container (backup_container.py) -> RKPBAK01 envelope (crypto.py)
+
         Returns the encrypted backup and the b64 encoded hash of it"""
         self.msg_aggregator.add_message(
             message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS,
