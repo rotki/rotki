@@ -189,7 +189,7 @@ describe('tradeRecipientAddress', () => {
 
     it('should mark the field when what is in it is not an address', async () => {
       expect(wrapper.text()).toContain('trade.to_address.label');
-      expect(wrapper.find('[data-testid=recipient-field]').classes()).not.toContain('!border-rui-error');
+      expect(wrapper.find('[data-testid=recipient-field]').classes()).not.toContain('border-rui-error!');
 
       await wrapper.setProps({ modelValue: 'not-an-address' });
       set(recipientApi.valid, false);
