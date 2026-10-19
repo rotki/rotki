@@ -536,6 +536,7 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 200: API key/secret deleted successfully
    :statuscode 400: Provided call is in some way malformed.
    :statuscode 401: The user does not have premium access.
+   :statuscode 409: The downloaded backup can't be restored on this device. It was made by a newer rotki version or is damaged, it is in an older format than the one this device already synced, or it does not match the backup details the server reported. The message says which.
    :statuscode 500: Internal rotki error
    :statuscode 502: The external premium service could not be reached or returned unexpected response.
 

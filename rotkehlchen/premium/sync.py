@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.misc import USERSDIR_NAME
+from rotkehlchen.crypto import is_backup_format
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.misc import plaintext_db_integrity_check
 from rotkehlchen.errors.api import (
@@ -13,7 +14,14 @@ from rotkehlchen.errors.api import (
     PremiumPermissionError,
     RotkehlchenPermissionError,
 )
-from rotkehlchen.errors.misc import DataIntegrityError, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.misc import (
+    DataIntegrityError,
+    RemoteBackupDowngrade,
+    RemoteBackupError,
+    RemoteBackupMismatch,
+    RemoteError,
+    UnableToDecryptRemoteData,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
     Premium,
@@ -45,6 +53,9 @@ class SyncCheckResult(NamedTuple):
     # If result is ASK_USER, what should the message be?
     message: str
     payload: dict[str, Any] | None
+    # The metadata the decision was made on. Set whenever syncing is allowed, so that the
+    # pulled backup can be checked against the same last_modify_ts.
+    remote_metadata: RemoteMetadata | None = None
 
 
 class PremiumSyncManager(LockableQueryMixIn):
@@ -91,7 +102,12 @@ class PremiumSyncManager(LockableQueryMixIn):
             return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
         if new_account:
-            return SyncCheckResult(can_sync=CanSync.YES, message='', payload=None)
+            return SyncCheckResult(
+                can_sync=CanSync.YES,
+                message='',
+                payload=None,
+                remote_metadata=metadata,
+            )
 
         with self.data.db.conn.read_ctx() as cursor:
             if not self.data.db.get_setting(cursor, name='premium_should_sync'):
@@ -112,26 +128,40 @@ class PremiumSyncManager(LockableQueryMixIn):
                 'local_last_modified': our_last_write_ts,
                 'remote_last_modified': metadata.last_modify_ts,
             },
+            remote_metadata=metadata,
         )
 
-    def _sync_data_from_server_and_replace_local(self, perform_migrations: bool) -> tuple[bool, str]:  # noqa: E501
+    def _sync_data_from_server_and_replace_local(
+            self,
+            perform_migrations: bool,
+            remote_metadata: RemoteMetadata | None,
+    ) -> tuple[bool, str]:
         """
         Performs syncing of data from server and replaces local db. If perform_migrations
         is True then once pulled any needed migrations will be performed. Otherwise,
         they are not and are expected to be done later down the line where all related
         modules are initialized.
 
+        remote_metadata is the metadata that justified the pull, and the backup must carry
+        the same last_modify_ts. Only a pull the user forced passes None, and then the
+        metadata is queried here.
+
         Returns true for success and False for error/failure
 
         May raise:
         - PremiumAuthenticationError due to an UnableToDecryptRemoteData
-        coming from  decompress_and_decrypt_db. This happens when the given password
+        coming from decrypt_db. This happens when the given password
         does not match the one on the saved DB.
+        - RemoteBackupError if the backup is refused. It needs a newer rotki version, is in
+        the legacy format after this device already synced the current one, or does not
+        match remote_metadata.
         """
         if self.premium is None:
             return False, 'Pulling failed. User does not have active premium.'
 
         try:
+            if remote_metadata is None:
+                remote_metadata = self._query_last_data_metadata()
             result = self.premium.pull_data()
         except (RemoteError, PremiumAuthenticationError) as e:
             log.debug('sync from server -- pulling failed.', error=str(e))
@@ -140,16 +170,41 @@ class PremiumSyncManager(LockableQueryMixIn):
         if result is None:
             return False, 'No data found'
 
+        if not is_backup_format(result):
+            with self.data.db.conn.read_ctx() as cursor:
+                v1_synced_ts = self.data.db.get_static_cache(
+                    cursor=cursor,
+                    name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
+                )
+            if v1_synced_ts is not None:  # refuse before running the unauthenticated decryption
+                raise RemoteBackupDowngrade
+
         try:
-            self.data.decompress_and_decrypt_db(result)
+            backup = self.data.decrypt_db(result)
         except UnableToDecryptRemoteData as e:
             raise PremiumAuthenticationError(
                 'The given password can not unlock the database that was retrieved  from '
                 'the server. Make sure to use the same password as when the account was created.',
             ) from e
+
+        if backup.legacy is False and backup.last_modify_ts != remote_metadata.last_modify_ts:
+            # With the check that the remote is newer than local, this stops the server from
+            # passing off an older backup as the newer one its metadata reports
+            raise RemoteBackupMismatch
+
+        try:
+            self.data.restore_db(backup.user_db)
         except DataIntegrityError as e:
             log.error('sync from server -- downloaded db integrity check failed', error=str(e))
             return False, str(e)
+
+        if backup.legacy is False:  # after the restore, since it replaced the whole DB
+            with self.data.db.conn.write_ctx() as write_cursor:  # don't bump last_write_ts
+                self.data.db.set_static_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
+                    value=ts_now(),
+                )
 
         # Need to run migrations in case the app was updated since last sync and in
         # case this is a request to sync from the API, where all modules are initialized
@@ -246,7 +301,10 @@ class PremiumSyncManager(LockableQueryMixIn):
                 )
                 self.last_upload_attempt_ts = ts_now()
                 return False, message
-            data, our_hash = self.data.compress_and_encrypt_db(tempdbpath)
+            data, our_hash = self.data.compress_and_encrypt_db(
+                tempdbpath=tempdbpath,
+                last_modify_ts=our_last_write_ts,
+            )
 
         log.debug(
             'CAN_PUSH',
@@ -287,7 +345,6 @@ class PremiumSyncManager(LockableQueryMixIn):
                 data_blob=data,
                 our_hash=our_hash,
                 last_modify_ts=our_last_write_ts,
-                compression_type='zlib',
             )
         except (RemoteError, PremiumAuthenticationError) as e:
             message = str(e)
@@ -307,6 +364,11 @@ class PremiumSyncManager(LockableQueryMixIn):
             self.data.db.set_static_cache(
                 write_cursor=cursor,
                 name=DBCacheStatic.LAST_DATA_UPLOAD_TS,
+                value=self.last_data_upload_ts,
+            )
+            self.data.db.set_static_cache(
+                write_cursor=cursor,
+                name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
                 value=self.last_data_upload_ts,
             )
 
@@ -335,7 +397,10 @@ class PremiumSyncManager(LockableQueryMixIn):
                     msg += f' {error_msg}'
             return success, msg
 
-        return self._sync_data_from_server_and_replace_local(perform_migrations)
+        return self._sync_data_from_server_and_replace_local(
+            perform_migrations=perform_migrations,
+            remote_metadata=None,  # a forced pull, so query what the server has now
+        )
 
     def _sync_if_allowed(
             self,
@@ -343,6 +408,13 @@ class PremiumSyncManager(LockableQueryMixIn):
             result: SyncCheckResult,
             perform_migrations: bool,
     ) -> None:
+        """May raise:
+        - PremiumAuthenticationError if the password can't decrypt the remote backup
+        - RemoteBackupError if the remote backup is refused
+        """
+        # Querying the metadata again here would let the server report one last_modify_ts
+        # to pass the "remote is newer" check and another one that matches an older backup
+        assert result.can_sync == CanSync.NO or result.remote_metadata is not None
         if result.can_sync == CanSync.ASK_USER:
             if sync_approval == 'unknown':
                 log.info('Remote DB is possibly newer. Ask user.')
@@ -351,13 +423,19 @@ class PremiumSyncManager(LockableQueryMixIn):
             if sync_approval == 'yes':
                 log.info('User approved data sync from server')
                 # this may raise due to password
-                self._sync_data_from_server_and_replace_local(perform_migrations)
+                self._sync_data_from_server_and_replace_local(
+                    perform_migrations=perform_migrations,
+                    remote_metadata=result.remote_metadata,
+                )
 
             else:
                 log.debug('Could sync data from server but user refused')
         elif result.can_sync == CanSync.YES:
             log.info('User approved data sync from server')
-            self._sync_data_from_server_and_replace_local(perform_migrations)  # may raise due to password  # noqa: E501
+            self._sync_data_from_server_and_replace_local(  # may raise due to password
+                perform_migrations=perform_migrations,
+                remote_metadata=result.remote_metadata,
+            )
 
     @staticmethod
     def maybe_add_device_limit_link(exception: Exception, msg: str) -> str:
@@ -371,7 +449,7 @@ class PremiumSyncManager(LockableQueryMixIn):
     def _abort_new_syncing_premium_user(
             self,
             username: str,
-            original_exception: PremiumAuthenticationError | PremiumPermissionError | RemoteError,
+            original_exception: PremiumAuthenticationError | PremiumPermissionError | RemoteError | RemoteBackupError,  # noqa: E501
     ) -> None:
         """At this point we are at a new user trying to create an account with
         premium API keys and we failed. But a directory was created. Remove it.
@@ -383,6 +461,11 @@ class PremiumSyncManager(LockableQueryMixIn):
             user_data_dir,  # type: ignore
             self.data.data_directory / USERSDIR_NAME / f'auto_backup_{username}_{ts_now()}',
         )
+        if isinstance(original_exception, RemoteBackupError):  # its message is a full sentence
+            raise PremiumAuthenticationError(
+                f'Could not restore the backup from the rotki server. {original_exception!s}',
+            ) from original_exception
+
         if isinstance(original_exception, PremiumPermissionError):
             error_prefix = 'Could not activate premium on this device.'
         elif isinstance(original_exception, RemoteError):
@@ -460,16 +543,21 @@ class PremiumSyncManager(LockableQueryMixIn):
                         result=result,
                         perform_migrations=False,  # will be done later during unlock
                     )
-                except PremiumAuthenticationError as e:
+                except (PremiumAuthenticationError, RemoteBackupError) as e:
                     self._abort_new_syncing_premium_user(username=username, original_exception=e)
 
             self.data.db.set_rotkehlchen_premium(self.premium.credentials)
         else:
-            self._sync_if_allowed(
-                sync_approval=sync_approval,
-                result=result,
-                perform_migrations=False,  # will be done later during unlock
-            )
+            try:
+                self._sync_if_allowed(
+                    sync_approval=sync_approval,
+                    result=result,
+                    perform_migrations=False,  # will be done later during unlock
+                )
+            except RemoteBackupError as e:
+                # Keep the local DB and premium active, and say why the backup was not used
+                log.error('sync from server -- remote backup refused', error=str(e))
+                self.data.msg_aggregator.add_error(str(e))
 
         # Success, return premium
         return self.premium

@@ -6,8 +6,10 @@ from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
+from rotkehlchen.crypto import decrypt_legacy, encrypt_backup
 from rotkehlchen.db.utils import update_table_schema
-from rotkehlchen.premium.premium import Premium, PremiumCredentials
+from rotkehlchen.premium.backup_container import build_container
+from rotkehlchen.premium.premium import BACKUP_FORMAT_HEADERS, Premium, PremiumCredentials
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.database import mock_db_schema_sanity_check
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -45,7 +47,8 @@ def mock_query_last_metadata(last_modify_ts, data_hash, data_size):
 
 
 def mock_get_backup(saved_data: bytes | None):
-    def do_mock_get_backup(url, timeout, params, data=None):  # pylint: disable=unused-argument
+    def do_mock_get_backup(url, timeout, params, headers, data=None):  # pylint: disable=unused-argument
+        assert headers == BACKUP_FORMAT_HEADERS
         if data is not None:
             assert len(data) == 1
             assert 'nonce' in data
@@ -183,11 +186,17 @@ def setup_starting_environment(
         remote_data: bytes | None,
         sync_approval: Literal['yes', 'no', 'unknown'] = 'yes',
         sync_database: bool = True,
+        reencrypt_remote_data: bool = False,
+        remote_header_ts_offset: int = 0,
 ):
     """
     Sets up the starting environment for premium testing when the user
     starts up his node either for the first time or logs in an already
     existing account
+
+    With reencrypt_remote_data the given legacy remote data is re-encrypted in the current
+    backup format, with a header last_modify_ts that is remote_header_ts_offset away from
+    the one the server metadata reports.
     """
     with rotkehlchen_instance.data.db.user_write() as cursor:
         if not first_time:
@@ -200,7 +209,10 @@ def setup_starting_environment(
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
-        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(
+            tempdbpath=tempdbpath,
+            last_modify_ts=our_last_write_ts,
+        )
 
     if same_hash_with_remote:
         remote_hash = our_hash
@@ -211,6 +223,15 @@ def setup_starting_environment(
         metadata_last_modify_ts = our_last_write_ts + 10
     else:
         metadata_last_modify_ts = our_last_write_ts - 10
+
+    if reencrypt_remote_data:
+        assert remote_data is not None
+        password = rotkehlchen_instance.data.db.password.encode()
+        remote_data = bytes(encrypt_backup(
+            password=password,
+            last_modify_ts=Timestamp(metadata_last_modify_ts + remote_header_ts_offset),
+            payload=build_container(user_db=decrypt_legacy(password, remote_data)),
+        ))
 
     patched_premium_at_start, _, patched_get, patched_upgrade = create_patched_premium(
         premium_credentials=premium_credentials,

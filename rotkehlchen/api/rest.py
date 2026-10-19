@@ -138,6 +138,7 @@ from rotkehlchen.errors.misc import (
     InputError,
     ModuleInactive,
     NotFoundError,
+    RemoteBackupError,
     RemoteError,
     SystemPermissionError,
 )
@@ -2704,6 +2705,8 @@ class RestAPI:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
         except PremiumAuthenticationError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.UNAUTHORIZED)
+        except RemoteBackupError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
         else:
             if msg.startswith('Pulling failed'):
                 return wrap_in_fail_result(msg, status_code=HTTPStatus.BAD_GATEWAY)

@@ -17,6 +17,7 @@ Changelog
 * :bug:`-` Hyperliquid Core history is no longer cut off after the first page of entries, and all funding payments are now saved instead of just one. History is refetched once after upgrading to recover what was missing.
 * :bug:`-` NFTs of a collection with no floor price on OpenSea now show up in the NFT gallery and NFT balances. Before, every NFT of such a collection was skipped, and an account that only held such NFTs did not appear at all.
 * :bug:`-` Leveraged Curve crvUSD loans on markets with WETH collateral no longer fail to decode.
+* :bug:`13393` Premium backups now use stronger encryption. Upgrade every device that syncs: older versions cannot restore backups made by this version.
 * :bug:`13356` Redecoding Monerium or Gnosis Pay transactions while signed out now asks you to sign in, or to sign in again if your session expired, instead of showing a misleading missing API key warning. It is only shown when there are events that signing in would add details to.
 * :bug:`13278` Choosing Email in the Report an Issue dialog now opens your mail client in the desktop app. Before, the dialog closed without opening anything and the title and description you typed were lost. If an option cannot be opened, the dialog now stays open with your report and says so.
 

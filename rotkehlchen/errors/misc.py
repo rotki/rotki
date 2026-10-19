@@ -21,6 +21,48 @@ class UnableToDecryptRemoteData(Exception):
     pass
 
 
+class RemoteBackupError(Exception):
+    """The remote premium backup can't be restored for a reason other than a wrong password.
+
+    The message is shown to the user as is, so it has to say what to do about it.
+    """
+
+
+class UnsupportedRemoteBackup(RemoteBackupError):
+    """The remote backup header names a version or KDF this rotki can't read.
+
+    Either a newer rotki made it or the header is damaged, and before deriving a key the two
+    can't be told apart.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            'The backup on the rotki server was made by a newer rotki version or is damaged. '
+            'If it is newer, update rotki on this device to restore it.',
+        )
+
+
+class RemoteBackupDowngrade(RemoteBackupError):
+    """The remote backup is in the legacy format but this device already synced the new one"""
+
+    def __init__(self) -> None:
+        super().__init__(
+            'The backup on the rotki server is in an older format than the one this device '
+            'already synced, so it was probably uploaded by an older rotki version on another '
+            'device. Update rotki on that device and upload from it again.',
+        )
+
+
+class RemoteBackupMismatch(RemoteBackupError):
+    """The authenticated timestamp of the remote backup differs from the server metadata"""
+
+    def __init__(self) -> None:
+        super().__init__(
+            'The backup received from the rotki server does not match the backup details the '
+            'server reported. It may have been replaced while downloading. Try syncing again.',
+        )
+
+
 class InputError(Exception):
     pass
 
