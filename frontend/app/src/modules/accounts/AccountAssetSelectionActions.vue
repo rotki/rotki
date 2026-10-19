@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
 import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 
 const {
@@ -33,39 +34,25 @@ const { t } = useI18n({ useScope: 'global' });
       @clear="emit('clear-selection')"
       @exit="emit('toggle-mode')"
     >
-      <RuiButton
-        size="sm"
-        variant="outlined"
+      <TableSelectionAction
+        icon="lu-eye-off"
         :disabled="selectedCount === 0"
         :title="t('ignore_buttons.ignore_tooltip')"
         data-testid="account-assets-ignore"
         @click="emit('ignore', true)"
       >
-        <template #prepend>
-          <RuiIcon
-            name="lu-eye-off"
-            size="16"
-          />
-        </template>
         {{ t('ignore_buttons.ignore') }}
-      </RuiButton>
-      <RuiButton
-        size="sm"
-        variant="outlined"
+      </TableSelectionAction>
+      <TableSelectionAction
+        icon="lu-trash-2"
         color="error"
         :disabled="selectedCount === 0"
         :title="t('asset_table.mark_spam_tooltip')"
         data-testid="account-assets-mark-spam"
         @click="emit('mark-spam')"
       >
-        <template #prepend>
-          <RuiIcon
-            name="lu-trash-2"
-            size="16"
-          />
-        </template>
         {{ t('asset_table.mark_spam') }}
-      </RuiButton>
+      </TableSelectionAction>
     </TableSelectionBar>
     <RuiTooltip
       v-else

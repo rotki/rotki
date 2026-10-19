@@ -4,6 +4,8 @@ import { startPromise } from '@shared/utils';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
+import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
+import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import InternalTxConflictRowActions from '@/modules/history/internal-tx-conflicts/InternalTxConflictRowActions.vue';
 import { useInternalTxConflictFields } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflict-fields';
@@ -199,50 +201,45 @@ defineExpose({
       class="flex flex-col gap-2 pt-4 pb-2 shrink-0"
       :class="compact ? 'px-3' : 'px-4 md:flex-row md:items-center'"
     >
-      <div class="flex items-center gap-3">
-        <template v-if="isRunning">
-          <RuiProgress
-            variant="indeterminate"
-            color="primary"
-            class="flex-1"
-          />
-          <span class="text-body-2 whitespace-nowrap">
-            {{ t('internal_tx_conflicts.resolution.progress', { completed: progress.completed, total: progress.total }) }}
-          </span>
-          <RuiButton
-            variant="outlined"
-            color="error"
-            size="sm"
-            @click="cancelResolution()"
-          >
-            {{ t('internal_tx_conflicts.resolution.cancel') }}
-          </RuiButton>
-        </template>
-        <template v-else>
-          <span class="text-body-2 whitespace-nowrap">
-            {{ t('internal_tx_conflicts.selection.selected', { count: selectedCount }) }}
-          </span>
-          <RuiButton
-            color="primary"
-            size="sm"
-            :disabled="selectedCount === 0"
-            data-testid="resolve-selected"
-            @click="onResolveSelected()"
-          >
-            {{ t('internal_tx_conflicts.resolution.resolve_selected', { count: selectedCount }) }}
-          </RuiButton>
-          <RuiButton
-            variant="outlined"
-            size="sm"
-            :disabled="selectedCount === 0"
-            @click="clearSelection()"
-          >
-            {{ t('internal_tx_conflicts.selection.clear') }}
-          </RuiButton>
-        </template>
+      <div
+        v-if="isRunning"
+        class="flex items-center gap-3"
+      >
+        <RuiProgress
+          variant="indeterminate"
+          color="primary"
+          class="flex-1"
+        />
+        <span class="text-body-2 whitespace-nowrap">
+          {{ t('internal_tx_conflicts.resolution.progress', { completed: progress.completed, total: progress.total }) }}
+        </span>
+        <RuiButton
+          variant="outlined"
+          color="error"
+          size="sm"
+          @click="cancelResolution()"
+        >
+          {{ t('internal_tx_conflicts.resolution.cancel') }}
+        </RuiButton>
       </div>
 
+      <TableSelectionBar
+        v-if="!isRunning && selectedCount > 0"
+        class="flex-1"
+        :count="selectedCount"
+        @clear="clearSelection()"
+      >
+        <TableSelectionAction
+          icon="lu-wrench"
+          color="primary"
+          data-testid="resolve-selected"
+          @click="onResolveSelected()"
+        >
+          {{ t('internal_tx_conflicts.resolution.resolve_selected', { count: selectedCount }) }}
+        </TableSelectionAction>
+      </TableSelectionBar>
       <PillFilterBar
+        v-else
         v-model:matches="filters"
         :fields="fields"
         :labels="pillLabels"

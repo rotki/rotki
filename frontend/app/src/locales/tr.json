@@ -4506,10 +4506,6 @@
       "resolve": "Yeniden çek ve yeniden çözümle",
       "resolve_selected": "Seçilenleri çöz ({count})"
     },
-    "selection": {
-      "clear": "Temizle",
-      "selected": "{count} seçili"
-    },
     "status": {
       "never": "Hiçbir zaman"
     },

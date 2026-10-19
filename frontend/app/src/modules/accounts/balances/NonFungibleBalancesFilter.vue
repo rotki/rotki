@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
+import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
 import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 
 const selected = defineModel<string[]>('selected', { required: true });
@@ -36,38 +37,24 @@ function exitSelection(): void {
     @clear="selected = []"
     @exit="exitSelection()"
   >
-    <RuiButton
-      size="sm"
-      variant="outlined"
+    <TableSelectionAction
+      icon="lu-eye-off"
       :disabled="disabledIgnoreActions.ignore"
       :title="t('ignore_buttons.ignore_tooltip')"
       data-testid="nft-balances-ignore"
       @click="emit('mass-ignore', true)"
     >
-      <template #prepend>
-        <RuiIcon
-          name="lu-eye-off"
-          size="16"
-        />
-      </template>
       {{ t('ignore_buttons.ignore') }}
-    </RuiButton>
-    <RuiButton
-      size="sm"
-      variant="outlined"
+    </TableSelectionAction>
+    <TableSelectionAction
+      icon="lu-eye"
       :disabled="disabledIgnoreActions.unIgnore"
       :title="t('ignore_buttons.unignore_tooltip')"
       data-testid="nft-balances-unignore"
       @click="emit('mass-ignore', false)"
     >
-      <template #prepend>
-        <RuiIcon
-          name="lu-eye"
-          size="16"
-        />
-      </template>
       {{ t('ignore_buttons.unignore') }}
-    </RuiButton>
+    </TableSelectionAction>
   </TableSelectionBar>
   <template v-else>
     <RuiTooltip
