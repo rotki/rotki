@@ -7090,7 +7090,6 @@
           "amount_label": "{type} Amount",
           "asset_label": "{type} Asset",
           "failed": "Failed to submit price",
-          "hint": "If you change the asset price, rotki will save the historic price that will be considered in PnL report calculation",
           "label": "Asset price in {symbol} at the time"
         },
         "block_number": {

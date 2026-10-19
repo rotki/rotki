@@ -6769,7 +6769,6 @@
           "amount_label": "{type} miktarı",
           "asset_label": "{type} varlığı",
           "failed": "Fiyat gönderilemedi",
-          "hint": "Varlık fiyatını değiştirirseniz rotki, kâr/zarar raporu hesaplamasında dikkate alınacak geçmiş fiyatı kaydeder",
           "label": "O tarihteki {symbol} cinsinden varlık fiyatı"
         },
         "block_number": {
