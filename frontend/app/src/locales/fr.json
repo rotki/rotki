@@ -2679,7 +2679,6 @@
           }
         },
         "asset_price": {
-          "hint": "Si vous changez le prix de l'actif, rotki enregistrera le prix historique qui sera pris en compte dans le calcul du rapport PnL",
           "label": "Prix de l'actif en {symbol} à ce moment"
         },
         "block_number": {

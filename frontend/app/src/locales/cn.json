@@ -6626,7 +6626,6 @@
           "amount_label": "{type}数量",
           "asset_label": "{type}资产",
           "failed": "提交价格失败",
-          "hint": "如果你修改资产价格，rotki 会保存该历史价格，并在盈亏报告计算中使用",
           "label": "当时以 {symbol} 计的资产价格"
         },
         "block_number": {

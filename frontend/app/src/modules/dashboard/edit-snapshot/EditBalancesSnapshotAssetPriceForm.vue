@@ -120,7 +120,6 @@ defineExpose({
         primary: form.errors('usdValue'),
         secondary: form.errors('usdValue'),
       }"
-      :hint="t('transactions.events.form.asset_price.hint')"
     />
 
     <TwoFieldsAmountInput
