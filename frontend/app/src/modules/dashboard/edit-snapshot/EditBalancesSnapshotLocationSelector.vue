@@ -44,7 +44,7 @@ function isLocationDisabled(item: TradeLocationData): boolean {
       color="primary"
       size="sm"
       hide-details
-      class="[&_span]:text-sm [&_span]:mt-0.5 mt-2"
+      class="mt-2"
     >
       {{ t('dashboard.snapshot.edit.dialog.balances.only_show_existing') }}
     </RuiSwitch>

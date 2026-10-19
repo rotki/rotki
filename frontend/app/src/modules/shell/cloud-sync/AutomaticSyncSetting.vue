@@ -52,9 +52,6 @@ async function updateSync(value: boolean): Promise<void> {
     :error-messages="error"
     :disabled="disabled"
     :size="dense ? 'sm' : undefined"
-    :class="{
-      '[&_span]:text-sm [&_span]:mt-0.5': dense,
-    }"
     color="primary"
     @update:model-value="updateSync($event)"
   />
