@@ -65,7 +65,7 @@ const displayAddress = computed<string | undefined>(() => {
 <template>
   <RuiBadge
     v-if="counterpartyData || displayAddress"
-    class="[&_span]:px-0!"
+    class="[&>[role=status]]:bg-transparent"
     color="default"
     offset-x="-8"
     offset-y="6"
