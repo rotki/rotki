@@ -1,18 +1,25 @@
 <script setup lang="ts">
+/**
+ * How the total row sits in its table: `default` pads its cells like a body row, `bordered` sets it
+ * off with a top border and roomier cells (the dashboard tables), `fixed` matches a table whose body
+ * rows are 44px tall.
+ */
+type RowAppendVariant = 'default' | 'bordered' | 'fixed';
+
 const {
-  className = '',
   isMobile = false,
   label = '',
   labelColspan = 1,
   leftPatchColspan = 0,
   rightPatchColspan = 0,
+  variant = 'default',
 } = defineProps<{
-  className?: string | Record<string, any>;
   label?: string;
   labelColspan?: string | number;
   leftPatchColspan?: string | number;
   rightPatchColspan?: string | number;
   isMobile?: boolean;
+  variant?: RowAppendVariant;
 }>();
 
 defineSlots<{
@@ -21,19 +28,11 @@ defineSlots<{
   'default': () => any;
 }>();
 
-const formattedClassName = computed(() => {
-  const propClassName
-    = typeof className === 'object'
-      ? className
-      : {
-          [className]: true,
-        };
-
-  return {
-    'flex justify-between': isMobile,
-    ...propClassName,
-  };
-});
+const VARIANT_CLASSES: Record<RowAppendVariant, string> = {
+  default: '[&>td]:py-2',
+  bordered: 'border-t border-default [&>td]:py-3',
+  fixed: '[&>td]:h-11',
+};
 
 const leftColspan = useToNumber(() => leftPatchColspan);
 const rightColspan = useToNumber(() => rightPatchColspan);
@@ -41,8 +40,8 @@ const rightColspan = useToNumber(() => rightPatchColspan);
 
 <template>
   <tr
-    class="font-medium append-row hover:bg-transparent"
-    :class="formattedClassName"
+    class="font-medium append-row hover:bg-transparent text-sm [&>td]:px-4"
+    :class="[VARIANT_CLASSES[variant], { 'flex justify-between': isMobile }]"
   >
     <td
       v-if="leftColspan >= 1 && !isMobile"

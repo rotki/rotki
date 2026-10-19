@@ -150,7 +150,6 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
             v-if="totalValue"
             :label-colspan="selectionMode ? 4 : 3"
             :label="t('common.total')"
-            class-name="[&>td]:px-4 [&>td]:py-2 text-sm"
             :right-patch-colspan="2"
           >
             <FiatDisplay

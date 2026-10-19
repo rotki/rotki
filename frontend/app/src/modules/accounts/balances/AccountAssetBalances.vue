@@ -119,7 +119,6 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
         <RowAppend
           :label-colspan="selectionMode ? 5 : 4"
           :label="t('common.total')"
-          class="[&>td]:px-4 [&>td]:py-2"
         >
           <FiatDisplay :value="totalValue" />
         </RowAppend>

@@ -29,7 +29,7 @@ const TableStub = defineComponent({
 });
 
 const RowAppendStub = defineComponent({
-  props: ['labelColspan', 'label', 'className', 'rightPatchColspan'],
+  props: ['labelColspan', 'label', 'rightPatchColspan'],
   template: '<div />',
 });
 

@@ -275,7 +275,6 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
         :label="t('common.total')"
         :is-mobile="false"
         :right-patch-colspan="2"
-        class-name="[&>td]:px-4 [&>td]:py-2 text-sm"
       >
         <FiatDisplay
           :value="total"

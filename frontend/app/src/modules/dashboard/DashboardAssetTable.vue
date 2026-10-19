@@ -208,7 +208,7 @@ watch(modelSearch, () => setPage(1));
           label-colspan="4"
           :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 4"
-          class-name="text-sm border-t border-default [&_td]:px-4 [&_td]:py-3"
+          variant="bordered"
           data-testid="dashboard-asset-table-total"
         >
           <FiatDisplay

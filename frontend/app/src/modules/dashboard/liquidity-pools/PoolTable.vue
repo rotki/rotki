@@ -189,7 +189,7 @@ watch(currencySymbol, async () => {
           label-colspan="1"
           :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 2"
-          class-name="text-sm border-t border-default [&>td]:px-4 [&>td]:py-3"
+          variant="bordered"
         >
           <FiatDisplay
             :value="total"

@@ -150,7 +150,7 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
           :label="t('common.total')"
           :right-patch-colspan="cols.length - 3"
           :is-mobile="false"
-          class-name="text-sm border-t border-default [&>td]:px-4 [&>td]:py-3"
+          variant="bordered"
         >
           <FiatDisplay
             v-if="totalValue"
