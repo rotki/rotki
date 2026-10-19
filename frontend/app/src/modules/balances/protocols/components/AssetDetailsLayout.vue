@@ -43,12 +43,12 @@ const showTabs = logicAnd(hasBreakdown, hasPerProtocol);
       </RuiTabs>
       <RuiTabItems :model-value="tab">
         <RuiTabItem>
-          <div class="bg-white dark:bg-dark-elevated rounded-xl">
+          <div class="bg-rui-surface rounded-xl">
             <slot name="breakdown" />
           </div>
         </RuiTabItem>
         <RuiTabItem>
-          <div class="bg-white dark:bg-dark-elevated rounded-xl">
+          <div class="bg-rui-surface rounded-xl">
             <slot name="perprotocol" />
           </div>
         </RuiTabItem>
@@ -56,7 +56,7 @@ const showTabs = logicAnd(hasBreakdown, hasPerProtocol);
     </template>
 
     <template v-else>
-      <div class="bg-white dark:bg-dark-elevated rounded-xl">
+      <div class="bg-rui-surface rounded-xl">
         <slot
           v-if="hasBreakdown"
           name="breakdown"

@@ -114,7 +114,7 @@ onBeforeMount(() => {
     <AppDrawer />
 
     <header
-      class="fixed top-0 left-0 w-full bg-white dark:bg-dark-elevated md:h-16 h-14 border-b border-rui-grey-300 dark:border-rui-grey-800"
+      class="fixed top-0 left-0 w-full bg-rui-surface md:h-16 h-14 border-b border-rui-grey-300 dark:border-rui-grey-800"
     >
       <nav class="flex items-center md:h-16 h-14 pl-2 px-4">
         <RuiButton

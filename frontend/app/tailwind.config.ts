@@ -15,7 +15,7 @@ const componentsPlugin = plugin((pluginAPI: PluginAPI) => {
       '@apply overflow-y-hidden max-h-screen antialiased': {},
     },
     'body': {
-      '@apply transition-all bg-rui-grey-50 dark:bg-dark-surface overflow-x-hidden h-[calc(100vh-4rem)] scroll-smooth scroll-pt-16 mt-16 overflow-y-auto': {},
+      '@apply transition-all bg-rui-grey-50 dark:bg-rui-background overflow-x-hidden h-[calc(100vh-4rem)] scroll-smooth scroll-pt-16 mt-16 overflow-y-auto': {},
       '--w3m-z-index': '10000',
     },
     '@media only screen and (max-width: 767px)': {
@@ -147,10 +147,6 @@ export default {
       center: true,
     },
     extend: {
-      colors: {
-        'dark-surface': '#121212',
-        'dark-elevated': '#1E1E1E',
-      },
       keyframes: {
         'shake': {
           '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-4px)' },

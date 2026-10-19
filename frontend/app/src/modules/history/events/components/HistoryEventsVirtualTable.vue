@@ -91,7 +91,7 @@ provideHistoryEventsRowContext(rowContext);
 </script>
 
 <template>
-  <div class="flex flex-col overflow-hidden bg-slate-50 dark:bg-dark-surface">
+  <div class="flex flex-col overflow-hidden bg-slate-50 dark:bg-rui-background">
     <HistoryEventsVirtualHeader
       v-model:sort="sort"
       v-model:pagination="pagination"
@@ -137,7 +137,7 @@ provideHistoryEventsRowContext(rowContext);
     <div
       v-if="loading && groups.length === 0"
       :style="placeholderStyle"
-      class="flex items-center justify-center dark:bg-dark-surface"
+      class="flex items-center justify-center dark:bg-rui-background"
     >
       <RuiProgress
         circular
@@ -212,7 +212,7 @@ provideHistoryEventsRowContext(rowContext);
       v-else
       v-bind="containerProps"
       :style="tableContainerStyle"
-      class="overflow-auto will-change-transform dark:bg-dark-surface"
+      class="overflow-auto will-change-transform dark:bg-rui-background"
     >
       <div v-bind="wrapperProps">
         <HistoryEventsVirtualRow

@@ -66,7 +66,7 @@ const selecting = computed<boolean>(() => !!selection && get(selection.isSelecti
   <div
     v-if="isCard"
     data-testid="history-event-group"
-    class="h-18 flex flex-col justify-center overflow-hidden px-3 border-b border-rui-grey-200 dark:border-rui-grey-800 bg-rui-grey-100 dark:bg-dark-elevated"
+    class="h-18 flex flex-col justify-center overflow-hidden px-3 border-b border-rui-grey-200 dark:border-rui-grey-800 bg-rui-grey-100 dark:bg-rui-surface"
     :class="getHighlightClass(highlightType)"
   >
     <div class="flex items-center justify-between gap-2 mb-0.5">
@@ -162,7 +162,7 @@ const selecting = computed<boolean>(() => !!selection && get(selection.isSelecti
   <div
     v-else
     data-testid="history-event-group"
-    class="group/row h-12 flex items-center gap-3 border-b border-default border-t-rui-grey-400! dark:border-t-rui-grey-600! pr-4 bg-white dark:bg-dark-elevated contain-content"
+    class="group/row h-12 flex items-center gap-3 border-b border-default border-t-rui-grey-400! dark:border-t-rui-grey-600! pr-4 bg-rui-surface contain-content"
     :class="[selecting ? 'pl-16' : 'pl-6', getHighlightClass(highlightType)]"
   >
     <div class="w-10 shrink-0 flex justify-center">
