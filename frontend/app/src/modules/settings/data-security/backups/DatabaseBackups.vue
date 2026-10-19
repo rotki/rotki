@@ -13,10 +13,12 @@ import RowAppend from '@/modules/shell/components/RowAppend.vue';
 
 const selected = defineModel<UserDbBackupWithId[]>('selected', { required: true });
 
-const { directory, items, loading = false } = defineProps<{
+const { directory, items, loading = false, selectionMode = false } = defineProps<{
   items: UserDbBackupWithId[];
   loading?: boolean;
   directory: string;
+  /** Whether the user switched on selecting rows; the checkbox column only shows while it is on. */
+  selectionMode?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -30,8 +32,12 @@ const sort = ref<DataTableSortData<UserDbBackupWithId>>({
   direction: 'desc',
 });
 
+/** `undefined` outside selection mode, which is what makes the table drop its checkbox column. */
 const selection = computed<number[] | undefined>({
   get() {
+    if (!selectionMode)
+      return undefined;
+
     return get(selected).map(x => x.id);
   },
   set(value?: number[]) {
@@ -171,7 +177,7 @@ function showDeleteConfirmation(item: UserDbBackupWithId) {
 
     <template #body.append>
       <RowAppend
-        label-colspan="3"
+        :label-colspan="selectionMode ? 3 : 2"
         class-name="[&>td]:px-4 [&>td]:py-2 text-sm"
         :label="t('common.total')"
         :right-patch-colspan="1"

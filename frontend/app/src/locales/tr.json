@@ -2962,7 +2962,6 @@
     },
     "user_backups": {
       "backup_button": "Yeni yedek oluştur",
-      "delete_selected": "Seçili yedekleri sil",
       "title": "Kullanıcı veritabanı yedekleri"
     }
   },
