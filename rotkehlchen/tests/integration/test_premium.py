@@ -24,6 +24,7 @@ from rotkehlchen.errors.api import (
     PremiumPermissionError,
     RotkehlchenPermissionError,
 )
+from rotkehlchen.errors.misc import RemoteBackupDowngrade, RemoteBackupMismatch
 from rotkehlchen.premium.premium import (
     DOCKER_PLATFORM_KEY,
     DOCKER_SHORT_ID_HASH_LENGTH,
@@ -50,7 +51,7 @@ from rotkehlchen.tests.utils.premium import (
     get_different_hash,
     setup_starting_environment,
 )
-from rotkehlchen.types import ChainID
+from rotkehlchen.types import ChainID, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
@@ -93,7 +94,7 @@ def test_upload_data_to_server(
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
-        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath, Timestamp(0))
     remote_hash = get_different_hash(our_hash)
 
     def mock_successful_upload_data_to_server(
@@ -109,7 +110,8 @@ def test_upload_data_to_server(
         assert 'total_size' in data
         assert data['last_modify_ts'] == last_write_ts
         assert 'nonce' in data
-        assert data['compression'] == 'zlib'
+        assert data['compression'] == 'rkpbak1'
+        assert headers['Backup-Format'] == '1'
 
         # Parse Content-Range header (in format: `bytes 0-524287/25000000`)
         content_range = headers['Content-Range']
@@ -156,6 +158,8 @@ def test_upload_data_to_server(
             with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
                 assert rotkehlchen_instance.data.db.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS) is None  # noqa: E501
             assert rotkehlchen_instance.premium_sync_manager.last_data_upload_ts == 0
+            with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+                assert rotkehlchen_instance.data.db.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS) is None  # noqa: E501
             return
 
         assert mocked_post.call_count == 3  # uploads in three chunks
@@ -178,6 +182,8 @@ def test_upload_data_to_server(
         assert last_ts >= now and last_ts - now < 90, db_msg
         last_ts = rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
         assert last_ts >= now and last_ts - now < 90, memory_msg
+        with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:  # legacy backups refused now
+            assert rotkehlchen_instance.data.db.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS) == last_ts  # noqa: E501
 
     # and now logout and login again and make sure that the last_data_upload_ts is correct
     rotkehlchen_instance.logout()
@@ -207,7 +213,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
-        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath, Timestamp(0))
     remote_hash = our_hash
 
     patched_post = patch.object(
@@ -227,7 +233,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
     with patched_get, patched_post as post_mock, patch.object(
         target=rotkehlchen_instance.data,
         attribute='compress_and_encrypt_db',
-        new=lambda *args: (None, our_hash),
+        new=lambda *args, **kwargs: (None, our_hash),
     ):
         rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
         # The upload mock should not have been called since the hash is the same
@@ -251,7 +257,7 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dic
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
-        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath, Timestamp(0))
     remote_hash = get_different_hash(our_hash)
 
     patched_post = patch.object(
@@ -419,6 +425,8 @@ def test_try_premium_at_start_old_account_can_pull_data(
         remote_data=premium_remote_data,
     )
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:  # a legacy restore doesn't set it
+        assert rotkehlchen_instance.data.db.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS) is None  # noqa: E501
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -571,6 +579,129 @@ def test_try_premium_at_start_first_time_no_previous_db(
     assert credentials.api_secret == rotki_premium_credentials.api_secret
 
 
+def _v1_sync_ts(rotkehlchen_instance: Rotkehlchen) -> Timestamp | None:
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+        return rotkehlchen_instance.data.db.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
+        )
+
+
+def _assert_db_not_replaced(rotkehlchen_instance: Rotkehlchen) -> None:
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+        assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('first_time', [True, False])
+def test_try_premium_at_start_can_pull_v1_data(
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes,
+        first_time: bool,
+) -> None:
+    """A backup in the current format restores, and from then on legacy ones are refused"""
+    now = ts_now()
+    setup_starting_environment(
+        rotkehlchen_instance=rotkehlchen_instance,
+        username=username,
+        premium_credentials=rotki_premium_credentials,
+        first_time=first_time,
+        same_hash_with_remote=False,
+        newer_remote_db=True,
+        db_can_sync_setting=True,
+        remote_data=premium_remote_data,
+        reencrypt_remote_data=True,
+    )
+    assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
+    assert (v1_sync_ts := _v1_sync_ts(rotkehlchen_instance)) is not None and v1_sync_ts >= now
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_try_premium_at_start_old_account_refuses_mismatched_v1_data(
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes,
+) -> None:
+    """R4: the server reports a newer backup than the one it serves. Login goes on with
+    the local DB and premium, and the user is told why the backup was not used."""
+    with patch.object(rotkehlchen_instance.data, 'restore_db') as restore_db:
+        setup_starting_environment(
+            rotkehlchen_instance=rotkehlchen_instance,
+            username=username,
+            premium_credentials=rotki_premium_credentials,
+            first_time=False,
+            same_hash_with_remote=False,
+            newer_remote_db=True,
+            db_can_sync_setting=True,
+            remote_data=premium_remote_data,
+            reencrypt_remote_data=True,
+            remote_header_ts_offset=-20,  # older than the local DB
+        )
+    assert restore_db.call_count == 0
+    _assert_db_not_replaced(rotkehlchen_instance)
+    assert _v1_sync_ts(rotkehlchen_instance) is None
+    assert rotkehlchen_instance.msg_aggregator.consume_errors() == [str(RemoteBackupMismatch())]
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_try_premium_at_start_new_account_refuses_mismatched_v1_data(
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes,
+) -> None:
+    """R4 when creating an account: the creation is aborted with the reason"""
+    with pytest.raises(PremiumAuthenticationError) as e:
+        setup_starting_environment(
+            rotkehlchen_instance=rotkehlchen_instance,
+            username=username,
+            premium_credentials=rotki_premium_credentials,
+            first_time=True,
+            same_hash_with_remote=False,
+            newer_remote_db=True,
+            db_can_sync_setting=True,
+            remote_data=premium_remote_data,
+            reencrypt_remote_data=True,
+            remote_header_ts_offset=1,
+        )
+    assert str(e.value) == f'Could not restore the backup from the rotki server. {RemoteBackupMismatch()}'  # noqa: E501
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_try_premium_at_start_refuses_legacy_data_after_v1_sync(
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes,
+) -> None:
+    """R1: once this device synced a current format backup, a legacy one is refused
+    without even decrypting it"""
+    with rotkehlchen_instance.data.db.conn.write_ctx() as write_cursor:
+        rotkehlchen_instance.data.db.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
+            value=Timestamp(1),
+        )
+
+    with patch('rotkehlchen.data_handler.decrypt_legacy') as decrypt_legacy:
+        setup_starting_environment(
+            rotkehlchen_instance=rotkehlchen_instance,
+            username=username,
+            premium_credentials=rotki_premium_credentials,
+            first_time=False,
+            same_hash_with_remote=False,
+            newer_remote_db=True,
+            db_can_sync_setting=True,
+            remote_data=premium_remote_data,
+        )
+    assert decrypt_legacy.call_count == 0
+    _assert_db_not_replaced(rotkehlchen_instance)
+    assert rotkehlchen_instance.msg_aggregator.consume_errors() == [str(RemoteBackupDowngrade())]
+
+
 def test_premium_credentials():
     """Test the premium credentials class"""
     # Test that improperly formatted keys are spotted
@@ -643,7 +774,7 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
         rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
-        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath, Timestamp(0))
         remote_hash = get_different_hash(our_hash)
 
     patched_post = patch.object(
@@ -734,7 +865,7 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
-        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath, Timestamp(0))
     remote_hash = get_different_hash(our_hash)
 
     patched_post = patch.object(
@@ -770,7 +901,7 @@ def test_upload_data_error(rotkehlchen_instance: Rotkehlchen) -> None:
     assert rotkehlchen_instance.premium is not None
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
-        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath, Timestamp(0))
     remote_hash = get_different_hash(our_hash)
     patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
@@ -806,13 +937,14 @@ def test_upload_skipped_when_backup_limit_is_zero(rotkehlchen_instance: Rotkehlc
         'maybe_upload_data_to_server',
     ) as upload_mock:
         assert rotkehlchen_instance.task_manager._maybe_schedule_db_upload() is None
-        success, message = rotkehlchen_instance.premium_sync_manager.sync_data(
+        success, message, restored_backup_ts = rotkehlchen_instance.premium_sync_manager.sync_data(
             action='upload',
             perform_migrations=False,
         )
 
     assert success is False
     assert message == 'Upload failed.'
+    assert restored_backup_ts is None
     upload_mock.assert_not_called()
 
 

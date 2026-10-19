@@ -1,6 +1,7 @@
 import json
 from contextlib import ExitStack
 from http import HTTPStatus
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -10,9 +11,13 @@ import requests
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
+from rotkehlchen.data_handler import RemoteBackup
+from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.errors.misc import RemoteBackupDowngrade
 from rotkehlchen.premium.premium import get_free_capabilities
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_async_response,
     assert_error_response,
     assert_ok_async_response,
     assert_proper_sync_response_with_result,
@@ -20,6 +25,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import create_patched_requests_get_for_premium
+from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -69,8 +75,14 @@ def test_upload_db(rotkehlchen_api_server: APIServer) -> None:
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_pull_db(rotkehlchen_api_server: APIServer) -> None:
-    """Just a smoke test that the api works fine for this endpoint.
+@pytest.mark.parametrize(('legacy', 'restored_backup_ts'), [(True, None), (False, 1760882400)])
+def test_pull_db(
+        rotkehlchen_api_server: APIServer,
+        legacy: bool,
+        restored_backup_ts: Timestamp | None,
+) -> None:
+    """Just a smoke test that the api works fine for this endpoint, and that a forced
+    download returns the authenticated timestamp of the restored backup.
 
     Actual functionality tested in tests/integration/test_premium.py
     """
@@ -84,13 +96,17 @@ def test_pull_db(rotkehlchen_api_server: APIServer) -> None:
     patches.extend((
         create_patched_requests_get_for_premium(
             session=rotki.premium.session,
-            metadata_last_modify_ts=0,
+            metadata_last_modify_ts=restored_backup_ts or 0,
             metadata_data_hash=b'',
             metadata_data_size=9999999999,
             saved_data=b'foo',
         ), patch.object(
             rotki.premium_sync_manager.data,
-            'decompress_and_decrypt_db',
+            'decrypt_db',
+            return_value=RemoteBackup(legacy=legacy, last_modify_ts=restored_backup_ts, user_db=b''),  # noqa: E501
+        ), patch.object(
+            rotki.premium_sync_manager.data,
+            'restore_db',
             return_value=None,
         )))
 
@@ -103,7 +119,40 @@ def test_pull_db(rotkehlchen_api_server: APIServer) -> None:
         task_id = assert_ok_async_response(response)
         result = wait_for_async_task(rotkehlchen_api_server, task_id)
         assert result['message'] == ''
-        assert result['result'] is True
+        assert result['result'] == {'last_modify_ts': restored_backup_ts}
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_pull_db_refuses_legacy_backup_after_v1_sync(rotkehlchen_api_server: APIServer) -> None:
+    """A forced download of a legacy backup, once this device synced the current format,
+    fails with a message saying which device to update"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        rotki.data.db.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
+            value=Timestamp(1),
+        )
+
+    with create_patched_requests_get_for_premium(
+        session=rotki.premium.session,
+        metadata_last_modify_ts=0,
+        metadata_data_hash=b'',
+        metadata_data_size=9999999999,
+        saved_data=(Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin').read_bytes(),  # noqa: E501
+    ), patch.object(rotki.data, 'restore_db') as restore_db:
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'userpremiumsyncresource',
+        ), json={'async_query': True, 'action': 'download'})
+        task_id = assert_ok_async_response(response)
+        assert_error_async_response(
+            response_data=wait_for_async_task(rotkehlchen_api_server, task_id),
+            contained_in_msg=str(RemoteBackupDowngrade()),
+            status_code=HTTPStatus.CONFLICT,
+        )
+    assert restore_db.call_count == 0
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

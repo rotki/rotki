@@ -10,6 +10,7 @@ import { useSync } from '@/modules/session/use-session-sync';
 
 const mockNotifyError = vi.fn();
 const mockNotifyInfo = vi.fn();
+const mockShowSuccessMessage = vi.fn();
 const mockForceSync = vi.fn();
 const { mockCancelAllQueued, mockCancel } = vi.hoisted(() => ({ mockCancel: vi.fn(), mockCancelAllQueued: vi.fn() }));
 
@@ -28,6 +29,7 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn(() => ({
     notifyError: mockNotifyError,
     notifyInfo: mockNotifyInfo,
+    showSuccessMessage: mockShowSuccessMessage,
   })),
 }));
 
@@ -35,6 +37,10 @@ vi.mock('@/modules/session/api/use-sync-api', () => ({
   useSyncApi: vi.fn(() => ({
     forceSync: mockForceSync,
   })),
+}));
+
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn(() => ref<string>('%Y-%m-%d %H:%M:%S')),
 }));
 
 vi.mock('@/modules/core/api/rotki-api', () => ({
@@ -118,14 +124,43 @@ describe('useSync', () => {
       expect(get(sync.displaySyncConfirmation)).toBe(false);
     });
 
-    it('should notify and log out on a successful download sync', async () => {
+    it('should show a message that outlasts the logout on a successful download sync', async () => {
       set(sync.syncAction, SYNC_DOWNLOAD);
       runTaskResult.mockResolvedValue(ok(true));
       const logout = vi.fn(async (): Promise<void> => {});
 
       await sync.forceSync(logout);
 
-      expect(mockNotifyInfo).toHaveBeenCalledOnce();
+      expect(mockShowSuccessMessage).toHaveBeenCalledOnce();
+      expect(mockNotifyInfo).not.toHaveBeenCalled();
+      expect(logout).toHaveBeenCalledOnce();
+    });
+
+    it('should say which backup a download restored', async () => {
+      set(sync.syncAction, SYNC_DOWNLOAD);
+      runTaskResult.mockResolvedValue(ok({ lastModifyTs: 1760882400 }));
+      const logout = vi.fn(async (): Promise<void> => {});
+
+      await sync.forceSync(logout);
+
+      expect(mockShowSuccessMessage).toHaveBeenCalledExactlyOnceWith(
+        'actions.session.force_sync.success.title',
+        'actions.session.force_sync.success.message_download::2025-10-19 14:00:00', // vitest runs in UTC
+      );
+      expect(logout).toHaveBeenCalledOnce();
+    });
+
+    it('should use the generic message for a restored backup in the old format', async () => {
+      set(sync.syncAction, SYNC_DOWNLOAD);
+      runTaskResult.mockResolvedValue(ok({ lastModifyTs: null }));
+      const logout = vi.fn(async (): Promise<void> => {});
+
+      await sync.forceSync(logout);
+
+      expect(mockShowSuccessMessage).toHaveBeenCalledExactlyOnceWith(
+        'actions.session.force_sync.success.title',
+        'actions.session.force_sync.success.message',
+      );
       expect(logout).toHaveBeenCalledOnce();
     });
 
@@ -147,6 +182,7 @@ describe('useSync', () => {
 
       expect(mockNotifyError).toHaveBeenCalledOnce();
       expect(mockNotifyInfo).not.toHaveBeenCalled();
+      expect(mockShowSuccessMessage).not.toHaveBeenCalled();
     });
 
     it('should notify a failure on an actionable task failure', async () => {

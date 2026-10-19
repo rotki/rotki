@@ -376,9 +376,12 @@ def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb:
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = data.db.export_unencrypted(tempdbfile)
-        encoded_data, _ = data.compress_and_encrypt_db(tempdbpath)
+        encoded_data, _ = data.compress_and_encrypt_db(tempdbpath, Timestamp(1700000000))
     # The server would return them decoded
-    data.decompress_and_decrypt_db(encoded_data)
+    backup = data.decrypt_db(bytes(encoded_data))
+    assert backup.legacy is False
+    assert backup.last_modify_ts == 1700000000
+    data.restore_db(backup.user_db)
     with data.db.user_write() as cursor:
         balances = data.db.get_manually_tracked_balances(cursor)
     assert balances == [starting_balance]

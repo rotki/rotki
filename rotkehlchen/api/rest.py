@@ -138,6 +138,7 @@ from rotkehlchen.errors.misc import (
     InputError,
     ModuleInactive,
     NotFoundError,
+    RemoteBackupError,
     RemoteError,
     SystemPermissionError,
 )
@@ -2694,7 +2695,7 @@ class RestAPI:
     @async_api_call()
     def sync_data(self, action: Literal['upload', 'download']) -> dict[str, Any]:
         try:
-            success, msg = self.rotkehlchen.premium_sync_manager.sync_data(
+            success, msg, restored_backup_ts = self.rotkehlchen.premium_sync_manager.sync_data(
                 action=action,
                 perform_migrations=True,  # we can do it now since all is initialized
             )
@@ -2704,9 +2705,15 @@ class RestAPI:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
         except PremiumAuthenticationError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.UNAUTHORIZED)
+        except RemoteBackupError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
         else:
             if msg.startswith('Pulling failed'):
                 return wrap_in_fail_result(msg, status_code=HTTPStatus.BAD_GATEWAY)
+            if action == 'download' and success:
+                # A forced pull skips the "remote is newer" check, so the authenticated
+                # timestamp is the only way the user can tell which backup they restored
+                return _wrap_in_result({'last_modify_ts': restored_backup_ts}, message=msg)
             return _wrap_in_result(success, message=msg)
 
     @async_api_call()

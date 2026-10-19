@@ -847,6 +847,7 @@ class DBHandler:
             name: Literal[
                 DBCacheStatic.LAST_BALANCE_SAVE,
                 DBCacheStatic.LAST_DATA_UPLOAD_TS,
+                DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
                 DBCacheStatic.LAST_OWNED_ASSETS_UPDATE,

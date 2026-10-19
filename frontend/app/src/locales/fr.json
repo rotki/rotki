@@ -516,6 +516,7 @@
         },
         "success": {
           "message": "L'opération de synchronisation des données a été complétée avec succès.",
+          "message_download": "L'opération de synchronisation des données a été complétée avec succès. La sauvegarde restaurée contient vos données au {date}.",
           "title": "Synchronisation forcée"
         }
       },

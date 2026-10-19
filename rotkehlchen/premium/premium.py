@@ -161,6 +161,10 @@ KNOWN_STATUS_CODES: Final = (
 NEST_API_ENDPOINTS: Final = ('backup', 'backup/range', 'devices', 'limits')
 UPLOAD_CHUNK_SIZE: Final = 10_000_000  # 10 MB
 MAX_UPLOAD_CHUNK_RETRIES: Final = 1
+# Sent with every backup upload and download. The server stores the compression value as is
+# and only serves a backup in a format newer than zlib to clients that send the header.
+BACKUP_COMPRESSION: Final = 'rkpbak1'
+BACKUP_FORMAT_HEADERS: Final = {'Backup-Format': '1'}
 
 
 def check_response_status_code(
@@ -830,10 +834,9 @@ class Premium:
 
     def upload_data(
             self,
-            data_blob: bytes,
+            data_blob: bytes | bytearray,
             our_hash: str,
             last_modify_ts: Timestamp,
-            compression_type: Literal['zlib'],
     ) -> None:
         """Uploads data to the server. We upload the encrypted database in chunks via an http form.
 
@@ -858,20 +861,25 @@ class Premium:
             form_kwargs: Any = {
                 'file_hash': our_hash,
                 'last_modify_ts': last_modify_ts,
-                'compression': compression_type,
+                'compression': BACKUP_COMPRESSION,
                 'total_size': total_size,
             }
             if upload_id is not None:  # add upload_id if present
                 form_kwargs['upload_id'] = upload_id
 
             retry_count, is_last_chunk = 0, (chunk_end == total_size)
+            # requests only takes bytes, and a memoryview slice copies the chunk just once
+            chunk = memoryview(data_blob)[offset:chunk_end].tobytes()
             while True:
                 try:
                     response = self.session.post(
                         self.rotki_nest + 'backup/range',
-                        files={'chunk_data': ('chunk', data_blob[offset:chunk_end])},
+                        files={'chunk_data': ('chunk', chunk)},
                         data=self.sign(method='backup/range', **form_kwargs),
-                        headers={'Content-Range': f'bytes {offset}-{chunk_end - 1}/{total_size}'},
+                        headers={
+                            'Content-Range': f'bytes {offset}-{chunk_end - 1}/{total_size}',
+                            **BACKUP_FORMAT_HEADERS,
+                        },
                         timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
                     )
                 except requests.exceptions.RequestException as e:
@@ -916,6 +924,7 @@ class Premium:
             response = self.session.get(
                 self.rotki_nest + 'backup',
                 params=data,
+                headers=BACKUP_FORMAT_HEADERS,
                 timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
