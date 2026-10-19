@@ -19,9 +19,6 @@ const [DefineSwitch, ReuseSwitch] = createReusableTemplate();
       inverted
       :control="confirm ? 'checkbox' : 'switch'"
       :size="dialog ? 'sm' : undefined"
-      :class="{
-        '[&_span]:text-sm [&_span]:mt-0.5': dialog,
-      }"
       :label="confirm
         ? t('sync_indicator.setting.ask_user_upon_size_discrepancy.confirm_label')
         : t('sync_indicator.setting.ask_user_upon_size_discrepancy.label')"
