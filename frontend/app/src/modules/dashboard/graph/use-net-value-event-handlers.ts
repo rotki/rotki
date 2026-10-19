@@ -92,8 +92,8 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
   /**
    * Sets up the handler that moves the axis pointer and the tooltip together.
    */
-  function setupAxisPointerHandler(instance: EChartsType): void {
-    instance.on('updateAxisPointer', (event: any) => {
+  function setupAxisPointerHandler(instance: EChartsType): () => void {
+    const handler = (event: any): void => {
       const { axesInfo, dataIndex } = event;
       const xAxisInfo = axesInfo?.[0];
 
@@ -119,38 +119,46 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
       });
 
       updateLastHover(!isSnapshot, timestamp, netValue);
-    });
+    };
+    instance.on('updateAxisPointer', handler);
+    return (): void => {
+      instance.off('updateAxisPointer', handler);
+    };
   }
 
   /**
    * Hides the tooltip when the pointer leaves the chart area entirely.
    */
-  function setupMouseLeaveHandler(instance: EChartsType): void {
-    instance.getZr().on('globalout', () => {
-      resetTooltip();
-    });
+  function setupMouseLeaveHandler(instance: EChartsType): () => void {
+    const handler = (): void => resetTooltip();
+    instance.getZr().on('globalout', handler);
+    return (): void => instance.getZr()?.off('globalout', handler);
   }
 
-  function setupMoveMoveHandler(instance: EChartsType): void {
-    instance.getZr().on('mousemove', (event: MouseEvent) => {
+  function setupMouseMoveHandler(instance: EChartsType): () => void {
+    const handler = (event: MouseEvent): void => {
       set(mousePos, {
         x: event.offsetX,
         y: event.offsetY,
       });
-    });
+    };
+    instance.getZr().on('mousemove', handler);
+    return (): void => instance.getZr()?.off('mousemove', handler);
   }
 
   /**
    * Handles double-click on the chart, which resets the data zoom to its initial state.
    */
-  function setupDoubleClickHandler(instance: EChartsType): void {
-    instance.getZr().on('dblclick', () => {
+  function setupDoubleClickHandler(instance: EChartsType): () => void {
+    const handler = (): void => {
       if (isDefined(clickTimer)) {
         clearTimeout(get(clickTimer));
         set(clickTimer, undefined);
       }
       instance.dispatchAction({ end: 100, start: 0, type: 'dataZoom' });
-    });
+    };
+    instance.getZr().on('dblclick', handler);
+    return (): void => instance.getZr()?.off('dblclick', handler);
   }
 
   let containerEventHandlers: {
@@ -177,13 +185,6 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
   }
 
   /**
-   * Handles clicks on the container, separating a single click from a double one.
-   *
-   * @remarks
-   * A timer holds the single-click action back long enough for a second click to cancel it, and
-   * mousedown/mouseup positions are tracked so a drag is not mistaken for a click.
-   */
-  /**
    * Clears the drag flag once the click that follows this mouseup has been dispatched.
    *
    * @remarks
@@ -197,6 +198,13 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     }, DRAG_FLAG_CLEAR_DELAY_MS);
   }
 
+  /**
+   * Handles clicks on the container, separating a single click from a double one.
+   *
+   * @remarks
+   * A timer holds the single-click action back long enough for a second click to cancel it, and
+   * mousedown/mouseup positions are tracked so a drag is not mistaken for a click.
+   */
   function setupContainerClickHandler(container: HTMLElement): void {
     containerEventHandlers.mousedown = (e): void => {
       set(dragStartPos, { x: e.offsetX, y: e.offsetY });
@@ -245,9 +253,9 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     container.addEventListener('mouseup', containerEventHandlers.mouseup);
   }
 
-  function setupZoomChangeHandler(instance: EChartsType): void {
+  function setupZoomChangeHandler(instance: EChartsType): () => void {
     if (!onZoomChange)
-      return;
+      return (): void => {};
 
     const handler = (...args: unknown[]): void => {
       const { times } = toValue(chartData);
@@ -272,6 +280,9 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     };
 
     instance.on('datazoom', handler);
+    return (): void => {
+      instance.off('datazoom', handler);
+    };
   }
 
   function setupZoomToolHandler(): void {
@@ -293,6 +304,14 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     instance.on('finished', activateZoomTool);
   }
 
+  /**
+   * Registers the chart and container handlers, replacing any from an earlier run.
+   *
+   * @remarks
+   * Each cleanup removes only the handler it added. An `off` without one also removes the
+   * listeners ECharts registers for itself, so once a theme change re-ran this setup the slider
+   * no longer dragged and the tooltip no longer showed.
+   */
   function setupChartEventHandlers(): void {
     const currentChart = get(chartInstance);
     const container = get(chartContainer);
@@ -305,21 +324,15 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     chartEventHandlers = [];
 
     const instance = currentChart.chart;
-    setupAxisPointerHandler(instance);
-    setupDoubleClickHandler(instance);
-    setupMoveMoveHandler(instance);
-    setupMouseLeaveHandler(instance);
     setupContainerClickHandler(container);
     setupZoomToolHandler();
-    setupZoomChangeHandler(instance);
 
     chartEventHandlers = [
-      (): EChartsType => instance?.off('updateAxisPointer'),
-      (): EChartsType => instance?.off('finished'),
-      (): EChartsType => instance?.off('datazoom'),
-      (): void => instance?.getZr()?.off('dblclick'),
-      (): void => instance?.getZr()?.off('mousemove'),
-      (): void => instance?.getZr()?.off('globalout'),
+      setupAxisPointerHandler(instance),
+      setupDoubleClickHandler(instance),
+      setupMouseMoveHandler(instance),
+      setupMouseLeaveHandler(instance),
+      setupZoomChangeHandler(instance),
       (): void => cleanupContainerEventHandlers(container),
     ];
   }
