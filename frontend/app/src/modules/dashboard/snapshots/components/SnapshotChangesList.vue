@@ -92,7 +92,7 @@ const { containerProps, list, wrapperProps } = useVirtualList(items, { itemHeigh
 
         <LocationDisplay
           v-else-if="item.location"
-          :opens-details="false"
+          :open-details="false"
           :identifier="item.location"
         />
 

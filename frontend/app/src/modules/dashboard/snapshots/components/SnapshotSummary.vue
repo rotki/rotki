@@ -369,7 +369,7 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
             v-if="!segment.other"
             horizontal
             size="16px"
-            :opens-details="false"
+            :open-details="false"
             :identifier="segment.location"
           />
           <span

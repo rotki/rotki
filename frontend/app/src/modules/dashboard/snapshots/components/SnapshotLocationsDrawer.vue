@@ -183,7 +183,7 @@ function applyDistribute(): void {
           <LocationDisplay
             horizontal
             size="20px"
-            :opens-details="false"
+            :open-details="false"
             :identifier="row.location"
           />
         </template>
