@@ -103,6 +103,17 @@ describe('useNetValueEventHandlers', () => {
     vi.restoreAllMocks();
   });
 
+  it('should remove only its own chart handlers when set up again, so ECharts keeps its listeners after a theme change', () => {
+    const { setupChartEventHandlers } = setupHarness();
+    setupChartEventHandlers();
+    setupChartEventHandlers();
+
+    const removals = [...fake.chart.off.mock.calls, ...fake.zr.off.mock.calls];
+    expect(removals.length).toBeGreaterThan(0);
+    for (const [event, handler] of removals)
+      expect(handler, `off('${event}') without a handler`).toBeTypeOf('function');
+  });
+
   it('should not register handlers when the chart instance is missing', () => {
     const harness = mount(defineComponent({
       setup(): () => VNode {
@@ -309,9 +320,9 @@ describe('useNetValueEventHandlers', () => {
 
     setupChartEventHandlers();
 
-    expect(fake.chart.off).toHaveBeenCalledWith('updateAxisPointer');
-    expect(fake.chart.off).toHaveBeenCalledWith('datazoom');
-    expect(fake.zr.off).toHaveBeenCalledWith('dblclick');
+    expect(fake.chart.off).toHaveBeenCalledWith('updateAxisPointer', expect.any(Function));
+    expect(fake.chart.off).toHaveBeenCalledWith('datazoom', expect.any(Function));
+    expect(fake.zr.off).toHaveBeenCalledWith('dblclick', expect.any(Function));
     unmount();
   });
 
@@ -323,8 +334,8 @@ describe('useNetValueEventHandlers', () => {
 
     unmount();
 
-    expect(fake.chart.off).toHaveBeenCalledWith('updateAxisPointer');
-    expect(fake.zr.off).toHaveBeenCalledWith('globalout');
+    expect(fake.chart.off).toHaveBeenCalledWith('updateAxisPointer', expect.any(Function));
+    expect(fake.zr.off).toHaveBeenCalledWith('globalout', expect.any(Function));
     expect(removeSpy).toHaveBeenCalledWith('click', expect.any(Function));
     vi.advanceTimersByTime(500);
     expect(onHover).not.toHaveBeenCalled();
