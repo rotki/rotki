@@ -180,7 +180,6 @@ onMounted(() => {
             :disabled="disabled"
             icon
             :size="isPinned ? 'sm' : 'lg'"
-            class="rounded-l-none!"
             :class="{ 'h-[30px]': isPinned }"
           >
             <RuiIcon name="lu-settings" />

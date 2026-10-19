@@ -231,7 +231,6 @@ onBeforeMount(async () => {
           <template #activator>
             <RuiButton
               color="primary"
-              class="rounded-r-none!"
               :size="buttonSize"
               :class="{ 'h-[30px] px-3!': isPinned }"
               :disabled="!isAutoMatchAllowed || unmatchedTransactions.length === 0 || autoMatchLoading"

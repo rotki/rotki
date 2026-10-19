@@ -78,14 +78,13 @@ function toggleSelectAll(): void {
 <template>
   <RuiMenu
     v-model="open"
-    class="border-0!"
     :options="{ offset: { crossAxis: 35 }, placement: 'bottom' }"
   >
     <template #activator="{ attrs }">
       <RuiButton
         variant="outlined"
         color="primary"
-        class="h-9 px-2.5 rounded-l-none outline-hidden!"
+        class="h-9 px-2.5 outline-hidden!"
         :disabled="disabled"
         :aria-label="t('common.actions.more')"
         data-testid="refresh-selection-toggle"
