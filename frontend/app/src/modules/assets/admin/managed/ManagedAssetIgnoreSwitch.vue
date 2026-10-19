@@ -55,6 +55,7 @@ const tooltipMessage = computed<string>(() =>
           :loading="loading"
           :disabled="isIgnoringDisabled"
           :model-value="isIgnored"
+          data-testid="managed-asset-ignore-switch"
           @update:model-value="emit('toggle-ignore')"
         />
       </template>
