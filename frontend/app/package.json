@@ -48,8 +48,8 @@
     "traces": "vue-tsc --build --force --generateTrace traces"
   },
   "dependencies": {
-    "@fontsource/roboto": "catalog:",
-    "@fontsource/roboto-mono": "catalog:",
+    "@fontsource-variable/geist-mono": "catalog:",
+    "@fontsource-variable/inter": "catalog:",
     "@rotki/common": "workspace:*",
     "@rotki/ui-library": "catalog:",
     "@types/ws": "catalog:",

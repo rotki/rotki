@@ -146,9 +146,6 @@ export default {
     container: {
       center: true,
     },
-    fontFamily: {
-      mono: ['Roboto Mono'],
-    },
     extend: {
       colors: {
         'dark-surface': '#121212',
