@@ -11,7 +11,9 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USD, A_USDC
 from rotkehlchen.db.filtering import NFTFilterQuery
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlockchain, TokenKind
 
 if TYPE_CHECKING:
@@ -22,6 +24,7 @@ if TYPE_CHECKING:
 TEST_ACC1 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
 TEST_ACC2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
 OPENSEA_STOREFRONT = string_to_evm_address('0x495f947276749Ce646f68AC8c248420045cb7b5e')  # ERC1155
+PENGUIN_7535 = Asset('eip155:1/erc721:0x524cAB2ec69124574082676e6F654a18df49A048/7535')
 
 
 def _add_nft_module_entry(
@@ -310,6 +313,111 @@ def test_nft_module_excludes_no_tokens_of_other_chains(
         blockchain.optimism.tokens.query_tokens_for_addresses(addresses=[user_address])
 
     assert chunks_mock.call_args.kwargs['addresses_to_tokens'] == {user_address: tokens}
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+def test_disabled_nft_module_excludes_no_tokens(
+        blockchain: ChainsAggregator,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Regression test for https://github.com/rotki/rotki/issues/13340
+
+    The NFTs that a disabled NFT module had stored are not added to the balances anymore,
+    so they should not exclude any token from the token balance query.
+    """
+    db = blockchain.database
+    penguins = string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048')
+    tokens = [get_or_create_evm_token(
+        userdb=db,
+        evm_address=penguins,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC721,
+        collectible_id=collectible_id,
+    ) for collectible_id in (None, '7535')]
+    with db.user_write() as write_cursor:
+        db.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=(user_address := ethereum_accounts[0]),
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=tokens,
+        )
+        _add_nft_module_entry(
+            write_cursor=write_cursor,
+            nft_id=f'_nft_{penguins}_7535',
+            owner_address=user_address,
+            usd_price='3',
+        )
+        db.set_settings(write_cursor, ModifiableDBSettings(active_modules=[]))
+
+    with patch('rotkehlchen.chain.evm.tokens.generate_multicall_chunks', return_value=[]) as chunks_mock:  # noqa: E501
+        blockchain.ethereum.tokens.query_tokens_for_addresses(addresses=[user_address])
+
+    assert chunks_mock.call_args.kwargs['addresses_to_tokens'] == {user_address: tokens}
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+@pytest.mark.parametrize(('mocked_current_prices', 'expected_value'), [
+    ({(PENGUIN_7535, DEFAULT_TESTS_MAIN_CURRENCY): ZERO, (A_ETH, DEFAULT_TESTS_MAIN_CURRENCY): FVal(3)}, FVal(6)),  # noqa: E501
+    ({(PENGUIN_7535, DEFAULT_TESTS_MAIN_CURRENCY): FVal(5), (A_ETH, DEFAULT_TESTS_MAIN_CURRENCY): FVal(3)}, FVal(5)),  # noqa: E501
+])
+def test_disabled_nft_module_keeps_nft_in_balances(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        expected_value: FVal,
+) -> None:
+    """Regression test for https://github.com/rotki/rotki/issues/13340
+
+    After the NFT module is disabled, an NFT that token detection found is counted once in
+    the balances. Its value comes from the manual price set for it in the NFT module, unless
+    its ERC721 token has a price of its own, such as a manual price set after disabling.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    nft_token = get_or_create_evm_token(
+        userdb=rotki.data.db,
+        evm_address=string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC721,
+        collectible_id='7535',
+    )
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=(user_address := ethereum_accounts[0]),
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[nft_token],
+        )
+        _add_nft_module_entry(
+            write_cursor=write_cursor,
+            nft_id=(nft_id := f'_nft_{nft_token.evm_address}_7535'),
+            owner_address=user_address,
+            usd_price='0',
+        )
+
+    assert (nft_module := rotki.chains_aggregator.get_module('nfts')) is not None
+    nft_module.add_nft_with_price(from_asset=Asset(nft_id), to_asset=A_ETH, price=Price(FVal(2)))
+    rotki.set_settings(ModifiableDBSettings(active_modules=[]))
+
+    with (  # saving the snapshot would query the main currency's USD rate online
+        patch.object(rotki.data.db, 'should_save_balances', return_value=False),
+        patch.object(
+            rotki.chains_aggregator.ethereum.node_inquirer,
+            'get_multi_balance',
+            return_value={user_address: ZERO},
+        ),
+        patch.object(
+            rotki.chains_aggregator.ethereum.tokens,
+            '_get_multicall_token_balances',
+            side_effect=lambda chunk, call_order: {
+                address: dict.fromkeys(tokens, ONE) for address, tokens in chunk
+            },
+        ),
+    ):
+        assets = rotki.query_balances()['assets']
+
+    assert assets[nft_token]['amount'] == ONE
+    assert assets[nft_token]['value'] == expected_value
+    assert Asset(nft_id) not in assets
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])

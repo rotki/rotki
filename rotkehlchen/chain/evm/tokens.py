@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotFoundError, RemoteError, RequestTooLargeError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -674,6 +675,12 @@ class EvmTokens(ABC):  # noqa: B024
         addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]] = {}
         chunk_size, call_order = self._get_token_detection_chunk_size_call_order()
         token_exceptions = self._per_chain_token_exceptions()
+        # the NFT module's balances are only added to the balances while it is active, so its
+        # stored NFTs must not hide any token once it is disabled
+        nfts_module_active = 'nfts' in CachedSettings().get_settings().active_modules
+        # ERC721 token identifier -> (price, price asset) of a manual price set for the NFT
+        # while the module was active. It is carried over to the token once it is disabled.
+        nft_manual_prices: dict[str, tuple[str, str]] = {}
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
@@ -692,16 +699,28 @@ class EvmTokens(ABC):  # noqa: B024
                 # tokens of its collection which the NFT module may not report.
                 nft_token_ids: set[str] = set()
                 nft_contracts: set[ChecksumEvmAddress] = set()
-                for row in cursor.execute(
-                    'SELECT identifier, blockchain FROM nfts WHERE owner_address=?',
-                    (address,),
-                ):
-                    if SupportedBlockchain.deserialize(row[1]) != self.evm_inquirer.blockchain:
-                        continue
+                if nfts_module_active:
+                    for row in cursor.execute(
+                        'SELECT identifier, blockchain FROM nfts WHERE owner_address=?',
+                        (address,),
+                    ):
+                        if SupportedBlockchain.deserialize(row[1]) != self.evm_inquirer.blockchain:
+                            continue
 
-                    nft_contracts.add((nft := Nft(row[0])).evm_address)
-                    if (nft_token_id := nft.to_erc721_identifier()) is not None:
-                        nft_token_ids.add(nft_token_id)
+                        nft_contracts.add((nft := Nft(row[0])).evm_address)
+                        if (nft_token_id := nft.to_erc721_identifier()) is not None:
+                            nft_token_ids.add(nft_token_id)
+                else:
+                    for row in cursor.execute(
+                        'SELECT identifier, blockchain, last_price, last_price_asset FROM nfts '
+                        'WHERE owner_address=? AND manual_price=1',
+                        (address,),
+                    ):
+                        if SupportedBlockchain.deserialize(row[1]) != self.evm_inquirer.blockchain:
+                            continue
+
+                        if (nft_token_id := Nft(row[0]).to_erc721_identifier()) is not None:
+                            nft_manual_prices[nft_token_id] = row[2], row[3]
 
                 token_list = [
                     x for x in saved_list
@@ -737,6 +756,22 @@ class EvmTokens(ABC):  # noqa: B024
                         addresses_to_balances[address][token] = balance
 
         token_price = cast('dict[EvmToken, Price]', Inquirer.find_main_currency_prices(list(tokens_with_balance)))  # noqa: E501
+        # the NFT's manual price only fills in for a token without a price of its own, so that
+        # a manual price set for the token after disabling the module is respected
+        unpriced_nft_tokens = [
+            token for token in tokens_with_balance
+            if token.identifier in nft_manual_prices and token_price.get(token, ZERO) == ZERO
+        ]
+        if len(unpriced_nft_tokens) != 0:
+            price_asset_prices = Inquirer.find_main_currency_prices(list({
+                Asset(nft_manual_prices[token.identifier][1]) for token in unpriced_nft_tokens
+            }))
+            for token in unpriced_nft_tokens:
+                price, price_asset = nft_manual_prices[token.identifier]
+                token_price[token] = Price(
+                    FVal(price) * price_asset_prices.get(Asset(price_asset), ZERO),
+                )
+
         return dict(addresses_to_balances), token_price
 
     def _get_token_exceptions(self) -> set[ChecksumEvmAddress]:
