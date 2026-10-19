@@ -69,7 +69,7 @@ onBeforeMount(async () => {
       <RuiSkeletonLoader
         v-for="i in 4"
         :key="i"
-        class="w-[113px] h-[84px]"
+        class="w-full h-21"
       />
     </div>
     <div v-else-if="providers.length > 0">
