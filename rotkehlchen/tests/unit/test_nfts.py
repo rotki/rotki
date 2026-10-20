@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, Nft
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.balances import BlockchainBalancesUpdate
+from rotkehlchen.chain.evm.tokens import ERC721OwnershipResult
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USD, A_USDC
@@ -18,7 +19,9 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlock
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.chain.evm.tokens import EvmTokens
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
 TEST_ACC1 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
@@ -39,6 +42,29 @@ def _add_nft_module_entry(
         'INSERT INTO nfts(identifier, name, last_price, last_price_asset, manual_price, '
         'owner_address, is_lp) VALUES(?, ?, ?, ?, ?, ?, ?)',
         (nft_id, 'Pudgy Penguin', usd_price, A_USD.identifier, 0, owner_address, 0),
+    )
+
+
+def _queried_tokens(
+        tokens: EvmTokens,
+        address: ChecksumEvmAddress,
+) -> tuple[dict[ChecksumEvmAddress, list[EvmToken]], list[tuple[ChecksumEvmAddress, EvmToken]]]:
+    """Query the token balances of the address without querying the chain.
+
+    Returns the tokens sent to the balanceOf query and the ones sent to the ownerOf query.
+    """
+    with (
+        patch('rotkehlchen.chain.evm.tokens.generate_multicall_chunks', return_value=[]) as chunks_mock,  # noqa: E501
+        patch(
+            'rotkehlchen.chain.evm.tokens.query_owned_erc721_tokens',
+            return_value=ERC721OwnershipResult(owned=set(), failed=set(), reverted=set()),
+        ) as ownership_mock,
+    ):
+        tokens.query_tokens_for_addresses(addresses=[address])
+
+    return (
+        chunks_mock.call_args.kwargs['addresses_to_tokens'],
+        ownership_mock.call_args.kwargs['candidates'],
     )
 
 
@@ -268,13 +294,11 @@ def test_nft_module_excludes_only_its_own_tokens(
             usd_price='3',
         )
 
-    with patch('rotkehlchen.chain.evm.tokens.generate_multicall_chunks', return_value=[]) as chunks_mock:  # noqa: E501
-        blockchain.ethereum.tokens.query_tokens_for_addresses(addresses=[user_address])
-
     # the collection token and the ERC721 #7535 are covered by the NFT module
-    assert chunks_mock.call_args.kwargs['addresses_to_tokens'] == {
-        user_address: tokens[1:] if is_erc1155 else [tokens[2]],
-    }
+    assert _queried_tokens(blockchain.ethereum.tokens, user_address) == (
+        {user_address: []},
+        [(user_address, token) for token in (tokens[1:] if is_erc1155 else [tokens[2]])],
+    )
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
@@ -309,10 +333,11 @@ def test_nft_module_excludes_no_tokens_of_other_chains(
             usd_price='3',
         )
 
-    with patch('rotkehlchen.chain.evm.tokens.generate_multicall_chunks', return_value=[]) as chunks_mock:  # noqa: E501
-        blockchain.optimism.tokens.query_tokens_for_addresses(addresses=[user_address])
-
-    assert chunks_mock.call_args.kwargs['addresses_to_tokens'] == {user_address: tokens}
+    # #7535 is checked on its own with ownerOf and the collection token with balanceOf
+    assert _queried_tokens(blockchain.optimism.tokens, user_address) == (
+        {user_address: [tokens[0]]},
+        [(user_address, tokens[1])],
+    )
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
@@ -349,13 +374,15 @@ def test_disabled_nft_module_excludes_no_tokens(
         )
         db.set_settings(write_cursor, ModifiableDBSettings(active_modules=[]))
 
-    with patch('rotkehlchen.chain.evm.tokens.generate_multicall_chunks', return_value=[]) as chunks_mock:  # noqa: E501
-        blockchain.ethereum.tokens.query_tokens_for_addresses(addresses=[user_address])
+    # #7535 is checked on its own with ownerOf and the collection token with balanceOf
+    assert _queried_tokens(blockchain.ethereum.tokens, user_address) == (
+        {user_address: [tokens[0]]},
+        [(user_address, tokens[1])],
+    )
 
-    assert chunks_mock.call_args.kwargs['addresses_to_tokens'] == {user_address: tokens}
 
-
-@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xA2a6D337e042009EbAC0f0c398Fef08Dc1074f19']])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
 @pytest.mark.parametrize(('mocked_current_prices', 'expected_value'), [
     ({(PENGUIN_7535, DEFAULT_TESTS_MAIN_CURRENCY): ZERO, (A_ETH, DEFAULT_TESTS_MAIN_CURRENCY): FVal(3)}, FVal(6)),  # noqa: E501
@@ -371,6 +398,7 @@ def test_disabled_nft_module_keeps_nft_in_balances(
     After the NFT module is disabled, an NFT that token detection found is counted once in
     the balances. Its value comes from the manual price set for it in the NFT module, unless
     its ERC721 token has a price of its own, such as a manual price set after disabling.
+    The account is the owner of #7535, so the recorded ownerOf query counts it.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     nft_token = get_or_create_evm_token(
@@ -398,21 +426,8 @@ def test_disabled_nft_module_keeps_nft_in_balances(
     nft_module.add_nft_with_price(from_asset=Asset(nft_id), to_asset=A_ETH, price=Price(FVal(2)))
     rotki.set_settings(ModifiableDBSettings(active_modules=[]))
 
-    with (  # saving the snapshot would query the main currency's USD rate online
-        patch.object(rotki.data.db, 'should_save_balances', return_value=False),
-        patch.object(
-            rotki.chains_aggregator.ethereum.node_inquirer,
-            'get_multi_balance',
-            return_value={user_address: ZERO},
-        ),
-        patch.object(
-            rotki.chains_aggregator.ethereum.tokens,
-            '_get_multicall_token_balances',
-            side_effect=lambda chunk, call_order: {
-                address: dict.fromkeys(tokens, ONE) for address, tokens in chunk
-            },
-        ),
-    ):
+    # saving the snapshot would query the main currency's USD rate online
+    with patch.object(rotki.data.db, 'should_save_balances', return_value=False):
         assets = rotki.query_balances()['assets']
 
     assert assets[nft_token]['amount'] == ONE

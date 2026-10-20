@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13399` Fixed NFTs appearing twice in balances or remaining after being sold or transferred.
 * :bug:`13340` After you disable the NFT module, the NFTs that token detection found for your accounts show up in balances and snapshots again, valued at the manual price you set for them in the module. Before, disabling the module hid them until it was turned back on.
 * :feature:`-` Calendar reminders are now created for SafeNet staking withdrawals that have been initiated but not claimed yet, set to the moment they can be claimed. The reminder is removed once the withdrawal is claimed.
 * :feature:`-` Initiating a withdrawal from SafeNet staking is now decoded as an informational event. Before, the transaction only showed the gas spend. Redecode your SafeNet transactions to pick up the withdrawals you already initiated.
