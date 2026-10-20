@@ -65,10 +65,10 @@ const { t } = useI18n({ useScope: 'global' });
           {{ item.resolvedLabel }}
         </RuiChip>
         <LocationDisplay
-          class="[&_div]:justify-start! [&_span]:text-caption! [&_span]:text-rui-text-secondary!"
           size="16px"
           :identifier="item.location"
           horizontal
+          dense
         />
         <RuiTooltip
           v-if="item.isFiat"
