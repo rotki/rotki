@@ -33,7 +33,7 @@ const hiddenCount = computed<number>(() => Math.max(0, get(chainEntries).length 
     </div>
     <div
       v-if="hiddenCount > 0"
-      class="size-6 rounded-full bg-rui-surface-muted border border-rui-divider flex items-center justify-center text-[0.625rem] font-medium text-rui-text-secondary"
+      class="size-6 rounded-full bg-rui-surface-muted border border-rui-divider flex items-center justify-center text-caption-2 font-medium text-rui-text-secondary"
       data-testid="chain-balances-more"
     >
       +{{ hiddenCount }}

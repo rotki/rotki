@@ -24,7 +24,6 @@ const isExchangeLocation = computed<boolean>(() => !matchChain(location));
       :item="location"
       size="16px"
       class="mr-0.5 shrink-0"
-      :class="{ 'text-[10px]!': dense }"
     />
     <HashLink
       :text="locationLabel"
@@ -32,7 +31,7 @@ const isExchangeLocation = computed<boolean>(() => !matchChain(location));
       :no-scramble="isExchangeLocation"
       :reveal-actions="revealActions"
       class="min-w-0"
-      :class="{ 'text-[10px]!': dense }"
+      :class="{ 'text-caption-2!': dense }"
     />
   </div>
 </template>

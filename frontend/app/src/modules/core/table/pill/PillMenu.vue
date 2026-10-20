@@ -165,7 +165,7 @@ function onKeydown(event: KeyboardEvent): void {
       <kbd
         v-for="hint in keyHints"
         :key="hint"
-        class="px-1 rounded-sm border border-rui-grey-300 dark:border-rui-grey-600 font-mono text-[10px] leading-4"
+        class="px-1 rounded-sm border border-rui-grey-300 dark:border-rui-grey-600 font-mono text-caption-2"
       >
         {{ hint }}
       </kbd>

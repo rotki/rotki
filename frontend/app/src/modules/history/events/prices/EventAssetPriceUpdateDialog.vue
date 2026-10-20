@@ -65,7 +65,7 @@ const {
             :actions="{ hideMenu: true }"
           />
           <div class="flex flex-col items-end">
-            <div class="text-[10px]! leading-none! text-caption text-rui-text-secondary uppercase">
+            <div class="text-caption-2 leading-none! text-rui-text-secondary uppercase">
               {{ t('common.datetime') }}
             </div>
             <DateDisplay
