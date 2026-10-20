@@ -44,8 +44,7 @@ const { isNonSyncExchange, resetNonSyncingExchanges, toggleSync } = useNonSyncin
 
 // the exchange reads as logo and name on one line, like the balances pages, and the row ends on its actions
 const cols = computed<DataTableColumn<Exchange>[]>(() => [{
-  // the location icon centres itself; in a left-aligned column it starts at the edge like the text beside it
-  cellClass: 'py-0 w-48 [&_[data-testid=location-icon]]:justify-start',
+  cellClass: 'py-0 w-48',
   key: 'location',
   label: t('common.exchange'),
   sortable: true,

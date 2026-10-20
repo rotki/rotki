@@ -66,7 +66,6 @@ onMounted(async () => {
         <template #item.location="{ row }">
           <LocationDisplay
             horizontal
-            class="[&_[data-testid=location-icon]]:justify-start"
             :identifier="row.location"
           />
         </template>

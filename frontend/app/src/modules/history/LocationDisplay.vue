@@ -11,6 +11,7 @@ const {
   openDetails = true,
   detailPath = '',
   horizontal,
+  dense,
 } = defineProps<{
   identifier: string;
   icon?: boolean;
@@ -18,6 +19,8 @@ const {
   openDetails?: boolean;
   detailPath?: string;
   horizontal?: boolean;
+  /** Shows the horizontal label as a small secondary caption, for metadata lines next to other details. */
+  dense?: boolean;
 }>();
 
 const { useLocationData } = useLocations();
@@ -62,6 +65,7 @@ const route = computed<RouteLocationRaw>(() => {
       :size="size"
       class="w-full"
       :horizontal="horizontal"
+      :dense="dense"
     />
   </NavigatorLink>
 </template>

@@ -26,10 +26,10 @@ const emit = defineEmits<{
         {{ typeLabel }}
       </BadgeDisplay>
       <LocationDisplay
-        class="[&_div]:justify-start! [&_span]:text-caption! [&_span]:text-rui-text-secondary!"
         size="16px"
         :identifier="entry.location"
         horizontal
+        dense
       />
       <DateDisplay
         class="ml-auto text-caption text-rui-text-disabled"
