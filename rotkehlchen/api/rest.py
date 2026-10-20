@@ -2708,7 +2708,9 @@ class RestAPI:
         except RemoteBackupError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
         else:
-            if msg.startswith('Pulling failed'):
+            if msg.startswith('Pulling failed') or (not success and msg != ''):
+                # A failed sync carries its reason in msg. Return it as an error so that the
+                # caller sees it, instead of a bare False with the reason in a side field.
                 return wrap_in_fail_result(msg, status_code=HTTPStatus.BAD_GATEWAY)
             if action == 'download' and success:
                 # A forced pull skips the "remote is newer" check, so the authenticated

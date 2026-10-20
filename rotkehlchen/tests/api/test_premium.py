@@ -75,6 +75,28 @@ def test_upload_db(rotkehlchen_api_server: APIServer) -> None:
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_upload_db_failure_reason_is_returned(rotkehlchen_api_server: APIServer) -> None:
+    """A failed forced upload must return its reason as an error, not as result False with the
+    reason in the message, which the frontend would drop."""
+    with patch.object(
+        rotkehlchen_api_server.rest_api.rotkehlchen.premium_sync_manager,
+        'sync_data',
+        return_value=(False, 'Upload failed. Uploaded database is bigger than the maximum', None),
+    ):
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'userpremiumsyncresource',
+        ), json={'async_query': True, 'action': 'upload'})
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert_error_async_response(
+        outcome,
+        contained_in_msg='bigger than the maximum',
+        status_code=HTTPStatus.BAD_GATEWAY,
+    )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize(('legacy', 'restored_backup_ts'), [(True, None), (False, 1760882400)])
 def test_pull_db(
         rotkehlchen_api_server: APIServer,

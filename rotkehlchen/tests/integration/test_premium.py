@@ -916,6 +916,7 @@ def test_upload_data_error(rotkehlchen_instance: Rotkehlchen) -> None:
     for (status_code, response_text, error_msg, expected_call_count) in (
         (HTTPStatus.REQUEST_ENTITY_TOO_LARGE, 'Payload size is too big', 'Size limit reached', 1),
         (HTTPStatus.BAD_REQUEST, 'XYZ', 'Could not upload database backup due to: XYZ', 2),
+        (HTTPStatus.BAD_REQUEST, '{"success":false,"msg":"Too big for your tier"}', 'Could not upload database backup due to: Too big for your tier', 2),  # noqa: E501
     ):
         with patched_get, patch.object(
             rotkehlchen_instance.premium.session,

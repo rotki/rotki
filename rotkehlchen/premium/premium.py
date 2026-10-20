@@ -211,6 +211,21 @@ def _process_dict_response(
     return result_dict
 
 
+def _extract_error_msg(response: requests.Response) -> str:
+    """Returns the reason the server gave in its json body ('msg' or 'error'), or the raw
+    response text if the body is not a json object with one of those."""
+    try:
+        body = jsonloads_dict(response.text)
+    except JSONDecodeError:
+        return response.text
+
+    for key in ('msg', 'error'):
+        if isinstance(reason := body.get(key), str) and reason != '':
+            return reason
+
+    return response.text
+
+
 def _get_rotki_base_url() -> str:
     rotki_base_url = 'rotki.com'
     if is_production() is False and os.environ.get('ROTKI_API_ENVIRONMENT') == 'staging':
@@ -895,7 +910,7 @@ class Premium:
                     _process_dict_response(
                         response=response,
                         status_codes=(expected_status,),
-                        user_msg='Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else f'Could not upload database backup due to: {response.text}',  # noqa: E501
+                        user_msg='Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else f'Could not upload database backup due to: {_extract_error_msg(response)}',  # noqa: E501
                     )
                     return
 
