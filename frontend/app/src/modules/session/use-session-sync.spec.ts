@@ -11,6 +11,8 @@ import { useSync } from '@/modules/session/use-session-sync';
 const mockNotifyError = vi.fn();
 const mockNotifyInfo = vi.fn();
 const mockShowSuccessMessage = vi.fn();
+const mockShowErrorMessage = vi.fn();
+const mockColibriLogout = vi.fn<() => Promise<boolean>>();
 const mockForceSync = vi.fn();
 const { mockCancelAllQueued, mockCancel } = vi.hoisted(() => ({ mockCancel: vi.fn(), mockCancelAllQueued: vi.fn() }));
 
@@ -29,7 +31,14 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn(() => ({
     notifyError: mockNotifyError,
     notifyInfo: mockNotifyInfo,
+    showErrorMessage: mockShowErrorMessage,
     showSuccessMessage: mockShowSuccessMessage,
+  })),
+}));
+
+vi.mock('@/modules/auth/use-users-api', () => ({
+  useUsersApi: vi.fn(() => ({
+    colibriLogout: mockColibriLogout,
   })),
 }));
 
@@ -55,6 +64,7 @@ describe('useSync', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockColibriLogout.mockResolvedValue(true);
     workStatus = { ...IDLE };
     sync = useSync();
     set(sync.syncAction, SYNC_DOWNLOAD);
@@ -175,31 +185,111 @@ describe('useSync', () => {
       expect(logout).not.toHaveBeenCalled();
     });
 
-    it('should notify a failure when the task succeeds but returns false', async () => {
+    it('should notify a failure when an upload task succeeds but returns false', async () => {
+      set(sync.syncAction, SYNC_UPLOAD);
       runTaskResult.mockResolvedValue(ok(false));
+      const logout = vi.fn(async (): Promise<void> => {});
 
-      await sync.forceSync(vi.fn(async (): Promise<void> => {}));
+      await sync.forceSync(logout);
 
       expect(mockNotifyError).toHaveBeenCalledOnce();
       expect(mockNotifyInfo).not.toHaveBeenCalled();
       expect(mockShowSuccessMessage).not.toHaveBeenCalled();
+      expect(logout).not.toHaveBeenCalled();
     });
 
-    it('should notify a failure on an actionable task failure', async () => {
+    it('should notify a failure on an actionable upload task failure', async () => {
+      set(sync.syncAction, SYNC_UPLOAD);
       runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
 
       await sync.forceSync(vi.fn(async (): Promise<void> => {}));
 
-      expect(mockNotifyError).toHaveBeenCalledOnce();
+      expect(mockNotifyError).toHaveBeenCalledExactlyOnceWith(
+        'actions.session.force_sync.error.title',
+        'actions.session.force_sync.error.message::boom',
+      );
     });
 
-    it('should stay silent on a cancelled task', async () => {
+    it('should stay silent on a cancelled upload task', async () => {
+      set(sync.syncAction, SYNC_UPLOAD);
       runTaskResult.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
 
       await sync.forceSync(vi.fn(async (): Promise<void> => {}));
 
       expect(mockNotifyError).not.toHaveBeenCalled();
       expect(mockNotifyInfo).not.toHaveBeenCalled();
+    });
+
+    it('should not lock colibri for an upload', async () => {
+      set(sync.syncAction, SYNC_UPLOAD);
+      runTaskResult.mockResolvedValue(ok(true));
+
+      await sync.forceSync(vi.fn(async (): Promise<void> => {}));
+
+      expect(mockColibriLogout).not.toHaveBeenCalled();
+    });
+  });
+
+  // A download replaces the user db file, so colibri must have closed its connection to it
+  // first. Once locked only a login unlocks it again, so a finished download ends in a logout.
+  describe('forceSync download', () => {
+    it('should lock colibri before starting the download', async () => {
+      runTaskResult.mockResolvedValue(ok(true));
+
+      await sync.forceSync(vi.fn(async (): Promise<void> => {}));
+
+      expect(mockColibriLogout).toHaveBeenCalledOnce();
+      expect(mockColibriLogout.mock.invocationCallOrder[0]).toBeLessThan(submitTask.mock.invocationCallOrder[0]);
+    });
+
+    it('should not download, and keep the session, when colibri can not be locked', async () => {
+      mockColibriLogout.mockRejectedValue(new Error('colibri down'));
+      const logout = vi.fn(async (): Promise<void> => {});
+
+      await sync.forceSync(logout);
+
+      expect(submitTask).not.toHaveBeenCalled();
+      expect(mockNotifyError).toHaveBeenCalledExactlyOnceWith(
+        'actions.session.force_sync.error.title',
+        'actions.session.force_sync.error.message::colibri down',
+      );
+      expect(logout).not.toHaveBeenCalled();
+    });
+
+    it('should show a failure that outlasts the logout when the task returns false', async () => {
+      runTaskResult.mockResolvedValue(ok(false));
+      const logout = vi.fn(async (): Promise<void> => {});
+
+      await sync.forceSync(logout);
+
+      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+      expect(mockNotifyError).not.toHaveBeenCalled();
+      expect(mockShowSuccessMessage).not.toHaveBeenCalled();
+      expect(logout).toHaveBeenCalledOnce();
+    });
+
+    it('should show an actionable failure and log out', async () => {
+      runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
+      const logout = vi.fn(async (): Promise<void> => {});
+
+      await sync.forceSync(logout);
+
+      expect(mockShowErrorMessage).toHaveBeenCalledExactlyOnceWith(
+        'actions.session.force_sync.error.title',
+        'actions.session.force_sync.error.message::boom',
+      );
+      expect(logout).toHaveBeenCalledOnce();
+    });
+
+    it('should stay logged in and silent on a cancelled task', async () => {
+      runTaskResult.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
+      const logout = vi.fn(async (): Promise<void> => {});
+
+      await sync.forceSync(logout);
+
+      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+      expect(mockNotifyError).not.toHaveBeenCalled();
+      expect(logout).not.toHaveBeenCalled();
     });
   });
 });
