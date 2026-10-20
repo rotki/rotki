@@ -152,7 +152,8 @@ function handleRemove(address: string, nodeOperatorIdValue: number): void {
     <RuiDataTable
       dense
       outlined
-      class="min-w-full [&_tr[data-id=row]]:h-[57px]"
+      class="min-w-full"
+      item-class="h-14.25"
       row-attr="key"
       :cols="tableColumns"
       :rows="tableRows"
