@@ -5,6 +5,7 @@ const { size = 'sm', title = '', subtitle = '', noPadding = false, noHover = fal
   inline?: boolean;
   title?: string;
   subtitle?: string;
+  /** Drops the row's own padding on every side, for a row inside something that already pads it. */
   noPadding?: boolean;
   noHover?: boolean;
   loading?: boolean;
@@ -34,9 +35,9 @@ const avatarSizeClasses = computed<string>(() => {
   <div
     class="flex items-center cursor-pointer"
     :class="[
-      inline ? 'py-0.5 gap-2' : 'py-2 gap-3',
+      inline ? 'gap-2' : 'gap-3',
       {
-        'px-4!': !noPadding,
+        [`px-4! ${inline ? 'py-0.5' : 'py-2'}`]: !noPadding,
         'hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800': !noHover,
       },
     ]"
