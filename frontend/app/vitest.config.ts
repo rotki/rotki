@@ -1,3 +1,4 @@
+import { availableParallelism } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -41,12 +42,18 @@ export default mergeConfig(
       /*
        * `vmThreads` builds the happy-dom environment once per worker instead of once per file,
        * which was a quarter of the run across 1111 files. `vmMemoryLimit` is not optional here:
-       * this pool does not reclaim contexts reliably, and without a limit the run holds ~17GB
-       * against ~5GB for the default pool, which does not fit a CI runner. It is a top-level
+       * this pool does not reclaim contexts reliably, and without a limit the run holds several
+       * times what the default pool does, which does not fit a CI runner. It is a top-level
        * option, not a `poolOptions` one, so a misplaced key silently does nothing.
        */
       pool: 'vmThreads',
       vmMemoryLimit: '512MB',
+      /*
+       * Each worker holds its own happy-dom context and module graph, so memory grows with the
+       * worker count while the run stops getting faster at about six. Capped below the core count
+       * as well, so a small runner keeps the default of one worker per spare core.
+       */
+      maxWorkers: Math.min(6, availableParallelism() - 1),
       testTimeout: 15_000,
       env: {
         TZ: 'UTC',
