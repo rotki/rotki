@@ -15,6 +15,7 @@ from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
 from rotkehlchen.exchanges.bitpanda import Bitpanda
 from rotkehlchen.exchanges.bitstamp import Bitstamp
+from rotkehlchen.exchanges.bitvavo import Bitvavo
 from rotkehlchen.exchanges.bybit import Bybit
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbaseprime import Coinbaseprime
@@ -899,6 +900,19 @@ def create_test_coinex(
     )
 
 
+def create_test_bitvavo(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Bitvavo:
+    return Bitvavo(
+        name='bitvavo',
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
 def create_test_kucoin(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
@@ -1092,6 +1106,14 @@ def try_get_first_exchange(
         exchange_manager: ExchangeManager,
         location: Literal[Location.COINEX],
 ) -> Coinex | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.BITVAVO],
+) -> Bitvavo | None:
     ...
 
 

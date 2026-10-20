@@ -855,6 +855,7 @@ class Location(DBCharEnumMixIn):
     INK = 64  # on-chain Ink chain events
     QONTO = 65  # bank connector
     FINTS = 66  # German FinTS/HBCI bank connector
+    BITVAVO = 67
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> EVM_LOCATIONS_TYPE:

@@ -471,6 +471,23 @@ def asset_from_coinex(coinex_name: str) -> AssetWithOracles:
     ))
 
 
+def asset_from_bitvavo(bitvavo_symbol: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnknownAsset
+    """
+    if not isinstance(bitvavo_symbol, str):
+        raise DeserializationError(
+            f'Got non-string type {type(bitvavo_symbol)} for Bitvavo asset',
+        )
+
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.BITVAVO,
+        symbol=bitvavo_symbol,
+        default=bitvavo_symbol,
+    ))
+
+
 def asset_from_bitcoinde(bitcoinde: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
@@ -543,6 +560,7 @@ LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.WOO: asset_from_woo,
     Location.HTX: asset_from_htx,
     Location.COINEX: asset_from_coinex,
+    Location.BITVAVO: asset_from_bitvavo,
     Location.BITCOINDE: asset_from_bitcoinde,
     Location.GATE: asset_from_gate,
     Location.EXTERNAL: asset_from_common_identifier,

@@ -63,6 +63,13 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
             (Location.FINTS.serialize_for_db(), Location.FINTS.value),
         )
 
+    @progress_step(description='Add Bitvavo location.')
+    def _add_bitvavo_location(write_cursor: DBCursor) -> None:
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
+            (Location.BITVAVO.serialize_for_db(), Location.BITVAVO.value),
+        )
+
     @progress_step(description='Remove notes that rotki now generates from event data.')
     def _remove_generated_notes(write_cursor: DBCursor) -> None:
         """Notes of gas, approvals, deploys, transactions to self, plain transfers, ETH staking

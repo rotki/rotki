@@ -29,6 +29,14 @@ def test_location_details_coverage():
             assert 'is_exchange' in location_detail
 
 
+def test_bitvavo_exists_in_db_schema():
+    """Test that fresh user DBs contain Bitvavo."""
+    assert (
+        f"INSERT OR IGNORE INTO location(location, seq) VALUES "
+        f"('{Location.BITVAVO.serialize_for_db()}', {Location.BITVAVO.value});"
+    ) in DB_CREATE_LOCATION
+
+
 def test_coinex_exists_in_db_schema():
     """Test that fresh user DBs contain CoinEx."""
     assert (
