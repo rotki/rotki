@@ -1,12 +1,12 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/messaging/types';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { err, isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useUsersApi } from '@/modules/auth/use-users-api';
 import { api } from '@/modules/core/api/rotki-api';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { serializer } from '@/modules/core/messaging/use-dynamic-messages';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useSyncApi } from '@/modules/session/api/use-sync-api';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -20,7 +20,7 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
 type ForceSyncResult = boolean | { lastModifyTs: number | null };
 
 export const useSync = createSharedComposable(() => {
-  const { statusOf, submitTask } = useNativeTask();
+  const { sessionEpoch, statusOf, submitTask } = useNativeTask();
   const { notifyError, notifyInfo, showErrorMessage, showSuccessMessage } = useNotifications();
   const { colibriLogout } = useUsersApi();
   const { t } = useI18n({ useScope: 'global' });
@@ -55,22 +55,6 @@ export const useSync = createSharedComposable(() => {
 
   const failureMessage = (error: string): string => t('actions.session.force_sync.error.message', { error });
 
-  /**
-   * A download replaces the user db file. Colibri keeps its own connection to that file while
-   * unlocked, and writing a new file under it corrupts the restored db. Returns false, after
-   * telling the user, if colibri could not be locked.
-   */
-  const lockColibri = async (): Promise<boolean> => {
-    try {
-      await colibriLogout();
-      return true;
-    }
-    catch (error: unknown) {
-      notifyError(t('actions.session.force_sync.error.title'), failureMessage(getErrorMessage(error)));
-      return false;
-    }
-  };
-
   /** The success message, or the failure error. Neither for a cancelled task, which stays silent. */
   const describeOutcome = (outcome: Result<ForceSyncResult, TaskError>): { message?: string; error?: string } => {
     if (isErr(outcome))
@@ -79,24 +63,22 @@ export const useSync = createSharedComposable(() => {
   };
 
   /**
-   * Colibri stays locked after a download and only a login unlocks it again, so a finished
-   * download ends in a logout. A toast would vanish on it; the message dialog stays open on the
-   * login screen. A cancelled download does not log out: core may still be replacing the db file.
+   * Colibri stays locked after a download and only a login unlocks it again, so a download that
+   * locked it ends in a logout, whatever its outcome. A toast would vanish on it; the message
+   * dialog stays open on the login screen.
    */
-  const finishDownload = async (
-    { error, message }: { message?: string; error?: string },
-    logout: () => Promise<void>,
-  ): Promise<void> => {
+  const finishDownload = async (outcome: Result<ForceSyncResult, TaskError>, logout: () => Promise<void>): Promise<void> => {
+    const { error, message } = describeOutcome(outcome);
     if (message !== undefined)
       showSuccessMessage(t('actions.session.force_sync.success.title'), message);
-    else if (error !== undefined)
-      showErrorMessage(t('actions.session.force_sync.error.title'), failureMessage(error));
+    else
+      showErrorMessage(t('actions.session.force_sync.error.title'), failureMessage(error ?? (isErr(outcome) ? outcome.error.message : '')));
 
-    if (message !== undefined || error !== undefined)
-      await logout();
+    await logout();
   };
 
-  const finishUpload = ({ error, message }: { message?: string; error?: string }): void => {
+  const notifyOutcome = (outcome: Result<ForceSyncResult, TaskError>): void => {
+    const { error, message } = describeOutcome(outcome);
     if (message !== undefined)
       notifyInfo(t('actions.session.force_sync.success.title'), message);
     else if (error !== undefined)
@@ -112,26 +94,38 @@ export const useSync = createSharedComposable(() => {
     const action = get(syncAction);
     if (action === SYNC_UPLOAD)
       set(displaySyncConfirmation, false);
-    else if (!(await lockColibri()))
-      return;
 
+    const epoch = sessionEpoch();
+    let colibriLocked = false;
     const outcome = await submitTask<ForceSyncResult>({
       id: makeActivityId(ActivityKind.SYNC),
+      // A download replaces the user db file, and core must not be stopped half way through.
+      interruptible: action === SYNC_UPLOAD,
       kind: ActivityKind.SYNC,
       rerunnable: false,
-      run: async ({ runTask }): Promise<Result<ForceSyncResult, TaskError>> => mapResult(
-        await runTask<ForceSyncResult>(
-          async () => useSyncApi().forceSync(action),
-        ),
-        result => result,
-      ),
+      run: async ({ runTask }): Promise<Result<ForceSyncResult, TaskError>> => {
+        if (action === SYNC_DOWNLOAD) {
+          // Colibri keeps its own connection to the user db file while unlocked, and core writing
+          // a new file under it corrupts the restored db. Locked only once the download runs, so
+          // a download dropped from the queue leaves colibri alone.
+          try {
+            await colibriLogout();
+          }
+          catch (error: unknown) {
+            return err(TaskFailed({ message: getErrorMessage(error) }));
+          }
+          colibriLocked = true;
+        }
+        return mapResult(await runTask<ForceSyncResult>(async () => useSyncApi().forceSync(action)), result => result);
+      },
       title: t('task_center.group.sync'),
     });
 
-    if (action === SYNC_DOWNLOAD)
-      await finishDownload(describeOutcome(outcome), logout);
+    // A session that ended meanwhile was already logged out, which locked colibri as well
+    if (colibriLocked && sessionEpoch() === epoch)
+      await finishDownload(outcome, logout);
     else
-      finishUpload(describeOutcome(outcome));
+      notifyOutcome(outcome);
   };
 
   const clearUploadStatus = (): void => {

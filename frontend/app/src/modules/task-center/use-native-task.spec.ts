@@ -72,6 +72,66 @@ describe('useNativeTask', () => {
     expect(run).toHaveBeenCalledOnce();
   });
 
+  describe('interruptible', () => {
+    // Work the backend must not be stopped in the middle of (replacing the user db) opts out of
+    // the cancel handle, so a running activity can not be cancelled by any surface.
+    it('should refuse to cancel a running activity that is not interruptible', async () => {
+      const { cancelActivity, submitTask } = useNativeTask();
+      const id = makeActivityId(ActivityKind.PRICES, 'not-interruptible');
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const seen: boolean[] = [];
+
+      const outcome = submitTask({
+        id,
+        interruptible: false,
+        kind: ActivityKind.PRICES,
+        run: async ({ cancelled }): ResultAsync<void, TaskError> => {
+          await gate;
+          seen.push(cancelled());
+          return ok(undefined);
+        },
+        title: 'prices',
+      });
+
+      expect(useTaskOrchestrator().snapshot().find(item => item.id === id)?.cancellable).toBe(false);
+      cancelActivity(ActivityKind.PRICES, 'not-interruptible');
+      release();
+
+      expect(isOk(await outcome)).toBe(true);
+      expect(seen).toStrictEqual([false]);
+    });
+
+    it('should keep a running activity cancellable by default', async () => {
+      const { cancelActivity, submitTask } = useNativeTask();
+      const id = makeActivityId(ActivityKind.PRICES, 'interruptible');
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+
+      const outcome = submitTask({
+        id,
+        kind: ActivityKind.PRICES,
+        run: async (): ResultAsync<void, TaskError> => {
+          await gate;
+          return ok(undefined);
+        },
+        title: 'prices',
+      });
+
+      expect(useTaskOrchestrator().snapshot().find(item => item.id === id)?.cancellable).toBe(true);
+      cancelActivity(ActivityKind.PRICES, 'interruptible');
+      release();
+
+      const result = await outcome;
+      assert(isErr(result));
+      expect(hasTag(result.error, 'Cancelled')).toBe(true);
+    });
+  });
+
   describe('ctx.cancelled', () => {
     /**
      * 🔴🔴 Cancelling settles the *record*; it cannot interrupt a running async body, because
