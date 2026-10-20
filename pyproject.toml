@@ -555,4 +555,4 @@ ignored-classes = "rsqlite"
 
 [tool.uv]
 exclude-newer = "1 week"
-exclude-newer-package = { xxhash = "2026-07-07T00:00:00Z", rotki-sqlite = "2026-07-13T15:54:00Z" }
+exclude-newer-package = { certifi = "2026-10-20T03:00:00Z", xxhash = "2026-07-07T00:00:00Z", rotki-sqlite = "2026-07-13T15:54:00Z" }
