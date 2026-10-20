@@ -120,6 +120,7 @@ watch(menuOpened, (menuOpened) => {
     no-padding
     no-hover
     class="max-w-80"
+    :class="inline ? 'py-0.5' : 'py-2'"
     v-bind="$attrs"
     :size="dense ? 'sm' : 'md'"
     :inline="inline"
@@ -153,6 +154,7 @@ watch(menuOpened, (menuOpened) => {
           no-padding
           no-hover
           class="max-w-80"
+          :class="inline ? 'py-0.5' : 'py-2'"
           v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
           :size="dense ? 'sm' : 'md'"
           :inline="inline"

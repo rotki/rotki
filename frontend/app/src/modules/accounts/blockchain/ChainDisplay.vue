@@ -30,7 +30,6 @@ const name = computed(() => {
     :title="name"
     no-padding
     no-hover
-    class="py-0!"
     :class="{ '[&_.avatar]:size-5! gap-1.5!': dense }"
     :blur-content="!shouldShowAmount"
   >
