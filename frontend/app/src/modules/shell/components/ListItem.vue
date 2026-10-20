@@ -60,7 +60,7 @@ const avatarSizeClasses = computed<string>(() => {
       :class="{ 'blur': blurContent, 'flex-col': !inline, 'items-baseline gap-1.5': inline }"
     >
       <template v-if="loading">
-        <RuiSkeletonLoader class="mt-[3px] mb-1.5 w-8" />
+        <RuiSkeletonLoader class="mt-0.75 mb-1.5 w-8" />
         <RuiSkeletonLoader class="w-16 mb-0.5 h-3" />
       </template>
       <template v-else>
