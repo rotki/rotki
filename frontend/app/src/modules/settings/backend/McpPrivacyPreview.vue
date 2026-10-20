@@ -202,7 +202,7 @@ const modeLabel = computed<string>(() => get(modeLabels)[mode]);
           <tr>
             <td
               colspan="3"
-              class="border-b border-default px-4 pb-1 pt-3 font-sans text-[0.65rem] font-medium uppercase tracking-wider text-rui-text-secondary"
+              class="border-b border-default px-4 pb-1 pt-3 font-sans text-caption-2 font-medium uppercase tracking-wider text-rui-text-secondary"
             >
               {{ group.label }}
             </td>

@@ -118,7 +118,7 @@ const selecting = computed<boolean>(() => !!selection && get(selection.isSelecti
         <span
           v-if="redecoding"
           data-testid="event-redecoding"
-          class="shrink-0 px-1.5 py-0.5 rounded-sm text-[10px] font-medium uppercase tracking-wide text-rui-primary bg-rui-primary/10 animate-pulse"
+          class="shrink-0 px-1.5 py-0.5 rounded-sm text-caption-2 font-medium uppercase tracking-wide text-rui-primary bg-rui-primary/10 animate-pulse"
         >
           {{ t('transactions.events.redecoding') }}
         </span>
@@ -215,7 +215,7 @@ const selecting = computed<boolean>(() => !!selection && get(selection.isSelecti
       <span
         v-if="redecoding"
         data-testid="event-redecoding"
-        class="shrink-0 px-1.5 py-0.5 rounded-sm text-[10px] font-medium uppercase tracking-wide text-rui-primary bg-rui-primary/10 animate-pulse"
+        class="shrink-0 px-1.5 py-0.5 rounded-sm text-caption-2 font-medium uppercase tracking-wide text-rui-primary bg-rui-primary/10 animate-pulse"
       >
         {{ t('transactions.events.redecoding') }}
       </span>

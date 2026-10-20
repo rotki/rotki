@@ -146,7 +146,7 @@ function unlink(): void {
         />
         <span
           v-if="isMultiSpend"
-          class="absolute -top-1 -right-1 bg-rui-primary text-white text-[10px] font-medium rounded-full size-4 flex items-center justify-center"
+          class="absolute -top-1 -right-1 bg-rui-primary text-white text-caption-2 font-medium rounded-full size-4 flex items-center justify-center"
         >
           +{{ spendEvents.length - 1 }}
         </span>
@@ -171,7 +171,7 @@ function unlink(): void {
         />
         <span
           v-if="isMultiReceive"
-          class="absolute -top-1 -right-1 bg-rui-success text-white text-[10px] font-medium rounded-full size-4 flex items-center justify-center"
+          class="absolute -top-1 -right-1 bg-rui-success text-white text-caption-2 font-medium rounded-full size-4 flex items-center justify-center"
         >
           +{{ receiveEvents.length - 1 }}
         </span>
@@ -263,7 +263,7 @@ function unlink(): void {
       </div>
       <span
         v-if="isMultiSpend"
-        class="absolute -top-1 -right-1 bg-rui-primary text-white text-[10px] font-medium rounded-full size-4 flex items-center justify-center"
+        class="absolute -top-1 -right-1 bg-rui-primary text-white text-caption-2 font-medium rounded-full size-4 flex items-center justify-center"
       >
         +{{ spendEvents.length - 1 }}
       </span>
@@ -282,7 +282,7 @@ function unlink(): void {
         />
         <span
           v-if="isMultiReceive"
-          class="absolute -top-1 -right-1 bg-rui-success text-white text-[10px] font-medium rounded-full size-4 flex items-center justify-center"
+          class="absolute -top-1 -right-1 bg-rui-success text-white text-caption-2 font-medium rounded-full size-4 flex items-center justify-center"
         >
           +{{ receiveEvents.length - 1 }}
         </span>

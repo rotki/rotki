@@ -326,7 +326,7 @@ function onUpdate(verbKey: string | undefined): void {
       </div>
     </template>
     <template #footer>
-      <div class="px-3 py-1.5 text-[10px] text-rui-text-secondary flex justify-between items-center gap-2">
+      <div class="px-3 py-1.5 text-caption-2 text-rui-text-secondary flex justify-between items-center gap-2">
         <ExternalLink
           :url="externalLinks.usageGuideSection.eventTypes"
           color="primary"

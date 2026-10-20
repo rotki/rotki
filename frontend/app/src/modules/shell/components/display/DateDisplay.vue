@@ -64,7 +64,7 @@ const splitByMillisecondsPart = computed<string[]>(() => get(formattedDate).spli
     {{ splitByMillisecondsPart[0] }}
     <span
       v-if="splitByMillisecondsPart[1]"
-      class="text-[0.625rem]"
+      class="text-caption-2"
     >
       .{{ splitByMillisecondsPart[1] }}
     </span>
