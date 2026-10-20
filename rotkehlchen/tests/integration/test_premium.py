@@ -201,6 +201,47 @@ def test_upload_data_to_server(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_upload_data_to_server_too_big_for_tier(rotkehlchen_instance):
+    """Test that a DB bigger than the tier limit is not encrypted nor uploaded and the user
+    gets a message explaining why"""
+    with rotkehlchen_instance.data.db.user_write() as write_cursor:
+        # Write anything in the DB to set a non-zero last_write_ts
+        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+
+    patched_post = patch.object(
+        rotkehlchen_instance.premium.session,
+        'post',
+        return_value=MockResponse(200, '{"success": true}'),
+    )
+    patched_get = create_patched_requests_get_for_premium(
+        session=rotkehlchen_instance.premium.session,
+        metadata_last_modify_ts=0,
+        metadata_data_hash='different_hash',
+        metadata_data_size=2,
+        saved_data='foo',
+    )
+    with (
+        patched_get,
+        patched_post as post_mock,
+        patch.object(rotkehlchen_instance.premium, 'get_capabilities', return_value={'max_backup_size_mb': 1}),  # noqa: E501
+        patch('rotkehlchen.data_handler.BYTES_PER_MB', 1),  # make the tiny test DB too big
+        patch('rotkehlchen.data_handler.encrypt_backup') as encrypt_mock,
+        patch.object(rotkehlchen_instance.msg_aggregator, 'add_message') as ws_mock,
+    ):
+        uploaded, message = rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
+
+    assert uploaded is False
+    assert message is not None
+    assert '1 MB your plan allows' in message
+    assert not encrypt_mock.called
+    assert not post_mock.called
+    assert ws_mock.call_args_list[-1] == call(
+        message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+        data={'uploaded': False, 'actionable': False, 'message': message},
+    )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_upload_data_to_server_same_hash(rotkehlchen_instance):
     """Test that if the server has same data hash as we no upload happens"""
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:

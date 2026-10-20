@@ -15,6 +15,7 @@ from rotkehlchen.errors.api import (
     RotkehlchenPermissionError,
 )
 from rotkehlchen.errors.misc import (
+    BackupTooLargeError,
     DataIntegrityError,
     RemoteBackupDowngrade,
     RemoteBackupError,
@@ -290,6 +291,16 @@ class PremiumSyncManager(LockableQueryMixIn):
             self.last_upload_attempt_ts = ts_now()
             return False, message
 
+        try:
+            max_backup_size_mb = self.premium.get_capabilities()['max_backup_size_mb']
+        except (RemoteError, PremiumAuthenticationError) as e:
+            log.warning('Could not query the max backup size, skipping size check', error=str(e))
+            max_backup_size_mb = None
+
+        # 0 is the default when the server sent no limit, so we can't tell it from a real one.
+        # In both cases we let the server decide.
+        max_backup_size_mb = max_backup_size_mb or None
+
         with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
             tempdbpath = self.data.db.export_unencrypted(tempdbfile)
             exported_ok, exported_error = plaintext_db_integrity_check(tempdbpath)
@@ -303,10 +314,21 @@ class PremiumSyncManager(LockableQueryMixIn):
                 )
                 self.last_upload_attempt_ts = ts_now()
                 return False, message
-            data, our_hash = self.data.compress_and_encrypt_db(
-                tempdbpath=tempdbpath,
-                last_modify_ts=our_last_write_ts,
-            )
+            try:
+                data, our_hash = self.data.compress_and_encrypt_db(
+                    tempdbpath=tempdbpath,
+                    last_modify_ts=our_last_write_ts,
+                    max_size_mb=max_backup_size_mb,
+                )
+            except BackupTooLargeError as e:
+                message = str(e)
+                log.error('upload to server aborted -- %s', message)
+                self.data.msg_aggregator.add_message(
+                    message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+                    data={'uploaded': False, 'actionable': False, 'message': message},
+                )
+                self.last_upload_attempt_ts = ts_now()
+                return False, message
 
         log.debug(
             'CAN_PUSH',

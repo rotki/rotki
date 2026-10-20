@@ -28,6 +28,13 @@ class RemoteBackupError(Exception):
     """
 
 
+class BackupTooLargeError(Exception):
+    """The compressed premium backup is bigger than what the user's tier allows to store.
+
+    The message is shown to the user as is.
+    """
+
+
 class UnsupportedRemoteBackup(RemoteBackupError):
     """The remote backup header names a version or KDF this rotki can't read.
 
