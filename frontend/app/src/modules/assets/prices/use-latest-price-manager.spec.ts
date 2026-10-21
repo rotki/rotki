@@ -1,4 +1,5 @@
 import type { ManualPrice } from '@/modules/assets/prices/price-types';
+import type { ProblemMessage } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { runSpecWith } from '@test/utils/mocks/native-task';
@@ -9,6 +10,7 @@ import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
+import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 
 const { spies } = vi.hoisted(() => ({
@@ -43,6 +45,18 @@ vi.mock('@/modules/assets/prices/use-price-refresh', () => ({
 
 function t(key: string): string {
   return key;
+}
+
+function fileMissingPrice(asset: string, timestamp: number | null): void {
+  const source: ProblemMessage = {
+    fields: { asset, timestamp },
+    group: ['warning', 'price', null, asset],
+    key: 'price',
+    subject: null,
+    value: `no price for ${asset}`,
+    verbosity: 'warning',
+  };
+  useBackendProblemsStore().record({ at: new Date(), count: 1, identity: JSON.stringify(source.group), source });
 }
 
 describe('useLatestPrices', () => {
@@ -232,6 +246,36 @@ describe('useLatestPrices', () => {
 
       await expect(save(payload, false)).resolves.toBe(true);
       expect(api.addLatestPrice).toHaveBeenCalledExactlyOnceWith(payload);
+    });
+
+    it('should clear the drawer\'s missing current price for the asset it saved, and no other asset\'s', async () => {
+      fileMissingPrice('ETH', null);
+      fileMissingPrice('BTC', null);
+      const { save } = useLatestPrices(t);
+
+      await save(payload, false);
+
+      const fields = useBackendProblemsStore().problems.flatMap(problem => problem.items.map(item => item.source.fields));
+      expect(fields).toEqual([{ asset: 'BTC', timestamp: null }]);
+    });
+
+    it('should keep a missing historic price of the asset, which a latest price does not fix', async () => {
+      fileMissingPrice('ETH', 1700000000);
+      const { save } = useLatestPrices(t);
+
+      await save(payload, false);
+
+      expect(useBackendProblemsStore().problems).toHaveLength(1);
+    });
+
+    it('should keep the missing current price when the save fails', async () => {
+      spies.submitTask.mockResolvedValue(err(TaskFailed({ message: 'bad pair' })));
+      fileMissingPrice('ETH', null);
+      const { save } = useLatestPrices(t);
+
+      await save(payload, false);
+
+      expect(useBackendProblemsStore().problems).toHaveLength(1);
     });
 
     it('should report a failed add as an add', async () => {

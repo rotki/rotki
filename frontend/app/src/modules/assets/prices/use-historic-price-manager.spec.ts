@@ -1,9 +1,11 @@
 import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
+import type { ProblemMessage } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { bigNumberify } from '@rotki/common';
 import { mockTranslate } from '@test/i18n';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
+import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { useHistoricPrices } from './use-historic-price-manager';
 
@@ -81,8 +83,21 @@ function mountManager(
   return captured!;
 }
 
+function fileMissingPrice(asset: string, timestamp: number): void {
+  const source: ProblemMessage = {
+    fields: { asset, timestamp },
+    group: ['warning', 'price', null, asset],
+    key: 'price',
+    subject: null,
+    value: `no price for ${asset}`,
+    verbosity: 'warning',
+  };
+  useBackendProblemsStore().record({ at: new Date(), count: 1, identity: JSON.stringify(source.group), source });
+}
+
 describe('modules/assets/prices/useHistoricPrices', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     fetchHistoricalPrices.mockResolvedValue([]);
     addHistoricalPrice.mockResolvedValue(true);
@@ -247,6 +262,39 @@ describe('modules/assets/prices/useHistoricPrices', () => {
       expect(editHistoricalPrice).toHaveBeenCalledWith(formPayload());
       expect(addHistoricalPrice).not.toHaveBeenCalled();
       expect(saved).toBe(true);
+    });
+
+    it('should clear the drawer\'s missing-price item for the asset it saved, and no other asset\'s', async () => {
+      fileMissingPrice('ETH', 1700000000);
+      fileMissingPrice('BTC', 1690000000);
+      const { save } = mountManager();
+      await flushPromises();
+
+      await save(formPayload({ fromAsset: 'ETH', timestamp: 1700000000 }), false);
+
+      const [problem] = useBackendProblemsStore().problems;
+      expect(problem.items.map(item => item.source.fields)).toEqual([{ asset: 'BTC', timestamp: 1690000000 }]);
+    });
+
+    it('should keep the missing-price item when the price is saved for another time', async () => {
+      fileMissingPrice('ETH', 1700000000);
+      const { save } = mountManager();
+      await flushPromises();
+
+      await save(formPayload({ fromAsset: 'ETH', timestamp: 1600000000 }), false);
+
+      expect(useBackendProblemsStore().problems[0].items).toHaveLength(1);
+    });
+
+    it('should keep the missing-price item when the backend refuses the price', async () => {
+      addHistoricalPrice.mockResolvedValue(false);
+      fileMissingPrice('ETH', 1700000000);
+      const { save } = mountManager();
+      await flushPromises();
+
+      await save(formPayload({ fromAsset: 'ETH', timestamp: 1700000000 }), false);
+
+      expect(useBackendProblemsStore().problems).toHaveLength(1);
     });
 
     it('should pass a refusal from the backend straight back to the caller', async () => {
