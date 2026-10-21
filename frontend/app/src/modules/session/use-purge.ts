@@ -2,7 +2,7 @@ import type { Purgeable } from '@/modules/session/purge';
 import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { errorOf, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { errorOf, isCancellation, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { protocolCacheActivityId } from '@/modules/history/protocol-cache-activity';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
@@ -10,8 +10,21 @@ import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseSessionPurge {
-  purgeData: (purgeable: Purgeable, value: string, deleteData: () => Promise<void>) => Promise<void>;
-  refreshGeneralCache: (source: string) => Promise<void>;
+  purgeData: (purgeable: Purgeable, value: string, deleteData: () => Promise<void>) => Promise<boolean>;
+  refreshGeneralCache: (source: string) => Promise<boolean>;
+}
+
+/**
+ * Turns an activity's outcome into what the settings page reports: `true` once the work happened,
+ * `false` for a cancelled run, which the page leaves to the task's row, and a rejection for a
+ * failure, which the page shows inline.
+ */
+function settledOrThrow(outcome: Result<void, TaskError>): boolean {
+  if (!isErr(outcome))
+    return true;
+  if (isCancellation(outcome.error))
+    return false;
+  throw errorOf(outcome.error);
 }
 
 export function useSessionPurge(): UseSessionPurge {
@@ -25,11 +38,9 @@ export function useSessionPurge(): UseSessionPurge {
    * names the source (`purge:transactions:eth`). Whatever derives from that data declares a
    * `staleAfter` edge against this kind rather than anyone reaching in to reset its status.
    *
-   * @remarks
-   * Rejects when the purge did not happen, since the purge page reports success for anything that
-   * resolves.
+   * @returns see {@link settledOrThrow}
    */
-  const purgeData = async (purgeable: Purgeable, value: string, deleteData: () => Promise<void>): Promise<void> => {
+  const purgeData = async (purgeable: Purgeable, value: string, deleteData: () => Promise<void>): Promise<boolean> => {
     const parts = value ? [purgeable, value] : [purgeable];
     const outcome = await submitTask({
       id: makeActivityId(ActivityKind.PURGE, ...parts),
@@ -47,18 +58,15 @@ export function useSessionPurge(): UseSessionPurge {
       title: t('task_center.group.purge'),
     });
 
-    if (isErr(outcome))
-      throw errorOf(outcome.error);
+    return settledOrThrow(outcome);
   };
 
   /**
    * Refresh one protocol's cached data as an activity.
    *
-   * @remarks
-   * Rejects when the refresh did not happen, cancelled or failed, since the refresh page reports
-   * success for anything that resolves and shows the rejection inline.
+   * @returns see {@link settledOrThrow}
    */
-  const refreshGeneralCache = async (source: string): Promise<void> => {
+  const refreshGeneralCache = async (source: string): Promise<boolean> => {
     const outcome = await submitTask({
       id: protocolCacheActivityId(),
       kind: ActivityKind.PROTOCOL_CACHE,
@@ -74,8 +82,7 @@ export function useSessionPurge(): UseSessionPurge {
       title: t('task_center.group.protocol_cache'),
     });
 
-    if (isErr(outcome))
-      throw errorOf(outcome.error);
+    return settledOrThrow(outcome);
   };
 
   return {
