@@ -66,6 +66,16 @@ describe('useCacheClear', () => {
     expect(get(status)).toBeNull();
   });
 
+  it('should set no status when the handle resolves false, as for a cancelled run', async () => {
+    const clearHandle = vi.fn().mockResolvedValue(false);
+    const { pending, showConfirmation, status } = useCacheClear<Source>(clearable, clearHandle, message, confirmText);
+    showConfirmation('a');
+    await show.mock.calls[0][1]();
+    expect(clearHandle).toHaveBeenCalledWith('a');
+    expect(get(status)).toBeNull();
+    expect(get(pending)).toBe(false);
+  });
+
   it('should set an error status carrying the rejection message when the handle rejects', async () => {
     const clearHandle = vi.fn().mockRejectedValue(new Error('boom'));
     const { pending, showConfirmation, status } = useCacheClear<Source>(clearable, clearHandle, message, confirmText);

@@ -55,8 +55,14 @@ describe('useSessionPurge', () => {
       await expect(useSessionPurge().purgeData(Purgeable.TRANSACTIONS, 'eth', deleteData)).rejects.toThrow('nope');
     });
 
-    it('should resolve when the deletion succeeds', async () => {
-      await expect(useSessionPurge().purgeData(Purgeable.TRANSACTIONS, 'eth', vi.fn().mockResolvedValue(undefined))).resolves.toBeUndefined();
+    it('should resolve true when the deletion succeeds', async () => {
+      await expect(useSessionPurge().purgeData(Purgeable.TRANSACTIONS, 'eth', vi.fn().mockResolvedValue(undefined))).resolves.toBe(true);
+    });
+
+    it('should resolve false rather than reject when the purge was cancelled, leaving it to the task row', async () => {
+      submitTask.mockResolvedValueOnce(err(Cancelled({ message: 'Cancelled before running' })));
+
+      await expect(useSessionPurge().purgeData(Purgeable.TRANSACTIONS, 'eth', vi.fn())).resolves.toBe(false);
     });
   });
 
@@ -66,9 +72,9 @@ describe('useSessionPurge', () => {
       expect(submitTask).toHaveBeenCalledOnce();
     });
 
-    it('should reject when the user cancelled the refresh', async () => {
+    it('should resolve false rather than reject when the user cancelled the refresh, leaving it to the task row', async () => {
       runTaskResult.mockResolvedValue(err(Cancelled({ message: 'Request cancelled' })));
-      await expect(useSessionPurge().refreshGeneralCache('opensea')).rejects.toThrow('Request cancelled');
+      await expect(useSessionPurge().refreshGeneralCache('opensea')).resolves.toBe(false);
       expect(submitTask).toHaveBeenCalledOnce();
     });
 
@@ -77,8 +83,8 @@ describe('useSessionPurge', () => {
       await expect(useSessionPurge().refreshGeneralCache('opensea')).rejects.toThrow('boom');
     });
 
-    it('should resolve when the refresh succeeds', async () => {
-      await expect(useSessionPurge().refreshGeneralCache('opensea')).resolves.toBeUndefined();
+    it('should resolve true when the refresh succeeds', async () => {
+      await expect(useSessionPurge().refreshGeneralCache('opensea')).resolves.toBe(true);
     });
   });
 });

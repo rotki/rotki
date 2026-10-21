@@ -19,7 +19,8 @@ interface ClearMessages {
 
 export function useCacheClear<T>(
   clearable: MaybeRef<Clearable<T>[]>,
-  clearHandle: (source: T) => Promise<void>,
+  /** Resolves `false` when the clear did not happen and needs no message, such as a cancelled run. */
+  clearHandle: (source: T) => Promise<boolean | void>,
   message: ClearMessages,
   confirmText: (
     textSource: string,
@@ -51,7 +52,8 @@ export function useCacheClear<T>(
     set(confirm, false);
     try {
       set(pending, true);
-      await clearHandle(source);
+      if (await clearHandle(source) === false)
+        return;
       set(status, {
         error: '',
         success: message.success(text(source)),

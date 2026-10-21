@@ -177,15 +177,15 @@ export function usePurgeData(): UsePurgeDataReturn {
       await deleteStakeEvents(source);
   }
 
-  async function purgeSource(source: Purgeable): Promise<void> {
+  async function purgeSource(source: Purgeable): Promise<boolean> {
     const value = selectedValue(source);
 
     if (purgeableOnlyModules.includes(value)) {
       await deleteSourceData(source, value);
-      return;
+      return true;
     }
 
-    await purgeData(source, value, async () => deleteSourceData(source, value));
+    return purgeData(source, value, async () => deleteSourceData(source, value));
   }
 
   function confirmText(textSource: string, source: Purgeable): { message: string; title: string } {
