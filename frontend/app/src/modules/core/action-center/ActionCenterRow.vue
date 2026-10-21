@@ -83,10 +83,9 @@ const showCount = computed<boolean>(() => item.count > 1 || get(wentDown));
         >
           <RuiChip
             v-if="showCount"
-            size="sm"
+            size="xs"
             :color="color"
             variant="outlined"
-            class="h-5! px-1.5! tabular-nums"
             data-testid="actions-center-row-count"
           >
             {{ item.count }}

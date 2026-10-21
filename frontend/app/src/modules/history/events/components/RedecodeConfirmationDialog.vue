@@ -95,7 +95,7 @@ watchImmediate(show, (value) => {
     v-model="show"
     :max-width="700"
   >
-    <RuiCard :class-names="{ content: 'pt-0!' }">
+    <RuiCard tight-header-gap>
       <template #header>
         {{ t('transactions.actions.redecode_events') }}
       </template>

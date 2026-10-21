@@ -74,7 +74,7 @@ watchImmediate(display, async (isDisplayed) => {
     max-width="500"
     persistent
   >
-    <RuiCard :class-names="{ content: 'pt-0!' }">
+    <RuiCard tight-header-gap>
       <template #header>
         {{ t('password_confirmation_dialog.title') }}
       </template>

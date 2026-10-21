@@ -115,9 +115,8 @@ const anyChip = computed<boolean>(() =>
 
           <RuiButton
             v-if="isAutoFixable && !hasDuplicateChanges"
-            size="sm"
-            variant="text"
-            class="py-0! underline text-xs! gap-1"
+            variant="link"
+            class="underline"
             color="primary"
             :loading="fixLoading"
             data-testid="duplicate-fix-all"
@@ -145,10 +144,9 @@ const anyChip = computed<boolean>(() =>
         />
         <span>{{ duplicateChangesMessage }}</span>
         <RuiButton
-          size="sm"
-          variant="text"
+          variant="link"
           color="secondary"
-          class="py-0! underline"
+          class="underline"
           data-testid="duplicate-refresh"
           @click="refreshDuplicateView()"
         >

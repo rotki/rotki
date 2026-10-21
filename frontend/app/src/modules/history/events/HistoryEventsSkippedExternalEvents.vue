@@ -77,11 +77,11 @@ const headers: DataTableColumn<SkippedEventsLocation>[] = [
           {{ row.number }}
         </template>
         <template #tfoot>
-          <tr class="text-sm font-medium">
-            <td class="px-4 py-2">
+          <tr class="font-medium">
+            <td>
               {{ t('common.total') }}
             </td>
-            <td class="px-4 py-2 text-end">
+            <td class="text-end">
               {{ skippedEvents.total }}
             </td>
           </tr>

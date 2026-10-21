@@ -41,9 +41,8 @@ const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{
         <RouterLink :to="route">
           <RuiButton
             color="primary"
-            variant="text"
-            size="sm"
-            class="inline -my-1 ml-auto [&>span]:underline"
+            variant="link"
+            class="ml-auto underline"
           >
             {{ buttonText }}
           </RuiButton>
@@ -59,9 +58,8 @@ const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{
     >
       <RuiButton
         color="primary"
-        variant="text"
-        size="sm"
-        class="inline -my-1 -ml-2.5 [&>span]:underline"
+        variant="link"
+        class="mr-2.5 underline"
       >
         {{ buttonText }}
       </RuiButton>
