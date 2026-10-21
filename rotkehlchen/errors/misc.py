@@ -31,6 +31,9 @@ class RemoteBackupError(Exception):
 class BackupTooLargeError(Exception):
     """The compressed premium backup is bigger than what the user's tier allows to store.
 
+    Raised both by the local check before uploading and when the server refuses the upload
+    for its size. Uploading again can't succeed until the DB or the plan changes.
+
     The message is shown to the user as is.
     """
 

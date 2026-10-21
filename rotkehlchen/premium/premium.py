@@ -35,7 +35,7 @@ from rotkehlchen.errors.api import (
     PremiumAuthenticationError,
     PremiumPermissionError,
 )
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import BackupTooLargeError, InputError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import is_production, set_user_agent
@@ -69,8 +69,6 @@ class RemoteMetadata(NamedTuple):
     upload_ts: Timestamp
     # This is the last modify timestamp of the remote DB data
     last_modify_ts: Timestamp
-    # This is the hash of the remote DB data
-    data_hash: str
     # This is the size in bytes of the remote DB data
     data_size: int
 
@@ -165,6 +163,8 @@ MAX_UPLOAD_CHUNK_RETRIES: Final = 1
 # and only serves a backup in a format newer than zlib to clients that send the header.
 BACKUP_COMPRESSION: Final = 'rkpbak1'
 BACKUP_FORMAT_HEADERS: Final = {'Backup-Format': '1'}
+# The error_code the server sends when it refuses a backup for exceeding the tier's size
+BACKUP_SIZE_LIMIT_ERROR_CODE: Final = 'backup_size_limit_exceeded'
 
 
 def check_response_status_code(
@@ -224,6 +224,17 @@ def _extract_error_msg(response: requests.Response) -> str:
             return reason
 
     return response.text
+
+
+def _is_backup_size_limit_rejection(response: requests.Response) -> bool:
+    """Whether the server refused an upload because the backup exceeds the tier's size. Nest
+    answers that with the same 400 as other bad requests, so only the error_code tells."""
+    try:
+        body = jsonloads_dict(response.text)
+    except JSONDecodeError:
+        return False
+
+    return body.get('error_code') == BACKUP_SIZE_LIMIT_ERROR_CODE
 
 
 def _get_rotki_base_url() -> str:
@@ -526,6 +537,9 @@ class Premium:
         self._cached_limits: UserLimits | None = None
         self.msg_aggregator = msg_aggregator
         self.db = db
+        # The device id this object registered at the server. None if the device was already
+        # registered, so that undoing a failed account creation never removes an existing one.
+        self.newly_registered_device_id: str | None = None
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
         self.credentials = credentials
@@ -662,6 +676,8 @@ class Premium:
                 if response.status_code in (HTTPStatus.CREATED, HTTPStatus.CONFLICT):
                     # Update cache with new device info
                     self._set_docker_device_info(device_id, current_version)
+                    if response.status_code == HTTPStatus.CREATED:
+                        self.newly_registered_device_id = device_id
                     return True
 
         except requests.exceptions.RequestException as e:
@@ -704,6 +720,8 @@ class Premium:
             if system_platform in (DOCKER_PLATFORM_KEY, KUBERNETES_PLATFORM_KEY):
                 self._set_docker_device_info(device_id, get_system_spec()['rotkehlchen'])
 
+            if response.status_code == HTTPStatus.CREATED:  # conflict: it was registered already
+                self.newly_registered_device_id = device_id
             return None  # device was created or it already exists
 
         if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:  # device limit is exceeded
@@ -734,6 +752,25 @@ class Premium:
         if device_id == extended_get_machine_id(self.username):
             raise InputError('Cannot delete the current device')
 
+        self._delete_device_at_server(device_id)
+
+    def deregister_new_device(self) -> None:
+        """Removes the device registration this object created, if any. Used to undo a failed
+        account creation so the dead registration doesn't take one of the plan's devices.
+
+        May raise:
+        - RemoteError
+        """
+        if (device_id := self.newly_registered_device_id) is None:
+            return
+
+        self._delete_device_at_server(device_id)
+        self.newly_registered_device_id = None
+
+    def _delete_device_at_server(self, device_id: str) -> None:
+        """May raise:
+        - RemoteError
+        """
         log.debug(f'Deleting premium registered {device_id=}')
         try:
             response = self.session.delete(
@@ -859,6 +896,7 @@ class Premium:
         - RemoteError if there are problems reaching the server or if
         there is an error returned by the server
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
+        - BackupTooLargeError if the server refuses the backup for exceeding the tier's size
         """
         total_size, upload_id = len(data_blob), None
         chunk_count = (total_size + UPLOAD_CHUNK_SIZE - 1) // UPLOAD_CHUNK_SIZE
@@ -903,6 +941,17 @@ class Premium:
 
                 expected_status = HTTPStatus.OK if is_last_chunk else HTTPStatus.PARTIAL_CONTENT
                 if response.status_code != expected_status:
+                    if _is_backup_size_limit_rejection(response):  # retrying can't make it fit
+                        log.error(
+                            'rotki server refused the backup for exceeding the tier size limit',
+                            status_code=response.status_code,
+                            response=response.text,
+                        )
+                        raise BackupTooLargeError(
+                            'The rotki server refused the backup because it is bigger than '
+                            'your plan allows.',
+                        )
+
                     if response.status_code != HTTPStatus.REQUEST_ENTITY_TOO_LARGE and retry_count < MAX_UPLOAD_CHUNK_RETRIES:  # noqa: E501
                         retry_count += 1
                         continue  # retry chunk upload
@@ -980,7 +1029,6 @@ class Premium:
             metadata = RemoteMetadata(
                 upload_ts=Timestamp(result['upload_ts']),
                 last_modify_ts=Timestamp(result['last_modify_ts']),
-                data_hash=result['data_hash'],
                 data_size=result['data_size'],
             )
         except KeyError as e:

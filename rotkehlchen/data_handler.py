@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Final, NamedTuple
 from sqlcipher3 import dbapi2 as sqlcipher  # pylint: disable=no-name-in-module
 
 from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
-from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
+from rotkehlchen.constants.misc import AUTO_BACKUP_DIR_PREFIX, USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.crypto import decrypt_backup, decrypt_legacy, encrypt_backup, is_backup_format
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
@@ -172,6 +172,12 @@ class DataHandler:
         """
         user_data_dir = self._get_user_data_dir(username)
         if create_new:
+            if username.startswith(AUTO_BACKUP_DIR_PREFIX):  # get_users() would not list it
+                raise AuthenticationError(
+                    f'Usernames starting with {AUTO_BACKUP_DIR_PREFIX} are reserved for '
+                    'backups of failed logins. Choose a different name.',
+                )
+
             try:
                 if (user_data_dir / USERDB_NAME).exists():
                     raise AuthenticationError(
@@ -200,7 +206,7 @@ class DataHandler:
                 # user account can be created
                 shutil.move(
                     user_data_dir,
-                    self.data_directory / USERSDIR_NAME / f'auto_backup_{username}_{ts_now()}',
+                    self.data_directory / USERSDIR_NAME / f'{AUTO_BACKUP_DIR_PREFIX}{username}_{ts_now()}',  # noqa: E501
                 )
 
                 raise SystemPermissionError(
@@ -269,7 +275,8 @@ class DataHandler:
         """Returns a dict with all users in the system.
 
         Each key is a user's name and the value is denoting whether that
-        particular user is logged in or not
+        particular user is logged in or not. Directories moved aside after a failed login or
+        account creation are left out, since they are kept only for recovery.
         """
         users = {}
         users_dir = self.data_directory / USERSDIR_NAME
@@ -278,7 +285,11 @@ class DataHandler:
 
         for x in users_dir.iterdir():
             try:
-                if x.is_dir() and (x / USERDB_NAME).exists():
+                if (
+                    x.is_dir() and
+                    not x.name.startswith(AUTO_BACKUP_DIR_PREFIX) and
+                    (x / USERDB_NAME).exists()
+                ):
                     users[x.name] = 'loggedin' if x.name == self.username else 'loggedout'
             except PermissionError:
                 # ignore directories that can't be accessed

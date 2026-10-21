@@ -5,7 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.constants.misc import USERSDIR_NAME
+from rotkehlchen.constants.misc import AUTO_BACKUP_DIR_PREFIX, USERSDIR_NAME
 from rotkehlchen.crypto import is_backup_format
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.misc import plaintext_db_integrity_check
@@ -17,10 +17,13 @@ from rotkehlchen.errors.api import (
 from rotkehlchen.errors.misc import (
     BackupTooLargeError,
     DataIntegrityError,
+    DBSchemaError,
+    DBUpgradeError,
     RemoteBackupDowngrade,
     RemoteBackupError,
     RemoteBackupMismatch,
     RemoteError,
+    SystemPermissionError,
     UnableToDecryptRemoteData,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -188,7 +191,7 @@ class PremiumSyncManager(LockableQueryMixIn):
             backup = self.data.decrypt_db(result)
         except UnableToDecryptRemoteData as e:
             raise PremiumAuthenticationError(
-                'The given password can not unlock the database that was retrieved  from '
+                'The given password can not unlock the database that was retrieved from '
                 'the server. Make sure to use the same password as when the account was created.',
             ) from e
 
@@ -242,8 +245,20 @@ class PremiumSyncManager(LockableQueryMixIn):
         # try an automatic upload only once per hour
         return ts_now() - self.last_upload_attempt_ts > 3600 or force_upload, None
 
-    @protect_with_lock()
     def maybe_upload_data_to_server(
+            self,
+            force_upload: bool = False,
+    ) -> tuple[bool, str | None]:
+        """Like upload_data_to_server, but a backup too big for the tier is returned as a
+        failure like any other. For the automatic upload task, where an exception would be
+        reported a second time on top of the upload result message."""
+        try:
+            return self.upload_data_to_server(force_upload=force_upload)
+        except BackupTooLargeError as e:
+            return False, str(e)
+
+    @protect_with_lock()
+    def upload_data_to_server(
             self,
             force_upload: bool = False,
     ) -> tuple[bool, str | None]:
@@ -254,6 +269,11 @@ class PremiumSyncManager(LockableQueryMixIn):
         We use a lock to prevent two greenlets from executing this logic at the
         same time since we want to export to plaintext only once to encrypt and that happens
         in a spawned thread inside this function.
+
+        May raise:
+        - BackupTooLargeError if the backup exceeds the size the tier allows, found either
+        while compressing or by the server refusing it. The upload result message is sent
+        before raising.
         """
         assert self.premium is not None, 'caller should make sure premium exists'
         log.debug('Starting maybe_upload_data_to_server')
@@ -321,29 +341,8 @@ class PremiumSyncManager(LockableQueryMixIn):
                     max_size_mb=max_backup_size_mb,
                 )
             except BackupTooLargeError as e:
-                message = str(e)
-                log.error('upload to server aborted -- %s', message)
-                self.data.msg_aggregator.add_message(
-                    message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
-                    data={'uploaded': False, 'actionable': False, 'message': message},
-                )
-                self.last_upload_attempt_ts = ts_now()
-                return False, message
-
-        log.debug(
-            'CAN_PUSH',
-            ours=our_hash,
-            theirs=metadata.data_hash,
-        )
-        if our_hash == metadata.data_hash and not force_upload:
-            log.debug('upload to server stopped -- same hash')
-            message = 'Remote database is up to date'
-            self.data.msg_aggregator.add_message(
-                message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
-                data={'uploaded': False, 'actionable': True, 'message': message},
-            )
-            self.last_upload_attempt_ts = ts_now()
-            return False, message
+                self._notify_backup_too_large(e)
+                raise
 
         data_bytes_size = len(data)
         if data_bytes_size < metadata.data_size and not force_upload:
@@ -370,6 +369,9 @@ class PremiumSyncManager(LockableQueryMixIn):
                 our_hash=our_hash,
                 last_modify_ts=our_last_write_ts,
             )
+        except BackupTooLargeError as e:
+            self._notify_backup_too_large(e)
+            raise
         except (RemoteError, PremiumAuthenticationError) as e:
             message = str(e)
             log.debug('upload to server -- upload error', error=message)
@@ -384,7 +386,9 @@ class PremiumSyncManager(LockableQueryMixIn):
         self.last_data_upload_ts = ts_now()
         self.last_upload_attempt_ts = self.last_data_upload_ts
         self.last_remote_data_upload_ts = self.last_data_upload_ts
-        with self.data.db.user_write() as cursor:
+        # Not user_write(), whose last_write_ts bump would make the local DB look newer than
+        # the backup just uploaded and so due for another upload
+        with self.data.db.conn.write_ctx() as cursor:
             self.data.db.set_static_cache(
                 write_cursor=cursor,
                 name=DBCacheStatic.LAST_DATA_UPLOAD_TS,
@@ -403,20 +407,35 @@ class PremiumSyncManager(LockableQueryMixIn):
         log.debug('upload to server -- success')
         return True, None
 
+    def _notify_backup_too_large(self, error: BackupTooLargeError) -> None:
+        log.error('upload to server aborted -- %s', error)
+        self.data.msg_aggregator.add_message(
+            message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+            data={'uploaded': False, 'actionable': False, 'message': str(error)},
+        )
+        self.last_upload_attempt_ts = ts_now()
+
     def sync_data(
             self,
             action: Literal['upload', 'download'],
             perform_migrations: bool,
     ) -> tuple[bool, str, Timestamp | None]:
         """The timestamp is the authenticated last_modify_ts of a downloaded backup, always
-        None for an upload. See _sync_data_from_server_and_replace_local."""
+        None for an upload. See _sync_data_from_server_and_replace_local.
+
+        May also raise:
+        - BackupTooLargeError if the upload exceeds the size the tier allows
+        """
         msg = ''
         if action == 'upload':
             should_sync, error_msg = self.check_if_should_sync(force_upload=True)
             if should_sync is False:
                 success = False
             else:
-                success, error_msg = self.maybe_upload_data_to_server(force_upload=True)
+                try:
+                    success, error_msg = self.upload_data_to_server(force_upload=True)
+                except BackupTooLargeError as e:
+                    raise BackupTooLargeError(f'Upload failed. {e!s}') from e
 
             if not success:
                 msg = 'Upload failed.'
@@ -473,37 +492,69 @@ class PremiumSyncManager(LockableQueryMixIn):
 
         return msg
 
+    def _deregister_new_device(self) -> bool:
+        """Removes the device registration this account creation made, so a failed attempt
+        doesn't take one of the plan's devices. A device that was already registered is kept.
+
+        Returns False if the registration could not be removed.
+        """
+        if self.premium is None:
+            return True
+
+        try:
+            self.premium.deregister_new_device()
+        except RemoteError as e:
+            log.error(
+                'Could not remove the premium device registered by the failed account '
+                'creation: %s',
+                e,
+            )
+            return False
+
+        return True
+
     def _abort_new_syncing_premium_user(
             self,
             username: str,
             original_exception: PremiumAuthenticationError | PremiumPermissionError | RemoteError | RemoteBackupError,  # noqa: E501
+            during_restore: bool = False,
     ) -> None:
         """At this point we are at a new user trying to create an account with
         premium API keys and we failed. But a directory was created. Remove it.
         But create a backup of it in case something went really wrong
-        and the directory contained data we did not want to lose"""
+        and the directory contained data we did not want to lose
+
+        during_restore is True when the keys were verified, and so the device registered,
+        but the remote backup could not be restored. Its errors are full sentences."""
+        device_removed = self._deregister_new_device()
         user_data_dir = self.data.user_data_dir
         self.data.logout()  # wipes self.data.user_data_dir, so store it
         shutil.move(
             user_data_dir,  # type: ignore
-            self.data.data_directory / USERSDIR_NAME / f'auto_backup_{username}_{ts_now()}',
+            self.data.data_directory / USERSDIR_NAME / f'{AUTO_BACKUP_DIR_PREFIX}{username}_{ts_now()}',  # noqa: E501
         )
-        if isinstance(original_exception, RemoteBackupError):  # its message is a full sentence
-            raise PremiumAuthenticationError(
-                f'Could not restore the backup from the rotki server. {original_exception!s}',
-            ) from original_exception
-
-        if isinstance(original_exception, PremiumPermissionError):
-            error_prefix = 'Could not activate premium on this device.'
-        elif isinstance(original_exception, RemoteError):
-            error_prefix = 'Could not reach the rotki server to verify premium keys.'
+        if during_restore:
+            message = f'Could not restore the backup from the rotki server. {original_exception!s}'
         else:
-            error_prefix = 'Could not verify keys for the new account.'
+            if isinstance(original_exception, PremiumPermissionError):
+                error_prefix = 'Could not activate premium on this device.'
+            elif isinstance(original_exception, RemoteError):
+                error_prefix = 'Could not reach the rotki server to verify premium keys.'
+            else:
+                error_prefix = 'Could not verify keys for the new account.'
 
-        raise PremiumAuthenticationError(self.maybe_add_device_limit_link(
-            exception=original_exception,
-            msg=f'{error_prefix} {original_exception!s}.',
-        )) from original_exception
+            message = self.maybe_add_device_limit_link(
+                exception=original_exception,
+                msg=f'{error_prefix} {original_exception!s}.',
+            )
+
+        if not device_removed:
+            message += (
+                ' This device stays registered to your premium account. Remove it from your '
+                'premium devices if you do not plan to create the account again.'
+            )
+
+        raise PremiumAuthenticationError(message) from original_exception
 
     def try_premium_at_start(
             self,
@@ -571,7 +622,16 @@ class PremiumSyncManager(LockableQueryMixIn):
                         perform_migrations=False,  # will be done later during unlock
                     )
                 except (PremiumAuthenticationError, RemoteBackupError) as e:
-                    self._abort_new_syncing_premium_user(username=username, original_exception=e)
+                    self._abort_new_syncing_premium_user(
+                        username=username,
+                        original_exception=e,
+                        during_restore=True,
+                    )
+                except (DBUpgradeError, DBSchemaError, SystemPermissionError):
+                    # Raised while replacing the DB. The caller cleans up the rest of the
+                    # failed creation but knows nothing of the device
+                    self._deregister_new_device()
+                    raise
 
             self.data.db.set_rotkehlchen_premium(self.premium.credentials)
         else:

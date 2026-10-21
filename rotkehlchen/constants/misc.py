@@ -39,6 +39,9 @@ GLOBALDIR_NAME: Final = 'global'
 GLOBALDB_NAME: Final = 'global.db'
 USERSDIR_NAME: Final = 'users'
 USERDB_NAME: Final = 'rotkehlchen.db'
+# Prefix of the user directories moved aside after a failed login or account creation. They
+# are kept in the users directory for recovery but are not profiles that can be logged into.
+AUTO_BACKUP_DIR_PREFIX: Final = 'auto_backup_'
 IMAGESDIR_NAME: Final = 'images'
 ASSETIMAGESDIR_NAME: Final = 'assets'
 AVATARIMAGESDIR_NAME: Final = 'avatars'

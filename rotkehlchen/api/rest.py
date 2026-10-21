@@ -132,6 +132,7 @@ from rotkehlchen.errors.api import (
 )
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import (
+    BackupTooLargeError,
     DBSchemaError,
     DBUpgradeError,
     EthSyncError,
@@ -2706,7 +2707,7 @@ class RestAPI:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
         except PremiumAuthenticationError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.UNAUTHORIZED)
-        except RemoteBackupError as e:
+        except (RemoteBackupError, BackupTooLargeError) as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
         else:
             if not success:  # every failed sync carries its reason in msg

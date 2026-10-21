@@ -5,10 +5,11 @@ import os
 import tempfile
 import time
 from base64 import b64decode
+from contextlib import contextmanager
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
-from unittest.mock import call, patch
+from unittest.mock import MagicMock, call, patch
 
 import machineid
 import pytest
@@ -16,6 +17,7 @@ import pytest
 from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.constants.assets import A_EUR
+from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.api import (
@@ -24,7 +26,7 @@ from rotkehlchen.errors.api import (
     PremiumPermissionError,
     RotkehlchenPermissionError,
 )
-from rotkehlchen.errors.misc import RemoteBackupDowngrade, RemoteBackupMismatch
+from rotkehlchen.errors.misc import DBUpgradeError, RemoteBackupDowngrade, RemoteBackupMismatch
 from rotkehlchen.premium.premium import (
     DOCKER_PLATFORM_KEY,
     DOCKER_SHORT_ID_HASH_LENGTH,
@@ -41,6 +43,7 @@ from rotkehlchen.premium.premium import (
     is_running_in_rotki_docker_image,
 )
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
+from rotkehlchen.tests.utils.database import mock_db_schema_sanity_check
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
@@ -54,8 +57,11 @@ from rotkehlchen.tests.utils.premium import (
 from rotkehlchen.types import ChainID, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
@@ -242,45 +248,55 @@ def test_upload_data_to_server_too_big_for_tier(rotkehlchen_instance):
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_upload_data_to_server_same_hash(rotkehlchen_instance):
-    """Test that if the server has same data hash as we no upload happens"""
-    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
-        last_ts = rotkehlchen_instance.data.db.get_static_cache(
-            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS,
-        )
+def test_upload_does_not_make_local_db_look_newer(rotkehlchen_instance: Rotkehlchen) -> None:
+    """The bookkeeping of a successful upload must not bump last_write_ts. Otherwise the DB
+    would look newer than the backup it just uploaded and be uploaded again for nothing.
+    A forced upload still goes ahead and a real user write makes the next upload due."""
+    db, sync_manager = rotkehlchen_instance.data.db, rotkehlchen_instance.premium_sync_manager
+    assert rotkehlchen_instance.premium is not None
+    session = rotkehlchen_instance.premium.session
+    with db.user_write() as write_cursor:
+        db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_EUR.resolve_to_fiat_asset()))  # noqa: E501
+    with db.conn.read_ctx() as cursor:
+        written_ts = db.get_setting(cursor, name='last_write_ts')
 
-    assert last_ts is None
-    with rotkehlchen_instance.data.db.user_write() as write_cursor:
-        # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+    def upload(remote_last_modify_ts: int, force_upload: bool = False) -> tuple[bool, int]:
+        with (
+            create_patched_requests_get_for_premium(
+                session=session,
+                metadata_last_modify_ts=remote_last_modify_ts,
+                metadata_data_hash='remote_hash',
+                metadata_data_size=2,
+                saved_data=b'foo',
+            ),
+            patch.object(
+                session,
+                'post',
+                return_value=MockResponse(HTTPStatus.OK, '{"success": true}'),
+            ) as post_mock,
+            # writes made during the upload get a later timestamp, so a bump would show
+            patch('rotkehlchen.db.drivers.sqlite.ts_now', return_value=written_ts + 100),
+        ):
+            uploaded, _ = sync_manager.maybe_upload_data_to_server(force_upload=force_upload)
+        return uploaded, post_mock.call_count
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
-        tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
-        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath, Timestamp(0))
-    remote_hash = our_hash
+    assert upload(remote_last_modify_ts=0) == (True, 1)
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, name='last_write_ts') == written_ts
+        assert db.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS) is not None  # noqa: E501
 
-    patched_post = patch.object(
-        rotkehlchen_instance.premium.session,
-        'post',
-        return_value=MockResponse(200, '{"success": true}'),
-    )
-    patched_get = create_patched_requests_get_for_premium(
-        session=rotkehlchen_instance.premium.session,
-        metadata_last_modify_ts=0,
-        metadata_data_hash=remote_hash,
-        # Smaller Remote DB size
-        metadata_data_size=2,
-        saved_data='foo',
-    )
+    # the server now holds what we uploaded, so there is nothing new to upload
+    assert upload(remote_last_modify_ts=written_ts) == (False, 0)
+    assert upload(remote_last_modify_ts=written_ts, force_upload=True) == (True, 1)
 
-    with patched_get, patched_post as post_mock, patch.object(
-        target=rotkehlchen_instance.data,
-        attribute='compress_and_encrypt_db',
-        new=lambda *args, **kwargs: (None, our_hash),
+    with (
+        patch('rotkehlchen.db.drivers.sqlite.ts_now', return_value=written_ts + 200),
+        db.user_write() as write_cursor,
     ):
-        rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
-        # The upload mock should not have been called since the hash is the same
-        assert not post_mock.called
+        db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_GBP.resolve_to_fiat_asset()))  # noqa: E501
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, name='last_write_ts') == written_ts + 200
+    assert upload(remote_last_modify_ts=written_ts) == (True, 1)
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -588,6 +604,148 @@ def test_try_premium_at_start_new_account_different_password_than_remote_db(
         )
 
 
+WRONG_BACKUP_PASSWORD_MSG = (
+    'Could not restore the backup from the rotki server. The given password can not unlock '
+    'the database that was retrieved from the server. Make sure to use the same password as '
+    'when the account was created.'
+)
+
+
+@contextmanager
+def _mock_device_server(
+        username: str,
+        remote_data: bytes,
+        check_status: HTTPStatus,
+        register_status: HTTPStatus = HTTPStatus.CREATED,
+        delete_status: HTTPStatus = HTTPStatus.OK,
+) -> Iterator[tuple[MagicMock, MagicMock]]:
+    """Mocks the server for a new premium account with the real device registration and
+    yields the mocks of the device register and delete requests"""
+    session = create_session()
+    with (
+        patch('rotkehlchen.premium.premium.create_session', return_value=session),
+        create_patched_requests_get_for_premium(
+            session=session,
+            metadata_last_modify_ts=0,
+            metadata_data_hash='remote_hash',
+            metadata_data_size=len(remote_data),
+            saved_data=remote_data,
+        ),
+        patch.object(session, 'post', return_value=MockResponse(check_status, '{}')),
+        patch.object(session, 'put', return_value=MockResponse(register_status, '{}')) as register_mock,  # noqa: E501
+        patch.object(session, 'delete', return_value=MockResponse(delete_status, '{}')) as delete_mock,  # noqa: E501
+        mock_db_schema_sanity_check(),
+    ):
+        yield register_mock, delete_mock
+
+    if delete_mock.called:  # only ever the device of this machine
+        assert delete_mock.call_args.kwargs['json']['device_identifier'] == extended_get_machine_id(username)  # noqa: E501
+
+
+def _create_new_premium_account(
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        premium_credentials: PremiumCredentials,
+) -> None:
+    rotkehlchen_instance.premium_sync_manager.try_premium_at_start(
+        given_premium_credentials=premium_credentials,
+        username=username,
+        create_new=True,
+        sync_approval='yes',
+        sync_database=True,
+    )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_password', ['different_password_than_remote_db_was_encoded_with'])
+@pytest.mark.parametrize(('check_status', 'register_status', 'removes_device'), [
+    (HTTPStatus.NOT_FOUND, HTTPStatus.CREATED, True),  # registered by this attempt
+    (HTTPStatus.OK, HTTPStatus.CREATED, False),  # registered before, so never re-registered
+    (HTTPStatus.NOT_FOUND, HTTPStatus.CONFLICT, False),  # registered meanwhile by someone else
+])
+def test_failed_restore_removes_only_the_device_it_registered(
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes,
+        check_status: HTTPStatus,
+        register_status: HTTPStatus,
+        removes_device: bool,
+) -> None:
+    """A wrong backup password at account creation is found after the device got registered.
+    That registration must then be undone so it doesn't take one of the plan's devices, while
+    a device that was registered already is kept."""
+    users_dir = rotkehlchen_instance.data.data_directory / USERSDIR_NAME
+    with (
+        _mock_device_server(
+            username=username,
+            remote_data=premium_remote_data,
+            check_status=check_status,
+            register_status=register_status,
+        ) as (register_mock, delete_mock),
+        pytest.raises(PremiumAuthenticationError) as e,
+    ):
+        _create_new_premium_account(rotkehlchen_instance, username, rotki_premium_credentials)
+
+    assert str(e.value) == WRONG_BACKUP_PASSWORD_MSG
+    assert register_mock.call_count == (check_status == HTTPStatus.NOT_FOUND)
+    assert delete_mock.call_count == removes_device
+    assert len(list(users_dir.glob(f'auto_backup_{username}_*'))) == 1  # kept for recovery
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_password', ['different_password_than_remote_db_was_encoded_with'])
+def test_failed_restore_says_when_device_could_not_be_removed(
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes,
+        caplog: pytest.LogCaptureFixture,
+) -> None:
+    """If removing the new registration fails the restore error still says what went wrong,
+    and the user learns the device stays registered"""
+    with (
+        _mock_device_server(
+            username=username,
+            remote_data=premium_remote_data,
+            check_status=HTTPStatus.NOT_FOUND,
+            delete_status=HTTPStatus.INTERNAL_SERVER_ERROR,
+        ) as (_, delete_mock),
+        pytest.raises(PremiumAuthenticationError) as e,
+    ):
+        _create_new_premium_account(rotkehlchen_instance, username, rotki_premium_credentials)
+
+    assert delete_mock.call_count == 1
+    assert str(e.value) == (
+        f'{WRONG_BACKUP_PASSWORD_MSG} This device stays registered to your premium account. '
+        'Remove it from your premium devices if you do not plan to create the account again.'
+    )
+    assert 'Could not remove the premium device registered by the failed account creation' in caplog.text  # noqa: E501
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_failed_db_replacement_removes_new_device(
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes,
+) -> None:
+    """Errors replacing the DB with the backup go to the caller as they are, but the device
+    registered for the failed account creation is removed first"""
+    with (
+        _mock_device_server(
+            username=username,
+            remote_data=premium_remote_data,
+            check_status=HTTPStatus.NOT_FOUND,
+        ) as (_, delete_mock),
+        patch.object(rotkehlchen_instance.data, 'restore_db', side_effect=DBUpgradeError('newer')),
+        pytest.raises(DBUpgradeError, match='newer'),
+    ):
+        _create_new_premium_account(rotkehlchen_instance, username, rotki_premium_credentials)
+
+    assert delete_mock.call_count == 1
+
+
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('premium_remote_data', [None])
 def test_try_premium_at_start_first_time_no_previous_db(
@@ -865,7 +1023,7 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
         wait(tasks)
         for g in tasks:
             assert g.exception is None, f'One of the tasks had an exception: {g.exception}'
-        # The upload mock should not have been called since the hash is the same
+        # The upload mock should not have been called since the remote DB is bigger
         assert not post_mock.called
 
 
@@ -933,7 +1091,7 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
         wait(tasks)
         for g in tasks:
             assert g.exception is None, f'One of the tasks had an exception: {g.exception}'
-        # The upload mock should not have been called since the hash is the same
+        # The upload mock should not have been called since the remote DB is bigger
         assert not post_mock.called
 
 
@@ -958,17 +1116,23 @@ def test_upload_data_error(rotkehlchen_instance: Rotkehlchen) -> None:
         (HTTPStatus.REQUEST_ENTITY_TOO_LARGE, 'Payload size is too big', 'Size limit reached', 1),
         (HTTPStatus.BAD_REQUEST, 'XYZ', 'Could not upload database backup due to: XYZ', 2),
         (HTTPStatus.BAD_REQUEST, '{"success":false,"msg":"Too big for your tier"}', 'Could not upload database backup due to: Too big for your tier', 2),  # noqa: E501
+        # only the error_code marks a size limit rejection, which is not retried
+        (HTTPStatus.BAD_REQUEST, '{"success":false,"msg":"Too big for your tier","error_code":"backup_size_limit_exceeded"}', 'The rotki server refused the backup because it is bigger than your plan allows.', 1),  # noqa: E501
     ):
         with patched_get, patch.object(
             rotkehlchen_instance.premium.session,
             'post',
             return_value=MockResponse(status_code, response_text),
-        ) as mock_post:
+        ) as mock_post, patch.object(rotkehlchen_instance.msg_aggregator, 'add_message') as ws_mock:  # noqa: E501
             status, error = rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
 
         assert status is False
         assert error == error_msg
         assert mock_post.call_count == expected_call_count
+        assert ws_mock.call_args_list[-1] == call(  # the automatic upload tells the user why
+            message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+            data={'uploaded': False, 'actionable': False, 'message': error_msg},
+        )
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -978,7 +1142,7 @@ def test_upload_skipped_when_backup_limit_is_zero(rotkehlchen_instance: Rotkehlc
     assert rotkehlchen_instance.task_manager is not None
     with patch.object(
         rotkehlchen_instance.premium_sync_manager,
-        'maybe_upload_data_to_server',
+        'upload_data_to_server',
     ) as upload_mock:
         assert rotkehlchen_instance.task_manager._maybe_schedule_db_upload() is None
         success, message, restored_backup_ts = rotkehlchen_instance.premium_sync_manager.sync_data(

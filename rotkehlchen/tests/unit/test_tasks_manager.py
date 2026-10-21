@@ -452,7 +452,6 @@ def test_check_premium_status(rotkehlchen_api_server, username):
         upload_ts=Timestamp(0),
         last_modify_ts=ts_now(),
         data_size=9494994,
-        data_hash='0x',
     )
     premium = Premium(
         credentials=premium_credentials,

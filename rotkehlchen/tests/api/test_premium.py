@@ -74,25 +74,77 @@ def test_upload_db(rotkehlchen_api_server: APIServer) -> None:
         assert_error_response(response, contained_in_msg='Must be one of: upload, download')
 
 
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_upload_db_failure_reason_is_returned(rotkehlchen_api_server: APIServer) -> None:
-    """A failed forced upload must return its reason as an error, not as result False with the
-    reason in the message, which the frontend would drop."""
-    with patch.object(
-        rotkehlchen_api_server.rest_api.rotkehlchen.premium_sync_manager,
-        'sync_data',
-        return_value=(False, 'Upload failed. Uploaded database is bigger than the maximum', None),
+SIZE_LIMIT_MSG = 'Uploaded database is bigger than the maximum allowed for your tier'
+
+
+def _force_upload(rotkehlchen_api_server: APIServer, post_response: MockResponse) -> dict:
+    """Forces an upload against a server answering every chunk with post_response and
+    returns the outcome of the task"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    with (
+        create_patched_requests_get_for_premium(
+            session=rotki.premium.session,
+            metadata_last_modify_ts=0,
+            metadata_data_hash='remote_hash',
+            metadata_data_size=2,
+            saved_data=b'foo',
+        ),
+        patch.object(rotki.premium.session, 'post', return_value=post_response),
     ):
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             'userpremiumsyncresource',
         ), json={'async_query': True, 'action': 'upload'})
         task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        return wait_for_async_task(rotkehlchen_api_server, task_id)
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_upload_db_failure_reason_is_returned(rotkehlchen_api_server: APIServer) -> None:
+    """A failed forced upload must return its reason as an error, not as result False with the
+    reason in the message, which the frontend would drop. A server error that is not marked
+    as a size limit rejection stays a gateway error, whatever its message says."""
+    assert_error_async_response(
+        _force_upload(rotkehlchen_api_server, MockResponse(
+            HTTPStatus.BAD_REQUEST,
+            json.dumps({'success': False, 'msg': SIZE_LIMIT_MSG}),
+        )),
+        contained_in_msg=f'Upload failed. Could not upload database backup due to: {SIZE_LIMIT_MSG}',  # noqa: E501
+        status_code=HTTPStatus.BAD_GATEWAY,
+    )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_upload_db_refused_by_server_for_size(rotkehlchen_api_server: APIServer) -> None:
+    """A backup the server refuses for exceeding the tier's size is a conflict with the plan,
+    not a gateway error, and retrying it is pointless"""
+    outcome = _force_upload(rotkehlchen_api_server, MockResponse(
+        HTTPStatus.BAD_REQUEST,
+        json.dumps({
+            'success': False,
+            'msg': SIZE_LIMIT_MSG,
+            'error_code': 'backup_size_limit_exceeded',
+        }),
+    ))
     assert_error_async_response(
         outcome,
-        contained_in_msg='bigger than the maximum',
-        status_code=HTTPStatus.BAD_GATEWAY,
+        contained_in_msg='Upload failed. The rotki server refused the backup because it is bigger than your plan allows.',  # noqa: E501
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('premium_limits_override', [{'max_backup_size_mb': 1}])
+def test_upload_db_too_big_for_tier(rotkehlchen_api_server: APIServer) -> None:
+    """A backup found too big for the tier before uploading is a conflict too"""
+    with patch('rotkehlchen.data_handler.BYTES_PER_MB', 1):  # make the tiny test DB too big
+        outcome = _force_upload(rotkehlchen_api_server, MockResponse(HTTPStatus.OK, '{}'))
+
+    assert_error_async_response(
+        outcome,
+        contained_in_msg='Upload failed. The compressed database does not fit in the 1 MB your plan allows for backups.',  # noqa: E501
+        status_code=HTTPStatus.CONFLICT,
     )
 
 
@@ -104,7 +156,7 @@ def test_upload_db_plan_without_backups(rotkehlchen_api_server: APIServer) -> No
     assert rotki.premium is not None
     with (
         patch.object(rotki.premium, 'get_capabilities', return_value={'max_backup_size_mb': 0}),
-        patch.object(rotki.premium_sync_manager, 'maybe_upload_data_to_server') as upload_mock,
+        patch.object(rotki.premium_sync_manager, 'upload_data_to_server') as upload_mock,
     ):
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
