@@ -987,7 +987,7 @@ def test_upload_skipped_when_backup_limit_is_zero(rotkehlchen_instance: Rotkehlc
         )
 
     assert success is False
-    assert message == 'Upload failed.'
+    assert message == 'Upload failed. Your premium plan does not include database backups.'
     assert restored_backup_ts is None
     upload_mock.assert_not_called()
 

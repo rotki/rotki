@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` A failed manual upload or download of the premium database backup now says why it failed, for example that the database is bigger than your plan allows, that your plan does not include backups or that there is no backup on the server. Before, an empty error dialog was shown. A database that is too big for your plan is now detected while it is compressed, instead of after uploading it.
 * :bug:`13399` Fixed NFTs appearing twice in balances or remaining after being sold or transferred.
 * :bug:`13340` After you disable the NFT module, the NFTs that token detection found for your accounts show up in balances and snapshots again, valued at the manual price you set for them in the module. Before, disabling the module hid them until it was turned back on.
 * :feature:`-` Calendar reminders are now created for SafeNet staking withdrawals that have been initiated but not claimed yet, set to the moment they can be claimed. The reminder is removed once the withdrawal is claimed.

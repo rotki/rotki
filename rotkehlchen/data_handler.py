@@ -295,15 +295,15 @@ class DataHandler:
         """Compress the plaintext DB at tempdbpath and encrypt it as a premium backup
         whose authenticated header carries last_modify_ts
 
-        If max_size_mb is given we stop compressing as soon as the compressed DB gets bigger
-        than that, since the server would reject the upload anyway.
+        If max_size_mb is given we stop compressing as soon as the compressed DB reaches
+        that size, since the server would reject the upload anyway.
 
         zstd(DB) -> RKC1 container (backup_container.py) -> RKPBAK01 envelope (crypto.py)
 
         Returns the encrypted backup and the b64 encoded hash of it
 
         May raise:
-        - BackupTooLargeError if the compressed DB is bigger than max_size_mb
+        - BackupTooLargeError if the compressed DB reaches max_size_mb
         """
         self.msg_aggregator.add_message(
             message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS,
@@ -315,24 +315,25 @@ class DataHandler:
         })
         compressed_data = bytearray()
         # The compressed size is unknown until the end, so we check it while compressing and
-        # stop as soon as it passes the limit. The encryption overhead is a few hundred bytes
-        # so we ignore it, and we use MiB so that we never reject what the server accepts.
+        # stop as soon as it reaches the limit. Like the server we use MiB and reject at the
+        # limit. The server measures the encrypted file, which is a few hundred bytes bigger,
+        # so a backup just under the limit may still be rejected there.
         max_size_bytes = None if max_size_mb is None else max_size_mb * BYTES_PER_MB
         with open(tempdbpath, 'rb') as src_f:
             block = src_f.read(BUFFERSIZE)
             while block:
                 compressed_data += compressor.compress(block)
-                if max_size_bytes is not None and len(compressed_data) > max_size_bytes:
+                if max_size_bytes is not None and len(compressed_data) >= max_size_bytes:
                     break
 
                 block = src_f.read(BUFFERSIZE)
             else:
                 compressed_data += compressor.flush()
 
-        if max_size_bytes is not None and len(compressed_data) > max_size_bytes:
+        if max_size_bytes is not None and len(compressed_data) >= max_size_bytes:
             tempdbpath.unlink(missing_ok=True)
             raise BackupTooLargeError(
-                f'The compressed database is bigger than the {max_size_mb} MB '
+                f'The compressed database does not fit in the {max_size_mb} MB '
                 f'your plan allows for backups.',
             )
 

@@ -120,7 +120,7 @@ describe('useSync', () => {
     });
 
     it('should cancel in-flight requests before syncing', async () => {
-      runTaskResult.mockResolvedValue(ok(false));
+      runTaskResult.mockResolvedValue(ok(true));
       await sync.forceSync(vi.fn(async (): Promise<void> => {}));
 
       expect(mockCancelAllQueued).toHaveBeenCalledOnce();
@@ -188,19 +188,6 @@ describe('useSync', () => {
       expect(logout).not.toHaveBeenCalled();
     });
 
-    it('should notify a failure when an upload task succeeds but returns false', async () => {
-      set(sync.syncAction, SYNC_UPLOAD);
-      runTaskResult.mockResolvedValue(ok(false));
-      const logout = vi.fn(async (): Promise<void> => {});
-
-      await sync.forceSync(logout);
-
-      expect(mockNotifyError).toHaveBeenCalledOnce();
-      expect(mockNotifyInfo).not.toHaveBeenCalled();
-      expect(mockShowSuccessMessage).not.toHaveBeenCalled();
-      expect(logout).not.toHaveBeenCalled();
-    });
-
     it('should notify a failure on an actionable upload task failure', async () => {
       set(sync.syncAction, SYNC_UPLOAD);
       runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
@@ -265,18 +252,6 @@ describe('useSync', () => {
         'actions.session.force_sync.error.message::colibri down',
       );
       expect(logout).not.toHaveBeenCalled();
-    });
-
-    it('should show a failure that outlasts the logout when the task returns false', async () => {
-      runTaskResult.mockResolvedValue(ok(false));
-      const logout = vi.fn(async (): Promise<void> => {});
-
-      await sync.forceSync(logout);
-
-      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
-      expect(mockNotifyError).not.toHaveBeenCalled();
-      expect(mockShowSuccessMessage).not.toHaveBeenCalled();
-      expect(logout).toHaveBeenCalledOnce();
     });
 
     it('should show an actionable failure and log out', async () => {

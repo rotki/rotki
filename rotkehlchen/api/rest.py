@@ -172,6 +172,7 @@ from rotkehlchen.premium.premium import (
     get_user_limit,
     has_premium_capability,
 )
+from rotkehlchen.premium.sync import NO_REMOTE_BACKUP_MSG
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.tasks.bridges import (
     ENTRY_TYPES_TO_EXCLUDE_FROM_BRIDGE_MATCHING,
@@ -2708,15 +2709,16 @@ class RestAPI:
         except RemoteBackupError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
         else:
-            if msg.startswith('Pulling failed') or (not success and msg != ''):
-                # A failed sync carries its reason in msg. Return it as an error so that the
-                # caller sees it, instead of a bare False with the reason in a side field.
-                return wrap_in_fail_result(msg, status_code=HTTPStatus.BAD_GATEWAY)
-            if action == 'download' and success:
+            if not success:  # every failed sync carries its reason in msg
+                return wrap_in_fail_result(
+                    msg,
+                    status_code=HTTPStatus.NOT_FOUND if msg == NO_REMOTE_BACKUP_MSG else HTTPStatus.BAD_GATEWAY,  # noqa: E501
+                )
+            if action == 'download':
                 # A forced pull skips the "remote is newer" check, so the authenticated
                 # timestamp is the only way the user can tell which backup they restored
                 return _wrap_in_result({'last_modify_ts': restored_backup_ts}, message=msg)
-            return _wrap_in_result(success, message=msg)
+            return _wrap_in_result(True, message=msg)
 
     @async_api_call()
     def create_oracle_cache(
