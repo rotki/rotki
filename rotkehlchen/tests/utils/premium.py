@@ -8,7 +8,7 @@ from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.crypto import decrypt_legacy, encrypt_backup
 from rotkehlchen.db.utils import update_table_schema
-from rotkehlchen.premium.backup_container import build_container
+from rotkehlchen.premium.backup_container import COMPRESSION_ZLIB, build_container
 from rotkehlchen.premium.premium import BACKUP_FORMAT_HEADERS, Premium, PremiumCredentials
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.database import mock_db_schema_sanity_check
@@ -230,7 +230,10 @@ def setup_starting_environment(
         remote_data = bytes(encrypt_backup(
             password=password,
             last_modify_ts=Timestamp(metadata_last_modify_ts + remote_header_ts_offset),
-            payload=build_container(user_db=decrypt_legacy(password, remote_data)),
+            payload=build_container(
+                user_db=decrypt_legacy(password, remote_data),  # legacy data is zlib compressed
+                compression=COMPRESSION_ZLIB,
+            ),
         ))
 
     patched_premium_at_start, _, patched_get, patched_upgrade = create_patched_premium(

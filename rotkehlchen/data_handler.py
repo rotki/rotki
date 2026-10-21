@@ -4,8 +4,9 @@ import logging
 import shutil
 import tempfile
 import zlib
+from compression import zstd
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 from sqlcipher3 import dbapi2 as sqlcipher  # pylint: disable=no-name-in-module
 
@@ -40,6 +41,9 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 BUFFERSIZE = 64 * 1024
+# zstd 6 is ~26x faster and ~32% smaller than the old zlib 9. 9 is ~55% slower for ~5 MB
+# less, and 12-15 gain nothing over 9
+BACKUP_ZSTD_LEVEL: Final = 6
 
 
 class RemoteBackup(NamedTuple):
@@ -284,14 +288,17 @@ class DataHandler:
         """Compress the plaintext DB at tempdbpath and encrypt it as a premium backup
         whose authenticated header carries last_modify_ts
 
-        zlib(DB) -> RKC1 container (backup_container.py) -> RKPBAK01 envelope (crypto.py)
+        zstd(DB) -> RKC1 container (backup_container.py) -> RKPBAK01 envelope (crypto.py)
 
         Returns the encrypted backup and the b64 encoded hash of it"""
         self.msg_aggregator.add_message(
             message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS,
             data={'type': str(DBUploadStatusStep.COMPRESSING)},
         )
-        compressor = zlib.compressobj(level=9)
+        compressor = zstd.ZstdCompressor(options={
+            zstd.CompressionParameter.compression_level: BACKUP_ZSTD_LEVEL,
+            zstd.CompressionParameter.checksum_flag: 1,
+        })
         compressed_data = bytearray()
         with open(tempdbpath, 'rb') as src_f:
             block = src_f.read(BUFFERSIZE)
