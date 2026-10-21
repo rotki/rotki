@@ -48,7 +48,7 @@ export default rotki({
   /* Only lines changed since `HEAD~1` are inspected. CI checks out at depth 2, where the default
      `HEAD~5` is missing and slop would silently fall back to whole files. */
   slop: { inspection: { mode: 'recent-changes', tracebackCommits: 1 } },
-  sonarjs: true,
+  sonarjs: { cognitiveComplexity: 15 },
   rotki: {
     src,
     ignoreKeys: i18nIgnoreKeys,
