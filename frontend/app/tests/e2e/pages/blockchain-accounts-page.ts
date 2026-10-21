@@ -3,6 +3,7 @@ import { expect, type Page } from '@playwright/test';
 import { BigNumber, Blockchain } from '@rotki/common';
 import { waitForNoRunningTasks } from '../helpers/api';
 import { TIMEOUT_LONG, TIMEOUT_VERY_LONG } from '../helpers/constants';
+import { dismissNotificationPopups } from '../helpers/notifications';
 import { updateLocationBalance } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
@@ -18,16 +19,11 @@ export class BlockchainAccountsPage {
    * Opens the add-account dialog.
    *
    * @remarks
-   * Notifications are cleared first and waited out. They stack over this corner of the page, so a
-   * leftover one intercepts the click on the add button and the dialog never opens.
+   * Notification popups are cleared first: they stack over this corner of the page, so a leftover
+   * one intercepts the click on the add button and the dialog never opens.
    */
   async openAddDialog(): Promise<void> {
-    const dismissButton = this.page.locator('[data-testid=notification_dismiss-all]');
-    if (await dismissButton.isVisible()) {
-      await dismissButton.click();
-    }
-
-    await this.page.locator('[data-testid=notification]').waitFor({ state: 'detached' });
+    await dismissNotificationPopups(this.page);
     const addButton = this.page.locator('[data-testid=add-blockchain-account]').first();
     await addButton.waitFor({ state: 'visible' });
     await addButton.click();

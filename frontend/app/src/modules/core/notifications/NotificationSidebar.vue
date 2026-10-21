@@ -115,9 +115,11 @@ const mutedCount = computed<number>(() => get(muted).problems.length + get(muted
         ref="contentWrapper"
         class="flex flex-col flex-1 min-h-0 gap-2 ps-3.5 pe-2 pb-2 overflow-y-auto"
       >
-        <template
+        <section
           v-for="day in historyDays"
           :key="day.key"
+          class="flex flex-col gap-2"
+          data-testid="notification-day-group"
         >
           <div
             class="sticky top-0 z-1 bg-rui-surface pt-2 pb-0.5 text-caption font-medium text-rui-text-secondary"
@@ -150,7 +152,7 @@ const mutedCount = computed<number>(() => get(muted).problems.length + get(muted
               @mute="muteNotification(item)"
             />
           </LazyLoader>
-        </template>
+        </section>
 
         <section
           v-if="problemCount > 0"

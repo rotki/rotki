@@ -56,6 +56,7 @@ watch(showNotificationBar, (showNotificationBar) => {
   >
     <Notification
       popup
+      data-testid="notification-popup"
       :notification="visibleNotification"
       @dismiss="dismiss(visibleNotification.id)"
     />
@@ -86,6 +87,8 @@ watch(showNotificationBar, (showNotificationBar) => {
               variant="text"
               class="p-1.5!"
               icon
+              :aria-label="t('notification_popup.dismiss_all')"
+              data-testid="notification-popup-dismiss-all"
               @click="dismissAll()"
             >
               <RuiIcon name="lu-list" />
