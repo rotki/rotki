@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { Blockchain } from '@rotki/common';
 import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExportImport.vue';
+import AccountsRefreshButton from '@/modules/accounts/AccountsRefreshButton.vue';
 import EvmAccountsRefreshMenu from '@/modules/accounts/EvmAccountsRefreshMenu.vue';
-import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { ActivityPart } from '@/modules/task-center/core/types';
 import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -20,9 +20,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const menuOpen = ref<boolean>(false);
-
-const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading('evm');
 const { useIsActive, useIsActivePrefix } = useTaskCenter();
 const eth2Querying = useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2);
 const eth2Hydrating = useBalanceRefreshState().useIsHydrating(Blockchain.ETH2);
@@ -35,46 +32,15 @@ const isEth2Loading = logicOr(
 </script>
 
 <template>
-  <RuiButtonGroup
+  <AccountsRefreshButton
     v-if="isAccountsTabSelected"
-    variant="outlined"
-    color="primary"
+    category="evm"
+    @refresh="emit('refresh-click')"
   >
-    <RuiButton
-      :disabled="refreshDisabled"
-      :loading="isSectionLoading"
-      @click="emit('refresh-click')"
-    >
-      <template #prepend>
-        <RuiIcon name="lu-refresh-ccw" />
-      </template>
-      {{ t('common.refresh') }}
-    </RuiButton>
-    <RuiMenu
-      v-model="menuOpen"
-      :options="{ placement: 'bottom-end' }"
-      :class-names="{ root: 'flex' }"
-    >
-      <template #activator="{ attrs }">
-        <RuiButton
-          v-bind="{
-            ...attrs,
-            'data-testid': 'blockchain-account-refresh',
-          }"
-          color="primary"
-          variant="outlined"
-          class="px-2"
-        >
-          <RuiIcon name="lu-chevron-down" />
-        </RuiButton>
-      </template>
-
-      <EvmAccountsRefreshMenu
-        v-if="menuOpen"
-        @close="menuOpen = false"
-      />
-    </RuiMenu>
-  </RuiButtonGroup>
+    <template #menu="{ close }">
+      <EvmAccountsRefreshMenu @close="close()" />
+    </template>
+  </AccountsRefreshButton>
 
   <RuiButton
     v-else
@@ -103,7 +69,7 @@ const isEth2Loading = logicOr(
         <template #prepend>
           <RuiIcon name="lu-plus" />
         </template>
-        {{ t('blockchain_balances.add_account') }}
+        {{ isAccountsTabSelected ? t('blockchain_balances.add_evm_account') : t('blockchain_balances.add_account') }}
       </RuiButton>
     </template>
     {{ t('blockchain_balances.add_validator_premium') }}

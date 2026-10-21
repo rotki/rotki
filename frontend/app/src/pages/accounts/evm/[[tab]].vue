@@ -5,13 +5,13 @@ import { Blockchain } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 import { msg } from '@/message-key';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
+import AccountsStalenessIndicator from '@/modules/accounts/AccountsStalenessIndicator.vue';
 import { type AddAccountSeed, parseAddAccountLink } from '@/modules/accounts/add-account-link';
 import { createNewAccountForChain } from '@/modules/accounts/blockchain/new-account-state';
 import EthStakingValidators from '@/modules/accounts/EthStakingValidators.vue';
 import EvmAccountPageButtons from '@/modules/accounts/EvmAccountPageButtons.vue';
 import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
-import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
@@ -113,7 +113,11 @@ watchImmediate(route, (route) => {
     ]"
   >
     <template #buttons>
-      <BlockchainBalanceStalenessIndicator class="self-center" />
+      <AccountsStalenessIndicator
+        v-if="isAccountsTabSelected"
+        class="self-center"
+        :category="category"
+      />
       <EvmAccountPageButtons
         :is-accounts-tab-selected="isAccountsTabSelected"
         :add-disabled="isAddDisabled"

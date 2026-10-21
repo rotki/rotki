@@ -17,5 +17,6 @@ const { t } = useI18n({ useScope: 'global' });
   <AccountBalancesDefaultPage
     category="substrate"
     :title="t('navigation_menu.accounts_sub.substrate')"
+    :add-label="t('blockchain_balances.add_substrate_account')"
   />
 </template>

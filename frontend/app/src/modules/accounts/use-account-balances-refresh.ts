@@ -12,7 +12,8 @@ interface UseAccountBalancesRefreshOptions {
 }
 
 interface UseAccountBalancesRefreshReturn {
-  refreshClick: () => Promise<void>;
+  /** Refreshes every chain of the category, or only `only` when given. */
+  refreshClick: (only?: string[]) => Promise<void>;
 }
 
 export function useAccountBalancesRefresh(
@@ -23,8 +24,8 @@ export function useAccountBalancesRefresh(
   const { handleBlockchainRefresh, refreshBlockchainBalances } = useBalanceRefresh();
   const { fetchAccounts } = useBlockchainAccountManagement();
 
-  async function refreshClick(): Promise<void> {
-    const chains = toValue(chainIds);
+  async function refreshClick(only?: string[]): Promise<void> {
+    const chains = only ?? toValue(chainIds);
     await fetchAccounts({ blockchain: chains, refreshEns: true });
     if (toValue(isEvm))
       await handleBlockchainRefresh(chains);
