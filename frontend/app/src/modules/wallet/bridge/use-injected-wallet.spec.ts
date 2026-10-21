@@ -254,5 +254,27 @@ describe('modules/wallet/bridge/use-injected-wallet', () => {
       await expect(wallet.switchNetwork(143n)).rejects.toThrow('unknown chain');
       expect(request).not.toHaveBeenCalledWith(expect.objectContaining({ method: 'wallet_addEthereumChain' }));
     });
+
+    it('should surface a refused switch without trying to add the chain', async () => {
+      const request = vi.fn()
+        .mockImplementationOnce(async () => ['0xabc']) // eth_requestAccounts
+        .mockImplementationOnce(async () => '0x1') // eth_chainId
+        .mockImplementationOnce(async () => { throw Object.assign(new Error('user rejected'), { code: 4001 }); })
+        .mockImplementation(async () => undefined);
+      const provider = makeProvider({ request });
+      selectProvider(provider);
+      // A known chain, so treating the refusal as an unknown chain would reach the add request.
+      getWalletNetwork.mockReturnValue({
+        blockExplorers: { default: { url: 'https://explorer' } },
+        name: 'Optimism',
+        nativeCurrency: { decimals: 18, name: 'Ether', symbol: 'ETH' },
+        rpcUrls: { default: { http: ['https://rpc.op'] } },
+      });
+      const wallet = useInjectedWallet();
+      await wallet.connectToSelectedProvider();
+
+      await expect(wallet.switchNetwork(10n)).rejects.toThrow('user rejected');
+      expect(request).not.toHaveBeenCalledWith(expect.objectContaining({ method: 'wallet_addEthereumChain' }));
+    });
   });
 });
