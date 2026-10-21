@@ -31,6 +31,19 @@ describe('useBlockchainRefreshTimestampsStore', () => {
     expect(get(store.refreshTimestamps)).toEqual({ eth: 3000 });
   });
 
+  it('should key a camelCased multi-word chain by its chain id', () => {
+    store.updateTimestamps({ arbitrumOne: 1000, polygonPos: 2000 });
+
+    expect(get(store.refreshTimestamps)).toEqual({ arbitrum_one: 1000, polygon_pos: 2000 });
+    expect(get(store.getTimestamp('arbitrum_one'))).toBe(1000);
+  });
+
+  it('should judge a multi-word chain stale against the camelCased timestamp it stored', () => {
+    store.updateTimestamps({ arbitrumOne: 2000 });
+
+    expect(store.isStale('arbitrum_one', 1000)).toBe(true);
+  });
+
   it('should return timestamp for a specific chain via getTimestamp', () => {
     store.updateTimestamps({ eth: 1000, btc: 2000 });
     const ethTimestamp = store.getTimestamp('eth');

@@ -1,6 +1,8 @@
 import type { ComputedRef } from 'vue';
+import { byChainKey, toChainKey } from '@/modules/core/common/chains';
 
 export const useBlockchainRefreshTimestampsStore = defineStore('balances/refresh-timestamps', () => {
+  /** Keyed by snake_case chain id ({@link toChainKey}), whatever spelling the writer used. */
   const refreshTimestamps = ref<Record<string, number>>({});
 
   /**
@@ -17,7 +19,7 @@ export const useBlockchainRefreshTimestampsStore = defineStore('balances/refresh
     const next = { ...current };
     let changed = false;
 
-    for (const [chain, timestamp] of Object.entries(timestamps)) {
+    for (const [chain, timestamp] of Object.entries(byChainKey(timestamps))) {
       const stored = next[chain];
       if (stored !== undefined && stored >= timestamp)
         continue;
@@ -41,12 +43,12 @@ export const useBlockchainRefreshTimestampsStore = defineStore('balances/refresh
     if (timestamp === undefined)
       return false;
 
-    const stored = get(refreshTimestamps)[chain];
+    const stored = get(refreshTimestamps)[toChainKey(chain)];
     return stored !== undefined && timestamp < stored;
   };
 
   const getTimestamp = (chain: string): ComputedRef<number | undefined> =>
-    computed<number | undefined>(() => get(refreshTimestamps)[chain]);
+    computed<number | undefined>(() => get(refreshTimestamps)[toChainKey(chain)]);
 
   const reset = (): void => {
     set(refreshTimestamps, {});

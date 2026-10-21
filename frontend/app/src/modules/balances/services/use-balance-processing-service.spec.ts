@@ -138,6 +138,26 @@ describe('useBalanceProcessingService', () => {
       expect(updateBalances).not.toHaveBeenCalled();
     });
 
+    it('should ignore an older payload for a multi-word chain whose timestamps arrive camelCased', async () => {
+      const chain = 'arbitrum_one';
+      useBlockchainAccountsStore().updateAccounts(chain, [
+        createAccount({ address: '0x9', label: null, tags: null }, chain),
+      ]);
+      const { updateBalances } = useBalancesStore();
+      const service = useBalanceProcessingService();
+      const fetchAt = async (lastRefreshTs: number): Promise<void> => {
+        mockQueryBlockchainBalances.mockResolvedValue({ ...balancesAt(chain, lastRefreshTs), lastRefreshTs: { arbitrumOne: lastRefreshTs } });
+        await service.handleCachedFetch({ addresses: undefined, blockchain: chain, isXpub: false }, undefined);
+      };
+
+      await fetchAt(3000);
+      vi.mocked(updateBalances).mockClear();
+
+      await fetchAt(1000);
+
+      expect(updateBalances).not.toHaveBeenCalled();
+    });
+
     it('should accept a payload newer than the chain holds', async () => {
       useBlockchainAccountsStore().updateAccounts(CHAIN, [
         createAccount({ address: '0x9', label: null, tags: null }, CHAIN),
