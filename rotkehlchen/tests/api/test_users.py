@@ -384,8 +384,9 @@ def test_user_creation_with_invalid_premium_credentials(
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
     result = assert_proper_sync_response_with_result(response)
-    assert result[username] == 'loggedin'
-    assert len(result) == 4  # also has three logged out entries for the auto backups made above.
+    # The three auto backups made above are kept for recovery but are not login profiles
+    assert result == {username: 'loggedin'}
+    assert len(list(users_dir.glob('auto_backup_Anja_*'))) == 3
 
     # Check that the directory was created
     assert (users_dir / username / USERDB_NAME).exists()
@@ -446,6 +447,17 @@ def test_user_creation_errors(
             ),
             status_code=HTTPStatus.CONFLICT,
         )
+
+        # name the users listing would hide as a recovery backup
+        assert_error_response(
+            response=requests.put(
+                url=api_url_for(rotkehlchen_api_server, 'usersresource'),
+                json={'name': 'auto_backup_john', 'password': '1234'},
+            ),
+            contained_in_msg='Usernames starting with auto_backup_ are reserved',
+            status_code=HTTPStatus.CONFLICT,
+        )
+        assert not (users_dir / 'auto_backup_john').exists()
 
         # Invalid type for password
         data = {
