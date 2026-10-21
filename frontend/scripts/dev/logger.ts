@@ -1,4 +1,6 @@
 import process from 'node:process';
+import { isatty } from 'node:tty';
+import { stripVTControlCharacters } from 'node:util';
 
 /**
  * Shared logger for the `pnpm dev` / `pnpm dev:web` run path (start-dev + its dev/
@@ -10,8 +12,27 @@ import process from 'node:process';
  * Child labels carry a reserved color (app/backend/colibri/proxy) and are passed to
  * formatDevLine directly. The orchestrator's own tags go through createDevLogger,
  * which paints them a single shared color so they are visually distinct from the
- * reserved child labels.
+ * reserved child labels. When {@link useColor} is off, formatDevLine strips every
+ * escape sequence from the finished line, so labels and child output come out plain.
  */
+
+function resolveColor(env: NodeJS.ProcessEnv, isTTY: boolean): boolean {
+  if (env.NO_COLOR)
+    return false;
+  if (env.FORCE_COLOR !== undefined)
+    return env.FORCE_COLOR !== '0' && env.FORCE_COLOR !== 'false';
+  return isTTY;
+}
+
+/**
+ * Whether dev output carries ANSI color.
+ *
+ * @remarks
+ * On for a terminal, off when stdout is redirected to a file or a pipe, so captured
+ * logs stay greppable. `NO_COLOR` (non-empty) turns it off and `FORCE_COLOR` forces
+ * it on, or off with `0`/`false`.
+ */
+export const useColor = resolveColor(process.env, isatty(process.stdout.fd));
 
 // ESC-based regexes built without embedding a control char in source.
 const ESC = String.fromCharCode(27);
@@ -90,7 +111,8 @@ export function formatDevLine(label: string, message: string): string {
   const indent = visibleWidth(prefix);
   // Only wrap for a real terminal wide enough to leave room for the message.
   const body = columns > indent + 8 ? wrapMessage(message, indent, columns) : message;
-  return `${prefix}${body}`;
+  const line = `${prefix}${body}`;
+  return useColor ? line : stripVTControlCharacters(line);
 }
 
 export interface DevLogger {

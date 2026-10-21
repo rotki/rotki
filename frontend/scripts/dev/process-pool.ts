@@ -2,7 +2,7 @@ import type { Buffer } from 'node:buffer';
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
 import process from 'node:process';
 import { errorCode, errorMessage } from '../dev-instance/format';
-import { createDevLogger, formatDevLine } from './logger';
+import { createDevLogger, formatDevLine, useColor } from './logger';
 
 const isWindows = process.platform === 'win32';
 
@@ -76,7 +76,8 @@ export function startProcess(cmd: string, tag: string, name: string, args: strin
   const listeners: OutputListener = { out: emit, err: emit };
 
   const env: NodeJS.ProcessEnv = {
-    FORCE_COLOR: '1',
+    // Children write into a pipe, so they only color when told to.
+    ...(useColor ? { FORCE_COLOR: '1' } : { NO_COLOR: '1' }),
     // The forwarder prepends its own time, so child tools (Vite) must drop theirs.
     ROTKI_DEV_FORWARDED: '1',
     ...process.env,
