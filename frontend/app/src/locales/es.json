@@ -117,13 +117,6 @@
     }
   },
   "actions": {
-    "assets": {
-      "erc20": {
-        "error": {
-          "title": "Consultando detalles del token {address} ({evmChain})"
-        }
-      }
-    },
     "balances": {
       "all_balances": {
         "task": {

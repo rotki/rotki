@@ -12,7 +12,8 @@ import {
   isHyperliquidTokenIdentifier,
   isSolanaTokenIdentifier,
 } from '@rotki/common';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { startPromise } from '@shared/utils';
+import { err, isErr, type Result } from 'plainfp/result';
 import { type AssetSearchParams, useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { type AssetsWithId, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
@@ -20,11 +21,11 @@ import { processAssetInfo, useResolveAssetIdentifier } from '@/modules/assets/us
 import { isAbortError } from '@/modules/core/common/helpers/is-of-enum';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { activityLabel } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
-import { type TaskOutcome, useNativeTask } from '@/modules/task-center/use-native-task';
+import { type RunBackendTask, type TaskOutcome, useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface AssetResolutionOptions {
   associate?: boolean;
@@ -35,10 +36,13 @@ export const NO_COLLECTION_RESOLVE: AssetResolutionOptions = { collectionParent:
 
 /**
  * Upper bound for the ERC20 token detail lookup. The backend queries live RPC nodes, which
- * can stall under rate limiting; past this we give up, cancel the task and let the user type
- * the token information manually.
+ * can stall under rate limiting; past this we give up, abort the backend task and let the user
+ * type the token information manually.
  */
 const ERC20_DETAILS_TIMEOUT_MS = 15_000;
+
+/** How long a lookup may wait queued before it starts, after which it is cancelled. */
+const ERC20_QUEUED_TIMEOUT_MS = 2 * ERC20_DETAILS_TIMEOUT_MS;
 
 interface AssetWithResolutionStatus extends AssetInfoWithId {
   resolved: boolean;
@@ -98,8 +102,8 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { assetSearch: assetSearchCaller, erc20details } = useAssetInfoApi();
   const { fetchedAssetCollections, queueIdentifier, resolve: resolveAsset } = useAssetInfoCache();
-  const { notifyError } = useNotifications();
   const { cancelActivity, submitTask } = useNativeTask();
+  const { cancelTaskById } = useTaskHandler();
 
   const { getChain } = useSupportedChains();
 
@@ -200,32 +204,61 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     computed<AssetContractInfo | undefined>(() => getAssetContractInfo(toValue(identifier), toValue(options)));
 
   /**
-   * Reads a token's details as a task.
-   *
-   * @remarks
-   * A failed task is reported only by its row in the task centre. A timeout is reported here as
-   * well, since this call cancels the task and its row then only says it was cancelled.
-   *
-   * @returns the details, or empty ones when the task failed or timed out
+   * The body of a token details read: fails, with a hint to enter the details by hand, when the
+   * backend takes longer than {@link ERC20_DETAILS_TIMEOUT_MS}, and aborts the backend task then.
    */
-  const fetchTokenDetails = async (payload: EvmChainAddress): Promise<ERC20Token> => {
+  const readTokenDetails = async (runTask: RunBackendTask, payload: EvmChainAddress): Promise<Result<ERC20Token, TaskError>> => {
     const timedOut = Symbol('timed-out');
+    let backendTaskId: number | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<typeof timedOut>((resolve) => {
       // eslint-disable-next-line @rotki/composable-require-cleanup -- cleared in the finally block below, so it never outlives this call
       timer = setTimeout(resolve, ERC20_DETAILS_TIMEOUT_MS, timedOut);
     });
 
+    try {
+      const outcome = await Promise.race([
+        runTask<ERC20Token>(async () => {
+          const pending = await erc20details(payload);
+          backendTaskId = pending.taskId;
+          return pending;
+        }),
+        timeout,
+      ]);
+      if (outcome !== timedOut)
+        return outcome;
+
+      if (backendTaskId !== undefined)
+        startPromise(cancelTaskById(backendTaskId));
+      return err(TaskFailed({ message: t('actions.assets.erc20.error.timeout') }));
+    }
+    finally {
+      clearTimeout(timer);
+    }
+  };
+
+  /**
+   * Reads a token's details as a task.
+   *
+   * @remarks
+   * A failure, a slow backend included, is reported only by the task's row. A read still queued
+   * after {@link ERC20_QUEUED_TIMEOUT_MS} is cancelled, so the form never waits on it forever.
+   *
+   * @returns the details, or empty ones when the task failed or never started
+   */
+  const fetchTokenDetails = async (payload: EvmChainAddress): Promise<ERC20Token> => {
+    const timedOut = Symbol('timed-out');
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<typeof timedOut>((resolve) => {
+      // eslint-disable-next-line @rotki/composable-require-cleanup -- cleared in the finally block below, so it never outlives this call
+      timer = setTimeout(resolve, ERC20_QUEUED_TIMEOUT_MS, timedOut);
+    });
+
     const task: Promise<TaskOutcome<ERC20Token>> = submitTask<ERC20Token>({
       id: makeActivityId(ActivityKind.ASSETS, ActivityPart.ERC20, payload.evmChain, payload.address),
       kind: ActivityKind.ASSETS,
       rerunnable: false,
-      run: async ({ runTask }): Promise<Result<ERC20Token, TaskError>> => mapResult(
-        await runTask<ERC20Token>(
-          async () => erc20details(payload),
-        ),
-        result => result,
-      ),
+      run: async ({ runTask }): Promise<Result<ERC20Token, TaskError>> => readTokenDetails(runTask, payload),
       subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.ERC20, { address: payload.address, chain: payload.evmChain }),
       title: t('task_center.group.assets'),
     });
@@ -235,7 +268,6 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
 
       if (outcome === timedOut) {
         cancelActivity(ActivityKind.ASSETS, ActivityPart.ERC20, payload.evmChain, payload.address);
-        notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.timeout'));
         return {};
       }
 

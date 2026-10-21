@@ -550,8 +550,7 @@
     "assets": {
       "erc20": {
         "error": {
-          "timeout": "Token ayrıntıları alınırken zaman aşımı oluştu. Token bilgilerini elle girebilirsiniz.",
-          "title": "{address} ({evmChain}) için token ayrıntılarını alma"
+          "timeout": "Token ayrıntıları alınırken zaman aşımı oluştu. Token bilgilerini elle girebilirsiniz."
         }
       }
     },
