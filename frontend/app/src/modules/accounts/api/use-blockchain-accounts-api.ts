@@ -19,16 +19,14 @@ import {
 import { type BtcChains, isBtcChain } from '@/modules/core/common/chains';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
-function payloadToData({ address, label, tags }: Omit<BlockchainAccountPayload, 'blockchain'>, isAdd = false): {
+function payloadToData({ address, label, tags }: Omit<BlockchainAccountPayload, 'blockchain'>): {
   accounts: GeneralAccountData[];
 } {
-  const usedLabel = isAdd ? (label ?? null) : (label ?? null);
-
   return {
     accounts: [
       {
         address,
-        label: usedLabel,
+        label: label ?? null,
         tags,
       },
     ],
@@ -240,7 +238,7 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
   const addEvmAccount = async (payload: Omit<BlockchainAccountPayload, 'blockchain'>): Promise<PendingTask> => {
     const response = await api.put<PendingTask>(
       '/blockchains/evm/accounts',
-      { asyncQuery: true, ...payloadToData(payload, true) },
+      { asyncQuery: true, ...payloadToData(payload) },
       {
         filterEmptyProperties: true,
         validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,

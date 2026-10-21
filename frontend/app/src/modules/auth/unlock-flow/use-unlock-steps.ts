@@ -68,15 +68,13 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
    */
   async function loadFrontendSettings(): Promise<Record<string, unknown>> {
     const { settings, write } = completeStoredSettings(await getFrontendSettings());
-    if (write === undefined) {
-      return settings;
-    }
-
-    try {
-      await patchFrontendSettings(write.patch, write.remove);
-    }
-    catch (error: unknown) {
-      logger.error('failed to write back the frontend settings', error);
+    if (write !== undefined) {
+      try {
+        await patchFrontendSettings(write.patch, write.remove);
+      }
+      catch (error: unknown) {
+        logger.error('failed to write back the frontend settings', error);
+      }
     }
     return settings;
   }

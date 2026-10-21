@@ -1,6 +1,6 @@
-import type { MessageHandler } from '../interfaces';
+import type { StateHandler } from '../interfaces';
 import type { NoAvailableIndexersData } from '@/modules/core/messaging/types';
-import { createConditionalHandler } from '@/modules/core/messaging/utils';
+import { createStateHandler } from '@/modules/core/messaging/utils';
 import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 /** The backend's `reason` for each cause it can send; anything else reads as no reason. */
@@ -21,15 +21,14 @@ const BLOCKSCOUT_INCOMPLETE_RESPONSE = 'blockscout_incomplete_response';
  * response raises nothing: no action fixes it, and the failed sync already shows on the account's
  * dock row until the next sync replaces it.
  */
-export function createNoAvailableIndexersHandler(): MessageHandler<NoAvailableIndexersData> {
+export function createNoAvailableIndexersHandler(): StateHandler<NoAvailableIndexersData> {
   const { raise } = useRaisedConditionsStore();
 
-  return createConditionalHandler<NoAvailableIndexersData>(({ chain, reason }) => {
+  return createStateHandler<NoAvailableIndexersData>(({ chain, reason }) => {
     if (reason === BLOCKSCOUT_INCOMPLETE_RESPONSE)
-      return null;
+      return;
 
     const cause = (reason === undefined ? undefined : CAUSE_BY_REASON.get(reason)) ?? NoIndexersCause.UNAVAILABLE;
     raise({ cause, chain, kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS });
-    return null;
   });
 }

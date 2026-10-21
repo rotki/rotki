@@ -136,72 +136,45 @@ describe('useBlockchainBalances', () => {
       ]);
     });
 
+    async function refreshEth(mode: RefreshMode = 'periodic'): Promise<void> {
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, mode);
+    }
+
+    function expectEthQueried(times: number): void {
+      expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(times);
+      expect(api.refreshBlockchainBalances).toHaveBeenCalledWith({
+        addresses: undefined,
+        blockchain: Blockchain.ETH,
+        isXpub: false,
+      });
+    }
+
     it('should refresh particular blockchain - default', () => {
-      const call = async (mode: RefreshMode = 'periodic'): Promise<void> => {
-        await blockchainBalances.refreshBlockchainBalances(
-          {
-            blockchain: Blockchain.ETH,
-          },
-          mode,
-        );
-      };
-
-      const assert = (times = 1): void => {
-        expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(times);
-        expect(api.refreshBlockchainBalances).toHaveBeenCalledWith({
-          addresses: undefined,
-          blockchain: Blockchain.ETH,
-          isXpub: false,
-        });
-      };
-
-      startPromise(call());
-      assert();
+      startPromise(refreshEth());
+      expectEthQueried(1);
     });
 
     it('should ignore periodic balance refresh, when there are other task running', async () => {
-      const call = async (mode: RefreshMode = 'periodic'): Promise<void> => {
-        await blockchainBalances.refreshBlockchainBalances(
-          {
-            blockchain: Blockchain.ETH,
-          },
-          mode,
-        );
-      };
-
-      const assert = (times = 1): void => {
-        expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(times);
-        expect(api.refreshBlockchainBalances).toHaveBeenCalledWith({
-          addresses: undefined,
-          blockchain: Blockchain.ETH,
-          isXpub: false,
-        });
-      };
-
       const refreshState = useBalanceRefreshState();
       const loading = refreshState.useIsRefreshing(Blockchain.ETH);
 
-      startPromise(call());
-      assert(1);
+      startPromise(refreshEth());
+      expectEthQueried(1);
 
-      startPromise(call());
-      assert(1);
+      startPromise(refreshEth());
+      expectEthQueried(1);
 
       await until(loading).toBe(false);
-      assert(1);
+      expectEthQueried(1);
     });
 
     /** The cancel/await/resubmit mechanics belong to `useNativeTask`; only the routing is asserted here. */
     it('should supersede a running refresh when the user asks for one', async () => {
-      const call = async (mode: RefreshMode): Promise<void> => {
-        await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, mode);
-      };
-
-      await call('periodic');
+      await refreshEth('periodic');
       expect(submitTask).toHaveBeenCalledTimes(1);
       expect(supersedeTask).not.toHaveBeenCalled();
 
-      await call('user');
+      await refreshEth('user');
       expect(supersedeTask).toHaveBeenCalledTimes(1);
       // Not joined onto the background run: the user's press genuinely re-queried.
       expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(2);

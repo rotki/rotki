@@ -65,7 +65,6 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
   });
 
   const providerChangeListeners = new Set<OnProviderChangedCallback>();
-  const providerMap = new Map<string, EIP1193Provider>();
   const isElectronMode = computed<boolean>(() => !!window.walletBridge);
 
   const selectedProviderUuid = computed<string | undefined>(() => get(selectedProvider)?.info.uuid);
@@ -135,12 +134,6 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     return [];
   }
 
-  function indexProviders(detected: EnhancedProviderDetail[]): void {
-    providerMap.clear();
-    for (const provider of detected)
-      providerMap.set(provider.info.uuid, provider.provider);
-  }
-
   function countBySource(detected: EnhancedProviderDetail[]): Record<string, number> {
     const breakdown: Record<string, number> = {};
     for (const { source } of detected)
@@ -168,7 +161,6 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
 
       const detectedProviders = await detectWithRetry(settings);
 
-      indexProviders(detectedProviders);
       set(availableProviders, detectedProviders);
 
       logger.info(
@@ -337,7 +329,6 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
     set(selectedProvider, undefined);
     set(isDetecting, false);
     set(detectionError, undefined);
-    providerMap.clear();
     providerChangeListeners.clear();
 
     logger.info('[UnifiedProviders] Cleanup completed');

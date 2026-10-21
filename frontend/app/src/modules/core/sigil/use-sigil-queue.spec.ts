@@ -42,6 +42,20 @@ async function countEvents(): Promise<number> {
   return count;
 }
 
+interface FlushedEntry { type: string; payload: { id?: string; name?: string; data?: Record<string, unknown> } }
+
+/** Flushes the queue into a stubbed `fetch` and returns the entries of the first request. */
+async function flushed(): Promise<FlushedEntry[]> {
+  const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
+  vi.stubGlobal('fetch', fetchSpy);
+
+  const { flush } = await import('@/modules/core/sigil/use-sigil-queue');
+  await flush();
+
+  const [, init] = fetchSpy.mock.calls[0];
+  return JSON.parse(init.body);
+}
+
 describe('use-sigil-queue', () => {
   beforeEach(() => {
     // eslint-disable-next-line no-global-assign -- a fresh fake-indexeddb per case; the queue keeps no handle across tests
@@ -118,19 +132,6 @@ describe('use-sigil-queue', () => {
   });
 
   describe('identify', () => {
-    interface FlushedEntry { type: string; payload: { id?: string; name?: string; data?: Record<string, unknown> } }
-
-    async function flushed(): Promise<FlushedEntry[]> {
-      const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
-      vi.stubGlobal('fetch', fetchSpy);
-
-      const { flush } = await import('@/modules/core/sigil/use-sigil-queue');
-      await flush();
-
-      const [, init] = fetchSpy.mock.calls[0];
-      return JSON.parse(init.body);
-    }
-
     it('should send an identify entry with the value as the distinct id', async () => {
       const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');
       await enqueue({ kind: 'identify', clientId: 'client-1', data: { instance_id: 'instance-1' }, url: '/page', timestamp: 1000 });
@@ -196,19 +197,6 @@ describe('use-sigil-queue', () => {
    * would leave the events unattributed and the account switch invisible.
    */
   describe('per-entry distinct id', () => {
-    interface FlushedEntry { payload: { id?: string } }
-
-    async function flushed(): Promise<FlushedEntry[]> {
-      const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
-      vi.stubGlobal('fetch', fetchSpy);
-
-      const { flush } = await import('@/modules/core/sigil/use-sigil-queue');
-      await flush();
-
-      const [, init] = fetchSpy.mock.calls[0];
-      return JSON.parse(init.body);
-    }
-
     it('should stamp a page view', async () => {
       const { setCurrentClientId } = await import('@/modules/core/sigil/use-sigil-identity');
       const { enqueue } = await import('@/modules/core/sigil/use-sigil-queue');

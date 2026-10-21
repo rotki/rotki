@@ -12,10 +12,9 @@ import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/Snap
 import { SnapshotBalanceFilterKeys } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 
 let spamIds: string[] = [];
-let ignoredIds: string[] = [];
 vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters', () => ({
   useSnapshotAssetFilters: (): { isSpamAsset: (id: string) => boolean; isIgnoredAsset: (id: string) => boolean } => ({
-    isIgnoredAsset: (id: string): boolean => ignoredIds.includes(id),
+    isIgnoredAsset: (): boolean => false,
     isSpamAsset: (id: string): boolean => spamIds.includes(id),
   }),
 }));
@@ -69,7 +68,6 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     spamIds = ['SAITAMA'];
-    ignoredIds = [];
   });
 
   afterEach(() => {
