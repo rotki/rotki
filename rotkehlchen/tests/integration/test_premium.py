@@ -128,7 +128,9 @@ def test_upload_data_to_server(
             return MockResponse(HTTPStatus.PARTIAL_CONTENT, '{"upload_id": "12345678"}')
 
     assert rotkehlchen_instance.premium is not None
-    chunk_size_patch = patch('rotkehlchen.premium.premium.UPLOAD_CHUNK_SIZE', 300000)
+    # Small enough that the zstd compressed backup still uploads in several chunks, which the
+    # call_count and progress messages below assert
+    chunk_size_patch = patch('rotkehlchen.premium.premium.UPLOAD_CHUNK_SIZE', 200000)
     ws_patch = patch.object(rotkehlchen_instance.msg_aggregator, 'add_message')
     patched_post = patch.object(
         rotkehlchen_instance.premium.session,

@@ -1,6 +1,8 @@
 import hashlib
 import json
+import tracemalloc
 import zlib
+from compression import zstd
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -14,15 +16,18 @@ from rotkehlchen.crypto import (
     decrypt_legacy,
     encrypt_backup,
 )
-from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.data_handler import DataHandler, RemoteBackup
 from rotkehlchen.errors.misc import (
     RemoteBackupError,
     UnableToDecryptRemoteData,
     UnsupportedRemoteBackup,
 )
 from rotkehlchen.premium.backup_container import (
+    COMPRESSION_ZLIB,
+    COMPRESSION_ZSTD,
     CONTAINER_MAGIC,
     USER_DB_ENTRY,
+    Compression,
     build_container,
     decompress_entry,
     read_container,
@@ -37,11 +42,18 @@ FRAME_SIZE = 4 + SEALED_CHUNK_SIZE  # with the length prefix
 FROZEN_PASSWORD = b'rotki frozen backup v1'
 FROZEN_TS = Timestamp(1760000000)
 FROZEN_SALT, FROZEN_NONCE = bytes(range(32)), bytes(range(100, 112))
-FROZEN_USER_DB = b''.join(hashlib.sha256(i.to_bytes(4, 'big')).digest() for i in range(2100))
+# Incompressible digests keep the compressed DB over one chunk, the repetitive tail makes
+# the compressors emit real compressed blocks rather than stored ones
+FROZEN_USER_DB = b''.join(hashlib.sha256(i.to_bytes(4, 'big')).digest() for i in range(2100)) + b'rotki' * 20000  # noqa: E501
 
 
-def _frozen_backup() -> bytes:
-    return (Path(__file__).resolve().parent.parent / 'data' / 'premium_backup_v1.bin').read_bytes()
+def _frozen_backup(compression: Compression = COMPRESSION_ZSTD) -> bytes:
+    name = 'premium_backup_v1.bin' if compression == COMPRESSION_ZLIB else 'premium_backup_v1_zstd.bin'  # noqa: E501
+    return (Path(__file__).resolve().parent.parent / 'data' / name).read_bytes()
+
+
+def _compress(data: bytes, compression: Compression) -> bytes:
+    return zstd.compress(data) if compression == COMPRESSION_ZSTD else zlib.compress(data)
 
 
 def _encrypt(payload: bytes, last_modify_ts: int = 1) -> bytes:
@@ -61,7 +73,12 @@ def _container(manifest: dict, *blocks: bytes) -> bytes:
     return CONTAINER_MAGIC + len(encoded).to_bytes(4, 'big') + encoded + b''.join(blocks)
 
 
-def _entry(name: str, data: bytes, required: bool = True, compression: str = 'zlib') -> dict:
+def _entry(
+        name: str,
+        data: bytes,
+        required: bool = True,
+        compression: str = COMPRESSION_ZLIB,
+) -> dict:
     return {'name': name, 'required': required, 'compression': compression, 'size': len(data)}
 
 
@@ -85,23 +102,38 @@ def test_backup_payload_segments_are_joined() -> None:
     assert decrypt_backup(PASSWORD, bytes(backup)) == (1, b'a' * 70000 + b'bbbc')
 
 
-def test_frozen_backup_decrypts() -> None:
-    """A committed backup, so a change to the format or the key derivation fails here"""
-    last_modify_ts, payload = decrypt_backup(FROZEN_PASSWORD, _frozen_backup())
-    assert last_modify_ts == FROZEN_TS
-    assert payload == b''.join(build_container(FROZEN_USER_DB))
-    assert bytes(read_container(payload)[USER_DB_ENTRY].data) == FROZEN_USER_DB
+@pytest.mark.parametrize('compression', [COMPRESSION_ZSTD, COMPRESSION_ZLIB])
+def test_frozen_backup_decrypts(compression: Compression) -> None:
+    """A committed backup, so a change to the format, the key derivation or the
+    decompression fails here. The zlib one proves that containers written with zlib can
+    still be read."""
+    data_handler = MagicMock()
+    data_handler.db.password = FROZEN_PASSWORD.decode()
+    assert DataHandler.decrypt_db(data_handler, _frozen_backup(compression)) == RemoteBackup(
+        legacy=False,
+        last_modify_ts=FROZEN_TS,
+        user_db=FROZEN_USER_DB,
+    )
 
 
-def test_frozen_backup_is_what_the_writer_produces() -> None:
+@pytest.mark.parametrize('compression', [COMPRESSION_ZSTD, COMPRESSION_ZLIB])
+def test_frozen_backup_is_what_the_writer_produces(compression: Compression) -> None:
+    """Reuses the stored compressed DB, since compressor output can change between
+    library versions while staying readable. The frozen backups were made by
+    DataHandler.compress_and_encrypt_db, and for zlib by its pre-zstd streaming zlib level 9
+    loop, with os.urandom patched to FROZEN_SALT and FROZEN_NONCE."""
+    _, payload = decrypt_backup(FROZEN_PASSWORD, frozen := _frozen_backup(compression))
+    entry = read_container(payload)[USER_DB_ENTRY]
+    assert entry.compression == compression
+    assert BACKUP_CHUNK_SIZE < len(entry.data) < len(FROZEN_USER_DB)
     with patch('rotkehlchen.crypto.os.urandom', side_effect=[FROZEN_SALT, FROZEN_NONCE]):
         backup = encrypt_backup(
             password=FROZEN_PASSWORD,
             last_modify_ts=FROZEN_TS,
-            payload=build_container(FROZEN_USER_DB),
+            payload=build_container(entry.data, compression),
             kdf_params=DEFAULT_BACKUP_KDF_PARAMS,
         )
-    assert backup == _frozen_backup()
+    assert backup == frozen
 
 
 def test_full_final_chunk_is_accepted() -> None:
@@ -202,9 +234,11 @@ def test_unsupported_header_is_rejected_before_derivation(index: int, value: int
     assert argon2id.call_count == 0
 
 
-def test_container_round_trip() -> None:
-    entries = read_container(b''.join(build_container(compressed := zlib.compress(b'db' * 100))))
+@pytest.mark.parametrize('compression', [COMPRESSION_ZSTD, COMPRESSION_ZLIB])
+def test_container_round_trip(compression: Compression) -> None:
+    entries = read_container(b''.join(build_container(compressed := _compress(b'db' * 100, compression), compression)))  # noqa: E501
     assert list(entries) == [USER_DB_ENTRY]
+    assert entries[USER_DB_ENTRY].compression == compression
     assert bytes(entries[USER_DB_ENTRY].data) == compressed
     assert decompress_entry(entries[USER_DB_ENTRY]) == b'db' * 100
 
@@ -212,7 +246,7 @@ def test_container_round_trip() -> None:
 def test_container_skips_unknown_optional_entry() -> None:
     entries = read_container(_container(
         {'container_version': 1, 'entries': [
-            _entry('globaldb_diff', diff := b'diff', required=False, compression='zstd'),
+            _entry('globaldb_diff', diff := b'diff', required=False, compression='lz4'),
             _entry(USER_DB_ENTRY, user_db := zlib.compress(b'db')),
         ]},
         diff,
@@ -229,7 +263,7 @@ def test_container_skips_unknown_optional_entry() -> None:
         b'x',
     ), id='unknown required entry'),
     pytest.param(_container(
-        {'container_version': 1, 'entries': [_entry(USER_DB_ENTRY, b'db', compression='zstd')]},
+        {'container_version': 1, 'entries': [_entry(USER_DB_ENTRY, b'db', compression='lz4')]},
         b'db',
     ), id='unknown compression of the user DB'),
     pytest.param(_container({'container_version': 2, 'entries': []}), id='newer container'),
@@ -272,20 +306,42 @@ def test_malformed_container_is_rejected(payload: bytes) -> None:
     assert type(e.value) is RemoteBackupError
 
 
-@pytest.mark.parametrize('data', [
-    pytest.param(zlib.compress(b'db')[:-2], id='truncated stream'),
-    pytest.param(zlib.compress(b'db') + b'x', id='data after the stream'),
-    pytest.param(b'not zlib', id='not zlib'),
-    pytest.param(zlib.compress(bytes(101)), id='over the size limit'),
+@pytest.mark.parametrize(('compression', 'data'), [
+    pytest.param(COMPRESSION_ZLIB, zlib.compress(b'db')[:-2], id='truncated zlib stream'),
+    pytest.param(COMPRESSION_ZLIB, zlib.compress(b'db') + b'x', id='data after the zlib stream'),
+    pytest.param(COMPRESSION_ZLIB, b'not zlib', id='not zlib'),
+    pytest.param(COMPRESSION_ZLIB, zlib.compress(bytes(101)), id='zlib over the size limit'),
+    pytest.param(COMPRESSION_ZSTD, zstd.compress(b'db')[:-2], id='truncated zstd stream'),
+    pytest.param(COMPRESSION_ZSTD, zstd.compress(b'db') + b'x', id='data after the zstd stream'),
+    pytest.param(COMPRESSION_ZSTD, zstd.compress(b'a') + zstd.compress(b'b'), id='two zstd frames'),  # noqa: E501
+    pytest.param(COMPRESSION_ZSTD, b'not zstd', id='not zstd'),
+    pytest.param(COMPRESSION_ZSTD, zstd.compress(bytes(101)), id='zstd over the size limit'),
 ])
-def test_bad_entry_data_is_rejected(data: bytes) -> None:
-    entry = read_container(_container({'container_version': 1, 'entries': [_entry(USER_DB_ENTRY, data)]}, data))[USER_DB_ENTRY]  # noqa: E501
+def test_bad_entry_data_is_rejected(compression: str, data: bytes) -> None:
+    entry = read_container(_container({'container_version': 1, 'entries': [_entry(USER_DB_ENTRY, data, compression=compression)]}, data))[USER_DB_ENTRY]  # noqa: E501
     with patch('rotkehlchen.premium.backup_container.MAX_ENTRY_SIZE', 100), pytest.raises(RemoteBackupError):  # noqa: E501
         decompress_entry(entry)
 
 
-def test_entry_at_the_size_limit_is_accepted() -> None:
-    entry = read_container(_container({'container_version': 1, 'entries': [_entry(USER_DB_ENTRY, data := zlib.compress(bytes(100)))]}, data))[USER_DB_ENTRY]  # noqa: E501
+@pytest.mark.parametrize('compression', [COMPRESSION_ZSTD, COMPRESSION_ZLIB])
+def test_decompression_bomb_is_not_expanded(compression: Compression) -> None:
+    """The output must be bounded while decompressing, not only checked afterwards"""
+    data = _compress(bytes(64 * 1024 ** 2), compression)
+    entry = read_container(_container({'container_version': 1, 'entries': [_entry(USER_DB_ENTRY, data, compression=compression)]}, data))[USER_DB_ENTRY]  # noqa: E501
+    tracemalloc.start()
+    try:
+        with patch('rotkehlchen.premium.backup_container.MAX_ENTRY_SIZE', 100), pytest.raises(RemoteBackupError):  # noqa: E501
+            decompress_entry(entry)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert peak < 1024 ** 2
+
+
+@pytest.mark.parametrize('compression', [COMPRESSION_ZSTD, COMPRESSION_ZLIB])
+def test_entry_at_the_size_limit_is_accepted(compression: Compression) -> None:
+    data = _compress(bytes(100), compression)
+    entry = read_container(_container({'container_version': 1, 'entries': [_entry(USER_DB_ENTRY, data, compression=compression)]}, data))[USER_DB_ENTRY]  # noqa: E501
     with patch('rotkehlchen.premium.backup_container.MAX_ENTRY_SIZE', 100):
         assert decompress_entry(entry) == bytes(100)
 
