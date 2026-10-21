@@ -151,7 +151,7 @@ install), so the CI column names the step rather than a whole job:
 
 | Command | 16-core workstation, warm cache | CI (`ubuntu-latest`, 4 cores) |
 |---------|---------------------------------|-----------------------------------------------|
-| `pnpm run lint` | 54s at `--concurrency=4`; 159s single-threaded | ESLint step: 110-154s at `--concurrency=4`; 208-226s single-threaded |
+| `pnpm run lint` | 54s at 4 workers (~15 GB peak); 116s at 2 (~8 GB); 159s single-threaded (~4.6 GB). The worker count follows free memory, see "Lint the whole project" | ESLint step: 110-154s at `--concurrency=4` (pinned); 208-226s single-threaded |
 | `pnpm run typecheck` | 56s | Typecheck step: 59-86s |
 | `pnpm run build` | | Build step (`build:app`): 12-17s |
 | `pnpm run test:unit` (full) | 114s | "Frontend unit tests / vitest" job: 483-519s |
@@ -753,6 +753,11 @@ All checks are run from the `frontend/` directory through the workspace scripts 
   pnpm run lint        # report-only
   pnpm run lint:fix    # auto-fix what it can
   ```
+  Both go through `scripts/lint.ts`, which picks the ESLint worker count from the memory free when
+  it starts. Each worker builds its own TypeScript programs and holds about 4 GiB, so four workers
+  need ~15 GB; the script keeps the larger of 4 GiB and 20% of RAM free, runs 1 to 4 workers, and
+  prints its choice on stderr. Pass `--concurrency=<n>` (or `off`) to pin it, as CI does with 4.
+  Prefer `lint:file:check` on the files you changed: a full pass is the most memory-hungry gate.
 
 - **Never invoke the tools directly.** `pnpm exec eslint`, `pnpm exec vitest`, and `pnpm exec vue-tsc`
   run with whatever working directory you happen to be in, which silently breaks CWD-relative rule

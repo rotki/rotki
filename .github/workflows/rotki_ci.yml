@@ -224,7 +224,8 @@ jobs:
       - name: ESLint
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         working-directory: ./frontend
-        run: pnpm run lint
+        # Pinned: the runner has the job to itself, so the memory-based worker count would only slow it down.
+        run: pnpm run lint --concurrency=4
 
       - name: Stylelint
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
