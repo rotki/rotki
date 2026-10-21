@@ -2,7 +2,7 @@ import logging
 import shutil
 import tempfile
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.misc import USERSDIR_NAME
@@ -15,6 +15,7 @@ from rotkehlchen.errors.api import (
     RotkehlchenPermissionError,
 )
 from rotkehlchen.errors.misc import (
+    BackupTooLargeError,
     DataIntegrityError,
     RemoteBackupDowngrade,
     RemoteBackupError,
@@ -39,6 +40,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+NO_REMOTE_BACKUP_MSG: Final = 'There is no database backup on the server.'
 
 
 class CanSync(Enum):
@@ -170,7 +173,7 @@ class PremiumSyncManager(LockableQueryMixIn):
             return False, f'Pulling failed: {e!s}', None
 
         if result is None:
-            return False, 'No data found', None
+            return False, NO_REMOTE_BACKUP_MSG, None
 
         if not is_backup_format(result):
             with self.data.db.conn.read_ctx() as cursor:
@@ -217,25 +220,27 @@ class PremiumSyncManager(LockableQueryMixIn):
 
         return True, '', backup.last_modify_ts
 
-    def check_if_should_sync(self, force_upload: bool) -> bool:
-        # if user has no premium do nothing
+    def check_if_should_sync(self, force_upload: bool) -> tuple[bool, str | None]:
+        """Returns whether the DB should be uploaded now and, if it can't be uploaded at all,
+        the reason to show the user. Skipping an automatic upload due to the user setting or
+        because one was attempted recently is not an error, so it comes with no reason."""
         if self.premium is None:
-            return False
+            return False, 'User does not have active premium.'
 
         try:
             if self.premium.get_capabilities()['max_backup_size_mb'] == 0:
                 log.debug('Skipping premium db backup because max size is zero')
-                return False
+                return False, 'Your premium plan does not include database backups.'
         except (RemoteError, PremiumAuthenticationError) as e:
             log.error('Could not query premium capabilities during sync check due to %s', e)
-            return False
+            return False, f'Could not query your premium plan due to: {e!s}'
 
         with self.data.db.conn.read_ctx() as cursor:
             if not self.data.db.get_setting(cursor, 'premium_should_sync') and not force_upload:
-                return False
+                return False, None
 
         # try an automatic upload only once per hour
-        return ts_now() - self.last_upload_attempt_ts > 3600 or force_upload
+        return ts_now() - self.last_upload_attempt_ts > 3600 or force_upload, None
 
     @protect_with_lock()
     def maybe_upload_data_to_server(
@@ -290,6 +295,12 @@ class PremiumSyncManager(LockableQueryMixIn):
             self.last_upload_attempt_ts = ts_now()
             return False, message
 
+        try:
+            max_backup_size_mb = self.premium.get_capabilities()['max_backup_size_mb']
+        except (RemoteError, PremiumAuthenticationError) as e:
+            log.warning('Could not query the max backup size, skipping size check', error=str(e))
+            max_backup_size_mb = None
+
         with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
             tempdbpath = self.data.db.export_unencrypted(tempdbfile)
             exported_ok, exported_error = plaintext_db_integrity_check(tempdbpath)
@@ -303,10 +314,21 @@ class PremiumSyncManager(LockableQueryMixIn):
                 )
                 self.last_upload_attempt_ts = ts_now()
                 return False, message
-            data, our_hash = self.data.compress_and_encrypt_db(
-                tempdbpath=tempdbpath,
-                last_modify_ts=our_last_write_ts,
-            )
+            try:
+                data, our_hash = self.data.compress_and_encrypt_db(
+                    tempdbpath=tempdbpath,
+                    last_modify_ts=our_last_write_ts,
+                    max_size_mb=max_backup_size_mb,
+                )
+            except BackupTooLargeError as e:
+                message = str(e)
+                log.error('upload to server aborted -- %s', message)
+                self.data.msg_aggregator.add_message(
+                    message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+                    data={'uploaded': False, 'actionable': False, 'message': message},
+                )
+                self.last_upload_attempt_ts = ts_now()
+                return False, message
 
         log.debug(
             'CAN_PUSH',
@@ -390,8 +412,9 @@ class PremiumSyncManager(LockableQueryMixIn):
         None for an upload. See _sync_data_from_server_and_replace_local."""
         msg = ''
         if action == 'upload':
-            if self.check_if_should_sync(force_upload=True) is False:
-                success, error_msg = False, None
+            should_sync, error_msg = self.check_if_should_sync(force_upload=True)
+            if should_sync is False:
+                success = False
             else:
                 success, error_msg = self.maybe_upload_data_to_server(force_upload=True)
 

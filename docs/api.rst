@@ -532,7 +532,7 @@ Handling user creation, sign-in, log-out and querying
           "message": ""
       }
 
-   :resjson bool result: The result field in this response is a simple boolean value indicating success or failure. A successful ``"download"`` instead returns an object, see below.
+   :resjson bool result: Always ``true`` for a successful ``"upload"``. A failed sync is returned as an error with the reason in ``message``. A successful ``"download"`` instead returns an object, see below.
 
    **Example Response** (successful download):
 
@@ -550,9 +550,10 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 200: API key/secret deleted successfully
    :statuscode 400: Provided call is in some way malformed.
    :statuscode 401: The user does not have premium access.
+   :statuscode 404: A ``"download"`` was requested but there is no database backup on the server.
    :statuscode 409: The downloaded backup can't be restored on this device. It was made by a newer rotki version or is damaged, it is in an older format than the one this device already synced, or it does not match the backup details the server reported. The message says which.
    :statuscode 500: Internal rotki error
-   :statuscode 502: The external premium service could not be reached or returned unexpected response.
+   :statuscode 502: The external premium service could not be reached or returned unexpected response, or the sync failed, for example because the database is bigger than the plan allows or the plan does not include backups.
 
 Querying premium devices
 ========================

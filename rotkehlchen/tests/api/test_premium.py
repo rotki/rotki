@@ -75,6 +75,72 @@ def test_upload_db(rotkehlchen_api_server: APIServer) -> None:
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_upload_db_failure_reason_is_returned(rotkehlchen_api_server: APIServer) -> None:
+    """A failed forced upload must return its reason as an error, not as result False with the
+    reason in the message, which the frontend would drop."""
+    with patch.object(
+        rotkehlchen_api_server.rest_api.rotkehlchen.premium_sync_manager,
+        'sync_data',
+        return_value=(False, 'Upload failed. Uploaded database is bigger than the maximum', None),
+    ):
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'userpremiumsyncresource',
+        ), json={'async_query': True, 'action': 'upload'})
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert_error_async_response(
+        outcome,
+        contained_in_msg='bigger than the maximum',
+        status_code=HTTPStatus.BAD_GATEWAY,
+    )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_upload_db_plan_without_backups(rotkehlchen_api_server: APIServer) -> None:
+    """A forced upload on a plan that includes no backups says so, instead of a bare
+    'Upload failed.' that leaves the user guessing"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    with (
+        patch.object(rotki.premium, 'get_capabilities', return_value={'max_backup_size_mb': 0}),
+        patch.object(rotki.premium_sync_manager, 'maybe_upload_data_to_server') as upload_mock,
+    ):
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'userpremiumsyncresource',
+        ), json={'async_query': True, 'action': 'upload'})
+        task_id = assert_ok_async_response(response)
+        assert_error_async_response(
+            response_data=wait_for_async_task(rotkehlchen_api_server, task_id),
+            contained_in_msg='Upload failed. Your premium plan does not include database backups.',
+            status_code=HTTPStatus.BAD_GATEWAY,
+        )
+    upload_mock.assert_not_called()
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_pull_db_without_remote_backup(rotkehlchen_api_server: APIServer) -> None:
+    """A forced download with no backup on the server is a not found, not a gateway error"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    with (
+        patch.object(rotki.premium_sync_manager, '_query_last_data_metadata'),
+        patch.object(rotki.premium, 'pull_data', return_value=None),
+    ):
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'userpremiumsyncresource',
+        ), json={'async_query': True, 'action': 'download'})
+        task_id = assert_ok_async_response(response)
+        assert_error_async_response(
+            response_data=wait_for_async_task(rotkehlchen_api_server, task_id),
+            contained_in_msg='There is no database backup on the server.',
+            status_code=HTTPStatus.NOT_FOUND,
+        )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize(('legacy', 'restored_backup_ts'), [(True, None), (False, 1760882400)])
 def test_pull_db(
         rotkehlchen_api_server: APIServer,

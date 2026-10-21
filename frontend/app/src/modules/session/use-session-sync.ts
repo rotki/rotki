@@ -16,9 +16,10 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 /**
  * A successful download carries the authenticated last write timestamp of the restored backup,
- * null for a backup in the old format. An upload, or a failure, is a plain boolean.
+ * null for a backup in the old format. A successful upload is a plain true. A failure is always
+ * a task error that carries the reason.
  */
-type ForceSyncResult = boolean | { lastModifyTs: number | null };
+type ForceSyncResult = true | { lastModifyTs: number | null };
 
 /** A cancellation is silent as a toast, but still needs explaining when the download logs out */
 type SyncOutcome =
@@ -69,7 +70,7 @@ export const useSync = createSharedComposable(() => {
   };
 
   /** A forced download skips the "remote is newer" check, so say which backup was restored */
-  const successMessage = (result: Exclude<ForceSyncResult, false>): string => {
+  const successMessage = (result: ForceSyncResult): string => {
     if (typeof result === 'object' && typeof result.lastModifyTs === 'number') {
       const date = displayDateFormatter.format(new Date(result.lastModifyTs * 1000), get(dateDisplayFormat));
       return t('actions.session.force_sync.success.message_download', { date });
@@ -84,7 +85,7 @@ export const useSync = createSharedComposable(() => {
       const { error } = outcome;
       return isActionable(error) ? { error: error.message, kind: 'failure' } : { error: error.message, kind: 'silent' };
     }
-    return outcome.value ? { kind: 'success', message: successMessage(outcome.value) } : { error: '', kind: 'failure' };
+    return { kind: 'success', message: successMessage(outcome.value) };
   };
 
   /**

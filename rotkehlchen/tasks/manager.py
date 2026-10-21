@@ -212,7 +212,7 @@ class TaskManager:
 
     def _maybe_schedule_db_upload(self) -> list[Task] | None:
         assert self.premium_sync_manager is not None, 'caller should make sure premium sync manager exists'  # noqa: E501
-        if self.premium_sync_manager.check_if_should_sync(force_upload=False) is False:
+        if self.premium_sync_manager.check_if_should_sync(force_upload=False)[0] is False:
             return None
 
         log.debug('Scheduling task for DB upload to server')

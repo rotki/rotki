@@ -18,7 +18,12 @@ from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.misc import detect_sqlcipher_version, plaintext_db_integrity_check
 from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.errors.api import AuthenticationError
-from rotkehlchen.errors.misc import DataIntegrityError, RemoteBackupError, SystemPermissionError
+from rotkehlchen.errors.misc import (
+    BackupTooLargeError,
+    DataIntegrityError,
+    RemoteBackupError,
+    SystemPermissionError,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.backup_container import (
     MALFORMED_BACKUP_MSG,
@@ -44,6 +49,7 @@ BUFFERSIZE = 64 * 1024
 # 6 trades a little size for speed: 9 is ~55% slower for only ~5 MB less on a large DB,
 # and levels 12-15 compress no better than 9
 BACKUP_ZSTD_LEVEL: Final = 6
+BYTES_PER_MB: Final = 1024 * 1024
 
 
 class RemoteBackup(NamedTuple):
@@ -284,13 +290,21 @@ class DataHandler:
             self,
             tempdbpath: Path,
             last_modify_ts: Timestamp,
+            max_size_mb: int | None = None,
     ) -> tuple[bytearray, str]:
         """Compress the plaintext DB at tempdbpath and encrypt it as a premium backup
         whose authenticated header carries last_modify_ts
 
+        If max_size_mb is given we stop compressing as soon as the compressed DB reaches
+        that size, since the server would reject the upload anyway.
+
         zstd(DB) -> RKC1 container (backup_container.py) -> RKPBAK01 envelope (crypto.py)
 
-        Returns the encrypted backup and the b64 encoded hash of it"""
+        Returns the encrypted backup and the b64 encoded hash of it
+
+        May raise:
+        - BackupTooLargeError if the compressed DB reaches max_size_mb
+        """
         self.msg_aggregator.add_message(
             message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS,
             data={'type': str(DBUploadStatusStep.COMPRESSING)},
@@ -300,13 +314,28 @@ class DataHandler:
             zstd.CompressionParameter.checksum_flag: 1,
         })
         compressed_data = bytearray()
+        # The compressed size is unknown until the end, so we check it while compressing and
+        # stop as soon as it reaches the limit. Like the server we use MiB and reject at the
+        # limit. The server measures the encrypted file, which is a few hundred bytes bigger,
+        # so a backup just under the limit may still be rejected there.
+        max_size_bytes = None if max_size_mb is None else max_size_mb * BYTES_PER_MB
         with open(tempdbpath, 'rb') as src_f:
             block = src_f.read(BUFFERSIZE)
             while block:
                 compressed_data += compressor.compress(block)
-                block = src_f.read(BUFFERSIZE)
+                if max_size_bytes is not None and len(compressed_data) >= max_size_bytes:
+                    break
 
-            compressed_data += compressor.flush()
+                block = src_f.read(BUFFERSIZE)
+            else:
+                compressed_data += compressor.flush()
+
+        if max_size_bytes is not None and len(compressed_data) >= max_size_bytes:
+            tempdbpath.unlink(missing_ok=True)
+            raise BackupTooLargeError(
+                f'The compressed database does not fit in the {max_size_mb} MB '
+                f'your plan allows for backups.',
+            )
 
         self.msg_aggregator.add_message(
             message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS,
