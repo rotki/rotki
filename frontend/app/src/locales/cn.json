@@ -4946,11 +4946,6 @@
       "off": "静默通知弹窗",
       "on": "弹窗已静默，点击重新允许"
     },
-    "tabs": {
-      "error": "错误",
-      "reminder": "提醒",
-      "view_all": "全部"
-    },
     "title": "通知",
     "view_calendar": "查看日历"
   },

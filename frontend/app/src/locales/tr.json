@@ -5077,11 +5077,6 @@
       "off": "Bildirim açılır pencerelerini sessize al",
       "on": "Açılır pencereler sessize alındı. Yeniden izin vermek için tıklayın"
     },
-    "tabs": {
-      "error": "Hata",
-      "reminder": "Hatırlatıcı",
-      "view_all": "Tümü"
-    },
     "title": "Bildirimler",
     "view_calendar": "Takvimi görüntüle"
   },
