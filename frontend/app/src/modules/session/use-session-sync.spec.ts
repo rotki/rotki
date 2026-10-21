@@ -234,9 +234,7 @@ describe('useSync', () => {
     });
   });
 
-  // A download replaces the user db file, so colibri must have closed its connection to it
-  // first, and core must not be stopped half way. Once colibri is locked only a login unlocks it
-  // again, so a download that locked it always ends in a logout.
+  // Colibri is locked before the db is replaced, and only a login unlocks it, so a locked download logs out
   describe('forceSync download', () => {
     it('should not be cancellable once running', async () => {
       runTaskResult.mockResolvedValue(ok(true));

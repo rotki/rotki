@@ -73,8 +73,7 @@ describe('useNativeTask', () => {
   });
 
   describe('interruptible', () => {
-    // Work the backend must not be stopped in the middle of (replacing the user db) opts out of
-    // the cancel handle, so a running activity can not be cancelled by any surface.
+    // Work core must not be stopped half way (replacing the user db) has no cancel handle once running
     it('should refuse to cancel a running activity that is not interruptible', async () => {
       const { cancelActivity, submitTask } = useNativeTask();
       const id = makeActivityId(ActivityKind.PRICES, 'not-interruptible');

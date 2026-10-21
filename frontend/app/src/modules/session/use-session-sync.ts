@@ -1,5 +1,6 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/messaging/types';
-import { err, isErr, map as mapResult, type Result } from 'plainfp/result';
+import { err, isErr, type Result } from 'plainfp/result';
+import { hasTag } from 'plainfp/tagged';
 import { useUsersApi } from '@/modules/auth/use-users-api';
 import { api } from '@/modules/core/api/rotki-api';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
@@ -18,6 +19,29 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
  * null for a backup in the old format. An upload, or a failure, is a plain boolean.
  */
 type ForceSyncResult = boolean | { lastModifyTs: number | null };
+
+/** A cancellation is silent as a toast, but still needs explaining when the download logs out */
+type SyncOutcome =
+  | { kind: 'success'; message: string }
+  | { kind: 'failure'; error: string }
+  | { kind: 'silent'; error: string };
+
+/** Colibri could not be locked, so the download never started */
+class ColibriLockError extends Error {
+  override name = 'ColibriLockError';
+}
+
+/**
+ * Whether the download got as far as locking colibri, which it only does once it runs, so a
+ * download dropped from the queue leaves colibri alone. Otherwise a running download is only
+ * cancelled when the session ends.
+ */
+function lockedColibri(outcome: Result<ForceSyncResult, TaskError>): boolean {
+  if (!isErr(outcome))
+    return true;
+  const { error } = outcome;
+  return !hasTag(error, 'Cancelled') && !(isActionable(error) && error.cause instanceof ColibriLockError);
+}
 
 export const useSync = createSharedComposable(() => {
   const { sessionEpoch, statusOf, submitTask } = useNativeTask();
@@ -55,11 +79,12 @@ export const useSync = createSharedComposable(() => {
 
   const failureMessage = (error: string): string => t('actions.session.force_sync.error.message', { error });
 
-  /** The success message, or the failure error. Neither for a cancelled task, which stays silent. */
-  const describeOutcome = (outcome: Result<ForceSyncResult, TaskError>): { message?: string; error?: string } => {
-    if (isErr(outcome))
-      return isActionable(outcome.error) ? { error: outcome.error.message } : {};
-    return outcome.value ? { message: successMessage(outcome.value) } : { error: '' };
+  const describeOutcome = (outcome: Result<ForceSyncResult, TaskError>): SyncOutcome => {
+    if (isErr(outcome)) {
+      const { error } = outcome;
+      return isActionable(error) ? { error: error.message, kind: 'failure' } : { error: error.message, kind: 'silent' };
+    }
+    return outcome.value ? { kind: 'success', message: successMessage(outcome.value) } : { error: '', kind: 'failure' };
   };
 
   /**
@@ -68,21 +93,21 @@ export const useSync = createSharedComposable(() => {
    * dialog stays open on the login screen.
    */
   const finishDownload = async (outcome: Result<ForceSyncResult, TaskError>, logout: () => Promise<void>): Promise<void> => {
-    const { error, message } = describeOutcome(outcome);
-    if (message !== undefined)
-      showSuccessMessage(t('actions.session.force_sync.success.title'), message);
+    const described = describeOutcome(outcome);
+    if (described.kind === 'success')
+      showSuccessMessage(t('actions.session.force_sync.success.title'), described.message);
     else
-      showErrorMessage(t('actions.session.force_sync.error.title'), failureMessage(error ?? (isErr(outcome) ? outcome.error.message : '')));
+      showErrorMessage(t('actions.session.force_sync.error.title'), failureMessage(described.error));
 
     await logout();
   };
 
   const notifyOutcome = (outcome: Result<ForceSyncResult, TaskError>): void => {
-    const { error, message } = describeOutcome(outcome);
-    if (message !== undefined)
-      notifyInfo(t('actions.session.force_sync.success.title'), message);
-    else if (error !== undefined)
-      notifyError(t('actions.session.force_sync.error.title'), failureMessage(error));
+    const described = describeOutcome(outcome);
+    if (described.kind === 'success')
+      notifyInfo(t('actions.session.force_sync.success.title'), described.message);
+    else if (described.kind === 'failure')
+      notifyError(t('actions.session.force_sync.error.title'), failureMessage(described.error));
   };
 
   const forceSync = async (logout: () => Promise<void>): Promise<void> => {
@@ -96,7 +121,6 @@ export const useSync = createSharedComposable(() => {
       set(displaySyncConfirmation, false);
 
     const epoch = sessionEpoch();
-    let colibriLocked = false;
     const outcome = await submitTask<ForceSyncResult>({
       id: makeActivityId(ActivityKind.SYNC),
       // A download replaces the user db file, and core must not be stopped half way through.
@@ -105,24 +129,22 @@ export const useSync = createSharedComposable(() => {
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<ForceSyncResult, TaskError>> => {
         if (action === SYNC_DOWNLOAD) {
-          // Colibri keeps its own connection to the user db file while unlocked, and core writing
-          // a new file under it corrupts the restored db. Locked only once the download runs, so
-          // a download dropped from the queue leaves colibri alone.
+          // Colibri's own connection to the user db would corrupt the file core restores under it
           try {
             await colibriLogout();
           }
           catch (error: unknown) {
-            return err(TaskFailed({ message: getErrorMessage(error) }));
+            const message = getErrorMessage(error);
+            return err(TaskFailed({ cause: new ColibriLockError(message, { cause: error }), message }));
           }
-          colibriLocked = true;
         }
-        return mapResult(await runTask<ForceSyncResult>(async () => useSyncApi().forceSync(action)), result => result);
+        return runTask<ForceSyncResult>(async () => useSyncApi().forceSync(action));
       },
       title: t('task_center.group.sync'),
     });
 
     // A session that ended meanwhile was already logged out, which locked colibri as well
-    if (colibriLocked && sessionEpoch() === epoch)
+    if (action === SYNC_DOWNLOAD && lockedColibri(outcome) && sessionEpoch() === epoch)
       await finishDownload(outcome, logout);
     else
       notifyOutcome(outcome);
