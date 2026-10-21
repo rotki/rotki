@@ -50,7 +50,7 @@ export function useSpamAsset(): UseSpamAssetReturn {
       }
 
       if (notIncludedInManualBalances.length > 0) {
-        await markAssetAsSpamCaller(tokens);
+        await markAssetAsSpamCaller(notIncludedInManualBalances);
         await fetchWhitelistedAssets();
         await fetchIgnoredAssets();
       }
