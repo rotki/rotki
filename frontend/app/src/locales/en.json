@@ -1939,6 +1939,7 @@
   "blockchain_balances": {
     "add_account": "Add Account",
     "add_bitcoin_account": "Add Bitcoin account",
+    "add_dogecoin_account": "Add Dogecoin account",
     "add_evm_account": "Add EVM account",
     "add_solana_account": "Add Solana account",
     "add_substrate_account": "Add Substrate account",

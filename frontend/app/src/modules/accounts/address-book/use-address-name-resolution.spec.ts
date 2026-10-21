@@ -27,6 +27,7 @@ vi.mock('@/modules/core/common/use-supported-chains', async () => {
       supportedChains: ref([
         { id: 'eth', type: 'evm' },
         { id: 'optimism', type: 'evm' },
+        { id: 'doge', type: 'dogecoin' },
       ]),
     }),
   };
@@ -221,6 +222,27 @@ describe('useAddressNameResolution', () => {
       await flushPromises();
 
       expect(api.getAddressesNames).not.toHaveBeenCalled();
+    });
+
+    it('should resolve the name of a dogecoin address, and keep other addresses out of its request', async () => {
+      enableAliasNames(true);
+      const address = 'DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L';
+      vi.mocked(api.getAddressesNames).mockResolvedValue([
+        { address, blockchain: Blockchain.DOGE, name: 'doge_name' },
+      ]);
+
+      const dogeName = resolution.useAddressName(() => address, () => Blockchain.DOGE);
+      const btcOnDoge = resolution.useAddressName(() => '1Dk75NPu6QXxMxRECfz6VM6oXq3XwprsDF', () => Blockchain.DOGE);
+
+      expect(get(dogeName)).toBeUndefined();
+      expect(get(btcOnDoge)).toBeUndefined();
+
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+
+      expect(api.getAddressesNames).toHaveBeenCalledWith([{ address, blockchain: Blockchain.DOGE }]);
+      expect(get(dogeName)).toBe('doge_name');
+      expect(get(btcOnDoge)).toBeUndefined();
     });
 
     it('should return undefined when enableAliasNames is false', async () => {

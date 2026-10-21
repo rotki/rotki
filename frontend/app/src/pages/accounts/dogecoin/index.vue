@@ -15,5 +15,6 @@ const { t } = useI18n({ useScope: 'global' });
   <AccountBalancesDefaultPage
     category="dogecoin"
     :title="t('navigation_menu.accounts_sub.dogecoin')"
+    :add-label="t('blockchain_balances.add_dogecoin_account')"
   />
 </template>

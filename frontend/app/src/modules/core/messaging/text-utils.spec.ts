@@ -6,6 +6,7 @@ import {
   isValidBchAddress,
   isValidBtcAddress,
   isValidBtcTxHash,
+  isValidDogeAddress,
   isValidEthAddress,
   isValidEvmTxHash,
   isValidHyperliquidTokenAddress,
@@ -149,6 +150,28 @@ describe('text-utils', () => {
     expect(isValidBchAddress(undefined)).toBe(false);
     expect(isValidBchAddress('bitcoincash:')).toBe(false);
     expect(isValidBchAddress('bitcoin:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a')).toBe(false); // Wrong prefix
+  });
+
+  it.each([
+    ['P2PKH', 'DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L'],
+    ['P2SH', '9t6e296CLrQL3mWDgcnuE8zbqJ9g9Xuprv'],
+    ['P2SH', 'A4BYSMMJSnHCF1BXQ2P7EFEuK8mhsCPTrp'],
+  ])('should accept a %s dogecoin address', (_format, address) => {
+    expect(isValidDogeAddress(address)).toBe(true);
+    expect(isValidAddress(address)).toBe(true);
+  });
+
+  it.each([
+    ['an empty string', ''],
+    ['a bitcoin address', '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'],
+    ['a litecoin address', 'LbGmfMhiY8ftvpPtwJGjcadLvamDR5q9de'],
+    ['a dogecoin testnet address', 'nkEyfR5Sgrnr5zTXXZvT8jKUqNWXctGEWY'],
+    ['a one-byte payload with a dogecoin version byte', 'FwZhmvLG'],
+    ['a 21-byte payload with a dogecoin version byte', 'vHgFguyk31G1cmADtTMMeyCJ4QgXWLb9AHZ'],
+    ['a value that is not base58', 'D0H5yaieqoZN36fDVciNyRueRGvGLR3mr7'],
+  ])('should reject %s as a dogecoin address', (_case, address) => {
+    expect(isValidDogeAddress(address)).toBe(false);
+    expect(isValidDogeAddress(undefined)).toBe(false);
   });
 
   it('should accept only base58 Solana addresses of 32 to 44 characters', () => {

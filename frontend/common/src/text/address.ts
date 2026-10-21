@@ -156,10 +156,35 @@ export function isValidSs58Address(address?: string): boolean {
   }
 }
 
+/** Version bytes of the Dogecoin mainnet addresses: P2PKH ("D...") and P2SH ("9..." or "A..."). */
+const DOGE_VERSIONS = new Set<number>([0x1E, 0x16]);
+/** One version byte, a 20-byte hash and a four-byte checksum. */
+const DOGE_DECODED_LENGTH = 25;
+
+/**
+ * Whether the value is a Dogecoin mainnet address.
+ *
+ * Like the substrate check above, the checksum is not verified here; the backend's
+ * `is_valid_dogecoin_address` is the authoritative check.
+ */
+export function isValidDogeAddress(address?: string): boolean {
+  if (address?.length !== 34)
+    return false;
+
+  try {
+    const decoded = decodeBase58(address);
+    return decoded.length === DOGE_DECODED_LENGTH && DOGE_VERSIONS.has(decoded[0]);
+  }
+  catch {
+    return false;
+  }
+}
+
 export function isValidAddress(address?: string): boolean {
   return isValidEthAddress(address)
     || isValidBtcAddress(address)
     || isValidBchAddress(address)
+    || isValidDogeAddress(address)
     || isValidSolanaAddress(address)
     || isValidSs58Address(address);
 }
