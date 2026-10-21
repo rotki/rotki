@@ -86,43 +86,61 @@ function setupWalletEventForwarding(): void {
   }
 }
 
+/** Emits `connect` with the bridge's current chain, when the page listens for it. */
+function emitConnect(): void {
+  const connectCallback = walletEventCallbacks.get('connect');
+  if (!connectCallback)
+    return;
+
+  fetchChainId()
+    .then(chainId => connectCallback({ chainId }))
+    .catch(error => logToFile(LogLevelEnum.ERROR, `Failed to emit connect event: ${String(error)}`));
+}
+
+/** Emits `accountsChanged` with the bridge's current accounts, when the page listens for it. */
+function emitAccountsChanged(): void {
+  const accountsChangedCallback = walletEventCallbacks.get('accountsChanged');
+  if (!accountsChangedCallback)
+    return;
+
+  fetchAccounts()
+    .then(accounts => accountsChangedCallback(accounts))
+    .catch(error => logToFile(LogLevelEnum.ERROR, `Failed to emit accounts changed event: ${String(error)}`));
+}
+
+function onConnected(): void {
+  walletBridgeConnected = true;
+  if (walletBridgeEnabled)
+    emitConnect();
+}
+
+function onDisconnected(): void {
+  walletBridgeConnected = false;
+  walletEventCallbacks.get('disconnect')?.({});
+}
+
+/** Unlike a first connect, a reconnect also re-sends the accounts. */
+function onReconnected(): void {
+  walletBridgeConnected = true;
+  if (!walletBridgeEnabled)
+    return;
+
+  emitConnect();
+  emitAccountsChanged();
+}
+
 function setupConnectionStatusListener(): void {
   ipcRenderer.on(IpcCommands.WALLET_BRIDGE_CONNECTION_STATUS, (_, status: WalletBridgeConnectionStatus) => {
-    if (status === 'connected') {
-      walletBridgeConnected = true;
-      const connectCallback = walletEventCallbacks.get('connect');
-      if (walletBridgeEnabled && connectCallback) {
-        // Fetch initial chain and emit connect event
-        fetchChainId()
-          .then(chainId => connectCallback({ chainId }))
-          .catch(error => logToFile(LogLevelEnum.ERROR, `Failed to emit connect event: ${String(error)}`));
-      }
-    }
-    else if (status === 'disconnected') {
-      walletBridgeConnected = false;
-      const disconnectCallback = walletEventCallbacks.get('disconnect');
-      if (disconnectCallback) {
-        disconnectCallback({});
-      }
-    }
-    else if (status === 'reconnected') {
-      walletBridgeConnected = true;
-      if (walletBridgeEnabled) {
-        const connectCallback = walletEventCallbacks.get('connect');
-        const accountsChangedCallback = walletEventCallbacks.get('accountsChanged');
-
-        if (connectCallback) {
-          fetchChainId()
-            .then(chainId => connectCallback({ chainId }))
-            .catch(error => logToFile(LogLevelEnum.ERROR, `Failed to emit connect event: ${String(error)}`));
-        }
-
-        if (accountsChangedCallback) {
-          fetchAccounts()
-            .then(accounts => accountsChangedCallback(accounts))
-            .catch(error => logToFile(LogLevelEnum.ERROR, `Failed to emit accounts changed event: ${String(error)}`));
-        }
-      }
+    switch (status) {
+      case 'connected':
+        onConnected();
+        break;
+      case 'disconnected':
+        onDisconnected();
+        break;
+      case 'reconnected':
+        onReconnected();
+        break;
     }
   });
 }

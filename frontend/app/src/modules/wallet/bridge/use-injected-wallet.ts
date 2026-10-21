@@ -20,6 +20,36 @@ interface UseInjectedWalletReturn {
   switchNetwork: (chainId: bigint) => Promise<void>;
 }
 
+/** EIP-3326's `4902`: the wallet has no such chain, so it has to be added before it can be switched to. */
+function isUnknownChainError(error: unknown): boolean {
+  return error instanceof Object && 'code' in error && error.code === 4902;
+}
+
+/**
+ * Adds the chain to the wallet from the definitions rotki ships.
+ *
+ * @remarks
+ * Without a definition there is nothing to add, so `unknownChain` is thrown again rather than
+ * swallowed, which would leave the switch silently doing nothing.
+ */
+async function addNetwork(provider: EIP1193Provider, chainId: bigint, unknownChain: unknown): Promise<void> {
+  const { getWalletNetwork } = await import('../chains-viem');
+  const network = getWalletNetwork(chainId);
+  if (!network)
+    throw unknownChain;
+
+  await provider.request({
+    method: 'wallet_addEthereumChain',
+    params: [{
+      blockExplorerUrls: network.blockExplorers?.default ? [network.blockExplorers.default.url] : [],
+      chainId: `0x${chainId.toString(16)}`,
+      chainName: network.name,
+      nativeCurrency: network.nativeCurrency,
+      rpcUrls: network.rpcUrls.default.http,
+    }],
+  });
+}
+
 function _useInjectedWallet(): UseInjectedWalletReturn {
   const connected = ref<boolean>(false);
   const connectedAddress = ref<string>();
@@ -255,38 +285,22 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
   }
 
   const switchNetwork = async (chainId: bigint): Promise<void> => {
-    if (injectedProvider) {
-      try {
-        await injectedProvider.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: `0x${chainId.toString(16)}` }],
-        });
+    if (!injectedProvider)
+      return;
 
-        await updateChainId();
-      }
-      catch (error: unknown) {
-        // If the chain doesn't exist, try to add it
-        if (error instanceof Object && 'code' in error && error.code === 4902) {
-          const { getWalletNetwork } = await import('../chains-viem');
-          const network = getWalletNetwork(chainId);
-          if (!network)
-            throw error;
+    try {
+      await injectedProvider.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: `0x${chainId.toString(16)}` }],
+      });
 
-          await injectedProvider.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              blockExplorerUrls: network.blockExplorers?.default ? [network.blockExplorers.default.url] : [],
-              chainId: `0x${chainId.toString(16)}`,
-              chainName: network.name,
-              nativeCurrency: network.nativeCurrency,
-              rpcUrls: network.rpcUrls.default.http,
-            }],
-          });
-        }
-        else {
-          throw error;
-        }
-      }
+      await updateChainId();
+    }
+    catch (error: unknown) {
+      if (!isUnknownChainError(error))
+        throw error;
+
+      await addNetwork(injectedProvider, chainId, error);
     }
   };
 
