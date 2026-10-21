@@ -52,4 +52,21 @@ describe('useEthStakingAccess', () => {
     const { allowed } = useEthStakingAccess();
     expect(get(allowed)).toBe(false);
   });
+
+  it('should be available with the premium tier and the module both on', () => {
+    const { available } = useEthStakingAccess();
+    expect(get(available)).toBe(true);
+  });
+
+  it('should not be available without the premium tier, even with the module on', () => {
+    set(mockAllowed, false);
+    const { available } = useEthStakingAccess();
+    expect(get(available)).toBe(false);
+  });
+
+  it('should not be available with the module off', () => {
+    set(mockEnabled, false);
+    const { available } = useEthStakingAccess();
+    expect(get(available)).toBe(false);
+  });
 });
