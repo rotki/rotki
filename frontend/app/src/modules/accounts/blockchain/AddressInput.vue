@@ -182,7 +182,7 @@ defineExpose({
       v-model="multiple"
       color="primary"
       class="-mt-2 mb-4 flex"
-      hide-details
+      details="hidden"
       :disabled="disabled"
     >
       {{ t('account_form.labels.multiple') }}

@@ -27,7 +27,7 @@ const isDetectingChain = useIsDetecting(() => item.id);
     :disabled="detecting"
     color="primary"
     size="sm"
-    hide-details
+    details="hidden"
     @click.prevent.stop="emit('toggle', item.id)"
   />
   <LocationIcon

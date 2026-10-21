@@ -249,7 +249,7 @@ watch(route, async (route) => {
           <RuiSwitch
             color="primary"
             :model-value="!isNonSyncExchange(row)"
-            hide-details
+            details="hidden"
             @update:model-value="toggleSync(row)"
           />
         </template>

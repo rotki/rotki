@@ -150,7 +150,7 @@ defineExpose({
           <div class="flex items-center gap-2 justify-end">
             <RuiSwitch
               color="primary"
-              hide-details
+              details="hidden"
               class="mr-2"
               :model-value="item.active"
               :disabled="isEtherscan(item)"

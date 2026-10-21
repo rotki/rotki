@@ -103,7 +103,7 @@ const elemID = computed<string>(() => `${identifier}-switch`);
         :id="elemID"
         :model-value="shownValue"
         color="primary"
-        hide-details
+        details="hidden"
         :disabled="state.linked"
         @update:model-value="state.value = $event"
       />
@@ -112,7 +112,7 @@ const elemID = computed<string>(() => `${identifier}-switch`);
       v-model="linked"
       size="sm"
       color="primary"
-      hide-details
+      details="hidden"
     >
       <span class="text-xs text-rui-text-secondary">
         {{ t('accounting_settings.rule.overwrite_by_setting') }}
@@ -124,7 +124,7 @@ const elemID = computed<string>(() => `${identifier}-switch`);
       class="pl-7"
       :label="t('accounting_settings.rule.overwrite_by_setting')"
       label-placement="hidden"
-      hide-details
+      details="hidden"
       key-attr="identifier"
       text-attr="label"
       :options="linkableSettingOptions"

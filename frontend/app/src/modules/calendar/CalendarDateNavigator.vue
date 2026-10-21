@@ -78,7 +78,7 @@ watch(
           class="w-64 [&_fieldset]:rounded-r-none!"
           type="epoch"
           dense
-          hide-details
+          details="hidden"
           :label="t('calendar.go_to_date')"
           @keydown.enter="goToSelectedDate()"
         />

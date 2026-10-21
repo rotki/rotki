@@ -153,7 +153,7 @@ function setOperator(op: FilterOp | FilterOp[] | undefined): void {
       type="number"
       dense
       :error-messages="rangeError"
-      :hide-details="!invalid"
+      details="auto"
       :label="t('transactions.filter.range_min')"
       data-testid="range-min"
       @keydown.enter="commitAndClose()"
@@ -165,7 +165,7 @@ function setOperator(op: FilterOp | FilterOp[] | undefined): void {
       type="number"
       dense
       :error-messages="rangeError"
-      :hide-details="!invalid"
+      details="auto"
       :label="t('transactions.filter.range_max')"
       data-testid="range-max"
       @keydown.enter="commitAndClose()"

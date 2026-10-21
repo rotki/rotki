@@ -221,7 +221,7 @@ const { containerProps: addressBookContainerProps, list: addressBookList, wrappe
           v-model="modelAddressBookSearch"
           prepend-icon="lu-search"
           dense
-          hide-details
+          details="hidden"
           color="primary"
           :label="t('common.actions.search')"
           label-placement="hidden"

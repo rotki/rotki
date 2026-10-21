@@ -112,7 +112,7 @@ async function updateScramble(value: boolean): Promise<void> {
             <RuiSwitch
               v-model="persistPrivacy"
               color="primary"
-              hide-details
+              details="hidden"
             >
               <div class="flex flex-col gap-1">
                 <span class="text-sm">
@@ -139,7 +139,7 @@ async function updateScramble(value: boolean): Promise<void> {
           :max="2"
           :min="0"
           show-ticks
-          hide-details
+          details="hidden"
           :tick-size="12"
           :class-names="{
             slider: 'bg-rui-grey-200! dark:bg-rui-grey-800!',
@@ -173,7 +173,7 @@ async function updateScramble(value: boolean): Promise<void> {
           color="secondary"
           size="sm"
           data-testid="privacy-mode-scramble-toggle"
-          hide-details
+          details="hidden"
           @update:model-value="updateScramble($event)"
         >
           <span class="text-sm">
@@ -187,7 +187,7 @@ async function updateScramble(value: boolean): Promise<void> {
           :disabled="!modelScrambleData"
           color="secondary"
           data-testid="privacy-mode-scramble-multiplier"
-          hide-details
+          details="hidden"
           dense
           @update:model-value="handleMultiplierUpdate($event)"
         >

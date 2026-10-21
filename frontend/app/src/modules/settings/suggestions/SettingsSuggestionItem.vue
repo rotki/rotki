@@ -59,7 +59,7 @@ function choiceLabel(item: SuggestionChoice): string {
   <div class="flex items-start gap-3 py-2 border-b border-default last:border-b-0">
     <RuiCheckbox
       :model-value="accepted"
-      hide-details
+      details="hidden"
       class="mt-0.5"
       @update:model-value="$emit('toggle')"
     />
@@ -98,7 +98,7 @@ function choiceLabel(item: SuggestionChoice): string {
         <RuiRadioGroup
           :model-value="choice"
           color="primary"
-          hide-details
+          details="hidden"
           class="mt-2"
           data-testid="suggestion-choices"
           @update:model-value="$emit('select', String($event))"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { FormDetails } from '@rotki/ui-library';
 import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { type Account, Blockchain } from '@rotki/common';
 import { omit } from 'es-toolkit';
@@ -65,7 +66,7 @@ const errorMessages = computed<string[]>(() => field?.errorMessages ?? []);
 
 const required = computed<boolean>(() => field?.required ?? false);
 
-const hideDetails = computed<boolean>(() => !(field?.showDetails ?? false));
+const details = computed<FormDetails>(() => (field?.showDetails ? 'reserve' : 'hidden'));
 
 const dense = computed<boolean>(() => field?.dense ?? false);
 
@@ -145,7 +146,7 @@ function getAccount(account: AddressAccount): Account {
       auto-select-first
       :loading="loading"
       :disabled="loading"
-      :hide-details="hideDetails"
+      :details="details"
       hide-selected
       :hide-no-data="!hideOnEmptyUsable"
       :item-height="40"

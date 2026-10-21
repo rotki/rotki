@@ -58,7 +58,7 @@ onMounted(async () => {
       label-placement="hidden"
       :placeholder="t('notes_menu.search_placeholder')"
       clearable
-      hide-details
+      details="hidden"
       data-testid="notes-search"
     />
 

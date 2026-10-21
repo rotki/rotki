@@ -18,7 +18,7 @@ const { t } = useI18n({ useScope: 'global' });
       v-model="usageAnalytics"
       :disabled="loading"
       color="primary"
-      hide-details
+      details="hidden"
     >
       {{ t('create_account.usage_analytics.label_confirm') }}
     </RuiCheckbox>

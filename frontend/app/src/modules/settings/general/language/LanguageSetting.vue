@@ -73,7 +73,7 @@ onMounted(() => {
       :label="t('general_settings.language.label')"
       :success-messages="success"
       :error-messages="error"
-      hide-details
+      details="hidden"
       key-attr="identifier"
       v-bind="$attrs"
       @update:model-value="updateSetting($event as SupportedLanguage)"
@@ -94,7 +94,7 @@ onMounted(() => {
 
     <RuiCheckbox
       v-if="!useLocalSetting"
-      hide-details
+      details="hidden"
       color="primary"
       class="mt-2"
       :model-value="forceUpdateMachineLanguage === 'true'"

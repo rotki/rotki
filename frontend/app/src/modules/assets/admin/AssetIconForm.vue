@@ -147,7 +147,7 @@ defineExpose({
         :click-to-upload-text="t('file_upload.dropzone.choose')"
         :replace-text="t('file_upload.dropzone.replace')"
         :hint="icon && identifier ? t('asset_form.replaced') : undefined"
-        :hide-details="!(icon && identifier)"
+        details="auto"
         data-testid="asset-icon-upload"
       />
     </div>

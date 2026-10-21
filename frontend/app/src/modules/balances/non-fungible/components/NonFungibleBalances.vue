@@ -105,7 +105,7 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
           <div class="flex justify-center">
             <RuiSwitch
               color="primary"
-              hide-details
+              details="hidden"
               :model-value="useIsAssetIgnored(row.id).value"
               @update:model-value="toggleIgnoreAsset(row)"
             />

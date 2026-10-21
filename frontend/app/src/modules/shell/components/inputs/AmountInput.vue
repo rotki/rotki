@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { assert } from '@rotki/common';
-import { RuiTextField } from '@rotki/ui-library';
+import { type FormDetails, RuiTextField } from '@rotki/ui-library';
 import IMask, { type InputMask } from 'imask';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface AmountInputProps {
   integer?: boolean;
-  hideDetails?: boolean;
+  details?: FormDetails;
   rawInput?: boolean;
 }
 
@@ -25,7 +25,7 @@ defineOptions({
 const modelValue = defineModel<string>({ required: true });
 
 const {
-  hideDetails = false,
+  details,
   integer = false,
   rawInput = false,
 } = defineProps<AmountInputProps>();
@@ -174,7 +174,7 @@ defineExpose({
     v-model="internalModelValue"
     color="primary"
     v-bind="$attrs"
-    :hide-details="hideDetails"
+    :details="details"
     @focus="onFocus()"
   >
     <template

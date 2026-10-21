@@ -39,7 +39,7 @@ function toggleSelect(address: string): void {
       :disabled="processing"
       color="primary"
       size="sm"
-      hide-details
+      details="hidden"
       @click.prevent.stop="toggleSelect(address)"
     />
 

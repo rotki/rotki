@@ -106,7 +106,7 @@ function toggleSelectAll(): void {
           color="primary"
           :label="searchLabel"
           prepend-icon="lu-search"
-          hide-details
+          details="hidden"
           clearable
         />
       </div>
@@ -189,7 +189,7 @@ function toggleSelectAll(): void {
           :indeterminate="indeterminate"
           :model-value="selected"
           size="sm"
-          hide-details
+          details="hidden"
           @click.prevent="toggleSelectAll()"
         >
           {{ t('common.actions.select_all') }}

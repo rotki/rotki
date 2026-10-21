@@ -216,7 +216,7 @@ onBeforeUnmount(() => {
       v-model="input"
       dense
       :error-messages="errorMessages"
-      :hide-details="errorMessages.length === 0"
+      details="auto"
       :label="resolveText(field.label)"
       :placeholder="field.multiple ? t('common.actions.add') : undefined"
       data-testid="text-input"

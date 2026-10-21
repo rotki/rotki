@@ -107,7 +107,7 @@ defineExpose({
           v-model="assetType"
           color="primary"
           inline
-          hide-details
+          details="hidden"
           :disabled="edit"
         >
           <RuiRadio

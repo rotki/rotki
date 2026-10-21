@@ -97,7 +97,7 @@ const { t } = useI18n({ useScope: 'global' });
         <div v-if="multiple">
           <RuiCheckbox
             v-model="partial"
-            hide-details
+            details="hidden"
             color="primary"
           >
             {{ t('asset_update.partially_update') }}
@@ -109,7 +109,7 @@ const { t } = useI18n({ useScope: 'global' });
               color="primary"
               type="number"
               dense
-              hide-details
+              details="hidden"
               :min="versions.local"
               :max="versions.remote"
               :label="t('asset_update.up_to_version')"
@@ -123,7 +123,7 @@ const { t } = useI18n({ useScope: 'global' });
             v-model="skipUpdate"
             dense
             color="primary"
-            hide-details
+            details="hidden"
           >
             {{ t('asset_update.skip_notification') }}
           </RuiCheckbox>

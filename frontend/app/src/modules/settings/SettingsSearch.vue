@@ -64,7 +64,7 @@ watchDebounced(search, (keyword: string) => {
     v-model:search-input="search"
     no-filter
     :no-data-text="t('settings.search.no_results')"
-    hide-details
+    details="hidden"
     :item-height="44"
     :options="visibleItems"
     text-attr="text"

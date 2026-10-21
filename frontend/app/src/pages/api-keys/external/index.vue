@@ -117,7 +117,7 @@ onMounted(async () => {
           color="primary"
           clearable
           dense
-          hide-details
+          details="hidden"
           class="w-full sm:w-80"
           :placeholder="t('external_services.search')"
           prepend-icon="lu-search"
@@ -139,7 +139,7 @@ onMounted(async () => {
           v-model="setUpOnly"
           color="primary"
           size="sm"
-          hide-details
+          details="hidden"
           :label="t('external_services.set_up_only')"
         />
       </div>

@@ -146,7 +146,7 @@ defineExpose({
       v-model="form.state.autoDelete"
       :label="t('calendar.dialog.settings.auto_delete_entry')"
       color="primary"
-      hide-details
+      details="hidden"
     />
   </div>
 </template>

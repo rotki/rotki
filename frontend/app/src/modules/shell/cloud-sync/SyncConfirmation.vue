@@ -57,7 +57,7 @@ const choice = computed<number>(() => (download ? 2 : 1));
       v-model="checked"
       color="primary"
       size="sm"
-      hide-details
+      details="hidden"
       data-testid="sync-confirm-check"
     >
       {{ t('sync_indicator.upload_confirmation.confirm_check') }}

@@ -198,7 +198,7 @@ watch([result, isValid], () => {
           :items="locations"
           clearable
           dense
-          hide-details
+          details="hidden"
           :label="t('common.location')"
           data-testid="snapshot-location-split-location"
         />
@@ -229,7 +229,7 @@ watch([result, isValid], () => {
           v-else
           v-model="row.amount"
           dense
-          hide-details
+          details="hidden"
           class="w-40"
           :label="t('common.value_in_symbol', { symbol: currencySymbol })"
           data-testid="snapshot-location-split-amount"

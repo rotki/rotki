@@ -79,7 +79,7 @@ onMounted(() => {
         text-attr="text"
         key-attr="id"
         :disabled="loading"
-        hide-details
+        details="hidden"
       >
         <template #selection="{ item }">
           <div>{{ item.shortText || item.text }}</div>

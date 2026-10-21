@@ -54,7 +54,7 @@ const presets = computed<PresetOption[]>(() => {
       max-date="now"
       partial-time="end"
       :label="t('historical_balances.as_of.label')"
-      hide-details
+      details="hidden"
       data-testid="historical-balances-as-of-picker"
     />
     <RuiButtonGroup

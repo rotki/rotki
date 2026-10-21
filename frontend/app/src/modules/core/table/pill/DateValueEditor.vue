@@ -160,7 +160,7 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
       partial-time="start"
       allow-empty
       dense
-      hide-details
+      details="hidden"
       :label="t('transactions.filter.date_from')"
       data-testid="date-from"
       @keydown.enter="emit('close')"
@@ -179,7 +179,7 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
       partial-time="end"
       allow-empty
       dense
-      hide-details
+      details="hidden"
       :label="t('transactions.filter.date_to')"
       data-testid="date-to"
       @keydown.enter="emit('close')"

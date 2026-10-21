@@ -25,7 +25,7 @@ const options = [
       control="radio"
       setting="blockchainRefreshButtonBehaviour"
       size="sm"
-      hide-details
+      details="hidden"
       key-attr="value"
       text-attr="label"
       :options="options"

@@ -15,7 +15,7 @@ const { t } = useI18n({ useScope: 'global' });
     label-placement="hidden"
     :placeholder="t('nft_gallery.select_collection')"
     clearable
-    hide-details
+    details="hidden"
     hide-selected
     :options="items"
     :item-height="42"

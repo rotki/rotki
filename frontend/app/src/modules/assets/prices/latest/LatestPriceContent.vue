@@ -139,7 +139,7 @@ onMounted(async () => {
           label-placement="hidden"
           :placeholder="t('price_management.from_asset')"
           clearable
-          hide-details
+          details="hidden"
           data-testid="latest-price-filter-from"
         />
       </template>

@@ -111,7 +111,7 @@ function unlink(): void {
           v-if="showCheckbox"
           v-model="isSelectedModel"
           color="primary"
-          hide-details
+          details="hidden"
           :disabled="isCheckboxDisabled"
           class="shrink-0"
         />
@@ -216,7 +216,7 @@ function unlink(): void {
       v-if="showCheckbox"
       v-model="isSelectedModel"
       color="primary"
-      hide-details
+      details="hidden"
       :disabled="isCheckboxDisabled"
       class="absolute left-4 top-1/2 -translate-y-1/2"
     />

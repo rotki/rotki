@@ -43,7 +43,7 @@ const {
         :options="purgeable"
         text-attr="text"
         key-attr="id"
-        hide-details
+        details="hidden"
         :disabled="pending"
         data-testid="purge-source"
       />
@@ -73,7 +73,7 @@ const {
         :options="centralizedExchangePurgeTypeOptions"
         text-attr="text"
         key-attr="id"
-        hide-details
+        details="hidden"
         :disabled="pending"
         data-testid="purge-cex-data-type"
       />

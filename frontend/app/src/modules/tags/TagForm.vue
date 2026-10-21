@@ -83,7 +83,7 @@ defineExpose({
       color="primary"
       data-testid="tag-creator-description"
       :label="t('common.description')"
-      hide-details
+      details="hidden"
     />
 
     <div class="grid md:grid-cols-2 gap-6 pt-2">

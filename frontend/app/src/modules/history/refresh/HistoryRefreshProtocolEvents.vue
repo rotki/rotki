@@ -106,7 +106,7 @@ defineExpose({
               :disabled="!queryConfigs[query]?.enabled || processing"
               color="primary"
               size="sm"
-              hide-details
+              details="hidden"
               @click.prevent
             />
 

@@ -155,7 +155,7 @@ onMounted(async () => {
         class="w-full sm:w-72"
         :placeholder="t('module_selector.filter')"
         clearable
-        hide-details
+        details="hidden"
         dense
         prepend-icon="lu-search"
       />
@@ -227,7 +227,7 @@ onMounted(async () => {
               :data-key="row.identifier"
               :disabled="loading"
               :model-value="row.enabled"
-              hide-details
+              details="hidden"
               class="mr-2"
               @update:model-value="switchModule(row.identifier, $event)"
             />

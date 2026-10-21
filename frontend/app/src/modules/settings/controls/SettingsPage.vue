@@ -82,7 +82,7 @@ const showRail = computed<boolean>(() => navigation.length > 1);
         text-attr="label"
         :label="t('settings.go_to_section')"
         class="py-4"
-        hide-details
+        details="hidden"
         dense
         @update:model-value="scrollToElement($event)"
       />

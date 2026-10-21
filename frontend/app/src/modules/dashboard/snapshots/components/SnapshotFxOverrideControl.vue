@@ -146,7 +146,7 @@ onMounted(() => {
         <AmountInput
           v-model="input"
           dense
-          hide-details
+          details="hidden"
           class="w-48"
           :label="t('dashboard.snapshot.detail.fx_override.rate_label', { symbol: currencySymbol })"
           data-testid="snapshot-fx-override-input"

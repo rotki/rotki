@@ -82,7 +82,7 @@ function update(value: TableColumn) {
         <RuiCheckbox
           color="primary"
           size="sm"
-          hide-details
+          details="hidden"
           :label="item.text"
           :model-value="active(item.value)"
           @update:model-value="update(item.value)"

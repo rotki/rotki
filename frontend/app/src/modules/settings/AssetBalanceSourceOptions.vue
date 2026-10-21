@@ -23,7 +23,7 @@ const { t } = useI18n({ useScope: 'global' });
       v-model="useHistoricalBalances"
       color="primary"
       size="sm"
-      hide-details
+      details="hidden"
     >
       <RuiRadio
         :label="t('statistics_graph_settings.source.snapshot')"
@@ -45,7 +45,7 @@ const { t } = useI18n({ useScope: 'global' });
     <RuiCheckbox
       v-if="asset"
       v-model="rememberForAsset"
-      hide-details
+      details="hidden"
       size="sm"
       color="primary"
       :label="t('statistics_graph_settings.source.remember_state_for_asset', { asset: name })"

@@ -134,7 +134,7 @@ onMounted(() => {
         :options="supportedExplorers"
         :label="t('explorers.chain_selector')"
         :item-height="56"
-        hide-details
+        details="hidden"
         @update:model-value="onChange()"
       >
         <template #item="{ item }">

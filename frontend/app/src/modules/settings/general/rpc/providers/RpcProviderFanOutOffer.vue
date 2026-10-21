@@ -44,7 +44,7 @@ const count = computed<number>(() => selected.length);
       <RuiCheckbox
         v-model="modelEnabled"
         color="primary"
-        hide-details
+        details="hidden"
         size="sm"
         data-testid="provider-fan-out-enable"
       >

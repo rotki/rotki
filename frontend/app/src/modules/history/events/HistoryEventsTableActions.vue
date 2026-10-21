@@ -170,7 +170,7 @@ function handleToggleSelectAllMatching(): void {
               :indeterminate="selection.isPartiallySelected"
               :disabled="selection.selectAllMatching"
               color="primary"
-              hide-details
+              details="hidden"
               size="sm"
               data-testid="selection-select-all-page"
               @update:model-value="handleToggleAll()"

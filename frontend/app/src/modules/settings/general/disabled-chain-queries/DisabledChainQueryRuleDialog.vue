@@ -97,7 +97,7 @@ watch(open, (value) => {
           :label="t('general_settings.disabled_chain_queries.dialog.chain_label')"
           key-attr="id"
           text-attr="name"
-          hide-details
+          details="hidden"
           auto-select-first
           data-testid="rule-chain-picker"
         >
@@ -123,7 +123,7 @@ watch(open, (value) => {
             key-attr="address"
             text-attr="address"
             :filter="filterAddressOption"
-            hide-details
+            details="hidden"
             auto-select-first
             data-testid="rule-address-picker"
           >
@@ -174,7 +174,7 @@ watch(open, (value) => {
             key-attr="id"
             text-attr="name"
             chips
-            hide-details
+            details="hidden"
             auto-select-first
             data-testid="rule-chains-picker"
             @update:model-value="modelSelectedChainIds = $event"
