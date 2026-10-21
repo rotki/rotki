@@ -70,6 +70,23 @@ function isSwapOnlyGroup(events: HistoryEventRow[]): events is HistoryEventEntry
   return events.length > 1 && events.every(e => !Array.isArray(e) && e.entryType === HistoryEventEntryType.SWAP_EVENT);
 }
 
+/** A group's rows without the events whose asset is ignored; a subgroup keeps its remaining legs, or goes when none remain. */
+function withoutIgnoredAssets(groupEvents: HistoryEventRow[], isIgnored: (asset: string) => boolean): HistoryEventRow[] {
+  const filtered: HistoryEventRow[] = [];
+  for (const event of groupEvents) {
+    if (!Array.isArray(event)) {
+      if (!isIgnored(event.asset))
+        filtered.push(event);
+      continue;
+    }
+
+    const visible = event.filter(item => !isIgnored(item.asset));
+    if (visible.length > 0)
+      filtered.push(visible);
+  }
+  return filtered;
+}
+
 export function useHistoryEventsData(
   options: UseHistoryEventsDataOptions,
   emit: HistoryEventsTableEmitFn,
@@ -235,17 +252,7 @@ export function useHistoryEventsData(
         continue;
       }
 
-      const filtered: HistoryEventRow[] = [];
-      for (const event of groupEvents) {
-        if (Array.isArray(event)) {
-          const visible = event.filter(item => !isAssetIgnored(item.asset));
-          if (visible.length > 0)
-            filtered.push(visible);
-        }
-        else if (!isAssetIgnored(event.asset)) {
-          filtered.push(event);
-        }
-      }
+      const filtered = withoutIgnoredAssets(groupEvents, isAssetIgnored);
       if (filtered.length > 0)
         mapping[groupId] = filtered;
     }

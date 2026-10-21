@@ -133,6 +133,59 @@ function subgroupKey(groupId: string, events: HistoryEventEntry[]): string {
   return `${groupId}-${events[0]?.identifier ?? 0}`;
 }
 
+/** A subgroup about to be flattened, with where it sits in its group. */
+interface Subgroup {
+  groupId: string;
+  events: HistoryEventEntry[];
+  /** Position of the subgroup among the group's visible rows. */
+  index: number;
+  /**
+   * Some legs are hidden by the ignored-asset filter, so the subgroup is shown expanded and offers no
+   * collapse control: collapsed, it would summarise legs the user cannot see.
+   */
+  forcedOpen: boolean;
+}
+
+function legRows({ events, groupId }: Subgroup, linkedLeg: boolean): EventDetailRow[] {
+  return events.map((data, index) => ({ type: 'event-row', groupId, data, index, linkedLeg }));
+}
+
+/** A matched movement: one combined row while collapsed, otherwise a collapse control and both sides. */
+function matchedMovementRows(subgroup: Subgroup, expanded: ReadonlySet<string>): VirtualRow[] {
+  const { events, forcedOpen, groupId, index } = subgroup;
+  const movementKey = subgroupKey(groupId, events);
+  if (!forcedOpen && !expanded.has(movementKey))
+    return [{ type: 'matched-movement-row', groupId, events, index, movementKey }];
+
+  const legs = legRows(subgroup, true);
+  return forcedOpen
+    ? legs
+    : [{ type: 'matched-movement-collapse', groupId, movementKey, eventCount: events.length }, ...legs];
+}
+
+/** A swap or matched bridge: one combined row while collapsed, otherwise a collapse control and its legs. */
+function swapRows(subgroup: Subgroup, expanded: ReadonlySet<string>): VirtualRow[] {
+  const { events, forcedOpen, groupId, index } = subgroup;
+  const swapKey = subgroupKey(groupId, events);
+  if (!forcedOpen && !expanded.has(swapKey))
+    return [{ type: 'swap-row', groupId, events, index, swapKey }];
+
+  const bridge = isMatchedBridgeGroup(events);
+  const legs = legRows(subgroup, bridge);
+  if (forcedOpen)
+    return legs;
+
+  return [{
+    type: 'swap-collapse',
+    groupId,
+    swapKey,
+    subgroupId: events[0]?.identifier,
+    eventCount: events.length,
+    bridge,
+    bridgeUnlink: getMatchedBridgeUnlink(events),
+  }, ...legs];
+}
+
 interface UseVirtualRowsReturn {
   flattenedRows: ComputedRef<VirtualRow[]>;
   groupVisibleCounts: DeepReadonly<Ref<Map<string, number>>>;
@@ -209,92 +262,20 @@ export function useVirtualRows(
       const visibleEvents = allEvents.slice(0, limit);
 
       visibleEvents.forEach((event, i) => {
-        if (Array.isArray(event)) {
-          const forcedOpenWithoutCollapseControls = isSubgroupIncomplete(event);
-
-          if (isMatchedMovementGroup(event)) {
-            const movementKey = subgroupKey(groupId, event);
-            const isMovementExpanded = forcedOpenWithoutCollapseControls || expandedMovementsSet.has(movementKey);
-
-            if (isMovementExpanded) {
-              if (!forcedOpenWithoutCollapseControls) {
-                rows.push({
-                  type: 'matched-movement-collapse',
-                  groupId,
-                  movementKey,
-                  eventCount: event.length,
-                });
-              }
-
-              event.forEach((subEvent, subIndex) => {
-                rows.push({
-                  type: 'event-row',
-                  groupId,
-                  data: subEvent,
-                  index: subIndex,
-                  linkedLeg: true,
-                });
-              });
-            }
-            else {
-              // Collapsed: show as combined matched movement row
-              rows.push({
-                type: 'matched-movement-row',
-                groupId,
-                events: event,
-                index: i,
-                movementKey,
-              });
-            }
-          }
-          else {
-            const swapKey = subgroupKey(groupId, event);
-            const isSwapExpanded = forcedOpenWithoutCollapseControls || expandedSwapsSet.has(swapKey);
-            const bridge = isMatchedBridgeGroup(event);
-
-            if (isSwapExpanded) {
-              if (!forcedOpenWithoutCollapseControls) {
-                rows.push({
-                  type: 'swap-collapse',
-                  groupId,
-                  swapKey,
-                  subgroupId: event[0]?.identifier,
-                  eventCount: event.length,
-                  bridge,
-                  bridgeUnlink: getMatchedBridgeUnlink(event),
-                });
-              }
-
-              event.forEach((subEvent, subIndex) => {
-                rows.push({
-                  type: 'event-row',
-                  groupId,
-                  data: subEvent,
-                  index: subIndex,
-                  linkedLeg: bridge,
-                });
-              });
-            }
-            else {
-              // Collapsed: show as combined swap row
-              rows.push({
-                type: 'swap-row',
-                groupId,
-                events: event,
-                index: i,
-                swapKey,
-              });
-            }
-          }
-        }
-        else {
+        if (!Array.isArray(event)) {
           rows.push({
             type: 'event-row',
             groupId,
             data: event,
             index: i,
           });
+          return;
         }
+
+        const subgroup: Subgroup = { events: event, forcedOpen: isSubgroupIncomplete(event), groupId, index: i };
+        rows.push(...(isMatchedMovementGroup(event)
+          ? matchedMovementRows(subgroup, expandedMovementsSet)
+          : swapRows(subgroup, expandedSwapsSet)));
       });
 
       // 3. Load more row (if there are still hidden events)
