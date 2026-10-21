@@ -52,12 +52,13 @@ describe('useNotificationCooldown', () => {
     expect(cooldown.shouldSuppress(NotificationGroup.MONERIUM_AUTH)).toBe(false);
   });
 
-  it('should track each group separately', () => {
-    cooldown.recordDisplay(grouped);
+  it('should throttle only the token announcements, so a group added later pops by default', () => {
+    for (const group of Object.values(NotificationGroup))
+      cooldown.recordDisplay(group);
 
     vi.setSystemTime(START + 30_000);
 
-    expect(cooldown.shouldSuppress(grouped)).toBe(true);
-    expect(cooldown.shouldSuppress(NotificationGroup.BEACONCHAIN_RATE_LIMITED)).toBe(false);
+    const throttled = Object.values(NotificationGroup).filter(group => cooldown.shouldSuppress(group));
+    expect(throttled).toEqual([NotificationGroup.NEW_DETECTED_TOKENS]);
   });
 });

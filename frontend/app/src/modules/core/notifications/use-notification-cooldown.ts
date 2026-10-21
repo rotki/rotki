@@ -4,13 +4,16 @@ import { createSharedComposable, useSessionStorage } from '@vueuse/core';
 const NOTIFICATION_COOLDOWN_MS = 60_000;
 
 /**
- * Groups whose entries are the successive steps of one flow the user just started, rather than
- * repeats of the same condition. Each step replaces the one before it, so the burst cooldown would
- * silence the outcome of an action taken seconds ago: the user would be told the browser is opening
- * and never told whether the authorization worked.
+ * Groups that arrive in bursts of one announcement: tokens detected one after another during a
+ * single query. Only these are throttled, one popup per group per cooldown.
+ *
+ * @remarks
+ * Every other group pops each time it should. A backend problem never pops, a condition is an
+ * action center row, and a group whose entries are the steps of a flow the user just started (such
+ * as Monerium's authorization) must not have its outcome silenced by the step before it.
  */
-const UNTHROTTLED_GROUPS: Set<NotificationGroup> = new Set([
-  NotificationGroup.MONERIUM_AUTH,
+const THROTTLED_GROUPS: ReadonlySet<NotificationGroup> = new Set([
+  NotificationGroup.NEW_DETECTED_TOKENS,
 ]);
 
 export interface UseNotificationCooldownReturn {
@@ -31,7 +34,7 @@ export const useNotificationCooldown = createSharedComposable((): UseNotificatio
   const lastDisplay: Ref<Record<string, number>> = useSessionStorage('rotki.notification.last_display', {});
 
   function shouldSuppress(group: NotificationGroup): boolean {
-    if (UNTHROTTLED_GROUPS.has(group))
+    if (!THROTTLED_GROUPS.has(group))
       return false;
 
     const lastTime = get(lastDisplay)[group] ?? 0;
