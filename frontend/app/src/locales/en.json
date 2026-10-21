@@ -88,6 +88,10 @@
       "chain": "Chain"
     },
     "per_chain": "Per chain",
+    "refresh_menu": {
+      "label": "Refresh options",
+      "one_chain": "Refresh one chain"
+    },
     "row_menu": "More actions for this account",
     "skip_queries": {
       "chain_marker": "rotki does not query this account on {chain}",
@@ -101,6 +105,12 @@
       "skip": "Skip balance and history queries for this account on {chains}",
       "skip_all": "Skip queries on this chain | Skip all {count} chains",
       "title": "Skip queries"
+    },
+    "staleness": {
+      "never": "not refreshed yet",
+      "oldest": "Oldest: {chain}, {time}",
+      "skipped": "Queries skipped",
+      "title": "Last balance refresh per chain"
     }
   },
   "account_form": {
@@ -1928,6 +1938,10 @@
   },
   "blockchain_balances": {
     "add_account": "Add Account",
+    "add_bitcoin_account": "Add Bitcoin account",
+    "add_evm_account": "Add EVM account",
+    "add_solana_account": "Add Solana account",
+    "add_substrate_account": "Add Substrate account",
     "add_validator_premium": "Adding ETH staking validators needs a rotki Premium plan.",
     "binance_warning": "Binance Smart Chain accounts can only be detected with a paid Etherscan key.",
     "early_chain_warning": "rotki's {chain} integration is early: only a limited set of protocols is decoded on this chain for now. Transactions from other protocols will appear as plain transfers, with more protocols added over time.",

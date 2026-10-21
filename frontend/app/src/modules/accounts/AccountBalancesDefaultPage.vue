@@ -3,24 +3,24 @@ import type { AccountManageState } from '@/modules/accounts/blockchain/use-accou
 import { useTemplateRef } from 'vue';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
 import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExportImport.vue';
+import AccountsRefreshButton from '@/modules/accounts/AccountsRefreshButton.vue';
+import AccountsStalenessIndicator from '@/modules/accounts/AccountsStalenessIndicator.vue';
 import { createNewAccountForChain } from '@/modules/accounts/blockchain/new-account-state';
 import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
-import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
-import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
-const { category, title } = defineProps<{
+const { addLabel, category, title } = defineProps<{
   category: string;
   title: string;
+  addLabel: string;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const account = ref<AccountManageState>();
 const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');
-const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading(() => category);
 
 const { chainIds } = useAccountCategoryHelper(() => category);
 
@@ -48,20 +48,14 @@ onMounted(async () => {
     ]"
   >
     <template #buttons>
-      <BlockchainBalanceStalenessIndicator class="self-center" />
-      <RuiButton
-        data-testid="blockchain-account-refresh"
-        variant="outlined"
-        color="primary"
-        :disabled="refreshDisabled"
-        :loading="isSectionLoading"
-        @click="table?.refreshClick()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-refresh-ccw" />
-        </template>
-        {{ t('common.refresh') }}
-      </RuiButton>
+      <AccountsStalenessIndicator
+        class="self-center"
+        :category="category"
+      />
+      <AccountsRefreshButton
+        :category="category"
+        @refresh="table?.refreshClick($event)"
+      />
       <RuiButton
         data-testid="add-blockchain-account"
         color="primary"
@@ -70,7 +64,7 @@ onMounted(async () => {
         <template #prepend>
           <RuiIcon name="lu-plus" />
         </template>
-        {{ t('blockchain_balances.add_account') }}
+        {{ addLabel }}
       </RuiButton>
 
       <AccountBalancesExportImport />

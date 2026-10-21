@@ -46,6 +46,16 @@ describe('useAccountBalancesRefresh', () => {
     expect(fetchData).toHaveBeenCalledOnce();
   });
 
+  it('should refresh only the given chains when asked for a subset', async () => {
+    const fetchData = vi.fn<() => Promise<void>>(async () => {});
+    const { refreshClick } = useAccountBalancesRefresh({ chainIds: ['btc', 'bch'], fetchData, isEvm: false });
+
+    await refreshClick(['bch']);
+
+    expect(h.fetchAccounts).toHaveBeenCalledWith({ blockchain: ['bch'], refreshEns: true });
+    expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(['bch']);
+  });
+
   it('should resolve reactive chain and evm inputs', async () => {
     const chainIds = ref<string[]>(['eth']);
     const isEvm = ref<boolean>(true);

@@ -17,5 +17,6 @@ const { t } = useI18n({ useScope: 'global' });
   <AccountBalancesDefaultPage
     category="bitcoin"
     :title="t('navigation_menu.accounts_sub.bitcoin')"
+    :add-label="t('blockchain_balances.add_bitcoin_account')"
   />
 </template>

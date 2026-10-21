@@ -15,5 +15,6 @@ const { t } = useI18n({ useScope: 'global' });
   <AccountBalancesDefaultPage
     category="solana"
     :title="t('navigation_menu.accounts_sub.solana')"
+    :add-label="t('blockchain_balances.add_solana_account')"
   />
 </template>
