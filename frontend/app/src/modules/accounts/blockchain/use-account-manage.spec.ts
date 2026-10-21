@@ -1,6 +1,6 @@
 import type { AccountAgnosticManage, AccountManage, StakingValidatorManage, XpubManage } from './use-account-manage';
 import type { ActionStatus } from '@/modules/core/common/action';
-import { Blockchain, Zero } from '@rotki/common';
+import { bigNumberify, Blockchain, Zero } from '@rotki/common';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAccountGroupId } from '@/modules/accounts/account-utils';
@@ -13,6 +13,8 @@ const mockAddAccounts = vi.fn();
 const mockAddEvmAccounts = vi.fn();
 const mockShowErrorMessage = vi.fn();
 const mockFetchAccounts = vi.fn().mockResolvedValue(undefined);
+const mockRefreshAccounts = vi.fn().mockResolvedValue(undefined);
+const mockUpdateEthStakingOwnership = vi.fn();
 const mockEditAccount = vi.fn();
 const mockEditAgnosticAccount = vi.fn();
 const mockUpdateAccountData = vi.fn();
@@ -23,7 +25,7 @@ vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
     addAccounts: mockAddAccounts,
     addEvmAccounts: mockAddEvmAccounts,
     fetchAccounts: mockFetchAccounts,
-    refreshAccounts: vi.fn().mockResolvedValue(undefined),
+    refreshAccounts: mockRefreshAccounts,
   })),
 }));
 
@@ -65,7 +67,7 @@ vi.mock('@/modules/accounts/use-eth-staking', () => ({
   useEthStaking: vi.fn(() => ({
     addEth2Validator: mockAddEth2Validator,
     editEth2Validator: mockEditEth2Validator,
-    updateEthStakingOwnership: vi.fn(),
+    updateEthStakingOwnership: mockUpdateEthStakingOwnership,
   })),
 }));
 
@@ -213,6 +215,38 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
 
       expect(mockEditEth2Validator).toHaveBeenCalledWith(state.data);
       expect(mockAddEth2Validator).not.toHaveBeenCalled();
+    });
+
+    it('should refresh the eth2 accounts after an add, leaving ownership alone', async () => {
+      mockAddEth2Validator.mockResolvedValue({ success: true });
+
+      const { save } = useAccountManage();
+      await save(createValidatorState());
+
+      expect(mockRefreshAccounts).toHaveBeenCalledWith({ blockchain: Blockchain.ETH2 });
+      expect(mockFetchAccounts).not.toHaveBeenCalled();
+      expect(mockUpdateEthStakingOwnership).not.toHaveBeenCalled();
+    });
+
+    it('should update the ownership and re-read the eth2 accounts after an edit', async () => {
+      mockEditEth2Validator.mockResolvedValue({ success: true });
+
+      const { save } = useAccountManage();
+      await save(createValidatorState('edit'));
+
+      expect(mockUpdateEthStakingOwnership).toHaveBeenCalledWith('0xabc123', bigNumberify('100'));
+      expect(mockFetchAccounts).toHaveBeenCalledWith({ blockchain: Blockchain.ETH2 });
+      expect(mockRefreshAccounts).not.toHaveBeenCalled();
+    });
+
+    it('should refresh nothing when the backend refuses the validator', async () => {
+      mockAddEth2Validator.mockResolvedValue({ message: 'refused', success: false });
+
+      const { save } = useAccountManage();
+      await save(createValidatorState());
+
+      expect(mockRefreshAccounts).not.toHaveBeenCalled();
+      expect(mockFetchAccounts).not.toHaveBeenCalled();
     });
 
     it('should set pending during save', async () => {
