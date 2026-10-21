@@ -143,36 +143,58 @@ const LOCK_STALE_MS = 10_000;
 const LOCK_POLL_MS = 50;
 const LOCK_MAX_WAIT_MS = 5_000;
 
+/** Creates the lock directory; false when another run already holds it. */
+function tryLock(lockDir: string): boolean {
+  try {
+    fs.mkdirSync(lockDir);
+    return true;
+  }
+  catch (error) {
+    if (errorCode(error) !== 'EEXIST') {
+      throw error;
+    }
+    return false;
+  }
+}
+
+/**
+ * Removes a lock older than `LOCK_STALE_MS`, which a crashed run left behind.
+ *
+ * @returns true when the lock should be retried at once: it was stale and is gone, or it vanished
+ * while being checked.
+ */
+function clearStaleLock(lockDir: string): boolean {
+  try {
+    const age = Date.now() - fs.statSync(lockDir).mtimeMs;
+    if (age <= LOCK_STALE_MS) {
+      return false;
+    }
+    logger.warn(`Removing stale port-index lock (${age}ms old)`);
+    fs.rmSync(lockDir, { recursive: true, force: true });
+    return true;
+  }
+  catch {
+    return true;
+  }
+}
+
+async function acquireLock(lockDir: string): Promise<void> {
+  const start = Date.now();
+  while (!tryLock(lockDir)) {
+    if (clearStaleLock(lockDir)) {
+      continue;
+    }
+    if (Date.now() - start > LOCK_MAX_WAIT_MS) {
+      throw new Error(`Timed out waiting for port-index lock at ${lockDir}`);
+    }
+    await new Promise(resolve => setTimeout(resolve, LOCK_POLL_MS));
+  }
+}
+
 export async function withRegistryLock<T>(fn: () => Promise<T> | T): Promise<T> {
   ensureInstanceParent();
   const lockDir = path.join(resolveInstanceParent(), LOCK_DIR_NAME);
-  const start = Date.now();
-  while (true) {
-    try {
-      fs.mkdirSync(lockDir);
-      break;
-    }
-    catch (error) {
-      if (errorCode(error) !== 'EEXIST') {
-        throw error;
-      }
-      try {
-        const age = Date.now() - fs.statSync(lockDir).mtimeMs;
-        if (age > LOCK_STALE_MS) {
-          logger.warn(`Removing stale port-index lock (${age}ms old)`);
-          fs.rmSync(lockDir, { recursive: true, force: true });
-          continue;
-        }
-      }
-      catch {
-        continue;
-      }
-      if (Date.now() - start > LOCK_MAX_WAIT_MS) {
-        throw new Error(`Timed out waiting for port-index lock at ${lockDir}`);
-      }
-      await new Promise(resolve => setTimeout(resolve, LOCK_POLL_MS));
-    }
-  }
+  await acquireLock(lockDir);
   try {
     return await fn();
   }

@@ -86,38 +86,47 @@ function rewriteEnvBlock(
   managed: Set<string>,
   replacement: string[] | null,
 ): RewriteResult {
-  const kept: string[] = [];
-  let hadBlock = false;
-  let changed = false;
-  let inBlock = false;
-  let blockEmitted = false;
+  const state: RewriteState = { kept: [], hadBlock: false, changed: false, inBlock: false, blockEmitted: false };
   for (const rawLine of lines) {
     // A CRLF file leaves a trailing \r that would hide the sentinel and duplicate the block.
     const line = rawLine.endsWith('\r') ? rawLine.slice(0, -1) : rawLine;
-    if (line === BLOCK_START) {
-      inBlock = true;
-      hadBlock = true;
-      changed = true;
-      if (replacement && !blockEmitted) {
-        kept.push(...replacement);
-        blockEmitted = true;
-      }
-      continue;
-    }
-    if (line === BLOCK_END) {
-      inBlock = false;
-      continue;
-    }
-    if (inBlock)
-      continue;
-    const key = envLineKey(line);
-    if (key !== undefined && managed.has(key)) {
-      changed = true;
-      continue;
-    }
-    kept.push(line);
+    rewriteLine(state, line, managed, replacement);
   }
+  const { kept, hadBlock, changed } = state;
   return { kept, hadBlock, changed };
+}
+
+interface RewriteState extends RewriteResult {
+  /** Between a START and its END, where every line is dropped. */
+  inBlock: boolean;
+  /** The replacement block was written, so a second START in the file adds nothing. */
+  blockEmitted: boolean;
+}
+
+/** Applies one line of the input to `state`, keeping it, dropping it, or swapping in the replacement block. */
+function rewriteLine(state: RewriteState, line: string, managed: Set<string>, replacement: string[] | null): void {
+  if (line === BLOCK_START) {
+    state.inBlock = true;
+    state.hadBlock = true;
+    state.changed = true;
+    if (replacement && !state.blockEmitted) {
+      state.kept.push(...replacement);
+      state.blockEmitted = true;
+    }
+    return;
+  }
+  if (line === BLOCK_END) {
+    state.inBlock = false;
+    return;
+  }
+  if (state.inBlock)
+    return;
+  const key = envLineKey(line);
+  if (key !== undefined && managed.has(key)) {
+    state.changed = true;
+    return;
+  }
+  state.kept.push(line);
 }
 
 function writeAtomic(file: string, contents: string): void {
