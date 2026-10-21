@@ -7,10 +7,6 @@ import { backendMappingKeys } from './app/backend-strings.generated.js';
 import { premiumComponentKeys } from './app/premium-keys.generated.js';
 import { localRules } from './eslint-local-rules.js';
 
-// vue-i18n require()s these while eslint composes configs; warming them avoids ERR_REQUIRE_ESM_RACE_CONDITION.
-import 'jsonc-eslint-parser';
-import 'yaml-eslint-parser';
-
 const src = path.join('app', 'src');
 
 /*

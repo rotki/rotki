@@ -8,11 +8,6 @@ minimumReleaseAgeExclude:
   - '@rotki/eslint-config'
   - '@rotki/eslint-plugin'
   - plainfp
-  - electron-builder@26.15.3
-  - dmg-builder@26.15.3
-  - app-builder-lib@26.15.3
-  - electron-builder-squirrel-windows@26.15.3
-  - electron-publish@26.15.3
 
 trustPolicy: no-downgrade
 trustPolicyExclude:
