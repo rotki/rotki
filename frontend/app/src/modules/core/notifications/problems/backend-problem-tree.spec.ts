@@ -3,8 +3,10 @@ import {
   type BackendProblem,
   foldReport,
   MAX_ITEMS_PER_PROBLEM,
+  type ProblemItem,
   type ProblemMessage,
   type ProblemReport,
+  withoutItems,
 } from '@/modules/core/notifications/problems/backend-problem-tree';
 
 const EARLY = new Date('2026-09-30T07:00:00Z');
@@ -81,6 +83,48 @@ describe('foldReport', () => {
     expect(problem.items).toHaveLength(MAX_ITEMS_PER_PROBLEM);
     expect(problem.itemTotal).toBe(MAX_ITEMS_PER_PROBLEM + 3);
     expect(problem.items[0].source.value).toBe(`could not read a record-${MAX_ITEMS_PER_PROBLEM + 2}`);
+  });
+
+  describe('withoutItems', () => {
+    const balance = (item: ProblemItem): boolean => item.identity === JSON.stringify(badData('balance').group);
+
+    it('should take the removed item out of its parent\'s counts', () => {
+      const [problem] = withoutItems(fold(report(badData('balance'), EARLY, 3), report(badData('trade'))), balance);
+
+      expect(problem.items.map(item => item.source.fields)).toEqual([{ error: 'Missing key', record: 'trade' }]);
+      expect(problem.itemTotal).toBe(1);
+      expect(problem.repeats).toBe(1);
+    });
+
+    it('should date the parent by its remaining items once its newest item is removed', () => {
+      const [problem] = withoutItems(fold(report(badData('balance'), LATE), report(badData('trade'), EARLY)), balance);
+
+      expect(problem.lastSeen).toEqual(EARLY);
+      expect(problem.firstSeen).toEqual(EARLY);
+    });
+
+    it('should sort the parents again by their remaining items', () => {
+      const MIDDAY = new Date('2026-09-30T08:30:00Z');
+      const problems = fold(
+        report(badData('trade'), EARLY),
+        report(badData('balance'), LATE),
+        report(badData('balance', 'could not read a binance balance', 'binance'), MIDDAY),
+      );
+
+      const subjects = withoutItems(problems, item => item.lastSeen.getTime() === LATE.getTime()).map(problem => problem.subject);
+
+      expect(subjects).toEqual(['binance', 'kucoin']);
+    });
+
+    it('should drop a parent left with no items', () => {
+      expect(withoutItems(fold(report(badData('balance'))), balance)).toEqual([]);
+    });
+
+    it('should leave a parent with nothing to remove as it was', () => {
+      const problems = fold(report(badData('trade')));
+
+      expect(withoutItems(problems, balance)[0]).toBe(problems[0]);
+    });
   });
 
   describe('read state', () => {

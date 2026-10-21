@@ -10,6 +10,7 @@ import { isNft } from '@/modules/assets/nft-utils';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
@@ -38,6 +39,7 @@ export function useLatestPrices(
   const { refreshPrices } = usePriceRefresh();
   const { notifyFailure, showErrorMessage } = useNotifications();
   const { submitTask } = useNativeTask();
+  const { resolveMissingCurrentPrice } = useBackendProblemsStore();
 
   const latestAssets = computed<string[]>(() =>
     get(latestPrices)
@@ -113,8 +115,11 @@ export function useLatestPrices(
       title: t('task_center.group.prices'),
     });
 
-    if (!isErr(outcome))
+    if (!isErr(outcome)) {
+      if (outcome.value)
+        resolveMissingCurrentPrice(data.fromAsset);
       return outcome.value;
+    }
 
     const values = { message: outcome.error.message };
     const title = update ? t('price_management.edit.error.title') : t('price_management.add.error.title');

@@ -151,6 +151,39 @@ function foldProblem(problem: BackendProblem, report: ProblemReport): BackendPro
 }
 
 /**
+ * The tree without the items `matches` picks, for problems the user has since fixed, newest
+ * parent first.
+ *
+ * @remarks
+ * A parent loses the removed items from its counts and is dropped once it has none left to show.
+ * Its last sighting becomes the newest remaining item's, which is exact because the cap keeps the
+ * newest items. Its first sighting is recomputed only when no item is hidden past the cap, since a
+ * hidden one may be older still.
+ */
+export function withoutItems(problems: readonly BackendProblem[], matches: (item: ProblemItem) => boolean): BackendProblem[] {
+  return problems.flatMap((problem) => {
+    const removed = problem.items.filter(matches);
+    if (removed.length === 0)
+      return [problem];
+
+    const items = problem.items.filter(item => !matches(item));
+    if (items.length === 0)
+      return [];
+
+    const itemTotal = problem.itemTotal - removed.length;
+    const hasHiddenItems = itemTotal > items.length;
+    return [{
+      ...problem,
+      firstSeen: hasHiddenItems ? problem.firstSeen : items.map(item => item.firstSeen).reduce(earlier),
+      itemTotal,
+      items,
+      lastSeen: items.map(item => item.lastSeen).reduce(later),
+      repeats: problem.repeats - removed.reduce((sum, item) => sum + item.repeats, 0),
+    }];
+  }).sort(byLastSeen);
+}
+
+/**
  * The tree with one more report folded in, newest parent first.
  *
  * @remarks

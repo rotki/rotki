@@ -4,6 +4,7 @@ import { startPromise } from '@shared/utils';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 
@@ -25,6 +26,7 @@ export function useHistoricPrices(
   const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
   const { resetHistoricalPricesData } = useHistoricPriceCache();
   const { notifyError, notifyFailure, showErrorMessage } = useNotifications();
+  const { resolveMissingPrice } = useBackendProblemsStore();
 
   const fetchPrices = async (payload?: Partial<ManualPricePayload>): Promise<void> => {
     set(loading, true);
@@ -54,12 +56,20 @@ export function useHistoricPrices(
     }
   };
 
+  /**
+   * Saves a manual historic price.
+   *
+   * @remarks
+   * A saved price fixes the backend's missing-price report for that asset and time, so its item
+   * leaves the notification drawer rather than asking for a price the user has just added.
+   */
   const save = async (data: HistoricalPriceFormPayload, update: boolean): Promise<boolean> => {
     try {
-      if (update)
-        return await editHistoricalPrice(data);
+      const saved = update ? await editHistoricalPrice(data) : await addHistoricalPrice(data);
+      if (saved)
+        resolveMissingPrice(data.fromAsset, data.timestamp);
 
-      return await addHistoricalPrice(data);
+      return saved;
     }
     catch (error: unknown) {
       const values = { message: getErrorMessage(error) };
