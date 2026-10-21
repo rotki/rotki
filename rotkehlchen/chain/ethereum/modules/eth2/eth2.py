@@ -577,7 +577,7 @@ class Eth2(EthereumModule):
                 found = source.get_withdrawals(address=address, period=period)
             except HistoryStartsLater as e:
                 if not period.from_value < e.first_block <= period.to_value:
-                    log.error(f'Failed to query ethereum withdrawals for {address} through {source.name}: {e!s}')  # noqa: E501
+                    log.error('Failed to query ethereum withdrawals for %s through %s: %s', address, source.name, e)  # noqa: E501
                     continue
                 # noted before asking, since the source records its progress as it goes. A
                 # history starting by Shapella misses no withdrawal.
@@ -589,7 +589,7 @@ class Eth2(EthereumModule):
                         period=TimestampOrBlockRange('blocks', e.first_block, period.to_value),
                     )
                 except (DeserializationError, RemoteError) as later:
-                    log.error(f'Failed to query ethereum withdrawals for {address} through {source.name} due to {later!s}')  # noqa: E501
+                    log.error('Failed to query ethereum withdrawals for %s through %s due to %s', address, source.name, later)  # noqa: E501
                     continue
             except (DeserializationError, RemoteError) as e:
                 log.error(
@@ -648,7 +648,7 @@ class Eth2(EthereumModule):
         try:
             period: TimestampOrBlockRange | None = self.ethereum.maybe_timestamp_to_block_range(TimestampOrBlockRange('timestamps', from_ts, to_ts))  # noqa: E501
         except RemoteError as e:  # blockscout, which takes no range, can still answer
-            log.warning(f'Could not turn the withdrawals range of {address} into blocks: {e!s}')
+            log.warning('Could not turn the withdrawals range of %s into blocks: %s', address, e)
             period = None
         uncovered_before: list[int] = []
         with self.database.conn.read_ctx() as cursor:
@@ -992,7 +992,7 @@ class Eth2(EthereumModule):
             try:
                 period = self.ethereum.maybe_timestamp_to_block_range(TimestampOrBlockRange('timestamps', from_ts, to_ts))  # noqa: E501
             except RemoteError as e:
-                log.warning(f'Could not turn the produced blocks range of {address} into blocks: {e!s}')  # noqa: E501
+                log.warning('Could not turn the produced blocks range of %s into blocks: %s', address, e)  # noqa: E501
                 blocks = None
             else:
                 blocks = self._fetch_validated_blocks_from_external_sources(address=address, period=period)  # noqa: E501
@@ -1053,7 +1053,7 @@ class Eth2(EthereumModule):
             nest = self._nest()
             bound_block, bound_ts = nest.finalized_head()
         except RemoteError as e:
-            log.warning(f'Not asking the nuthatch nest for produced blocks: {e!s}')
+            log.warning('Not asking the nuthatch nest for produced blocks: %s', e)
             return
 
         self._repair_nest_cursors()
@@ -1070,7 +1070,7 @@ class Eth2(EthereumModule):
         try:  # no validator proposed before the first one tracked was active
             first_block = self.ethereum.get_blocknumber_by_time(ts=min(entry[1] for entry in validators))  # noqa: E501
         except RemoteError as e:
-            log.warning(f'Not asking the nuthatch nest for produced blocks: {e!s}')
+            log.warning('Not asking the nuthatch nest for produced blocks: %s', e)
             return
 
         with self.database.conn.read_ctx() as cursor:
@@ -1135,13 +1135,13 @@ class Eth2(EthereumModule):
             nest = self._nest()
             head, _ = nest.finalized_head()
         except RemoteError as e:
-            log.warning(f'Not asking the nuthatch nest for proven produced blocks: {e!s}')
+            log.warning('Not asking the nuthatch nest for proven produced blocks: %s', e)
             with self.database.conn.read_ctx() as cursor:
                 return {row[0] for row in cursor.execute('SELECT validator_index FROM eth2_validators WHERE validator_index IS NOT NULL')}, set()  # noqa: E501
         try:  # validators found since the last sync, or added while the nest was down
             nest.sync_watched()
         except RemoteError as e:
-            log.warning(f'Could not tell the nuthatch nest which validators to watch: {e!s}')
+            log.warning('Could not tell the nuthatch nest which validators to watch: %s', e)
 
         with self.database.conn.read_ctx() as cursor:
             validators = cursor.execute(
@@ -1170,7 +1170,7 @@ class Eth2(EthereumModule):
                 first_ts = covered[3] if joins and covered is not None else nest.block_timestamp(answer.from_block)  # noqa: E501
                 self._store_proven_blocks(index, answer.rows, tracked_accounts, blocks_without_mev)
             except RemoteError as e:
-                log.warning(f'Could not ask the nuthatch nest for the blocks of validator {index}: {e!s}')  # noqa: E501
+                log.warning('Could not ask the nuthatch nest for the blocks of validator %s: %s', index, e)  # noqa: E501
                 unanswered.add(index)
                 continue
 
@@ -1243,7 +1243,7 @@ class Eth2(EthereumModule):
                 answer = self._ask_nest_for_validator(nest, index, from_block, to_block)
                 lacking = self._store_proven_blocks(index, answer.rows, tracked_accounts, blocks_without_mev)  # noqa: E501
             except RemoteError as e:
-                log.warning(f'Could not ask the nuthatch nest again for the blocks of validator {index}: {e!s}')  # noqa: E501
+                log.warning('Could not ask the nuthatch nest again for the blocks of validator %s: %s', index, e)  # noqa: E501
                 unanswered.add(index)
                 ranges.append((index, from_block, to_block, served_at))
                 continue
@@ -1351,7 +1351,7 @@ class Eth2(EthereumModule):
                         tracked_accounts=tracked_accounts,
                     )
                 except DeserializationError as e:
-                    log.error(f'Could not read the MEV reward of block {block_number}: {e!s}')
+                    log.error('Could not read the MEV reward of block %s: %s', block_number, e)
                     mev_event = None
                 if mev_event is None:  # unrecorded, disputed or unread: retried, never zero
                     blocks_without_mev.add(block_number)
@@ -1399,7 +1399,7 @@ class Eth2(EthereumModule):
                 ))
             ]
             if len(drop := [identifier for identifier, customized in disagree if not customized]) != len(disagree):  # noqa: E501
-                log.warning(f'Block {block_number} has edited events that disagree with the proof that validator {validator_index} proposed it. They are kept as edited.')  # noqa: E501
+                log.warning('Block %s has edited events that disagree with the proof that validator %s proposed it. They are kept as edited.', block_number, validator_index)  # noqa: E501
             write_cursor.executemany(
                 'DELETE FROM history_events WHERE identifier=?',
                 [(identifier,) for identifier in drop],
@@ -1475,7 +1475,7 @@ class Eth2(EthereumModule):
             try:
                 block_number, timestamp, reward = self._deserialize_validated_block(entry)
             except (DeserializationError, TypeError, ValueError) as e:
-                log.error(f'Failed to deserialize validated block entry {entry} due to {e!s}')
+                log.error('Failed to deserialize validated block entry %s due to %s', entry, e)
                 incomplete.update(index for index, _, _ in validators)  # whose block is unknown
                 continue
 
@@ -1661,11 +1661,11 @@ class Eth2(EthereumModule):
             return from_block, nest.get_validated_blocks(address=address, period=TimestampOrBlockRange('blocks', from_block, to_block))  # noqa: E501
         except HistoryStartsLater as e:
             if not from_block < e.first_block <= to_block:
-                log.warning(f'Could not ask the nuthatch nest for the produced blocks of {address}: {e!s}')  # noqa: E501
+                log.warning('Could not ask the nuthatch nest for the produced blocks of %s: %s', address, e)  # noqa: E501
                 return None
             return self._ask_nest(nest, address, e.first_block, to_block)
         except RemoteError as e:
-            log.warning(f'Could not ask the nuthatch nest for the produced blocks of {address}: {e!s}')  # noqa: E501
+            log.warning('Could not ask the nuthatch nest for the produced blocks of %s: %s', address, e)  # noqa: E501
             return None
 
     def _forget_nest_progress_for_new_validators(self, validators: set[int]) -> None:
