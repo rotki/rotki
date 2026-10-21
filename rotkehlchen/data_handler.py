@@ -41,8 +41,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 BUFFERSIZE = 64 * 1024
-# zstd 6 is ~26x faster and ~32% smaller than the old zlib 9. 9 is ~55% slower for ~5 MB
-# less, and 12-15 gain nothing over 9
+# 6 trades a little size for speed: 9 is ~55% slower for only ~5 MB less on a large DB,
+# and levels 12-15 compress no better than 9
 BACKUP_ZSTD_LEVEL: Final = 6
 
 

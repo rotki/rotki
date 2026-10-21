@@ -27,6 +27,7 @@ from rotkehlchen.premium.backup_container import (
     COMPRESSION_ZSTD,
     CONTAINER_MAGIC,
     USER_DB_ENTRY,
+    Compression,
     build_container,
     decompress_entry,
     read_container,
@@ -46,12 +47,12 @@ FROZEN_SALT, FROZEN_NONCE = bytes(range(32)), bytes(range(100, 112))
 FROZEN_USER_DB = b''.join(hashlib.sha256(i.to_bytes(4, 'big')).digest() for i in range(2100)) + b'rotki' * 20000  # noqa: E501
 
 
-def _frozen_backup(compression: str = COMPRESSION_ZSTD) -> bytes:
+def _frozen_backup(compression: Compression = COMPRESSION_ZSTD) -> bytes:
     name = 'premium_backup_v1.bin' if compression == COMPRESSION_ZLIB else 'premium_backup_v1_zstd.bin'  # noqa: E501
     return (Path(__file__).resolve().parent.parent / 'data' / name).read_bytes()
 
 
-def _compress(data: bytes, compression: str) -> bytes:
+def _compress(data: bytes, compression: Compression) -> bytes:
     return zstd.compress(data) if compression == COMPRESSION_ZSTD else zlib.compress(data)
 
 
@@ -102,7 +103,7 @@ def test_backup_payload_segments_are_joined() -> None:
 
 
 @pytest.mark.parametrize('compression', [COMPRESSION_ZSTD, COMPRESSION_ZLIB])
-def test_frozen_backup_decrypts(compression: str) -> None:
+def test_frozen_backup_decrypts(compression: Compression) -> None:
     """A committed backup, so a change to the format, the key derivation or the
     decompression fails here. The zlib one proves that containers written with zlib can
     still be read."""
@@ -116,7 +117,7 @@ def test_frozen_backup_decrypts(compression: str) -> None:
 
 
 @pytest.mark.parametrize('compression', [COMPRESSION_ZSTD, COMPRESSION_ZLIB])
-def test_frozen_backup_is_what_the_writer_produces(compression: str) -> None:
+def test_frozen_backup_is_what_the_writer_produces(compression: Compression) -> None:
     """Reuses the stored compressed DB, since compressor output can change between
     library versions while staying readable. The frozen backups were made by
     DataHandler.compress_and_encrypt_db, and for zlib by its pre-zstd streaming zlib level 9
@@ -234,7 +235,7 @@ def test_unsupported_header_is_rejected_before_derivation(index: int, value: int
 
 
 @pytest.mark.parametrize('compression', [COMPRESSION_ZSTD, COMPRESSION_ZLIB])
-def test_container_round_trip(compression: str) -> None:
+def test_container_round_trip(compression: Compression) -> None:
     entries = read_container(b''.join(build_container(compressed := _compress(b'db' * 100, compression), compression)))  # noqa: E501
     assert list(entries) == [USER_DB_ENTRY]
     assert entries[USER_DB_ENTRY].compression == compression
@@ -323,7 +324,7 @@ def test_bad_entry_data_is_rejected(compression: str, data: bytes) -> None:
 
 
 @pytest.mark.parametrize('compression', [COMPRESSION_ZSTD, COMPRESSION_ZLIB])
-def test_decompression_bomb_is_not_expanded(compression: str) -> None:
+def test_decompression_bomb_is_not_expanded(compression: Compression) -> None:
     """The output must be bounded while decompressing, not only checked afterwards"""
     data = _compress(bytes(64 * 1024 ** 2), compression)
     entry = read_container(_container({'container_version': 1, 'entries': [_entry(USER_DB_ENTRY, data, compression=compression)]}, data))[USER_DB_ENTRY]  # noqa: E501
@@ -338,7 +339,7 @@ def test_decompression_bomb_is_not_expanded(compression: str) -> None:
 
 
 @pytest.mark.parametrize('compression', [COMPRESSION_ZSTD, COMPRESSION_ZLIB])
-def test_entry_at_the_size_limit_is_accepted(compression: str) -> None:
+def test_entry_at_the_size_limit_is_accepted(compression: Compression) -> None:
     data = _compress(bytes(100), compression)
     entry = read_container(_container({'container_version': 1, 'entries': [_entry(USER_DB_ENTRY, data, compression=compression)]}, data))[USER_DB_ENTRY]  # noqa: E501
     with patch('rotkehlchen.premium.backup_container.MAX_ENTRY_SIZE', 100):

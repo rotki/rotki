@@ -24,7 +24,7 @@ import logging
 import struct
 import zlib
 from compression import zstd
-from typing import TYPE_CHECKING, Final, NamedTuple
+from typing import TYPE_CHECKING, Final, Literal, NamedTuple, TypeIs, assert_never, get_args
 
 from rotkehlchen.errors.misc import RemoteBackupError, UnsupportedRemoteBackup
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -38,9 +38,9 @@ log = RotkehlchenLogsAdapter(logger)
 CONTAINER_MAGIC: Final = b'RKC1'
 CONTAINER_VERSION: Final = 1
 USER_DB_ENTRY: Final = 'user_db'
+Compression = Literal['zstd', 'zlib']
 COMPRESSION_ZSTD: Final = 'zstd'
 COMPRESSION_ZLIB: Final = 'zlib'  # only read, for containers written with zlib
-_SUPPORTED_COMPRESSIONS: Final = frozenset((COMPRESSION_ZSTD, COMPRESSION_ZLIB))
 _MANIFEST_LENGTH: Final = struct.Struct('>I')
 _PREAMBLE_SIZE: Final = len(CONTAINER_MAGIC) + _MANIFEST_LENGTH.size
 # Limits against decompression bombs and oversized manifests
@@ -53,11 +53,11 @@ MALFORMED_BACKUP_MSG: Final = 'The backup on the rotki server is malformed and c
 
 class ContainerEntry(NamedTuple):
     name: str
-    compression: str
+    compression: Compression
     data: memoryview  # as stored, so still compressed
 
 
-def build_container(user_db: Buffer, compression: str = COMPRESSION_ZSTD) -> list[Buffer]:
+def build_container(user_db: Buffer, compression: Compression = COMPRESSION_ZSTD) -> list[Buffer]:
     """Returns the container for the given compressed user DB, as consecutive segments
     so that the compressed DB is not copied: the magic, manifest length and manifest as one
     segment, then the user DB itself. The segments are never joined, encrypt_backup reads
@@ -75,6 +75,10 @@ def build_container(user_db: Buffer, compression: str = COMPRESSION_ZSTD) -> lis
         separators=(',', ':'),
     ).encode()
     return [CONTAINER_MAGIC + _MANIFEST_LENGTH.pack(len(manifest)) + manifest, user_db]
+
+
+def _is_supported_compression(compression: str) -> TypeIs[Compression]:
+    return compression in get_args(Compression)
 
 
 def read_container(payload: bytes | bytearray) -> dict[str, ContainerEntry]:
@@ -128,7 +132,7 @@ def read_container(payload: bytes | bytearray) -> dict[str, ContainerEntry]:
             log.warning('Skipping unknown optional entry of the remote backup', name=name)
             continue
 
-        if compression not in _SUPPORTED_COMPRESSIONS:
+        if not _is_supported_compression(compression):
             raise UnsupportedRemoteBackup
 
         known_entries[name] = ContainerEntry(name=name, compression=compression, data=data)
@@ -158,13 +162,16 @@ def decompress_entry(entry: ContainerEntry) -> bytes:
 
         return data
 
-    decompressor = zlib.decompressobj()
-    try:
-        data = decompressor.decompress(entry.data, MAX_ENTRY_SIZE + 1)
-    except zlib.error as e:
-        raise RemoteBackupError(MALFORMED_BACKUP_MSG) from e
+    if entry.compression == COMPRESSION_ZLIB:
+        decompressor = zlib.decompressobj()
+        try:
+            data = decompressor.decompress(entry.data, MAX_ENTRY_SIZE + 1)
+        except zlib.error as e:
+            raise RemoteBackupError(MALFORMED_BACKUP_MSG) from e
 
-    if len(data) > MAX_ENTRY_SIZE or not decompressor.eof or len(decompressor.unused_data) != 0:
-        raise RemoteBackupError(MALFORMED_BACKUP_MSG)
+        if len(data) > MAX_ENTRY_SIZE or not decompressor.eof or len(decompressor.unused_data) != 0:  # noqa: E501
+            raise RemoteBackupError(MALFORMED_BACKUP_MSG)
 
-    return data
+        return data
+
+    assert_never(entry.compression)  # raises at runtime too, for an entry not from read_container
