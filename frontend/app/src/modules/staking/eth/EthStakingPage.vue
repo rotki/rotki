@@ -15,14 +15,13 @@ import { useEthStakingPerformance } from './use-eth-staking-performance';
 import { useEthStakingRefresh } from './use-eth-staking-refresh';
 import { useEthValidatorManagement } from './use-eth-validator-management';
 
-const { allowed, enabled, module } = useEthStakingAccess();
+const { allowed, available, enabled, module } = useEthStakingAccess();
 
-// API key check (only when module is allowed and enabled)
 const { getApiKey } = useExternalApiKeys();
 const beaconRpcEndpoint = useSetting('beaconRpcEndpoint');
 
 const missingApiKeyService = computed<'beaconchain' | 'consensusRpc' | undefined>(() => {
-  if (!get(allowed) || !get(enabled)) {
+  if (!get(available)) {
     return undefined;
   }
 
@@ -74,7 +73,7 @@ const { refresh, refreshing: stakingRefreshing } = useEthStakingRefresh({
 const { chainName, refreshPage, refreshing, syncHistory, syncingHistory } = useEthStakingPageRefresh(refresh, stakingRefreshing);
 
 onBeforeMount(async () => {
-  if (get(enabled))
+  if (get(available))
     await refresh(false);
 
   await fetchValidatorsWithFilter();
@@ -87,7 +86,7 @@ onBeforeMount(async () => {
       <StakingLocationTitle location="eth2" />
     </template>
     <template
-      v-if="allowed && enabled"
+      v-if="available"
       #buttons
     >
       <EthStakingHeaderActions
