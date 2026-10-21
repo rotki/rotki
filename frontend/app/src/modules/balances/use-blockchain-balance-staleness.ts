@@ -1,5 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
+import { toChainKey } from '@/modules/core/common/chains';
 
 interface UseBlockchainBalanceStalenessReturn {
   lastRefreshed: Ref<string>;
@@ -19,7 +20,7 @@ export function useBlockchainBalanceStaleness(chain?: MaybeRefOrGetter<string | 
     const chainValue = toValue(chain);
 
     if (chainValue)
-      return timestamps[chainValue];
+      return timestamps[toChainKey(chainValue)];
 
     const values = Object.values(timestamps);
     if (values.length === 0)

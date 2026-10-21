@@ -13,6 +13,7 @@ import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-s
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
+import { byChainKey } from '@/modules/core/common/chains';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Cancelled, isActionable, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
@@ -45,11 +46,12 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const refreshState = useBalanceRefreshState();
 
   const processBalanceResult = (blockchain: string, parsedBalances: BlockchainBalances): void => {
-    if (isStale(blockchain, parsedBalances.lastRefreshTs?.[blockchain]))
+    const lastRefreshTs = parsedBalances.lastRefreshTs ? byChainKey(parsedBalances.lastRefreshTs) : undefined;
+    if (isStale(blockchain, lastRefreshTs?.[blockchain]))
       return;
 
-    if (parsedBalances.lastRefreshTs)
-      updateTimestamps(parsedBalances.lastRefreshTs);
+    if (lastRefreshTs)
+      updateTimestamps(lastRefreshTs);
 
     const perAccount = parsedBalances.perAccount[blockchain];
 

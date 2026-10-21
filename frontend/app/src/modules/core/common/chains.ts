@@ -29,6 +29,18 @@ export function toChainKey(chain: string): string {
   return chain.replace(/([a-z\d])([A-Z])/gu, '$1_$2').toLowerCase();
 }
 
+/**
+ * Re-keys a chain-keyed record by {@link toChainKey}, so it can be read with a chain id.
+ *
+ * @remarks
+ * A record that came through the camelCase response transformer has `arbitrumOne` where the chain
+ * id is `arbitrum_one`, while single-word chains pass through unchanged, so a direct lookup misses
+ * only the multi-word chains.
+ */
+export function byChainKey<T>(record: Record<string, T>): Record<string, T> {
+  return Object.fromEntries(Object.entries(record).map(([chain, value]) => [toChainKey(chain), value]));
+}
+
 interface EvmTokenData {
   identifier: EvmTokenKind;
   label: string;
