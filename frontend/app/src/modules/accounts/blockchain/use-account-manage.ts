@@ -286,6 +286,30 @@ export function useAccountManage(): UseAccountManageReturn {
     return true;
   }
 
+  /** An edit moves only the validator's ownership; an add needs the accounts fetched again. */
+  function refreshSavedValidator(payload: Eth2Validator, isEdit: boolean): void {
+    if (!isEdit) {
+      startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));
+      return;
+    }
+    assert(payload.publicKey);
+    assert(payload.ownershipPercentage);
+    updateEthStakingOwnership(payload.publicKey, bigNumberify(payload.ownershipPercentage));
+    startPromise(fetchAccounts({ blockchain: Blockchain.ETH2 }));
+  }
+
+  /** Field errors go to the form; a message goes above it, with a hint when credentials are missing. */
+  function showValidatorRefusal(message: ValidationErrors | string): void {
+    if (typeof message !== 'string') {
+      set(modelErrorMessages, message);
+      return;
+    }
+    set(saveErrorIsPremium, message.includes('limit exceeded'));
+    set(saveError, message.includes('failed due to missing API key')
+      ? t('account_form.error.validator_needs_credentials')
+      : message);
+  }
+
   async function saveValidator(state: StakingValidatorManage): Promise<boolean> {
     set(pending, true);
     set(saveError, '');
@@ -296,30 +320,13 @@ export function useAccountManage(): UseAccountManageReturn {
       const isEdit = state.mode === 'edit';
       const result = isEdit ? await editEth2Validator(payload) : await addEth2Validator(payload);
 
-      if (result.success) {
-        if (isEdit) {
-          assert(payload.publicKey);
-          assert(payload.ownershipPercentage);
-          updateEthStakingOwnership(payload.publicKey, bigNumberify(payload.ownershipPercentage));
-          startPromise(fetchAccounts({ blockchain: Blockchain.ETH2 }));
-        }
-        else {
-          startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));
-        }
-        return true;
+      if (!result.success) {
+        showValidatorRefusal(result.message);
+        return false;
       }
 
-      if (typeof result.message === 'string') {
-        set(saveErrorIsPremium, result.message.includes('limit exceeded'));
-        const friendly = result.message.includes('failed due to missing API key')
-          ? t('account_form.error.validator_needs_credentials')
-          : result.message;
-        set(saveError, friendly);
-      }
-      else {
-        set(modelErrorMessages, result.message);
-      }
-      return false;
+      refreshSavedValidator(payload, isEdit);
+      return true;
     }
     catch (error: unknown) {
       logger.error(error);
