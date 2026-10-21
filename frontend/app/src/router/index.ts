@@ -46,7 +46,7 @@ export const router = createRouter({
 
       return { el: to.hash };
     }
-    else if (savedPosition && !(savedPosition.left === 0 && savedPosition.left === 0)) {
+    else if (savedPosition && !(savedPosition.left === 0 && savedPosition.top === 0)) {
       document.body.scrollTo(savedPosition.left, savedPosition.top);
       return savedPosition;
     }
