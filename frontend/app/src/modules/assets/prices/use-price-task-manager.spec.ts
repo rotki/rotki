@@ -11,7 +11,7 @@ import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { ActivityKind, ActivityPart, ActivityStatus } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 const { notifyError, notifyInfo, runTaskMock } = vi.hoisted(() => ({ notifyError: vi.fn(), notifyInfo: vi.fn(), runTaskMock: vi.fn() }));
@@ -131,6 +131,28 @@ describe('usePriceTaskManager', () => {
     expect(get(exchangeRates)).toMatchObject({
       EUR: bigNumberify(1.5),
     });
+  });
+
+  it('should fail the exchange rate activity naming the currency when the rate is zero, without a toast', async () => {
+    runTaskMock.mockResolvedValue(ok({ EUR: 0 }));
+
+    await priceTaskManager.fetchExchangeRates('EUR');
+    await flushPromises();
+
+    const activity = get(useTaskOrchestrator().useActivity(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES));
+    expect(activity?.status).toBe(ActivityStatus.FAILED);
+    expect(activity?.reason).toBe('missing_exchange_rate.title (EUR)');
+    expect(notifyError).not.toHaveBeenCalled();
+  });
+
+  it('should complete the exchange rate activity when the rate is found', async () => {
+    runTaskMock.mockResolvedValue(ok({ EUR: 1.5 }));
+
+    await priceTaskManager.fetchExchangeRates('EUR');
+    await flushPromises();
+
+    const activity = get(useTaskOrchestrator().useActivity(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES));
+    expect(activity?.status).toBe(ActivityStatus.COMPLETE);
   });
 
   describe('refreshLatestPrices', () => {

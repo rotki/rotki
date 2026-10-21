@@ -4997,7 +4997,6 @@
     }
   },
   "missing_exchange_rate": {
-    "message": "This session of rotki may have errors if you use this currency.",
     "title": "Missing exchange rate"
   },
   "missing_prices_dialog": {

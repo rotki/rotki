@@ -4678,7 +4678,6 @@
     }
   },
   "missing_exchange_rate": {
-    "message": "如果使用此货币，本次 rotki 会话可能会出错。",
     "title": "缺少汇率"
   },
   "missing_prices_dialog": {
