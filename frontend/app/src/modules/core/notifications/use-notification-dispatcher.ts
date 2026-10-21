@@ -7,6 +7,7 @@ import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { createBeaconchainRateLimitStrategy } from './strategies/beaconchain-rate-limit';
 import { createGroupUpdateStrategy } from './strategies/group-update';
 import { useNotificationCooldown } from './use-notification-cooldown';
+import { notificationMuteKey, useNotificationMute } from './use-notification-mute';
 import { useSilentNotifications } from './use-silent-notifications';
 
 interface UseNotificationDispatcherReturn {
@@ -18,6 +19,7 @@ export function useNotificationDispatcher(): UseNotificationDispatcherReturn {
   const store = useNotificationsStore();
   const cooldown = useNotificationCooldown();
   const { silent } = useSilentNotifications();
+  const { isMuted } = useNotificationMute();
 
   const strategies: NotificationStrategy[] = [
     createBeaconchainRateLimitStrategy(t),
@@ -39,7 +41,8 @@ export function useNotificationDispatcher(): UseNotificationDispatcherReturn {
       return;
     }
 
-    const incoming: Notification = get(silent)
+    const quiet = get(silent) || isMuted(notificationMuteKey(payload));
+    const incoming: Notification = quiet
       ? { ...payload, display: false }
       : payload;
 

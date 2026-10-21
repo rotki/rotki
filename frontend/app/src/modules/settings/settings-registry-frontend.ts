@@ -119,6 +119,7 @@ export const frontendRegistry = {
   lastPasswordConfirmed: frontend('lastPasswordConfirmed', { userFacing: false }),
   lightTheme: frontend('lightTheme'),
   minimumDigitToBeAbbreviated: frontend('minimumDigitToBeAbbreviated', { anchor: SettingsHighlightIds.ABBREVIATION }),
+  mutedNotificationGroups: frontend('mutedNotificationGroups', { userFacing: false }),
   newlyDetectedTokensMaxCount: frontend('newlyDetectedTokensMaxCount', {
     anchor: SettingsHighlightIds.NEWLY_DETECTED_TOKENS_MAX_COUNT,
     search: { category: SettingsCategoryIds.NEWLY_DETECTED_TOKENS, titleKey: msg.$t('frontend_settings.newly_detected_tokens.max_count.title') },

@@ -1,4 +1,4 @@
-import { type NotificationData, NotificationKind, Severity } from '@rotki/common';
+import { type NotificationData, NotificationGroup, NotificationKind, Severity } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises } from '@vue/test-utils';
 import { setActivePinia, storeToRefs } from 'pinia';
@@ -7,16 +7,25 @@ import { createApp, effectScope, nextTick, type Ref, ref } from 'vue';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useNotificationSidebar } from './use-notification-sidebar';
 
 interface MockedDependencies {
   silent?: Ref<boolean>;
 }
 
-const { deps, toggleSilent } = vi.hoisted(() => {
+const { deps, toggleSilent, updateFrontendSetting } = vi.hoisted(() => {
   const deps: MockedDependencies = {};
-  return { deps, toggleSilent: vi.fn(async () => Promise.resolve()) };
+  return {
+    deps,
+    toggleSilent: vi.fn(async () => Promise.resolve()),
+    updateFrontendSetting: vi.fn<(update: Record<string, unknown>) => Promise<void>>(async () => Promise.resolve()),
+  };
 });
+
+vi.mock('@/modules/settings/use-frontend-settings-writer', () => ({
+  useFrontendSettingsWriter: (): Record<string, unknown> => ({ updateFrontendSetting }),
+}));
 
 let silent: Ref<boolean>;
 
@@ -141,6 +150,35 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
       const { modelProblemsOpen } = sidebar();
 
       expect(get(modelProblemsOpen)).toBe(true);
+    });
+  });
+
+  describe('muted groups', () => {
+    it('should move a muted problem and a muted announcement group into the muted section', () => {
+      useSettingsRepo().updateFrontend({ mutedNotificationGroups: ['problem:local_db:', 'group:NEW_DETECTED_TOKENS'] });
+      fileProblem();
+      seed([
+        notification({ group: NotificationGroup.NEW_DETECTED_TOKENS, id: 1, kind: NotificationKind.ANNOUNCEMENT }),
+        notification({ id: 2, kind: NotificationKind.ANNOUNCEMENT }),
+      ]);
+
+      const { historyDays, modelMutedOpen, muted, problems } = sidebar();
+
+      expect(get(problems)).toEqual([]);
+      expect(get(historyDays).flatMap(day => day.notifications.map(item => item.id))).toEqual([2]);
+      expect(get(muted).problems).toHaveLength(1);
+      expect(get(muted).notifications.map(item => item.id)).toEqual([1]);
+      expect(get(modelMutedOpen)).toBe(false);
+    });
+
+    it('should write the mute key of the problem it mutes', async () => {
+      fileProblem();
+      const { muteProblem, problems } = sidebar();
+
+      muteProblem(get(problems)[0]);
+      await flushPromises();
+
+      expect(updateFrontendSetting).toHaveBeenCalledWith({ mutedNotificationGroups: ['problem:local_db:'] });
     });
   });
 

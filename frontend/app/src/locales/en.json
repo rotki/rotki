@@ -5366,6 +5366,8 @@
       "title": "You're all caught up"
     },
     "message_overflow": "The total amount of notifications received has exceeded the limit of 200. Older notifications have been removed.",
+    "mute": "Mute",
+    "muted": "Muted ({count})",
     "problems": "Problems ({count})",
     "show_less": "Show less",
     "show_more": "Show more",
@@ -5374,6 +5376,7 @@
       "on": "Popups silenced. Click to allow them again"
     },
     "title": "Notifications",
+    "unmute": "Unmute",
     "view_calendar": "View Calendar"
   },
   "oracle_cache_management": {

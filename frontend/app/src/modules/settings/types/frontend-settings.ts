@@ -238,6 +238,11 @@ export const FrontendSettings = z.object({
   lastPasswordConfirmed: LastPasswordConfirmed.default(0),
   lightTheme: ThemeColors.default(LIGHT_COLORS),
   minimumDigitToBeAbbreviated: z.number().default(MINIMUM_DIGIT_TO_BE_ABBREVIATED),
+  /**
+   * Notification groups the user muted, as mute keys (`problem:<family>:<location>`,
+   * `group:<group>`). Empty for a settings blob saved before muting existed.
+   */
+  mutedNotificationGroups: z.array(z.string()).default([]),
   newlyDetectedTokensMaxCount: NewlyDetectedTokensMaxCount.default(
     Defaults.DEFAULT_NEWLY_DETECTED_TOKENS_MAX_COUNT,
   ),

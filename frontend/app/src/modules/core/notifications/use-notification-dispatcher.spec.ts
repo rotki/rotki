@@ -256,6 +256,19 @@ describe('useNotificationDispatcher', () => {
       expect(get(data)[0]).toMatchObject({ display: false, groupCount: 2, message: 'second' });
     });
 
+    it('should keep a muted announcement group out of the popup queue past any cooldown, but in the notification area', () => {
+      vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS * 2);
+      useSettingsRepo().updateFrontend({ mutedNotificationGroups: [`group:${NotificationGroup.NEW_DETECTED_TOKENS}`] });
+      const { notify } = useNotificationDispatcher();
+      const { data, queue } = storeToRefs(useNotificationsStore());
+
+      notify({ group: NotificationGroup.NEW_DETECTED_TOKENS, kind: NotificationKind.ANNOUNCEMENT, message: 'muted', severity: Severity.INFO, title: 'title' });
+      notify({ kind: NotificationKind.ANNOUNCEMENT, message: 'loud', severity: Severity.INFO, title: 'title' });
+
+      expect(get(queue).map(item => item.message)).toEqual(['loud']);
+      expect(get(data).map(item => item.message).sort()).toEqual(['loud', 'muted']);
+    });
+
     it('should let notifications interrupt again once it is turned off', () => {
       silence();
       const { notify } = useNotificationDispatcher();

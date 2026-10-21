@@ -3,13 +3,19 @@ import { type NotificationData, Severity } from '@rotki/common';
 import { useNotificationCard } from '@/modules/core/notifications/use-notification-card';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
-const { notification, popup = false } = defineProps<{
+const { notification, popup = false, mutable = false, muted = false } = defineProps<{
   notification: NotificationData;
   popup?: boolean;
+  /** Whether the card offers to mute its group; only the drawer passes it, never a popup. */
+  mutable?: boolean;
+  /** Whether its group is muted, which offers to unmute instead. */
+  muted?: boolean;
 }>();
 
 const emit = defineEmits<{
   dismiss: [id: number];
+  mute: [];
+  unmute: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -140,6 +146,22 @@ const {
         <template #append>
           <RuiIcon
             :name="getIcon(action)"
+            size="16"
+          />
+        </template>
+      </RuiButton>
+      <RuiButton
+        v-if="mutable || muted"
+        color="primary"
+        variant="text"
+        size="sm"
+        data-testid="notification-mute"
+        @click="muted ? emit('unmute') : emit('mute')"
+      >
+        {{ muted ? t('notification_sidebar.unmute') : t('notification_sidebar.mute') }}
+        <template #append>
+          <RuiIcon
+            :name="muted ? 'lu-bell-ring' : 'lu-bell-off'"
             size="16"
           />
         </template>
