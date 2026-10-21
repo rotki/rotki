@@ -70,12 +70,7 @@ const backNavigation = createBackNavigationTracker();
  * Take the topmost layer down and swallow the gesture instead. Aborting a pop makes
  * vue-router restore the history position, so the URL stays where it was.
  */
-router.beforeEach(() => {
-  if (backNavigation.isBack() && dismissTop())
-    return false;
-
-  return true;
-});
+router.beforeEach(() => !(backNavigation.isBack() && dismissTop()));
 
 router.afterEach((_to, _from, failure) => {
   backNavigation.settle(Boolean(failure));

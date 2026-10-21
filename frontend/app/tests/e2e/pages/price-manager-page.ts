@@ -62,23 +62,71 @@ async function cancelDialog(page: Page): Promise<void> {
   await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
 }
 
-export class LatestPricePage {
-  constructor(private readonly page: Page) {}
-
-  async visit(): Promise<void> {
-    await RotkiApp.navigateTo(this.page, 'price-manager', 'price-manager-latest');
-  }
-
-  private table() {
-    return this.page.getByTestId('latest-price-table');
-  }
+/** The table and its add/edit dialog, which the latest and historic tabs share under their own test-id prefix. */
+abstract class PriceTablePage {
+  constructor(
+    protected readonly page: Page,
+    private readonly prefix: 'latest-price' | 'historic-price',
+  ) {}
 
   private rows() {
-    return this.table().locator('tbody tr[data-id="row"]');
+    return this.page.getByTestId(`${this.prefix}-table`).locator('tbody tr[data-id="row"]');
   }
 
   private rowMatching(value: string) {
     return this.rows().filter({ hasText: value });
+  }
+
+  async editPrice(currentValue: string, newValue: string): Promise<void> {
+    await this.rowMatching(currentValue).first().locator('[data-testid=row-edit]').click();
+    const valueInput = this.page.getByTestId(`${this.prefix}-value`).locator('input');
+    await valueInput.fill(newValue);
+    await confirmDialog(this.page);
+  }
+
+  async deletePrice(value: string): Promise<void> {
+    const row = this.rowMatching(value).first();
+    await row.locator('[data-testid=row-delete]').click();
+    await confirmDelete(this.page);
+    await expect(this.rowMatching(value)).toHaveCount(0);
+  }
+
+  async expectRowWithValue(value: string): Promise<void> {
+    await expect(this.rowMatching(value).first()).toBeVisible();
+  }
+
+  async expectVisibleRowCount(count: number): Promise<void> {
+    await expect(this.rows()).toHaveCount(count);
+  }
+
+  async openAddDialog(): Promise<void> {
+    await this.page.getByTestId(`${this.prefix}-add`).click();
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible' });
+  }
+
+  async submitDialog(): Promise<void> {
+    await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
+  }
+
+  async cancelDialog(): Promise<void> {
+    await cancelDialog(this.page);
+  }
+
+  async expectRequiredErrors(): Promise<void> {
+    const dialog = this.page.locator('[data-testid=bottom-dialog]');
+    await expect(dialog.getByText('Pick the asset to price')).toBeVisible();
+    await expect(dialog.getByText('Pick the asset the price is in')).toBeVisible();
+    await expect(dialog.getByText('The price cannot be empty')).toBeVisible();
+  }
+}
+
+export class LatestPricePage extends PriceTablePage {
+  constructor(page: Page) {
+    super(page, 'latest-price');
+  }
+
+  async visit(): Promise<void> {
+    await RotkiApp.navigateTo(this.page, 'price-manager', 'price-manager-latest');
   }
 
   /**
@@ -96,70 +144,18 @@ export class LatestPricePage {
     await confirmDialog(this.page);
   }
 
-  async editPrice(currentValue: string, newValue: string): Promise<void> {
-    await this.rowMatching(currentValue).first().locator('[data-testid=row-edit]').click();
-    const valueInput = this.page.getByTestId('latest-price-value').locator('input');
-    await valueInput.fill(newValue);
-    await confirmDialog(this.page);
-  }
-
-  async deletePrice(value: string): Promise<void> {
-    const row = this.rowMatching(value).first();
-    await row.locator('[data-testid=row-delete]').click();
-    await confirmDelete(this.page);
-    await expect(this.rowMatching(value)).toHaveCount(0);
-  }
-
-  async expectRowWithValue(value: string): Promise<void> {
-    await expect(this.rowMatching(value).first()).toBeVisible();
-  }
-
-  async expectVisibleRowCount(count: number): Promise<void> {
-    await expect(this.rows()).toHaveCount(count);
-  }
-
-  async openAddDialog(): Promise<void> {
-    await this.page.getByTestId('latest-price-add').click();
-    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible' });
-  }
-
-  async submitDialog(): Promise<void> {
-    await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
-  }
-
-  async cancelDialog(): Promise<void> {
-    await cancelDialog(this.page);
-  }
-
-  async expectRequiredErrors(): Promise<void> {
-    const dialog = this.page.locator('[data-testid=bottom-dialog]');
-    await expect(dialog.getByText('Pick the asset to price')).toBeVisible();
-    await expect(dialog.getByText('Pick the asset the price is in')).toBeVisible();
-    await expect(dialog.getByText('The price cannot be empty')).toBeVisible();
-  }
-
   async filterByFromAsset(asset: string): Promise<void> {
     await selectAsset('latest-price-filter-from', asset, this.page);
   }
 }
 
-export class HistoricPricePage {
-  constructor(private readonly page: Page) {}
+export class HistoricPricePage extends PriceTablePage {
+  constructor(page: Page) {
+    super(page, 'historic-price');
+  }
 
   async visit(): Promise<void> {
     await RotkiApp.navigateTo(this.page, 'price-manager', 'price-manager-historic');
-  }
-
-  private table() {
-    return this.page.getByTestId('historic-price-table');
-  }
-
-  private rows() {
-    return this.table().locator('tbody tr[data-id="row"]');
-  }
-
-  private rowMatching(value: string) {
-    return this.rows().filter({ hasText: value });
   }
 
   async addPrice(fromAsset: string, toAsset: string, value: string, timestamp: string): Promise<void> {
@@ -173,48 +169,6 @@ export class HistoricPricePage {
     await this.page.keyboard.press('Escape');
     await this.page.getByTestId('historic-price-value').locator('input').fill(value);
     await confirmDialog(this.page);
-  }
-
-  async editPrice(currentValue: string, newValue: string): Promise<void> {
-    await this.rowMatching(currentValue).first().locator('[data-testid=row-edit]').click();
-    const valueInput = this.page.getByTestId('historic-price-value').locator('input');
-    await valueInput.fill(newValue);
-    await confirmDialog(this.page);
-  }
-
-  async deletePrice(value: string): Promise<void> {
-    const row = this.rowMatching(value).first();
-    await row.locator('[data-testid=row-delete]').click();
-    await confirmDelete(this.page);
-    await expect(this.rowMatching(value)).toHaveCount(0);
-  }
-
-  async expectRowWithValue(value: string): Promise<void> {
-    await expect(this.rowMatching(value).first()).toBeVisible();
-  }
-
-  async expectVisibleRowCount(count: number): Promise<void> {
-    await expect(this.rows()).toHaveCount(count);
-  }
-
-  async openAddDialog(): Promise<void> {
-    await this.page.getByTestId('historic-price-add').click();
-    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible' });
-  }
-
-  async submitDialog(): Promise<void> {
-    await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
-  }
-
-  async cancelDialog(): Promise<void> {
-    await cancelDialog(this.page);
-  }
-
-  async expectRequiredErrors(): Promise<void> {
-    const dialog = this.page.locator('[data-testid=bottom-dialog]');
-    await expect(dialog.getByText('Pick the asset to price')).toBeVisible();
-    await expect(dialog.getByText('Pick the asset the price is in')).toBeVisible();
-    await expect(dialog.getByText('The price cannot be empty')).toBeVisible();
   }
 
   /** Narrows by the from-asset through the pill bar, which replaced the two asset selects. */

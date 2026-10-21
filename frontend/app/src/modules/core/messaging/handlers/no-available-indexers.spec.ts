@@ -12,7 +12,7 @@ describe('createNoAvailableIndexersHandler', () => {
 
     const result = await handler.handle({ chain: 'optimism' });
 
-    expect(result).toBeNull();
+    expect(result).toBeUndefined();
     expect(useRaisedConditionsStore().conditions).toEqual([
       { cause: NoIndexersCause.UNAVAILABLE, chain: 'optimism', kind: RaisedConditionKind.NO_AVAILABLE_INDEXERS },
     ]);
@@ -53,9 +53,8 @@ describe('createNoAvailableIndexersHandler', () => {
   it('should raise nothing for an incomplete blockscout response, since the failed sync shows in the dock', async () => {
     const handler = createNoAvailableIndexersHandler();
 
-    const result = await handler.handle({ chain: 'optimism', reason: 'blockscout_incomplete_response' });
+    await handler.handle({ chain: 'optimism', reason: 'blockscout_incomplete_response' });
 
-    expect(result).toBeNull();
     expect(useRaisedConditionsStore().conditions).toEqual([]);
   });
 

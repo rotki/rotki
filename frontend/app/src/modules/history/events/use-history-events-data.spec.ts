@@ -64,6 +64,15 @@ vi.mock('@/modules/core/common/data/collection-utils', () => ({
   })),
 }));
 
+/** Settles the `watchImmediate` callback and the async `fetchEvents()` it starts. */
+async function waitForFetchEvents(): Promise<void> {
+  await nextTick();
+  await vi.runAllTimersAsync();
+  await nextTick();
+  await vi.runAllTimersAsync();
+  await nextTick();
+}
+
 describe('use-history-events-data', () => {
   let scope: ReturnType<typeof effectScope>;
 
@@ -271,15 +280,6 @@ describe('use-history-events-data', () => {
   });
 
   describe('async event fetching and mapping', () => {
-    /** Settles the `watchImmediate` callback and the async `fetchEvents()` it starts. */
-    async function waitForFetchEvents(): Promise<void> {
-      await nextTick();
-      await vi.runAllTimersAsync();
-      await nextTick();
-      await vi.runAllTimersAsync();
-      await nextTick();
-    }
-
     beforeEach(() => {
       vi.useFakeTimers();
     });
@@ -509,14 +509,6 @@ describe('use-history-events-data', () => {
   });
 
   describe('cancellation and stale response protection', () => {
-    async function waitForFetchEvents(): Promise<void> {
-      await nextTick();
-      await vi.runAllTimersAsync();
-      await nextTick();
-      await vi.runAllTimersAsync();
-      await nextTick();
-    }
-
     beforeEach(() => {
       vi.useFakeTimers();
     });
@@ -844,14 +836,6 @@ describe('use-history-events-data', () => {
   });
 
   describe('swap event subgrouping', () => {
-    async function waitForFetchEvents(): Promise<void> {
-      await nextTick();
-      await vi.runAllTimersAsync();
-      await nextTick();
-      await vi.runAllTimersAsync();
-      await nextTick();
-    }
-
     function createSwapEvent(overrides: Partial<Omit<HistoryEventEntry, 'entryType'>> = {}): HistoryEventEntry {
       const event: HistoryEventEntry = {
         amount: bigNumberify('100'),
@@ -966,14 +950,6 @@ describe('use-history-events-data', () => {
   });
 
   describe('isSubgroupIncomplete', () => {
-    async function waitForFetchEvents(): Promise<void> {
-      await nextTick();
-      await vi.runAllTimersAsync();
-      await nextTick();
-      await vi.runAllTimersAsync();
-      await nextTick();
-    }
-
     beforeEach(() => {
       vi.useFakeTimers();
     });
@@ -1058,14 +1034,6 @@ describe('use-history-events-data', () => {
   });
 
   describe('showing ignored assets reconciliation', () => {
-    async function waitForFetchEvents(): Promise<void> {
-      await nextTick();
-      await vi.runAllTimersAsync();
-      await nextTick();
-      await vi.runAllTimersAsync();
-      await nextTick();
-    }
-
     beforeEach(() => {
       vi.useFakeTimers();
     });

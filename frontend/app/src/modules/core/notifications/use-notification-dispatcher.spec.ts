@@ -8,6 +8,15 @@ import { useNotificationDispatcher } from './use-notification-dispatcher';
 /** Matches NOTIFICATION_COOLDOWN_MS in use-notification-cooldown.ts */
 const NOTIFICATION_COOLDOWN_MS = 60_000;
 
+function beaconchainRateLimited(endpoint: string): NotificationPayload {
+  return {
+    category: NotificationCategory.DEFAULT,
+    message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs for more details',
+    severity: Severity.WARNING,
+    title: endpoint,
+  };
+}
+
 describe('useNotificationDispatcher', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -122,16 +131,9 @@ describe('useNotificationDispatcher', () => {
     const store = useNotificationsStore();
     const { data } = storeToRefs(store);
 
-    const getMessage = (endpoint: string): NotificationPayload => ({
-      category: NotificationCategory.DEFAULT,
-      message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs for more details',
-      severity: Severity.WARNING,
-      title: endpoint,
-    });
-
-    notify(getMessage('Endpoint 1'));
-    notify(getMessage('Endpoint 2'));
-    notify(getMessage('Endpoint 3'));
+    notify(beaconchainRateLimited('Endpoint 1'));
+    notify(beaconchainRateLimited('Endpoint 2'));
+    notify(beaconchainRateLimited('Endpoint 3'));
 
     expect(get(data)).toHaveLength(1);
     expect(get(data)[0]).toMatchObject({
@@ -146,17 +148,10 @@ describe('useNotificationDispatcher', () => {
     const store = useNotificationsStore();
     const { data } = storeToRefs(store);
 
-    const getMessage = (endpoint: string): NotificationPayload => ({
-      category: NotificationCategory.DEFAULT,
-      message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs for more details',
-      severity: Severity.WARNING,
-      title: endpoint,
-    });
-
-    notify(getMessage('Endpoint 1'));
-    notify(getMessage('Endpoint 1'));
-    notify(getMessage('Endpoint 2'));
-    notify(getMessage('Endpoint 1'));
+    notify(beaconchainRateLimited('Endpoint 1'));
+    notify(beaconchainRateLimited('Endpoint 1'));
+    notify(beaconchainRateLimited('Endpoint 2'));
+    notify(beaconchainRateLimited('Endpoint 1'));
 
     expect(get(data)).toHaveLength(1);
     expect(get(data)[0]).toMatchObject({

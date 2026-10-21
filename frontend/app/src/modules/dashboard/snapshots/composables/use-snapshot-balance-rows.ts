@@ -119,10 +119,9 @@ export function useSnapshotBalanceRows(
   const hidden = computed<SnapshotHiddenCounts>(() => {
     const counts = { ignored: 0, spam: 0, zeroValue: 0 };
     const { showIgnored, showSpam, zeroValue } = get(active);
-    if (zeroValue === ZeroValueFilter.ONLY)
-      return counts;
+    const rows = zeroValue === ZeroValueFilter.ONLY ? [] : toValue(data);
 
-    for (const item of toValue(data)) {
+    for (const item of rows) {
       if (!showSpam && isSpamAsset(item.assetIdentifier))
         counts.spam++;
       else if (!showIgnored && isIgnoredOnly(item.assetIdentifier))

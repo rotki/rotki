@@ -53,7 +53,7 @@ const chainStatus = computed<AccountChainState[]>(() => get(allChainStatus).slic
 const overflowStatus = computed<AccountChainState[]>(() => get(allChainStatus).slice(MAX_VISIBLE_CHAINS));
 
 function updateChain(chain: string, enabled: boolean) {
-  if (!(get(chains).length > 1))
+  if (get(chains).length <= 1)
     return;
 
   const currentFilter = get(chainFilter)[row.id] ?? [];
