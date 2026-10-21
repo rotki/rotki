@@ -35,12 +35,7 @@ export const ManualBalances = z.object({
 
 export type ManualBalances = z.infer<typeof ManualBalances>;
 
-const ManualBalanceWithPrice = z.object({
-  ...ManualBalanceWithValue.shape,
-  price: NumericString.optional(),
-});
-
-export type ManualBalanceWithPrice = z.infer<typeof ManualBalanceWithPrice>;
+export type ManualBalanceWithPrice = ManualBalanceWithValue & { price?: z.infer<typeof NumericString> };
 
 export interface ManualBalanceRequestPayload extends PaginationRequestPayload<ManualBalanceWithValue> {
   readonly tags?: string[];

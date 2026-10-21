@@ -37,8 +37,8 @@ const pnpmVersion = `${execSync('pnpm --version')}`.trim();
 const requiredPnpmVersion = pkg.engines.pnpm;
 const requiredNodeVersion = pkg.engines.node;
 
-const error = e => `\u001B[40m\u001B[31m${e}\u001B[0m`;
-const version = version => `\u001B[33m\u001B[40m${version}\u001B[0m`;
+const error = e => `\u{1B}[40m\u{1B}[31m${e}\u{1B}[0m`;
+const version = version => `\u{1B}[33m\u{1B}[40m${version}\u{1B}[0m`;
 
 if (!satisfies(pnpmVersion, requiredPnpmVersion)) {
   console.error(

@@ -67,7 +67,7 @@ const copyValue = computed<string>(() => {
 });
 
 /** Holds the placeholder's line box: a text baseline with no visible width. */
-const ZERO_WIDTH_SPACE = '​';
+const ZERO_WIDTH_SPACE = '\u{200B}';
 </script>
 
 <template>

@@ -75,7 +75,7 @@ function setupWithoutCallback(): ReturnType<typeof useAssetMovementActions> {
 async function extractAndCallConfirmCallback(): Promise<void> {
   const callback: unknown = spies.showConfirm.mock.calls[0][1];
   if (typeof callback !== 'function')
-    throw new Error('Expected callback function');
+    throw new TypeError('Expected callback function');
   await callback();
 }
 

@@ -132,12 +132,7 @@ const Settings = z.object({
   ...OtherSettings.shape,
 });
 
-const SettingsUpdate = z.object({
-  ...Settings.shape,
-  mainCurrency: z.string(),
-});
-
-export type SettingsUpdate = Partial<z.infer<typeof SettingsUpdate>>;
+export type SettingsUpdate = Partial<Omit<z.infer<typeof Settings>, 'mainCurrency'> & { mainCurrency: string }>;
 
 const BaseData = z.object({
   lastBalanceSave: z.number(),

@@ -1,8 +1,8 @@
 allowUnusedPatches: true
 blockExoticSubdeps: true
+
 minimumReleaseAge: 10080
 minimumReleaseAgeExcludePrune: true
-
 minimumReleaseAgeExclude:
   - '@rotki/ui-library'
   - '@rotki/eslint-config'
@@ -13,6 +13,7 @@ minimumReleaseAgeExclude:
   - app-builder-lib@26.15.3
   - electron-builder-squirrel-windows@26.15.3
   - electron-publish@26.15.3
+
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - 'semver@5.7.2 || 6.3.1'
@@ -20,22 +21,27 @@ trustPolicyExclude:
   - '@noble/curves@1.8.0'
   - '@noble/hashes@1.7.0'
   - slow-redact@0.3.2
+
 shamefullyHoist: true
 shellEmulator: true
 strictDepBuilds: true
 saveExact: true
+
 packages:
   - app
   - common
   - dev-proxy
   - 'eslint/*'
+
 overrides:
   chokidar: 5.0.0
   tinypool: 2.2.0
   ws: 8.22.0
+
 patchedDependencies:
   app-builder-lib: patches/app-builder-lib.patch
   bignumber.js@11.1.5: patches/bignumber.js@11.1.5.patch
+
 allowBuilds:
   '@parcel/watcher': true
   bufferutil: true
@@ -47,6 +53,7 @@ allowBuilds:
   msw: false
   utf-8-validate: true
   vue-demi: true
+
 catalog:
   '@bcoe/v8-coverage': 1.0.2
   '@clack/prompts': 1.8.1
@@ -57,8 +64,8 @@ catalog:
   '@intlify/unplugin-vue-i18n': 11.2.5
   '@pinia/testing': 2.0.1
   '@playwright/test': 1.64.0
-  '@rotki/eslint-config': 8.3.0
-  '@rotki/eslint-plugin': 1.8.0
+  '@rotki/eslint-config': 8.4.1
+  '@rotki/eslint-plugin': 1.10.0
   '@rotki/ui-library': 3.1.0
   '@tailwindcss/postcss': 4.3.3
   '@tsconfig/node24': 24.0.5

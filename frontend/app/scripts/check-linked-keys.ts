@@ -88,8 +88,8 @@ if (process.argv[1] === import.meta.filename) {
   const dir = join(import.meta.dirname, LOCALES_DIR);
   const locales = readLocales(dir);
   const dangling = findDanglingLinks(locales);
-  const linkCount = [...locales.values()]
-    .reduce((total, messages) => total + [...messages.values()].reduce((n, value) => n + extractLinkTargets(value).length, 0), 0);
+  const linkCount = locales.values()
+    .reduce((total, messages) => total + messages.values().reduce((n, value) => n + extractLinkTargets(value).length, 0), 0);
 
   if (dangling.length === 0) {
     consola.success(`All ${linkCount} linked messages across ${locales.size} locales resolve`);

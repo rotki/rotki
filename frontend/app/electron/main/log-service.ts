@@ -14,20 +14,20 @@ const COLIBRI_LOG_FILENAME = 'colibri.log';
 const LOG_DIR = 'logs';
 
 // Console only: the log file stays plain so it remains greppable. NO_COLOR is honoured.
-const ANSI_RESET = '\u001B[0m';
+const ANSI_RESET = '\u{1B}[0m';
 const LEVEL_COLORS: Record<LogLevel, string> = {
-  [LogLevel.CRITICAL]: '\u001B[1;31m', // bold red
-  [LogLevel.ERROR]: '\u001B[31m', // red
-  [LogLevel.WARNING]: '\u001B[33m', // yellow
-  [LogLevel.INFO]: '\u001B[32m', // green
-  [LogLevel.DEBUG]: '\u001B[36m', // cyan
-  [LogLevel.TRACE]: '\u001B[90m', // gray
+  [LogLevel.CRITICAL]: '\u{1B}[1;31m', // bold red
+  [LogLevel.ERROR]: '\u{1B}[31m', // red
+  [LogLevel.WARNING]: '\u{1B}[33m', // yellow
+  [LogLevel.INFO]: '\u{1B}[32m', // green
+  [LogLevel.DEBUG]: '\u{1B}[36m', // cyan
+  [LogLevel.TRACE]: '\u{1B}[90m', // gray
 };
 // Colors for the source marker ([main]/[vue]/[starling]) on the console.
 const SOURCE_COLORS: Record<string, string> = {
-  '[main]': '\u001B[35m', // magenta
-  '[vue]': '\u001B[34m', // blue
-  '[starling]': '\u001B[95m', // bright magenta
+  '[main]': '\u{1B}[35m', // magenta
+  '[vue]': '\u{1B}[34m', // blue
+  '[starling]': '\u{1B}[95m', // bright magenta
 };
 const USE_COLOR = !process.env.NO_COLOR;
 

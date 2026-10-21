@@ -32,30 +32,13 @@ export const Percentage = z.string().refine((arg) => {
   message: 'Percentage must be between 0 and 100',
 });
 
-const ProtocolBalanceSchema = Balance.extend({
-  containsManual: z.boolean().optional(),
-  protocol: z.string(),
-});
-
-const BaseAssetBalanceSchema = z.object({
-  ...AssetBalance.shape,
-  price: NumericString,
-});
-
-const BreakdownSchema = BaseAssetBalanceSchema.extend({
-  perProtocol: z.array(ProtocolBalanceSchema).optional(),
-});
-
-export type ProtocolBalance = z.infer<typeof ProtocolBalanceSchema>;
+export type ProtocolBalance = Balance & { containsManual?: boolean; protocol: string };
 
 export type ProtocolBalanceWithChains = ProtocolBalance & { chains?: Record<string, Balance> };
 
-const AssetBalanceWithPrice = BaseAssetBalanceSchema.extend({
-  breakdown: z.array(BreakdownSchema).optional(),
-  perProtocol: z.array(ProtocolBalanceSchema).optional(),
-});
+type Breakdown = AssetBalance & { price: Balance['value']; perProtocol?: ProtocolBalance[] };
 
-export type AssetBalanceWithPrice = z.infer<typeof AssetBalanceWithPrice>;
+export type AssetBalanceWithPrice = Breakdown & { breakdown?: Breakdown[] };
 
 export type AssetBalanceWithPriceAndChains = Omit<AssetBalanceWithPrice, 'perProtocol'> & {
   perProtocol?: ProtocolBalanceWithChains[];

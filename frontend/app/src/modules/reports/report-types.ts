@@ -72,9 +72,7 @@ export const ProfitLossEvent = z.object({
 
 export type ProfitLossEvent = z.infer<typeof ProfitLossEvent>;
 
-const ProfitLossEvents = z.array(ProfitLossEvent);
-
-export type ProfitLossEvents = z.infer<typeof ProfitLossEvents>;
+export type ProfitLossEvents = ProfitLossEvent[];
 
 export interface ProfitLossEventsPayload extends PaginationRequestPayload<ProfitLossEvent> {
   reportId: number;

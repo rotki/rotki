@@ -12,7 +12,7 @@ const {
 const rows = new Array(5).fill({});
 
 /** A label that keeps its line, so the skeleton tiles are as tall as the loaded ones. */
-const BLANK_LABEL = ' ';
+const BLANK_LABEL = '\u{A0}';
 </script>
 
 <template>
