@@ -8,6 +8,9 @@ function convert(data: any): any {
   if (Array.isArray(data))
     return data.map(entry => convert(entry));
 
+  if (data instanceof Date)
+    return { __type: 'Date', value: data.toISOString() };
+
   if (!isObject(data))
     return data;
 
@@ -56,6 +59,9 @@ function getState(key: string): any {
 
     if (isObject(value) && value.__type === 'Map')
       return new Map(value.entries);
+
+    if (isObject(value) && value.__type === 'Date')
+      return new Date(value.value);
 
     return value;
   });

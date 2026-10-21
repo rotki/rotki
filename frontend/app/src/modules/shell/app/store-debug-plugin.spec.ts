@@ -16,11 +16,20 @@ const useSettingsLikeStore = defineStore('persist-spec', () => {
   return { general };
 });
 
-function createStore(): ReturnType<typeof useSettingsLikeStore> {
+const useDatedStore = defineStore('persist-dates-spec', () => {
+  const seen = shallowRef<{ at: Date }[]>([]);
+  return { seen };
+});
+
+function activatePinia(): void {
   const pinia = createPinia();
   pinia.use(StoreStatePersistsPlugin);
   createApp({}).use(pinia);
   setActivePinia(pinia);
+}
+
+function createStore(): ReturnType<typeof useSettingsLikeStore> {
+  activatePinia();
   return useSettingsLikeStore();
 }
 
@@ -50,6 +59,19 @@ describe('storeStatePersistsPlugin', () => {
     createStore();
 
     expect(usd.tickerSymbol).toBe('USD');
+  });
+
+  it('should restore a date as a date, so a reload does not hand its readers a string', async () => {
+    const at = new Date('2026-10-21T10:00:00Z');
+    activatePinia();
+    useDatedStore().seen = [{ at }];
+    await nextTick();
+
+    activatePinia();
+    const [restored] = useDatedStore().seen;
+
+    expect(restored.at).toBeInstanceOf(Date);
+    expect(restored.at.getTime()).toBe(at.getTime());
   });
 
   it('should not restore a login, so a reload resumes it through the unlock as in production', () => {
