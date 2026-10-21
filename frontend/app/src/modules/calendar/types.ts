@@ -21,12 +21,10 @@ export const CalendarEvent = CalendarEventPayload.extend({
 
 export type CalendarEvent = z.infer<typeof CalendarEvent>;
 
-const CalendarAccountFilter = z.object({
-  address: z.string(),
-  blockchain: z.string().optional(),
-});
-
-type CalendarAccountFilter = z.infer<typeof CalendarAccountFilter>;
+interface CalendarAccountFilter {
+  address: string;
+  blockchain?: string;
+}
 
 export interface CalendarEventRequestPayload extends PaginationRequestPayload<CalendarEvent> {
   fromTimestamp?: number;

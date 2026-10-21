@@ -106,16 +106,16 @@ export class TrayManager {
     if (typeof up !== 'undefined') {
       if (up) {
         icon = 'rotki_up.png';
-        color = '\u001B[32m';
+        color = '\u{1B}[32m';
         indicator = '▴';
       }
       else {
         icon = 'rotki_down.png';
-        color = '\u001B[31m';
+        color = '\u{1B}[31m';
         indicator = '▾';
       }
 
-      title += `${color}${indicator}\u001B[0m`;
+      title += `${color}${indicator}\u{1B}[0m`;
       tooltip.push(`Change in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`);
     }
 

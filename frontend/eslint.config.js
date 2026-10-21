@@ -97,6 +97,13 @@ export default rotki({
     '@typescript-eslint/explicit-function-return-type': 'error',
   },
 }, {
+  /* The renderer also ships to browsers in web mode, at Vite's baseline-widely-available target,
+     which iterator helpers are not part of yet. `tsconfig.app.json` types it as ES2022 to match. */
+  files: ['app/src/**/*.ts', 'app/src/**/*.vue'],
+  rules: {
+    'unicorn/prefer-iterator-helpers': 'off',
+  },
+}, {
   /*
    * A looser cap for presentational primitives, which are configured by many call sites; feature
    * components keep the project-wide cap, where a high prop count is a decomposition signal.

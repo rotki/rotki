@@ -296,13 +296,13 @@ describe('text-utils', () => {
   });
 
   it('should decode HTML entities', () => {
-    expect(decodeHtmlEntities('&#8226;')).toBe('\u2022'); // Numeric, since happy-dom decodes only the basic named entities
+    expect(decodeHtmlEntities('&#8226;')).toBe('\u{2022}'); // Numeric, since happy-dom decodes only the basic named entities
     expect(decodeHtmlEntities('&lt;div&gt;')).toBe('<div>');
     expect(decodeHtmlEntities('&amp;')).toBe('&');
     expect(decodeHtmlEntities('&quot;')).toBe('"');
     expect(decodeHtmlEntities('&apos;')).toBe('\'');
-    expect(decodeHtmlEntities('&#169;')).toBe('\u00A9');
-    expect(decodeHtmlEntities('&#x2665;')).toBe('\u2665');
+    expect(decodeHtmlEntities('&#169;')).toBe('\u{A9}');
+    expect(decodeHtmlEntities('&#x2665;')).toBe('\u{2665}');
     expect(decodeHtmlEntities('Hello &amp; welcome &lt;test&gt;')).toBe('Hello & welcome <test>');
     expect(decodeHtmlEntities('plain text')).toBe('plain text');
     expect(decodeHtmlEntities('')).toBe('');

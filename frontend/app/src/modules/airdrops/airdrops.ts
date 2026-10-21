@@ -10,21 +10,19 @@ const PoapDeliveryDetails = z.object({
 
 export type PoapDeliveryDetails = z.infer<typeof PoapDeliveryDetails>;
 
-const Airdrop = z.object({
-  address: z.string(),
-  amount: NumericString.optional(),
-  asset: z.string().optional(),
-  claimed: z.boolean().optional(),
-  cutoffTime: z.number().optional(),
-  details: z.array(PoapDeliveryDetails).optional(),
-  hasDecoder: z.boolean().optional(),
-  icon: z.string().optional(),
-  iconUrl: z.string().optional(),
-  link: z.string().optional(),
-  source: z.string(),
-});
-
-export type Airdrop = z.infer<typeof Airdrop>;
+export interface Airdrop {
+  address: string;
+  amount?: z.infer<typeof NumericString>;
+  asset?: string;
+  claimed?: boolean;
+  cutoffTime?: number;
+  details?: PoapDeliveryDetails[];
+  hasDecoder?: boolean;
+  icon?: string;
+  iconUrl?: string;
+  link?: string;
+  source: string;
+}
 
 const AirdropDetail = z.object({
   amount: NumericString,

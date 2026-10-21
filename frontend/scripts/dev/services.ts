@@ -16,8 +16,8 @@ import { type StarlingDevEnv, startStarlingSupervisor } from './starling';
 const logger = createDevLogger('dev:services');
 
 const colors = {
-  green: (msg: string) => `\u001B[32m${msg}\u001B[0m`,
-  magenta: (msg: string) => `\u001B[35m${msg}\u001B[0m`,
+  green: (msg: string) => `\u{1B}[32m${msg}\u{1B}[0m`,
+  magenta: (msg: string) => `\u{1B}[35m${msg}\u{1B}[0m`,
 } as const;
 
 const PROXY = 'proxy';

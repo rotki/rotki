@@ -22,7 +22,7 @@ function createWrapper(props: { src?: string; size?: string | number; backing?: 
 function frame(wrapper: VueWrapper): HTMLElement {
   const element = wrapper.find('[data-testid=icon-mark]').element;
   if (!(element instanceof HTMLElement))
-    throw new Error('no frame');
+    throw new TypeError('no frame');
   return element;
 }
 

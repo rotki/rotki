@@ -8,15 +8,11 @@ enum KrakenStakingEventType {
   REMOVE_ASSET = 'remove asset',
 }
 
-const KrakenStakingEventTypeEnum = z.enum(KrakenStakingEventType);
-
-const KrakenStakingEvent = AssetBalance.extend({
-  eventType: KrakenStakingEventTypeEnum,
-  location: z.literal('kraken'),
-  timestamp: z.number().nonnegative(),
-});
-
-type KrakenStakingEvent = z.infer<typeof KrakenStakingEvent>;
+type KrakenStakingEvent = AssetBalance & {
+  eventType: KrakenStakingEventType;
+  location: 'kraken';
+  timestamp: number;
+};
 
 export const KrakenStakingEvents = z.object({
   assets: z.array(z.string()),

@@ -40,8 +40,8 @@ const ANSI_GLOBAL = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');
 const ANSI_AT_START = new RegExp(`^${ESC}\\[[0-9;]*m`);
 
 // Blue: not white, and not one of the child-label colors red/green/yellow/magenta.
-const TAG_COLOR = '\u001B[34m';
-const RESET = '\u001B[0m';
+const TAG_COLOR = '\u{1B}[34m';
+const RESET = '\u{1B}[0m';
 
 function timestamp(): string {
   return new Date().toLocaleTimeString('en-US');
