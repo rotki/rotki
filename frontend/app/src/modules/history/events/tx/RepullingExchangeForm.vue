@@ -93,9 +93,8 @@ defineExpose({
           <RouterLink :to="{ name: '/api-keys/exchanges/' }">
             <RuiButton
               color="primary"
-              variant="text"
-              size="sm"
-              class="inline -my-1 [&>span]:underline"
+              variant="link"
+              class="underline"
             >
               {{ t('transactions.repulling.add_exchange_link') }}
             </RuiButton>

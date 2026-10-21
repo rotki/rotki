@@ -64,7 +64,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <RuiCard :class-names="{ content: 'pt-0!' }">
+  <RuiCard tight-header-gap>
     <template #header>
       <span class="text-base font-semibold">
         {{ t('profit_loss_report.generate_title') }}

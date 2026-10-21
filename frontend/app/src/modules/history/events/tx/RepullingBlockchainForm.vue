@@ -82,9 +82,8 @@ defineExpose({
           <RouterLink :to="{ name: '/accounts/evm/[[tab]]' }">
             <RuiButton
               color="primary"
-              variant="text"
-              size="sm"
-              class="inline -my-1 [&>span]:underline"
+              variant="link"
+              class="underline"
             >
               {{ t('transactions.repulling.add_account_link') }}
             </RuiButton>

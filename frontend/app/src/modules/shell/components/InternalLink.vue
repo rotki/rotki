@@ -39,9 +39,9 @@ defineSlots<{
       @click.shift.prevent
     >
       <RuiButton
-        variant="text"
+        variant="link"
         color="primary"
-        class="inline! text-[1em]! p-0! px-0.5! -mx-0.5! font-[inherit]! [&_span]:underline"
+        class="font-[inherit]! underline"
       >
         <slot />
       </RuiButton>

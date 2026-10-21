@@ -215,16 +215,16 @@ function applyDistribute(): void {
 
         <template #tfoot>
           <tr>
-            <td class="font-medium p-4">
+            <td class="font-medium">
               {{ t('dashboard.snapshot.detail.locations.allocated') }}
             </td>
-            <td class="text-right font-bold p-4">
+            <td class="text-right font-bold">
               <SnapshotFiatDisplay
                 :value="allocated"
                 :timestamp="timestamp"
               />
             </td>
-            <td class="text-right text-body-2 text-rui-text-secondary p-4">
+            <td class="text-right text-rui-text-secondary">
               <span v-if="allocatedShare">
                 {{ t('dashboard.snapshot.detail.locations.share_percent', { percent: allocatedShare }) }}
               </span>
@@ -232,10 +232,10 @@ function applyDistribute(): void {
             <td />
           </tr>
           <tr>
-            <td class="text-rui-text-secondary p-4 pt-0">
+            <td class="text-rui-text-secondary">
               {{ t('dashboard.snapshot.detail.locations.net_worth') }}
             </td>
-            <td class="text-right text-rui-text-secondary p-4 pt-0">
+            <td class="text-right text-rui-text-secondary">
               <SnapshotFiatDisplay
                 :value="storedTotal"
                 :timestamp="timestamp"

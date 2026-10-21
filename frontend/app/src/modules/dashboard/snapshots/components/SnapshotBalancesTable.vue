@@ -318,11 +318,11 @@ function onDelete(payload: { index: number; location: LocationAttribution }): vo
           <tr>
             <td
               colspan="3"
-              class="font-medium p-4"
+              class="font-medium"
             >
               {{ t('dashboard.snapshot.detail.balances.total_with_hidden', { count: hiddenCount }, hiddenCount) }}
             </td>
-            <td class="text-right font-bold p-4">
+            <td class="text-right font-bold">
               <SnapshotFiatDisplay
                 :value="total"
                 :timestamp="timestamp"
