@@ -178,6 +178,17 @@ describe('modules/wallet/bridge/use-injected-wallet', () => {
   });
 
   describe('switchNetwork', () => {
+    it('should do nothing before a wallet is connected', async () => {
+      const provider = makeProvider();
+      selectProvider(provider);
+      const wallet = useInjectedWallet();
+
+      await wallet.switchNetwork(10n);
+
+      expect(provider.request).not.toHaveBeenCalled();
+      expect(get(wallet.connectedChainId)).toBeUndefined();
+    });
+
     it('should request a chain switch and refresh the chain id', async () => {
       const provider = makeProvider();
       selectProvider(provider);
