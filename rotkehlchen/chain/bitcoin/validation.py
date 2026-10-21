@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 
 # Version bytes of the bitcoin mainnet P2PKH and P2SH base58 addresses
 BTC_BASE58_VERSIONS: Final = frozenset({0x00, 0x05})
+# A version byte, the 20-byte hash of the key or script and a 4-byte checksum
+BASE58_ADDRESS_BYTES: Final = 25
 
 
 def is_valid_btc_address(value: str) -> bool:
@@ -54,7 +56,7 @@ def is_valid_base58_address(
     Code is taken from:
     https://github.com/joeblackwaslike/coinaddr/blob/ae35c7ae550a687d9a7c2e0cb090d52edbb29cb5/coinaddr/validation.py#L67-L87
     """
-    if 25 > len(value) > 35:
+    if not 25 <= len(value) <= 35:
         return False
 
     try:
@@ -62,7 +64,7 @@ def is_valid_base58_address(
     except ValueError:
         return False
 
-    if len(abytes) == 0 or abytes[0] not in versions:
+    if len(abytes) != BASE58_ADDRESS_BYTES or abytes[0] not in versions:
         return False
 
     checksum = hashlib.sha256(hashlib.sha256(abytes[:-4]).digest()).digest()[:4]

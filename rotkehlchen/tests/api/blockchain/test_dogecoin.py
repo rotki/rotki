@@ -6,14 +6,13 @@ import pytest
 import requests
 
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
-from rotkehlchen.constants.assets import A_EUR
+from rotkehlchen.constants.assets import A_DOGE, A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_sync_response_with_result,
 )
-from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.tests.utils.dogecoin import (
     DOGE_ADDRESS_1,
     DOGE_ADDRESS_2,

@@ -7,6 +7,7 @@ from rotkehlchen.constants.assets import (
     A_BCH,
     A_BSC_BNB,
     A_BTC,
+    A_DOGE,
     A_DOT,
     A_ETH,
     A_ETH2,
@@ -18,7 +19,6 @@ from rotkehlchen.constants.assets import (
     A_SOL,
     A_XDAI,
 )
-from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.types import ChainID, SupportedBlockchain
 
 

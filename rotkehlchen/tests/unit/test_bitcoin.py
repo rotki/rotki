@@ -61,6 +61,9 @@ def test_is_valid_btc_address():
 
     assert not is_valid_btc_address('')
     assert not is_valid_btc_address('foo')
+    # base58check with a bitcoin version byte and a valid checksum, but a 21 or 19-byte hash
+    assert not is_valid_btc_address('1QXEx2ZQ9mEdvMSaVKHznFv6iZq2LQbDz8')
+    assert not is_valid_btc_address('TTazDDREDxxh1mPyGySut6H98h4UKPG6')
     assert not is_valid_btc_address('18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1')
     assert not is_valid_btc_address(
         'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3')

@@ -24,6 +24,7 @@ from rotkehlchen.constants.assets import (
     A_1INCH,
     A_BTC,
     A_DAI,
+    A_DOGE,
     A_ETH,
     A_ETH2,
     A_POL,
@@ -111,7 +112,6 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import (
     A_DAO,
-    A_DOGE,
     A_EUR,
     A_RDN,
     A_SDC,

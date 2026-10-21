@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
+from rotkehlchen.constants.assets import A_DOGE
 from rotkehlchen.constants.misc import (
     ASSETIMAGESDIR_NAME,
     CUSTOMASSETIMAGESDIR_NAME,
@@ -21,7 +22,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.constants import A_DOGE, A_GNO
+from rotkehlchen.tests.utils.constants import A_GNO
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
