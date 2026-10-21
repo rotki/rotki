@@ -449,6 +449,32 @@ describe('use-history-events-data', () => {
       expect(displayed.group1).toBeUndefined();
     });
 
+    it('should drop a subgroup whose legs are all ignored, keeping the rest of the group', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const approveEvent = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
+      const spamSpend = createMockEvent({ asset: 'SPAM_TOKEN', groupIdentifier: 'group1', identifier: 2 });
+      const spamReceive = createMockEvent({ asset: 'SPAM_TOKEN', groupIdentifier: 'group1', identifier: 3 });
+
+      mockFetchHistoryEvents.mockResolvedValue(ok({ data: [approveEvent, [spamSpend, spamReceive]] }));
+      mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'SPAM_TOKEN');
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([approveEvent]));
+      const options = {
+        excludeIgnored: ref<boolean>(true),
+        groupLoading: ref<boolean>(false),
+        groups,
+        requestPayload: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
+
+      await waitForFetchEvents();
+
+      expect(get(result.displayedEventsMapped).group1).toEqual([approveEvent]);
+    });
+
     it('should detect hidden ignored assets inside swap subgroups', async () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
