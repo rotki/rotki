@@ -78,6 +78,12 @@ export interface ActivityContext {
  */
 export type NativeActivitySpec<T = void> = Omit<ActivitySpec<T>, 'cancel' | 'run'> & {
   readonly run: (ctx: ActivityContext) => ResultAsync<T, TaskError>;
+  /**
+   * False for work the backend must not be stopped in the middle of, such as replacing the user
+   * db. Once running the activity then has no cancel handle, so the orchestrator refuses to cancel
+   * it. It can still be dropped while queued. Defaults to true.
+   */
+  readonly interruptible?: boolean;
 };
 
 interface UseNativeTaskReturn {
@@ -355,7 +361,8 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     inflight.set(spec.id, promise as Promise<TaskOutcome<never>>);
     inflightFinish.set(spec.id, finish);
     inflightCancel.set(spec.id, requestCancel);
-    orchestrator.submit({ ...spec, cancel, run });
+    const { interruptible = true, ...activitySpec } = spec;
+    orchestrator.submit({ ...activitySpec, ...(interruptible ? { cancel } : {}), run });
     return promise;
   }
 
