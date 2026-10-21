@@ -100,6 +100,7 @@ describe('user-types', () => {
       passwordConfirmationInterval: 604800,
       newlyDetectedTokensMaxCount: 500,
       newlyDetectedTokensTtlDays: 30,
+      mutedNotificationGroups: [],
       suppressBinancePairsMissing: [],
       suppressNoIndexerChains: [],
       autoDetectTokensCooldownHours: 24,

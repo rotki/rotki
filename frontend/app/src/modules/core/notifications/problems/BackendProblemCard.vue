@@ -4,13 +4,17 @@ import BackendProblemItem from '@/modules/core/notifications/problems/BackendPro
 import { useBackendProblemText } from '@/modules/core/notifications/problems/use-backend-problem-text';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
-const { problem } = defineProps<{
+const { problem, muted = false } = defineProps<{
   problem: BackendProblem;
+  /** Whether the problem's family and location are muted, which turns its mute button into unmute. */
+  muted?: boolean;
 }>();
 
 const emit = defineEmits<{
   dismiss: [id: string];
   acted: [];
+  mute: [];
+  unmute: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -105,6 +109,28 @@ function toggle(): void {
           :name="expanded ? 'lu-chevron-up' : 'lu-chevron-down'"
         />
       </RuiButton>
+      <RuiTooltip
+        :open-delay="400"
+        class="shrink-0"
+      >
+        <template #activator>
+          <RuiButton
+            variant="text"
+            icon
+            size="sm"
+            class="text-rui-text-secondary!"
+            :aria-label="muted ? t('notification_sidebar.unmute') : t('notification_sidebar.mute')"
+            data-testid="backend-problem-mute"
+            @click="muted ? emit('unmute') : emit('mute')"
+          >
+            <RuiIcon
+              size="18"
+              :name="muted ? 'lu-bell-ring' : 'lu-bell-off'"
+            />
+          </RuiButton>
+        </template>
+        {{ muted ? t('notification_sidebar.unmute') : t('notification_sidebar.mute') }}
+      </RuiTooltip>
       <RuiButton
         variant="text"
         icon

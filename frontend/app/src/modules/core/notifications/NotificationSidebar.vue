@@ -3,6 +3,7 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { NotificationDayLabel } from '@/modules/core/notifications/notification-days';
 import Notification from '@/modules/core/notifications/Notification.vue';
 import BackendProblemCard from '@/modules/core/notifications/problems/BackendProblemCard.vue';
+import { notificationMuteKey } from '@/modules/core/notifications/use-notification-mute';
 import { useNotificationSidebar } from '@/modules/core/notifications/use-notification-sidebar';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import LazyLoader from '@/modules/shell/components/LazyLoader.vue';
@@ -25,16 +26,24 @@ const {
   initialAppear,
   isEmpty,
   messageOverflow,
+  modelMutedOpen,
   modelProblemsOpen,
+  muted,
+  muteNotification,
+  muteProblem,
   problems,
   remove,
   removeProblem,
   showConfirmation,
   silent,
   toggleSilentMode,
+  unmuteNotification,
+  unmuteProblem,
 } = useNotificationSidebar({ display, scrollY: y });
 
 const problemCount = computed<number>(() => get(problems).length + get(failures).length);
+
+const mutedCount = computed<number>(() => get(muted).problems.length + get(muted).notifications.length);
 </script>
 
 <template>
@@ -136,7 +145,9 @@ const problemCount = computed<number>(() => get(problems).length + get(failures)
           >
             <Notification
               :notification="item"
+              :mutable="notificationMuteKey(item) !== undefined"
               @dismiss="remove($event)"
+              @mute="muteNotification(item)"
             />
           </LazyLoader>
         </template>
@@ -167,6 +178,7 @@ const problemCount = computed<number>(() => get(problems).length + get(failures)
               :problem="problem"
               @dismiss="removeProblem($event)"
               @acted="close()"
+              @mute="muteProblem(problem)"
             />
             <LazyLoader
               v-for="item in failures"
@@ -180,6 +192,47 @@ const problemCount = computed<number>(() => get(problems).length + get(failures)
                 @dismiss="remove($event)"
               />
             </LazyLoader>
+          </template>
+        </section>
+
+        <section
+          v-if="mutedCount > 0"
+          class="flex flex-col gap-2"
+          data-testid="notification-muted"
+        >
+          <button
+            type="button"
+            class="sticky top-0 z-1 bg-rui-surface pt-2 pb-0.5 flex items-center gap-1.5 text-caption font-medium text-rui-text-secondary cursor-pointer"
+            :aria-expanded="modelMutedOpen"
+            data-testid="notification-muted-toggle"
+            @click="modelMutedOpen = !modelMutedOpen"
+          >
+            {{ t('notification_sidebar.muted', { count: mutedCount }) }}
+            <RuiIcon
+              size="16"
+              :name="modelMutedOpen ? 'lu-chevron-up' : 'lu-chevron-down'"
+            />
+          </button>
+          <template v-if="modelMutedOpen">
+            <BackendProblemCard
+              v-for="problem in muted.problems"
+              :key="problem.id"
+              class="grow-0 shrink-0"
+              :problem="problem"
+              muted
+              @dismiss="removeProblem($event)"
+              @acted="close()"
+              @unmute="unmuteProblem(problem)"
+            />
+            <Notification
+              v-for="item in muted.notifications"
+              :key="item.id"
+              class="grow-0 shrink-0"
+              :notification="item"
+              muted
+              @dismiss="remove($event)"
+              @unmute="unmuteNotification(item)"
+            />
           </template>
         </section>
 
