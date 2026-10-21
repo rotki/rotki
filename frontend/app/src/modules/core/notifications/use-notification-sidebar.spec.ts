@@ -7,7 +7,7 @@ import { createApp, effectScope, nextTick, type Ref, ref } from 'vue';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
-import { TAB_ORDER, TabCategory, useNotificationSidebar } from './use-notification-sidebar';
+import { useNotificationSidebar } from './use-notification-sidebar';
 
 interface MockedDependencies {
   silent?: Ref<boolean>;
@@ -23,7 +23,6 @@ let silent: Ref<boolean>;
 vi.mock('@/modules/core/notifications/use-notification-cooldown', () => ({
   useNotificationCooldown: vi.fn(() => ({
     recordDisplay: vi.fn(),
-    resetSchedule: vi.fn(),
     shouldSuppress: vi.fn(() => false),
   })),
 }));
@@ -98,46 +97,50 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
     scope?.stop();
   });
 
-  describe('the tabs', () => {
-    it('should show the tabs in the order the drawer lays them out', () => {
-      expect(TAB_ORDER).toEqual([
-        TabCategory.VIEW_ALL,
-        TabCategory.REMINDER,
-        TabCategory.ERROR,
-      ]);
+  describe('the day headers', () => {
+    afterEach(() => {
+      vi.useRealTimers();
     });
 
-    it('should label every tab it offers', () => {
-      const { tabCategoriesLabel } = sidebar();
+    it('should move a notification from today to yesterday at midnight while the drawer stays mounted', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 2, 4, 23, 59));
+      seed([notification({ date: new Date(2026, 2, 4, 23, 0) })]);
+      const { historyDays } = sidebar();
+      expect(get(historyDays)[0].label).toBe('today');
 
-      for (const tab of TAB_ORDER)
-        expect(get(tabCategoriesLabel)[tab]).toBe(`notification_sidebar.tabs.${tab}`);
+      vi.advanceTimersByTime(2 * 60_000);
+      await nextTick();
+
+      expect(get(historyDays)[0].label).toBe('yesterday');
     });
   });
 
-  describe('filtering by tab', () => {
-    const error = notification({ id: 1, severity: Severity.ERROR });
+  describe('the history and the problems section', () => {
+    const result = notification({ id: 1, kind: NotificationKind.RESULT });
     const reminder = notification({ id: 2, kind: NotificationKind.REMINDER });
-    const info = notification({ id: 3, severity: Severity.INFO });
+    const failure = notification({ id: 3, kind: NotificationKind.FAILURE, severity: Severity.ERROR });
 
     beforeEach(() => {
-      seed([error, reminder, info]);
+      seed([result, reminder, failure]);
     });
 
-    it('should hold everything back on the view-all tab', () => {
-      const { selectedNotifications } = sidebar();
+    it('should keep the failures out of the history', () => {
+      const { historyDays } = sidebar();
 
-      expect(get(selectedNotifications)).toHaveLength(3);
+      expect(get(historyDays).flatMap(day => day.notifications.map(item => item.id)).sort()).toEqual([1, 2]);
     });
 
-    it.each([
-      [TabCategory.ERROR, 1],
-      [TabCategory.REMINDER, 2],
-    ])('should show only what the %s tab admits', (tab, expectedId) => {
-      const { modelSelectedTab, selectedNotifications } = sidebar();
-      set(modelSelectedTab, tab);
+    it('should file the failures in the problems section', () => {
+      const { failures } = sidebar();
 
-      expect(get(selectedNotifications).map(item => item.id)).toEqual([expectedId]);
+      expect(get(failures).map(item => item.id)).toEqual([3]);
+    });
+
+    it('should open the problems section by default', () => {
+      const { modelProblemsOpen } = sidebar();
+
+      expect(get(modelProblemsOpen)).toBe(true);
     });
   });
 
@@ -146,18 +149,10 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
       fileProblem();
     });
 
-    it.each([TabCategory.VIEW_ALL, TabCategory.ERROR])('should show the problems on the %s tab', (tab) => {
-      const { modelSelectedTab, selectedProblems } = sidebar();
-      set(modelSelectedTab, tab);
+    it('should hand the drawer every problem', () => {
+      const { problems } = sidebar();
 
-      expect(get(selectedProblems)).toHaveLength(1);
-    });
-
-    it('should keep the problems off the reminder tab', () => {
-      const { modelSelectedTab, selectedProblems } = sidebar();
-      set(modelSelectedTab, TabCategory.REMINDER);
-
-      expect(get(selectedProblems)).toEqual([]);
+      expect(get(problems)).toHaveLength(1);
     });
 
     it('should not count as empty while it holds only a problem', () => {
@@ -272,16 +267,6 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
   });
 
   describe('how rows appear', () => {
-    it('should show a freshly filtered list at once rather than on scroll', async () => {
-      seed([notification({ id: 1, severity: Severity.ERROR })]);
-      const { initialAppear, modelSelectedTab } = sidebar();
-
-      set(modelSelectedTab, TabCategory.ERROR);
-      await flushPromises();
-
-      expect(get(initialAppear)).toBe(true);
-    });
-
     it('should show the first notifications to arrive at once', async () => {
       const { initialAppear } = sidebar();
 

@@ -1,31 +1,18 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { BackendProblem } from '@/modules/core/notifications/problems/backend-problem-tree';
-import { type NotificationData, NotificationKind, Severity } from '@rotki/common';
+import { type NotificationData, NotificationKind } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { groupByDay, type NotificationDay, startOfDay } from '@/modules/core/notifications/notification-days';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
 
-export const TabCategory = {
-  ERROR: 'error',
-  REMINDER: 'reminder',
-  VIEW_ALL: 'view_all',
-} as const;
-
-export type TabCategory = (typeof TabCategory)[keyof typeof TabCategory];
-
-/** Order the tabs appear in, which is not the declaration order of {@link TabCategory}. */
-export const TAB_ORDER: TabCategory[] = [
-  TabCategory.VIEW_ALL,
-  TabCategory.REMINDER,
-  TabCategory.ERROR,
-];
-
-const TAB_FILTERS: Partial<Record<TabCategory, (item: NotificationData) => boolean>> = {
-  [TabCategory.ERROR]: (item: NotificationData) => item.severity === Severity.ERROR,
-  [TabCategory.REMINDER]: (item: NotificationData) => item.kind === NotificationKind.REMINDER,
-};
+/**
+ * How often the drawer checks the clock, so "Today" and "Yesterday" move on at midnight while the
+ * app stays open. The grouping itself reruns only when the day changes.
+ */
+const DAY_LABEL_TICK_MS = 60_000;
 
 interface UseNotificationSidebarOptions {
   /** Two-way binding for the drawer; closing the sidebar writes `false` to it. */
@@ -35,10 +22,16 @@ interface UseNotificationSidebarOptions {
 }
 
 interface UseNotificationSidebarReturn {
-  /** Whether the drawer holds neither a notification nor a backend problem, whatever tab is selected. */
+  /** Results, announcements and reminders, by the day they arrived, newest day first. */
+  historyDays: ComputedRef<NotificationDay[]>;
+  /** Background requests that failed with nowhere else to show it, newest first. */
+  failures: ComputedRef<NotificationData[]>;
+  /** The backend problems tree, newest first. */
+  problems: Readonly<Ref<BackendProblem[]>>;
+  /** Whether the problems section is open. */
+  modelProblemsOpen: Ref<boolean>;
+  /** Whether the drawer holds neither a notification nor a backend problem. */
   isEmpty: ComputedRef<boolean>;
-  /** The backend problems tree the selected tab shows, newest first: none on the reminder tab. */
-  selectedProblems: ComputedRef<BackendProblem[]>;
   /** Dismisses one backend problem with every item under it. */
   removeProblem: (id: string) => void;
   /** Closes the drawer. */
@@ -47,19 +40,14 @@ interface UseNotificationSidebarReturn {
    * Whether newly rendered rows should appear without waiting to be scrolled into view.
    *
    * @remarks
-   * It resets on a tab change and on the list going from empty to populated, so a fresh list is
-   * shown at once rather than a column of placeholders; while scrolling it tracks the top of the
-   * list instead.
+   * It resets when the history goes from empty to populated, so a fresh list is shown at once
+   * rather than a column of placeholders; while scrolling it tracks the top of the list instead.
    */
   initialAppear: Readonly<Ref<boolean>>;
   /** Whether notifications were dropped because the store was full. */
   messageOverflow: Readonly<Ref<boolean>>;
-  /** The selected tab. */
-  modelSelectedTab: Ref<TabCategory>;
   /** Dismisses a single notification. */
   remove: (id: number) => void;
-  /** The notifications the selected tab admits. */
-  selectedNotifications: ComputedRef<NotificationData[]>;
   /**
    * Asks for confirmation before discarding every notification.
    *
@@ -69,15 +57,18 @@ interface UseNotificationSidebarReturn {
   showConfirmation: () => void;
   /** Whether popups are suppressed. */
   silent: Readonly<Ref<boolean>>;
-  /** The tab labels, keyed by tab. */
-  tabCategoriesLabel: ComputedRef<Record<TabCategory, string>>;
   /** Turns popup suppression on or off. */
   toggleSilentMode: () => void;
 }
 
 /**
- * Drives the notification drawer: the tab filtering, the silent-mode toggle, the clear-all
- * confirmation, and the appearance of rows as the list scrolls.
+ * Drives the notification drawer: its history by day and its problems section, the silent-mode
+ * toggle, the clear-all confirmation, and the appearance of rows as the list scrolls.
+ *
+ * @remarks
+ * The history holds what happened (results, announcements, reminders). The problems section holds
+ * what went wrong in the background: the backend problems tree, then the failures, which never pop
+ * and so are only ever read here.
  *
  * @returns the list state the drawer renders and the actions its controls call
  */
@@ -86,8 +77,8 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const modelSelectedTab = shallowRef<TabCategory>(TabCategory.VIEW_ALL);
   const initialAppear = shallowRef<boolean>(false);
+  const modelProblemsOpen = shallowRef<boolean>(true);
 
   const notificationStore = useNotificationsStore();
   const { messageOverflow, newestFirst: allNotifications } = storeToRefs(notificationStore);
@@ -98,25 +89,14 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   const { show } = useConfirmStore();
   const { silent, toggle: toggleSilent } = useSilentNotifications();
 
-  const tabCategoriesLabel = computed<Record<TabCategory, string>>(() => ({
-    [TabCategory.ERROR]: t('notification_sidebar.tabs.error'),
-    [TabCategory.REMINDER]: t('notification_sidebar.tabs.reminder'),
-    [TabCategory.VIEW_ALL]: t('notification_sidebar.tabs.view_all'),
-  }));
+  const history = computed<NotificationData[]>(() => get(allNotifications).filter(item => item.kind !== NotificationKind.FAILURE));
 
-  const selectedNotifications = computed<NotificationData[]>(() => {
-    const all = get(allNotifications);
-    const filterBy = TAB_FILTERS[get(modelSelectedTab)];
+  const now = useNow({ scheduler: tick => useIntervalFn(tick, DAY_LABEL_TICK_MS) });
+  const today = computed<number>(() => startOfDay(get(now)).getTime());
 
-    if (filterBy)
-      return all.filter(filterBy);
+  const historyDays = computed<NotificationDay[]>(() => groupByDay(get(history), new Date(get(today))));
 
-    return all;
-  });
-
-  const selectedProblems = computed<BackendProblem[]>(() =>
-    get(modelSelectedTab) === TabCategory.REMINDER ? [] : get(problems),
-  );
+  const failures = computed<NotificationData[]>(() => get(allNotifications).filter(item => item.kind === NotificationKind.FAILURE));
 
   const isEmpty = computed<boolean>(() => get(allNotifications).length === 0 && get(problems).length === 0);
 
@@ -159,12 +139,10 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   }
 
   function trackRowAppearance(
-    [currentY, currentTab, currentNotifications]: [number, TabCategory, NotificationData[]],
-    [, previousTab, previousNotifications]: [number, TabCategory, NotificationData[]],
+    [currentY, current]: [number, NotificationData[]],
+    [, previous]: [number, NotificationData[]],
   ): void {
-    const listArrived = previousNotifications.length === 0 && currentNotifications.length > 0;
-
-    if (currentTab !== previousTab || listArrived) {
+    if (previous.length === 0 && current.length > 0) {
       set(initialAppear, false);
       startPromise(nextTick((): void => {
         set(initialAppear, true);
@@ -175,21 +153,21 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
     }
   }
 
-  watch([(): number => toValue(scrollY), modelSelectedTab, selectedNotifications], trackRowAppearance);
+  watch([(): number => toValue(scrollY), allNotifications], trackRowAppearance);
 
   return {
     close,
+    failures,
+    historyDays,
     initialAppear: readonly(initialAppear),
     isEmpty,
     messageOverflow,
-    modelSelectedTab,
+    modelProblemsOpen,
+    problems,
     remove,
     removeProblem,
-    selectedNotifications,
-    selectedProblems,
     showConfirmation,
     silent,
-    tabCategoriesLabel,
     toggleSilentMode,
   };
 }

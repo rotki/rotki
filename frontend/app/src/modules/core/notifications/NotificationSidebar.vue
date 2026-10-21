@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { NotificationDayLabel } from '@/modules/core/notifications/notification-days';
 import Notification from '@/modules/core/notifications/Notification.vue';
 import BackendProblemCard from '@/modules/core/notifications/problems/BackendProblemCard.vue';
-import { TAB_ORDER, TabCategory, useNotificationSidebar } from '@/modules/core/notifications/use-notification-sidebar';
+import { useNotificationSidebar } from '@/modules/core/notifications/use-notification-sidebar';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import LazyLoader from '@/modules/shell/components/LazyLoader.vue';
 
 const display = defineModel<boolean>({ required: true });
@@ -18,30 +20,21 @@ const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
 
 const {
   close,
+  failures,
+  historyDays,
   initialAppear,
   isEmpty,
   messageOverflow,
-  modelSelectedTab,
+  modelProblemsOpen,
+  problems,
   remove,
   removeProblem,
-  selectedNotifications,
-  selectedProblems,
   showConfirmation,
   silent,
-  tabCategoriesLabel,
   toggleSilentMode,
 } = useNotificationSidebar({ display, scrollY: y });
 
-/** Nothing at all reads as caught up; an empty filter names what it filters and points back to All. */
-const emptyState = computed<{ title: string; description: string }>(() => {
-  if (get(isEmpty))
-    return { description: t('notification_sidebar.empty.description'), title: t('notification_sidebar.empty.title') };
-
-  const title = get(modelSelectedTab) === TabCategory.ERROR
-    ? t('notification_sidebar.empty_tab.error')
-    : t('notification_sidebar.empty_tab.reminder');
-  return { description: t('notification_sidebar.empty_tab.description'), title };
-});
+const problemCount = computed<number>(() => get(problems).length + get(failures).length);
 </script>
 
 <template>
@@ -66,10 +59,10 @@ const emptyState = computed<{ title: string; description: string }>(() => {
           />
         </div>
         <div class="text-base font-medium text-rui-text">
-          {{ emptyState.title }}
+          {{ t('notification_sidebar.empty.title') }}
         </div>
         <div class="text-sm text-rui-text-secondary max-w-64">
-          {{ emptyState.description }}
+          {{ t('notification_sidebar.empty.description') }}
         </div>
       </div>
     </DefineNoMessages>
@@ -110,39 +103,32 @@ const emptyState = computed<{ title: string; description: string }>(() => {
       <ReuseNoMessages v-if="isEmpty" />
       <div
         v-else
-        class="flex flex-col flex-1 min-h-0"
+        ref="contentWrapper"
+        class="flex flex-col flex-1 min-h-0 gap-2 ps-3.5 pe-2 pb-2 overflow-y-auto"
       >
-        <div class="border-b border-default mx-4">
-          <RuiTabs
-            v-model="modelSelectedTab"
-            color="primary"
-          >
-            <RuiTab
-              v-for="item in TAB_ORDER"
-              :key="item"
-              size="sm"
-              class="min-w-0!"
-              :value="item"
-            >
-              {{ tabCategoriesLabel[item] }}
-            </RuiTab>
-          </RuiTabs>
-        </div>
-        <div
-          v-if="selectedNotifications.length > 0 || selectedProblems.length > 0"
-          ref="contentWrapper"
-          class="ps-3.5 pe-2 mt-2 flex flex-col gap-2 overflow-y-auto!"
+        <template
+          v-for="day in historyDays"
+          :key="day.key"
         >
-          <BackendProblemCard
-            v-for="problem in selectedProblems"
-            :key="problem.id"
-            class="grow-0 shrink-0"
-            :problem="problem"
-            @dismiss="removeProblem($event)"
-            @acted="close()"
-          />
+          <div
+            class="sticky top-0 z-1 bg-rui-surface pt-2 pb-0.5 text-caption font-medium text-rui-text-secondary"
+            data-testid="notification-day"
+          >
+            <template v-if="day.label === NotificationDayLabel.TODAY">
+              {{ t('notification_sidebar.day.today') }}
+            </template>
+            <template v-else-if="day.label === NotificationDayLabel.YESTERDAY">
+              {{ t('notification_sidebar.day.yesterday') }}
+            </template>
+            <DateDisplay
+              v-else
+              :timestamp="day.date.getTime()"
+              milliseconds
+              no-time
+            />
+          </div>
           <LazyLoader
-            v-for="item in selectedNotifications"
+            v-for="item in day.notifications"
             :key="item.id"
             :initial-appear="initialAppear"
             min-height="120px"
@@ -153,26 +139,68 @@ const emptyState = computed<{ title: string; description: string }>(() => {
               @dismiss="remove($event)"
             />
           </LazyLoader>
-          <div
-            v-if="messageOverflow"
-            class="flex bg-rui-warning/10 rounded-md border p-2 gap-4"
-          >
-            <div class="flex flex-col justify-center items-center">
-              <div class="rounded-full p-2 bg-rui-warning">
-                <RuiIcon
-                  size="20"
-                  class="text-white"
-                  name="lu-siren"
-                />
-              </div>
-            </div>
+        </template>
 
-            <div class="text-rui-text-secondary text-body-2 break-words">
-              {{ t('notification_sidebar.message_overflow') }}
+        <section
+          v-if="problemCount > 0"
+          class="flex flex-col gap-2"
+          data-testid="notification-problems"
+        >
+          <button
+            type="button"
+            class="sticky top-0 z-1 bg-rui-surface pt-2 pb-0.5 flex items-center gap-1.5 text-caption font-medium text-rui-text-secondary cursor-pointer"
+            :aria-expanded="modelProblemsOpen"
+            data-testid="notification-problems-toggle"
+            @click="modelProblemsOpen = !modelProblemsOpen"
+          >
+            {{ t('notification_sidebar.problems', { count: problemCount }) }}
+            <RuiIcon
+              size="16"
+              :name="modelProblemsOpen ? 'lu-chevron-up' : 'lu-chevron-down'"
+            />
+          </button>
+          <template v-if="modelProblemsOpen">
+            <BackendProblemCard
+              v-for="problem in problems"
+              :key="problem.id"
+              class="grow-0 shrink-0"
+              :problem="problem"
+              @dismiss="removeProblem($event)"
+              @acted="close()"
+            />
+            <LazyLoader
+              v-for="item in failures"
+              :key="item.id"
+              :initial-appear="initialAppear"
+              min-height="120px"
+              class="grow-0 shrink-0"
+            >
+              <Notification
+                :notification="item"
+                @dismiss="remove($event)"
+              />
+            </LazyLoader>
+          </template>
+        </section>
+
+        <div
+          v-if="messageOverflow"
+          class="flex bg-rui-warning/10 rounded-md border p-2 gap-4"
+        >
+          <div class="flex flex-col justify-center items-center">
+            <div class="rounded-full p-2 bg-rui-warning">
+              <RuiIcon
+                size="20"
+                class="text-white"
+                name="lu-siren"
+              />
             </div>
           </div>
+
+          <div class="text-rui-text-secondary text-body-2 break-words">
+            {{ t('notification_sidebar.message_overflow') }}
+          </div>
         </div>
-        <ReuseNoMessages v-else />
       </div>
       <div class="p-3 flex justify-end border-t border-rui-divider mt-2">
         <RuiButton

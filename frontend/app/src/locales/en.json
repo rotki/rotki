@@ -5357,26 +5357,21 @@
       "message": "This action will clear all the active notifications. Do you want to proceed?",
       "title": "Clear active notifications"
     },
+    "day": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
     "empty": {
       "description": "Sync results, alerts and errors show up here as they happen.",
       "title": "You're all caught up"
     },
-    "empty_tab": {
-      "description": "Switch to All to see the rest of your notifications.",
-      "error": "No errors",
-      "reminder": "No reminders"
-    },
     "message_overflow": "The total amount of notifications received has exceeded the limit of 200. Older notifications have been removed.",
+    "problems": "Problems ({count})",
     "show_less": "Show less",
     "show_more": "Show more",
     "silent": {
       "off": "Silence notification popups",
       "on": "Popups silenced. Click to allow them again"
-    },
-    "tabs": {
-      "error": "Error",
-      "reminder": "Reminder",
-      "view_all": "All"
     },
     "title": "Notifications",
     "view_calendar": "View Calendar"

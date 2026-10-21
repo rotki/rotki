@@ -99,6 +99,33 @@ describe('modules/core/notifications/NotificationSidebar.vue', () => {
     expect(remaining[0].text()).toContain('second');
   });
 
+  describe('the history and the problems section', () => {
+    it('should head the history by day', async () => {
+      const wrapper = createWrapper([notification({ date: new Date(), id: 1 })]);
+      await nextTick();
+
+      expect(wrapper.findAll('[data-testid=notification-day]').map(day => day.text())).toEqual(['notification_sidebar.day.today']);
+    });
+
+    it('should file a failure under the problems, not in the history', async () => {
+      const wrapper = createWrapper([notification({ id: 1, kind: NotificationKind.FAILURE, title: 'a failure' })]);
+      await nextTick();
+
+      expect(wrapper.findAll('[data-testid=notification-day]')).toHaveLength(0);
+      expect(wrapper.find('[data-testid=notification-problems]').text()).toContain('a failure');
+    });
+
+    it('should hide what the problems section holds once it is folded', async () => {
+      const wrapper = createWrapper([notification({ id: 1, kind: NotificationKind.FAILURE })]);
+      await nextTick();
+
+      await wrapper.find('[data-testid=notification-problems-toggle]').trigger('click');
+
+      expect(wrapper.find('[data-testid=notification-problems]').findAll('[data-id=notification]')).toHaveLength(0);
+      expect(wrapper.find('[data-testid=notification-problems-toggle]').attributes('aria-expanded')).toBe('false');
+    });
+  });
+
   describe('backend problems', () => {
     function fileProblem(subject: string): void {
       useBackendProblemsStore().record({
