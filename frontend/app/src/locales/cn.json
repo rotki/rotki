@@ -550,8 +550,7 @@
     "assets": {
       "erc20": {
         "error": {
-          "timeout": "获取代币详情超时。你可以手动输入代币信息。",
-          "title": "正在获取 {address} ({evmChain}) 的代币详情"
+          "timeout": "获取代币详情超时。你可以手动输入代币信息。"
         }
       }
     },

@@ -175,13 +175,6 @@
     }
   },
   "actions": {
-    "assets": {
-      "erc20": {
-        "error": {
-          "title": "Récupération des détails du token pour {address} ({evmChain})"
-        }
-      }
-    },
     "balances": {
       "all_balances": {
         "task": {

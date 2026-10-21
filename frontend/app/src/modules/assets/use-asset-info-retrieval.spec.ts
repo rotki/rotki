@@ -12,8 +12,13 @@ import { useNotificationDispatcher } from '@/modules/core/notifications/use-noti
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 
-const { cancelActivityMock } = vi.hoisted(() => ({
+const { cancelActivityMock, cancelTaskByIdMock } = vi.hoisted(() => ({
   cancelActivityMock: vi.fn(),
+  cancelTaskByIdMock: vi.fn<(taskId: number) => Promise<boolean>>(async () => true),
+}));
+
+vi.mock('@/modules/core/tasks/use-task-handler', () => ({
+  useTaskHandler: vi.fn(() => ({ cancelTaskById: cancelTaskByIdMock })),
 }));
 
 const runTaskResult = vi.fn();
@@ -121,15 +126,38 @@ describe('useAssetRetrieval', () => {
       expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
     });
 
-    it('should time out and cancel the task when the lookup never resolves, rather than leave the form fields disabled forever', async () => {
+    it('should fail the task with a hint and abort the backend task when the lookup outlasts its timeout, without a notification', async () => {
       vi.useFakeTimers();
-      cancelActivityMock.mockClear();
-      submitTask.mockReturnValueOnce(neverSettles());
+      runTaskResult.mockImplementation(async (task: () => Promise<unknown>) => {
+        await task();
+        return neverSettles();
+      });
 
       try {
         const resultPromise = assetInfoRetrieval.fetchTokenDetails(payload);
 
         await vi.advanceTimersByTimeAsync(15_000);
+
+        await expect(resultPromise).resolves.toEqual({});
+        const outcome = await submitTask.mock.results[0]?.value;
+        expect(outcome).toEqual(err(TaskFailed({ message: 'actions.assets.erc20.error.timeout' })));
+        expect(cancelTaskByIdMock).toHaveBeenCalledWith(1);
+        expect(cancelActivityMock).not.toHaveBeenCalled();
+        expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
+      }
+      finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('should cancel a lookup still queued after the queue timeout, rather than leave the form fields disabled forever', async () => {
+      vi.useFakeTimers();
+      submitTask.mockReturnValueOnce(neverSettles());
+
+      try {
+        const resultPromise = assetInfoRetrieval.fetchTokenDetails(payload);
+
+        await vi.advanceTimersByTimeAsync(30_000);
 
         await expect(resultPromise).resolves.toEqual({});
         expect(cancelActivityMock).toHaveBeenCalledWith(
@@ -138,7 +166,7 @@ describe('useAssetRetrieval', () => {
           payload.evmChain,
           payload.address,
         );
-        expect(useNotificationDispatcher().notify).toHaveBeenCalled();
+        expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
       }
       finally {
         vi.useRealTimers();

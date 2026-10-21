@@ -582,8 +582,7 @@
     "assets": {
       "erc20": {
         "error": {
-          "timeout": "Timed out while retrieving token details. You can enter the token information manually.",
-          "title": "Retrieving token details for {address} ({evmChain})"
+          "timeout": "Timed out while retrieving token details. You can enter the token information manually."
         }
       }
     },

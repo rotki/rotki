@@ -316,13 +316,6 @@
         "title": "Движение актива сопоставлено"
       }
     },
-    "assets": {
-      "erc20": {
-        "error": {
-          "title": "Получение данных токена для {address} ({evmChain})"
-        }
-      }
-    },
     "balances": {
       "all_balances": {
         "task": {
