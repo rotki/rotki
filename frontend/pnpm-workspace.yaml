@@ -59,7 +59,7 @@ catalog:
   '@playwright/test': 1.64.0
   '@rotki/eslint-config': 8.3.0
   '@rotki/eslint-plugin': 1.8.0
-  '@rotki/ui-library': 3.0.0
+  '@rotki/ui-library': 3.1.0
   '@tailwindcss/postcss': 4.3.3
   '@tsconfig/node24': 24.0.5
   '@types/node': 24.19.1
