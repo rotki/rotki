@@ -91,16 +91,17 @@ export const useSync = createSharedComposable(() => {
   /**
    * Colibri stays locked after a download and only a login unlocks it again, so a download that
    * locked it ends in a logout, whatever its outcome. A toast would vanish on it; the message
-   * dialog stays open on the login screen.
+   * dialog stays open on the login screen. Logout resets every store, the message store and the
+   * date display setting included, so the text is built before it and shown once it is done.
    */
   const finishDownload = async (outcome: Result<ForceSyncResult, TaskError>, logout: () => Promise<void>): Promise<void> => {
     const described = describeOutcome(outcome);
+    await logout();
+
     if (described.kind === 'success')
       showSuccessMessage(t('actions.session.force_sync.success.title'), described.message);
     else
       showErrorMessage(t('actions.session.force_sync.error.title'), failureMessage(described.error));
-
-    await logout();
   };
 
   const notifyOutcome = (outcome: Result<ForceSyncResult, TaskError>): void => {

@@ -137,14 +137,23 @@ describe('useSync', () => {
       expect(get(sync.displaySyncConfirmation)).toBe(false);
     });
 
-    it('should show a message that outlasts the logout on a successful download sync', async () => {
+    it('should show the message only after the logout, which resets every store, on a successful download sync', async () => {
       set(sync.syncAction, SYNC_DOWNLOAD);
       runTaskResult.mockResolvedValue(ok(true));
-      const logout = vi.fn(async (): Promise<void> => {});
+      let loggedOut = false;
+      const logout = vi.fn(async (): Promise<void> => {
+        await Promise.resolve();
+        loggedOut = true;
+      });
+      let shownAfterLogout: boolean | undefined;
+      mockShowSuccessMessage.mockImplementationOnce(() => {
+        shownAfterLogout = loggedOut;
+      });
 
       await sync.forceSync(logout);
 
       expect(mockShowSuccessMessage).toHaveBeenCalledOnce();
+      expect(shownAfterLogout).toBe(true);
       expect(mockNotifyInfo).not.toHaveBeenCalled();
       expect(logout).toHaveBeenCalledOnce();
     });
@@ -254,9 +263,17 @@ describe('useSync', () => {
       expect(logout).not.toHaveBeenCalled();
     });
 
-    it('should show an actionable failure and log out', async () => {
+    it('should show an actionable failure once the logout is done', async () => {
       runTaskResult.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
-      const logout = vi.fn(async (): Promise<void> => {});
+      let loggedOut = false;
+      const logout = vi.fn(async (): Promise<void> => {
+        await Promise.resolve();
+        loggedOut = true;
+      });
+      let shownAfterLogout: boolean | undefined;
+      mockShowErrorMessage.mockImplementationOnce(() => {
+        shownAfterLogout = loggedOut;
+      });
 
       await sync.forceSync(logout);
 
@@ -264,6 +281,7 @@ describe('useSync', () => {
         'actions.session.force_sync.error.title',
         'actions.session.force_sync.error.message::boom',
       );
+      expect(shownAfterLogout).toBe(true);
       expect(logout).toHaveBeenCalledOnce();
     });
 
