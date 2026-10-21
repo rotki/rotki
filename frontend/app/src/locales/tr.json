@@ -4800,7 +4800,6 @@
     }
   },
   "missing_exchange_rate": {
-    "message": "Bu para birimini kullanırsanız bu rotki oturumunda hatalar oluşabilir.",
     "title": "Kur bilgisi eksik"
   },
   "missing_prices_dialog": {

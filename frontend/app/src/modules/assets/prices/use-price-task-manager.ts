@@ -1,7 +1,7 @@
 import type { FetchPricePayload } from '@/modules/accounts/blockchain-accounts';
 import type { SupportedCurrency } from '@/modules/assets/amount-display/currencies';
 import { type BigNumber, One } from '@rotki/common';
-import { err, getOr, isErr, isOk, map as mapResult, ok, type Result } from 'plainfp/result';
+import { err, flatMap, getOr, isErr, isOk, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { type HistoricPricePayload, HistoricPrices, type OracleCachePayload } from '@/modules/assets/prices/price-types';
 import { assetSetDigest, useFetchPrices } from '@/modules/assets/prices/use-fetch-prices';
@@ -31,7 +31,7 @@ interface UsePriceTaskManagerReturn {
 export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { statusOf, submitTask } = useNativeTask();
-  const { notifyError, notifyInfo } = useNotifications();
+  const { notifyInfo } = useNotifications();
   const { getAssetField } = useAssetInfoRetrieval();
   const currencySymbol = useSetting('currencySymbol');
   const { exchangeRates } = storeToRefs(useBalancePricesStore());
@@ -45,10 +45,14 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   /**
    * The body of an exchange-rate fetch, run through `runTask` inside whichever activity calls it.
    *
+   * @remarks
+   * The backend answers a rate it could not find with zero rather than an error, so a zero rate
+   * fails the activity, which names the currency on its dock row.
+   *
    * @param runTask - the runner of the activity this is a stage of
    * @param selectedCurrency - the currency to fetch the rate of
    */
-  const queryExchangeRates = async (runTask: RunBackendTask, selectedCurrency: SupportedCurrency): Promise<Result<void, TaskError>> => mapResult(
+  const queryExchangeRates = async (runTask: RunBackendTask, selectedCurrency: SupportedCurrency): Promise<Result<void, TaskError>> => flatMap(
     await runTask<ExchangeRates>(
       async () => queryFiatExchangeRates([selectedCurrency]),
     ),
@@ -59,9 +63,9 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
         ...rates,
       });
 
-      const rate = rates[selectedCurrency];
-      if (rate?.eq(0))
-        notifyError(t('missing_exchange_rate.title'), t('missing_exchange_rate.message'));
+      if (rates[selectedCurrency]?.eq(0))
+        return err(TaskFailed({ message: `${t('missing_exchange_rate.title')} (${selectedCurrency})` }));
+      return ok(undefined);
     },
   );
 

@@ -1990,7 +1990,6 @@
     }
   },
   "missing_exchange_rate": {
-    "message": "Cette session de rotki peut présenter des erreurs si vous utilisez cette devise.",
     "title": "Taux de change manquant"
   },
   "module_activator": {
