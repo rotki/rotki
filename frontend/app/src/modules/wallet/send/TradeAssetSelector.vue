@@ -268,7 +268,7 @@ function redetectTokens(): void {
           <ChainSelect
             v-model="internalChain"
             class="w-56 shrink-0"
-            hide-details
+            details="hidden"
             dense
             label-placement="hidden"
             :items="chainOptions"

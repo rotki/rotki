@@ -105,7 +105,7 @@ async function changeSelectedTheme(selectedTheme: Theme) {
             :max="2"
             :min="0"
             show-ticks
-            hide-details
+            details="hidden"
             hide-track
             :tick-size="12"
             :class-names="{

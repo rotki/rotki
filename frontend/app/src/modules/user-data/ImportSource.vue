@@ -236,7 +236,7 @@ const activeOptions = computed<number>(() =>
           ref="uploader"
           v-model="file"
           accept=".csv"
-          hide-details
+          details="hidden"
           :loading="loading"
           :uploaded="uploaded"
           :error-messages="errorMessage ? [errorMessage] : []"
@@ -324,7 +324,7 @@ const activeOptions = computed<number>(() =>
         >
           <RuiSwitch
             color="primary"
-            hide-details
+            details="hidden"
             :model-value="form.state.dateInputFormat !== undefined"
             data-testid="import-date-format-switch"
             @update:model-value="changeShouldCustomDateFormat()"
@@ -360,7 +360,7 @@ const activeOptions = computed<number>(() =>
           <div data-testid="import-timezone-switch">
             <RuiSwitch
               color="primary"
-              hide-details
+              details="hidden"
               :model-value="useCustomTimezone"
               @update:model-value="toggleCustomTimezone($event)"
             >

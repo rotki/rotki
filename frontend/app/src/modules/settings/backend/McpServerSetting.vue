@@ -417,7 +417,7 @@ onBeforeMount(() => {
           v-model="privacyMode"
           data-testid="mcp-privacy-mode"
           color="primary"
-          hide-details
+          details="hidden"
           :disabled="privacyModePending"
         >
           <RuiRadio
@@ -463,7 +463,7 @@ onBeforeMount(() => {
           data-testid="mcp-auto-start"
           :model-value="autoStart"
           :disabled="isAutoStartDisabled"
-          hide-details
+          details="hidden"
           color="primary"
           :label="t('backend_settings.settings.mcp_server.auto_start')"
           @update:model-value="updateAutoStart($event)"

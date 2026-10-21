@@ -127,7 +127,7 @@ watch(() => form.state.hide, resetThresholdForHiding);
         size="sm"
         data-testid="hide-small-balances-toggle"
         :label="t('hide_small_balances.hide')"
-        hide-details
+        details="hidden"
         color="primary"
       />
       <RuiTextField
@@ -154,7 +154,7 @@ watch(() => form.state.hide, resetThresholdForHiding);
       <div class="flex gap-2 items-center">
         <RuiCheckbox
           v-model="form.state.applyToAllBalances"
-          hide-details
+          details="hidden"
           :disabled="loading"
           color="primary"
           :label="t('hide_small_balances.apply_to_all')"

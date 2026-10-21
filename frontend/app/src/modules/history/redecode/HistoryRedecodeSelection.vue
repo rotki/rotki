@@ -112,7 +112,7 @@ function redecode() {
           color="primary"
           :label="t('history_redecode_selection.search_chain')"
           prepend-icon="lu-search"
-          hide-details
+          details="hidden"
           clearable
         />
       </div>
@@ -140,7 +140,7 @@ function redecode() {
         :indeterminate="indeterminate"
         :model-value="selected"
         size="sm"
-        hide-details
+        details="hidden"
         @click.prevent="toggleSelectAll()"
       >
         {{ t('common.actions.select_all') }}

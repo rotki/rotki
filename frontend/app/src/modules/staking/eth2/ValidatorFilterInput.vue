@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Eth2ValidatorEntry } from '@rotki/common';
+import type { FormDetails } from '@rotki/ui-library';
 import ValidatorDisplay from '@/modules/shell/components/display/ValidatorDisplay.vue';
 
 const model = defineModel<Eth2ValidatorEntry[]>({ required: true });
@@ -8,13 +9,13 @@ const {
   items,
   loading = false,
   dense = false,
-  hideDetails = false,
+  details,
   hint,
 } = defineProps<{
   items: Eth2ValidatorEntry[];
   loading?: boolean;
   dense?: boolean;
-  hideDetails?: boolean;
+  details?: FormDetails;
   hint?: string;
 }>();
 
@@ -28,7 +29,7 @@ const { t } = useI18n({ useScope: 'global' });
     :loading="loading"
     :disabled="loading"
     :dense="dense"
-    :hide-details="hideDetails"
+    :details="details"
     :hint="hint"
     hide-selected
     hide-no-data

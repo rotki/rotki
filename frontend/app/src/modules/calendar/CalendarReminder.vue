@@ -276,7 +276,7 @@ defineExpose({
       v-model="remindInTime"
       color="primary"
       size="sm"
-      hide-details
+      details="hidden"
       :label="t('calendar.reminder.notify')"
     />
 

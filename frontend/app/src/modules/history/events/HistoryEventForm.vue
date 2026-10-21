@@ -115,7 +115,7 @@ defineExpose({
     :options="historyEventEntryTypes"
     :disabled="data.type !== 'add' && !isGroupAdd"
     :label="t('common.entry_type')"
-    hide-details
+    details="hidden"
   >
     <template #selection="{ item }">
       <span class="capitalize">

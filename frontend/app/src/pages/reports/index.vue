@@ -183,7 +183,7 @@ const accountingSettingsRoute: RouteLocationRaw = { name: '/settings/accounting/
           :upload-text="t('file_upload.dropzone.prefix')"
           :click-to-upload-text="t('file_upload.dropzone.choose')"
           :replace-text="t('file_upload.dropzone.replace')"
-          hide-details
+          details="hidden"
           data-testid="report-debug-data-file"
         />
         <template #footer>

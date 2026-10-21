@@ -26,7 +26,7 @@ function toggleSelect(): void {
       :disabled="disabled"
       color="primary"
       size="sm"
-      hide-details
+      details="hidden"
     />
     <LocationIcon
       size="1.25"

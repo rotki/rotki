@@ -86,7 +86,7 @@ const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>
         :options="purgeable"
         text-attr="text"
         key-attr="id"
-        hide-details
+        details="hidden"
         :disabled="pending"
       />
       <AssetSelect

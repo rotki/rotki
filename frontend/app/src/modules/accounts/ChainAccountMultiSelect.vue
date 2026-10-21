@@ -98,7 +98,7 @@ defineExpose({
     text-attr="id"
     chips
     dense
-    hide-details
+    details="hidden"
     auto-select-first
     @update:model-value="modelValue = $event"
   >

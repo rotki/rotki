@@ -119,7 +119,7 @@ const limits = [10, 25, 50, 100];
           :label="t('data_table.rows_per_page')"
           label-placement="hidden"
           dense
-          hide-details
+          details="hidden"
           :class-names="{ label: 'text-xs!' }"
           class="w-18"
         />

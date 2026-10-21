@@ -135,7 +135,7 @@ defineExpose({ open });
         v-model="splitMode"
         color="primary"
         size="sm"
-        hide-details
+        details="hidden"
         data-testid="snapshot-balances-delete-split-toggle"
       >
         {{ t('dashboard.snapshot.detail.split.title') }}

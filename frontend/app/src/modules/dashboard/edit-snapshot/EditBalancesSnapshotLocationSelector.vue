@@ -33,7 +33,6 @@ function isLocationDisabled(item: TradeLocationData): boolean {
       data-testid="snapshot-location"
       clearable
       :item-disabled="isLocationDisabled"
-      :hide-details="false"
       :error-messages="errorMessages"
       :hint="t('dashboard.snapshot.edit.dialog.balances.hints.location')"
       :label="t('common.location')"
@@ -43,7 +42,7 @@ function isLocationDisabled(item: TradeLocationData): boolean {
       v-model="showOnlyExisting"
       color="primary"
       size="sm"
-      hide-details
+      details="hidden"
       class="mt-2"
     >
       {{ t('dashboard.snapshot.edit.dialog.balances.only_show_existing') }}

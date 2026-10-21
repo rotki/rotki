@@ -155,7 +155,7 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
           :options="sources"
           text-attr="label"
           dense
-          hide-details
+          details="hidden"
           return-object
           auto-select-first
           key-attr="key"

@@ -268,7 +268,7 @@ defineExpose({
             :model-value="allPageSelected"
             :disabled="isRunning || conflicts.length === 0"
             color="primary"
-            hide-details
+            details="hidden"
             @update:model-value="toggleAllOnPage(conflicts)"
           />
         </template>
@@ -277,7 +277,7 @@ defineExpose({
             :model-value="isSelected(row)"
             :disabled="isRunning"
             color="primary"
-            hide-details
+            details="hidden"
             @update:model-value="toggleSelection(row)"
           />
         </template>

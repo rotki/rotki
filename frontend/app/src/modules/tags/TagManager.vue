@@ -109,7 +109,7 @@ onMounted(async () => {
           :label="t('common.actions.search')"
           label-placement="hidden"
           :placeholder="t('common.actions.search')"
-          hide-details
+          details="hidden"
           data-testid="tag-manager-search"
         />
       </template>

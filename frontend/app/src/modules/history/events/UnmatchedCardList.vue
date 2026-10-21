@@ -114,7 +114,7 @@ watch(() => items.length, (length) => {
         :indeterminate="someSelected"
         color="primary"
         size="sm"
-        hide-details
+        details="hidden"
         :label="t('asset_movement_matching.card_list.select_all')"
         data-testid="unmatched-card-select-all"
         @update:model-value="toggleAll(!allSelected)"
@@ -168,7 +168,7 @@ watch(() => items.length, (length) => {
             :model-value="isSelected(item)"
             color="primary"
             size="sm"
-            hide-details
+            details="hidden"
             @click.stop
             @update:model-value="toggle(item, $event ?? false)"
           />

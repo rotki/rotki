@@ -21,7 +21,7 @@ const { isPackaged } = useInterop();
       v-model="rememberUsername"
       :disabled="disabled || rememberPassword"
       color="primary"
-      hide-details
+      details="hidden"
     >
       {{ t('login.remember_username') }}
     </RuiCheckbox>
@@ -34,7 +34,7 @@ const { isPackaged } = useInterop();
           v-model="rememberPassword"
           :disabled="disabled"
           color="primary"
-          hide-details
+          details="hidden"
         >
           {{ t('login.remember_password') }}
         </RuiCheckbox>

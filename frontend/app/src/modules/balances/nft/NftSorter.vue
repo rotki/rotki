@@ -34,7 +34,7 @@ const sortProperties = [
       text-attr="text"
       :label="t('nft_gallery.sort.by')"
       label-placement="hidden"
-      hide-details
+      details="hidden"
       dense
       data-testid="nft-gallery-sort"
     />

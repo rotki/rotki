@@ -133,7 +133,7 @@ defineExpose({
         <RuiSwitch
           v-model="form.state.owned"
           color="primary"
-          hide-details
+          details="hidden"
           data-testid="node-owned"
           :disabled="isEtherscan || restricted"
         />
@@ -146,7 +146,7 @@ defineExpose({
         <RuiSwitch
           v-model="form.state.active"
           color="primary"
-          hide-details
+          details="hidden"
           data-testid="node-active"
           :disabled="isEtherscan || restricted"
         />
@@ -171,7 +171,7 @@ defineExpose({
         v-model="form.state.weight"
         :disabled="form.state.owned"
         :error-messages="form.errors('weight').length > 0 ? [''] : []"
-        hide-details
+        details="hidden"
         class="w-24 [&>div]:min-w-0"
       >
         <template #append>

@@ -113,7 +113,7 @@ watch(visible, (isVisible, wasVisible) => {
         v-model="filter"
         dense
         autofocus
-        hide-details
+        details="hidden"
         clearable
         color="primary"
         :label="t('common.actions.filter')"

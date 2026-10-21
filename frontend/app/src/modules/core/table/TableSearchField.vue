@@ -14,7 +14,7 @@ const { t } = useI18n({ useScope: 'global' });
     :placeholder="t('common.actions.search')"
     :aria-label="t('common.actions.search')"
     class="ml-auto w-full max-w-64 [&_input]:py-1.5! [&_input]:text-sm! [&_input]:leading-5! [&_input::placeholder]:opacity-100! [&_input::placeholder]:text-rui-text-secondary! [&_svg]:size-4!"
-    hide-details
+    details="hidden"
     clearable
     @click:clear="search = ''"
   />

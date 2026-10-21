@@ -79,7 +79,7 @@ defineExpose({
       min-rows="3"
       auto-grow
       clearable
-      hide-details
+      details="hidden"
       :label="t('common.notes')"
     />
 

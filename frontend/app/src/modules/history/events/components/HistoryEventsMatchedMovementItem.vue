@@ -99,7 +99,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
         v-if="showCheckbox"
         v-model="isSelectedModel"
         color="primary"
-        hide-details
+        details="hidden"
         :disabled="isCheckboxDisabled"
         class="shrink-0"
       />
@@ -163,7 +163,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
       v-if="showCheckbox"
       v-model="isSelectedModel"
       color="primary"
-      hide-details
+      details="hidden"
       :disabled="isCheckboxDisabled"
       class="absolute left-4 top-1/2 -translate-y-1/2"
     />

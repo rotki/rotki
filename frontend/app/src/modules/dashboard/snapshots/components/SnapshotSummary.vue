@@ -309,7 +309,7 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
         <RuiCheckbox
           v-model="excludeNfts"
           color="primary"
-          hide-details
+          details="hidden"
           size="sm"
           data-testid="snapshot-summary-exclude-nfts"
         >
@@ -525,7 +525,7 @@ watch(() => get(warningMessages).map(message => message.text).join(' '), () => {
           :items="existingLocations"
           :item-disabled="isOverdrawnTarget"
           dense
-          hide-details
+          details="hidden"
           :label="t('dashboard.snapshot.detail.mismatch.reconcile_into')"
         />
         <RuiButton

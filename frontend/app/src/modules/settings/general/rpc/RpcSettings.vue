@@ -160,7 +160,7 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
             :label="t('general_settings.rpc_node_setting.title')"
             key-attr="key"
             text-attr="label"
-            hide-details
+            details="hidden"
             @update:model-value="selectTab($event)"
           >
             <template #item="{ item }">

@@ -51,7 +51,7 @@ const tooltipMessage = computed<string>(() =>
       <template #activator>
         <RuiSwitch
           color="primary"
-          hide-details
+          details="hidden"
           :loading="loading"
           :disabled="isIgnoringDisabled"
           :model-value="isIgnored"
@@ -105,7 +105,7 @@ const tooltipMessage = computed<string>(() =>
             <RuiCheckbox
               class="-mr-2"
               color="primary"
-              hide-details
+              details="hidden"
               :model-value="isWhitelisted"
             />
           </template>
@@ -121,7 +121,7 @@ const tooltipMessage = computed<string>(() =>
             <RuiCheckbox
               class="-mr-2"
               color="primary"
-              hide-details
+              details="hidden"
               :model-value="isSpam"
             />
           </template>

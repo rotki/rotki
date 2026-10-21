@@ -46,7 +46,7 @@ watch(search, () => {
         color="primary"
         :label="t('account_balances.detect_tokens.selection.type')"
         prepend-icon="lu-search"
-        hide-details
+        details="hidden"
         clearable
       />
     </div>
@@ -77,7 +77,7 @@ watch(search, () => {
         :indeterminate="hasSelection && !isAllSelected"
         :model-value="isAllSelected"
         size="sm"
-        hide-details
+        details="hidden"
         @click.prevent="toggle()"
       >
         {{ t('account_balances.detect_tokens.selection.select_all') }}

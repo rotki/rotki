@@ -141,7 +141,7 @@ onBeforeMount(async () => {
         v-model:search-input="search"
         no-filter
         :no-data-text="t('global_search.no_actions')"
-        hide-details
+        details="hidden"
         :loading="loading"
         :item-height="44"
         :options="visibleItems"

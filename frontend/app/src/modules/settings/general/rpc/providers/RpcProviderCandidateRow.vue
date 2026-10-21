@@ -25,7 +25,7 @@ const { getChainName } = useSupportedChains();
       :model-value="selected"
       :disabled="!!candidate.existing"
       color="primary"
-      hide-details
+      details="hidden"
       size="sm"
       @update:model-value="emit('toggle', $event)"
     >

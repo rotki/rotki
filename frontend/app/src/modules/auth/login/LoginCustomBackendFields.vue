@@ -86,7 +86,7 @@ const { t } = useI18n({ useScope: 'global' });
       <RuiCheckbox
         v-model="sessionOnly"
         color="primary"
-        hide-details
+        details="hidden"
         :disabled="saved"
       >
         {{ t('login.custom_backend.session_only') }}

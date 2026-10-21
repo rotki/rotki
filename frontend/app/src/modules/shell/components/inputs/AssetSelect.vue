@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { FormDetails } from '@rotki/ui-library';
 import type { NftAsset } from '@/modules/assets/nfts';
 import type { AssetActions, AssetDisplay } from '@/modules/assets/types';
 import { type AssetInfoWithId, getValidSelectorFromEvmAddress } from '@rotki/common';
@@ -24,9 +25,9 @@ const asset = defineModel<AssetInfoWithId | NftAsset | undefined>('asset');
 const {
   clearable = false,
   dense = false,
+  details,
   disabled = false,
   errorMessages = [],
-  hideDetails = false,
   hint = '',
   label,
   required = false,
@@ -49,7 +50,7 @@ const {
   disabled?: boolean;
   clearable?: boolean;
   required?: boolean;
-  hideDetails?: boolean;
+  details?: FormDetails;
   dense?: boolean;
 }>();
 
@@ -123,7 +124,7 @@ function onUpdateModelValue(value: string): void {
     :error-messages="errors"
     key-attr="identifier"
     text-attr="identifier"
-    :hide-details="hideDetails"
+    :details="details"
     :hide-no-data="loading || !modelSearch || !!error"
     auto-select-first
     :dense="dense"

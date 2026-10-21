@@ -53,7 +53,7 @@ const filtered = computed<StakingInfo[]>(() => {
           <RuiTextField
             v-model="search"
             dense
-            hide-details
+            details="hidden"
             clearable
             prepend-icon="lu-search"
             :label="t('staking_page.search_locations')"

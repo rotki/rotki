@@ -62,7 +62,7 @@ defineExpose({
       :disabled="processing"
       color="primary"
       size="sm"
-      hide-details
+      details="hidden"
       @click.prevent
     />
 

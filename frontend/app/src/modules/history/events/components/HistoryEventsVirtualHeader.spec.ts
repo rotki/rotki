@@ -17,7 +17,7 @@ vi.mock('@/modules/session/use-items-per-page', () => ({
 
 const MenuSelectStub = {
   name: 'RuiMenuSelect',
-  props: ['modelValue', 'options', 'dense', 'hideDetails', 'classNames'],
+  props: ['modelValue', 'options', 'dense', 'details', 'classNames'],
   template: '<div />',
 };
 

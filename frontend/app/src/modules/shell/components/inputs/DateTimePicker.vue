@@ -16,8 +16,8 @@ const {
   dense,
   disabled,
   errorMessages,
+  details,
   format,
-  hideDetails,
   hint,
   label,
   maxDate,
@@ -56,9 +56,9 @@ function applyQuickOption(option: QuickOption): void {
     :allow-empty="allowEmpty"
     :dense="dense"
     :disabled="disabled"
+    :details="details"
     :error-messages="errorMessages"
     :format="format"
-    :hide-details="hideDetails"
     :hint="hint"
     :label="label"
     :max-date="maxDate"

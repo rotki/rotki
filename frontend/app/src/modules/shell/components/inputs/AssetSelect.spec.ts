@@ -48,7 +48,7 @@ const RuiAutoComplete = defineComponent({
   props: {
     dense: { default: false, type: Boolean },
     errorMessages: { default: undefined, type: [String, Array] },
-    hideDetails: { default: false, type: Boolean },
+    details: { default: undefined, type: String },
     label: { default: undefined, type: String },
     modelValue: { default: undefined, type: String },
     options: { default: () => [], type: Array },
@@ -59,7 +59,7 @@ const RuiAutoComplete = defineComponent({
     :data-label="label"
     :data-placeholder="placeholder"
     :data-dense="String(dense === true)"
-    :data-hide-details="String(hideDetails === true)"
+    :data-details="details"
   >
     <template v-for="option in options" :key="option.identifier">
       <div v-if="option.identifier === modelValue" class="selection">

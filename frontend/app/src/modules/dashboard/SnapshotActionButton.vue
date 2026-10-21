@@ -98,7 +98,7 @@ async function forceSaveAndClose(): Promise<void> {
               setting="ignoreSnapshotError"
               control="checkbox"
               :label="t('snapshot_action_button.ignore_errors_label')"
-              hide-details
+              details="hidden"
             />
           </template>
           {{ t('snapshot_action_button.ignore_errors_tooltip') }}
