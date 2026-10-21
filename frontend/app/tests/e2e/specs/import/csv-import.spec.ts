@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { waitForNoRunningTasks } from '../../helpers/api';
 import { TIMEOUT_MEDIUM } from '../../helpers/constants';
+import { closeNotificationDrawer, openNotificationDrawer } from '../../helpers/notifications';
 import { HistoryEventsPage } from '../../pages/history-events-page';
 import { ImportPage } from '../../pages/import-page';
 
@@ -74,6 +75,13 @@ test.describe.serial('csv import', () => {
     await importPage.submitImport('cointracking');
     await importPage.waitForImportComplete('cointracking');
     await importPage.dismissNotifications();
+
+    await openNotificationDrawer(ctx.sharedPage);
+    const today = ctx.sharedPage.getByTestId('notification-day-group').filter({
+      has: ctx.sharedPage.getByTestId('notification-day').filter({ hasText: 'Today' }),
+    });
+    await expect(today.locator('[data-id=notification]').filter({ hasText: 'CSV Import Result' }).first()).toBeVisible();
+    await closeNotificationDrawer(ctx.sharedPage);
 
     // Navigate to history and filter by poloniex (unique: 5 XMR deposit from cointracking)
     await historyPage.visit();

@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import path from 'node:path';
 import { TIMEOUT_LONG } from '../helpers/constants';
+import { dismissNotificationPopups } from '../helpers/notifications';
 import { RotkiApp } from './rotki-app';
 
 /**
@@ -67,11 +68,7 @@ export class ImportPage {
   }
 
   async dismissNotifications(): Promise<void> {
-    const dismissButton = this.page.locator('[data-id=notification_dismiss]');
-    if (await dismissButton.isVisible()) {
-      await dismissButton.click();
-      await this.page.locator('[data-id=notification]').waitFor({ state: 'detached' });
-    }
+    await dismissNotificationPopups(this.page);
   }
 
   async importCsv(sourceKey: string, csvFileName: string): Promise<void> {
