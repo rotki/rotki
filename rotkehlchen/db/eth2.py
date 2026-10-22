@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 )
 from rotkehlchen.constants import WEEK_IN_MILLISECONDS, ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.filtering import (
     ETH_STAKING_EVENT_JOIN,
     EthStakingEventFilterQuery,
@@ -338,13 +338,36 @@ class DBEth2:
             )
 
             # Delete cached timestamps
+            for key in (
+                DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                DBCacheDynamic.NEST_PRODUCED_BLOCKS_QUERY_TS,
+            ):
+                cursor.execute(
+                    f'DELETE FROM key_value_cache WHERE name IN ({placeholders})',
+                    [key.get_db_key(index=index) for index in validator_indices],
+                )
+            # A nuthatch nest's history was matched against the validators tracked then; their
+            # removed rewards come back only if it is asked again once they are added back.
             cursor.execute(
-                f'DELETE FROM key_value_cache WHERE name IN ({placeholders})',
-                [
-                    DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS.get_db_key(index=index)
-                    for index in validator_indices
-                ],
+                'DELETE FROM key_value_cache WHERE name LIKE ? OR name=?',
+                (
+                    DBCacheDynamic.NEST_PRODUCED_BLOCKS_THROUGH.value[0].removesuffix('{address}') + '%',  # noqa: E501
+                    DBCacheStatic.NUTHATCH_PRODUCED_VALIDATORS.value,
+                ),
             )
+            # What the nest proved for them goes with their deleted blocks, so adding them back
+            # asks for their blocks again.
+            removed = {str(index) for index in validator_indices}
+            for name, keep in (
+                (DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE, lambda raw: {k: v for k, v in raw.items() if k not in removed}),  # noqa: E501
+                (DBCacheStatic.NUTHATCH_VALIDATOR_RANGES, lambda raw: [r for r in raw if str(r[0]) not in removed]),  # noqa: E501
+                (DBCacheStatic.NUTHATCH_PROVEN_BLOCKS, lambda raw: {k: v for k, v in raw.items() if str(v) not in removed}),  # noqa: E501
+            ):
+                if (raw := cursor.execute('SELECT value FROM key_value_cache WHERE name=?', (name.value,)).fetchone()) is not None:  # noqa: E501
+                    cursor.execute(
+                        'UPDATE key_value_cache SET value=? WHERE name=?',
+                        (json.dumps(keep(json.loads(raw[0]))), name.value),
+                    )
 
     @staticmethod
     def _validator_stats_process_queries(

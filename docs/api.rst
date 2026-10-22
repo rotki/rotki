@@ -1073,6 +1073,7 @@ Getting or modifying settings
    :reqjson string[optional] ksm_rpc_endpoint: A URL denoting the rpc endpoint for the Kusama node to use when contacting the Kusama blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :reqjson string[optional] dot_rpc_endpoint: A URL denoting the rpc endpoint for the Polkadot node to use when contacting the Polkadot blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :reqjson string[optional] beacon_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum consensus layer beacon node to use when contacting the consensus layer. If it can not be reached or if it is invalid beaconcha.in is used.
+   :reqjson string[optional] nuthatch_api_endpoint: The base URL of a nuthatch nest in rotki mode (https://nuthatch-indexer.com), default ``http://127.0.0.1:8288``. It is only queried on the chains whose ``evm_indexers_order`` names ``nuthatch``, and rotki registers with the nest the accounts it tracks on those of them the nest serves. Removed accounts are not unwatched. An empty string resets it to the default.
    :reqjson string[optional] main_currency: The FIAT currency to use for all profit/loss calculation. USD by default.
    :reqjson string[optional] date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :reqjson bool[optional] submit_usage_analytics: A boolean denoting whether or not to submit anonymous usage analytics to the rotki server.
@@ -3178,7 +3179,7 @@ Decode transactions that haven't been decoded yet
    :reqjson string chain: The name of the chain for which to decode transactions.
    :reqjson list tx_refs: A list of transaction hashes/signatures from the specified chain to redecode.
    :reqjson bool delete_custom: Boolean denoting whether to delete any customized events of the transaction or not. Default is false
-   :reqjson list[string][optional] custom_indexers_order: Optional ordered list of indexers (``etherscan``, ``blockscout`` or ``routescan``) to prioritize when redecoding EVM transactions for the given request.
+   :reqjson list[string][optional] custom_indexers_order: Optional ordered list of indexers (``etherscan``, ``blockscout``, ``routescan`` or ``nuthatch``) to prioritize when redecoding EVM transactions for the given request.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
 

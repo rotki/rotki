@@ -13,7 +13,10 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
-from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
+from rotkehlchen.chain.ethereum.modules.eth2.utils import (
+    calculate_query_chunks,
+)
+from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
@@ -31,6 +34,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
 )
 from rotkehlchen.types import (
+    ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
     ExternalService,
@@ -507,21 +511,58 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
 
     def get_validators_to_query_for_blocks(self) -> list[int]:
         """Get indices of validators that are either active, exited but never queried,
-        or exited and queried but exited timestamp is after last query timestamp.
+        or exited and queried but exited timestamp is after last query timestamp, and those a
+        nuthatch nest's produced blocks still need asking about.
         """
-        return self._get_validators_to_query_for_blocks(
+        return sorted(set(self._get_validators_to_query_for_blocks(
             where='WHERE kv.name IS NULL OR ev.exited_timestamp IS NULL OR ev.exited_timestamp > kv.value',  # noqa: E501
-        )
+        )) | self._validators_awaiting_mev(outdated_only=False))
 
     def get_outdated_validators_to_query_for_blocks(self) -> list[int]:
         """Get indices of validators that have not already been queried for blocks
         within the last day, and that are either active, exited but never queried,
         or exited and queried but exited timestamp is after last query timestamp.
         """
-        return self._get_validators_to_query_for_blocks(
+        return sorted(set(self._get_validators_to_query_for_blocks(
             where='WHERE kv.name IS NULL OR (kv.value <= ? AND (ev.exited_timestamp IS NULL OR ev.exited_timestamp > kv.value))',  # noqa: E501
             bindings=(ts_now() - DAY_IN_SECONDS,),
-        )
+        )) | self._validators_awaiting_mev(outdated_only=True))
+
+    def _validators_awaiting_mev(self, outdated_only: bool) -> set[int]:
+        """Validators to pick for produced blocks whatever their last query time says: the
+        proposers of blocks stored without their MEV reward that wait for beaconcha.in, and,
+        while Ethereum's indexer order names a nuthatch nest, every validator, as the nest is
+        asked by address, not validator, and no source's answer says it has nothing more to
+        tell. With `outdated_only`, only once a day after the nest was last asked, except a
+        validator the nest has not been asked about yet. Neither a last query time nor a missing
+        activation leaves a validator out while the nest is ordered: the nest proves its blocks
+        by its index, and keeps its own intervals and retries."""
+        with self.db.conn.read_ctx() as cursor:
+            pending = json.loads(self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_MEV_RECHECK,
+            ) or '[]')
+            awaiting = {row[0] for block in pending for row in cursor.execute(
+                'SELECT info.validator_index FROM history_events he '
+                'JOIN eth_staking_events_info info ON info.identifier=he.identifier '
+                'WHERE he.group_identifier=? AND he.sequence_index=0',
+                (EthBlockEvent.form_group_identifier(block),),
+            )}
+            if EvmIndexer.NUTHATCH not in CachedSettings().get_evm_indexers_order_for_chain(
+                chain_id=ChainID.ETHEREUM,
+            ):
+                return awaiting
+            registered = {row[0] for row in cursor.execute(
+                'SELECT validator_index FROM eth2_validators WHERE validator_index IS NOT NULL',
+            )}
+            last_run = self.db.get_static_cache(cursor=cursor, name=DBCacheStatic.NUTHATCH_PRODUCED_LAST_RUN)  # noqa: E501
+            if not (outdated_only and last_run is not None and last_run > ts_now() - DAY_IN_SECONDS):  # noqa: E501
+                return awaiting | registered
+            asked = set(json.loads(self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.NUTHATCH_VALIDATOR_COVERAGE,
+            ) or '{}'))
+        return awaiting | {index for index in registered if str(index) not in asked}
 
     def get_and_store_produced_blocks(
             self,
@@ -535,7 +576,8 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             self,
             indices: list[int],
             update_cache: bool = True,
-    ) -> None:
+            recheck_blocks: set[int] | None = None,
+    ) -> set[int]:
         """Get blocks produced by a set of validator indices/pubkeys and store the
         data in the DB.
 
@@ -559,6 +601,9 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         for each validator. Set to False when refetching historical data so that the
         normal periodic query schedule is not affected.
 
+        A block already stored is passed over unless it is stored without its MEV reward and
+        named in `recheck_blocks`. Returns the blocks beaconcha.in listed.
+
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
@@ -571,19 +616,23 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         dbevents = DBHistoryEvents(self.db)
         with self.db.conn.read_ctx() as cursor:
             ethereum_tracked_accounts = self.db.get_blockchain_accounts(cursor).get(SupportedBlockchain.ETHEREUM)  # noqa: E501
+        listed: set[int] = set()
         try:
             for entry in data:
                 if entry.get('block') is None:
                     continue
 
                 blocknumber = int(entry['block'])
+                listed.add(blocknumber)
                 with self.db.conn.read_ctx() as cursor:
-                    cursor.execute(
-                        'SELECT COUNT(*) from eth_staking_events_info WHERE is_exit_or_blocknumber IS ?',  # noqa: E501
-                        (blocknumber,),
-                    )
-                    if cursor.fetchone()[0] != 0:
-                        continue
+                    stored = {row[0] for row in cursor.execute(
+                        'SELECT sequence_index FROM history_events WHERE group_identifier=?',
+                        (EthBlockEvent.form_group_identifier(blocknumber),),
+                    )}
+                # A block stored without its MEV reward that a nuthatch nest has asked to have
+                # rechecked, since no relay had a record of it, is asked about here again.
+                if 0 in stored and (1 in stored or blocknumber not in (recheck_blocks or set())):
+                    continue
 
                 block_data = self._query_block_data(blocknumber)
                 rewards_data = self._query_block_rewards(blocknumber)
@@ -676,6 +725,8 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             raise RemoteError(
                 f'Beaconcha.in produced blocks response error. Missing key entry {e!s}',
             ) from e
+
+        return listed
 
     def get_eth1_address_validators(self, address: ChecksumEvmAddress) -> list[ValidatorID]:
         """Get a list of Validators that are associated with the given eth1 address.
