@@ -674,6 +674,7 @@ jobs:
       build_only: true
     permissions:
       contents: read
+      id-token: write  # unused with build_only, but GitHub validates every nested job's permissions
 
   done:
     name: 'Success check'
