@@ -61,7 +61,7 @@ jobs:
     permissions: { }
     steps:
       - name: Merge the cassettes
-        uses: rotki/action-cassette-deck@5c276c9ba29fa32f3bc3673b2ff3086d0e85f5fa  # v4.2.0
+        uses: rotki/action-cassette-deck@f641d23657c1dc06ac76ad046f63ed1195642749  # v4.2.1
         with:
           token: ${{ secrets.MERGE_TOKEN }}
           cassette_repo: test-caching
