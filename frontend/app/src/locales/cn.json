@@ -5578,7 +5578,6 @@
     "debug": {
       "export_data": "导出调试数据",
       "export_message": {
-        "failure": "导出盈亏报告调试数据失败",
         "success": "盈亏报告调试数据导出成功",
         "title": "导出盈亏报告调试数据"
       },

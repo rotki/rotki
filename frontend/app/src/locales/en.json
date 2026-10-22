@@ -6027,7 +6027,6 @@
     "debug": {
       "export_data": "Export debug data",
       "export_message": {
-        "failure": "Export PnL report debug data failed",
         "success": "PnL report debug data exported successfully",
         "title": "Export PnL report debug data"
       },

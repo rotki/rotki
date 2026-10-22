@@ -1,7 +1,8 @@
 import { err, ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TaskFailed } from '@/modules/core/tasks/task-result';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { clampProgress, useReportGeneration } from '@/modules/reports/use-report-generation';
+import { useReportsStore } from '@/modules/reports/use-reports-store';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -182,13 +183,31 @@ describe('useReportGeneration', () => {
       expect(result).toEqual(mockData);
     });
 
-    it('should return empty object on failure', async () => {
+    it('should return null on failure, so the page cannot mistake it for an exported payload', async () => {
       mockRunTask.mockResolvedValue(err(TaskFailed({ cause: new Error('Export failed'), message: 'Export failed' })));
 
       const { exportReportData } = scope.run(() => useReportGeneration())!;
       const result = await exportReportData({ fromTimestamp: 1000, toTimestamp: 2000 });
 
-      expect(result).toEqual({});
+      expect(result).toBeNull();
+    });
+
+    it('should leave a failed export to its task row rather than the report generation error screen', async () => {
+      mockRunTask.mockResolvedValue(err(TaskFailed({ message: 'Export failed' })));
+
+      const { exportReportData } = scope.run(() => useReportGeneration())!;
+      await exportReportData({ fromTimestamp: 1000, toTimestamp: 2000 });
+
+      expect(useReportsStore().reportError.message).toBe('');
+    });
+
+    it('should return null when the export was cancelled', async () => {
+      mockRunTask.mockResolvedValue(err(Cancelled({ message: 'Request cancelled' })));
+
+      const { exportReportData } = scope.run(() => useReportGeneration())!;
+      const result = await exportReportData({ fromTimestamp: 1000, toTimestamp: 2000 });
+
+      expect(result).toBeNull();
     });
   });
 });

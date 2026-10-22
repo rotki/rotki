@@ -2425,7 +2425,6 @@
     "debug": {
       "export_data": "Exporter les données de débogage",
       "export_message": {
-        "failure": "L'exportation du rapport de bénéfice/perte a échoué",
         "success": "Données de débogage du rapport de bénéfice/perte exportées avec succès",
         "title": "Exportation des données de débogage du rapport de bénéfice/perte"
       },
