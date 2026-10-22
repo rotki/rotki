@@ -74,27 +74,20 @@ export function useHistoryEventsExport(
     return isErr(outcome) ? null : { result: outcome.value };
   }
 
-  function exportOutcomeMessage(succeeded: boolean, taskMessage?: string): ExportMessage {
-    return {
-      message: succeeded
-        ? t('actions.history_events_export.message.success')
-        : t('actions.history_events_export.message.failure', { description: taskMessage }),
-      severity: succeeded ? Severity.INFO : Severity.ERROR,
-      title: t('actions.history_events_export.title'),
-    };
-  }
-
   /**
-   * In an app session the file was written where the user chose, so the outcome is only reported. A
-   * browser session instead gets the generated file streamed back, and only a failure is reported.
+   * In an app session the file was written where the user chose, so the success is only reported. A
+   * browser session instead gets the generated file streamed back. A failure is the task's to report.
    */
-  async function reportExport(outcome: ExportOutcome): Promise<ExportMessage | null> {
-    const { result } = outcome;
+  async function reportExport({ result }: ExportOutcome): Promise<ExportMessage | null> {
+    if (appSession) {
+      return {
+        message: t('actions.history_events_export.message.success'),
+        severity: Severity.INFO,
+        title: t('actions.history_events_export.title'),
+      };
+    }
 
-    if (appSession || !result)
-      return exportOutcomeMessage(!!result);
-
-    if (result !== true && 'filePath' in result)
+    if (typeof result === 'object')
       await downloadHistoryEventsCSV(result.filePath);
 
     return null;

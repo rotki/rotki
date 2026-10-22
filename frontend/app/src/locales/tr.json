@@ -5724,7 +5724,6 @@
         "title": "Kâr/zarar raporu hata ayıklama verilerini içe aktar"
       },
       "import_message": {
-        "failure": "Kâr/zarar raporu hata ayıklama verileri içe aktarılamadı: {message}",
         "success": "Kâr/zarar raporu hata ayıklama verileri başarıyla içe aktarıldı",
         "title": "Kâr/zarar raporu hata ayıklama verilerini içe aktar"
       },

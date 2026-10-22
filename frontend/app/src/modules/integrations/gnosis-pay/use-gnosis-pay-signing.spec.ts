@@ -244,7 +244,7 @@ describe('useGnosisPaySigning', () => {
     expect(get(harness.signInSuccess)).toBe(false);
   });
 
-  it('should show generic failure when verification returns false', async () => {
+  it('should fail the verify task without a toast when verification returns false', async () => {
     const harness = makeHarness();
     runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
     runTaskResult.mockImplementationOnce(async () => makeSuccess(false));
@@ -252,7 +252,9 @@ describe('useGnosisPaySigning', () => {
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
 
-    expect(showErrorMessage).toHaveBeenCalled();
+    const verifyOutcome = await submitTask.mock.results[1]?.value;
+    expect(verifyOutcome).toEqual(err(TaskFailed({ message: 'external_services.gnosispay.siwe.failed' })));
+    expect(showErrorMessage).not.toHaveBeenCalled();
     expect(get(harness.signInSuccess)).toBe(false);
   });
 

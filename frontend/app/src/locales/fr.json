@@ -2433,7 +2433,6 @@
         "title": "Importer les données de débogage du rapport de bénéfice/perte"
       },
       "import_message": {
-        "failure": "L'importation des données de débogage du rapport de bénéfice/perte a échoué: {message}",
         "success": "Données de débogage du rapport de bénéfice/perte importées avec succès",
         "title": "Importation des données de débogage du rapport de bénéfice/perte"
       },

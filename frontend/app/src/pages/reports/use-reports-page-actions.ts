@@ -1,7 +1,7 @@
 import type { DeepReadonly, Ref } from 'vue';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import { Priority, Severity } from '@rotki/common';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { isErr, type Result } from 'plainfp/result';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -126,24 +126,16 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
       id: makeActivityId(ActivityKind.PNL_REPORT, ActivityPart.IMPORT),
       kind: ActivityKind.PNL_REPORT,
       rerunnable: false,
-      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
-        await runTask<boolean>(
-          async () => path ? importReportData(path) : uploadReportData(file),
-        ),
-        value => value,
+      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => runTask<boolean>(
+        async () => path ? importReportData(path) : uploadReportData(file),
       ),
       subtitle: activityLabel(ActivityKind.PNL_REPORT, ActivityPart.IMPORT),
       title: t('profit_loss_reports.debug.import_message.title'),
     });
 
     if (!isErr(outcome)) {
-      if (outcome.value) {
-        showSuccessMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.success'));
-        await fetchReports();
-      }
-      else {
-        showErrorMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.failure', { message: '' }));
-      }
+      showSuccessMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.success'));
+      await fetchReports();
     }
     else if (isCancellation(outcome.error)) {
       await fetchReports();
