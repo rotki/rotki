@@ -39,11 +39,26 @@ jobs:
             gh api "repos/$GH_REPO/commits/$SHA/pulls" \
               --jq "[.[] | select(.merged_at != null and .base.ref == \"$BRANCH\")][0].number // empty"
           }
-          number=$(find_pr)
-          # Right after a merge the commit may not be linked to its PR yet.
-          if [ -z "$number" ]; then
-            sleep 10
-            number=$(find_pr)
+          # The endpoint intermittently answers a 500 for a large merge commit, so an error is retried
+          # like an empty answer and the step only fails when no attempt got through.
+          number=''
+          answered=0
+          for attempt in 1 2 3 4 5; do
+            if result=$(find_pr); then
+              number=$result
+              answered=$((answered + 1))
+              # Right after a merge the commit may not be linked to its PR yet.
+              if [ -n "$number" ] || [ "$answered" -ge 2 ]; then
+                break
+              fi
+            fi
+            if [ "$attempt" -lt 5 ]; then
+              sleep 10
+            fi
+          done
+          if [ "$answered" -eq 0 ]; then
+            echo "::error::Could not list the PRs of $SHA"
+            exit 1
           fi
           if [ -z "$number" ]; then
             echo "No PR merged into $BRANCH by $SHA"
