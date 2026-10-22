@@ -18,6 +18,7 @@ permissions: { }
 
 jobs:
   update:
+    name: 'Update the release sponsors'
     if: >-
       github.repository == 'rotki/rotki' &&
       (github.event_name == 'workflow_dispatch' ||
