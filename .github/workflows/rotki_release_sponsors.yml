@@ -80,18 +80,42 @@ jobs:
 
       - name: Create or update pull request
         if: steps.release.outputs.minor == 'true'
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
-          add-paths: releases_sponsors.md
-          base: develop
-          branch: automation/release-sponsors/${{ steps.release.outputs.tag }}
-          delete-branch: true
-          commit-message: Update sponsors for ${{ steps.release.outputs.tag }}
-          title: Update sponsors for ${{ steps.release.outputs.tag }}
-          body: |
-            Update `releases_sponsors.md` from the sponsor section of
-            https://github.com/${{ github.repository }}/releases/tag/${{ steps.release.outputs.tag }}.
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          ACTOR: ${{ github.actor }}
+          ACTOR_ID: ${{ github.actor_id }}
+        run: |
+          branch="automation/release-sponsors/$RELEASE_TAG"
+          if git diff --quiet -- releases_sponsors.md; then
+            echo "releases_sponsors.md already matches develop"
+            # A branch left from an earlier run no longer differs from develop: deleting it closes its PR.
+            if gh api "repos/$GH_REPO/branches/$branch" --silent 2>/dev/null; then
+              gh api -X DELETE "repos/$GH_REPO/git/refs/heads/$branch"
+            fi
+            exit 0
+          fi
 
-            Keeps sponsor tiers and details as published and releases ordered newest first.
+          gh auth setup-git
+          git switch -c "$branch"
+          git add releases_sponsors.md
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit --author="$ACTOR <$ACTOR_ID+$ACTOR@users.noreply.github.com>" \
+            -m "Update sponsors for $RELEASE_TAG"
+          git push --force "https://github.com/$GH_REPO.git" "HEAD:refs/heads/$branch"
+
+          title="Update sponsors for $RELEASE_TAG"
+          printf '%s\n' \
+            "Update \`releases_sponsors.md\` from the sponsor section of" \
+            "https://github.com/$GH_REPO/releases/tag/$RELEASE_TAG." \
+            '' \
+            'Keeps sponsor tiers and details as published and releases ordered newest first.' \
+            > "$RUNNER_TEMP/pr-body.md"
+          number=$(gh pr list --head "$branch" --base develop --state open --json number --jq '.[0].number // empty')
+          if [[ -n "$number" ]]; then
+            gh pr edit "$number" --title "$title" --body-file "$RUNNER_TEMP/pr-body.md"
+          else
+            gh pr create --base develop --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/pr-body.md"
+          fi
