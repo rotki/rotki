@@ -113,7 +113,7 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         if should_update_protocol_cache(self.base.database, CacheType.YEARN_VAULTS, args=cache_args) is True:  # noqa: E501
             query_yearn_vaults(
                 db=self.node_inquirer.database,
-                ethereum_inquirer=self.node_inquirer,
+                node_inquirer=self.node_inquirer,
             )
         elif len(self.vaults[CPT_YEARN_V2]) != 0:
             return None  # we didn't update the globaldb cache and we have the data already

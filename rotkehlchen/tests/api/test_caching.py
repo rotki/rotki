@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
@@ -8,17 +9,21 @@ import requests
 
 from rotkehlchen.constants.misc import AVATARIMAGESDIR_NAME, IMAGESDIR_NAME
 from rotkehlchen.db.ens import DBEns
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_proper_response,
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ProtocolsWithCache
+from rotkehlchen.types import ChainID, ProtocolsWithCache
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -207,7 +212,7 @@ def test_protocol_data_refresh(rotkehlchen_api_server: APIServer) -> None:
             (ProtocolsWithCache.GEARBOX, patched_gearbox_query, 1),
             (ProtocolsWithCache.VELODROME, patched_velodrome_query, 1),
             (ProtocolsWithCache.AERODROME, patched_velodrome_query, 1),
-            (ProtocolsWithCache.YEARN, patched_query_yearn_vaults, 1),
+            (ProtocolsWithCache.YEARN, patched_query_yearn_vaults, 6),  # supported on 6 chains
             (ProtocolsWithCache.MAKER, patched_ilk_registry, 1),
             (ProtocolsWithCache.AAVE, patched_aave_v3_assets, 1),
             (ProtocolsWithCache.SPARK, patched_spark_assets, 1),
@@ -228,3 +233,36 @@ def test_protocol_data_refresh(rotkehlchen_api_server: APIServer) -> None:
             ), json={'cache_protocol': protocol.serialize()})
             assert_proper_response(response)
             assert patched_obj.call_count == expected_calls, f'{protocol} should have been queried {expected_calls} but had {patched_obj.call_count} calls'  # noqa: E501
+
+
+def test_yearn_refresh_continues_after_a_chain_fails(rotkehlchen_api_server: APIServer) -> None:
+    """A failing chain is reported, and the yearn vaults of the other chains are still refreshed"""
+    def query_yearn_vaults(db: DBHandler, node_inquirer: EvmNodeInquirer) -> None:  # pylint: disable=unused-argument
+        if node_inquirer.chain_id == ChainID.OPTIMISM:
+            raise RemoteError('Kong is down')
+
+    with patch(
+        'rotkehlchen.api.services.assets.query_yearn_vaults',
+        new=MagicMock(side_effect=query_yearn_vaults),
+    ) as patched_query_yearn_vaults:
+        response = requests.post(api_url_for(
+            rotkehlchen_api_server,
+            'protocoldatarefreshresource',
+        ), json={'cache_protocol': ProtocolsWithCache.YEARN.serialize()})
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to refresh yearn vaults cache for optimism: Kong is down',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    assert [
+        call.kwargs['node_inquirer'].chain_id
+        for call in patched_query_yearn_vaults.call_args_list
+    ] == [
+        ChainID.ETHEREUM,
+        ChainID.OPTIMISM,
+        ChainID.ARBITRUM_ONE,
+        ChainID.BASE,
+        ChainID.GNOSIS,
+        ChainID.POLYGON_POS,
+    ]

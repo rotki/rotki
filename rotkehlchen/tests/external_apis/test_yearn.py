@@ -70,7 +70,7 @@ def test_yearn_api_addresses_are_checksummed(database, ethereum_inquirer):
         }]))
 
     with patch.object(requests, 'get', wraps=mock_yearn_api):
-        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+        query_yearn_vaults(db=database, node_inquirer=ethereum_inquirer)
 
     # queried by the checksummed address, which the address column only matches exactly
     assert (token := GlobalDBHandler.get_evm_token(
@@ -109,7 +109,7 @@ def test_kong_vaults_without_api_version_are_skipped_silently(
         'asset': {'address': make_evm_address(), 'decimals': 6, 'name': 'USD Coin', 'symbol': 'USDC'},  # noqa: E501
         'staking': None,
     }]))):
-        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+        query_yearn_vaults(db=database, node_inquirer=ethereum_inquirer)
 
     assert GlobalDBHandler.get_evm_token(address=non_yearn_address, chain_id=ChainID.ETHEREUM) is None  # noqa: E501
     assert (token := GlobalDBHandler.get_evm_token(address=vault_address, chain_id=ChainID.ETHEREUM)) is not None  # noqa: E501
@@ -147,7 +147,7 @@ def test_kong_vaults_without_asset_are_skipped_with_info_log(
         'asset': {'address': make_evm_address(), 'decimals': 6, 'name': 'USD Coin', 'symbol': 'USDC'},  # noqa: E501
         'staking': None,
     }]))):
-        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+        query_yearn_vaults(db=database, node_inquirer=ethereum_inquirer)
 
     assert GlobalDBHandler.get_evm_token(address=no_asset_address, chain_id=ChainID.ETHEREUM) is None  # noqa: E501
     assert (token := GlobalDBHandler.get_evm_token(address=vault_address, chain_id=ChainID.ETHEREUM)) is not None  # noqa: E501
@@ -179,7 +179,7 @@ def test_malformed_staking_skips_only_that_vault(
         'asset': {'address': make_evm_address(), 'decimals': 18, 'name': 'Dai', 'symbol': 'DAI'},
         'staking': staking,
     } for idx, (address, staking) in enumerate(((malformed_vault, staking_address), (next_vault, None)))]))):  # noqa: E501
-        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+        query_yearn_vaults(db=database, node_inquirer=ethereum_inquirer)
 
     assert GlobalDBHandler.get_evm_token(address=staking_address, chain_id=ChainID.ETHEREUM) is None  # noqa: E501
     assert (token := GlobalDBHandler.get_evm_token(address=next_vault, chain_id=ChainID.ETHEREUM)) is not None  # noqa: E501
@@ -214,7 +214,7 @@ def test_staking_token_saved_when_the_nodes_fail(
         patch.object(requests, 'get', wraps=mock_yearn_api),
         patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('nodes down')),
     ):
-        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+        query_yearn_vaults(db=database, node_inquirer=ethereum_inquirer)
 
     token = EvmToken(identifier := evm_address_to_identifier(staking_address, ChainID.ETHEREUM))
     assert (token.name, token.decimals, token.protocol) == (identifier, 6, CPT_YEARN_STAKING)
@@ -321,7 +321,7 @@ def test_yearn_api(database, ethereum_inquirer):
         )
 
     with patch.object(requests, 'get', wraps=mock_yearn_api):
-        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+        query_yearn_vaults(db=database, node_inquirer=ethereum_inquirer)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         state_after = globaldb_get_unique_cache_value(
@@ -375,7 +375,7 @@ def test_yearn_api(database, ethereum_inquirer):
     # trigger the query again and check that the timestamp was updated
     future_timestamp = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
     with freeze_time(future_timestamp), patch.object(requests, 'get', wraps=mock_yearn_api):
-        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+        query_yearn_vaults(db=database, node_inquirer=ethereum_inquirer)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         new_queried_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
@@ -424,7 +424,7 @@ def test_process_staked_vaults(
 
     evm_manager = inquirer_defi.get_evm_manager(chain_id=ChainID.ETHEREUM)
     with patch.object(requests, 'get', wraps=mock_yearn_api):
-        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+        query_yearn_vaults(db=database, node_inquirer=ethereum_inquirer)
 
     token = EvmToken('eip155:1/erc20:0x7Fd8Af959B54A677a1D8F92265Bd0714274C56a3')
     underlying_tokens = token.underlying_tokens
