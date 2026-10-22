@@ -43,7 +43,7 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: rotki/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda  # v3.0.0
+        uses: rotki/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
@@ -168,7 +168,7 @@ jobs:
           uv run --no-sync ./package.py --build full
 
       - name: Upload to release
-        uses: rotki/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda  # v3.0.0
+        uses: rotki/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           name: Rotki ${{ env.RELEASE_VERSION }} -
@@ -295,7 +295,7 @@ jobs:
           path: dist/latest-mac-*.yml
 
       - name: Upload to release
-        uses: rotki/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda  # v3.0.0
+        uses: rotki/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           name: Rotki ${{ env.RELEASE_VERSION }} -
@@ -348,7 +348,7 @@ jobs:
           node ./.github/scripts/merge-latest.mjs latest-mac/latest-mac-x86_64.yml latest-mac/latest-mac-arm64.yml latest-mac.yml
 
       - name: Upload to release
-        uses: rotki/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda  # v3.0.0
+        uses: rotki/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           name: Rotki ${{ env.RELEASE_VERSION }} -
@@ -417,7 +417,7 @@ jobs:
         shell: powershell
 
       - name: Upload to release
-        uses: rotki/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda  # v3.0.0
+        uses: rotki/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           name: Rotki ${{ env.RELEASE_VERSION }} -
