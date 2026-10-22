@@ -290,7 +290,7 @@ jobs:
     name: 'Frontend unit tests'
     needs: [ 'check-changes' ]
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.frontend_tasks }}
-    uses: ./.github/workflows/task_fe_unit_tests.yml
+    uses: $/.github/workflows/task_fe_unit_tests.yml
     permissions:
       contents: read
     secrets:
@@ -638,7 +638,7 @@ jobs:
   test-backend:
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
     needs: [ 'lint-backend', 'check-changes' ]
-    uses: ./.github/workflows/task_backend_tests.yml
+    uses: $/.github/workflows/task_backend_tests.yml
     with:
       os: ubuntu-22.04
       test_environment: ${{needs.check-changes.outputs.test_environment}}
@@ -654,7 +654,7 @@ jobs:
     name: 'API contract tests'
     needs: [ 'check-changes' ]
     if: ${{ github.event_name != 'push' && (needs.check-changes.outputs.backend_tasks || needs.check-changes.outputs.frontend_tasks) }}
-    uses: ./.github/workflows/task_contract_tests.yml
+    uses: $/.github/workflows/task_contract_tests.yml
     permissions:
       contents: read
 
@@ -662,7 +662,7 @@ jobs:
     name: 'Frontend e2e tests'
     needs: check-changes
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.e2e_tasks }}
-    uses: ./.github/workflows/task_e2e_tests.yml
+    uses: $/.github/workflows/task_e2e_tests.yml
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
@@ -672,7 +672,7 @@ jobs:
   warm-e2e-caches:
     name: 'Warm e2e build caches'
     if: ${{ github.event_name == 'push' }}
-    uses: ./.github/workflows/task_e2e_tests.yml
+    uses: $/.github/workflows/task_e2e_tests.yml
     with:
       build_only: true
     permissions:
