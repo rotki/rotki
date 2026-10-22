@@ -28,24 +28,11 @@ jobs:
         id: rotki_version
         run: echo "version=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
 
-      - name: Cache regctl
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: regctl-linux-amd64
-          key: ${{ runner.os }}-regctl-${{ env.REGCTL }}
-
-      - name: Publish ${{ github.repository }}:latest from ${{ steps.rotki_version.outputs.version }}
+      - name: Download regctl ${{ env.REGCTL }}
         run: |
-          if [[ ! -f "regctl-linux-amd64" ]]; then
-            echo "downloading regctl ${REGCTL}"
-            curl -LO --fail-with-body "https://github.com/regclient/regclient/releases/download/${REGCTL}/regctl-linux-amd64"            
-          fi
+          curl -LO --fail-with-body "https://github.com/regclient/regclient/releases/download/${REGCTL}/regctl-linux-amd64"
+          echo "${REGCTL_SUM}  regctl-linux-amd64" | sha512sum -c -
           chmod u+x regctl-linux-amd64
-          echo "${REGCTL_SUM} regctl-linux-amd64" > regctl-linux-amd64.sha512
-          if [[ ! $(sha512sum -c regctl-linux-amd64.sha512) ]]; then 
-            echo checksum failed
-            exit 1
-          fi
 
       - name: Publish latest to hub.docker.com
         run: ./regctl-linux-amd64 image copy "${REPOSITORY}:${VERSION}" "${REPOSITORY}:latest"
