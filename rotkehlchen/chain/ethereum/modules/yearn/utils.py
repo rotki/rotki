@@ -107,14 +107,14 @@ def _query_yearn_vaults(chain_id: ChainID) -> list[dict[str, Any]]:
     return data
 
 
-def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> None:
+def query_yearn_vaults(db: DBHandler, node_inquirer: EvmNodeInquirer) -> None:
     """Query yearn API and ensure that all the tokens exist locally. If they exist but the protocol
     is not the correct one, then the asset will be edited.
 
     May raise:
     - RemoteError
     """
-    chain_id = ethereum_inquirer.chain_id
+    chain_id = node_inquirer.chain_id
     try:
         data = _query_yearn_vaults(chain_id=chain_id)
         if _maybe_reset_yearn_cache_timestamp(count=len(data), chain_id=chain_id):
@@ -189,7 +189,7 @@ def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> Non
                     get_or_create_evm_token(
                         userdb=db,
                         evm_address=staking_token_address,
-                        evm_inquirer=ethereum_inquirer,
+                        evm_inquirer=node_inquirer,
                         chain_id=chain_id,
                         protocol=CPT_YEARN_STAKING,
                         underlying_tokens=staking_underlying_tokens,

@@ -1129,15 +1129,27 @@ class AssetsService:
                     eth_node_inquirer,
                 ))
             case ProtocolsWithCache.YEARN:
-                try:
-                    query_yearn_vaults(
-                        db=self.rotkehlchen.data.db,
-                        ethereum_inquirer=eth_node_inquirer,
-                    )
-                except RemoteError as e:
+                failed_chains = []  # keep going so one chain's failure doesn't block the others
+                for node_inquirer in (
+                    eth_node_inquirer,
+                    optimism_inquirer,
+                    arbitrum_inquirer,
+                    base_inquirer,
+                    gnosis_inquirer,
+                    polygon_inquirer,
+                ):
+                    try:
+                        query_yearn_vaults(
+                            db=self.rotkehlchen.data.db,
+                            node_inquirer=node_inquirer,
+                        )
+                    except RemoteError as e:
+                        failed_chains.append(f'{node_inquirer.chain_name}: {e!s}')
+
+                if len(failed_chains) != 0:
                     return {
                         'result': None,
-                        'message': f'Failed to refresh yearn vaults cache due to: {e!s}',
+                        'message': f'Failed to refresh yearn vaults cache for {", ".join(failed_chains)}',  # noqa: E501
                         'status_code': HTTPStatus.CONFLICT,
                     }
             case ProtocolsWithCache.MAKER:
