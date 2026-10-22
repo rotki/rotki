@@ -25,6 +25,7 @@ jobs:
        (!github.event.release.draft && !github.event.release.prerelease))
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: release-sponsors  # holds RELEASE_SPONSORS_APP_KEY
     permissions:
       contents: read
     steps:
