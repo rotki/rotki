@@ -841,8 +841,8 @@ def test_cache_is_per_token_type(ethereum_inquirer):
         erc20_cached_data = query_token_info(TokenKind.ERC20)
         erc721_cached_data = query_token_info(TokenKind.ERC721)
 
-    assert erc20_token_data == erc20_cached_data == ('Tether USD', 'USDT', 6, TokenKind.ERC20)
-    assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0, TokenKind.ERC721)
+    assert erc20_token_data == erc20_cached_data == ('Tether USD', 'USDT', 6, TokenKind.ERC20, frozenset())  # noqa: E501
+    assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0, TokenKind.ERC721, frozenset())  # noqa: E501
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
@@ -1192,6 +1192,88 @@ def test_erc721_detection_keeps_cached_tokens_on_failed_ownership_check(
             blockchain=SupportedBlockchain.ETHEREUM,
             token_exceptions=set(),
         )[0] or []) == {A_DAI, cached_nft}
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xbe4f0cdf3834bD876813A1037137DcFAD79AcD99']])
+@pytest.mark.parametrize('knows_all_owned_nfts', [False, True])
+def test_erc721_balances_count_only_owned_token_ids(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        database: DBHandler,
+        knows_all_owned_nfts: bool,
+) -> None:
+    """Regression test for https://github.com/rotki/rotki/issues/13399
+
+    The address holds two NFTs of the collection, #7776 and #9403, while #7809 belongs to
+    someone else and #99999999 doesn't exist. A positive balanceOf of the collection must
+    not count every saved token of it. The collection level token counts the NFTs whose
+    token id rotki doesn't know, so it only drops out once both owned token ids are saved.
+    """
+    collection_token, token_7776, token_7809, nonexistent_token, token_9403 = (get_or_create_evm_token(  # noqa: E501
+        userdb=database,
+        evm_address=string_to_evm_address('0xD3D9ddd0CF0A5F0BFB8f7fcEAe075DF687eAEBaB'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC721,
+        collectible_id=collectible_id,
+        name='TEST NFT',
+        symbol='TEST',
+    ) for collectible_id in (None, '7776', '7809', '99999999', '9403'))
+    with database.user_write() as write_cursor:
+        database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=(user_address := ethereum_accounts[0]),
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[A_DAI.resolve_to_evm_token(), collection_token, token_7776, token_7809, nonexistent_token] + ([token_9403] if knows_all_owned_nfts else []),  # noqa: E501
+        )
+
+    with patch.object(Inquirer, 'find_main_currency_prices', return_value={}):
+        balances, _ = EthereumTokens(database, ethereum_inquirer).query_tokens_for_addresses(
+            addresses=[user_address],
+        )
+
+    assert balances == {user_address: {
+        token_7776: ONE,
+        token_9403 if knows_all_owned_nfts else collection_token: ONE,
+    }}
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('multicall_mock_kwargs', [
+    {'side_effect': RemoteError('node down')},
+    {'return_value': []},  # fewer results than calls
+])
+def test_erc721_balances_raise_on_unknown_ownership(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        database: DBHandler,
+        multicall_mock_kwargs: dict[str, Any],
+) -> None:
+    """When the ownerOf query doesn't reach the chain the ownership of the NFT is unknown,
+    so the balance query fails as it does for the other tokens instead of dropping it."""
+    with database.user_write() as write_cursor:
+        database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=ethereum_accounts[0],
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[get_or_create_evm_token(
+                userdb=database,
+                evm_address=make_evm_address(),
+                chain_id=ChainID.ETHEREUM,
+                token_kind=TokenKind.ERC721,
+                collectible_id='1',
+                name='NFT',
+                symbol='NFT',
+            )],
+        )
+
+    with (
+        patch.object(ethereum_inquirer, 'multicall_2', **multicall_mock_kwargs),
+        pytest.raises(RemoteError, match='Could not check the ownership of 1 erc721 tokens'),
+    ):
+        EthereumTokens(database, ethereum_inquirer).query_tokens_for_addresses(
+            addresses=ethereum_accounts,
+        )
 
 
 def test_superfluid_constant_flow_nfts_are_in_token_exceptions(

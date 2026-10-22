@@ -137,12 +137,14 @@ from rotkehlchen.errors.api import (
 )
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import (
+    BackupTooLargeError,
     DBSchemaError,
     DBUpgradeError,
     EthSyncError,
     InputError,
     ModuleInactive,
     NotFoundError,
+    RemoteBackupError,
     RemoteError,
     SystemPermissionError,
 )
@@ -180,6 +182,7 @@ from rotkehlchen.premium.premium import (
     get_user_limit,
     has_premium_capability,
 )
+from rotkehlchen.premium.sync import NO_REMOTE_BACKUP_MSG
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.tasks.bridges import (
     ENTRY_TYPES_TO_EXCLUDE_FROM_BRIDGE_MATCHING,
@@ -2837,7 +2840,7 @@ class RestAPI:
     @async_api_call()
     def sync_data(self, action: Literal['upload', 'download']) -> dict[str, Any]:
         try:
-            success, msg = self.rotkehlchen.premium_sync_manager.sync_data(
+            success, msg, restored_backup_ts = self.rotkehlchen.premium_sync_manager.sync_data(
                 action=action,
                 perform_migrations=True,  # we can do it now since all is initialized
             )
@@ -2847,10 +2850,19 @@ class RestAPI:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
         except PremiumAuthenticationError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.UNAUTHORIZED)
+        except (RemoteBackupError, BackupTooLargeError) as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
         else:
-            if msg.startswith('Pulling failed'):
-                return wrap_in_fail_result(msg, status_code=HTTPStatus.BAD_GATEWAY)
-            return _wrap_in_result(success, message=msg)
+            if not success:  # every failed sync carries its reason in msg
+                return wrap_in_fail_result(
+                    msg,
+                    status_code=HTTPStatus.NOT_FOUND if msg == NO_REMOTE_BACKUP_MSG else HTTPStatus.BAD_GATEWAY,  # noqa: E501
+                )
+            if action == 'download':
+                # A forced pull skips the "remote is newer" check, so the authenticated
+                # timestamp is the only way the user can tell which backup they restored
+                return _wrap_in_result({'last_modify_ts': restored_backup_ts}, message=msg)
+            return _wrap_in_result(True, message=msg)
 
     @async_api_call()
     def create_oracle_cache(

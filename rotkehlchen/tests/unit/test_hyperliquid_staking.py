@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
 from rotkehlchen.constants.assets import A_HYPE
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -20,6 +19,7 @@ from rotkehlchen.tests.utils.hyperliquid import query_staking_history_events
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
@@ -86,7 +86,9 @@ def test_query_staking_summary_malformed_response() -> None:
         HyperliquidAPI().query_staking_summary(address=STAKER)
 
 
-def test_query_staking_summaries_skips_empty_accounts() -> None:
+def test_query_staking_summaries_skips_empty_accounts(
+        hyperliquid_manager: HyperliquidManager,
+) -> None:
     empty = StakingSummary(delegated=ZERO, undelegated=ZERO, pending_withdrawal=ZERO)
     staked = StakingSummary(delegated=FVal(3), undelegated=ZERO, pending_withdrawal=FVal(1))
     with patch.object(
@@ -94,7 +96,7 @@ def test_query_staking_summaries_skips_empty_accounts() -> None:
         'query_staking_summary',
         side_effect=lambda address: staked if address == STAKER else empty,
     ):
-        result = HyperliquidManager.query_staking_summaries(addresses=[
+        result = hyperliquid_manager.query_staking_summaries(addresses=[
             STAKER,
             string_to_evm_address('0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'),
         ])
@@ -263,7 +265,9 @@ def test_staking_entries_sharing_an_id_get_distinct_ids() -> None:
         ]
 
 
-def test_query_staking_summaries_skips_failing_address() -> None:
+def test_query_staking_summaries_skips_failing_address(
+        hyperliquid_manager: HyperliquidManager,
+) -> None:
     """A failing address is skipped, and the error is raised only if every address fails."""
     other = string_to_evm_address('0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c')
 
@@ -273,8 +277,8 @@ def test_query_staking_summaries_skips_failing_address() -> None:
         return StakingSummary(delegated=FVal(2), undelegated=ZERO, pending_withdrawal=ZERO)
 
     with patch.object(HyperliquidAPI, 'query_staking_summary', side_effect=query_staking_summary):
-        summaries, failed = HyperliquidManager.query_staking_summaries([other, STAKER])
+        summaries, failed = hyperliquid_manager.query_staking_summaries([other, STAKER])
         assert list(summaries) == [STAKER]
         assert failed == [other]
         with pytest.raises(RemoteError):
-            HyperliquidManager.query_staking_summaries([other])
+            hyperliquid_manager.query_staking_summaries([other])

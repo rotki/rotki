@@ -102,7 +102,7 @@ from rotkehlchen.db.settings import (
 )
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.errors.api import AuthenticationError
-from rotkehlchen.errors.misc import DBSchemaError, InputError
+from rotkehlchen.errors.misc import BackupTooLargeError, DBSchemaError, InputError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
@@ -378,12 +378,31 @@ def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb:
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = data.db.export_unencrypted(tempdbfile)
-        encoded_data, _ = data.compress_and_encrypt_db(tempdbpath)
+        encoded_data, _ = data.compress_and_encrypt_db(tempdbpath, Timestamp(1700000000))
     # The server would return them decoded
-    data.decompress_and_decrypt_db(encoded_data)
+    backup = data.decrypt_db(bytes(encoded_data))
+    assert backup.legacy is False
+    assert backup.last_modify_ts == 1700000000
+    data.restore_db(backup.user_db)
     with data.db.user_write() as cursor:
         balances = data.db.get_manually_tracked_balances(cursor)
     assert balances == [starting_balance]
+    data.logout()
+
+
+def test_compress_and_encrypt_db_too_large(data_dir, username, sql_vm_instructions_cb):
+    """Test that a DB bigger than the tier limit is rejected before encrypting and that the
+    plaintext temp file is removed"""
+    data = DataHandler(data_dir, MessagesAggregator(), sql_vm_instructions_cb)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+        tempdbpath = data.db.export_unencrypted(tempdbfile)
+
+    with patch('rotkehlchen.data_handler.encrypt_backup') as encrypt_mock, pytest.raises(BackupTooLargeError):  # noqa: E501
+        data.compress_and_encrypt_db(tempdbpath, Timestamp(0), max_size_mb=0)  # 0 bytes limit
+
+    assert not encrypt_mock.called
+    assert not tempdbpath.exists()
     data.logout()
 
 

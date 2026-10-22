@@ -209,7 +209,7 @@ Handling user creation, sign-in, log-out and querying
 
 .. http:get:: /api/(version)/users
 
-   By doing a ``GET`` at this endpoint you can see all the currently existing users and see who if any is logged in.
+   By doing a ``GET`` at this endpoint you can see all the currently existing users and see who if any is logged in. User directories named ``auto_backup_*``, which keep the data of a failed login or account creation for recovery, are not listed.
 
    **Example Request**:
 
@@ -312,7 +312,7 @@ Handling user creation, sign-in, log-out and querying
    :resjson object result: For successful requests, result contains the currently connected exchanges, and the user's settings. For details on the user settings refer to the `Getting or modifying settings`_ section.
    :statuscode 200: Adding the new user was successful
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Another user is already logged in. User already exists. Given Premium API credentials are invalid. Permission error while trying to access the directory where rotki saves data.
+   :statuscode 409: Another user is already logged in. User already exists. The name starts with ``auto_backup_``, which is reserved for the backups of failed logins. Given Premium API credentials are invalid. Permission error while trying to access the directory where rotki saves data.
    :statuscode 500: Internal rotki error
 
 .. http:post:: /api/(version)/users/(username)
@@ -532,12 +532,28 @@ Handling user creation, sign-in, log-out and querying
           "message": ""
       }
 
-   :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
+   :resjson bool result: Always ``true`` for a successful ``"upload"``. A failed sync is returned as an error with the reason in ``message``. A successful ``"download"`` instead returns an object, see below.
+
+   **Example Response** (successful download):
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"last_modify_ts": 1760882400},
+          "message": ""
+      }
+
+   :resjson int last_modify_ts: The last write timestamp of the restored database at the time it was uploaded, taken from the authenticated part of the backup so the server can not change it. ``null`` for a backup in the old format, which does not carry one.
    :statuscode 200: API key/secret deleted successfully
    :statuscode 400: Provided call is in some way malformed.
    :statuscode 401: The user does not have premium access.
+   :statuscode 404: A ``"download"`` was requested but there is no database backup on the server.
+   :statuscode 409: The downloaded backup can't be restored on this device. It was made by a newer rotki version or is damaged, it is in an older format than the one this device already synced, or it does not match the backup details the server reported. Or an ``"upload"`` was refused because the compressed database is bigger than the plan allows, found either before uploading or by the server. The message says which.
    :statuscode 500: Internal rotki error
-   :statuscode 502: The external premium service could not be reached or returned unexpected response.
+   :statuscode 502: The external premium service could not be reached or returned unexpected response, or the sync failed for another reason, for example because the plan does not include backups.
 
 Querying premium devices
 ========================

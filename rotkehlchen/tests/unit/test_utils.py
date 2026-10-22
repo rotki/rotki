@@ -5,9 +5,11 @@ import threading
 from collections import defaultdict
 from datetime import datetime
 from json.decoder import JSONDecodeError
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+from eth_abi import encode
 from eth_typing import HexAddress, HexStr
 from eth_utils import to_checksum_address
 from hexbytes import HexBytes
@@ -18,6 +20,8 @@ from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.constants.assets import A_USDC, A_WBTC
 from rotkehlchen.constants.resolver import identifier_to_evm_address, identifier_to_evm_chain
+from rotkehlchen.constants.timing import TOKEN_QUERY_FAILURE_COOLDOWN
+from rotkehlchen.errors.misc import RemoteError, TokenQueryFailed
 from rotkehlchen.errors.serialization import ConversionError
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.fval import FVal
@@ -34,11 +38,15 @@ from rotkehlchen.utils.misc import (
     pairwise,
     pairwise_longest,
     timestamp_to_date,
+    ts_now,
 )
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 from rotkehlchen.utils.version_check import get_current_version
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
 def test_process_result():
@@ -433,6 +441,65 @@ def test_retrieve_old_erc20_token_info(ethereum_inquirer):
     info = ethereum_inquirer.get_erc20_contract_info('0x2C4Bd064b998838076fa341A83d007FC2FA50957')
     assert info['symbol'] == 'UNI-V1'
     assert info['name'] == 'Uniswap V1'
+
+
+def test_failed_contract_info_query_is_not_cached(ethereum_inquirer: EthereumInquirer) -> None:
+    """A failure to reach the nodes must not make a token look non conformant for good. It
+    is raised and not cached, and the address is not queried again until the cooldown passes,
+    unless a request of the user forgets the failure."""
+    address = to_checksum_address('0x' + '1' * 40)
+    erc20_output = [
+        (True, encode(['uint8'], [6])),
+        (True, encode(['string'], ['TKN'])),
+        (True, encode(['string'], ['Token'])),
+    ]
+    erc721_output = [(True, encode(['string'], ['NFT'])), (True, encode(['string'], ['Nft']))]
+    now = ts_now()
+    for getter, output in (
+        (ethereum_inquirer.get_erc20_contract_info, erc20_output),
+        (ethereum_inquirer.get_erc721_contract_info, erc721_output),
+    ):
+        with patch.object(
+            ethereum_inquirer,
+            'multicall_2',
+            side_effect=[RemoteError('down'), RemoteError('down'), output],
+        ) as multicall:
+            with patch('rotkehlchen.chain.evm.node_inquirer.ts_now', return_value=now):
+                for _ in range(2):  # the second time is in the cooldown and does not query
+                    with pytest.raises(TokenQueryFailed):
+                        getter(address)
+                assert multicall.call_count == 1
+
+                ethereum_inquirer.forget_token_query_failures(address)
+                with pytest.raises(TokenQueryFailed):
+                    getter(address)
+                assert multicall.call_count == 2
+
+            with patch(
+                'rotkehlchen.chain.evm.node_inquirer.ts_now',
+                return_value=now + TOKEN_QUERY_FAILURE_COOLDOWN,
+            ):
+                assert getter(address)['name'] in {'Token', 'Nft'}
+                assert getter(address)['name'] in {'Token', 'Nft'}  # cached now
+            assert multicall.call_count == 3
+
+
+def test_contract_info_without_methods_is_cached(ethereum_inquirer: EthereumInquirer) -> None:
+    """Contracts that really lack the methods are still cached to not query them every time"""
+    address = to_checksum_address('0x' + '2' * 40)
+    for getter, calls in (
+        (ethereum_inquirer.get_erc20_contract_info, 3),
+        (ethereum_inquirer.get_erc721_contract_info, 2),
+    ):
+        with patch.object(
+            ethereum_inquirer,
+            'multicall_2',
+            return_value=[(False, b'')] * calls,
+        ) as multicall:
+            for _ in range(2):
+                assert getter(address)['name'] is None
+
+        assert multicall.call_count == 1
 
 
 def test_pairwise():

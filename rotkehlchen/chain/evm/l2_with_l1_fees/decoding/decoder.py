@@ -109,10 +109,14 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
     def _get_tx_not_decoded_filter_query(
             self,
             limit: int | None,
+            retry_deferred: bool = False,
     ) -> EvmTransactionsNotDecodedFilterQuery:
         """Leave out the transactions with an unresolved L1 fee while a recent lookup
         failure defers them. See _decode_transaction."""
-        filter_query = super()._get_tx_not_decoded_filter_query(limit=limit)
+        filter_query = super()._get_tx_not_decoded_filter_query(
+            limit=limit,
+            retry_deferred=retry_deferred,
+        )
         if self._should_defer_unresolved_l1_fees():
             filter_query.filters.append(DBResolvedL1FeeFilter(and_op=True))
         return filter_query

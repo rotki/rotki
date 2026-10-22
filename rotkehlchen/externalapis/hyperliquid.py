@@ -3,8 +3,10 @@ import json
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import partial
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Final, Literal, NotRequired, TypedDict
+from threading import Lock
+from typing import TYPE_CHECKING, Any, Final, Literal, NotRequired, TypedDict, get_args
 
 import requests
 
@@ -17,7 +19,11 @@ from rotkehlchen.constants.assets import A_HYPE
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnknownCounterpartyMapping, WrongAssetType
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import (
+    RecoverableRemoteError,
+    RemoteError,
+    remote_error_for_status,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.counterparty_mappings import get_asset_id_by_counterparty
@@ -42,12 +48,25 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Collection, Iterator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def counterparty_for_notes(value: Any) -> str:
+    """Return an address of a hyperliquid entry checksummed, for use in an event's notes.
+
+    Hyperliquid returns addresses lowercase. A value that is not an address is returned
+    as is, since it is only informational and must not fail the event.
+    """
+    try:
+        return deserialize_evm_address(str(value))
+    except DeserializationError:
+        return str(value)
 
 
 def asset_from_hyperliquid(symbol: str) -> Asset:
@@ -76,8 +95,34 @@ def asset_from_hyperliquid(symbol: str) -> Asset:
 HYPERLIQUID_MIN_PAGE_CAP: Final = 500
 # The REST weight limit is per minute, so keep retrying rate limited requests for that long.
 HYPERLIQUID_RATE_LIMIT_WINDOW: Final = 60
+# All `/info` requests share one allowance of 1200 weight per minute per IP. Pace them at 900
+# per minute (15 per second) and allow a burst of 120, so that even the first minute stays
+# at 1020, leaving room for requests from elsewhere and for the extra weight of long pages.
+# https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits
+HYPERLIQUID_WEIGHT_PER_SECOND: Final = 15
+HYPERLIQUID_WEIGHT_BURST: Final = 120
+HYPERLIQUID_DEFAULT_REQUEST_WEIGHT: Final = 20
+HYPERLIQUID_REQUEST_WEIGHTS: Final = {
+    'l2Book': 2,
+    'allMids': 2,
+    'clearinghouseState': 2,
+    'spotClearinghouseState': 2,
+    'orderStatus': 2,
+    'exchangeStatus': 2,
+    'userRole': 60,
+}
+# Time range queries cost 1 extra weight for every this many items returned. That is only known
+# from the response, so only the base weight is acquired before sending and the extra is charged
+# afterwards, without waiting.
+HYPERLIQUID_ITEMS_PER_EXTRA_WEIGHT: Final = 20
+# Roles of accounts whose balances and history can be queried in Core
+HYPERLIQUID_CORE_ACCOUNT_ROLES: Final = ('user', 'vault', 'subAccount')
+# `agent` wallets only sign for another account, and `missing` has never been seen by Core
+HYPERLIQUID_CORE_NON_ACCOUNT_ROLES: Final = ('agent', 'missing')
 USDC_SYMBOL: Final = 'USDC'
+HYPE_SYMBOL: Final = 'HYPE'
 HistoryQueryType = Literal['userFunding', 'userNonFundingLedgerUpdates', 'userFillsByTime']
+HYPERLIQUID_LISTING_QUERIES: Final = frozenset(get_args(HistoryQueryType))
 
 
 class FundingDelta(TypedDict):
@@ -96,6 +141,12 @@ class LedgerDelta(TypedDict, total=False):
     usdc: str
     amount: str
     coin: str
+    token: str
+    user: str
+    destination: str
+    fee: str
+    nativeTokenFee: str
+    feeToken: str
 
 
 class LedgerEntry(TypedDict, total=False):
@@ -170,12 +221,32 @@ class ParsedFillEntry:
     extra_data: dict[str, Any]
 
 
+def create_weight_limiter() -> TokenBucket:
+    """Create a limiter for the weight of Hyperliquid `/info` requests, where one token
+    is one unit of weight."""
+    return TokenBucket(
+        rps=HYPERLIQUID_WEIGHT_PER_SECOND,
+        capacity=HYPERLIQUID_WEIGHT_BURST,
+    )
+
+
 class HyperliquidAPI:
     """Client for Hyperliquid `info` endpoint balances and user history APIs."""
 
-    def __init__(self) -> None:
+    def __init__(
+            self,
+            session: requests.Session | None = None,
+            rate_limiter: TokenBucket | None = None,
+            listing_lock: Lock | None = None,
+    ) -> None:
+        """The session, weight limiter and listing lock can be shared between clients to reuse
+        the connection and to account all requests against the same allowance. The metadata
+        caches are always per client so a long lived owner does not hold on to stale
+        market/DEX metadata."""
         self.base_url = 'https://api.hyperliquid.xyz'
-        self.session = create_session()
+        self.session = session if session is not None else create_session()
+        self.rate_limiter = rate_limiter if rate_limiter is not None else create_weight_limiter()
+        self.listing_lock = listing_lock if listing_lock is not None else Lock()
         self.arb_usdc = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
         self._spot_market_to_base_symbol: dict[int, str] | None = None
         self._discovered_dex_names: list[str] | None = None
@@ -193,9 +264,9 @@ class HyperliquidAPI:
         try:
             data = self._query_list(payload={'type': 'perpDexs'}, query_name='perpDexs')
         except RemoteError as e:
+            # Not cached so that a later call can recover from a temporary failure
             log.debug(f'Failed to auto-discover Hyperliquid DEXs due to {e}')
-            self._discovered_dex_names = []
-            return self._discovered_dex_names
+            return []
 
         discovered_names: set[str] = set()
         for entry in data:
@@ -214,7 +285,21 @@ class HyperliquidAPI:
         return self._discovered_dex_names
 
     def _post_info(self, payload: dict[str, Any], wait_for_rate_limit: bool = False) -> Any:
-        """Query hyperliquid info endpoint.
+        """Query hyperliquid info endpoint. Queries whose weight depends on the number of
+        items returned go one at a time, since their weight is only charged once the response
+        arrives, and overlapping ones could together owe more than the limiter has accounted.
+
+        May raise:
+            - RemoteError
+        """
+        if payload.get('type') not in HYPERLIQUID_LISTING_QUERIES:
+            return self._send_info(payload=payload, wait_for_rate_limit=wait_for_rate_limit)
+
+        with self.listing_lock:
+            return self._send_info(payload=payload, wait_for_rate_limit=wait_for_rate_limit)
+
+    def _send_info(self, payload: dict[str, Any], wait_for_rate_limit: bool) -> Any:
+        """Send a single info request, paced by the weight limiter.
 
         A rate limited request is retried with a growing backoff up to the configured query
         retry limit. With `wait_for_rate_limit` it keeps retrying for at least the length of
@@ -226,11 +311,16 @@ class HyperliquidAPI:
         May raise:
             - RemoteError
         """
+        base_weight = HYPERLIQUID_REQUEST_WEIGHTS.get(
+            str(payload.get('type')),
+            HYPERLIQUID_DEFAULT_REQUEST_WEIGHT,
+        )
         cached_settings = CachedSettings()
         timeout = cached_settings.get_timeout_tuple()
         min_attempts = max(1, cached_settings.get_query_retry_limit())
         backoff = slept = attempts = 0
         while True:
+            self.rate_limiter.acquire(base_weight)  # every request, retries included
             try:
                 response = self.session.post(
                     url=f'{self.base_url}/info',
@@ -238,14 +328,14 @@ class HyperliquidAPI:
                     timeout=timeout,
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Failed to query hyperliquid info due to {e}') from e
+                raise RecoverableRemoteError(f'Failed to query hyperliquid info due to {e}') from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 attempts += 1
                 if attempts >= min_attempts and (
                     not wait_for_rate_limit or slept >= HYPERLIQUID_RATE_LIMIT_WINDOW
                 ):
-                    raise RemoteError(
+                    raise RecoverableRemoteError(
                         f'Hyperliquid API request {response.url} failed with HTTP status code '
                         f'{response.status_code} and text {response.text} after waiting '
                         f'{slept} seconds for the rate limit for payload {payload}',
@@ -266,7 +356,7 @@ class HyperliquidAPI:
                 continue
 
             if response.status_code != HTTPStatus.OK:
-                raise RemoteError(
+                raise remote_error_for_status(response.status_code)(
                     f'Failed to query hyperliquid info with status code '
                     f'{response.status_code} and text {response.text}',
                 )
@@ -277,6 +367,11 @@ class HyperliquidAPI:
                 raise RemoteError(
                     f'Failed to decode hyperliquid JSON response: {response.text[:200]}',
                 ) from e
+
+            if isinstance(data, list):
+                # Charge the weight for the items returned without waiting, so that the
+                # next request is the one that gets paced by it.
+                self.rate_limiter.charge(len(data) // HYPERLIQUID_ITEMS_PER_EXTRA_WEIGHT)
 
             return data
 
@@ -333,6 +428,43 @@ class HyperliquidAPI:
             payload['dex'] = dex_name
 
         return self._query_dict(payload=payload, query_name=account_type)
+
+    def has_core_activity(self, address: ChecksumEvmAddress) -> bool:
+        """Check whether the address is a queryable account in Hyperliquid Core.
+
+        The `userRole` info query returns the role `missing` for addresses that have never
+        interacted with Hyperliquid Core. The roles `user`, `vault` and `subAccount` are
+        accounts whose balances and history can be queried. The role `agent` is an API/signing
+        wallet whose trading account is another address, so querying it returns nothing and
+        it does not count as active.
+
+        Example request and responses:
+        POST https://api.hyperliquid.xyz/info {"type": "userRole", "user": "<address>"}
+        - Known user:    {"role": "user"}
+        - Known vault:   {"role": "vault"}
+        - Agent wallet:  {"role": "agent", "data": {"user": "<trading account address>"}}
+        - Unknown:       {"role": "missing"}
+
+        Note that Hyperliquid creates a Core account for any address that has received funds,
+        so an address that only received a transfer is reported as active.
+
+        `userRole` has a weight of 60, which the shared request weight limiter accounts for.
+        https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#query-a-users-role
+        https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits
+
+        May raise:
+            - RemoteError
+        """
+        result = self._query_dict(
+            payload={'type': 'userRole', 'user': address},
+            query_name='userRole',
+        )
+        if (role := result.get('role')) in HYPERLIQUID_CORE_ACCOUNT_ROLES:
+            return True
+        if role in HYPERLIQUID_CORE_NON_ACCOUNT_ROLES:
+            return False
+
+        raise RemoteError(f'Hyperliquid userRole returned unexpected role {role!r} for {address}')
 
     def query_balances(
             self,
@@ -546,10 +678,25 @@ class HyperliquidAPI:
         """
         if isinstance((tid := entry.get('tid')), int | str):
             return str(tid)
-        if isinstance((entry_hash := entry.get('hash')), str) and entry_hash != ZERO_32_BYTES_HEX:
+
+        entry_hash = entry.get('hash')
+        if not isinstance(entry_hash, str) or entry_hash == ZERO_32_BYTES_HEX:
+            entry_hash = None
+
+        delta = entry.get('delta')
+        if isinstance(delta, dict) and delta.get('type') == 'send' and entry_hash is not None:
+            # The sender and the recipient of a `send` are served the same ledger entry, and
+            # a group holds one event per sequence index, so the hash alone made the events
+            # of the second account a duplicate of the first one's and dropped them. Keep the
+            # two apart by account, as the funding payments that every account receives at
+            # the same times are.
+            return f'send_{address}_{entry_hash}'
+
+        if entry_hash is not None:
             return entry_hash
+
         if (
-            isinstance((delta := entry.get('delta')), dict) and
+            isinstance(delta, dict) and
             delta.get('type') == 'funding' and
             isinstance((coin := delta.get('coin')), str)
         ):
@@ -935,7 +1082,8 @@ class HyperliquidAPI:
             return None
 
         try:
-            if (amount := self._deserialize_amount(value=raw_amount, name=f'ledger {entry_type}')) == ZERO:  # noqa: E501
+            # a zero `send` can still have paid a fee, so it is kept for the fee events
+            if (amount := self._deserialize_amount(value=raw_amount, name=f'ledger {entry_type}')) == ZERO and entry_type != 'send':  # noqa: E501
                 return None
             if (token := delta.get('token')) is not None:
                 asset = self._asset_from_hyperliquid_token(token=token, prefer_spot_metadata=True)
@@ -1082,9 +1230,11 @@ class HyperliquidAPI:
             self,
             address: ChecksumEvmAddress,
             contexts: list[EntryContext],
+            tracked_addresses: Collection[ChecksumEvmAddress] = (),
     ) -> list[HistoryBaseEntry]:
         """Convert a page of ledger updates to rotki events."""
         events: list[HistoryBaseEntry] = []
+        tracked = {tracked_address.lower() for tracked_address in tracked_addresses}
         for context in contexts:
             if (parsed := self._parse_ledger_entry(context)) is None:
                 continue
@@ -1151,12 +1301,114 @@ class HyperliquidAPI:
                         notes='Hyperliquid liquidation',
                     ),
                 )
+            elif parsed.entry_type == 'send':
+                # A `send` moves spot tokens between two Core accounts, so it never touches
+                # HyperEVM and only shows up in the Core ledger. The recipient is sent the
+                # amount as is, while the sender also pays the fee, so the fee is only
+                # reported for the sender. When the other side is also tracked (or it is a
+                # send to oneself across dexes) the amount is a transfer, but the fee is
+                # still spent, so it is always its own event.
+                delta = parsed.context.entry['delta']
+                lower_address = address.lower()
+                is_sender = str(delta.get('user', '')).lower() == lower_address
+                is_recipient = str(delta.get('destination', '')).lower() == lower_address
+                if not is_sender and not is_recipient:
+                    log.error(
+                        'Hyperliquid send entry %s is neither from nor to %s. Skipping.',
+                        parsed.context.entry,
+                        address,
+                    )
+                    continue
+
+                counterparty = delta.get('destination') if is_sender else delta.get('user')
+                is_internal = (is_sender and is_recipient) or str(counterparty).lower() in tracked
+                if parsed.amount != ZERO:
+                    if is_sender:
+                        event_type = HistoryEventType.TRANSFER if is_internal else HistoryEventType.SPEND  # noqa: E501
+                        direction = 'to'
+                    else:
+                        event_type = HistoryEventType.TRANSFER if is_internal else HistoryEventType.RECEIVE  # noqa: E501
+                        direction = 'from'
+                    events.append(
+                        self._make_history_event(
+                            context=parsed.context,
+                            sequence_index=0,
+                            event_type=event_type,
+                            event_subtype=HistoryEventSubType.NONE,
+                            asset=parsed.asset,
+                            amount=abs(parsed.amount),
+                            location_label=address,
+                            notes=f'Hyperliquid spot send {direction} {counterparty_for_notes(counterparty)}',  # noqa: E501
+                        ),
+                    )
+
+                if is_sender:
+                    events.extend(self._create_send_fee_events(
+                        address=address,
+                        context=parsed.context,
+                    ))
             else:
                 log.warning(
                     f'Unknown hyperliquid ledger event type {parsed.entry_type!r} '
                     f'in entry {parsed.context.entry}. '
                     f'Skipping. This may indicate a new event type that needs handling.',
                 )
+
+        return events
+
+    def _create_send_fee_events(
+            self,
+            address: ChecksumEvmAddress,
+            context: EntryContext,
+    ) -> list[HistoryBaseEntry]:
+        """Create the fee events paid by the sender of a spot `send` entry.
+
+        The fee is charged in `feeToken`, USDC unless it says otherwise, or in HYPE via
+        `nativeTokenFee`, so only one of the two is paid. A fee that can't be read or
+        resolved is skipped with a warning instead of dropping the send itself.
+        """
+        delta = context.entry['delta']
+        events: list[HistoryBaseEntry] = []
+        for sequence_index, (fee_key, fee_token) in enumerate(
+                (('fee', delta.get('feeToken') or USDC_SYMBOL), ('nativeTokenFee', HYPE_SYMBOL)),
+                start=1,
+        ):
+            try:
+                if (fee_amount := self._deserialize_amount(
+                    value=delta.get(fee_key, '0'),
+                    name=f'send {fee_key}',
+                )) == ZERO:
+                    continue
+                fee_asset = self._asset_from_hyperliquid_token(
+                    token=fee_token,
+                    prefer_spot_metadata=True,
+                )
+            except (
+                DeserializationError,
+                UnknownAsset,
+                UnknownCounterpartyMapping,
+                WrongAssetType,
+            ) as e:
+                log.warning(
+                    'Failed to parse the %s of hyperliquid send entry %s due to %s. Skipping',
+                    fee_key,
+                    context.entry,
+                    e,
+                )
+                continue
+
+            events.append(
+                self._make_history_event(
+                    context=context,
+                    sequence_index=sequence_index,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=fee_asset,
+                    amount=fee_amount,
+                    location_label=address,
+                    notes='Hyperliquid spot send fee',
+                ),
+            )
 
         return events
 
@@ -1461,6 +1713,7 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            tracked_addresses: Collection[ChecksumEvmAddress] = (),
     ) -> Iterator[list[HistoryBaseEntry]]:
         """Query Hyperliquid Core history entries and yield the rotki events of each page.
 
@@ -1480,7 +1733,7 @@ class HyperliquidAPI:
         """
         query_type: HistoryQueryType
         for query_type, create_events in (
-            ('userNonFundingLedgerUpdates', self._create_ledger_events),
+            ('userNonFundingLedgerUpdates', partial(self._create_ledger_events, tracked_addresses=tracked_addresses)),  # noqa: E501
             ('userFunding', self._create_funding_events),
             ('userFillsByTime', self._create_fill_events),
         ):

@@ -3,7 +3,7 @@ import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { RaisedConditionKind, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 import { GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySigning } from './use-gnosis-pay-signing';
 
@@ -171,8 +171,8 @@ describe('useGnosisPaySigning', () => {
 
   it('should take down only the expired-session row once the signature is verified', async () => {
     const conditions = useRaisedConditionsStore();
-    conditions.raise({ kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
-    conditions.raise({ kind: RaisedConditionKind.MONERIUM_SESSION });
+    conditions.raise({ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
+    conditions.raise({ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.MONERIUM_SESSION });
     const harness = makeHarness();
     runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
     runTaskResult.mockImplementationOnce(async () => makeSuccess(true));
@@ -180,12 +180,12 @@ describe('useGnosisPaySigning', () => {
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
 
-    expect(conditions.conditions).toEqual([{ kind: RaisedConditionKind.MONERIUM_SESSION }]);
+    expect(conditions.conditions).toEqual([{ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.MONERIUM_SESSION }]);
   });
 
   it('should keep the expired-session row when verification returns false', async () => {
     const conditions = useRaisedConditionsStore();
-    conditions.raise({ kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
+    conditions.raise({ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
     const harness = makeHarness();
     runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
     runTaskResult.mockImplementationOnce(async () => makeSuccess(false));
@@ -193,7 +193,7 @@ describe('useGnosisPaySigning', () => {
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
 
-    expect(conditions.conditions).toEqual([{ kind: RaisedConditionKind.GNOSIS_PAY_SESSION }]);
+    expect(conditions.conditions).toEqual([{ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.GNOSIS_PAY_SESSION }]);
   });
 
   it('should put a bare authority on line 1 and the full url in URI', async () => {

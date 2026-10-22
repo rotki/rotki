@@ -16,10 +16,15 @@ class DBCacheStatic(Enum):
     that can be stored in the `key_value_cache` table"""
     LAST_BALANCE_SAVE: Final = 'last_balance_save'
     LAST_DATA_UPLOAD_TS: Final = 'last_data_upload_ts'
+    # When this device last uploaded or restored a premium backup in the current format.
+    # Once set, a legacy format backup from the server is refused.
+    LAST_PREMIUM_BACKUP_V1_SYNC_TS: Final = 'last_premium_backup_v1_sync_ts'
     LAST_DATA_UPDATES_TS: Final = 'last_data_updates_ts'
     LAST_DATA_UPDATES_FAILED_TS: Final = 'last_data_updates_failed_ts'
     LAST_OWNED_ASSETS_UPDATE: Final = 'last_owned_assets_update'
     LAST_EVM_ACCOUNTS_DETECT_TS: Final = 'last_evm_accounts_detect_ts'
+    # JSON of EVM activity checks that failed recoverably and should be retried soon
+    EVM_ACCOUNTS_DETECT_RETRIES: Final = 'evm_accounts_detect_retries'
     LAST_SPAM_ASSETS_DETECT_KEY: Final = 'last_spam_assets_detect_key'
     LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY: Final = 'last_augmented_spam_assets_detect_key'
     LAST_ETH2_EVENTS_PROCESSING_TS: Final = 'last_eth2_events_processing_ts'
@@ -33,6 +38,7 @@ class DBCacheStatic(Enum):
     GNOSIS_PAY_SAFE_MIGRATION: Final = 'gnosis_pay_safe_migration'
     LAST_SPARK_ASSETS_UPDATE: Final = 'last_spark_assets_update'
     LAST_DB_UPGRADE: Final = 'last_db_upgrade'
+    LAST_TOKEN_DETAILS_RETRY_TS: Final = 'last_token_details_retry_ts'
     DOCKER_DEVICE_INFO: Final = 'docker_device_info'
     MONERIUM_OAUTH_CREDENTIALS: Final = 'monerium_oauth_credentials'
     # Earliest timestamp from which balance caches are stale due to event modifications.
@@ -60,7 +66,7 @@ class LabeledLocationIdArgsType(LabeledLocationArgsType):
 
 
 class AddressArgType(TypedDict):
-    """Type of kwargs, used to get the value of following `WITHDRAWALS_TS`, `WITHDRAWALS_IDX`, `LAST_BTC_TX_BLOCK`, `LAST_BCH_TX_BLOCK` and `SOLANA_TOKEN_ACCOUNT`"""  # noqa: E501
+    """Type of kwargs for dynamic caches keyed by a blockchain address."""
     address: ChecksumEvmAddress | BTCAddress | SolanaAddress
 
 
@@ -132,12 +138,15 @@ class DBCacheDynamic(Enum):
     LINEA_AIRDROP_ALLOCATION: Final = 'linea_airdrop_allocation_{address}', lambda x: x
     ZKSYNC_LITE_BALANCES_CLAIMED: Final = 'zksync_lite_balances_claimed_{address}', _deserialize_int_from_str  # noqa: E501
     ZKSYNC_LITE_ELIGIBILITY: Final = 'zksync_lite_eligibility_{address}', lambda x: x
+    ZKSYNC_LITE_HISTORY_SYNCED: Final = 'zksync_lite_history_synced_{address}', _deserialize_int_from_str  # noqa: E501
     SOLANA_TOKEN_ACCOUNT: Final = 'solana_token_account_{address}', _deserialize_solana_token_account_from_str  # noqa: E501
     CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX: Final = 'customized_event_original_{group_identifier}_{sequence_index}', _deserialize_int_from_str  # noqa: E501
     LAST_BLOCKCHAIN_BALANCES_QUERY_TS: Final = (
         '{blockchain}_last_balances_query_ts',
         _deserialize_timestamp_from_str,
     )
+    # identifier of the last token of the chain the details retry task went through
+    TOKEN_DETAILS_RETRY_CURSOR: Final = '{blockchain}_token_details_retry_cursor', lambda x: x
 
     @overload
     def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:

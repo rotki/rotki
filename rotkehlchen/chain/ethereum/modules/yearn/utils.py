@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Final, Literal, overload
+from typing import TYPE_CHECKING, Any, Final
 
 import requests
 
@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
 )
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, TokenQueryFailed
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
@@ -23,7 +23,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CacheType,
     ChainID,
@@ -35,8 +35,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
-YDAEMON_API: Final[str] = 'https://ydaemon.yearn.fi/rotki'  # contains v2 and v3 vaults
-YDAEMON_PAGE_SIZE: Final[int] = 200
+KONG_API: Final[str] = 'https://kong.yearn.fi/api/rest'
 
 
 logger = logging.getLogger(__name__)
@@ -80,100 +79,46 @@ def _maybe_reset_yearn_cache_timestamp(count: int | None, chain_id: ChainID) -> 
     return False  # will continue
 
 
-@overload
-def _query_ydaemon(endpoint: Literal['count/vaults'], params: str) -> dict[str, int]:
-    ...
+def _query_yearn_vaults(chain_id: ChainID) -> list[dict[str, Any]]:
+    """Query Yearn v2 and v3 vault metadata from Kong.
 
-
-@overload
-def _query_ydaemon(endpoint: Literal['list/vaults'], params: str) -> list[dict[str, Any]]:
-    ...
-
-
-def _query_ydaemon(endpoint: str, params: str) -> list[dict[str, Any]] | dict[str, Any]:
-    """Query the ydaemon api.
-    Returns the response from the api in a list or dict.
-
-    May raise:
-    - RemoteError
+    Include hidden, retired and third-party vaults for historical transaction decoding.
+    May raise RemoteError.
     """
-    timeout_tuple = CachedSettings().get_timeout_tuple()
-    url = f'{YDAEMON_API}/{endpoint}?{params}'
+    url = f'{KONG_API}/list/vaults/{chain_id.value}'
     try:
-        response = requests.get(url, timeout=timeout_tuple)
+        response = requests.get(url, timeout=CachedSettings().get_timeout_tuple())
     except requests.exceptions.RequestException as e:
         log.error(f'Request to {url} failed due to {e!s}')
         raise RemoteError('Failed to obtain yearn vault information') from e
 
-    if response.status_code in (HTTPStatus.NOT_FOUND, HTTPStatus.SERVICE_UNAVAILABLE):
-        raise RemoteError('Failed to obtain a proper response from the yearn API')
+    if response.status_code != HTTPStatus.OK:
+        raise RemoteError(f'Failed to query Kong vaults: HTTP {response.status_code}')
 
     try:
         data = response.json()
     except (DeserializationError, JSONDecodeError) as e:
-        log.error(f'Failed to deserialize yearn api response {response.text} as JSON due to {e!s}')
-        raise RemoteError('Failed to deserialize data from the yearn api') from e
+        log.error('Failed to deserialize Kong response as JSON due to %s', e)
+        raise RemoteError('Failed to deserialize data from Kong') from e
+
+    if not isinstance(data, list) or any(not isinstance(vault, dict) for vault in data):
+        raise RemoteError('Unexpected format from Kong vault list response')
 
     return data
 
 
-def _query_yearn_vaults(chain_id: ChainID) -> list[dict[str, Any]]:
-    """Query list of yearn v2 and v3 vaults from the ydaemon api.
-    Returns the list of vaults.
-
-    May raise:
-        - RemoteError
-    """
-    all_vaults, offset = [], 0
-    while True:
-        data = _query_ydaemon(
-            endpoint='list/vaults',
-            params=f'chainIDs={chain_id.value}&limit={YDAEMON_PAGE_SIZE}&skip={offset}',
-        )
-        all_vaults.extend(data)
-        offset += YDAEMON_PAGE_SIZE
-        if len(data) < YDAEMON_PAGE_SIZE:
-            break  # No more vaults to retrieve
-
-    return all_vaults
-
-
-def _query_yearn_vault_count(chain_id: ChainID) -> int:
-    """Query count of yearn v2 and v3 vaults from the ydaemon api.
-    Returns total vault count.
-
-    May raise:
-    - RemoteError
-    """
-    data = _query_ydaemon(endpoint='count/vaults', params=f'chainIDs={chain_id.value}')
-    if 'numberOfVaults' not in data:
-        msg = 'Unexpected format from yearn vault count response.'
-        log.error(f'{msg} Expected a dict containing numberOfVaults integer, got {data}')
-        raise RemoteError(msg)
-
-    try:
-        return deserialize_int(value=data['numberOfVaults'], location='yearn vault count')
-    except DeserializationError as e:
-        log.error(f'Yearn number of vaults is not an integer {data}')
-        raise RemoteError(
-            'Yearn number of vaults is not an integer. Check logs for more details',
-        ) from e
-
-
-def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> None:
+def query_yearn_vaults(db: DBHandler, node_inquirer: EvmNodeInquirer) -> None:
     """Query yearn API and ensure that all the tokens exist locally. If they exist but the protocol
     is not the correct one, then the asset will be edited.
 
     May raise:
     - RemoteError
     """
-    chain_id = ethereum_inquirer.chain_id
+    chain_id = node_inquirer.chain_id
     try:
-        count = _query_yearn_vault_count(chain_id=chain_id)
-        if _maybe_reset_yearn_cache_timestamp(count=count, chain_id=chain_id):
-            return  # no new vaults
-
         data = _query_yearn_vaults(chain_id=chain_id)
+        if _maybe_reset_yearn_cache_timestamp(count=len(data), chain_id=chain_id):
+            return  # no new vaults
     except RemoteError as e:
         log.error(
             f'Failed to query yearn vaults on {chain_id} due to {e}. '
@@ -182,26 +127,23 @@ def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> Non
         _maybe_reset_yearn_cache_timestamp(count=None, chain_id=chain_id)  # reset timestamp to prevent repeated errors  # noqa: E501
         raise
 
-    if (vault_count := len(data)) != count:
-        log.error(
-            'Queried amount of yearn vaults does not match expected number. '
-            f'Expected {count} vaults, got {vault_count}. {data}',
-        )
-
-    assert data is not None, 'data exists. Checked by _maybe_reset_yearn_cache_timestamp'
     tokens_to_update_by_protocol = defaultdict(list)
 
     for vault in data:
-        if (version := vault.get('version')) is None:
-            log.error(f'Could not identify the yearn vault type for {vault}. Skipping...')
+        if (version := vault.get('apiVersion')) is None:  # Kong also lists non-yearn ERC4626 vaults (sDAI, Fluid, Morpho...) without an apiVersion  # noqa: E501
+            log.debug('Skipping Kong vault %s without apiVersion', vault.get('address'))
             continue
 
-        if version.startswith('0.'):  # version '0.x.x' happens in ydaemon and is always a v2 vault
+        if version.startswith('0.'):  # v2 vault API versions use 0.x.x
             vault_type = CPT_YEARN_V2
         elif version.startswith(('3.', '~3.')):  # '~' indicates it has basically the same functionality as a yearn vault but is not deployed by yearn  # noqa: E501
             vault_type = CPT_YEARN_V3
         else:
             log.error(f'Found yearn token with unknown version {vault}. Skipping...')
+            continue
+
+        if not isinstance(asset := vault.get('asset'), dict):  # Kong has not indexed the underlying asset yet  # noqa: E501
+            log.info('Skipping yearn %s vault %s without underlying asset', vault_type, vault.get('address'))  # noqa: E501
             continue
 
         encounter = TokenEncounterInfo(
@@ -211,11 +153,11 @@ def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> Non
         try:
             underlying_token = get_or_create_evm_token(
                 userdb=db,
-                evm_address=deserialize_evm_address(vault['token']['address']),
+                evm_address=deserialize_evm_address(asset['address']),
                 chain_id=chain_id,
-                decimals=vault['token']['decimals'],
-                name=vault['token']['name'],
-                symbol=vault['token']['symbol'],
+                decimals=asset['decimals'],
+                name=asset['name'],
+                symbol=asset['symbol'],
                 encounter=encounter,
             )
             vault_token = get_or_create_evm_token(
@@ -233,23 +175,43 @@ def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> Non
                 )],
                 encounter=encounter,
             )
-            if (staking_address := vault.get('staking')) is not None:  # check if the vault has a staking contract where the user can deposit vault tokens. Shares are 1:1  # noqa: E501
-                get_or_create_evm_token(
-                    userdb=db,
-                    evm_address=deserialize_evm_address(staking_address),
-                    evm_inquirer=ethereum_inquirer,
-                    chain_id=chain_id,
-                    protocol=CPT_YEARN_STAKING,
-                    underlying_tokens=[UnderlyingToken(
-                        address=vault_token.evm_address,
-                        token_kind=TokenKind.ERC20,
-                        weight=ONE,
-                    )],
-                    fallback_name=f'Yearn staking {vault_token.name}',  # fallback in case for the vaults that aren't ERC20  # noqa: E501
-                    fallback_symbol=f'YG-{vault_token.symbol}',
-                    fallback_decimals=18,
-                    encounter=encounter,
-                )
+            if (staking := vault.get('staking')) is not None and not isinstance(staking, dict):
+                raise DeserializationError(f'Unexpected staking metadata {staking}')
+
+            if (staking_address := (staking or {}).get('address')) is not None:  # check if the vault has a staking contract where the user can deposit vault tokens. Shares are 1:1  # noqa: E501
+                staking_token_address = deserialize_evm_address(staking_address)
+                staking_underlying_tokens = [UnderlyingToken(
+                    address=vault_token.evm_address,
+                    token_kind=TokenKind.ERC20,
+                    weight=ONE,
+                )]
+                try:
+                    get_or_create_evm_token(
+                        userdb=db,
+                        evm_address=staking_token_address,
+                        evm_inquirer=node_inquirer,
+                        chain_id=chain_id,
+                        protocol=CPT_YEARN_STAKING,
+                        underlying_tokens=staking_underlying_tokens,
+                        fallback_name=f'Yearn staking {vault_token.name}',  # fallback in case for the vaults that aren't ERC20  # noqa: E501
+                        fallback_symbol=f'YG-{vault_token.symbol}',
+                        fallback_decimals=18,
+                        encounter=encounter,
+                    )
+                except TokenQueryFailed as e:
+                    # save it without querying, so it is known as a yearn staking token, with
+                    # the identifier as name. That makes it a placeholder whose details are
+                    # filled in by the token details retry task once the nodes respond.
+                    log.warning('Could not query yearn staking token %s due to %s. Saving it without its details', staking_address, e)  # noqa: E501
+                    get_or_create_evm_token(
+                        userdb=db,
+                        evm_address=staking_token_address,
+                        chain_id=chain_id,
+                        protocol=CPT_YEARN_STAKING,
+                        underlying_tokens=staking_underlying_tokens,
+                        decimals=vault_token.decimals,  # shares are 1:1 with the vault
+                        encounter=encounter,
+                    )
 
         except (KeyError, DeserializationError) as e:
             msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)

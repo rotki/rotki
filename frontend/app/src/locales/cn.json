@@ -878,8 +878,13 @@
         }
       },
       "force_sync": {
+        "error": {
+          "message": "执行同步时出错：{error}",
+          "title": "强制同步"
+        },
         "success": {
           "message": "数据同步操作成功完成。",
+          "message_download": "数据同步操作成功完成。恢复的备份包含截至 {date} 的数据。",
           "title": "强制同步"
         }
       },
@@ -1582,9 +1587,13 @@
     },
     "trade_location": {
       "banks": "银行",
+      "bonds": "债券",
+      "collectibles": "收藏品",
       "commodities": "商品",
       "equities": "股票",
-      "external": "外部"
+      "etf": "ETF",
+      "external": "外部",
+      "realestate": "房地产"
     }
   },
   "backend_problems": {

@@ -32,6 +32,7 @@ const {
   uploadProgress,
   uploadProgressIcon,
   uploadStatus,
+  waitingForBalances,
 } = useSyncIndicator();
 </script>
 
@@ -160,6 +161,7 @@ const {
           v-model:checked="confirmChecked"
           :download="isDownload"
           :syncing="isSyncing"
+          :waiting="waitingForBalances"
           :size-discrepancy="!!uploadStatus"
           @cancel="cancelSync()"
           @confirm="performSync()"

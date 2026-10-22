@@ -647,6 +647,44 @@ def test_safenet_stake(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_safenet_withdrawal_initiated(ethereum_inquirer, ethereum_accounts):
+    """Test initiating a SafeNet staking withdrawal. The SAFE token transfer happens later,
+    at claim time, so this transaction only produces an informational event."""
+    tx_hash = deserialize_evm_tx_hash('0xdd0a6f4220bebfcacaa5595b00530fa8e72c6236a400d0a06f2cb6f278f4b03d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1792162007000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas := '0.00003362490416768'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=201,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
+            amount=FVal(amount := '2756.171010809713962163'),
+            location_label=user_address,
+            notes=f'Initiate withdrawal of {amount} SAFE from SafeNet',
+            counterparty=CPT_SAFE,
+            address=SAFENET_STAKING,
+            extra_data={'withdrawal_id': 106},
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe7FBc1925605AdF4fAF09e6614d7eeb9713467f5']])
 def test_safenet_withdrawal_claim(ethereum_inquirer, ethereum_accounts):
     """Test claiming a SafeNet staking withdrawal directly from the staking contract"""
@@ -677,6 +715,7 @@ def test_safenet_withdrawal_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Unstake {amount} SAFE from SafeNet',
             counterparty=CPT_SAFE,
             address=SAFENET_STAKING,
+            extra_data={'withdrawal_id': 24},
         ),
     ]
 

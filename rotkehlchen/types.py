@@ -850,11 +850,14 @@ class Location(DBCharEnumMixIn):
     GATE = 59
     BIT2ME = 60
     COINEX = 61
-    SONIC = 62  # on-chain Sonic events
-    ROBINHOOD = 63  # on-chain Robinhood chain events
-    INK = 64  # on-chain Ink chain events
-    QONTO = 65  # bank connector
-    FINTS = 66  # German FinTS/HBCI bank connector
+    BONDS = 62
+    ETF = 63
+    COLLECTIBLES = 64
+    SONIC = 65  # on-chain Sonic events
+    ROBINHOOD = 66  # on-chain Robinhood chain events
+    INK = 67  # on-chain Ink chain events
+    QONTO = 68  # bank connector
+    FINTS = 69  # German FinTS/HBCI bank connector
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> EVM_LOCATIONS_TYPE:
@@ -1450,6 +1453,8 @@ class CacheType(Enum):
     STAKEDAO_V2_VAULTS = auto()
     SUPERFLUID_TOKEN_LIST_VERSION = auto()
     SUPERFLUID_SUPER_TOKENS = auto()
+    # evm tokens whose contract did not return decimals. See mark_token_without_decimals
+    TOKEN_WITHOUT_DECIMALS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1521,6 +1526,7 @@ UniqueCacheType = Literal[
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
 
 GeneralCacheType = Literal[
+    CacheType.TOKEN_WITHOUT_DECIMALS,
     CacheType.CURVE_LP_TOKENS,
     CacheType.CURVE_POOL_TOKENS,
     CacheType.VELODROME_POOL_ADDRESS,

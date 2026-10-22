@@ -1,5 +1,4 @@
 import logging
-from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Final, NamedTuple, overload
 
 import regex
@@ -40,9 +39,15 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier, solana_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, NotSPLConformant
+from rotkehlchen.errors.misc import (
+    NotERC20Conformant,
+    NotERC721Conformant,
+    NotSPLConformant,
+    TokenQueryFailed,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -50,6 +55,7 @@ from rotkehlchen.types import (
     EVM_TOKEN_KINDS_TYPE,
     SOLANA_TOKEN_KINDS_TYPE,
     SPAM_PROTOCOL,
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
@@ -67,6 +73,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
     from rotkehlchen.chain.solana.rpc import Signature
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -90,22 +97,37 @@ def _query_or_get_given_token_info(
         symbol: str | None,
         decimals: int | None,
         token_kind: EVM_TOKEN_KINDS_TYPE | SOLANA_TOKEN_KINDS_TYPE | None,
-) -> tuple[str | None, str | None, int | None, EVM_TOKEN_KINDS_TYPE | SOLANA_TOKEN_KINDS_TYPE | None]:  # noqa: E501
+) -> tuple[str | None, str | None, int | None, EVM_TOKEN_KINDS_TYPE | SOLANA_TOKEN_KINDS_TYPE | None, frozenset[str]]:  # noqa: E501
     """Query basic token information for the given address.
     If unable to get the values from onchain data then the values given as arguments are used.
-    Returns the name, symbol and decimals in a tuple.
+    Returns the name, symbol, decimals and token kind in a tuple, together with the properties
+    that the contract did not return, whose values are only defaults.
+
+    May raise:
+    - TokenQueryFailed if the nodes could not be reached to query an evm token
     """
+    missing: frozenset[str] = frozenset()
     if token_kind in EVM_TOKEN_KINDS:
         if token_kind == TokenKind.ERC20:
-            with suppress(NotERC20Conformant):
-                info = chain_inquirer.get_erc20_contract_info(address)  # type: ignore
+            try:
+                info, missing = chain_inquirer.get_erc20_contract_info_and_missing(address)  # type: ignore
+            except TokenQueryFailed:
+                raise
+            except NotERC20Conformant:
+                pass
+            else:
                 decimals = info['decimals'] if decimals is None else decimals
                 symbol = info['symbol'] if symbol is None else symbol
                 name = info['name'] if name is None else name
 
         else:  # TokenKind.ERC721
-            with suppress(NotERC721Conformant):
+            try:
                 info = chain_inquirer.get_erc721_contract_info(address)  # type: ignore
+            except TokenQueryFailed:
+                raise
+            except NotERC721Conformant:
+                pass
+            else:
                 decimals = 0
                 symbol = info['symbol'] or '' if symbol is None else symbol
                 name = info['name'] or '' if name is None else name
@@ -129,7 +151,58 @@ def _query_or_get_given_token_info(
                     metadata=metadata,
                 ) else TokenKind.SPL_TOKEN
 
-    return name, symbol, decimals, token_kind
+    return name, symbol, decimals, token_kind, missing
+
+
+def name_for_answered_token(
+        symbol: str | None,
+        chain_id: ChainID,
+        address: ChecksumEvmAddress,
+) -> str:
+    """Return the name to save for a token already in the DB whose details query answered
+    without a name.
+
+    The details are queried in a single eth_call to the multicall contract (tryAggregate), so
+    decimals(), symbol() and name() run in the same execution at the same block, and each
+    one reports its own success. These are cheap getters, so when the query answers but one of
+    them failed, the contract reverted on it or does not have it. That is its final answer,
+    and querying again would return the same. Only a failure of the whole query, which raises
+    TokenQueryFailed, is retried.
+
+    So once the query answered the token is done: the details that came back are saved, and
+    the missing decimals and symbol keep the value they had, which is never replaced with a
+    default, since a caller may have given the right one. The name can't be kept though: a
+    token whose name is its identifier is a placeholder, and placeholders are selected to be
+    queried again. Instead of keeping state to remember which tokens not to query again, the
+    name is set to the symbol, or to `<chain_id>:<address>` if the symbol is missing too.
+
+    This only applies to tokens that already exist. A new token whose contract does not
+    return a name or a symbol is still not ERC20 conformant and is not created, since that is
+    what keeps contracts that emit transfer-like logs from being saved as tokens.
+    """
+    return symbol or f'{chain_id.value}:{address}'
+
+
+def mark_token_without_decimals(write_cursor: DBCursor, identifier: str) -> None:
+    """Record in the global DB general cache that the saved decimals of an evm token did not
+    come from the chain nor from the caller saving it: its details query answered without
+    decimals, and they were not given. It is kept under the TOKEN_WITHOUT_DECIMALS key with
+    the token identifier as value, and the timestamp is the last time it was seen so. A query
+    that failed to reach the nodes says nothing about the contract, so it never marks.
+
+    The decimals saved for such a token did not come from the chain. They are the default 18,
+    a fallback of the caller, or the ones a placeholder already had, so the amounts of its
+    events may be wrong. Since an answered query is final (see name_for_answered_token) the
+    token is not queried again and nothing else would remember that its decimals are a guess.
+    The mark keeps these tokens queryable, so they can be listed later, for example to warn the
+    user about them or to fix their decimals from another source, without querying the
+    details of every token again. It is never used to decide whether to query a token.
+    """
+    globaldb_set_general_cache_values(
+        write_cursor=write_cursor,
+        key_parts=(CacheType.TOKEN_WITHOUT_DECIMALS,),
+        values=(identifier,),
+    )
 
 
 def edit_token_and_clean_cache(
@@ -151,23 +224,56 @@ def edit_token_and_clean_cache(
         - InputError if there is an error while editing the token
     """
     updated_fields: set[str] = set()
-    if name is not None and token.name != name:
+    query_failed = False
+    if (
+            token.name == token.identifier and
+            chain_inquirer is not None and
+            None in (name, symbol, decimals) and
+            (name is None or isinstance(token, EvmToken))
+    ):
+        # query the chain for the details of the placeholder, also when the caller gives its
+        # name, since that takes it out of the placeholders and its decimals or symbol would
+        # never be queried. A failed query saves nothing. An answered one saves what came back
+        # and never the defaults of what did not. See name_for_answered_token
+        try:
+            *on_chain_details, _, missing = _query_or_get_given_token_info(
+                chain_inquirer=chain_inquirer,
+                address=token.evm_address if isinstance(token, EvmToken) else token.mint_address,
+                name=name,
+                symbol=symbol,
+                decimals=decimals,
+                token_kind=token.token_kind,
+            )
+        except TokenQueryFailed as e:
+            log.warning('Could not query the details of token %s due to %s', token.identifier, e)
+            query_failed = True
+        else:
+            given = {
+                attribute for attribute, value in zip(('name', 'symbol', 'decimals'), (name, symbol, decimals), strict=True)  # noqa: E501
+                if value is not None
+            }
+            for attribute, value in zip(('name', 'symbol', 'decimals'), on_chain_details, strict=True):  # noqa: E501
+                if value is not None and (attribute not in missing or attribute in given):
+                    object.__setattr__(token, attribute, value)
+                    updated_fields.add(attribute)
+
+            if 'decimals' in missing and 'decimals' not in given:
+                with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                    mark_token_without_decimals(write_cursor, token.identifier)
+
+            if isinstance(token, EvmToken) and token.name == token.identifier:
+                object.__setattr__(token, 'name', name_for_answered_token(
+                    symbol=token.symbol,
+                    chain_id=token.chain_id,
+                    address=token.evm_address,
+                ))
+                updated_fields.add('name')
+
+    # after a failed query the given name is not saved, so the token stays a placeholder and
+    # is queried again when seen again or by the token details retry task
+    if name is not None and token.name != name and query_failed is False:
         object.__setattr__(token, 'name', name)
         updated_fields.add('name')
-    elif token.name == token.identifier and chain_inquirer is not None:
-        # query the chain for available information
-        on_chain_name, on_chain_symbol, on_chain_decimals, _ = _query_or_get_given_token_info(
-            chain_inquirer=chain_inquirer,
-            address=token.evm_address if isinstance(token, EvmToken) else token.mint_address,
-            name=name,
-            symbol=symbol,
-            decimals=decimals,
-            token_kind=token.token_kind,
-        )
-        object.__setattr__(token, 'name', on_chain_name)
-        object.__setattr__(token, 'symbol', on_chain_symbol)
-        object.__setattr__(token, 'decimals', on_chain_decimals)
-        updated_fields.update(('name', 'symbol', 'decimals'))
 
     for field_name, value in (
             ('symbol', symbol),
@@ -499,6 +605,8 @@ def _get_or_create_token(
     Note3: If encounter is None, it will broadcast the `NEW_TOKEN_DETECTED` message by default.
 
     May raise:
+    - TokenQueryFailed if a chain_inquirer is given but the nodes could not be reached to
+       query the token details. Nothing is saved then, not even with fallbacks.
     - NotERC20Conformant if token_kind is ERC20 and a chain_inquirer is given but the given
        address does not conform to the ERC20 spec
     - NotERC721Conformant if token_kind is ERC721 and a chain_inquirer is given but the given
@@ -536,8 +644,15 @@ def _get_or_create_token(
         else:
             asset_exists = False
 
+        without_decimals = False
         if None in (name, symbol, decimals, token_kind) and chain_inquirer is not None:
-            name, symbol, decimals, token_kind = _query_or_get_given_token_info(
+            given = frozenset(
+                prop for prop, value in zip(('name', 'symbol', 'decimals'), (name, symbol, decimals), strict=True)  # noqa: E501
+                if value is not None
+            )
+            # a TokenQueryFailed is let out. Nothing is saved, so the token is queried again
+            # when seen again
+            name, symbol, decimals, token_kind, missing = _query_or_get_given_token_info(
                 chain_inquirer=chain_inquirer,
                 address=address,
                 name=name,
@@ -545,13 +660,16 @@ def _get_or_create_token(
                 decimals=decimals,
                 token_kind=token_kind,
             )
+            without_decimals = 'decimals' in missing and 'decimals' not in given
 
-            if (
-                    (missing_metadata := None in (name, symbol, decimals, token_kind)) and
-                    None not in (fallback_name, fallback_symbol, fallback_decimals)
-            ):
-                name, symbol, decimals = fallback_name, fallback_symbol, fallback_decimals
-            elif missing_metadata:
+            if None not in (fallback_name, fallback_symbol, fallback_decimals):
+                # fallbacks only replace what the chain did not return
+                name = fallback_name if name is None else name
+                symbol = fallback_symbol if symbol is None else symbol
+                if decimals is None or ('decimals' in missing and 'decimals' not in given):
+                    decimals = fallback_decimals
+
+            if None in (name, symbol, decimals, token_kind):
                 raise (
                     NotERC20Conformant(f'Token {address} is not ERC20 conformant')
                     if token_kind == TokenKind.ERC20 else
@@ -629,6 +747,10 @@ def _get_or_create_token(
                 # at this point the newly detected asset has just been added to the DB
                 if is_spam_token:
                     userdb.add_to_ignored_assets(write_cursor=write_cursor, asset=token)
+
+        if without_decimals:
+            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                mark_token_without_decimals(write_cursor, token.identifier)
 
     return token
 

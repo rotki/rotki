@@ -33,6 +33,7 @@ SCHEDULER_PERIODIC_TASK_KEYS: Final = (
     DBCacheStatic.LAST_ETH2_EVENTS_PROCESSING_TS,
     DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS,
     DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+    DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
 )
 
 
@@ -70,6 +71,7 @@ def should_run_periodic_task(
             DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
             DBCacheStatic.LAST_ETH2_EVENTS_PROCESSING_TS,
             DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS,
+            DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
         ],
         refresh_period: int,
         cached_timestamps: Mapping[str, str] | None = None,

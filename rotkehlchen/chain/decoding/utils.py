@@ -3,6 +3,8 @@ import traceback
 from typing import TYPE_CHECKING, Any, overload
 
 from rotkehlchen.api.websockets.typedefs import UserMessageOperation
+from rotkehlchen.chain.evm.token_query_failures import is_token_query_deferring
+from rotkehlchen.errors.misc import TokenQueryFailed
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import Internal
@@ -87,7 +89,9 @@ def decode_safely(
 ) -> tuple[Any, bool]:
     """
     Wrapper for methods that execute logic from decoders. It handles all known errors
-    by logging them and optionally sending them to the user.
+    by logging them and optionally sending them to the user. A TokenQueryFailed that defers
+    the transaction being decoded is only logged, since the transaction is left undecoded and
+    retried later. See track_token_query_failures.
 
     tx_reference is used only to log more information in case of error when decoding
     a single transaction.
@@ -102,6 +106,13 @@ def decode_safely(
     except handled_exceptions as e:
         if raise_on_error:
             raise
+        if isinstance(e, TokenQueryFailed) and is_token_query_deferring():
+            # the transaction is left undecoded and retried later, so it is not an error
+            log.warning(
+                'Could not decode transaction %s in %s yet: %s', tx_reference, blockchain, e,
+            )
+            return None, True
+
         log.error(traceback.format_exc())
         error_prefix = (
             f'Decoding of transaction {tx_reference} in {blockchain}'

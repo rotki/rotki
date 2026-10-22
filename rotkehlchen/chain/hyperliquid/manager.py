@@ -1,5 +1,7 @@
 import logging
 from collections import Counter, defaultdict
+from functools import partial
+from threading import Lock
 from typing import TYPE_CHECKING, Final, Protocol
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
@@ -16,12 +18,17 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI, StakingSummary
+from rotkehlchen.externalapis.hyperliquid import (
+    HyperliquidAPI,
+    StakingSummary,
+    create_weight_limiter,
+)
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location
+from rotkehlchen.types import Location, SupportedBlockchain
 from rotkehlchen.user_messages import NetworkFailure
+from rotkehlchen.utils.network import create_session
 
 from .accountant import HyperliquidAccountingAggregator
 from .decoding.decoder import HyperliquidTransactionDecoder
@@ -31,10 +38,13 @@ from .transactions import HyperliquidTransactions
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
+    from requests import Session
+
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.premium.premium import Premium
     from rotkehlchen.types import ChecksumEvmAddress, Timestamp
+    from rotkehlchen.utils.rate_limiter import TokenBucket
 
     from .node_inquirer import HyperliquidInquirer
 
@@ -87,6 +97,26 @@ class HyperliquidManager(EvmManager):
             ),
         )
         self.node_inquirer: HyperliquidInquirer
+        # Created eagerly: history, balances and detection may request clients concurrently
+        # and lazy initialization would hand each of them its own session, limiter and lock.
+        self._http_session: Session = create_session()
+        self._rate_limiter: TokenBucket = create_weight_limiter()
+        self._listing_lock: Lock = Lock()
+
+    @property
+    def api(self) -> HyperliquidAPI:
+        """A Core API client for one operation (balances, history, account detection).
+
+        Only the connection, the request weight limiter and the lock serializing list queries
+        are shared between clients, so all queries are paced against the same allowance. Market
+        and DEX metadata is cached per client, so that each operation sees newly listed markets
+        and deployed DEXes.
+        """
+        return HyperliquidAPI(
+            session=self._http_session,
+            rate_limiter=self._rate_limiter,
+            listing_lock=self._listing_lock,
+        )
 
     def query_balances(
             self,
@@ -106,7 +136,7 @@ class HyperliquidManager(EvmManager):
                 )
                 del assets[sthype]
 
-        api = HyperliquidAPI()
+        api = self.api
         main_currency = CachedSettings().main_currency
         for address in addresses:
             self._add_core_staking_balance(
@@ -147,8 +177,8 @@ class HyperliquidManager(EvmManager):
 
         return balances
 
-    @staticmethod
     def query_staking_summaries(
+            self,
             addresses: Sequence[ChecksumEvmAddress],
     ) -> tuple[dict[ChecksumEvmAddress, StakingSummary], list[ChecksumEvmAddress]]:
         """Query the core staking account of each address, keeping only the non-empty ones.
@@ -159,7 +189,7 @@ class HyperliquidManager(EvmManager):
         May raise:
             - RemoteError if the query failed for every one of the given addresses
         """
-        api = HyperliquidAPI()
+        api = self.api
         summaries: dict[ChecksumEvmAddress, StakingSummary] = {}
         failed: list[ChecksumEvmAddress] = []
         for address in addresses:
@@ -298,10 +328,27 @@ class HyperliquidManager(EvmManager):
         history of addresses whose core history range was already queried before
         staking history existed.
         """
+        history_batches = partial(
+            api.iter_history_event_batches,
+            tracked_addresses=self._get_tracked_addresses(),
+        )
         return (
-            (HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX, 'history', api.iter_history_event_batches),
+            (HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX, 'history', history_batches),
             (HYPERLIQUID_CORE_STAKING_RANGE_PREFIX, 'staking history', api.iter_staking_history_event_batches),  # noqa: E501
         )
+
+    def _get_tracked_addresses(self) -> list[ChecksumEvmAddress]:
+        """All tracked Hyperliquid accounts, not only the ones being queried, so that a send
+        between two of them is recognized as a transfer whichever of them is queried first.
+        Only these have their Core history queried, so an account tracked on another chain
+        only would never get the matching side of the transfer."""
+        with self.node_inquirer.database.conn.read_ctx() as cursor:
+            return [
+                account.address for account in self.node_inquirer.database.get_blockchain_account_data(  # noqa: E501
+                    cursor=cursor,
+                    blockchain=SupportedBlockchain.HYPERLIQUID,
+                )
+            ]
 
     def query_proprietary_history(
             self,
@@ -314,12 +361,12 @@ class HyperliquidManager(EvmManager):
         A range is only marked as queried once all of its history has been queried, so a
         range that failed midway is queried again in a future sync.
         """
-        api = HyperliquidAPI()
+        core_history_queries = self._core_history_queries(self.api)
         ranges = DBQueryRanges(self.node_inquirer.database)
         history_db = DBHistoryEvents(self.node_inquirer.database)
 
         for address in addresses:
-            for range_prefix, history_name, query_batches in self._core_history_queries(api):
+            for range_prefix, history_name, query_batches in core_history_queries:
                 location_string = f'{range_prefix}_{address}'
                 with self.node_inquirer.database.conn.read_ctx() as cursor:
                     ranges_to_query = ranges.get_location_query_ranges(
@@ -384,7 +431,7 @@ class HyperliquidManager(EvmManager):
             self._save_history_batches(
                 history_db=history_db,
                 batches=query_batches(address=address, start_ts=start_ts, end_ts=end_ts),
-            ) for _, _, query_batches in self._core_history_queries(HyperliquidAPI())
+            ) for _, _, query_batches in self._core_history_queries(self.api)
         )
 
     def query_transactions(

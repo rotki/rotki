@@ -587,7 +587,6 @@ def test_check_premium_status(rotkehlchen_api_server, username):
         upload_ts=Timestamp(0),
         last_modify_ts=ts_now(),
         data_size=9494994,
-        data_hash='0x',
     )
     premium = Premium(
         credentials=premium_credentials,
@@ -2299,4 +2298,6 @@ def test_check_if_should_sync_survives_premium_errors() -> None:
     sync_manager.premium = MagicMock()
     for error in (RemoteError('connection timeout'), PremiumAuthenticationError('key rejected')):
         sync_manager.premium.get_capabilities.side_effect = error
-        assert sync_manager.check_if_should_sync(force_upload=False) is False
+        should_sync, reason = sync_manager.check_if_should_sync(force_upload=False)
+        assert should_sync is False
+        assert reason == f'Could not query your premium plan due to: {error!s}'

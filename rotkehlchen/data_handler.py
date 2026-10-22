@@ -4,21 +4,34 @@ import logging
 import shutil
 import tempfile
 import zlib
+from compression import zstd
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 from sqlcipher3 import dbapi2 as sqlcipher  # pylint: disable=no-name-in-module
 
 from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
-from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
-from rotkehlchen.crypto import decrypt, encrypt
+from rotkehlchen.constants.misc import AUTO_BACKUP_DIR_PREFIX, USERDB_NAME, USERSDIR_NAME
+from rotkehlchen.crypto import decrypt_backup, decrypt_legacy, encrypt_backup, is_backup_format
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.misc import detect_sqlcipher_version, plaintext_db_integrity_check
 from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.errors.api import AuthenticationError
-from rotkehlchen.errors.misc import DataIntegrityError, SystemPermissionError
+from rotkehlchen.errors.misc import (
+    BackupTooLargeError,
+    DataIntegrityError,
+    RemoteBackupError,
+    SystemPermissionError,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.backup_container import (
+    MALFORMED_BACKUP_MSG,
+    USER_DB_ENTRY,
+    build_container,
+    decompress_entry,
+    read_container,
+)
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 if TYPE_CHECKING:
@@ -26,12 +39,25 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.settings import ModifiableDBSettings
+    from rotkehlchen.types import Timestamp
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 BUFFERSIZE = 64 * 1024
+# 6 trades a little size for speed: 9 is ~55% slower for only ~5 MB less on a large DB,
+# and levels 12-15 compress no better than 9
+BACKUP_ZSTD_LEVEL: Final = 6
+BYTES_PER_MB: Final = 1024 * 1024
+
+
+class RemoteBackup(NamedTuple):
+    """A remote backup that was decrypted and decompressed but not applied yet"""
+    legacy: bool  # in the format from before encrypt_backup
+    # Authenticated, so the server can't change it. None for a legacy backup.
+    last_modify_ts: Timestamp | None
+    user_db: bytes  # the plaintext DB
 
 
 class DataHandler:
@@ -146,6 +172,12 @@ class DataHandler:
         """
         user_data_dir = self._get_user_data_dir(username)
         if create_new:
+            if username.startswith(AUTO_BACKUP_DIR_PREFIX):  # get_users() would not list it
+                raise AuthenticationError(
+                    f'Usernames starting with {AUTO_BACKUP_DIR_PREFIX} are reserved for '
+                    'backups of failed logins. Choose a different name.',
+                )
+
             try:
                 if (user_data_dir / USERDB_NAME).exists():
                     raise AuthenticationError(
@@ -174,7 +206,7 @@ class DataHandler:
                 # user account can be created
                 shutil.move(
                     user_data_dir,
-                    self.data_directory / USERSDIR_NAME / f'auto_backup_{username}_{ts_now()}',
+                    self.data_directory / USERSDIR_NAME / f'{AUTO_BACKUP_DIR_PREFIX}{username}_{ts_now()}',  # noqa: E501
                 )
 
                 raise SystemPermissionError(
@@ -243,7 +275,8 @@ class DataHandler:
         """Returns a dict with all users in the system.
 
         Each key is a user's name and the value is denoting whether that
-        particular user is logged in or not
+        particular user is logged in or not. Directories moved aside after a failed login or
+        account creation are left out, since they are kept only for recovery.
         """
         users = {}
         users_dir = self.data_directory / USERSDIR_NAME
@@ -252,7 +285,11 @@ class DataHandler:
 
         for x in users_dir.iterdir():
             try:
-                if x.is_dir() and (x / USERDB_NAME).exists():
+                if (
+                    x.is_dir() and
+                    not x.name.startswith(AUTO_BACKUP_DIR_PREFIX) and
+                    (x / USERDB_NAME).exists()
+                ):
                     users[x.name] = 'loggedin' if x.name == self.username else 'loggedout'
             except PermissionError:
                 # ignore directories that can't be accessed
@@ -260,30 +297,66 @@ class DataHandler:
 
         return users
 
-    def compress_and_encrypt_db(self, tempdbpath: Path) -> tuple[bytes, str]:
-        """Decrypt the DB, dump in temporary plaintextdb, compress it,
-        and then re-encrypt it
+    def compress_and_encrypt_db(
+            self,
+            tempdbpath: Path,
+            last_modify_ts: Timestamp,
+            max_size_mb: int | None = None,
+    ) -> tuple[bytearray, str]:
+        """Compress the plaintext DB at tempdbpath and encrypt it as a premium backup
+        whose authenticated header carries last_modify_ts
 
-        Returns a b64 encoded binary blob"""
+        If max_size_mb is given we stop compressing as soon as the compressed DB reaches
+        that size, since the server would reject the upload anyway.
+
+        zstd(DB) -> RKC1 container (backup_container.py) -> RKPBAK01 envelope (crypto.py)
+
+        Returns the encrypted backup and the b64 encoded hash of it
+
+        May raise:
+        - BackupTooLargeError if the compressed DB reaches max_size_mb
+        """
         self.msg_aggregator.add_message(
             message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS,
             data={'type': str(DBUploadStatusStep.COMPRESSING)},
         )
-        compressor = zlib.compressobj(level=9)
+        compressor = zstd.ZstdCompressor(options={
+            zstd.CompressionParameter.compression_level: BACKUP_ZSTD_LEVEL,
+            zstd.CompressionParameter.checksum_flag: 1,
+        })
         compressed_data = bytearray()
+        # The compressed size is unknown until the end, so we check it while compressing and
+        # stop as soon as it reaches the limit. Like the server we use MiB and reject at the
+        # limit. The server measures the encrypted file, which is a few hundred bytes bigger,
+        # so a backup just under the limit may still be rejected there.
+        max_size_bytes = None if max_size_mb is None else max_size_mb * BYTES_PER_MB
         with open(tempdbpath, 'rb') as src_f:
             block = src_f.read(BUFFERSIZE)
             while block:
                 compressed_data += compressor.compress(block)
-                block = src_f.read(BUFFERSIZE)
+                if max_size_bytes is not None and len(compressed_data) >= max_size_bytes:
+                    break
 
-            compressed_data += compressor.flush()
+                block = src_f.read(BUFFERSIZE)
+            else:
+                compressed_data += compressor.flush()
+
+        if max_size_bytes is not None and len(compressed_data) >= max_size_bytes:
+            tempdbpath.unlink(missing_ok=True)
+            raise BackupTooLargeError(
+                f'The compressed database does not fit in the {max_size_mb} MB '
+                f'your plan allows for backups.',
+            )
 
         self.msg_aggregator.add_message(
             message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS,
             data={'type': str(DBUploadStatusStep.ENCRYPTING)},
         )
-        encrypted_data = encrypt(self.db.password.encode(), bytes(compressed_data))
+        encrypted_data = encrypt_backup(
+            password=self.db.password.encode(),
+            last_modify_ts=last_modify_ts,
+            payload=build_container(user_db=compressed_data),
+        )
         # We rehash the data on the server side to check that it was uploaded correctly,
         # so the hash we send must be of the encrypted data that is actually uploaded.
         data_hash = base64.b64encode(
@@ -293,20 +366,41 @@ class DataHandler:
         tempdbpath.unlink()
         return encrypted_data, data_hash
 
-    def decompress_and_decrypt_db(self, encrypted_data: bytes) -> None:
-        """Decrypt and decompress the encrypted data we receive from the server
-
-        If successful then replace our local Database
+    def decrypt_db(self, encrypted_data: bytes) -> RemoteBackup:
+        """Decrypt and decompress the backup we received from the server, without applying it
 
         May Raise:
-        - UnableToDecryptRemoteData due to decrypt()
+        - UnableToDecryptRemoteData if the password is wrong or the backup was modified
+        - RemoteBackupError if the backup needs a newer rotki version or is malformed
+        """
+        log.info('Decrypt and decompress DB')
+        password = self.db.password.encode()
+        if not is_backup_format(encrypted_data):
+            try:
+                user_db = zlib.decompress(decrypt_legacy(password, encrypted_data))
+            except zlib.error as e:
+                raise RemoteBackupError(MALFORMED_BACKUP_MSG) from e
+
+            return RemoteBackup(legacy=True, last_modify_ts=None, user_db=user_db)
+
+        last_modify_ts, payload = decrypt_backup(password=password, data=encrypted_data)
+        return RemoteBackup(
+            legacy=False,
+            last_modify_ts=last_modify_ts,
+            user_db=decompress_entry(read_container(payload)[USER_DB_ENTRY]),
+        )
+
+    def restore_db(self, user_db: bytes) -> None:
+        """Replace our local Database with the plaintext DB of a decrypted remote backup
+
+        May Raise:
         - DBUpgradeError if the rotki DB version is newer than the software or
         there is a DB upgrade and there is an error or if the version is older
         than the one supported.
         - SystemPermissionError if the DB file permissions are not correct
         - DataIntegrityError if the downloaded database fails the SQLite integrity check
         """
-        log.info('Decompress and decrypt DB')
+        log.info('Restore DB from remote backup')
         # First make a backup of the DB we are about to replace
         date = timestamp_to_date(ts=ts_now(), formatstr='%Y_%m_%d_%H_%M_%S', treat_as_local=True)
         users_dir = self.data_directory / USERSDIR_NAME
@@ -315,15 +409,13 @@ class DataHandler:
             users_dir / self.username / f'rotkehlchen_db_{date}.backup',
         )
 
-        decrypted_data = decrypt(self.db.password.encode(), encrypted_data)
-        decompressed_data = zlib.decompress(decrypted_data)
         # Verify the downloaded plaintext DB before letting it overwrite the local one
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdirname:  # needed on windows, see https://tinyurl.com/tmp-win-err  # noqa: E501
             tempdbpath = Path(tmpdirname) / 'remote.db'
-            tempdbpath.write_bytes(decompressed_data)
+            tempdbpath.write_bytes(user_db)
             ok, integrity_error = plaintext_db_integrity_check(tempdbpath)
         if not ok:
             message = f'Downloaded database failed the integrity check: {integrity_error}'
             log.error(message)
             raise DataIntegrityError(message)
-        self.db.import_unencrypted(decompressed_data)
+        self.db.import_unencrypted(user_db)

@@ -6,6 +6,7 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_EUR, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.errors.asset import UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.fval import FVal
@@ -16,6 +17,7 @@ from rotkehlchen.types import (
     ExternalServiceApiCredentials,
     Price,
     Timestamp,
+    TokenKind,
 )
 
 if TYPE_CHECKING:
@@ -125,3 +127,17 @@ def test_alchemy_invalid_api_key(price_historian: PriceHistorian, database: DBHa
             from_asset=A_ETH.resolve_to_asset_with_oracles(),
             to_asset=A_USD.resolve_to_asset_with_oracles(),
         )
+
+
+def test_alchemy_skips_collectibles(database: DBHandler) -> None:
+    """Alchemy prices by contract address, so an ERC721 token id can't be priced and
+    must not cost a request."""
+    nft = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xAA277CB7914b7e5514946Da92cb9De332Ce610EF'),
+        chain_id=ChainID.ARBITRUM_ONE,
+        token_kind=TokenKind.ERC721,
+        collectible_id='28315',
+    )
+    with pytest.raises(UnsupportedAsset):
+        Alchemy._get_alchemy_asset_data(nft)

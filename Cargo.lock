@@ -341,7 +341,7 @@ checksum = "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486"
 
 [[package]]
 name = "colibri"
-version = "1.44.1"
+version = "1.44.2"
 dependencies = [
  "async-sqlite",
  "axum",
@@ -1704,9 +1704,9 @@ checksum = "eec689c0bc40ff2458a5977b6619cb718087084a18e02a131c599b62d05e1a5f"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.15"
+version = "0.103.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2"
+checksum = "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281"
 dependencies = [
  "ring",
  "rustls-pki-types",
@@ -1971,7 +1971,7 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "starling"
-version = "1.44.1"
+version = "1.44.2"
 dependencies = [
  "clap",
  "fs4",
@@ -1989,7 +1989,7 @@ dependencies = [
 
 [[package]]
 name = "starling-core"
-version = "1.44.1"
+version = "1.44.2"
 dependencies = [
  "async-trait",
  "dirs",
@@ -2004,7 +2004,7 @@ dependencies = [
 
 [[package]]
 name = "starling-proxy"
-version = "1.44.1"
+version = "1.44.2"
 dependencies = [
  "axum",
  "futures-util",

@@ -120,22 +120,28 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('x', 56);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('y', 57);
 /* Monad */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('z', 58);
-/* Sonic */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('~', 62);
-/* Robinhood */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('\x7f', 63);
-/* Ink */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('\x80', 64);
-/* Qonto */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('\x81', 65);
-/* FinTS */
-INSERT OR IGNORE INTO location(location, seq) VALUES ('\x82', 66);
 /* Gate */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('{', 59);
 /* Bit2me */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('|', 60);
 /* CoinEx */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('}', 61);
+/* Bonds */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('~', 62);
+/* ETF */
+INSERT OR IGNORE INTO location(location, seq) VALUES (char(127), 63);
+/* Collectibles */
+INSERT OR IGNORE INTO location(location, seq) VALUES (char(128), 64);
+/* Sonic */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('\x81', 65);
+/* Robinhood */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('\x82', 66);
+/* Ink */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('\x83', 67);
+/* Qonto */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('\x84', 68);
+/* FinTS */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('\x85', 69);
 """
 
 # Custom enum table for Balance categories (asset/liability)

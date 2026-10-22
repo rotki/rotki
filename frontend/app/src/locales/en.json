@@ -492,7 +492,9 @@
         },
         "gnosis_pay_session": {
           "description": "Sign in again to keep importing Gnosis Pay transactions.",
-          "title": "Gnosis Pay session expired"
+          "description_not_connected": "Some of your Gnosis Pay transactions lack the merchant details only Gnosis Pay provides. Sign in to add them.",
+          "title": "Gnosis Pay session expired",
+          "title_not_connected": "Gnosis Pay not connected"
         },
         "missing_api_key": {
           "action": "Enter key",
@@ -517,7 +519,9 @@
         },
         "monerium_session": {
           "description": "Sign in again to keep importing Monerium activity.",
-          "title": "Monerium session expired"
+          "description_not_connected": "Some of your Monerium transfers lack the details only Monerium provides. Sign in to add them.",
+          "title": "Monerium session expired",
+          "title_not_connected": "Monerium not connected"
         },
         "oracle_penalized": {
           "action": "Price oracles",
@@ -899,7 +903,8 @@
     "repulling_transaction": {
       "success": {
         "action": "See pulled transactions",
-        "description": "{length} transactions re-pulled",
+        "description": "{length} transaction re-pulled | {length} transactions re-pulled",
+        "events_description": "{length} event re-pulled | {length} events re-pulled",
         "no_tx_description": "No transactions re-pulled"
       },
       "task": {
@@ -925,8 +930,13 @@
         }
       },
       "force_sync": {
+        "error": {
+          "message": "There was an error while performing the sync: {error}",
+          "title": "Forced Sync"
+        },
         "success": {
           "message": "The data sync operation was completed successfully.",
+          "message_download": "The data sync operation was completed successfully. The restored backup holds your data as of {date}.",
           "title": "Forced sync"
         }
       },
@@ -1671,9 +1681,13 @@
     },
     "trade_location": {
       "banks": "Banks",
+      "bonds": "Bonds",
+      "collectibles": "Collectibles",
       "commodities": "Commodities",
       "equities": "Equities",
-      "external": "External"
+      "etf": "ETFs",
+      "external": "External",
+      "realestate": "Real Estate"
     }
   },
   "backend_problems": {
@@ -1728,6 +1742,7 @@
       "market": "Markets",
       "node": "Node",
       "position": "Positions",
+      "premium_backup": "Premium backup",
       "premium_limits": "Premium limits",
       "protocol_cache": "Protocol data",
       "trade": "Trades",
@@ -6487,7 +6502,6 @@
       "automatic": "Backing up automatically",
       "download": "Restoring from the server backup",
       "failed": "The backup did not complete",
-      "refused": "The rotki server did not accept the sync",
       "upload": "Backing up this database"
     },
     "cloud_backup_unavailable": "Cloud backup is not available for your current plan. Upgrade to enable cloud sync.",

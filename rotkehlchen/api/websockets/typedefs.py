@@ -101,6 +101,7 @@ class UserMessageRecord(StrEnum):
     ASSET_UPDATE = auto()
     DATA_UPDATE = auto()
     PREMIUM_LIMITS = auto()
+    PREMIUM_BACKUP = auto()
 
 
 class UserMessageEntry(StrEnum):

@@ -4943,6 +4943,7 @@ def test_upgrade_db_53_to_54(
         messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test upgrading the DB from version 53 to version 54."""
+    new_locations = (Location.SONIC, Location.ROBINHOOD, Location.INK, Location.QONTO, Location.FINTS)  # noqa: E501
     _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
     db_v53 = _init_db_with_target_version(
         target_version=53,
@@ -4953,19 +4954,12 @@ def test_upgrade_db_53_to_54(
     with db_v53.conn.write_ctx() as write_cursor:
         assert not column_exists(write_cursor, 'rpc_nodes', 'is_archive')
         assert not column_exists(write_cursor, 'rpc_nodes', 'is_pruned')
-        # make sure the Sonic and Robinhood locations are not in the old DB
-        assert write_cursor.execute(
-            "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
-        ).fetchone()[0] == 0
-        assert write_cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(127) AND seq = 63',
-        ).fetchone()[0] == 0
-        assert write_cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(128) AND seq = 64',
-        ).fetchone()[0] == 0
-        assert write_cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(129) AND seq = 65',
-        ).fetchone()[0] == 0
+        # make sure the locations this upgrade adds are not in the old DB
+        for new_location in new_locations:
+            assert write_cursor.execute(
+                'SELECT COUNT(*) FROM location WHERE location=? OR seq=?',
+                (new_location.serialize_for_db(), new_location.value),
+            ).fetchone()[0] == 0
         # v52->v53 already removed the obsolete unsupported-assets update setting
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
@@ -5084,19 +5078,12 @@ def test_upgrade_db_53_to_54(
         resume_from_backup=False,
     )
     with db.conn.write_ctx() as cursor:
-        # make sure the Sonic and Robinhood locations exist
-        assert cursor.execute(
-            "SELECT COUNT(*) FROM location WHERE location = '~' AND seq = 62",
-        ).fetchone()[0] == 1
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(127) AND seq = 63',
-        ).fetchone()[0] == 1
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(128) AND seq = 64',
-        ).fetchone()[0] == 1
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location = char(129) AND seq = 65',
-        ).fetchone()[0] == 1
+        # make sure the locations this upgrade adds exist
+        for new_location in new_locations:
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM location WHERE location=? AND seq=?',
+                (new_location.serialize_for_db(), new_location.value),
+            ).fetchone()[0] == 1
         # and the obsolete setting was removed
         assert cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",

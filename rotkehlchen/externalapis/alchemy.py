@@ -18,7 +18,7 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp
+from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp, TokenKind
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
@@ -226,6 +226,9 @@ class Alchemy(
         """
         if asset.is_evm_token() is True:
             asset = asset.resolve_to_evm_token()
+            if asset.token_kind == TokenKind.ERC721:  # the price api is per contract and can't price a collectible  # noqa: E501
+                raise UnsupportedAsset(asset.identifier)
+
             if asset.chain_id == ChainID.POLYGON_POS:
                 network = 'polygon-mainnet'
             elif asset.chain_id == ChainID.ARBITRUM_ONE:

@@ -111,6 +111,7 @@ export interface RepullingTransactionPayload extends TimeRange {
 }
 
 export interface RepullingTransactionResponse {
+  newHistoryEventsCount: number;
   newTransactionsCount: number;
   newTransactions: Record<string, string[]>;
 }

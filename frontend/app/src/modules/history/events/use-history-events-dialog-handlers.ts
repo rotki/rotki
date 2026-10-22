@@ -43,7 +43,7 @@ export function useHistoryEventsDialogHandlers(deps: UseHistoryEventsDialogHandl
     onRepullTransactions: async (result: RepullingTransactionResult): Promise<void> => {
       await checkMissingEventsAndRedecode();
 
-      const { newTransactions, newTransactionsCount } = result;
+      const { newHistoryEventsCount, newTransactions, newTransactionsCount } = result;
 
       let action: NotificationAction | undefined;
       if (newTransactionsCount > 0) {
@@ -59,9 +59,16 @@ export function useHistoryEventsDialogHandlers(deps: UseHistoryEventsDialogHandl
         };
       }
 
+      // Hyperliquid core events have no tx hash, so they are only reported through the events count.
+      const messages: string[] = [];
+      if (newTransactionsCount > 0)
+        messages.push(t('actions.repulling_transaction.success.description', { length: newTransactionsCount }, newTransactionsCount));
+      if (newHistoryEventsCount > 0)
+        messages.push(t('actions.repulling_transaction.success.events_description', { length: newHistoryEventsCount }, newHistoryEventsCount));
+
       notify({
         action,
-        message: newTransactionsCount ? t('actions.repulling_transaction.success.description', { length: newTransactionsCount }) : t('actions.repulling_transaction.success.no_tx_description'),
+        message: messages.length > 0 ? messages.join('\n') : t('actions.repulling_transaction.success.no_tx_description'),
         kind: NotificationKind.RESULT,
         severity: Severity.INFO,
         title: t('actions.repulling_transaction.task.title'),

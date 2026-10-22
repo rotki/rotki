@@ -16,20 +16,24 @@ from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID, Timestamp
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import convert_to_int
 
+if TYPE_CHECKING:
+    from rotkehlchen.user_messages import MessagesAggregator
+
 DEFAULT_API = 'etherscan'
 REAUTHENTICATION_MESSAGES: Final = {
-    'gnosispay': 'Please sign in with GnosisPay again to refresh your data',
-    'monerium': 'Please sign in with Monerium again to refresh your data',
+    ('gnosispay', 'expired'): 'Please sign in with GnosisPay again to refresh your data',
+    ('gnosispay', 'not_connected'): 'Sign in with Gnosis Pay to add merchant details to your Gnosis Pay events',  # noqa: E501
+    ('monerium', 'expired'): 'Please sign in with Monerium again to refresh your data',
+    ('monerium', 'not_connected'): 'Sign in with Monerium to add bank transfer details to your Monerium events',  # noqa: E501
 }
 REAUTHENTICATION_MESSAGE_TYPES: Final = {
     'gnosispay': WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED,
     'monerium': WSMessageType.MONERIUM_SESSIONKEY_EXPIRED,
 }
 
-if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
 
 ReauthService = Literal['gnosispay', 'monerium']
+ReauthReason = Literal['expired', 'not_connected']
 
 
 def read_hash(data: dict[str, Any], key: str, api: str = DEFAULT_API) -> bytes:
@@ -101,8 +105,26 @@ def get_earliest_ts(chain_id: SUPPORTED_CHAIN_IDS) -> Timestamp:
     raise InputError(f'Unexpected chain {chain_id} when querying earliest block ts')
 
 
-def notify_reauthentication_required(database: DBHandler, service: ReauthService) -> None:
-    database.msg_aggregator.add_message(
+def notify_reauthentication_required(
+        msg_aggregator: MessagesAggregator,
+        service: ReauthService,
+        reason: ReauthReason = 'expired',
+        reminder: bool = False,
+) -> None:
+    """Ask the user to sign in to the service.
+
+    `expired` is for a user whose session stopped working and `not_connected` for
+    one who has never signed in, so the frontend can word its sign-in row accordingly.
+
+    `reminder` marks a repeat of a condition the user may already know about, as opposed
+    to the moment the session is found to be expired. The frontend keeps one action center
+    row per service, so a reminder updates it instead of adding another.
+    """
+    msg_aggregator.add_message(
         message_type=REAUTHENTICATION_MESSAGE_TYPES[service],
-        data={'error': REAUTHENTICATION_MESSAGES[service]},
+        data={
+            'error': REAUTHENTICATION_MESSAGES[service, reason],
+            'reason': reason,
+            'reminder': reminder,
+        },
     )

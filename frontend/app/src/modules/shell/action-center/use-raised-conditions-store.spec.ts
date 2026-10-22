@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { NoIndexersCause, RaisedConditionKind, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 describe('modules/shell/action-center/use-raised-conditions-store', () => {
   beforeEach(() => {
@@ -28,16 +28,16 @@ describe('modules/shell/action-center/use-raised-conditions-store', () => {
     const store = useRaisedConditionsStore();
 
     store.raise({ kind: RaisedConditionKind.MISSING_API_KEY, service: 'etherscan' });
-    store.raise({ kind: RaisedConditionKind.MONERIUM_SESSION });
+    store.raise({ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.MONERIUM_SESSION });
 
     store.clear(condition => condition.kind === RaisedConditionKind.MISSING_API_KEY && condition.service === 'etherscan');
 
-    expect(store.conditions).toEqual([{ kind: RaisedConditionKind.MONERIUM_SESSION }]);
+    expect(store.conditions).toEqual([{ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.MONERIUM_SESSION }]);
   });
 
   it('should leave the record untouched when nothing matches', () => {
     const store = useRaisedConditionsStore();
-    store.raise({ kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
+    store.raise({ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
     const before = store.raised;
 
     store.clear(condition => condition.kind === RaisedConditionKind.MONERIUM_SESSION);

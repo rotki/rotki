@@ -3,6 +3,7 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.evm.types import ChainID
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -240,6 +241,14 @@ class IntegrationsService:
     def disconnect_monerium(self) -> dict[str, Any]:
         assert self.rotkehlchen.monerium is not None, 'Monerium should be initialized after login'
         self.rotkehlchen.monerium.oauth_client.clear_credentials()
+        # Forget that the user had connected, so that a later request to sign in is worded
+        # as connecting and not as an expired session. Credentials cleared because the
+        # session expired keep it.
+        with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name=?',
+                (DBCacheStatic.LAST_MONERIUM_QUERY_TS.value,),
+            )
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
     def get_gnosis_pay_safe_admin_addresses(self) -> dict[str, Any]:

@@ -6,7 +6,7 @@ import { type ActionItem, type ActionItemOption, ActionUrgency } from '@/modules
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { INDEXER_SETTINGS, ORACLE_SETTINGS } from '@/modules/shell/action-center/row-options';
 import { useIntegrationRows } from '@/modules/shell/action-center/use-integration-rows';
-import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { NoIndexersCause, RaisedConditionKind, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 const savedKeys = ref<Record<string, string>>({});
 const moneriumAuthenticated = ref<boolean>(false);
@@ -256,7 +256,7 @@ describe('modules/shell/action-center/use-integration-rows', () => {
 
   describe('session rows', () => {
     it('should keep a Monerium row only while the session reads unauthenticated', () => {
-      useRaisedConditionsStore().raise({ kind: RaisedConditionKind.MONERIUM_SESSION });
+      useRaisedConditionsStore().raise({ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.MONERIUM_SESSION });
       const result = rows();
 
       expect(get(result).map(row => row.id)).toEqual(['monerium-session']);
@@ -269,15 +269,32 @@ describe('modules/shell/action-center/use-integration-rows', () => {
 
     it('should keep a Gnosis Pay row until its condition is cleared', () => {
       const store = useRaisedConditionsStore();
-      store.raise({ kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
+      store.raise({ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
       const result = rows();
 
       expect(get(result).map(row => row.id)).toEqual(['gnosis-pay-session']);
       expect(get(result)[0].title).toBe('action_center.rows.integrations.gnosis_pay_session.title');
+      expect(get(result)[0].actionLabel).toBe('external_services.actions.reauthenticate');
 
       store.clear(({ kind }) => kind === RaisedConditionKind.GNOSIS_PAY_SESSION);
 
       expect(get(result)).toEqual([]);
+    });
+
+    it('should ask a user who never connected Gnosis Pay to connect, not to sign in again', () => {
+      useRaisedConditionsStore().raise({ cause: SessionCause.NOT_CONNECTED, kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
+
+      expect(onlyRow().title).toBe('action_center.rows.integrations.gnosis_pay_session.title_not_connected');
+      expect(onlyRow().description).toBe('action_center.rows.integrations.gnosis_pay_session.description_not_connected');
+      expect(onlyRow().actionLabel).toBe('external_services.actions.authenticate');
+    });
+
+    it('should ask a user who never connected Monerium to connect, not to sign in again', () => {
+      useRaisedConditionsStore().raise({ cause: SessionCause.NOT_CONNECTED, kind: RaisedConditionKind.MONERIUM_SESSION });
+
+      expect(onlyRow().title).toBe('action_center.rows.integrations.monerium_session.title_not_connected');
+      expect(onlyRow().description).toBe('action_center.rows.integrations.monerium_session.description_not_connected');
+      expect(onlyRow().actionLabel).toBe('external_services.actions.authenticate');
     });
   });
 

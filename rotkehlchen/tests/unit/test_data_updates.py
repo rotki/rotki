@@ -672,6 +672,7 @@ def test_failed_update_warns_once_until_recovered(
         data_updater: RotkiDataUpdater,
         bad_info: bool,
 ) -> None:
+    consume_warnings(data_updater.msg_aggregator)  # consume warnings from other tests
     info: dict[str, Any] = {update_type.value: {'latest': 0} for update_type in UpdateType}
     info['rpc_nodes'] = [] if bad_info else {'latest': 1}
     with patch.object(data_updater, '_get_remote_info_json', return_value=info), patch(

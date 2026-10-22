@@ -66,6 +66,18 @@
       }
     }
   },
+  "backend_mappings": {
+    "trade_location": {
+      "banks": "Banken",
+      "bonds": "Anleihen",
+      "collectibles": "Sammlerstücke",
+      "commodities": "Rohstoffe",
+      "equities": "Aktien",
+      "etf": "ETFs",
+      "external": "Extern",
+      "realestate": "Immobilien"
+    }
+  },
   "common": {
     "never": "Niemals",
     "refresh": "Αktualisieren"

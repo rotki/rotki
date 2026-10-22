@@ -16,6 +16,7 @@ from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
+from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
@@ -621,6 +622,7 @@ def setup_evm_addresses_activity_mock(
         scroll_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
         binance_sc_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
         hyperliquid_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        hyperliquid_core_addresses: list[ChecksumEvmAddress] | None = None,
         monad_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
         sonic_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
         robinhood_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
@@ -674,6 +676,11 @@ def setup_evm_addresses_activity_mock(
         chains_aggregator.avalanche,
         'get_avax_balance',
         side_effect=mock_avax_balance,
+    ))
+    stack.enter_context(patch.object(
+        HyperliquidAPI,
+        'has_core_activity',
+        side_effect=lambda address: hyperliquid_core_addresses is not None and address in hyperliquid_core_addresses,  # noqa: E501
     ))
     stack.enter_context(patch.object(
         chains_aggregator.zksync_lite,

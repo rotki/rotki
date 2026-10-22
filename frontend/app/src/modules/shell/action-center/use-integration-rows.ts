@@ -16,9 +16,11 @@ import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { INDEXER_SETTINGS, ORACLE_SETTINGS, useSuppressOption } from '@/modules/shell/action-center/row-options';
-import { conditionRowId, type RaisedCondition, RaisedConditionKind, type RaisedConditionOf, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { conditionRowId, type RaisedCondition, RaisedConditionKind, type RaisedConditionOf, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 type MissingApiKeyCondition = RaisedConditionOf<typeof RaisedConditionKind.MISSING_API_KEY>;
+
+type SessionCondition = RaisedConditionOf<typeof RaisedConditionKind.MONERIUM_SESSION | typeof RaisedConditionKind.GNOSIS_PAY_SESSION>;
 
 /** Services whose key only adds data: the queries work without one, so the row is a to-do, not a warning. */
 const OPTIONAL_KEY_SERVICES: ReadonlySet<string> = new Set([SuppressibleMissingKeyService.BEACONCHAIN]);
@@ -199,10 +201,12 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
     });
   }
 
-  function sessionRow(condition: RaisedCondition, service: ExternalServiceName, copy: { title: string; description: string }): ActionItem {
+  function sessionRow(condition: SessionCondition, service: ExternalServiceName, copy: { title: string; description: string }): ActionItem {
     return createActionItem<ActionTarget, string>({
       ...copy,
-      actionLabel: t('external_services.actions.reauthenticate'),
+      actionLabel: condition.cause === SessionCause.NOT_CONNECTED
+        ? t('external_services.actions.authenticate')
+        : t('external_services.actions.reauthenticate'),
       count: 1,
       icon: 'lu-log-in',
       id: conditionRowId(condition),
@@ -211,20 +215,38 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
     });
   }
 
-  /** The row of an expired session, or none once Monerium reads authenticated again. */
-  function sessionRowFor(condition: RaisedConditionOf<typeof RaisedConditionKind.MONERIUM_SESSION | typeof RaisedConditionKind.GNOSIS_PAY_SESSION>): Option<ActionItem> {
-    if (condition.kind === RaisedConditionKind.GNOSIS_PAY_SESSION) {
-      return some(sessionRow(condition, 'gnosis_pay', {
-        description: t('action_center.rows.integrations.gnosis_pay_session.description'),
-        title: t('action_center.rows.integrations.gnosis_pay_session.title'),
-      }));
-    }
-    return get(moneriumAuthenticated)
-      ? none
-      : some(sessionRow(condition, 'monerium', {
+  function gnosisPaySessionCopy(cause: SessionCause): { title: string; description: string } {
+    return cause === SessionCause.NOT_CONNECTED
+      ? {
+          description: t('action_center.rows.integrations.gnosis_pay_session.description_not_connected'),
+          title: t('action_center.rows.integrations.gnosis_pay_session.title_not_connected'),
+        }
+      : {
+          description: t('action_center.rows.integrations.gnosis_pay_session.description'),
+          title: t('action_center.rows.integrations.gnosis_pay_session.title'),
+        };
+  }
+
+  function moneriumSessionCopy(cause: SessionCause): { title: string; description: string } {
+    return cause === SessionCause.NOT_CONNECTED
+      ? {
+          description: t('action_center.rows.integrations.monerium_session.description_not_connected'),
+          title: t('action_center.rows.integrations.monerium_session.title_not_connected'),
+        }
+      : {
           description: t('action_center.rows.integrations.monerium_session.description'),
           title: t('action_center.rows.integrations.monerium_session.title'),
-        }));
+        };
+  }
+
+  /** The row of a missing or expired session, or none once Monerium reads authenticated again. */
+  function sessionRowFor(condition: SessionCondition): Option<ActionItem> {
+    if (condition.kind === RaisedConditionKind.GNOSIS_PAY_SESSION)
+      return some(sessionRow(condition, 'gnosis_pay', gnosisPaySessionCopy(condition.cause)));
+
+    return get(moneriumAuthenticated)
+      ? none
+      : some(sessionRow(condition, 'monerium', moneriumSessionCopy(condition.cause)));
   }
 
   /** The row a condition raises right now, or none when it is resolved or belongs to another module. */

@@ -1,6 +1,6 @@
 import logging
 from abc import ABC
-from collections import defaultdict, deque
+from collections import Counter, defaultdict, deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final, cast
 
@@ -8,12 +8,14 @@ from rotkehlchen.assets.asset import Asset, EvmToken, Nft
 from rotkehlchen.assets.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
+    token_raw_value_decimals,
 )
 from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotFoundError, RemoteError, RequestTooLargeError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -169,20 +171,25 @@ class ERC721OwnershipResult:
       the multicall returned fewer results than calls, or the ownerOf result was failed,
       empty or undecodable. They are neither owned nor not owned, so callers must not
       drop previously cached entries for them.
+    - reverted: the pairs of failed whose own ownerOf call failed, was empty or
+      undecodable, as happens for a burned or nonexistent token id. Unlike the rest of
+      failed, the chain was reached and reported no valid owner for them.
     """
     owned: set[tuple[ChecksumEvmAddress, EvmToken]]
     failed: set[tuple[ChecksumEvmAddress, EvmToken]]
+    reverted: set[tuple[ChecksumEvmAddress, EvmToken]]
 
 
 def query_owned_erc721_tokens(
         evm_inquirer: EvmNodeInquirer,
         candidates: Sequence[tuple[ChecksumEvmAddress, EvmToken]],
+        call_order: Sequence[WeightedNode] | None = None,
 ) -> ERC721OwnershipResult:
     """Check via ownerOf which of the given (address, erc721 token) pairs are currently owned.
 
     A positive collection-level balance does not prove ownership of a specific NFT, so each
     token id is checked individually. Tokens without a collectible id can't be checked and
-    are in neither of the returned sets.
+    are in none of the returned sets.
     """
     erc721_contract = EvmContract(address=ZERO_ADDRESS, abi=evm_inquirer.contracts.erc721_abi)
     checkable = [
@@ -190,7 +197,7 @@ def query_owned_erc721_tokens(
         for address, token in candidates
         if (raw_collectible_id := tokenid_to_collectible_id(token.identifier)) is not None
     ]
-    result = ERC721OwnershipResult(owned=set(), failed=set())
+    result = ERC721OwnershipResult(owned=set(), failed=set(), reverted=set())
     for chunk in get_chunks(checkable, n=ERC721_OWNERSHIP_CHUNK_SIZE):
         try:
             outputs = evm_inquirer.multicall_2(
@@ -199,6 +206,7 @@ def query_owned_erc721_tokens(
                     for _, token, collectible_id in chunk
                 ],
                 require_success=False,
+                call_order=call_order,
             )
         except RemoteError as e:
             log.error(
@@ -226,6 +234,7 @@ def query_owned_erc721_tokens(
                     address,
                 )
                 result.failed.add((address, token))
+                result.reverted.add((address, token))
                 continue
 
             try:
@@ -237,6 +246,7 @@ def query_owned_erc721_tokens(
             except DeserializationError as e:
                 log.error('Failed to read the owner of erc721 token %s due to %s', token, e)
                 result.failed.add((address, token))
+                result.reverted.add((address, token))
                 continue
 
             if owner != address:
@@ -674,6 +684,13 @@ class EvmTokens(ABC):  # noqa: B024
         addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]] = {}
         chunk_size, call_order = self._get_token_detection_chunk_size_call_order()
         token_exceptions = self._per_chain_token_exceptions()
+        # the NFT module's balances are only added to the balances while it is active, so its
+        # stored NFTs must not hide any token once it is disabled
+        nfts_module_active = 'nfts' in CachedSettings().get_settings().active_modules
+        # ERC721 token identifier -> (price, price asset) of a manual price set for the NFT
+        # while the module was active. It is carried over to the token once it is disabled.
+        nft_manual_prices: dict[str, tuple[str, str]] = {}
+        erc721_candidates: list[tuple[ChecksumEvmAddress, EvmToken]] = []
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
@@ -686,20 +703,71 @@ class EvmTokens(ABC):  # noqa: B024
                 if saved_list is None:
                     continue  # Do not query if we know the address has no tokens
 
-                # get NFT tokens for address and ignore them from the query to avoid duplicates
-                cursor.execute(
-                    'SELECT identifier, blockchain FROM nfts WHERE owner_address=?',
-                    (address,),
-                )
-                excluded_addresses = {
-                    Nft(row[0]).evm_address for row in cursor
-                    if SupportedBlockchain.deserialize(row[1]) == self.evm_inquirer.blockchain
-                }
-                token_list = [x for x in saved_list if x.evm_address not in excluded_addresses]
+                # get NFT tokens for address and ignore them from the query to avoid duplicates.
+                # An NFT covers its own ERC721 token and every token of its contract without
+                # a collectible id (such as a collection level token), but not the other
+                # tokens of its collection which the NFT module may not report.
+                nft_token_ids: set[str] = set()
+                nft_contracts: set[ChecksumEvmAddress] = set()
+                if nfts_module_active:
+                    for row in cursor.execute(
+                        'SELECT identifier, blockchain FROM nfts WHERE owner_address=?',
+                        (address,),
+                    ):
+                        if SupportedBlockchain.deserialize(row[1]) != self.evm_inquirer.blockchain:
+                            continue
+
+                        nft_contracts.add((nft := Nft(row[0])).evm_address)
+                        if (nft_token_id := nft.to_erc721_identifier()) is not None:
+                            nft_token_ids.add(nft_token_id)
+                else:
+                    for row in cursor.execute(
+                        'SELECT identifier, blockchain, last_price, last_price_asset FROM nfts '
+                        'WHERE owner_address=? AND manual_price=1',
+                        (address,),
+                    ):
+                        if SupportedBlockchain.deserialize(row[1]) != self.evm_inquirer.blockchain:
+                            continue
+
+                        if (nft_token_id := Nft(row[0]).to_erc721_identifier()) is not None:
+                            nft_manual_prices[nft_token_id] = row[2], row[3]
+
+                token_list = []
+                for token in saved_list:
+                    if token.identifier in nft_token_ids:
+                        continue
+
+                    if tokenid_to_collectible_id(token.identifier) is not None:
+                        # balanceOf is the number of NFTs of the whole collection, so it
+                        # can't tell whether this token id is owned
+                        erc721_candidates.append((address, token))
+                    elif token.evm_address not in nft_contracts:
+                        token_list.append(token)
+
                 all_tokens.update(token_list)
                 addresses_to_tokens[address] = token_list
 
         tokens_with_balance = set()
+        ownership = query_owned_erc721_tokens(
+            evm_inquirer=self.evm_inquirer,
+            candidates=erc721_candidates,
+            call_order=call_order,
+        )
+        if len(unknown := ownership.failed - ownership.reverted) != 0:
+            # a reverted ownerOf means the token id has no valid owner, but for the rest the
+            # chain wasn't reached, as when the balances multicall below raises
+            raise RemoteError(
+                f'Could not check the ownership of {len(unknown)} erc721 tokens '
+                f'in {self.evm_inquirer.chain_name}',
+            )
+
+        # (address, collection address) -> number of the collection's token ids it owns
+        owned_token_ids: Counter[tuple[ChecksumEvmAddress, ChecksumEvmAddress]] = Counter()
+        for address, token in ownership.owned:
+            tokens_with_balance.add(token)
+            addresses_to_balances[address][token] = ONE
+            owned_token_ids[address, token.evm_address] += 1
+
         multicall_chunks = generate_multicall_chunks(
             addresses_to_tokens=addresses_to_tokens,
             chunk_length=chunk_size,
@@ -714,15 +782,39 @@ class EvmTokens(ABC):  # noqa: B024
                     if balance == ZERO:
                         continue  # skip any zero balance tokens
 
-                    tokens_with_balance.add(token)
                     if token.token_kind == TokenKind.ERC721:
-                        # For nfts the balance will be the total number of nfts the user owns from
-                        # this collection. But any individual nft can only have a balance of one.
+                        # Only collection level tokens get here, for which the balance is the
+                        # total number of nfts the user owns from this collection. The token
+                        # ids already counted on their own are taken out of it, so it only
+                        # counts while the user owns nfts of the collection that rotki has
+                        # no token id for. The raw count is used since the decimals of an
+                        # erc721 token are often a default of 18.
+                        if token_raw_value_decimals(balance, token.decimals) <= owned_token_ids[address, token.evm_address]:  # noqa: E501
+                            continue
+
                         addresses_to_balances[address][token] = ONE
                     else:
                         addresses_to_balances[address][token] = balance
 
+                    tokens_with_balance.add(token)
+
         token_price = cast('dict[EvmToken, Price]', Inquirer.find_main_currency_prices(list(tokens_with_balance)))  # noqa: E501
+        # the NFT's manual price only fills in for a token without a price of its own, so that
+        # a manual price set for the token after disabling the module is respected
+        unpriced_nft_tokens = [
+            token for token in tokens_with_balance
+            if token.identifier in nft_manual_prices and token_price.get(token, ZERO) == ZERO
+        ]
+        if len(unpriced_nft_tokens) != 0:
+            price_asset_prices = Inquirer.find_main_currency_prices(list({
+                Asset(nft_manual_prices[token.identifier][1]) for token in unpriced_nft_tokens
+            }))
+            for token in unpriced_nft_tokens:
+                price, price_asset = nft_manual_prices[token.identifier]
+                token_price[token] = Price(
+                    FVal(price) * price_asset_prices.get(Asset(price_asset), ZERO),
+                )
+
         return dict(addresses_to_balances), token_price
 
     def _get_token_exceptions(self) -> set[ChecksumEvmAddress]:

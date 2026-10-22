@@ -8,6 +8,7 @@ minimumReleaseAgeExclude:
   - '@rotki/eslint-config'
   - '@rotki/eslint-plugin'
   - plainfp
+  - electron@43.8.1
 
 trustPolicy: no-downgrade
 trustPolicyExclude:
@@ -90,7 +91,7 @@ catalog:
   dmg-license: 1.0.11
   dotenv: 18.0.6
   echarts: 6.1.0
-  electron: 43.7.5
+  electron: 43.8.1
   electron-builder: 26.15.3
   electron-updater: 6.8.9
   electron-window-state: 5.0.3

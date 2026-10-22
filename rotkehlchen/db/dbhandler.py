@@ -866,6 +866,7 @@ class DBHandler:
             DBCacheStatic.GNOSIS_PAY_SAFE_MIGRATION,
             DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
             DBCacheStatic.ETHERSCAN_API_KEY_TIER,
+            DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
@@ -881,6 +882,7 @@ class DBHandler:
             name: Literal[
                 DBCacheStatic.DOCKER_DEVICE_INFO,
                 DBCacheStatic.ETHERSCAN_API_KEY_TIER,
+                DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
                 DBCacheStatic.GNOSIS_PAY_SAFE_MIGRATION,
                 DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
                 DBCacheStatic.STALE_BALANCES_FROM_TS,
@@ -896,6 +898,7 @@ class DBHandler:
             name: Literal[
                 DBCacheStatic.LAST_BALANCE_SAVE,
                 DBCacheStatic.LAST_DATA_UPLOAD_TS,
+                DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
                 DBCacheStatic.LAST_OWNED_ASSETS_UPDATE,
@@ -913,6 +916,7 @@ class DBHandler:
                 DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
                 DBCacheStatic.LAST_DB_UPGRADE,
                 DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
             ],
     ) -> Timestamp | None:
         ...
@@ -1111,6 +1115,15 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
+            name: Literal[DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED],
+            **kwargs: Unpack[AddressArgType],
+    ) -> int | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.ZKSYNC_LITE_ELIGIBILITY],
             **kwargs: Unpack[AddressArgType],
     ) -> str | None:
@@ -1123,6 +1136,15 @@ class DBHandler:
             name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
             **kwargs: Unpack[BlockchainArgType],
     ) -> Timestamp | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
+            name: Literal[DBCacheDynamic.TOKEN_DETAILS_RETRY_CURSOR],
+            **kwargs: Unpack[BlockchainArgType],
+    ) -> str | None:
         ...
 
     def get_dynamic_cache(
@@ -1306,6 +1328,16 @@ class DBHandler:
     def set_dynamic_cache(
             self,
             write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED],
+            value: int,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.ZKSYNC_LITE_ELIGIBILITY],
             value: str,
             **kwargs: Unpack[AddressArgType],
@@ -1328,6 +1360,16 @@ class DBHandler:
             write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
             value: Timestamp,
+            **kwargs: Unpack[BlockchainArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.TOKEN_DETAILS_RETRY_CURSOR],
+            value: str,
             **kwargs: Unpack[BlockchainArgType],
     ) -> None:
         ...
@@ -3528,6 +3570,11 @@ class DBHandler:
             blockchain=SupportedBlockchain.ZKSYNC_LITE,
         )
         other_addresses.remove(address)  # exclude the address in question so it's only the others
+        self.delete_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.ZKSYNC_LITE_HISTORY_SYNCED,
+            address=address,
+        )
 
         # delete events by tx_hash
         write_cursor.execute(

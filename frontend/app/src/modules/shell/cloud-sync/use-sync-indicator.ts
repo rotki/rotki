@@ -2,6 +2,7 @@ import type { RuiIcons } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/messaging/types';
 import { useLogout } from '@/modules/auth/use-logout';
+import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 import { useSync } from '@/modules/session/use-session-sync';
@@ -53,6 +54,8 @@ interface UseSyncIndicatorReturn {
   uploadProgressIcon: ComputedRef<RuiIcons>;
   /** The outcome of the last upload, or null when it succeeded or none has run. */
   uploadStatus: Ref<DbUploadResult | null>;
+  /** Whether balances or token detection are loading, which holds back a sync. */
+  waitingForBalances: Readonly<Ref<boolean>>;
 }
 
 /**
@@ -82,6 +85,7 @@ export function useSyncIndicator(): UseSyncIndicatorReturn {
   } = useSync();
   const { useIsActive } = useTaskCenter();
   const { logout } = useLogout();
+  const { loadingBalancesAndDetection: waitingForBalances } = useBalancesLoading();
 
   const isSyncing = useIsActive(ActivityKind.SYNC);
 
@@ -193,5 +197,6 @@ export function useSyncIndicator(): UseSyncIndicatorReturn {
     uploadProgress,
     uploadProgressIcon,
     uploadStatus,
+    waitingForBalances,
   };
 }

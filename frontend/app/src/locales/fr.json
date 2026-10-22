@@ -338,8 +338,13 @@
         }
       },
       "force_sync": {
+        "error": {
+          "message": "Une erreur est survenue lors de la synchronisation : {error}",
+          "title": "Synchronisation forcée"
+        },
         "success": {
           "message": "L'opération de synchronisation des données a été complétée avec succès.",
+          "message_download": "L'opération de synchronisation des données a été complétée avec succès. La sauvegarde restaurée contient vos données au {date}.",
           "title": "Synchronisation forcée"
         }
       },
@@ -750,9 +755,13 @@
     },
     "trade_location": {
       "banks": "Banques",
-      "commodities": "Marchandises",
+      "bonds": "Obligations",
+      "collectibles": "Objets de collection",
+      "commodities": "Matières premières",
       "equities": "Actions",
-      "external": "Externe"
+      "etf": "ETF",
+      "external": "Externe",
+      "realestate": "Immobilier"
     }
   },
   "backend_problems": {

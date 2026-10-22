@@ -30,6 +30,7 @@ from .constants import (
     STAKE_INCREASED,
     UNLOCKED,
     WITHDRAWAL_CLAIMED,
+    WITHDRAWAL_INITIATED,
     WITHDRAWN,
 )
 
@@ -240,11 +241,40 @@ class SafeDecoder(EvmDecoderInterface):
             to_notes=f'Unstake {amount} SAFE from SafeNet',
             to_counterparty=CPT_SAFE,
             to_address=context.tx_log.address,
+            extra_data={'withdrawal_id': int.from_bytes(context.tx_log.topics[2])},
         )])
+
+    def _decode_safenet_withdrawal_initiated(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode a SafeNet staking withdrawal initiation (WithdrawalInitiated event). This only
+        queues the withdrawal. The SAFE token transfer happens later, when the withdrawal is
+        claimed after the delay."""
+        if not self.base.is_tracked(staker := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=self.safe_token,
+            amount=amount,
+            location_label=staker,
+            notes=f'Initiate withdrawal of {amount} SAFE from SafeNet',
+            address=context.tx_log.address,
+            counterparty=CPT_SAFE,
+            extra_data={'withdrawal_id': int.from_bytes(context.tx_log.topics[3])},
+        )
+        return EvmDecodingOutput(events=[event])
 
     def _decode_safenet_staking(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == STAKE_INCREASED:
             return self._decode_safenet_stake(context)
+        elif context.tx_log.topics[0] == WITHDRAWAL_INITIATED:
+            return self._decode_safenet_withdrawal_initiated(context)
         elif context.tx_log.topics[0] == WITHDRAWAL_CLAIMED:
             return self._decode_safenet_withdrawal_claimed(context)
 

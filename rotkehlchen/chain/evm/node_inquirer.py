@@ -26,10 +26,12 @@ from rotkehlchen.chain.evm.constants import (
     EIP7702_DELEGATION_CODE_LENGTH,
     EIP7702_DELEGATION_PREFIX,
     ERC20_PROPERTIES,
+    ERC20_PROPERTIES_NUM,
     ERC721_PROPERTIES,
     ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT,
     FAKE_GENESIS_TX_RECEIPT,
     GENESIS_HASH,
+    ZERO_ADDRESS,
 )
 from rotkehlchen.chain.evm.contracts import (
     EvmContract,
@@ -38,6 +40,10 @@ from rotkehlchen.chain.evm.contracts import (
 )
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2_CHAINIDS_WITH_L1_FEES
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
+from rotkehlchen.chain.evm.token_query_failures import (
+    is_token_query_deferring,
+    record_token_query_failure,
+)
 from rotkehlchen.chain.evm.types import (
     DEFAULT_EVM_INDEXER_ORDER,
     DEFAULT_INDEXERS_ORDER,
@@ -50,6 +56,7 @@ from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin, _is_rate_limit_error
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.timing import TOKEN_QUERY_FAILURE_COOLDOWN
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
@@ -61,8 +68,10 @@ from rotkehlchen.errors.misc import (
     NoAvailableIndexers,
     NotERC20Conformant,
     NotERC721Conformant,
+    RecoverableRemoteError,
     RemoteError,
     RequestTooLargeError,
+    TokenQueryFailed,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import read_integer
@@ -86,7 +95,7 @@ from rotkehlchen.types import (
     TokenKind,
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
-from rotkehlchen.utils.misc import from_wei, get_chunks
+from rotkehlchen.utils.misc import from_wei, get_chunks, ts_now
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
@@ -130,6 +139,17 @@ T = TypeVar('T')
 def _connect_task_prefix(chain_name: str) -> str:
     """Helper function to create the connection task greenlet name"""
     return f'Attempt connection to {chain_name} node'
+
+
+def _missing_properties(
+        properties: tuple[str, ...],
+        output: Sequence[tuple[bool, bytes]],
+) -> frozenset[str]:
+    """Return the properties whose call failed or returned nothing in a token contract query"""
+    return frozenset(
+        prop for prop, (success, data) in zip(properties, output, strict=True)
+        if success is False or len(data) == 0
+    )
 
 
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
@@ -294,9 +314,13 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # the range cache above so every query over the range sees the same verdict.
         self.range_indexer_failures: LRUCacheWithRemove[tuple[Timestamp, Timestamp], frozenset[EvmIndexer]] = LRUCacheWithRemove(maxsize=32)  # noqa: E501
 
-        # A cache for erc20 and erc721 contract info to not requery the info
-        self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
+        # A cache for erc20 and erc721 contract info to not requery the info. The erc20 one also
+        # keeps which of the properties were not returned by the contract.
+        self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, tuple[dict[str, Any], frozenset[str]]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
         self.contract_info_erc721_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
+        # When the token contract query of an address last failed to reach the nodes. Used to
+        # not query it again until TOKEN_QUERY_FAILURE_COOLDOWN passes.
+        self.token_query_failures: LRUCacheWithRemove[ChecksumEvmAddress, Timestamp] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
         # cache used by is_safe_proxy_or_eoa
         self._known_accounts_cache: LRUCacheWithRemove[ChecksumEvmAddress, bool] = LRUCacheWithRemove(maxsize=50)  # noqa: E501
         # tracks the request length that failed to proactively use smaller chunks per node type
@@ -1414,6 +1438,36 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             properties: tuple[str, ...],
             address: ChecksumEvmAddress,
     ) -> list[tuple[bool, bytes]]:
+        """Query the given properties of a token contract. A failure to reach the nodes is
+        recorded in the token query failures of the transaction being decoded, if any. Once
+        one is recorded the nodes are not queried again for that transaction, since it is
+        left undecoded anyway and each query would go through the whole node failover.
+
+        After a failure the address is not queried again for TOKEN_QUERY_FAILURE_COOLDOWN, so
+        that the many transactions of a token seen while the nodes fail don't each go through
+        the node failover. Those queries fail and are recorded as if the nodes were reached.
+        Requests of the user can skip the cooldown with forget_token_query_failures.
+
+        May raise:
+        - TokenQueryFailed if the nodes could not be reached, now or within the cooldown
+        """
+        if is_token_query_deferring():
+            record_token_query_failure(address)
+            raise TokenQueryFailed(
+                f'Not querying token {address} since a token query of the same '
+                'transaction failed to reach the nodes',
+            )
+
+        if (
+                (failed_at := self.token_query_failures.get(address)) is not None and
+                ts_now() - failed_at < TOKEN_QUERY_FAILURE_COOLDOWN
+        ):
+            record_token_query_failure(address)
+            raise TokenQueryFailed(
+                f'Not querying token {address} since its query failed to reach the nodes '
+                'recently',
+            )
+
         contract = EvmContract(address=address, abi=abi, deployed_block=0)
         try:
             # Output contains call status and result
@@ -1421,12 +1475,22 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 require_success=False,
                 calls=[(address, contract.encode(method_name=prop)) for prop in properties],
             )
-        except RemoteError:
-            # If something happens in the connection the output should have
-            # the same length as the tuple of properties
-            output = [(False, b'')] * len(properties)
+        except RemoteError as e:
+            self.token_query_failures.add(address, ts_now())
+            record_token_query_failure(address)
+            raise TokenQueryFailed(f'Failed to query token {address} due to {e!s}') from e
 
+        self.token_query_failures.remove(address)
         return output
+
+    def forget_token_query_failures(self, address: ChecksumEvmAddress | None = None) -> None:
+        """Let the token contract of the given address, or of all if None, be queried again
+        before TOKEN_QUERY_FAILURE_COOLDOWN passes, for requests of the user, since the nodes
+        may be back. See _query_token_contract."""
+        if address is None:
+            self.token_query_failures.clear()
+        else:
+            self.token_query_failures.remove(address)
 
     def get_erc20_contract_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
         """
@@ -1439,17 +1503,92 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if it is provided in the contract. This method may raise:
         - BadFunctionCallOutput: If there is an error calling a bad address
         - NotERC20Conformant
+        - TokenQueryFailed if the nodes could not be reached
         """
+        return self.get_erc20_contract_info_and_missing(address=address)[0]
+
+    def get_erc20_contract_info_and_missing(
+            self,
+            address: ChecksumEvmAddress,
+    ) -> tuple[dict[str, Any], frozenset[str]]:
+        """Same as get_erc20_contract_info but also returns which of the ERC20_PROPERTIES the
+        contract did not return, since their values in the info are only defaults."""
         if (cache := self.contract_info_erc20_cache.get(address)) is not None:
             return cache
 
-        output = self._query_token_contract(abi=self.contracts.erc20_abi, properties=ERC20_PROPERTIES, address=address)  # noqa: E501
-        info = self._process_and_create_erc20_info(
-            output=output,
+        output = self._query_token_contract(
+            abi=self.contracts.erc20_abi,
+            properties=ERC20_PROPERTIES,
             address=address,
         )
-        self.contract_info_erc20_cache.add(address, info)
-        return info
+        result = (
+            self._process_and_create_erc20_info(output=output, address=address),
+            _missing_properties(properties=ERC20_PROPERTIES, output=output),
+        )
+        self.contract_info_erc20_cache.add(address, result)
+        return result
+
+    def _decode_erc20_property(
+            self,
+            prop: str,
+            output: tuple[bool, bytes],
+            address: ChecksumEvmAddress,
+    ) -> Any:
+        """Decode a single property of an erc20 contract query output on its own.
+        Returns the value or None if the call failed, returned nothing or can't be decoded."""
+        if output[0] is False or len(output[1]) == 0:
+            return None
+
+        for abi in (self.contracts.erc20_abi, self.contracts.univ1lp_abi):  # the latter has bytes name and symbol  # noqa: E501
+            try:
+                value = self._process_contract_info(
+                    output=[output],
+                    properties=(prop,),
+                    contract=EvmContract(address=address, abi=abi, deployed_block=0),
+                    token_kind=TokenKind.ERC20,
+                )[0]
+                return value.rstrip(b'\x00').decode() if isinstance(value, bytes) else value
+            except (OverflowError, DeserializationError, UnicodeDecodeError):
+                continue
+
+        return None
+
+    def get_multiple_erc20_contracts_info(
+            self,
+            addresses: Sequence[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, dict[str, Any]]:
+        """Query decimals, symbol and name of many erc20 contracts in a single multicall.
+
+        The result has, for each address, only the properties that were returned and could be
+        decoded, so a value in it is never a default. Addresses with no property are not in it.
+        Unlike get_erc20_contract_info this does not read the contract info cache, it drops the
+        entries of the queried addresses since they may be stale, and a failed query is raised.
+
+        May raise:
+        - RemoteError if the multicall could not be executed
+        """
+        # the calldata does not depend on the contract address
+        contract = EvmContract(
+            address=ZERO_ADDRESS,
+            abi=self.contracts.erc20_abi,
+            deployed_block=0,
+        )
+        encoded = [contract.encode(method_name=prop) for prop in ERC20_PROPERTIES]
+        output = self.multicall_2(
+            require_success=False,
+            calls=[(address, data) for address in addresses for data in encoded],
+        )
+        result: dict[ChecksumEvmAddress, dict[str, Any]] = {}
+        for idx, address in enumerate(addresses):
+            self.contract_info_erc20_cache.remove(address)  # may have the details before a fix
+            token_output = output[idx * ERC20_PROPERTIES_NUM:(idx + 1) * ERC20_PROPERTIES_NUM]
+            if len(info := {
+                prop: value for prop, prop_output in zip(ERC20_PROPERTIES, token_output, strict=True)  # noqa: E501
+                if (value := self._decode_erc20_property(prop=prop, output=prop_output, address=address)) is not None  # noqa: E501
+            }) != 0:
+                result[address] = info
+
+        return result
 
     def get_erc721_contract_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
         """
@@ -1462,6 +1601,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if it is provided in the contract. This method may raise:
         - BadFunctionCallOutput: If there is an error calling a bad address
         - NotERC721Conformant: If the address can't be decoded as an ERC721 contract
+        - TokenQueryFailed if the nodes could not be reached
         """
         if (cache := self.contract_info_erc721_cache.get(address)) is not None:
             return cache
@@ -2136,6 +2276,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 isinstance(e, (IndexerRangeNotCovered, ChainNotSupported)) for _, e in errors
         ):
             raise IndexerRangeNotCovered(message)
+
+        # If any indexer failed with an error that may heal by itself (rate limit, timeout,
+        # 5xx) let callers know that trying again later can help.
+        if any(isinstance(e, RecoverableRemoteError) for _, e in errors):
+            raise RecoverableRemoteError(message)
 
         raise RemoteError(message)
 

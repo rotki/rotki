@@ -967,7 +967,10 @@ class Rotkehlchen:
             failed_accounts,
             no_activity_accounts,
             evm_contract_addresses,
-        ) = self.chains_aggregator.add_accounts_to_all_evm(accounts=[entry.address for entry in account_data])  # noqa: E501
+        ) = self.chains_aggregator.add_accounts_to_all_evm(
+            accounts=[entry.address for entry in account_data],
+            account_data=account_data_map,
+        )
         with self.data.db.user_write() as write_cursor:
             for chain, address in added_accounts:
                 account_data_entry = account_data_map[address]
@@ -1396,10 +1399,10 @@ class Rotkehlchen:
                         # in the chain balances we update the price and continue
                         blockchain_balances = balances[blockchain_location]
                         nft = Nft(balance_entry['id'])
-                        if (nft_as_token := GlobalDBHandler.get_evm_token(
-                            address=nft.evm_address,
-                            chain_id=nft.chain_id,
-                        )) in blockchain_balances:  # we need the eip155 identifier instead of the _nft_ one.  # noqa: E501
+                        if (  # we need the eip155 identifier instead of the _nft_ one.
+                            (nft_token_id := nft.to_erc721_identifier()) is not None and
+                            (nft_as_token := Asset(nft_token_id)) in blockchain_balances
+                        ):
                             blockchain_balances[nft_as_token].value = balance_entry['price']
                         else:
                             blockchain_balances[nft] = Balance(

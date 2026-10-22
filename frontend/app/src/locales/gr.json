@@ -144,6 +144,18 @@
       }
     }
   },
+  "backend_mappings": {
+    "trade_location": {
+      "banks": "Τράπεζες",
+      "bonds": "Ομόλογα",
+      "collectibles": "Συλλεκτικά",
+      "commodities": "Εμπορεύματα",
+      "equities": "Μετοχές",
+      "etf": "ETF",
+      "external": "Εξωτερικά",
+      "realestate": "Ακίνητα"
+    }
+  },
   "common": {
     "actions": {
       "save": "Αποθήκευση"

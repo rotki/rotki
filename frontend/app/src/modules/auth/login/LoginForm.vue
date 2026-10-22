@@ -2,12 +2,12 @@
 import type { ZodType } from 'zod';
 import type { LoginCredentials, SyncApproval } from '@/modules/auth/login';
 import { externalLinks } from '@shared/external-links';
-import AutoLogoutNotice from '@/modules/auth/login/AutoLogoutNotice.vue';
 import { focusInput } from '@/modules/auth/login/focus-input';
 import IncompleteUpgradeAlert from '@/modules/auth/login/IncompleteUpgradeAlert.vue';
 import { classifyLoginErrors, type LoginFormState, loginSchema } from '@/modules/auth/login/login-form';
 import LoginBackendToggle from '@/modules/auth/login/LoginBackendToggle.vue';
 import LoginCustomBackendFields from '@/modules/auth/login/LoginCustomBackendFields.vue';
+import LoginNotices from '@/modules/auth/login/LoginNotices.vue';
 import LoginRememberOptions from '@/modules/auth/login/LoginRememberOptions.vue';
 import LoginUsernameField from '@/modules/auth/login/LoginUsernameField.vue';
 import LoginWelcomeMessageDialog from '@/modules/auth/login/LoginWelcomeMessageDialog.vue';
@@ -232,7 +232,7 @@ onMounted(() => {
           </i18n-t>
         </div>
 
-        <AutoLogoutNotice />
+        <LoginNotices />
 
         <div>
           <form

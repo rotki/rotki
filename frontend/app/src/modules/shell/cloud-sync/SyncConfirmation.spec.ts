@@ -18,7 +18,7 @@ const stubs = {
   RuiIcon: true,
 };
 
-function createWrapper(props: { checked?: boolean; download?: boolean; syncing?: boolean; sizeDiscrepancy?: boolean } = {}): VueWrapper<InstanceType<typeof SyncConfirmation>> {
+function createWrapper(props: { checked?: boolean; download?: boolean; syncing?: boolean; waiting?: boolean; sizeDiscrepancy?: boolean } = {}): VueWrapper<InstanceType<typeof SyncConfirmation>> {
   return mount(SyncConfirmation, {
     global: { stubs },
     props: { checked: false, download: false, ...props },
@@ -66,11 +66,31 @@ describe('modules/shell/cloud-sync/SyncConfirmation', () => {
     expect(text).not.toContain('message_upload');
   });
 
-  it('should spin the action and hold off cancel while syncing', () => {
+  it('should hold the action, the acknowledgement and cancel while syncing, without a spinner of its own', () => {
     const wrapper = createWrapper({ checked: true, syncing: true });
+    const action = wrapper.find('[data-testid=sync-confirm-action]');
 
-    expect(wrapper.find('[data-testid=sync-confirm-action]').attributes('data-loading')).toBe('true');
+    expect(action.attributes('disabled')).toBeDefined();
+    expect(action.attributes('data-loading')).toBe('false');
+    expect(wrapper.find('[data-testid=sync-confirm-check]').attributes('disabled')).toBeDefined();
     expect(wrapper.find('[data-testid=sync-confirm-cancel]').attributes('disabled')).toBeDefined();
+  });
+
+  it('should not let the overwrite be acknowledged or run while balances are loading', () => {
+    const wrapper = createWrapper({ checked: true, waiting: true });
+
+    expect(wrapper.find('[data-testid=sync-confirm-check]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-testid=sync-confirm-action]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-testid=sync-confirm-waiting]').text()).toContain('sync_buttons.waiting_for_balances');
+  });
+
+  it('should free the acknowledgement once balances have loaded', async () => {
+    const wrapper = createWrapper({ waiting: true });
+
+    await wrapper.setProps({ waiting: false });
+
+    expect(wrapper.find('[data-testid=sync-confirm-check]').attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('[data-testid=sync-confirm-waiting]').exists()).toBe(false);
   });
 
   it('should offer the size discrepancy setting only after a size discrepancy', async () => {

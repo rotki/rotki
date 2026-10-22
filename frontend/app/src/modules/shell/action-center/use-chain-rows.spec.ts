@@ -5,7 +5,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { INDEXER_SETTINGS } from '@/modules/shell/action-center/row-options';
 import { useChainRows } from '@/modules/shell/action-center/use-chain-rows';
-import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { NoIndexersCause, RaisedConditionKind, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 const suppressedChains = ref<string[]>([]);
 const updateFrontendSetting = vi.fn<(payload: object) => Promise<{ success: boolean }>>();
@@ -127,7 +127,7 @@ describe('modules/shell/action-center/use-chain-rows', () => {
   });
 
   it('should leave conditions of other modules to their own rows', () => {
-    useRaisedConditionsStore().raise({ kind: RaisedConditionKind.MONERIUM_SESSION });
+    useRaisedConditionsStore().raise({ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.MONERIUM_SESSION });
 
     expect(get(rows())).toEqual([]);
   });

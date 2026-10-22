@@ -4,13 +4,19 @@ import AskUserUponSizeDiscrepancySetting from '@/modules/settings/general/AskUse
 /**
  * Confirms a force sync in place, inside the sync menu. Either direction overwrites one side
  * wholesale, so the action stays disabled until the user acknowledges it.
+ *
+ * Nothing here can be acted on while balances are loading or a sync runs: the acknowledgement
+ * is disabled along with the action. A running sync is shown by the menu's status line and its
+ * dock row, so the action does not spin as well.
  */
 const checked = defineModel<boolean>('checked', { required: true });
 
-const { download, syncing = false, sizeDiscrepancy = false } = defineProps<{
+const { download, syncing = false, waiting = false, sizeDiscrepancy = false } = defineProps<{
   /** Pulling replaces the local database and logs out; pushing replaces the server backup. */
   download: boolean;
   syncing?: boolean;
+  /** Balances or token detection are still loading, which a sync must not interrupt. */
+  waiting?: boolean;
   /** The last upload stopped on a size discrepancy, so the setting that governs it is offered. */
   sizeDiscrepancy?: boolean;
 }>();
@@ -23,6 +29,8 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const choice = computed<number>(() => (download ? 2 : 1));
+
+const locked = computed<boolean>(() => syncing || waiting);
 </script>
 
 <template>
@@ -58,10 +66,18 @@ const choice = computed<number>(() => (download ? 2 : 1));
       color="primary"
       size="sm"
       details="hidden"
+      :disabled="locked"
       data-testid="sync-confirm-check"
     >
       {{ t('sync_indicator.upload_confirmation.confirm_check') }}
     </RuiCheckbox>
+    <div
+      v-if="waiting && !syncing"
+      class="text-xs text-rui-text-secondary"
+      data-testid="sync-confirm-waiting"
+    >
+      {{ t('sync_buttons.waiting_for_balances') }}
+    </div>
     <div class="flex justify-end gap-2">
       <RuiButton
         variant="text"
@@ -75,8 +91,7 @@ const choice = computed<number>(() => (download ? 2 : 1));
       <RuiButton
         color="error"
         size="sm"
-        :disabled="!checked"
-        :loading="syncing"
+        :disabled="!checked || locked"
         data-testid="sync-confirm-action"
         @click="emit('confirm')"
       >

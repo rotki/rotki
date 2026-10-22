@@ -26,6 +26,7 @@ from rotkehlchen.constants.timing import (
     HOUR_IN_SECONDS,
     OWNED_ASSETS_UPDATE,
     SPAM_ASSETS_DETECTION_REFRESH,
+    TOKEN_DETAILS_RETRY,
 )
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
@@ -46,6 +47,7 @@ from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.tasks.assets import (
     autodetect_spam_assets_in_db,
     maybe_detect_new_tokens,
+    retry_missing_token_details,
     update_aave_v3_underlying_assets,
     update_owned_assets,
     update_spark_underlying_assets,
@@ -201,6 +203,7 @@ class TaskManager:
                 if is_accounting_update_enabled() else []
             ),
             self._maybe_detect_evm_accounts,
+            self._maybe_retry_failed_evm_detections,
             self._maybe_update_ilk_cache,
             self._maybe_query_produced_blocks,
             self._maybe_query_withdrawals,
@@ -210,6 +213,7 @@ class TaskManager:
             self._maybe_update_owned_assets,
             self._maybe_update_aave_v3_underlying_assets,
             self._maybe_update_spark_underlying_assets,
+            self._maybe_retry_missing_token_details,
             self._maybe_create_calendar_reminder,
             self._maybe_trigger_calendar_reminder,
             self._maybe_delete_past_calendar_events,
@@ -229,7 +233,7 @@ class TaskManager:
 
     def _maybe_schedule_db_upload(self) -> list[Task] | None:
         assert self.premium_sync_manager is not None, 'caller should make sure premium sync manager exists'  # noqa: E501
-        if self.premium_sync_manager.check_if_should_sync(force_upload=False) is False:
+        if self.premium_sync_manager.check_if_should_sync(force_upload=False)[0] is False:
             return None
 
         log.debug('Scheduling task for DB upload to server')
@@ -903,6 +907,19 @@ class TaskManager:
             chains=self.database.get_chains_to_detect_evm_accounts(),
         )]
 
+    def _maybe_retry_failed_evm_detections(self) -> list[Task] | None:
+        """Schedule a retry of only the EVM activity checks that failed with a recoverable
+        error (e.g. rate limiting) in the last detection, once their retry delay has passed."""
+        if self.chains_aggregator.should_retry_activity_checks() is False:
+            return None
+
+        return [self.task_supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name='Retry failed EVM accounts detection',
+            exception_is_error=True,
+            method=self.chains_aggregator.retry_failed_activity_checks,
+        )]
+
     def _maybe_update_ilk_cache(self) -> list[Task] | None:
         with self.database.conn.read_ctx() as cursor:
             if len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0:  # noqa: E501
@@ -1009,6 +1026,25 @@ class TaskManager:
             task_name='Update Spark underlying assets in globaldb',
             exception_is_error=True,
             method=update_spark_underlying_assets,
+            chains_aggregator=self.chains_aggregator,
+        )]
+
+    def _maybe_retry_missing_token_details(self) -> list[Task] | None:
+        """Retry querying the details of tokens that were stored without them because the
+        query failed when they were first seen. Not while history is fetched, to not add to
+        the load of the nodes.
+        """
+        if self.history_processing_coordinator.is_history_fetching():
+            return None
+
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS, TOKEN_DETAILS_RETRY, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
+            return None
+
+        return [self.task_supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name='Retry missing token details',
+            exception_is_error=True,
+            method=retry_missing_token_details,
             chains_aggregator=self.chains_aggregator,
         )]
 

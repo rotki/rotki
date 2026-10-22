@@ -34,6 +34,21 @@ export const NoIndexersCause = {
 
 export type NoIndexersCause = (typeof NoIndexersCause)[keyof typeof NoIndexersCause];
 
+/** Why an integration needs a sign-in, which decides whether the row asks to connect or to reconnect. */
+export const SessionCause = {
+  /** The session the user had stopped working. */
+  EXPIRED: 'expired',
+  /** The user never signed in, yet a redecode found events only the integration's API can enrich. */
+  NOT_CONNECTED: 'not-connected',
+} as const;
+
+export type SessionCause = (typeof SessionCause)[keyof typeof SessionCause];
+
+/** The cause of a session condition, from the `reason` of the backend's session message. */
+export function sessionCauseOf(reason: 'expired' | 'not_connected'): SessionCause {
+  return reason === 'not_connected' ? SessionCause.NOT_CONNECTED : SessionCause.EXPIRED;
+}
+
 export type RaisedConditionKind = (typeof RaisedConditionKind)[keyof typeof RaisedConditionKind];
 
 /** Why the backend set an oracle aside: it stopped answering, or it kept failing. */
@@ -55,8 +70,8 @@ export type RaisedCondition =
   | { kind: typeof RaisedConditionKind.EXCHANGE_KEY_REJECTED; location: string; name: string }
   | { kind: typeof RaisedConditionKind.NO_AVAILABLE_INDEXERS; chain: string; cause: NoIndexersCause }
   | { kind: typeof RaisedConditionKind.ORACLE_PENALIZED; oracle: string; reason: OraclePenaltyReason; until: number }
-  | { kind: typeof RaisedConditionKind.GNOSIS_PAY_SESSION }
-  | { kind: typeof RaisedConditionKind.MONERIUM_SESSION }
+  | { kind: typeof RaisedConditionKind.GNOSIS_PAY_SESSION; cause: SessionCause }
+  | { kind: typeof RaisedConditionKind.MONERIUM_SESSION; cause: SessionCause }
   | { kind: typeof RaisedConditionKind.PREMIUM_INACTIVE; cause: PremiumInactiveCause; reason?: string }
   | { kind: typeof RaisedConditionKind.BINANCE_PAIRS_MISSING; location: string; name: string };
 

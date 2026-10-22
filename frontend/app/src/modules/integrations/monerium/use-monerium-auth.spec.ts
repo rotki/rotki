@@ -1,7 +1,7 @@
 import type { MoneriumOAuthResult, MoneriumStatus } from './types';
 import { flushPromises } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { RaisedConditionKind, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 import { useMoneriumOAuth } from './use-monerium-auth';
 
 const getStatus = vi.fn();
@@ -208,8 +208,8 @@ describe('useMoneriumOAuth', () => {
 
     beforeEach(() => {
       const { raise } = useRaisedConditionsStore();
-      raise({ kind: RaisedConditionKind.MONERIUM_SESSION });
-      raise({ kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
+      raise({ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.MONERIUM_SESSION });
+      raise({ cause: SessionCause.EXPIRED, kind: RaisedConditionKind.GNOSIS_PAY_SESSION });
       getStatus.mockResolvedValue({ authenticated: true });
     });
 
