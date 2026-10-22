@@ -6,11 +6,16 @@ name: Benchmark PR comment
 # Note: workflow_run only triggers once this file is on the default branch.
 
 on:
-  workflow_run:
+  workflow_run:  # zizmor: ignore[dangerous-triggers] no checkout, PR number reduced to digits, body posted from a file
     workflows: [ Benchmarks ]
     types: [ completed ]
 
 permissions: { }
+
+# A newer benchmark run of the same branch replaces the comment anyway.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
 
 jobs:
   comment:
