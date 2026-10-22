@@ -2,9 +2,6 @@ name: Frontend Unit Tests
 
 on:
   workflow_call:
-    secrets:
-      CODECOV_TOKEN:
-        required: false
 
 permissions: { }
 
@@ -15,6 +12,7 @@ jobs:
     timeout-minutes: 20  # observed max 10m
     permissions:
       contents: read
+      id-token: write  # authenticate the Codecov upload with OIDC
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -54,4 +52,5 @@ jobs:
           # The action otherwise also uploads every coverage-looking file it finds.
           disable_search: true
           flags: frontend_unit
-          token: ${{ secrets.CODECOV_TOKEN }}
+          # A fork PR gets no OIDC token; Codecov accepts its upload without one.
+          use_oidc: ${{ !github.event.pull_request.head.repo.fork }}
