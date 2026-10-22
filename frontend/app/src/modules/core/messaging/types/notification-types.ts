@@ -17,13 +17,19 @@ export type BinancePairsMissingData = z.infer<typeof BinancePairsMissingData>;
 // `not_connected` is sent to a user who never signed in, `expired` to one whose session stopped working
 const SessionKeyExpiredReason = z.enum(['expired', 'not_connected']);
 
-// `reminder` marks a repeat of a known condition, sent on each redecode, as opposed to the moment
-// the session is found to be expired
+/**
+ * Whether a session-expired message repeats a known condition.
+ *
+ * @remarks
+ * `true` on the repeat sent on each redecode, `false` at the moment the session is first found
+ * to be expired.
+ */
+const SessionKeyExpiredReminder = z.boolean();
 
 export const GnosisPaySessionKeyExpiredData = z.object({
   error: z.string(),
   reason: SessionKeyExpiredReason,
-  reminder: z.boolean(),
+  reminder: SessionKeyExpiredReminder,
 });
 
 export type GnosisPaySessionKeyExpiredData = z.infer<typeof GnosisPaySessionKeyExpiredData>;
@@ -54,7 +60,7 @@ export type MissingApiKey = z.infer<typeof MissingApiKey>;
 export const MoneriumSessionKeyExpiredData = z.object({
   error: z.string(),
   reason: SessionKeyExpiredReason,
-  reminder: z.boolean(),
+  reminder: SessionKeyExpiredReminder,
 });
 
 export type MoneriumSessionKeyExpiredData = z.infer<typeof MoneriumSessionKeyExpiredData>;
