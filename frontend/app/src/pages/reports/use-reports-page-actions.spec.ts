@@ -163,13 +163,13 @@ describe('pages/reports/useReportsPageActions', () => {
       expect(downloadFileByTextContent).not.toHaveBeenCalled();
     });
 
-    it('should report a failure when the backend declines the export', async () => {
-      exportReportData.mockResolvedValue(false);
+    it('should report neither success nor failure when the export failed or was cancelled, leaving it to the task row', async () => {
+      exportReportData.mockResolvedValue(null);
 
       await setup().exportData(PERIOD);
 
-      expect(showErrorMessage).toHaveBeenCalled();
       expect(showSuccessMessage).not.toHaveBeenCalled();
+      expect(showErrorMessage).not.toHaveBeenCalled();
     });
   });
 
@@ -184,6 +184,14 @@ describe('pages/reports/useReportsPageActions', () => {
         'pnl_debug.json',
         'application/json',
       );
+    });
+
+    it('should download nothing when the export failed or was cancelled', async () => {
+      exportReportData.mockResolvedValue(null);
+
+      await setup().exportData(PERIOD);
+
+      expect(downloadFileByTextContent).not.toHaveBeenCalled();
     });
 
     it('should surface a thrown error as a message rather than rejecting', async () => {

@@ -5716,7 +5716,6 @@
     "debug": {
       "export_data": "Hata ayıklama verilerini dışa aktar",
       "export_message": {
-        "failure": "Kâr/zarar raporu hata ayıklama verileri dışa aktarılamadı",
         "success": "Kâr/zarar raporu hata ayıklama verileri başarıyla dışa aktarıldı",
         "title": "Kâr/zarar raporu hata ayıklama verilerini dışa aktar"
       },

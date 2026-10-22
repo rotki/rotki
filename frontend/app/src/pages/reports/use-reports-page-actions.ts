@@ -98,12 +98,11 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
       }
 
       const result = await exportReportData(payload);
+      if (result === null)
+        return;
 
       if (appSession) {
-        if (result)
-          showSuccessMessage(t('profit_loss_reports.debug.export_message.title'), t('profit_loss_reports.debug.export_message.success'));
-        else
-          showErrorMessage(t('profit_loss_reports.debug.export_message.title'), t('profit_loss_reports.debug.export_message.failure'));
+        showSuccessMessage(t('profit_loss_reports.debug.export_message.title'), t('profit_loss_reports.debug.export_message.success'));
       }
       else {
         downloadFileByTextContent(JSON.stringify(result, null, 2), 'pnl_debug.json', 'application/json');

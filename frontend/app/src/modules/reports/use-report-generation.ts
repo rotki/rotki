@@ -12,7 +12,8 @@ import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/m
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseReportGenerationReturn {
-  exportReportData: (payload: ProfitLossReportDebugPayload) => Promise<boolean | object>;
+  /** Resolves `null` when the export failed or was cancelled, which its task row reports. */
+  exportReportData: (payload: ProfitLossReportDebugPayload) => Promise<boolean | object | null>;
   generateReport: (period: ProfitLossReportPeriod) => Promise<number>;
 }
 
@@ -143,7 +144,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
     return getOr(outcome, -1);
   }
 
-  async function exportReportData(payload: ProfitLossReportDebugPayload): Promise<boolean | object> {
+  async function exportReportData(payload: ProfitLossReportDebugPayload): Promise<boolean | object | null> {
     resetProgress();
     set(reportError, emptyError());
 
@@ -168,14 +169,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
       title: t('task_center.group.pnl_report'),
     });
 
-    onActionableError(outcome, (error) => {
-      set(reportError, {
-        error: error.message,
-        message: t('actions.reports.generate.error.description'),
-      });
-    });
-
-    return getOr(outcome, {});
+    return getOr(outcome, null);
   }
 
   return {
