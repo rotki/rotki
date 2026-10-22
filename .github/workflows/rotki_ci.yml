@@ -293,8 +293,7 @@ jobs:
     uses: $/.github/workflows/task_fe_unit_tests.yml
     permissions:
       contents: read
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      id-token: write  # the Codecov upload authenticates with OIDC
 
   docs:
     name: 'Documentation build'
@@ -642,8 +641,6 @@ jobs:
     with:
       os: ubuntu-22.04
       test_environment: ${{needs.check-changes.outputs.test_environment}}
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     permissions:
       contents: read
 
@@ -664,10 +661,10 @@ jobs:
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.e2e_tasks }}
     uses: $/.github/workflows/task_e2e_tests.yml
     secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
     permissions:
       contents: read
+      id-token: write  # the Codecov upload authenticates with OIDC
 
   warm-e2e-caches:
     name: 'Warm e2e build caches'
@@ -683,6 +680,8 @@ jobs:
     if: ${{ always() }}
     needs: [ 'check-changes', 'lint-frontend', 'check-backend-mapping-keys', 'unittest-frontend', 'docs', 'lint-colibri', 'lint-starling', 'test-starling-windows', 'lint-backend', 'test-backend', 'test-e2e' ]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # authenticate the Codecov notification with OIDC
     steps:
       - name: Check if any task failed
         run: |
@@ -700,7 +699,8 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
         with:
           run_command: send-notifications
-          token: ${{ secrets.CODECOV_TOKEN }}
+          # A fork PR gets no OIDC token; Codecov accepts its call without one.
+          use_oidc: ${{ !github.event.pull_request.head.repo.fork }}
           override_commit: ${{ github.event.pull_request.head.sha }}
           override_pr: ${{ github.event.pull_request.number }}
           fail_ci_if_error: false

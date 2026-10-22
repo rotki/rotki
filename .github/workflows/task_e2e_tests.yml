@@ -11,8 +11,6 @@ on:
         type: boolean
         default: false
     secrets:
-      CODECOV_TOKEN:
-        required: false
       ETHERSCAN_API_KEY:
         required: false
 
@@ -192,6 +190,7 @@ jobs:
         shard: [ 1, 2, 3, 4 ]
     permissions:
       contents: read
+      id-token: write  # authenticate the Codecov upload with OIDC
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -305,7 +304,8 @@ jobs:
         if: success()
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          # A fork PR gets no OIDC token; Codecov accepts its upload without one.
+          use_oidc: ${{ !github.event.pull_request.head.repo.fork }}
           files: ./frontend/app/tests/e2e/coverage/lcov.info
           # The action otherwise also uploads every coverage-looking file it finds.
           disable_search: true

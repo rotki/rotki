@@ -2,9 +2,6 @@ name: Backend Tests
 
 on:
   workflow_call:
-    secrets:
-      CODECOV_TOKEN:
-        required: false
     inputs:
       os:
         required: true

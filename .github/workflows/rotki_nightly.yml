@@ -22,8 +22,6 @@ jobs:
       os: ubuntu-22.04
       test_environment: nightly
       collect_coverage: true
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     permissions:
       contents: read
 
@@ -34,8 +32,6 @@ jobs:
     with:
       os: macos-latest
       test_environment: nightly
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     permissions:
       contents: read
 
@@ -45,8 +41,6 @@ jobs:
     with:
       os: windows-latest
       test_environment: nightly
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     permissions:
       contents: read
 
@@ -54,10 +48,9 @@ jobs:
     uses: $/.github/workflows/task_e2e_tests.yml
     if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
     needs: [ 'macos' ]
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     permissions:
       contents: read
+      id-token: write  # the Codecov upload authenticates with OIDC
 
   backend-coverage:
     name: 'Backend coverage upload'
@@ -66,6 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write  # authenticate the Codecov upload with OIDC
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -112,15 +106,14 @@ jobs:
         with:
           flags: backend-nightly
           files: coverage.xml
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
 
   unittest-frontend:
     uses: $/.github/workflows/task_fe_unit_tests.yml
     if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     permissions:
       contents: read
+      id-token: write  # the Codecov upload authenticates with OIDC
 
   verify-link:
     uses: $/.github/workflows/task_fe_external_links_verification.yml
