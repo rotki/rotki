@@ -336,6 +336,7 @@ jobs:
           retention-days: 1
 
   docker-merge:
+    name: 'Merge the Docker platform images'
     runs-on: ubuntu-latest
     timeout-minutes: 15  # observed max 36s; the prune step lives here
     needs:
