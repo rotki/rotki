@@ -11,16 +11,19 @@ from eth_abi import encode
 from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_STAKING,
     CPT_YEARN_V2,
     CPT_YEARN_V3,
 )
+from rotkehlchen.chain.ethereum.modules.yearn.decoder import YearnDecoder
 from rotkehlchen.chain.ethereum.modules.yearn.utils import (
     KONG_API,
     _query_yearn_vaults,
     query_yearn_vaults,
 )
+from rotkehlchen.chain.evm.decoding.yearn import decoder as yearn_decoder_module
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
@@ -29,6 +32,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
     globaldb_get_unique_cache_value,
+    globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tasks.assets import retry_missing_token_details
@@ -38,6 +42,7 @@ from rotkehlchen.types import CacheType, ChainID, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.inquirer import Inquirer
 
@@ -458,3 +463,32 @@ def test_yearn_kong_chain_list(chain_id):
 
     assert request.call_count == 1
     assert request.call_args.args == (f'{KONG_API}/list/vaults/{chain_id.value}',)
+
+
+def test_ethereum_decoder_reads_chain_scoped_cache_key(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+        eth_transactions: EthereumTransactions,
+) -> None:
+    """The ethereum yearn decoder checks the same cache key query_yearn_vaults writes, so a
+    fresh cache does not trigger a new query of the yearn API on every decoder reload.
+
+    The decoder is built directly since the ethereum_transaction_decoder fixture stubs the
+    cache staleness check of every decoder to False."""
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.YEARN_VAULTS, str(ChainID.ETHEREUM.serialize_for_db())),
+            value='1322',
+        )
+
+    decoder = EthereumTransactionDecoder(
+        database=database,
+        ethereum_inquirer=ethereum_inquirer,
+        transactions=eth_transactions,
+    )
+    assert isinstance(yearn_decoder := decoder.decoders['Yearn'], YearnDecoder)
+    with patch.object(yearn_decoder_module, 'query_yearn_vaults') as patched_query_yearn_vaults:
+        yearn_decoder.reload_data()
+
+    assert patched_query_yearn_vaults.call_count == 0

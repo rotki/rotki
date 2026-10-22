@@ -49,7 +49,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChainID
+from rotkehlchen.types import CacheType
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -104,13 +104,11 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         """Check that cache is up to date and refresh cache from db
         Returns a fresh addresses to decoders mapping.
         """
-        cache_args = (
-            [] if self.node_inquirer.chain_id == ChainID.ETHEREUM
-            else [str(self.node_inquirer.chain_id.serialize_for_db())]
-        )
-        # TODO: https://github.com/rotki/rotki/issues/9024
-        # Remove this ethereum special case after cache-key migration lands.
-        if should_update_protocol_cache(self.base.database, CacheType.YEARN_VAULTS, args=cache_args) is True:  # noqa: E501
+        if should_update_protocol_cache(
+            userdb=self.base.database,
+            cache_key=CacheType.YEARN_VAULTS,
+            args=[str(self.node_inquirer.chain_id.serialize_for_db())],
+        ) is True:
             query_yearn_vaults(
                 db=self.node_inquirer.database,
                 node_inquirer=self.node_inquirer,
