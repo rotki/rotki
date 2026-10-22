@@ -5586,7 +5586,6 @@
         "title": "导入盈亏报告调试数据"
       },
       "import_message": {
-        "failure": "导入盈亏报告调试数据失败：{message}",
         "success": "盈亏报告调试数据导入成功",
         "title": "导入盈亏报告调试数据"
       },

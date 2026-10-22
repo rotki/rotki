@@ -139,14 +139,7 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
         return;
 
       if (appSession) {
-        if (result) {
-          showSuccessMessage(title, t('actions.accounting_rules.export.message.success'));
-        }
-        else {
-          showErrorMessage(title, t('actions.accounting_rules.export.message.failure', {
-            description: '',
-          }));
-        }
+        showSuccessMessage(title, t('actions.accounting_rules.export.message.success'));
       }
       else {
         downloadFileByTextContent(JSON.stringify(result, null, 2), 'accounting_rules.json', 'application/json');

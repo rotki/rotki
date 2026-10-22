@@ -1,9 +1,9 @@
 import type { MaybePromise } from '@rotki/common';
 import type { Ref } from 'vue';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { err, flatMap, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 import { activityLabel } from '@/modules/task-center/activity-labels';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
@@ -158,11 +158,11 @@ Issued At: ${issuedAt}`;
         id: makeActivityId(ActivityKind.GNOSIS_PAY, ActivityPart.VERIFY),
         kind: ActivityKind.GNOSIS_PAY,
         rerunnable: false,
-        run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
+        run: async ({ runTask }): Promise<Result<boolean, TaskError>> => flatMap(
           await runTask<boolean>(
             async () => verifySiweSignature(message, signature),
           ),
-          value => value,
+          verified => verified ? ok(true) : err(TaskFailed({ message: t('external_services.gnosispay.siwe.failed') })),
         ),
         subtitle: activityLabel(ActivityKind.GNOSIS_PAY, ActivityPart.VERIFY),
         title: t('task_center.group.gnosis_pay'),
@@ -173,16 +173,10 @@ Issued At: ${issuedAt}`;
         return;
       }
 
-      if (verifyOutcome.value) {
-        set(signInSuccess, true);
-        clearSessionExpiredCondition();
-        if (onSignInComplete)
-          await onSignInComplete();
-      }
-      else {
-        showErrorMessage(t('external_services.gnosispay.siwe.failed'), t('external_services.gnosispay.siwe.failed'));
-        logger.error('Sign-in with Ethereum failed: verification returned false');
-      }
+      set(signInSuccess, true);
+      clearSessionExpiredCondition();
+      if (onSignInComplete)
+        await onSignInComplete();
     }
     catch (error: unknown) {
       if (isUserRejectedError(error)) {

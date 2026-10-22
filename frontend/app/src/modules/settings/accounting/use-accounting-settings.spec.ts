@@ -177,14 +177,6 @@ describe('useAccountingSettings', () => {
       expect(showSuccessMessage).toHaveBeenCalledOnce();
     });
 
-    it('should show an error message when the app-session export fails', async () => {
-      appSession = true;
-      openDirectory.mockResolvedValue('/tmp');
-      runTaskResult.mockResolvedValue(ok(false));
-      await useAccountingSettings().exportJSON();
-      expect(showErrorMessage).toHaveBeenCalledOnce();
-    });
-
     it('should leave a failed app-session export to its task centre row', async () => {
       appSession = true;
       openDirectory.mockResolvedValue('/tmp');

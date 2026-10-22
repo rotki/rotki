@@ -174,14 +174,6 @@ describe('useHistoryEventsExport', () => {
         severity: Severity.INFO,
       }));
     });
-
-    it('should report a backend that declined to write one', async () => {
-      submitTask.mockResolvedValue(ok(false));
-
-      await exportAfterConfirming();
-
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ severity: Severity.ERROR }));
-    });
   });
 
   describe('reporting the outcome in a browser session', () => {
@@ -192,15 +184,6 @@ describe('useHistoryEventsExport', () => {
 
       expect(downloadHistoryEventsCSV).toHaveBeenCalledWith('/tmp/events.csv');
       expect(notify).not.toHaveBeenCalled();
-    });
-
-    it('should still report a failure', async () => {
-      submitTask.mockResolvedValue(ok(false));
-
-      await exportAfterConfirming();
-
-      expect(downloadHistoryEventsCSV).not.toHaveBeenCalled();
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ severity: Severity.ERROR }));
     });
   });
 

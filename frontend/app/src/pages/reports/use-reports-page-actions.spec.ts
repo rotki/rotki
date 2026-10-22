@@ -246,16 +246,6 @@ describe('pages/reports/useReportsPageActions', () => {
       expect(fetchReports).toHaveBeenCalledTimes(1);
     });
 
-    it('should report a failure and not refresh when the import returns false', async () => {
-      set(reportDebugData, file);
-      submitTask.mockResolvedValue(ok(false));
-
-      await setup().importData();
-
-      expect(showErrorMessage).toHaveBeenCalled();
-      expect(fetchReports).not.toHaveBeenCalled();
-    });
-
     it('should refresh quietly on a cancellation, with no error shown', async () => {
       set(reportDebugData, file);
       submitTask.mockResolvedValue(err<TaskError>(Cancelled({ message: 'stopped' })));
