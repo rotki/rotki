@@ -51,6 +51,12 @@ describe('activitySubject', () => {
       .toEqual({ location: 'monerium' });
   });
 
+  it('should name nothing for an events id its descriptor never mints, including a bare kind', () => {
+    expect(activitySubject(activity(makeActivityId(ActivityKind.EXCHANGE_EVENTS), ActivityKind.EXCHANGE_EVENTS))).toBeUndefined();
+    expect(activitySubject(activity(exchangeEventsActivity.id({ location: 'kraken', name: 'main' }), ActivityKind.BANK_EVENTS)))
+      .toBeUndefined();
+  });
+
   it('should name the chain of a balance job, with or without detection, but not of the run over several chains', () => {
     const balances = (...parts: string[]): Activity => activity(makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, ...parts), ActivityKind.BLOCKCHAIN_BALANCES);
 
