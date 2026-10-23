@@ -9,6 +9,7 @@ import {
   RuiDataTable,
   RuiDateTimePicker,
   RuiDialog,
+  RuiFieldDefaults,
   RuiIcon,
   RuiMenu,
   RuiProgress,
@@ -45,6 +46,7 @@ function ruiRegister(app: App): void {
   app.component('RuiColorPicker', RuiColorPicker);
   app.component('RuiProgress', RuiProgress);
   app.component('RuiDateTimePicker', RuiDateTimePicker);
+  app.component('RuiFieldDefaults', RuiFieldDefaults);
 }
 
 /**
