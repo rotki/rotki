@@ -1246,12 +1246,6 @@
     "subtitle": "Ce sont les options de formatage de date prises en charge",
     "title": "Format de date"
   },
-  "error": {
-    "generic": {
-      "message": "Nous avons rencontré une erreur interne lors du traitement de votre demande. Si ce problème persiste, veuillez contacter notre équipe d'assistance avec les détails suivants : \nCode d'erreur : {code} \nMessage d'erreur : {message} \nChemin : {path}",
-      "title": "Quelque chose s'est mal passé"
-    }
-  },
   "error_screen": {
     "backend_error": "Il y a un problème avec le backend.",
     "copy_tooltip": "Copier le texte d'erreur dans le presse-papiers",

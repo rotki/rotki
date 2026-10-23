@@ -3013,12 +3013,6 @@
     "proxy_note": "Bu örnek zaten her isteğin kimliğini doğrulayan bir proxy sunucusunun arkasında çalışıyorsa korumalıdır ve aşağıdan kabul edebilirsiniz.",
     "recommendation": "{0} değişkeni ayarlandığında rotki, girişte bir oturum çerezi oluşturur ve bu çerezi taşımayan istekleri reddeder."
   },
-  "error": {
-    "generic": {
-      "message": "İsteğiniz işlenirken dahili bir hata oluştu. Sorun devam ederse lütfen aşağıdaki ayrıntılarla destek ekibimizle iletişime geçin: \nHata kodu: {code} \nHata mesajı: {message} \nYol: {path}",
-      "title": "Bir şeyler ters gitti"
-    }
-  },
   "error_screen": {
     "backend_error": "Backend ile ilgili bir sorun var.",
     "copy_tooltip": "Hata metnini panoya kopyala",
@@ -4460,10 +4454,6 @@
     "dialog": {
       "description": "Çakışan veya yinelenen olarak tespit edilen dahili işlemler. Sistem düzenli aralıklarla otomatik olarak yeniden deneyecek.",
       "title": "Dahili işlem çakışmaları"
-    },
-    "errors": {
-      "fetch": "Dahili işlem çakışmaları alınamadı: {error}",
-      "fetch_title": "Dahili işlem çakışmaları hatası"
     },
     "filter": {
       "period": "Tarih"

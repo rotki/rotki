@@ -426,12 +426,6 @@
     "no_data": "No hay datos disponibles",
     "rows_per_page": "Filas por página"
   },
-  "error": {
-    "generic": {
-      "message": "Encontramos un error interno al procesar su solicitud. Si este problema persiste, comuníquese con nuestro equipo de soporte con los detalles a continuación: \nCódigo de error: {code} \nMensaje de error: {message} \nRuta: {path}",
-      "title": "Algo salió mal"
-    }
-  },
   "evm_rpc_node_manager": {
     "connected": {
       "failure": "Fallido",
