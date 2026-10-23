@@ -22,6 +22,12 @@ export interface Scheduler {
   /** Remove a still-queued job (returns true if it was queued; running jobs are unaffected). */
   readonly drop: (id: string) => boolean;
   /**
+   * Free a running job's lane slot before its run settles. Used when a running activity is
+   * cancelled: the slot would otherwise stay held until the body returns, and a body that never
+   * resumes would hold a cap-1 lane until logout. Does not pump, the caller does.
+   */
+  readonly release: (job: ScheduledJob) => void;
+  /**
    * Drop every queued job *and* release every running job's lane slot. Used by orchestrator reset.
    *
    * The slots must go too. A slot is freed from `run()`'s `finally`, and a reset abandons those
@@ -51,11 +57,10 @@ export function createScheduler(
 ): Scheduler {
   const queue: ScheduledJob[] = [];
   /**
-   * Keyed by the job itself, not by its id: two live jobs can legitimately share an id. Cancelling
-   * a RUNNING activity settles it CANCELLED immediately while the scheduler still holds its job,
-   * and `rerun` then accepts that terminal status and schedules a second job under the same id.
-   * Keyed by id, the second `set` overwrote the first — `runningInLane` undercounted (the decode
-   * lane ran 3 jobs at a cap of 2) and whichever job finished first deleted the *other* one's slot.
+   * Keyed by the job itself, not by its id: two jobs under one id can overlap. Cancelling a
+   * RUNNING activity settles it CANCELLED and releases its slot while its body may still be
+   * running, and `rerun` then schedules a second job under the same id. Keyed by id, the old run's
+   * `finally` would delete the new job's slot.
    */
   const running = new Map<ScheduledJob, Lane>();
   /**
@@ -159,6 +164,9 @@ export function createScheduler(
     isQueued: (id: string): boolean => queue.some(job => job.id === id),
     isRunning: (id: string): boolean => [...running.keys()].some(job => job.id === id),
     pump,
+    release(job: ScheduledJob): void {
+      running.delete(job);
+    },
     runningCount: (lane?: Lane): number => (lane === undefined ? running.size : runningInLane(lane)),
     submit(job: ScheduledJob): void {
       queue.push(job);

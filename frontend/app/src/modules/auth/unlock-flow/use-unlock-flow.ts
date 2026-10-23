@@ -1,7 +1,7 @@
 import type { Ref } from 'vue';
 import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/modules/assets/types';
 import type { LoginCredentials } from '@/modules/auth/login';
-import { type OptionType as Option, pipe, type ResultAsyncType as ResultAsync } from 'plainfp';
+import { type OptionType as Option, pipe, type ResultType as Result, type ResultAsyncType as ResultAsync } from 'plainfp';
 import { flatMap } from 'plainfp/result-async';
 import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 
@@ -194,11 +194,25 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
    * The socket opens before the probe so backend migration progress can stream while it runs.
    * A live session resumes straight away and never reaches the asset-update prompt: applying an
    * update restarts the backend, which would kill the session just re-attached to.
+   *
+   * A background unlock with no saved password can only resume, so it probes first, sessionless,
+   * and returns to the form without beginning a session or opening a socket when there is nothing
+   * to resume. That is every return to the login screen after a logout.
    */
   async function runPipeline(): Promise<void> {
     const creds = credentials;
     if (!creds)
       return fail({ kind: UnlockErrorKind.unknown, message: 'unlock without an active flow' });
+
+    const canOnlyResume = startedInTheBackground && !creds.password;
+    let resumable: Result<boolean, UnlockError> | undefined;
+    if (canOnlyResume) {
+      resumable = await probe(creds);
+      if (!resumable.ok)
+        return fail(resumable.error);
+      if (!resumable.value)
+        return reset();
+    }
 
     beginSession();
     toPhase({ kind: UnlockPhase.authenticating });
@@ -212,19 +226,20 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
     if (!connected.ok)
       return fail(connected.error);
 
-    toPhase({ kind: UnlockPhase.probing });
-    const resumable = await steps.probeSession(creds);
+    resumable ??= await probe(creds);
     if (!resumable.ok)
       return fail(resumable.error);
 
     if (resumable.value)
       return finishUnlock(true);
 
-    const wouldBeADoomedEmptyPasswordLogin = startedInTheBackground && !creds.password;
-    if (wouldBeADoomedEmptyPasswordLogin)
-      return reset();
-
     await checkUpdate();
+  }
+
+  /** Asks whether the backend already holds a live session for these credentials. */
+  async function probe(creds: UnlockCredentials): Promise<Result<boolean, UnlockError>> {
+    toPhase({ kind: UnlockPhase.probing });
+    return steps.probeSession(creds);
   }
 
   async function checkUpdate(): Promise<void> {

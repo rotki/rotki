@@ -1,8 +1,10 @@
 import type { AdditionSummary } from '@/modules/accounts/use-account-addition-service';
 import type { GnosisPaySafeMigration } from '@/modules/integrations/gnosis-pay/types';
 import { Blockchain } from '@rotki/common';
+import { logoutThenLogin, sessionRequest } from '@test/utils/realistic-logout';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 
 const NEW_SAFE = '0xabcdef1234567890abcdef1234567890abcdef12';
@@ -188,6 +190,23 @@ describe('useGnosisPaySafeMigration', () => {
     resolve({ added: [{ address: NEW_SAFE, chain: Blockchain.GNOSIS }], cancelled: false, failed: [], skipped: 0 });
     await adding;
 
+    expect(get(composable.adding)).toBe(false);
+  });
+
+  it('should not toast in the next session when an addition was in flight across a realistic logout', async () => {
+    const toastedWithASession: boolean[] = [];
+    showErrorMessage.mockImplementation(() => toastedWithASession.push(hasLiveSession()));
+    showSuccessMessage.mockImplementation(() => toastedWithASession.push(hasLiveSession()));
+    fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: NEW_SAFE, type: 'new' }]));
+    addAccounts.mockReturnValue(sessionRequest<AdditionSummary>().promise);
+    const { composable } = await setup();
+    await composable.checkMigration();
+
+    const adding = composable.addMissingSafe();
+    await logoutThenLogin();
+    await adding;
+
+    expect(toastedWithASession).not.toContain(true);
     expect(get(composable.adding)).toBe(false);
   });
 
