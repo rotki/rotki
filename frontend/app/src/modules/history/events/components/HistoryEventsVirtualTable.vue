@@ -3,6 +3,9 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmits, HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
+import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { useTableEmptyState, useTableFetchError } from '@/modules/core/table/use-table-empty-state';
 import { provideHistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
 import { useHistoryEventsTable } from '@/modules/history/events/use-history-events-table';
@@ -40,6 +43,7 @@ defineSlots<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const failureMessage = useFailureMessage();
 
 const DEFAULT_TABLE_HEIGHT_OFFSET = 390;
 
@@ -113,26 +117,15 @@ provideHistoryEventsRowContext(rowContext);
       :colspan="5"
     />
 
-    <RuiAlert
+    <TableFailureStrip
       v-if="eventsError && groups.length > 0"
-      type="error"
+      standalone
       class="m-2"
       :title="t('data_table.fetch_failed')"
+      :message="failureMessage(eventsError)"
       data-testid="history-events-events-error"
-    >
-      <div class="flex flex-col items-start gap-2">
-        <span>{{ eventsError.message }}</span>
-        <RuiButton
-          size="sm"
-          color="error"
-          variant="outlined"
-          data-testid="history-events-events-retry"
-          @click="retryEvents()"
-        >
-          {{ t('common.actions.retry') }}
-        </RuiButton>
-      </div>
-    </RuiAlert>
+      @retry="retryEvents()"
+    />
 
     <div
       v-if="loading && groups.length === 0"
@@ -152,15 +145,19 @@ provideHistoryEventsRowContext(rowContext);
       :style="placeholderStyle"
       class="flex flex-col items-center justify-center px-4"
     >
-      <RuiTableErrorState
+      <RuiTableEmptyState
         v-if="fetchFailed"
-        class="w-full max-w-xl"
-        :title="emptyState.label"
-        :action-text="t('common.actions.retry')"
-        @action="emit('refetch')"
+        class="max-w-md"
+        :label="emptyState.label"
+        data-testid="history-events-fetch-error"
       >
-        <span data-testid="history-events-fetch-error">{{ emptyState.description }}</span>
-      </RuiTableErrorState>
+        <template #description>
+          <TableFailureDescription
+            :message="emptyState.description ?? ''"
+            @retry="emit('refetch')"
+          />
+        </template>
+      </RuiTableEmptyState>
       <RuiTableEmptyState
         v-else-if="hasActiveFilters"
         :label="t('transactions.empty_state.no_data_with_filters')"
