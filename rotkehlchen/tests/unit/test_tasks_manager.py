@@ -56,6 +56,7 @@ from rotkehlchen.tasks.assets import (
 )
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
 from rotkehlchen.tasks.manager import (
+    CURRENT_BALANCE_DETECTION_TIME_BUDGET,
     DATA_ISSUE_REMEDIATION_TASK_NAME,
     HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
     PREMIUM_STATUS_CHECK,
@@ -117,6 +118,7 @@ def test_potential_maybe_schedule_task(task_manager: TaskManager):
     if is_accounting_update_enabled() is False:
         expected_tasks.remove('_maybe_process_historical_balances')
         expected_tasks.remove('_maybe_run_data_issue_remediation')
+        expected_tasks.remove('_maybe_detect_current_balance_mismatches')
 
     assert expected_tasks == tasks
     assert [function.__name__ for function in task_manager.priority_tasks_queue] == [
@@ -216,6 +218,38 @@ def test_data_issue_remediation_runs_daily_after_initial_processing(
             )
 
         assert task_manager._maybe_run_data_issue_remediation() == [spawn_task.return_value]
+
+
+def test_current_balance_detection_scope_follows_processing_passes(
+        task_manager: TaskManager,
+) -> None:
+    def set_cache(name: DBCacheStatic, value: int) -> None:
+        with task_manager.database.user_write() as write_cursor:
+            task_manager.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=name,
+                value=Timestamp(value),
+            )
+
+    with patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task:
+        set_cache(DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS, ts_now())
+        set_cache(DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS, ts_now())
+        assert task_manager._maybe_detect_current_balance_mismatches() is None  # nothing due
+
+        set_cache(DBCacheStatic.PENDING_DETECTION_FROM_TS, 5_000)
+        assert task_manager._maybe_detect_current_balance_mismatches() == [
+            spawn_task.return_value,
+        ]
+        assert spawn_task.call_args.kwargs['from_ts'] == 5_000
+        assert spawn_task.call_args.kwargs['time_budget'] == CURRENT_BALANCE_DETECTION_TIME_BUDGET
+        assert task_manager._maybe_detect_current_balance_mismatches() is None  # consumed
+
+        set_cache(DBCacheStatic.PENDING_DETECTION_FROM_TS, 0)  # a full processing pass
+        assert task_manager._maybe_detect_current_balance_mismatches() is not None
+        assert spawn_task.call_args.kwargs['from_ts'] is None
+
+        assert task_manager._maybe_detect_current_balance_mismatches(force=True) is not None
+        assert spawn_task.call_args.kwargs['from_ts'] is None
 
 
 @pytest.mark.parametrize('force', [False, True])

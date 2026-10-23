@@ -302,17 +302,24 @@ def run_current_balance_detection(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
         from_ts: TimestampMS | None = None,
+        time_budget: int = DEFAULT_DETECTION_TIME_BUDGET,
 ) -> int:
-    """Task entrypoint. Returns the number of wallet buckets that were compared."""
+    """Task entrypoint. Returns the number of wallet buckets that were compared.
+
+    Only a full run (no from_ts) restarts the daily cooldown, so partial runs after each
+    processing pass don't postpone the daily full comparison.
+    """
     try:
         return CurrentBalanceMismatchDetector(
             database=database,
             observed_balance_reader=make_evm_observed_balance_reader(chains_aggregator),
+            time_budget=time_budget,
         ).run(from_ts=from_ts)
     finally:  # a crash must not leave the periodic task due again on the very next tick
-        with database.user_write() as write_cursor:
-            database.set_static_cache(
-                write_cursor=write_cursor,
-                name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
-                value=ts_now(),
-            )
+        if from_ts is None:
+            with database.user_write() as write_cursor:
+                database.set_static_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
+                    value=ts_now(),
+                )

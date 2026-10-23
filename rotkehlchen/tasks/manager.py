@@ -94,6 +94,7 @@ DATA_ISSUE_REMEDIATION_REFRESH: Final = DAY_IN_SECONDS
 DATA_ISSUE_REMEDIATION_TASK_NAME: Final = 'Auto-remediate data issues'
 CURRENT_BALANCE_DETECTION_REFRESH: Final = DAY_IN_SECONDS
 CURRENT_BALANCE_DETECTION_TASK_NAME: Final = 'Detect current balance mismatches'
+CURRENT_BALANCE_DETECTION_TIME_BUDGET: Final = 300  # seconds a single detection run may take
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -740,10 +741,12 @@ class TaskManager:
             self,
             force: bool = False,
     ) -> list[Task] | None:
-        """Schedule the comparison of derived and live balances, optionally bypassing the cooldown.
+        """Schedule the comparison of derived and live balances.
 
         It needs fully processed balances, since a stale derived balance would be reported as a
-        mismatch with the chain.
+        mismatch with the chain. After a processing pass it only compares the buckets that pass
+        touched. Otherwise it runs a full comparison daily, or at once when forced, since live
+        balances can drift without any event being written.
         """
         if (
             self.history_processing_coordinator.is_history_fetching() or
@@ -753,7 +756,23 @@ class TaskManager:
         ):
             return None
 
-        if not force and should_run_periodic_task(
+        with self.database.conn.read_ctx() as cursor:
+            stale_from_ts, last_processing_ts, pending_from_ts = self.database.get_static_caches(
+                cursor=cursor,
+                names=(
+                    DBCacheStatic.STALE_BALANCES_FROM_TS,
+                    DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                    DBCacheStatic.PENDING_DETECTION_FROM_TS,
+                ),
+            )
+
+        if stale_from_ts is not None or last_processing_ts is None:
+            return None
+
+        from_ts: TimestampMS | None = None  # None is a full comparison
+        if not force and pending_from_ts is not None:
+            from_ts = TimestampMS(int(pending_from_ts)) if int(pending_from_ts) > 0 else None
+        elif not force and should_run_periodic_task(
             database=self.database,
             key_name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
             refresh_period=CURRENT_BALANCE_DETECTION_REFRESH,
@@ -761,17 +780,11 @@ class TaskManager:
         ) is False:
             return None
 
-        with self.database.conn.read_ctx() as cursor:
-            stale_from_ts, last_processing_ts = self.database.get_static_caches(
-                cursor=cursor,
-                names=(
-                    DBCacheStatic.STALE_BALANCES_FROM_TS,
-                    DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
-                ),
+        with self.database.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name=?',
+                (DBCacheStatic.PENDING_DETECTION_FROM_TS.value,),
             )
-
-        if stale_from_ts is not None or last_processing_ts is None:
-            return None
 
         return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
@@ -780,6 +793,8 @@ class TaskManager:
             method=run_current_balance_detection,
             database=self.database,
             chains_aggregator=self.chains_aggregator,
+            from_ts=from_ts,
+            time_budget=CURRENT_BALANCE_DETECTION_TIME_BUDGET,
         )]
 
     def trigger_current_balance_detection(self) -> list[Task] | None:

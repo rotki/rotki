@@ -547,6 +547,7 @@ def process_historical_balances(
         _finalize_processing(
             database=database,
             modification_ts_at_start=modification_ts_at_start,
+            from_ts=from_ts,
         )
         msg_aggregator.add_message(
             message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
@@ -634,7 +635,11 @@ def process_historical_balances(
         },
     )
     _detect_unmatched_bridge_issues(database=database)
-    _finalize_processing(database=database, modification_ts_at_start=modification_ts_at_start)
+    _finalize_processing(
+        database=database,
+        modification_ts_at_start=modification_ts_at_start,
+        from_ts=from_ts,
+    )
     msg_aggregator.add_message(
         message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
         data={},
@@ -792,8 +797,12 @@ def _detect_unmatched_bridge_issues(database: DBHandler) -> None:
 def _finalize_processing(
         database: DBHandler,
         modification_ts_at_start: int | None,
+        from_ts: TimestampMS | None,
 ) -> None:
     """Update cache timestamps. Only clears stale marker if no modifications during processing.
+
+    Also records the earliest ``from_ts`` of the passes the current balance detection has not
+    seen yet, with 0 meaning a full pass, so the detection only compares the touched buckets.
 
     Uses a snapshot of the modification timestamp taken after reading events. If the current
     modification timestamp is strictly greater than the snapshot, events were modified during
@@ -804,6 +813,18 @@ def _finalize_processing(
             write_cursor=write_cursor,
             name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
             value=ts_now(),
+        )
+        pending_from_ts = write_cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name = ?',
+            (DBCacheStatic.PENDING_DETECTION_FROM_TS.value,),
+        ).fetchone()
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.PENDING_DETECTION_FROM_TS,
+            value=Timestamp(min(
+                this_pass_from_ts := from_ts or 0,
+                this_pass_from_ts if pending_from_ts is None else int(pending_from_ts[0]),
+            )),
         )
 
         if (

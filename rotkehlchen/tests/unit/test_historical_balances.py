@@ -2802,3 +2802,26 @@ def test_empty_historical_balance_processing_notifies_completion(
         message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
         data={},
     )
+
+
+def test_processing_records_earliest_from_ts_for_pending_detection(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    def pending() -> int | None:
+        with database.conn.read_ctx() as cursor:
+            return database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.PENDING_DETECTION_FROM_TS,
+            )
+
+    process_historical_balances(database, messages_aggregator, from_ts=TimestampMS(9_000))
+    assert pending() == 9_000
+    process_historical_balances(database, messages_aggregator, from_ts=TimestampMS(4_000))
+    assert pending() == 4_000
+    process_historical_balances(database, messages_aggregator, from_ts=TimestampMS(7_000))
+    assert pending() == 4_000
+    process_historical_balances(database, messages_aggregator)
+    assert pending() == 0
+    process_historical_balances(database, messages_aggregator, from_ts=TimestampMS(7_000))
+    assert pending() == 0

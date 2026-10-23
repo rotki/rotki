@@ -319,6 +319,9 @@ def run_data_issue_remediation(
 
     Saved events are never removed or replaced. Each applicable issue receives a diagnostic
     timeline entry and remains unresolved for the user to review.
+
+    Current balance mismatches are deliberately not handled. Re-decoding can't add the history
+    they usually lack, so they are left to the user's on-demand divergence search.
     """
     issues_manager = DataIssuesManager(database)
     treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True

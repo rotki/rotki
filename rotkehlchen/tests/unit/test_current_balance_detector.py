@@ -211,3 +211,25 @@ def test_crashed_detection_still_records_its_run(database: DBHandler) -> None:
             cursor=cursor,
             name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
         ) is not None
+
+
+def test_partial_detection_keeps_the_daily_full_run_due(database: DBHandler) -> None:
+    with patch(
+        'rotkehlchen.history.data_issues.detectors.current_balance.'
+        'CurrentBalanceMismatchDetector.run',
+        return_value=0,
+    ), patch(
+        'rotkehlchen.history.data_issues.detectors.current_balance.'
+        'make_evm_observed_balance_reader',
+    ):
+        run_current_balance_detection(
+            database=database,
+            chains_aggregator=None,  # type: ignore[arg-type]  # never reached
+            from_ts=TimestampMS(5_000),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
+        ) is None

@@ -917,6 +917,7 @@ class DBHandler:
                 DBCacheStatic.LAST_DB_UPGRADE,
                 DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
                 DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
+                DBCacheStatic.PENDING_DETECTION_FROM_TS,
             ],
     ) -> Timestamp | None:
         ...
