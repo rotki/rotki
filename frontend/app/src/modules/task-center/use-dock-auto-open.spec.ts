@@ -160,19 +160,15 @@ describe('useDockAutoOpen', () => {
   });
 
   describe('when a batch settles', () => {
-    it('should show a clean run\'s summary, then fold it back into the pill', async () => {
+    it('should leave the panel shut when work that started on its own finishes cleanly', async () => {
       await start(job('login-load'));
       await settle(DockState.DONE);
-
-      expect(get(modelExpanded)).toBe(true);
-
-      await vi.advanceTimersByTimeAsync(6000);
 
       expect(get(modelExpanded)).toBe(false);
     });
 
     it('should hold the summary open while the dock is hovered, and give it the full time again once left', async () => {
-      await start(job('login-load'));
+      await start(job('import', true));
       await settle(DockState.DONE);
 
       set(interacting, true);
@@ -257,7 +253,7 @@ describe('useDockAutoOpen', () => {
     });
 
     it('should end a summary when the next batch starts on its own', async () => {
-      await start(job('login-load'));
+      await start(job('import', true));
       await settle(DockState.DONE);
 
       await start(job('periodic'));
@@ -266,7 +262,7 @@ describe('useDockAutoOpen', () => {
     });
 
     it('should still summarize a batch that ended the previous summary', async () => {
-      await start(job('login-load'));
+      await start(job('import', true));
       await settle(DockState.DONE);
       await start(job('periodic'));
 
@@ -281,7 +277,7 @@ describe('useDockAutoOpen', () => {
       set(modelExpanded, false);
       await nextTick();
 
-      await start(job('periodic'));
+      await start(job('report', true));
       await settle(DockState.DONE);
       await vi.advanceTimersByTimeAsync(6000);
 

@@ -3489,7 +3489,7 @@
       }
     },
     "dock_show_summary": {
-      "subtitle": "Bir iş grubu tamamlandığında nasıl sonuçlandığını göstermek için görev paneli kısa süreliğine açılır. Hatalar, bu ayardan bağımsız olarak siz kapatana kadar görünür kalır.",
+      "subtitle": "Başlattığınız bir iş tamamlandığında ya da arka plandaki bir iş başarısız olduğunda veya ilgi gerektirdiğinde, nasıl sonuçlandığını göstermek için görev paneli kısa süreliğine açılır. Hatalar, bu ayardan bağımsız olarak siz kapatana kadar görünür kalır.",
       "title": "Görevler tamamlandığında özet göster",
       "validation": {
         "error": "Görev özeti ayarlanırken hata oluştu: {message}"

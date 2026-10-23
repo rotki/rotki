@@ -34,13 +34,14 @@ interface DockAutoOpenSources {
  *
  * - A job the user started (`Activity.userStarted`), when it appears. Background work that starts on
  * its own only updates the pill. Once its batch settles, a panel opened this way is treated like a
- * summary: it folds away after a clean run, at once when the summary is off, and stays for a failure.
+ * summary: it folds away after a clean run, after {@link SUMMARY_PEEK} (held while the dock is
+ * hovered or focused) or at once when the summary is off, and stays for a failure.
  * A panel the user opened themselves is theirs, so it is left as it is.
- * - The outcome of a batch, once everything settles, when the "show summary" setting is on. A clean
- * run folds back into the pill after {@link SUMMARY_PEEK}, held while the dock is hovered or
- * focused; a run with a failure stays open, since failures stay until they are dismissed. Only
- * the jobs of the batch that settled count: a failure left from an earlier batch does not open
- * the panel again.
+ * - A batch holding something for the user, a failure or a skip that asked for attention, once
+ * everything settles, when the "show summary" setting is on. It stays open, since held jobs stay until
+ * they are dismissed and the dock is the only place they show.
+ * Only the jobs of the batch that settled count: a failure left from an earlier batch does not
+ * open the panel again. A batch that ran on its own and finished cleanly only updates the pill.
  *
  * Collapsing the panel while work runs is taken as "leave me alone" for that batch: its summary is
  * skipped, and a job the user starts does not open the panel while that work is still running.
@@ -116,8 +117,8 @@ export function useDockAutoOpen({ failedBeforeMount, finished, held, interacting
 
   /**
    * When a batch settles, shows its outcome unless the user collapsed the panel during it. A panel
-   * the dock opened for a job the user started gets the same treatment as a summary; one the user
-   * opened themselves is left as it is.
+   * the dock opened for a job the user started gets the same treatment as a summary; otherwise only
+   * a held job opens it. A panel the user opened themselves is left as it is.
    */
   function summarize(active: boolean, wasActive: boolean | undefined): void {
     if (active) {
@@ -132,7 +133,7 @@ export function useDockAutoOpen({ failedBeforeMount, finished, held, interacting
 
     const collapsed = get(collapsedDuringBatch);
     const ours = get(openedForJob);
-    const batchFailed = inBatch(get(held));
+    const batchHeld = inBatch(get(held));
     const batchFinished = inBatch(get(finished));
     set(collapsedDuringBatch, false);
     set(openedForJob, false);
@@ -140,14 +141,14 @@ export function useDockAutoOpen({ failedBeforeMount, finished, held, interacting
     if (collapsed)
       return;
     if (ours)
-      settleOpenedForJob(batchFailed, batchFinished);
-    else
-      showOutcome(batchFailed, batchFinished);
+      settleOpenedForJob(batchHeld, batchFinished);
+    else if (batchHeld)
+      showHeld();
   }
 
-  /** A panel opened for the user's job stays for a failure, and otherwise folds away like a summary. */
-  function settleOpenedForJob(batchFailed: boolean, batchFinished: boolean): void {
-    if (batchFailed)
+  /** A panel opened for the user's job stays for a held job, and otherwise folds away like a summary. */
+  function settleOpenedForJob(batchHeld: boolean, batchFinished: boolean): void {
+    if (batchHeld)
       return;
     if (batchFinished && get(showSummary))
       peek();
@@ -155,14 +156,10 @@ export function useDockAutoOpen({ failedBeforeMount, finished, held, interacting
       set(modelExpanded, false);
   }
 
-  /** Opens the panel on the batch's outcome, unless the summary is off or the user has it open already. */
-  function showOutcome(batchFailed: boolean, batchFinished: boolean): void {
-    if (!get(showSummary) || get(modelExpanded))
-      return;
-    if (batchFailed)
+  /** Opens the panel on a batch's held jobs, unless the summary is off. */
+  function showHeld(): void {
+    if (get(showSummary))
       set(modelExpanded, true);
-    else if (batchFinished)
-      peek();
   }
 
   /** Holds a summary open while the dock is touched, and gives it the full time again once it is left. */
