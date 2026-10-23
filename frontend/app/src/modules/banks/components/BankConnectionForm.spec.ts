@@ -44,7 +44,7 @@ describe('bankConnectionForm', () => {
         plugins: [pinia],
         stubs: {
           ExternalLink: true,
-          LocationDisplay: true,
+          LocationIcon: true,
           RuiMenuSelect: true,
         },
       },
@@ -98,6 +98,7 @@ describe('bankConnectionForm', () => {
   it('should pass validation with empty credentials when editing, hiding the bank picker', () => {
     wrapper = createWrapper(ref(createForm('edit')));
     expect(wrapper.find('[data-testid=bank-connection-location]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=bank-connection-bank]').text()).toBe('Qonto');
     expect(wrapper.vm.validate()).toBe(true);
     expect(wrapper.find('[data-testid=bank-connection-secret-api_key]').text()).toContain('bank_settings.form.credential_keep_hint');
   });

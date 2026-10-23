@@ -7,7 +7,6 @@ import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vu
 import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import BigDialog, { type BigDialogAction } from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<BankFormData | undefined>({ required: true });
@@ -21,11 +20,12 @@ const stateUpdated = ref<boolean>(false);
 const errorMessages = ref<ValidationErrors>({});
 const authChallenge = ref<BankAuthChallenge>();
 const authResponse = ref<string>('');
+/** why the backend refused the last save or answer, shown until the next attempt */
+const setupError = ref<string>();
 const form = useTemplateRef<ComponentExposed<typeof BankConnectionForm>>('form');
 
 const { answerBankAuthentication, setupBank } = useBanks();
 const { bankNameFor } = useBankConnectionsStore();
-const { setMessage } = useMessageStore();
 const { t } = useI18n({ useScope: 'global' });
 
 const title = computed<string>(() => {
@@ -52,15 +52,24 @@ function toFieldErrors(errors: ValidationErrors, form: BankFormData): Validation
   );
 }
 
+/**
+ * Shows why the backend refused, in the dialog.
+ *
+ * @remarks
+ * A setup whose TAN the bank rejected or let expire is dropped by the backend, so the dialog goes
+ * back to the credentials and saving starts a fresh setup. Any other refusal keeps the setup and
+ * its challenge, so the answer can be sent again.
+ */
 function showSetupError(error: BankSetupError, payload: BankFormData): void {
   if (error.type === 'fields') {
     set(errorMessages, toFieldErrors(error.errors, payload));
     return;
   }
-  setMessage({
-    description: t('bank_settings.errors.setup_message', { bank: bankNameFor(payload.location), error: error.message }),
-    title: t('bank_settings.errors.setup_title'),
-  });
+  set(setupError, t('bank_settings.errors.setup_message', { bank: bankNameFor(payload.location), error: error.message }));
+  if (error.type === 'expired') {
+    set(authChallenge, undefined);
+    set(authResponse, '');
+  }
 }
 
 async function save(): Promise<void> {
@@ -70,6 +79,7 @@ async function save(): Promise<void> {
 
   set(submitting, true);
   set(errorMessages, {});
+  set(setupError, undefined);
   const payload = get(modelValue);
   const outcome = isDefined(get(authChallenge))
     ? await answerBankAuthentication(
@@ -99,6 +109,7 @@ async function save(): Promise<void> {
 watch(modelValue, (value) => {
   if (!value) {
     set(errorMessages, {});
+    set(setupError, undefined);
     set(authChallenge, undefined);
     set(authResponse, '');
     set(stateUpdated, false);
@@ -116,17 +127,26 @@ watch(modelValue, (value) => {
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
-    <BankAuthChallengeFields
-      v-if="authChallenge"
-      v-model:response="authResponse"
-      :challenge="authChallenge"
-    />
-    <BankConnectionForm
-      v-else-if="modelValue"
-      ref="form"
-      v-model="modelValue"
-      v-model:state-updated="stateUpdated"
-      v-model:error-messages="errorMessages"
-    />
+    <div class="flex flex-col gap-4">
+      <RuiAlert
+        v-if="setupError"
+        type="error"
+        data-testid="bank-setup-error"
+      >
+        {{ setupError }}
+      </RuiAlert>
+      <BankAuthChallengeFields
+        v-if="authChallenge"
+        v-model:response="authResponse"
+        :challenge="authChallenge"
+      />
+      <BankConnectionForm
+        v-else-if="modelValue"
+        ref="form"
+        v-model="modelValue"
+        v-model:state-updated="stateUpdated"
+        v-model:error-messages="errorMessages"
+      />
+    </div>
   </BigDialog>
 </template>

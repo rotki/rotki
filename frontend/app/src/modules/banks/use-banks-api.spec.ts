@@ -31,14 +31,14 @@ describe('useBanksApi', () => {
   it('should parse the bank connections with their sync status', async () => {
     server.use(http.get(`${backendUrl}/api/1/banks`, () => HttpResponse.json({
       message: '',
-      result: [{ display_name: 'Qonto', location: 'qonto', name: 'main', sync_status: { auth_challenge: null, last_error: 'boom', last_sync_ts: 10, running: false } }],
+      result: [{ display_name: 'Qonto', location: 'qonto', name: 'main', sync_status: { auth_challenge: null, auth_expired: false, last_error: 'boom', last_sync_ts: 10, running: false } }],
     })));
 
     expect(await useBanksApi().getBanks()).toEqual([{
       displayName: 'Qonto',
       location: 'qonto',
       name: 'main',
-      syncStatus: { authChallenge: null, lastError: 'boom', lastSyncTs: 10, running: false },
+      syncStatus: { authChallenge: null, authExpired: false, lastError: 'boom', lastSyncTs: 10, running: false },
     }]);
   });
 
@@ -164,6 +164,18 @@ describe('useBanksApi', () => {
 
       assert(!outcome.ok);
       expect(outcome.error).toEqual({ message: 'The TAN was rejected by the bank', type: 'rejected' });
+    });
+
+    it('should report an answer to a challenge the bank dropped as expired', async () => {
+      server.use(http.post(`${backendUrl}/api/1/banks/auth`, () => HttpResponse.json(
+        { message: 'The TAN was rejected by the bank', result: null },
+        { status: 410 },
+      )));
+
+      const outcome = await useBanksApi().answerAuthentication({ location: 'fints', name: 'main', response: '1' });
+
+      assert(!outcome.ok);
+      expect(outcome.error).toEqual({ message: 'The TAN was rejected by the bank', type: 'expired' });
     });
   });
 

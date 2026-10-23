@@ -2,7 +2,7 @@ import type { EffectScope } from 'vue';
 import { externalLinks } from '@shared/external-links';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
-import { type ActionItem, type ActionItemOption, ActionUrgency } from '@/modules/core/action-center/types';
+import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { INDEXER_SETTINGS, ORACLE_SETTINGS } from '@/modules/shell/action-center/row-options';
 import { useIntegrationRows } from '@/modules/shell/action-center/use-integration-rows';
@@ -34,6 +34,12 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
 
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
   useConfirmStore: (): object => ({ show }),
+}));
+
+const bankRows = ref<ActionItem[]>([]);
+
+vi.mock('@/modules/shell/action-center/use-bank-rows', () => ({
+  useBankRows: (): Ref<ActionItem[]> => bankRows,
 }));
 
 let scope: EffectScope | undefined;
@@ -70,10 +76,28 @@ describe('modules/shell/action-center/use-integration-rows', () => {
     set(savedKeys, {});
     set(moneriumAuthenticated, false);
     set(suppressedServices, []);
+    set(bankRows, []);
   });
 
   afterEach(() => {
     scope?.stop();
+  });
+
+  it('should list the bank rows ahead of the raised conditions', () => {
+    const bank = createActionItem<ActionTarget, string>({
+      actionLabel: 'authenticate',
+      count: 1,
+      description: 'tan',
+      icon: 'lu-shield-alert',
+      id: 'bank-authentication-fints-main',
+      target: { kind: 'route', to: { name: '/api-keys/banks/' } },
+      title: 'tan',
+      urgency: ActionUrgency.BLOCKING,
+    });
+    set(bankRows, [bank]);
+    raiseMissingKey('etherscan');
+
+    expect(get(rows()).map(row => row.id)).toEqual(['bank-authentication-fints-main', 'missing-api-key-etherscan']);
   });
 
   describe('missing api key rows', () => {

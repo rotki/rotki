@@ -1,13 +1,10 @@
-import type { BankAuthChallenge, BankConnectionIdentity } from '@/modules/banks/types';
+import type { BankConnectionIdentity } from '@/modules/banks/types';
 import type { ActivityId } from '@/modules/task-center/core/types';
-import { NotificationKind, Severity } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
-import { hasTag } from 'plainfp/tagged';
 import { msg } from '@/message-key';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { bankEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
@@ -28,46 +25,25 @@ interface UseBankEventsRefreshReturn {
  */
 export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotifications();
   const { getBanks, syncBanks } = useBanksApi();
   const { submitTask } = useNativeTask();
   const store = useBankConnectionsStore();
 
   /**
-   * The challenge a sync paused on, read from a fresh connection list.
+   * Re-reads the connections, so what the syncs changed reaches the action center and the bank pages.
    *
    * @remarks
    * A sync the bank interrupts for a TAN finishes without a result or a message, which the task
    * layer cannot tell apart from a backend cancellation. The connection's sync status is the only
-   * place the challenge is reported.
+   * place the challenge is reported, and the action center's bank rows read it from the store.
    */
-  const pendingChallenge = async ({ location, name }: BankConnectionIdentity): Promise<BankAuthChallenge | undefined> => {
+  const refreshConnections = async (): Promise<void> => {
     try {
-      const connections = await getBanks();
-      store.setConnections(connections);
-      return connections.find(connection => connection.location === location && connection.name === name)?.syncStatus.authChallenge ?? undefined;
+      store.setConnections(await getBanks());
     }
     catch (error: unknown) {
       logger.error(error);
-      return undefined;
     }
-  };
-
-  const notifyAuthenticationRequired = ({ location, name }: BankConnectionIdentity): void => {
-    notify({
-      action: {
-        action: async () => {
-          const { router } = await import('@/router');
-          await router.push({ name: '/api-keys/banks/', query: { authenticate: name, location } });
-        },
-        icon: 'lu-shield-check',
-        label: t('actions.bank_events.authentication.action'),
-      },
-      kind: NotificationKind.ANNOUNCEMENT,
-      message: t('actions.bank_events.authentication.description', { location: store.bankNameFor(location), name }),
-      severity: Severity.WARNING,
-      title: t('actions.bank_events.authentication.title'),
-    });
   };
 
   const queryBank = async (bank: BankConnectionIdentity, parent?: ActivityId): Promise<Result<void, TaskError>> => {
@@ -88,21 +64,25 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
       title: t('task_center.group.bank_events'),
     });
 
-    if (isErr(outcome)) {
-      if (hasTag(outcome.error, 'BackendCancelled') && await pendingChallenge(bank)) {
-        notifyAuthenticationRequired(bank);
-      }
-      else if (isActionable(outcome.error)) {
-        logger.error(outcome.error);
-      }
-    }
+    if (isErr(outcome) && isActionable(outcome.error))
+      logger.error(outcome.error);
 
     return outcome;
   };
 
-  /** Connections of one bank run in sequence and two banks at once; the lanes enforce that. */
-  const queryAllBankEvents = async (banks: BankConnectionIdentity[], parent?: ActivityId): Promise<Result<void, TaskError>[]> =>
-    Promise.all(banks.map(async bank => queryBank(bank, parent)));
+  /**
+   * Connections of one bank run in sequence and two banks at once; the lanes enforce that.
+   *
+   * @remarks
+   * The connections are re-read once every sync has ended, whatever the outcome: a sync can raise,
+   * clear or expire a challenge and record or clear a failure.
+   */
+  const queryAllBankEvents = async (banks: BankConnectionIdentity[], parent?: ActivityId): Promise<Result<void, TaskError>[]> => {
+    const outcomes = await Promise.all(banks.map(async bank => queryBank(bank, parent)));
+    if (banks.length > 0)
+      await refreshConnections();
+    return outcomes;
+  };
 
   return {
     queryAllBankEvents,

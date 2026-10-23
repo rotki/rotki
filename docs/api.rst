@@ -2435,12 +2435,18 @@ Get, add, edit or remove bank connections
               "name": "Qonto main",
               "location": "qonto",
               "display_name": "Qonto",
-              "sync_status": {"running": false, "last_sync_ts": 1757595000, "last_error": null}
+              "sync_status": {
+                  "running": false,
+                  "last_sync_ts": 1757595000,
+                  "last_error": null,
+                  "auth_challenge": null,
+                  "auth_expired": false
+              }
           }],
           "message": ""
       }
 
-   :resjson list result: One entry per connection. ``sync_status.last_sync_ts`` is the time of the last successful history sync in this session, ``last_error`` the message of the last failed one, ``running`` whether one is in progress.
+   :resjson list result: One entry per connection. ``sync_status.last_sync_ts`` is the time of the last successful history sync in this session, ``last_error`` the message of the last failed one, ``running`` whether one is in progress. ``auth_challenge`` is the authentication the bank is waiting on, or ``null``. ``auth_challenge`` stays until it is answered or dropped with ``DELETE /banks/auth``, since only the bank knows when it lapsed. ``auth_expired`` is ``true`` once the bank rejected the last pending authentication, until the bank raises a fresh challenge, an answer is accepted or a sync succeeds.
    :statuscode 200: Connections returned
    :statuscode 401: No user is logged in
    :statuscode 500: Internal rotki error
@@ -2492,6 +2498,35 @@ Get, add, edit or remove bank connections
    :statuscode 400: Malformed JSON
    :statuscode 401: No user is logged in
    :statuscode 409: The connection does not exist
+   :statuscode 500: Internal rotki error
+
+Answer a bank authentication
+============================
+
+.. http:post:: /api/(version)/banks/auth
+
+   Doing a POST on this endpoint answers the authentication a connection's bank is waiting on (for FinTS, a TAN), during setup or later. A connection still being set up is saved once its answer is accepted.
+
+   :reqjson string location: The bank of the connection
+   :reqjson string name: The name of the connection
+   :reqjson string response: Optional. What the user typed, such as the TAN. Omitted for an approval in the bank's app.
+   :statuscode 200: Accepted. ``result`` is ``true``, or for a setup the same object ``PUT /banks`` returns. A history sync the authentication interrupted is resumed; if it fails, the failure shows under the connection's ``last_error``.
+   :statuscode 202: The bank asks for a further authentication. ``result`` is the new challenge, as in ``auth_challenge``.
+   :statuscode 401: No user is logged in
+   :statuscode 409: The answer could not be sent or was refused, and the challenge is still pending, so it can be answered again
+   :statuscode 410: The bank rejected or expired the challenge and dropped it. A connection is marked ``auth_expired`` and its next sync asks for a fresh one; a setup has to start over.
+   :statuscode 500: Internal rotki error
+
+.. http:delete:: /api/(version)/banks/auth
+
+   Doing a DELETE on this endpoint drops the challenge a connection is waiting on, so its next query asks the bank for a fresh one, or drops a setup waiting on one. Only the bank knows when a challenge lapsed, so this is how a user starts over from one they will not answer.
+
+   :reqjson string location: The bank of the connection
+   :reqjson string name: The name of the connection
+   :statuscode 200: The challenge, or the setup, was dropped
+   :statuscode 400: Malformed JSON
+   :statuscode 401: No user is logged in
+   :statuscode 409: No such connection or setup exists
    :statuscode 500: Internal rotki error
 
 Sync bank transactions

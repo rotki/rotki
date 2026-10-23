@@ -1,4 +1,4 @@
-import type { BankFormData, BankManifest, BankSetupError } from '@/modules/banks/types';
+import type { BankAuthChallenge, BankFormData, BankManifest, BankSetupError } from '@/modules/banks/types';
 import type { useBanks } from '@/modules/banks/use-banks';
 import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
@@ -11,9 +11,8 @@ import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionF
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import '@test/i18n';
 
-const { answerBankAuthentication, setMessage, setupBank, validate } = vi.hoisted(() => ({
+const { answerBankAuthentication, setupBank, validate } = vi.hoisted(() => ({
   answerBankAuthentication: vi.fn(),
-  setMessage: vi.fn(),
   setupBank: vi.fn<ReturnType<typeof useBanks>['setupBank']>(),
   validate: vi.fn(),
 }));
@@ -22,9 +21,14 @@ vi.mock('@/modules/banks/use-banks', () => ({
   useBanks: (): Record<string, unknown> => ({ answerBankAuthentication, setupBank }),
 }));
 
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
-}));
+const otp: BankAuthChallenge = {
+  challenge: 'Enter TAN',
+  challengeData: null,
+  challengeHtml: null,
+  challengeMimeType: null,
+  primitive: 'otp input',
+  prompt: 'Enter TAN',
+};
 
 vi.mock('@/modules/banks/components/BankConnectionForm.vue', () => ({
   default: defineComponent({
@@ -98,36 +102,65 @@ describe('bankConnectionFormDialog', () => {
     setupBank.mockResolvedValue(err<BankSetupError>({ errors: { api_secret: ['wrong'], name: ['taken'] }, type: 'fields' }));
     wrapper = createWrapper(createForm());
     await confirm();
-    expect(setMessage).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid=bank-setup-error]').exists()).toBe(false);
     expect(JSON.parse(wrapper.find('[data-testid=form-stub]').text())).toEqual({ 'credentials.api_secret': ['wrong'], 'name': ['taken'] });
     expect(wrapper.emitted('added')).toBeUndefined();
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
 
-  it('should keep the dialog open and show a message when the bank rejects the request', async () => {
+  it('should keep the dialog open and show the reason in it when the bank rejects the request', async () => {
     setupBank.mockResolvedValue(err<BankSetupError>({ message: 'Qonto rejected the credentials', type: 'rejected' }));
     wrapper = createWrapper(createForm());
     await confirm();
-    expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({
-      description: 'bank_settings.errors.setup_message::Qonto, Qonto rejected the credentials',
-    }));
+    expect(wrapper.find('[data-testid=bank-setup-error]').text()).toBe('bank_settings.errors.setup_message::Qonto, Qonto rejected the credentials');
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+
+    setupBank.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+    await confirm();
+    expect(wrapper.find('[data-testid=bank-setup-error]').exists()).toBe(false);
+  });
+
+  it('should keep the dialog open without an error when the backend requests authentication', async () => {
+    setupBank.mockResolvedValue(ok(otp));
+    wrapper = createWrapper(createForm());
+    await confirm();
+    expect(wrapper.find('[data-testid=bank-setup-error]').exists()).toBe(false);
+    expect(wrapper.emitted('added')).toBeUndefined();
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
 
-  it('should keep the dialog open without a message when the backend requests authentication', async () => {
-    setupBank.mockResolvedValue(ok({
-      challenge: 'Enter TAN',
-      challengeData: null,
-      challengeHtml: null,
-      challengeMimeType: null,
-      primitive: 'otp input',
-      prompt: 'Enter TAN',
-    }));
+  it('should keep the setup TAN field with the reason when the answer can be sent again', async () => {
+    setupBank.mockResolvedValue(ok(otp));
+    answerBankAuthentication.mockResolvedValue(err<BankSetupError>({ message: 'Could not connect to the FinTS endpoint', type: 'rejected' }));
     wrapper = createWrapper(createForm());
+
     await confirm();
-    expect(setMessage).not.toHaveBeenCalled();
-    expect(wrapper.emitted('added')).toBeUndefined();
-    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    await wrapper.find('[data-testid=bank-auth-response] input').setValue('123456');
+    await confirm();
+
+    expect(wrapper.find('[data-testid=bank-setup-error]').text()).toContain('Could not connect to the FinTS endpoint');
+    expect(wrapper.find('[data-testid=bank-auth-challenge]').exists()).toBe(true);
+
+    await confirm();
+    expect(answerBankAuthentication).toHaveBeenCalledTimes(2);
+    expect(setupBank).toHaveBeenCalledOnce();
+  });
+
+  it('should go back to the credentials with the reason when the bank dropped the setup TAN', async () => {
+    setupBank.mockResolvedValue(ok(otp));
+    answerBankAuthentication.mockResolvedValue(err<BankSetupError>({ message: 'The TAN was rejected by the bank', type: 'expired' }));
+    wrapper = createWrapper(createForm());
+
+    await confirm();
+    await wrapper.find('[data-testid=bank-auth-response] input').setValue('000000');
+    await confirm();
+
+    expect(wrapper.find('[data-testid=bank-setup-error]').text()).toContain('The TAN was rejected by the bank');
+    expect(wrapper.find('[data-testid=bank-auth-challenge]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=form-stub]').exists()).toBe(true);
+
+    await confirm();
+    expect(setupBank).toHaveBeenCalledTimes(2);
   });
 
   it('should name the bank by its display name once its manifest is loaded', async () => {
@@ -135,9 +168,7 @@ describe('bankConnectionFormDialog', () => {
     setupBank.mockResolvedValue(err<BankSetupError>({ message: 'Qonto rejected the credentials', type: 'rejected' }));
     wrapper = createWrapper(createForm());
     await confirm();
-    expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({
-      description: 'bank_settings.errors.setup_message::Qonto Business, Qonto rejected the credentials',
-    }));
+    expect(wrapper.find('[data-testid=bank-setup-error]').text()).toBe('bank_settings.errors.setup_message::Qonto Business, Qonto rejected the credentials');
   });
 
   it('should display and answer a TAN challenge without restarting setup', async () => {

@@ -30,7 +30,7 @@ function connection(syncStatus: Partial<BankConnection['syncStatus']> = {}): Ban
     displayName: 'Sparkasse',
     location: 'fints',
     name: 'main',
-    syncStatus: { authChallenge: null, lastError: null, lastSyncTs: null, running: false, ...syncStatus },
+    syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false, ...syncStatus },
   };
 }
 
@@ -81,6 +81,20 @@ describe('modules/banks/components/BankConnectionItem', () => {
     await wrapper.find('[data-testid=bank-balances-connection-action]').trigger('click');
 
     expect(push).toHaveBeenCalledWith({ name: '/api-keys/banks/', query: { authenticate: 'main', location: 'fints' } });
+  });
+
+  it('should say an expired TAN needs a new sync instead of showing the last sync time, and ask for that sync', async () => {
+    const wrapper = createWrapper(connection({ authExpired: true, lastError: 'Login refused', lastSyncTs: 1700000000 }));
+
+    expect(wrapper.find('[data-testid=bank-balances-connection]').attributes('data-state')).toBe('expired');
+    expect(wrapper.find('[data-testid=bank-balances-connection-status]').text()).toBe('bank_balances.status.expired');
+    expect(wrapper.find('[data-testid=bank-balances-connection-synced]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=bank-balances-connection-action]').text()).toBe('bank_settings.authentication.sync_again');
+
+    await wrapper.find('[data-testid=bank-balances-connection-action]').trigger('click');
+
+    expect(wrapper.emitted('sync')).toEqual([[{ location: 'fints', name: 'main' }]]);
+    expect(push).not.toHaveBeenCalled();
   });
 
   it('should put a pending authentication ahead of an older failure', () => {

@@ -31,8 +31,23 @@ interface UseBanksReturn {
   refreshBankConnections: () => Promise<void>;
   /** Adds or edits a connection, refreshing the connections and balances once the backend accepts it. */
   setupBank: (form: BankFormData) => ResultAsync<BankSetupResult, BankSetupError>;
+  /**
+   * Answers a connection's pending challenge.
+   *
+   * @remarks
+   * A refused answer re-reads the connections too: the backend drops a TAN the bank rejected or let
+   * expire, and the connection then reports it as expired.
+   */
   answerBankAuthentication: (connection: BankConnectionIdentity, response?: string) => ResultAsync<BankSetupResult, BankSetupError>;
   removeBank: (connection: BankConnectionIdentity) => Promise<boolean>;
+  /**
+   * Drops the challenge a connection waits on and syncs it again, so the bank sends a fresh one.
+   *
+   * @remarks
+   * Only the bank knows when a challenge lapsed, so a challenge nobody answers would otherwise be
+   * raised again by every query. The sync re-reads the connections either way.
+   */
+  startOverAuthentication: (connection: BankConnectionIdentity) => Promise<void>;
   /** Pulls new transactions of one connection, of one bank, or of every connection. */
   syncBanks: (payload?: BankSyncPayload) => Promise<boolean>;
   /** Queries every connected bank's balances into the per-location balance map. */
@@ -122,10 +137,18 @@ export function useBanks(): UseBanksReturn {
       .filter(connection => name === undefined || connection.name === name)
       .map(connection => ({ location: connection.location, name: connection.name }));
 
+  /**
+   * The bank events activity re-reads the connections after it ran. With nothing to sync it never
+   * runs, so the list is re-read here: the store may not hold a connection added a moment ago.
+   */
   const syncBanks = async (payload: BankSyncPayload = {}): Promise<boolean> => {
-    const outcomes = await queryAllBankEvents(resolveSyncTargets(payload));
-    await refreshBankConnections();
-    return outcomes.length > 0 && outcomes.every(outcome => isOk(outcome));
+    const targets = resolveSyncTargets(payload);
+    if (targets.length === 0) {
+      await refreshBankConnections();
+      return false;
+    }
+    const outcomes = await queryAllBankEvents(targets);
+    return outcomes.every(outcome => isOk(outcome));
   };
 
   /** A blank credential in an edit means "keep the stored one", which the backend only accepts as an absent slot. */
@@ -157,8 +180,8 @@ export function useBanks(): UseBanksReturn {
   ): ResultAsync<BankSetupResult, BankSetupError> => {
     const connection = { location, name };
     const outcome = await api.answerAuthentication({ ...connection, response });
+    await refreshBankConnections();
     if (outcome.ok && isBankSetupComplete(outcome.value)) {
-      await refreshBankConnections();
       startPromise(fetchBankBalances());
       if (outcome.value !== true) {
         notifyHistoryLimit(outcome.value);
@@ -186,6 +209,22 @@ export function useBanks(): UseBanksReturn {
     }
   };
 
+  const startOverAuthentication = async (connection: BankConnectionIdentity): Promise<void> => {
+    try {
+      await api.cancelAuthentication(connection);
+    }
+    catch (error: unknown) {
+      notifyError(
+        t('bank_settings.errors.start_over_title'),
+        t('bank_settings.errors.start_over_message', { error: getErrorMessage(error), name: connection.name }),
+      );
+      await refreshBankConnections();
+      return;
+    }
+    await refreshBankConnections();
+    await syncBanks(connection);
+  };
+
   return {
     answerBankAuthentication,
     fetchBankBalances,
@@ -193,6 +232,7 @@ export function useBanks(): UseBanksReturn {
     refreshSupportedBanks,
     removeBank,
     setupBank,
+    startOverAuthentication,
     syncBanks,
   };
 }

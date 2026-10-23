@@ -3,7 +3,7 @@ from __future__ import annotations
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.banks.errors import BankMFARequired
+from rotkehlchen.banks.errors import BankAuthExpired, BankMFARequired
 from rotkehlchen.banks.manager import BankCredentialInput
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -80,6 +80,8 @@ class BanksService:
             )
         except BankMFARequired as e:
             return e.challenge.serialize(), '', HTTPStatus.ACCEPTED
+        except BankAuthExpired as e:  # dropped by the bank: only a new sync or setup helps
+            return None, str(e), HTTPStatus.GONE
         except RemoteError as e:
             return None, str(e), HTTPStatus.CONFLICT
         if result is False:
@@ -116,6 +118,15 @@ class BanksService:
             return None, msg, HTTPStatus.CONFLICT
         return True, msg, HTTPStatus.OK
 
+    def cancel_authentication(
+            self,
+            name: str,
+            location: Location,
+    ) -> tuple[bool | None, str, HTTPStatus]:
+        if not self.rotkehlchen.bank_manager.cancel_bank_authentication(name=name, location=location):  # noqa: E501
+            return None, f'{location!s} bank connection {name} does not exist', HTTPStatus.CONFLICT
+        return True, '', HTTPStatus.OK
+
     def sync_banks(self, location: Location | None, name: str | None) -> dict[str, Any]:
         try:
             self.rotkehlchen.bank_manager.query_bank_history_events(location=location, name=name)
@@ -146,16 +157,18 @@ class BanksService:
         error_msg = ''
         banks = manager.connected_banks.get(location, []) if location is not None else list(manager.iterate_banks())  # noqa: E501
         for bank in banks:
+            status = manager.sync_status[bank.location_id()]
             try:
                 balances, msg = bank.query_balances(ignore_cache=ignore_cache)
             except BankMFARequired as e:
-                manager.sync_status[bank.location_id()].auth_challenge = e.challenge
+                status.set_challenge(e.challenge)
                 error_msg += f'{bank.manifest.display_name} {bank.name} requires authentication. '
                 continue
             if balances is None:
                 error_msg += msg
                 continue
-            manager.sync_status[bank.location_id()].auth_challenge = None
+            # a cached success must not drop a challenge the connector still waits on
+            status.drop_challenge(still_pending=bank.has_pending_authentication)
             if value_threshold is not None:
                 balances = {a: b for a, b in balances.items() if b.value > value_threshold}
             key = str(bank.location)

@@ -1,3 +1,4 @@
+import { FetchError } from 'ofetch';
 import { fromAsync, type ResultAsync } from 'plainfp/result-async';
 import {
   BankAuthChallenge,
@@ -60,6 +61,8 @@ interface UseBanksApiReturn {
   answerAuthentication: (payload: BankConnectionIdentity & { response?: string }) => ResultAsync<BankSetupResult, BankSetupError>;
   editBank: (payload: BankConnectionEditPayload) => ResultAsync<boolean, BankSetupError>;
   removeBank: (payload: BankConnectionIdentity) => Promise<boolean>;
+  /** Drops the challenge a connection waits on, so its next query asks the bank for a fresh one. */
+  cancelAuthentication: (payload: BankConnectionIdentity) => Promise<boolean>;
   /** Starts a backend task that pulls new transactions; the caller awaits it through the task center. */
   syncBanks: (payload: BankSyncPayload) => Promise<PendingTask>;
   /** Starts a backend task that queries every bank's balances, keyed by location. */
@@ -96,11 +99,15 @@ export function useBanksApi(): UseBanksApiReturn {
       cause => toBankSetupError(cause, payload),
     );
 
+  /** A `410` means the bank dropped the challenge, so the answer cannot be sent again. */
   const answerAuthentication = async (
     payload: BankConnectionIdentity & { response?: string },
   ): ResultAsync<BankSetupResult, BankSetupError> => fromAsync(
     async () => parseSetupResult(await api.post<unknown>('/banks/auth', payload, { validStatuses: authStatuses })),
-    cause => ({ message: getErrorMessage(cause), type: 'rejected' }),
+    cause => ({
+      message: getErrorMessage(cause),
+      type: cause instanceof FetchError && cause.status === HTTPStatus.GONE ? 'expired' : 'rejected',
+    }),
   );
 
   const editBank = async (payload: BankConnectionEditPayload): ResultAsync<boolean, BankSetupError> =>
@@ -108,6 +115,9 @@ export function useBanksApi(): UseBanksApiReturn {
       async () => api.patch<boolean>('/banks', payload, { filterEmptyProperties: { removeEmptyString: true } }),
       cause => toBankSetupError(cause, payload),
     );
+
+  const cancelAuthentication = async ({ location, name }: BankConnectionIdentity): Promise<boolean> =>
+    api.delete<boolean>('/banks/auth', { body: { location, name } });
 
   const removeBank = async ({ location, name }: BankConnectionIdentity): Promise<boolean> =>
     api.delete<boolean>('/banks', { body: { location, name } });
@@ -127,6 +137,7 @@ export function useBanksApi(): UseBanksApiReturn {
   return {
     addBank,
     answerAuthentication,
+    cancelAuthentication,
     editBank,
     getBanks,
     getSupportedBanks,

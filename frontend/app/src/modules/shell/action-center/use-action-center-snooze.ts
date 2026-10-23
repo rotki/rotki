@@ -1,8 +1,8 @@
 import type { EventHookOn } from '@vueuse/core';
 import type { Ref } from 'vue';
-import type { ActionItem, ActionItemOption } from '@/modules/core/action-center/types';
 import { startPromise } from '@shared/utils';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
+import { type ActionItem, type ActionItemOption, ActionUrgency } from '@/modules/core/action-center/types';
 import { HISTORY_SYNC_ROW_ID } from '@/modules/shell/action-center/row-ids';
 
 const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -48,12 +48,25 @@ interface UseActionCenterSnoozeReturn {
  *
  * @remarks
  * Any row that counts toward the badge, including what rotki retries on its own: a locked or already
- * set-aside row has nothing to put off, and the history sync row has a dismissal of its own.
+ * set-aside row has nothing to put off, the history sync row has a dismissal of its own, and a row
+ * that can never be set aside (see {@link canBeSetAside}) stays put.
  */
 function canSnooze(item: ActionItem): boolean {
-  return !item.locked
+  return canBeSetAside(item)
+    && !item.locked
     && !item.informational
     && item.id !== HISTORY_SYNC_ROW_ID;
+}
+
+/**
+ * Whether a row may be snoozed or muted at all.
+ *
+ * @remarks
+ * A blocking row expires before a week is up, and a row marked not `snoozable` would hide its next
+ * occurrence. Neither honours a snooze or mute stored under its id before.
+ */
+function canBeSetAside(item: ActionItem): boolean {
+  return item.urgency !== ActionUrgency.BLOCKING && item.snoozable !== false;
 }
 
 /** Whether a row can be muted: any row that can be snoozed, unless it already offers a way to silence it for good. */
@@ -90,6 +103,8 @@ export function useActionCenterSnooze(): UseActionCenterSnoozeReturn {
   }
 
   function setAsideOf(item: ActionItem): SetAside | undefined {
+    if (!canBeSetAside(item))
+      return undefined;
     if (get(muted).includes(item.id))
       return SetAside.MUTED;
     return isSnoozed(item) ? SetAside.SNOOZED : undefined;

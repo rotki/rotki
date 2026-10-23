@@ -10,11 +10,13 @@ import { match, type Option } from 'plainfp/option';
  *
  * @remarks
  * An actionability axis rather than a severity, so it stays apart from the notifications' `Severity`.
- * `DECISION` needs the user to decide something, `TODO` is work that resolves once data is
+ * `BLOCKING` is a decision that expires, so it cannot wait: it is never snoozed and never folded
+ * away. `DECISION` needs the user to decide something, `TODO` is work that resolves once data is
  * processed, and `AUTOMATIC` is handled by rotki (it retries) and is only worth a look.
  */
 export const ActionUrgency = {
   AUTOMATIC: 'automatic',
+  BLOCKING: 'blocking',
   DECISION: 'decision',
   TODO: 'todo',
 } as const;
@@ -23,17 +25,24 @@ export type ActionUrgency = (typeof ActionUrgency)[keyof typeof ActionUrgency];
 
 /** How pressing each urgency is, most pressing lowest. */
 export const URGENCY_RANK: Record<ActionUrgency, number> = {
-  [ActionUrgency.DECISION]: 0,
-  [ActionUrgency.TODO]: 1,
-  [ActionUrgency.AUTOMATIC]: 2,
+  [ActionUrgency.BLOCKING]: 0,
+  [ActionUrgency.DECISION]: 1,
+  [ActionUrgency.TODO]: 2,
+  [ActionUrgency.AUTOMATIC]: 3,
 };
 
 /** The colour each urgency is drawn in; `AUTOMATIC` stays neutral, since rotki handles it. */
 export const URGENCY_COLORS: Record<ActionUrgency, ContextColorsType | undefined> = {
   [ActionUrgency.AUTOMATIC]: undefined,
+  [ActionUrgency.BLOCKING]: 'error',
   [ActionUrgency.DECISION]: 'warning',
   [ActionUrgency.TODO]: 'info',
 };
+
+/** Whether a section holds a row that cannot wait, which keeps it unfolded. */
+export function holdsBlocking(items: readonly Pick<ActionItem<{ kind: string }>, 'urgency' | 'informational' | 'locked'>[]): boolean {
+  return items.some(item => item.urgency === ActionUrgency.BLOCKING && !item.informational && !item.locked);
+}
 
 /**
  * The targets every action center understands.
@@ -102,6 +111,11 @@ export interface ActionItem<TTarget extends { kind: string } = ActionTarget, TId
   informational: boolean;
   /** how the user set the row aside and for how long, shown ahead of its options */
   status?: string;
+  /**
+   * False for a row a snooze would hide wrongly, such as one whose next occurrence keeps the same id
+   * and count, so a snooze could not tell it apart. Absent means it can be snoozed.
+   */
+  snoozable?: boolean;
   /** where the row's action leads */
   target: TTarget;
   /** where the category is opened from the cleared strip, when it has nothing pending */

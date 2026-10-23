@@ -6,17 +6,13 @@ import { defineComponent, h, type VNode } from 'vue';
 import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticationDialog.vue';
 import '@test/i18n';
 
-const { answerBankAuthentication, setMessage } = vi.hoisted(() => ({
+const { answerBankAuthentication, syncBanks } = vi.hoisted(() => ({
   answerBankAuthentication: vi.fn(),
-  setMessage: vi.fn(),
+  syncBanks: vi.fn<(payload?: { location?: string; name?: string }) => Promise<boolean>>(),
 }));
 
 vi.mock('@/modules/banks/use-banks', () => ({
-  useBanks: (): Record<string, unknown> => ({ answerBankAuthentication }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
+  useBanks: (): Record<string, unknown> => ({ answerBankAuthentication, syncBanks }),
 }));
 
 const BigDialogStub = defineComponent({
@@ -57,6 +53,7 @@ describe('bankAuthenticationDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    syncBanks.mockResolvedValue(true);
   });
 
   it('should answer with the connection identity only and close after success', async () => {
@@ -93,18 +90,55 @@ describe('bankAuthenticationDialog', () => {
     expect(wrapper.emitted('update:modelValue')).toEqual([[{ ...request, challenge: poll }]]);
   });
 
-  it('should keep the dialog open and show the reason when the bank refuses the TAN', async () => {
-    answerBankAuthentication.mockResolvedValue(err<BankSetupError>({ message: 'The TAN was rejected by the bank', type: 'rejected' }));
-    wrapper = createWrapper(request);
+  describe('when the bank refuses the answer', () => {
+    const refused = err<BankSetupError>({ message: 'The TAN was rejected by the bank', type: 'rejected' });
+    const expired = err<BankSetupError>({ message: 'The TAN was rejected by the bank', type: 'expired' });
 
-    await wrapper.find('[data-testid=bank-auth-response] input').setValue('000000');
-    await confirm();
+    it('should show the reason in the dialog and keep the TAN field for another try', async () => {
+      answerBankAuthentication.mockResolvedValue(refused);
+      wrapper = createWrapper(request);
 
-    expect(setMessage).toHaveBeenCalledExactlyOnceWith({
-      description: 'The TAN was rejected by the bank',
-      title: 'bank_settings.errors.setup_title',
+      await wrapper.find('[data-testid=bank-auth-response] input').setValue('000000');
+      await confirm();
+
+      expect(wrapper.find('[data-testid=bank-auth-error]').text()).toBe('The TAN was rejected by the bank');
+      expect(wrapper.find('[data-testid=bank-auth-response]').exists()).toBe(true);
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+
+      await wrapper.find('[data-testid=bank-auth-response] input').setValue('1');
+      expect(wrapper.find('[data-testid=bank-auth-error]').exists()).toBe(false);
     });
-    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+
+    it('should clear the reason of a refused app approval once the next check gets through', async () => {
+      const poll: BankAuthChallenge = { ...otp, primitive: 'app approval poll' };
+      answerBankAuthentication.mockResolvedValueOnce(refused).mockResolvedValueOnce(ok(poll));
+      wrapper = createWrapper({ ...request, challenge: poll });
+
+      await confirm();
+      expect(wrapper.find('[data-testid=bank-auth-error]').exists()).toBe(true);
+
+      await confirm();
+      expect(wrapper.find('[data-testid=bank-auth-error]').exists()).toBe(false);
+    });
+
+    it('should offer a new sync instead of the TAN field once the bank dropped the challenge', async () => {
+      answerBankAuthentication.mockResolvedValue(expired);
+      wrapper = createWrapper(request);
+
+      await wrapper.find('[data-testid=bank-auth-response] input').setValue('000000');
+      await confirm();
+
+      expect(wrapper.find('[data-testid=bank-auth-error]').text())
+        .toBe('bank_settings.authentication.expired::The TAN was rejected by the bank');
+      expect(wrapper.find('[data-testid=bank-auth-response]').exists()).toBe(false);
+      expect(action()).toEqual({ disabled: false, primary: 'bank_settings.authentication.sync_again' });
+
+      await confirm();
+
+      expect(syncBanks).toHaveBeenCalledExactlyOnceWith({ location: 'fints', name: 'Checking' });
+      expect(answerBankAuthentication).toHaveBeenCalledOnce();
+      expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
+    });
   });
 
   it('should close without answering when cancelled', async () => {

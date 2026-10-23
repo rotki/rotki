@@ -16,6 +16,7 @@ import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { INDEXER_SETTINGS, ORACLE_SETTINGS, useSuppressOption } from '@/modules/shell/action-center/row-options';
+import { useBankRows } from '@/modules/shell/action-center/use-bank-rows';
 import { conditionRowId, type RaisedCondition, RaisedConditionKind, type RaisedConditionOf, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 type MissingApiKeyCondition = RaisedConditionOf<typeof RaisedConditionKind.MISSING_API_KEY>;
@@ -61,8 +62,9 @@ function serviceSettings(service: string): RouteLocationRaw {
 }
 
 /**
- * The integration rows: services a query needed a key for, exchange accounts whose key was
- * refused, price oracles set aside for a while, and sessions that expired.
+ * The integration rows: bank connections waiting on a TAN (see {@link useBankRows}), services a
+ * query needed a key for, exchange accounts whose key was refused, price oracles set aside for a
+ * while, and sessions that expired.
  *
  * @remarks
  * A missing key leaves as soon as a key is saved for the service or the service is suppressed, and a
@@ -82,6 +84,7 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
   const { suppressOption } = useSuppressOption();
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { settleDisconnected } = useExchangeKeyConditions();
+  const bankRows = useBankRows();
 
   function hasKey(service: string): boolean {
     return isExternalServiceName(service) && getApiKey(service) !== '';
@@ -270,5 +273,5 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
 
   watch(connectedExchanges, settleDisconnected);
 
-  return computed<ActionItem[]>(() => applicable(get(conditions).map(rowFor)));
+  return computed<ActionItem[]>(() => [...get(bankRows), ...applicable(get(conditions).map(rowFor))]);
 }

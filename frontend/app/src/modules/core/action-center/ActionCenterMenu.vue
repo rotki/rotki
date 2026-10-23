@@ -38,6 +38,7 @@ interface TriggerTone {
 /** Matches the row colours, so the trigger never sounds more alarmed than the rows it opens. */
 const URGENCY_TONES: Record<ActionUrgency, TriggerTone> = {
   [ActionUrgency.AUTOMATIC]: { badgeColor: 'secondary', icon: 'lu-list-todo', textClass: 'text-rui-text-secondary!' },
+  [ActionUrgency.BLOCKING]: { badgeColor: 'error', icon: 'lu-clock-alert', textClass: 'text-rui-error!' },
   [ActionUrgency.DECISION]: { badgeColor: 'warning', icon: 'lu-triangle-alert', textClass: 'text-rui-warning!' },
   [ActionUrgency.TODO]: { badgeColor: 'info', icon: 'lu-list-todo', textClass: 'text-rui-info!' },
 };
@@ -52,14 +53,17 @@ const tone = computed<TriggerTone | undefined>(() => (urgency ? URGENCY_TONES[ur
  * Names the trigger's state, and doubles as its accessible name.
  *
  * @remarks
- * A badge reaches a screen reader as a bare number, so the count is spelled out here.
+ * A badge reaches a screen reader as a bare number, so the count is spelled out here, and a red
+ * badge as nothing at all, so a row that cannot wait is named too.
  */
 const tooltip = computed<string>(() => {
-  if (count > 0 && newCount > 0)
-    return `${t('action_center.subtitle', { count }, count)}, ${t('action_center.new_count', { count: newCount }, newCount)}`;
-  if (count > 0)
-    return t('action_center.subtitle', { count }, count);
-  return checking ? t('action_center.button_checking') : t('action_center.button_clear');
+  if (count === 0)
+    return checking ? t('action_center.button_checking') : t('action_center.button_clear');
+  return [
+    t('action_center.subtitle', { count }, count),
+    ...(urgency === ActionUrgency.BLOCKING ? [t('action_center.blocking')] : []),
+    ...(newCount > 0 ? [t('action_center.new_count', { count: newCount }, newCount)] : []),
+  ].join(', ');
 });
 
 /**

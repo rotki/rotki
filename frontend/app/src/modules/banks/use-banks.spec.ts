@@ -16,6 +16,7 @@ import '@test/i18n';
 const {
   addBank,
   answerAuthentication,
+  cancelAuthentication,
   editBank,
   getBanks,
   getSupportedBanks,
@@ -28,6 +29,7 @@ const {
 } = vi.hoisted(() => ({
   addBank: vi.fn(),
   answerAuthentication: vi.fn(),
+  cancelAuthentication: vi.fn(),
   editBank: vi.fn(),
   getBanks: vi.fn(),
   getSupportedBanks: vi.fn(),
@@ -43,6 +45,7 @@ vi.mock('@/modules/banks/use-banks-api', () => ({
   useBanksApi: (): Record<string, unknown> => ({
     addBank,
     answerAuthentication,
+    cancelAuthentication,
     editBank,
     getBanks,
     getSupportedBanks,
@@ -80,7 +83,7 @@ const connection: BankConnection = {
   displayName: 'Qonto',
   location: 'qonto',
   name: 'Qonto main',
-  syncStatus: { authChallenge: null, lastError: null, lastSyncTs: null, running: false },
+  syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false },
 };
 
 const eur = { EUR: { amount: bigNumberify(10), value: bigNumberify(11) } };
@@ -131,7 +134,7 @@ describe('useBanks', () => {
     expect(notifyError).not.toHaveBeenCalled();
   });
 
-  it('should add through PUT and edit through PATCH, dropping an unchanged new name and refreshing after each setup, balance query and sync', async () => {
+  it('should add through PUT and edit through PATCH, dropping an unchanged new name and refreshing after each setup and balance query', async () => {
     addBank.mockResolvedValue(ok({ historyStartTs: null, success: true }));
     editBank.mockResolvedValue(ok(true));
     const banks = useBanks();
@@ -148,7 +151,7 @@ describe('useBanks', () => {
     await banks.setupBank({ credentials, location: 'qonto', mode: 'edit', name: 'Qonto main', newName: 'Renamed' });
     await flushPromises();
     expect(editBank).toHaveBeenLastCalledWith({ credentials, location: 'qonto', name: 'Qonto main', newName: 'Renamed' });
-    expect(getBanks).toHaveBeenCalledTimes(7);
+    expect(getBanks).toHaveBeenCalledTimes(6);
     expect(queryAllBankEvents).toHaveBeenCalledOnce();
   });
 
@@ -188,13 +191,15 @@ describe('useBanks', () => {
       expect(queryAllBankEvents).toHaveBeenCalledExactlyOnceWith([{ location: 'qonto', name: 'Qonto main' }]);
     });
 
-    it('should hand back a further challenge without refreshing', async () => {
+    it('should hand back a further challenge and re-read the connections, which now hold it', async () => {
       answerAuthentication.mockResolvedValue(ok(challenge));
+      getBanks.mockResolvedValue([connection]);
 
       expect(await useBanks().answerBankAuthentication({ location: 'qonto', name: 'Qonto main' })).toEqual(ok(challenge));
       await flushPromises();
 
-      expect(getBanks).not.toHaveBeenCalled();
+      expect(getBanks).toHaveBeenCalledOnce();
+      expect(queryBankBalances).not.toHaveBeenCalled();
     });
   });
 
@@ -228,7 +233,7 @@ describe('useBanks', () => {
     const outcome = await useBanks().setupBank({ credentials: {}, location: 'qonto', mode: 'add', name: 'Qonto main', newName: '' });
     await flushPromises();
     expect(outcome).toEqual(ok(success));
-    expect(getBanks).toHaveBeenCalledTimes(3);
+    expect(getBanks).toHaveBeenCalledTimes(2);
     expect(queryBankBalances).toHaveBeenCalledOnce();
     expect(queryAllBankEvents).toHaveBeenCalledWith([{ location: 'qonto', name: 'Qonto main' }]);
     expect(notifyInfo).toHaveBeenCalledOnce();
@@ -264,20 +269,61 @@ describe('useBanks', () => {
     expect(queryBankBalances).not.toHaveBeenCalled();
   });
 
-  it('should sync the picked connection through the bank events activity and refresh the status', async () => {
+  it('should sync the picked connection through the bank events activity, which re-reads the status itself', async () => {
     const both = [connection, { ...connection, name: 'Qonto side' }];
-    getBanks.mockResolvedValue(both);
     useBankConnectionsStore().setConnections(both);
     const banks = useBanks();
     expect(await banks.syncBanks({ location: 'qonto', name: 'Qonto main' })).toBe(true);
     expect(queryAllBankEvents).toHaveBeenCalledWith([{ location: 'qonto', name: 'Qonto main' }]);
-    expect(getBanks).toHaveBeenCalledOnce();
+    expect(getBanks).not.toHaveBeenCalled();
 
     await banks.syncBanks();
     expect(queryAllBankEvents).toHaveBeenLastCalledWith([
       { location: 'qonto', name: 'Qonto main' },
       { location: 'qonto', name: 'Qonto side' },
     ]);
+  });
+
+  it('should re-read the connections when there is nothing to sync, since the activity never runs', async () => {
+    getBanks.mockResolvedValue([connection]);
+
+    expect(await useBanks().syncBanks({ location: 'qonto', name: 'Qonto main' })).toBe(false);
+
+    expect(queryAllBankEvents).not.toHaveBeenCalled();
+    expect(getBanks).toHaveBeenCalledOnce();
+    expect(useBankConnectionsStore().connections).toEqual([connection]);
+  });
+
+  describe('starting over from a pending TAN', () => {
+    it('should drop the challenge, re-read the connections and sync again so the bank sends a fresh one', async () => {
+      useBankConnectionsStore().setConnections([connection]);
+      cancelAuthentication.mockResolvedValue(true);
+      getBanks.mockResolvedValue([connection]);
+      queryAllBankEvents.mockResolvedValue([ok(undefined)]);
+
+      await useBanks().startOverAuthentication({ location: 'qonto', name: 'Qonto main' });
+
+      expect(cancelAuthentication).toHaveBeenCalledExactlyOnceWith({ location: 'qonto', name: 'Qonto main' });
+      expect(queryAllBankEvents).toHaveBeenCalledExactlyOnceWith([{ location: 'qonto', name: 'Qonto main' }]);
+      const [cancelled, reread, synced] = [cancelAuthentication, getBanks, queryAllBankEvents]
+        .map(mock => mock.mock.invocationCallOrder[0]);
+      expect(cancelled).toBeLessThan(reread);
+      expect(reread).toBeLessThan(synced);
+    });
+
+    it('should say so and sync nothing when the challenge could not be dropped', async () => {
+      useBankConnectionsStore().setConnections([connection]);
+      cancelAuthentication.mockRejectedValue(new Error('backend down'));
+      getBanks.mockResolvedValue([connection]);
+
+      await useBanks().startOverAuthentication({ location: 'qonto', name: 'Qonto main' });
+
+      expect(queryAllBankEvents).not.toHaveBeenCalled();
+      expect(notifyError).toHaveBeenCalledExactlyOnceWith(
+        'bank_settings.errors.start_over_title',
+        'bank_settings.errors.start_over_message::backend down, Qonto main',
+      );
+    });
   });
 
   it('should report a failed sync as false', async () => {

@@ -12,19 +12,26 @@ from fints.exceptions import (
     FinTSClientTemporaryAuthError,
     FinTSDialogInitError,
 )
+from fints.formals import UserDefinedSignature
 from fints.parser import FinTS3Parser
-from fints.utils import mt940_to_array
+from fints.utils import Password, mt940_to_array
 
 from rotkehlchen.api.services.banks import BanksService
-from rotkehlchen.banks.errors import BankAuthExpired, BankError, BankMFARequired
+from rotkehlchen.banks.errors import (
+    BankAuthChallenge,
+    BankAuthExpired,
+    BankError,
+    BankMFARequired,
+)
 from rotkehlchen.banks.fints import (
     Fints,
     FinTSProductRegistrationError,
     RotkiFinTS3PinTanClient,
 )
-from rotkehlchen.banks.manager import BankManager
+from rotkehlchen.banks.manager import BankManager, BankSyncStatus
 from rotkehlchen.banks.manifest import AuthPrimitive
 from rotkehlchen.banks.normalization import BankTransactionKind
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.banks import FinTSFixtureTransport
 from rotkehlchen.types import ExchangeApiCredentials, Location
 
@@ -143,6 +150,72 @@ class AuthenticationTransport(FinTSFixtureTransport):
         return super().get_sepa_accounts()
 
 
+def rotki_client_stub() -> RotkiFinTS3PinTanClient:
+    """The client attributes python-fints' _process_response reads before raising for a PIN"""
+    client = object.__new__(RotkiFinTS3PinTanClient)
+    client.pin = Password(FINTS_VALUES['pin'])
+    client._bootstrap_mode = False  # pylint: disable=protected-access
+    client.bank_identifier = SimpleNamespace(bank_code=FINTS_VALUES['bank_code'])
+    return client
+
+
+def reject_pin(client: RotkiFinTS3PinTanClient, dialog: SimpleNamespace) -> None:
+    """The bank answers 9340: python-fints blocks the client's PIN and raises"""
+    client._process_response(  # pylint: disable=protected-access
+        dialog=dialog,
+        segment=None,
+        response=SimpleNamespace(code='9340'),
+    )
+
+
+class RejectingAuthenticationTransport(AuthenticationTransport):
+    """Rejects the first TAN it is sent the way python-fints does. The resumed dialog signs with
+    the copy of the PIN its pause pickled, which the block does not reach, so leaving it while
+    still open sends HKEND with the PIN python-fints just blocked."""
+    def __init__(self, challenge: FixtureTANResponse) -> None:
+        super().__init__(challenge)
+        self.client = rotki_client_stub()
+        self.dialog = SimpleNamespace(open=True)
+        self.hkend_sent = False
+
+    @contextmanager
+    def resume_dialog(self, dialog_data: bytes):
+        assert dialog_data == b'dialog-state'
+        self.dialog.open = True
+        try:
+            yield self
+        finally:
+            if self.dialog.open:  # FinTSDialog.__exit__ ends an open dialog with HKEND
+                self.hkend_sent = True
+                self.dialog.open = False
+
+    def send_tan(self, challenge: NeedTANResponse, tan: str):
+        if len(self.answers) == 0:
+            self.answers.append(tan)
+            reject_pin(self.client, self.dialog)
+        return super().send_tan(challenge, tan)
+
+
+class WrongPinTransport(FinTSFixtureTransport):
+    """Refuses the PIN in a fresh dialog. Its mechanism signs with the client's own PIN, so
+    ending the dialog after the block raises python-fints' bare Exception over the PIN error."""
+    def __init__(self) -> None:
+        super().__init__()
+        self.client = rotki_client_stub()
+        self.dialog = SimpleNamespace(open=False)
+
+    def __enter__(self) -> None:
+        self.dialog.open = True
+
+    def __exit__(self, *_args: object) -> None:
+        if self.dialog.open:  # FinTSDialog.end() signs HKEND
+            UserDefinedSignature(pin=self.client.pin, tan=None)
+            self.dialog.open = False
+
+    def get_sepa_accounts(self):
+        reject_pin(self.client, self.dialog)
+
+
 class InitializationAuthenticationTransport(FinTSFixtureTransport):
     def __init__(self, challenge: FixtureTANResponse) -> None:
         super().__init__()
@@ -245,6 +318,42 @@ def test_product_registration_response_aborts_the_dialog() -> None:
         )
 
     assert dialog.open is False
+
+
+@pytest.mark.parametrize(('code', 'error'), [
+    ('9340', FinTSClientPINError),
+    ('3938', FinTSClientTemporaryAuthError),
+])
+def test_rejected_authentication_closes_the_dialog_before_the_blocked_pin_signs(
+        code: str,
+        error: type[Exception],
+) -> None:
+    client = object.__new__(RotkiFinTS3PinTanClient)
+    client.pin = Password(FINTS_VALUES['pin'])
+    client._bootstrap_mode = False  # pylint: disable=protected-access
+    client.bank_identifier = SimpleNamespace(bank_code=FINTS_VALUES['bank_code'])
+    with pytest.raises(error):
+        client._process_response(  # pylint: disable=protected-access
+            dialog=(dialog := SimpleNamespace(open=True)),
+            segment=None,
+            response=SimpleNamespace(code=code),
+        )
+
+    assert dialog.open is False, 'an open dialog would sign HKEND with the blocked PIN'
+    with pytest.raises(Exception, match='Refusing to use PIN after block'):
+        UserDefinedSignature(pin=client.pin, tan=None)
+
+
+def test_wrong_pin_in_a_fresh_dialog_reports_the_rejection(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    """Without the dialog closed first, ending it would sign HKEND with the blocked PIN and a bare
+    Exception would replace the rejection, escaping every handler as a crash."""
+    connector = create_fints(database, function_scope_messages_aggregator, WrongPinTransport())
+
+    with pytest.raises(BankAuthExpired, match='rejected FinTS authentication'):
+        connector.query_accounts()
 
 
 def test_ing_uses_one_step_authentication() -> None:
@@ -493,6 +602,243 @@ def test_query_authentication_is_exposed_and_cleared_by_the_bank_manager(
     assert status.auth_challenge is None
     assert status.last_sync_ts is not None
     assert any(request == 'transactions' for request, _params in restored_transport.requests)
+
+
+def test_rejected_tan_drops_the_pending_challenge_and_marks_it_expired(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    challenge = FixtureTANResponse()
+    transport = RejectingAuthenticationTransport(challenge)
+    connector = create_fints(database, function_scope_messages_aggregator, transport)
+    manager = BankManager(function_scope_messages_aggregator)
+    manager.connected_banks[Location.FINTS].append(connector)
+
+    with pytest.raises(BankMFARequired):
+        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+    with (
+        patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
+        pytest.raises(BankAuthExpired),
+    ):
+        manager.answer_bank_authentication(
+            name=connector.name,
+            location=connector.location,
+            response='000000',
+        )
+
+    assert transport.hkend_sent is False, 'HKEND would send the PIN python-fints just blocked'
+    status = manager.sync_status[connector.location_id()]
+    assert status.auth_challenge is None
+    assert status.auth_expired is True
+    assert status.serialize()['auth_expired'] is True
+    assert connector.pending_authentication() is None
+    assert '"pending":null' in (connector.load_session() or '')
+
+    transport.challenge_sent = False
+    with pytest.raises(BankMFARequired):
+        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+    assert (serialized := status.serialize())['auth_challenge'] is not None
+    assert serialized['auth_expired'] is False
+
+
+def test_starting_over_drops_the_pending_challenge_so_the_bank_is_asked_again(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    """A TAN the user will not answer would otherwise be raised again by every query until it is
+    answered, since only the bank knows when it lapsed."""
+    challenge = FixtureTANResponse()
+    transport = AuthenticationTransport(challenge)
+    connector = create_fints(database, function_scope_messages_aggregator, transport)
+    manager = BankManager(function_scope_messages_aggregator)
+    manager.connected_banks[Location.FINTS].append(connector)
+    with pytest.raises(BankMFARequired):
+        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+
+    rotki = MagicMock()
+    rotki.bank_manager = manager
+    assert BanksService(rotki).cancel_authentication(
+        name=connector.name,
+        location=connector.location,
+    ) == (True, '', HTTPStatus.OK)
+
+    assert connector.has_pending_authentication() is False
+    assert '"pending":null' in (connector.load_session() or '')
+    status = manager.sync_status[connector.location_id()].serialize()
+    assert (status['auth_challenge'], status['auth_expired']) == (None, False)
+    assert len(connector.query_accounts()) == 1, 'a fresh dialog, not the saved challenge again'
+    assert transport.answers == []
+
+
+def test_starting_over_without_a_pending_challenge_saves_nothing(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        AuthenticationTransport(FixtureTANResponse()),
+    )
+    connector.cancel_authentication()
+    assert connector.load_session() is None
+
+
+def test_starting_over_a_setup_drops_it(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        AuthenticationTransport(FixtureTANResponse()),
+    )
+    manager = BankManager(function_scope_messages_aggregator)
+    with pytest.raises(BankMFARequired):
+        connector.query_accounts()
+    manager.pending_setups[location_id := connector.location_id()] = connector
+
+    assert manager.cancel_bank_authentication(name=connector.name, location=connector.location)
+
+    assert location_id not in manager.pending_setups
+    assert location_id not in manager.sync_status
+    assert connector.load_session() is None, 'a new setup under this name would restore it'
+    assert not manager.cancel_bank_authentication(name=connector.name, location=connector.location)
+
+
+def test_a_further_setup_challenge_leaves_no_status_behind(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    """A setup's challenges reach its dialog through the 202, not the connection status. A status
+    recorded for one would outlive a dropped setup and show its dead challenge on a connection
+    added later under the same name."""
+    challenge = FixtureTANResponse(decoupled=True)
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        AuthenticationTransport(challenge, pending_polls=1),
+    )
+    manager = BankManager(function_scope_messages_aggregator)
+    with pytest.raises(BankMFARequired):
+        connector.query_accounts()
+    manager.pending_setups[location_id := connector.location_id()] = connector
+
+    with (
+        patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
+        pytest.raises(BankMFARequired),
+    ):
+        manager.answer_bank_authentication(
+            name=connector.name,
+            location=connector.location,
+            response=None,
+        )
+    assert manager.cancel_bank_authentication(name=connector.name, location=connector.location)
+
+    assert location_id not in manager.sync_status
+
+
+def test_answer_endpoint_reports_a_dropped_challenge_as_gone(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    """A dropped challenge cannot be answered again, so the endpoint says so with its own status
+    rather than the 409 of an answer that can be retried."""
+    challenge = FixtureTANResponse()
+    transport = RejectingAuthenticationTransport(challenge)
+    connector = create_fints(database, function_scope_messages_aggregator, transport)
+    manager = BankManager(function_scope_messages_aggregator)
+    manager.connected_banks[Location.FINTS].append(connector)
+    rotki = MagicMock()
+    rotki.bank_manager = manager
+    with pytest.raises(BankMFARequired):
+        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+
+    with patch.object(NeedRetryResponse, 'from_data', return_value=challenge):
+        result, message, status = BanksService(rotki).answer_authentication(
+            name=connector.name,
+            location=connector.location,
+            response='000000',
+        )
+
+    assert (result, status) == (None, HTTPStatus.GONE)
+    assert 'rejected' in message
+
+
+def test_accepted_tan_stays_accepted_when_the_resumed_sync_fails(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    challenge = FixtureTANResponse()
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        AuthenticationTransport(challenge),
+    )
+    manager = BankManager(function_scope_messages_aggregator)
+    manager.connected_banks[Location.FINTS].append(connector)
+    with pytest.raises(BankMFARequired):
+        manager.query_bank_history_events(location=Location.FINTS, name=connector.name)
+
+    with (
+        patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
+        patch.object(connector, 'pending_authentication_resumes_history', return_value=True),
+        patch.object(connector, 'query_history_events', side_effect=RemoteError('bank down')),
+    ):
+        assert manager.answer_bank_authentication(
+            name=connector.name,
+            location=connector.location,
+            response='123456',
+        ) == (True, '')
+
+    status = manager.sync_status[connector.location_id()].serialize()
+    assert status['auth_challenge'] is None
+    assert 'bank down' in status['last_error']
+
+
+def test_dropping_a_challenge_reads_whether_it_is_pending_under_the_status_lock() -> None:
+    """A sync raises its challenge through set_challenge, which takes the same lock, so a challenge
+    raised while a balance query decides to drop the old one is kept."""
+    status = BankSyncStatus()
+    status.set_challenge(challenge := BankAuthChallenge(
+        primitive=AuthPrimitive.OTP_INPUT,
+        prompt='Enter the TAN',
+    ))
+
+    status.drop_challenge(still_pending=status.lock.locked)
+    assert status.auth_challenge == challenge
+
+    status.drop_challenge(still_pending=lambda: False)
+    assert status.serialize()['auth_challenge'] is None
+
+
+def test_rejected_setup_tan_drops_the_setup_without_a_connection_status(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    challenge = FixtureTANResponse()
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        RejectingAuthenticationTransport(challenge),
+    )
+    manager = BankManager(function_scope_messages_aggregator)
+    with pytest.raises(BankMFARequired):
+        connector.query_accounts()
+    manager.pending_setups[location_id := connector.location_id()] = connector
+
+    with (
+        patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
+        pytest.raises(BankAuthExpired),
+    ):
+        manager.answer_bank_authentication(
+            name=connector.name,
+            location=connector.location,
+            response='000000',
+        )
+
+    assert location_id not in manager.pending_setups
+    assert location_id not in manager.sync_status
+    assert connector.load_session() is None, 'a new setup under this name would restore it'
 
 
 def test_sync_requiring_authentication_has_no_success_result(

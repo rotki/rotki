@@ -394,6 +394,7 @@
     }
   },
   "action_center": {
+    "blocking": "one needs you now",
     "button_checking": "Checking for actions",
     "button_clear": "All clear",
     "checks_passed": "{count} check passed | {count} checks passed",
@@ -469,6 +470,17 @@
         }
       },
       "integrations": {
+        "bank_authentication": {
+          "action": "Authenticate",
+          "description": "{location} connection '{name}' needs you to confirm access before rotki can pull new transactions.",
+          "start_over": "Start over with a new TAN",
+          "title": "Bank authentication required"
+        },
+        "bank_authentication_expired": {
+          "action": "Sync again",
+          "description": "The bank rejected or expired the last TAN for {location} connection '{name}'. Sync again to get a new one.",
+          "title": "Bank authentication expired"
+        },
         "binance_pairs_missing": {
           "action": "Select pairs",
           "description": "No market pairs are selected, so trades are not imported. Choose the pairs you trade on this account.",
@@ -666,13 +678,6 @@
         "error": {
           "title": "Deleting Manual Balance"
         }
-      }
-    },
-    "bank_events": {
-      "authentication": {
-        "action": "Authenticate",
-        "description": "{location} connection '{name}' needs you to confirm access before rotki can pull new transactions.",
-        "title": "Bank authentication required"
       }
     },
     "bridge_matching": {
@@ -1940,6 +1945,7 @@
     "status": {
       "authenticate": "Authenticate",
       "authentication": "Waiting for a TAN, balances may be out of date",
+      "expired": "The last TAN expired, sync again to get a new one",
       "failed": "Could not sync: {error}",
       "review": "Review",
       "synced": "Synced {time}"
@@ -1948,7 +1954,9 @@
   "bank_settings": {
     "authentication": {
       "continue": "Continue",
+      "expired": "{error}. The bank no longer accepts an answer to this request: sync again to get a new one.",
       "response": "TAN",
+      "sync_again": "Sync again",
       "tooltip": "Complete the authentication your bank requested"
     },
     "confirmation": {
@@ -1975,7 +1983,8 @@
       "remove_message": "Could not remove the bank connection {name}: {error}",
       "remove_title": "Bank connection removal",
       "setup_message": "Could not set up the {bank} connection: {error}",
-      "setup_title": "Bank connection setup",
+      "start_over_message": "Could not drop the pending authentication of {name}: {error}",
+      "start_over_title": "Bank authentication",
       "supported_title": "Supported banks"
     },
     "form": {
@@ -1997,6 +2006,7 @@
     },
     "subtitle": "rotki talks to each bank directly from this machine with the credentials you enter here. Transactions are pulled into your history and balances into your net worth.",
     "sync": {
+      "authentication_expired": "Authentication expired, sync again",
       "authentication_required": "Authentication required",
       "failed": "Last sync failed",
       "never": "Never synced",

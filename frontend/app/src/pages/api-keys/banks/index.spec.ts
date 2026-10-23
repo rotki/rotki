@@ -50,7 +50,7 @@ const connection: BankConnection = {
   displayName: 'Qonto',
   location: 'qonto',
   name: 'Qonto main',
-  syncStatus: { authChallenge: null, lastError: 'boom', lastSyncTs: 1757595000, running: false },
+  syncStatus: { authChallenge: null, authExpired: false, lastError: 'boom', lastSyncTs: 1757595000, running: false },
 };
 
 describe('banks page', () => {

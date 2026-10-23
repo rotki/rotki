@@ -10,6 +10,8 @@ export interface FakeBankConnection {
   lastError?: string;
   /** The TAN prompt of a challenge the connection is waiting on. */
   pendingTan?: string;
+  /** The bank rejected or expired the last TAN. */
+  authExpired?: boolean;
 }
 
 export interface FakeBankSetup {
@@ -87,6 +89,7 @@ function toWireConnection(connection: FakeBankConnection): Record<string, unknow
             prompt: connection.pendingTan,
           }
         : null,
+      auth_expired: connection.authExpired ?? false,
       last_error: connection.lastError ?? null,
       last_sync_ts: connection.lastSyncTs ?? null,
       running: false,

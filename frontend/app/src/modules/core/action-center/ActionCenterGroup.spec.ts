@@ -70,6 +70,24 @@ describe('modules/core/action-center/ActionCenterGroup', () => {
     expect(wrapper.find('[data-testid=actions-center-section-count]').text()).toBe('2');
   });
 
+  describe('holding a row that cannot wait', () => {
+    const blocking = createItem({ id: 'tan', urgency: ActionUrgency.BLOCKING });
+
+    it('should show its rows although the user folded it, and offer no fold', () => {
+      const wrapper = mountGroup({ folded: true, items: [createItem({ id: 'a' }), blocking] });
+
+      expect(rowCount(wrapper)).toBe(2);
+      expect(toggle(wrapper).attributes('aria-expanded')).toBe('true');
+      expect(toggle(wrapper).attributes('disabled')).toBeDefined();
+    });
+
+    it('should fold again once the row is set aside', () => {
+      const wrapper = mountGroup({ folded: true, items: [createItem({ id: 'a' }), { ...blocking, informational: true }] });
+
+      expect(rowCount(wrapper)).toBe(0);
+    });
+  });
+
   it('should say on a folded header that a new row is inside', () => {
     const items = [createItem({ id: 'a' }), createItem({ id: 'b' })];
 

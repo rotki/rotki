@@ -1,17 +1,20 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import BankAuthChallengeFields from '@/modules/banks/components/BankAuthChallengeFields.vue';
-import { type BankAuthenticationRequest, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
+import { type BankAuthenticationRequest, type BankSetupError, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
 import { useBanks } from '@/modules/banks/use-banks';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<BankAuthenticationRequest>();
 
 const response = ref<string>('');
 const submitting = ref<boolean>(false);
+/** why the bank refused the last answer, shown in the dialog until the user types again */
+const error = ref<string>();
+/** the bank dropped the challenge, so only a new sync can raise another one */
+const expired = ref<boolean>(false);
 
-const { answerBankAuthentication } = useBanks();
-const { setMessage } = useMessageStore();
+const { answerBankAuthentication, syncBanks } = useBanks();
 const { t } = useI18n({ useScope: 'global' });
 
 const missingResponse = computed<boolean>(() => {
@@ -19,16 +22,40 @@ const missingResponse = computed<boolean>(() => {
   return !!request && challengeNeedsResponse(request.challenge) && get(response).trim() === '';
 });
 
+const primaryAction = computed<string>(() => get(expired)
+  ? t('bank_settings.authentication.sync_again')
+  : t('bank_settings.authentication.continue'));
+
+function errorText(setupError: BankSetupError): string {
+  return setupError.type === 'fields'
+    ? Object.values(setupError.errors).flat().join(', ')
+    : setupError.message;
+}
+
 function close(): void {
   set(modelValue, undefined);
   set(response, '');
+  set(error, undefined);
+  set(expired, false);
+}
+
+function syncAgain({ location, name }: BankAuthenticationRequest): void {
+  startPromise(syncBanks({ location, name }));
+  close();
 }
 
 async function confirm(): Promise<void> {
   const request = get(modelValue);
-  if (!request || get(missingResponse))
+  if (!request)
+    return;
+  if (get(expired)) {
+    syncAgain(request);
+    return;
+  }
+  if (get(missingResponse))
     return;
 
+  set(error, undefined);
   set(submitting, true);
   const result = await answerBankAuthentication(
     { location: request.location, name: request.name },
@@ -37,12 +64,8 @@ async function confirm(): Promise<void> {
   set(submitting, false);
 
   if (!result.ok) {
-    setMessage({
-      description: result.error.type === 'rejected'
-        ? result.error.message
-        : Object.values(result.error.errors).flat().join(', '),
-      title: t('bank_settings.errors.setup_title'),
-    });
+    set(error, errorText(result.error));
+    set(expired, result.error.type === 'expired');
     return;
   }
 
@@ -53,21 +76,35 @@ async function confirm(): Promise<void> {
   set(modelValue, { ...request, challenge: result.value });
   set(response, '');
 }
+
+watch(response, () => {
+  if (!get(expired))
+    set(error, undefined);
+});
 </script>
 
 <template>
   <BigDialog
     :display="!!modelValue"
     :title="modelValue?.name ?? ''"
-    :action="{ primary: t('bank_settings.authentication.continue'), disabled: missingResponse }"
+    :action="{ primary: primaryAction, disabled: !expired && missingResponse }"
     :loading="submitting"
     @confirm="confirm()"
     @cancel="close()"
   >
-    <BankAuthChallengeFields
-      v-if="modelValue"
-      v-model:response="response"
-      :challenge="modelValue.challenge"
-    />
+    <div class="flex flex-col gap-4">
+      <RuiAlert
+        v-if="error"
+        type="error"
+        data-testid="bank-auth-error"
+      >
+        {{ expired ? t('bank_settings.authentication.expired', { error }) : error }}
+      </RuiAlert>
+      <BankAuthChallengeFields
+        v-if="modelValue && !expired"
+        v-model:response="response"
+        :challenge="modelValue.challenge"
+      />
+    </div>
   </BigDialog>
 </template>
