@@ -1,4 +1,5 @@
 import type { ManualPriceWithUsd } from '@/modules/assets/prices/price-types';
+import type { TableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
@@ -41,10 +42,11 @@ const PRICE: ManualPriceWithUsd = {
 };
 
 vi.mock('@/modules/assets/prices/use-latest-price-manager', () => ({
-  useLatestPrices: (_t: unknown, filter: Ref<string | undefined>): object => {
+  useLatestPrices: (filter: Ref<string | undefined>): object => {
     held.filter = filter;
     return {
       deletePrice: spies.deletePrice,
+      emptyState: computed<TableEmptyState>(() => ({ description: 'data_table.no_data' })),
       items: computed<ManualPriceWithUsd[]>(() => [PRICE]),
       loading: ref<boolean>(false),
       refreshCurrentPrices: spies.refreshCurrentPrices,

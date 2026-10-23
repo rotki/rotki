@@ -1,4 +1,5 @@
 import type { HistoricalPrice } from '@/modules/assets/prices/price-types';
+import type { TableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
@@ -46,10 +47,11 @@ const PRICE: HistoricalPrice = {
 };
 
 vi.mock('@/modules/assets/prices/use-historic-price-manager', () => ({
-  useHistoricPrices: (_t: unknown, filter: Ref<PriceFilter>): object => {
+  useHistoricPrices: (filter: Ref<PriceFilter>): object => {
     held.filter = filter;
     return {
       deletePrice: spies.deletePrice,
+      emptyState: computed<TableEmptyState>(() => ({ description: 'data_table.no_data' })),
       items: ref<HistoricalPrice[]>([PRICE]),
       loading: ref<boolean>(false),
       refresh: spies.refresh,

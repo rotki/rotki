@@ -93,7 +93,7 @@ const filter = computed<{ fromAsset?: string; toAsset?: string }>(() => {
   };
 });
 
-const { deletePrice, items, loading, refresh } = useHistoricPrices(t, filter);
+const { deletePrice, emptyState, items, loading, refresh } = useHistoricPrices(filter);
 
 /**
  * Opens the add dialog, seeded from the table filter, or from the `?add=` link when it names the
@@ -188,6 +188,7 @@ onMounted(async () => {
         :cols="headers"
         :loading="loading"
         :rows="items"
+        :empty="emptyState"
         row-attr="fromAsset"
         data-testid="historic-price-table"
       >

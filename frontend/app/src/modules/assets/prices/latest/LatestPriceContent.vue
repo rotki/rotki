@@ -58,7 +58,7 @@ const headers = computed<DataTableColumn<ManualPriceWithUsd>[]>(() => [
 
 useRememberTableSorting<ManualPriceWithUsd>(TableId.LATEST_PRICES, sort, headers);
 
-const { deletePrice, items, loading, refreshCurrentPrices, refreshing } = useLatestPrices(t, filter);
+const { deletePrice, emptyState, items, loading, refreshCurrentPrices, refreshing } = useLatestPrices(filter);
 
 const { show } = useConfirmStore();
 
@@ -154,6 +154,7 @@ onMounted(async () => {
         :cols="headers"
         :loading="loading || refreshing"
         :rows="items"
+        :empty="emptyState"
         row-attr="id"
         data-testid="latest-price-table"
       >

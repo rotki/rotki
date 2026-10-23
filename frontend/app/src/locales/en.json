@@ -5989,12 +5989,6 @@
         "title": "Price delete failed"
       }
     },
-    "fetch": {
-      "failure": {
-        "message": "Failed to fetch prices {message}",
-        "title": "Price fetch failure"
-      }
-    },
     "headers": {
       "from_asset": "From Asset"
     },

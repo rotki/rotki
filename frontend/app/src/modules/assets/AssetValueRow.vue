@@ -21,7 +21,7 @@ const customPrice = ref<ManualPriceFormPayload | null>(null);
 
 const { t } = useI18n({ useScope: 'global' });
 const currencySymbol = useSetting('currencySymbol');
-const { deletePrice, refreshCurrentPrices, refreshing } = useLatestPrices(t);
+const { deletePrice, refreshCurrentPrices, refreshing } = useLatestPrices();
 const { useAssetPriceInfo } = useAggregatedBalances();
 const { useAssetPrice, useIsManualAssetPrice } = usePriceUtils();
 const { getAssetField } = useAssetInfoRetrieval();
