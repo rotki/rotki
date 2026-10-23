@@ -3,7 +3,7 @@ import { createMock } from '@test/utils/create-mock';
 import { err, ok, type Result } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { decodeActivityId } from '@/modules/history/events/tx/decode.activity';
 import { redecodeFlow } from '@/modules/history/events/tx/redecode.flow';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useHistoryTransactionDecoding } from './use-history-transaction-decoding';

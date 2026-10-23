@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { accountAddActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
-import { decodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode-activity';
-import { accountSyncActivity, bankEventsActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
+import { decodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode.activity';
+import { accountSyncActivity, bankEventsActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { activitySubject } from './activity-subject';
 import { type Activity, type ActivityId, ActivityKind, ActivityPart, ActivitySourceType, ActivityStatus, makeActivityId } from './core/types';
 

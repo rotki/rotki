@@ -7,7 +7,7 @@ import { type Exchange, QueryExchangeEventsPayload } from '@/modules/balances/ty
 import { logger } from '@/modules/core/common/logging/logging';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
+import { exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 

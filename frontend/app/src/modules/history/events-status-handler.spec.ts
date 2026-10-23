@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
 import { createEventsStatusHandler } from '@/modules/history/events-status-handler';
-import { bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
+import { bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { type ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { readActivityDetail, useActivityDetail } from '@/modules/task-center/use-activity-detail';
 

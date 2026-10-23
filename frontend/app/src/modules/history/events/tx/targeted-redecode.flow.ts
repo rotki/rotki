@@ -1,6 +1,6 @@
 import type { FlowChild, HistoryFlow } from '@/modules/history/events/flows';
 import { msg } from '@/message-key';
-import { blockDecodeActivityId, targetedDecodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { blockDecodeActivityId, targetedDecodeActivityId } from '@/modules/history/events/tx/decode.activity';
 import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
 /**

@@ -6,7 +6,7 @@ import {
   decodeActivityId,
   targetedDecodeActivity,
   targetedDecodeActivityId,
-} from '@/modules/history/events/tx/decode-activity';
+} from '@/modules/history/events/tx/decode.activity';
 
 /**
  * The ids are asserted as literals on purpose. Comparing a helper against the descriptor it

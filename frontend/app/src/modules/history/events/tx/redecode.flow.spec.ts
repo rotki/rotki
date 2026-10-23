@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { decodeActivityId } from '@/modules/history/events/tx/decode.activity';
 import { redecodeFlow } from '@/modules/history/events/tx/redecode.flow';
 import { ActivityKind, activityParts } from '@/modules/task-center/core/types';
 

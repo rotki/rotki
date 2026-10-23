@@ -1,6 +1,6 @@
 import type { FlowChild, HistoryFlow } from '@/modules/history/events/flows';
 import { msg } from '@/message-key';
-import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { decodeActivityId } from '@/modules/history/events/tx/decode.activity';
 import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 
 /** The `ignoreCache` a re-decode submits with, and therefore the one its children must be named for. */

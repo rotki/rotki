@@ -9,7 +9,7 @@ import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
-import { bankEventsActivity } from '@/modules/history/events/tx/sync-activity';
+import { bankEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 

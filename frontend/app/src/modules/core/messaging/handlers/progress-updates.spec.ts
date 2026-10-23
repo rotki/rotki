@@ -6,8 +6,8 @@ import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProgressUpdateHandler } from '@/modules/core/messaging/handlers/progress-updates';
 import { SocketMessageProgressUpdateSubType } from '@/modules/core/messaging/types/base';
-import { decodeActivity, decodeActivityId } from '@/modules/history/events/tx/decode-activity';
-import { protocolCacheActivity } from '@/modules/history/protocol-cache-activity';
+import { decodeActivity, decodeActivityId } from '@/modules/history/events/tx/decode.activity';
+import { protocolCacheActivity } from '@/modules/history/protocol-cache.activity';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { readActivityDetail, useActivityDetail } from '@/modules/task-center/use-activity-detail';
 

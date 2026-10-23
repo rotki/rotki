@@ -2,7 +2,7 @@ import { createMock } from '@test/utils/create-mock';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransactionsQueryStatus, type UnifiedTransactionStatusData } from '@/modules/core/messaging/types';
-import { accountSyncActivity, type AccountSyncDetail } from '@/modules/history/events/tx/sync-activity';
+import { accountSyncActivity, type AccountSyncDetail } from '@/modules/history/events/tx/sync.activity';
 import { createTransactionStatusHandler } from '@/modules/history/transaction-status-handler';
 import { type ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { readActivityDetail, useActivityDetail } from '@/modules/task-center/use-activity-detail';
