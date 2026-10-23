@@ -21,7 +21,7 @@ from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_USDC, A_WETH
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_HYPE, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HistoryMappingState
@@ -43,6 +43,7 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.tasks.events import match_asset_movements
 from rotkehlchen.tasks.historical_balances import (
+    HYPERCORE_BUCKET_PROTOCOL,
     Bucket,
     _get_rebasing_reconciliation_points,
     process_historical_balances,
@@ -874,6 +875,47 @@ def test_exchange_transfer_does_not_update_bucket(
             'SELECT timestamp, asset, location_label, metric_value FROM event_metrics '
             'ORDER BY timestamp',
         ).fetchall() == [(1000, A_BTC.identifier, 'kraken', '10')]
+
+
+def test_hypercore_events_are_kept_out_of_the_hyperevm_wallet_bucket(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """HyperCore and HyperEVM share a location, but only HyperEVM balances are on chain."""
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                group_identifier='hypercore-receive',
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.HYPERLIQUID,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_HYPE,
+                amount=FVal('10'),
+                location_label=TEST_ADDR1,
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.HYPERLIQUID,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_HYPE,
+                amount=FVal('3'),
+                location_label=TEST_ADDR1,
+            )],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT protocol, metric_value FROM event_metrics WHERE metric_key = ? '
+            'ORDER BY timestamp',
+            (EventMetricKey.BALANCE.serialize(),),
+        ).fetchall() == [(HYPERCORE_BUCKET_PROTOCOL, '10'), (None, '3')]
 
 
 def test_deposit_to_protocol_updates_wallet_and_protocol_buckets(

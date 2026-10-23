@@ -17,13 +17,15 @@ from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tasks.historical_balances import HYPERCORE_BUCKET_PROTOCOL
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
-from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import EventMetricKey, Location, TimestampMS
 
 pytestmark = [
     pytest.mark.accounting_update,
     pytest.mark.parametrize('use_clean_caching_directory', [True]),
+    pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]]),
 ]
 
 if TYPE_CHECKING:
@@ -32,11 +34,17 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
 
-ETH_LOCATION = Location.ETHEREUM.serialize_for_db()
 TOLERANCE = FVal('0.001')
 
 
-def _add_balance(database: DBHandler, address: str, balance: str, ts: int = 1_000) -> int:
+def _add_balance(
+        database: DBHandler,
+        address: str,
+        balance: str,
+        ts: int = 1_000,
+        location: Location = Location.ETHEREUM,
+        protocol: str | None = None,
+) -> int:
     """Add an event and the derived balance metric the processor would have written for it."""
     with database.user_write() as write_cursor:
         event_id = DBHistoryEvents(database).add_history_event(
@@ -45,7 +53,7 @@ def _add_balance(database: DBHandler, address: str, balance: str, ts: int = 1_00
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(ts),
-                location=Location.ETHEREUM,
+                location=location,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -56,9 +64,10 @@ def _add_balance(database: DBHandler, address: str, balance: str, ts: int = 1_00
         write_cursor.execute(
             'INSERT INTO event_metrics(event_identifier, location, location_label, protocol, '
             'metric_key, metric_value, asset, timestamp, sequence_index, sort_key) '
-            'VALUES (?, ?, ?, NULL, ?, ?, ?, ?, 0, ?)',
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)',
             (
-                event_id, ETH_LOCATION, address, EventMetricKey.BALANCE.serialize(), balance,
+                event_id, location.serialize_for_db(), address, protocol,
+                EventMetricKey.BALANCE.serialize(), balance,
                 A_ETH.identifier, ts, ts,
             ),
         )
@@ -110,6 +119,47 @@ def test_divergence_within_tolerance_writes_nothing(database: DBHandler) -> None
     _add_balance(database, TEST_ADDR1, '5')
     assert _make_detector(database, '5.0005').run() == 1
     assert _get_issues(database) == []
+
+
+def test_tolerance_is_relative_to_the_balance(database: DBHandler) -> None:
+    _add_balance(database, TEST_ADDR1, '1000')
+    _add_balance(database, TEST_ADDR2, '0.0005')
+    observed = {TEST_ADDR1: '1000.5', TEST_ADDR2: '0'}
+
+    def reader(
+            location: Location,
+            address: ChecksumEvmAddress,
+            assets: Sequence[str],
+    ) -> dict[str, FVal]:
+        return {asset: FVal(observed[address]) for asset in assets}
+
+    CurrentBalanceMismatchDetector(
+        database=database,
+        observed_balance_reader=reader,
+        tolerance=TOLERANCE,
+    ).run()
+    assert [issue.location_label for issue in _get_issues(database)] == [TEST_ADDR2]
+
+
+def test_untracked_address_is_not_compared(database: DBHandler) -> None:
+    _add_balance(database, make_evm_address(), '5')
+    assert _make_detector(database, '3').run() == 0
+    assert _get_issues(database) == []
+
+
+@pytest.mark.parametrize('hyperliquid_accounts', [[TEST_ADDR1]])
+def test_hypercore_bucket_is_not_compared_with_hyperevm(database: DBHandler) -> None:
+    _add_balance(database, TEST_ADDR1, '5', location=Location.HYPERLIQUID)
+    _add_balance(
+        database=database,
+        address=TEST_ADDR1,
+        balance='7',
+        location=Location.HYPERLIQUID,
+        protocol=HYPERCORE_BUCKET_PROTOCOL,
+    )
+    assert _make_detector(database, '3').run() == 1
+    assert len(issues := _get_issues(database)) == 1
+    assert issues[0].payload['derived_balance'] == '5'
 
 
 def test_repeated_detection_updates_the_issue_instead_of_duplicating(
@@ -177,6 +227,39 @@ def test_time_budget_stops_the_run(database: DBHandler) -> None:
     detector.time_budget = -1
     assert detector.run() == 0
     assert _get_issues(database) == []
+
+
+def test_full_run_out_of_budget_resumes_where_it_stopped(database: DBHandler) -> None:
+    _add_balance(database, TEST_ADDR1, '5')
+    _add_balance(database, TEST_ADDR2, '5')
+    clock, queried = [0.0], []
+
+    def reader(
+            location: Location,
+            address: ChecksumEvmAddress,
+            assets: Sequence[str],
+    ) -> dict[str, FVal]:
+        clock[0] += 10  # each wallet uses up the whole budget
+        queried.append(address)
+        return {asset: FVal('5') for asset in assets}
+
+    detector = CurrentBalanceMismatchDetector(
+        database=database,
+        observed_balance_reader=reader,
+        time_budget=5,
+        tolerance=TOLERANCE,
+    )
+    with patch(
+        'rotkehlchen.history.data_issues.detectors.current_balance.time.monotonic',
+        side_effect=lambda: clock[0],
+    ):
+        for _ in range(3):
+            detector.run()
+        detector.run(from_ts=TimestampMS(0))  # a scoped run neither follows nor moves the cursor
+        detector.run()
+
+    first, second = sorted((TEST_ADDR1, TEST_ADDR2))
+    assert queried == [first, second, first, first, second]
 
 
 def test_unexpected_reader_failure_skips_the_address_instead_of_crashing(

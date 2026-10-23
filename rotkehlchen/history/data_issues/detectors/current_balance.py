@@ -1,3 +1,4 @@
+import bisect
 import logging
 import time
 from collections import defaultdict, deque
@@ -26,6 +27,7 @@ from rotkehlchen.types import (
     ChainID,
     EventMetricKey,
     Location,
+    SupportedBlockchain,
     TimestampMS,
     TokenKind,
 )
@@ -105,6 +107,26 @@ def get_derived_wallet_balances(
             balances = {key: entry for key, entry in balances.items() if key in modified}
 
     return balances
+
+
+def get_tracked_wallets(database: DBHandler) -> set[tuple[str, str]]:
+    """The (location, address) pairs of the EVM accounts that are tracked now.
+
+    A removed account can keep a wallet bucket, since a transfer to it from a tracked account
+    stays in the history, but its derived balance no longer covers its own activity.
+    """
+    location_of_chain = {
+        SupportedBlockchain.from_location(location).value: location.serialize_for_db()
+        for location in EVM_LOCATIONS
+    }
+    with database.conn.read_ctx() as cursor:
+        return {
+            (location, account)
+            for blockchain, account in cursor.execute(
+                'SELECT blockchain, account FROM blockchain_accounts',
+            )
+            if (location := location_of_chain.get(blockchain)) is not None
+        }
 
 
 def _query_token_balances(
@@ -191,12 +213,25 @@ def make_evm_observed_balance_reader(chains_aggregator: ChainsAggregator) -> Obs
     return read
 
 
+def _serialize_cursor(wallet: tuple[str, str]) -> str:
+    """Location and address of the last wallet a full run reached, as stored in the cache."""
+    return ':'.join(wallet)
+
+
+def _deserialize_cursor(value: str) -> tuple[str, str]:
+    location, address = value.split(':', maxsplit=1)
+    return location, address
+
+
 class CurrentBalanceMismatchDetector:
     """Compare the balances derived from events to the live chain balances.
 
     Meant to run in its own task after a successful historical balance processing pass, never
     inline with it. It only reads the live balances and writes data issues. Locating the events
     that cause a divergence is left to the archive node search of the issue.
+
+    The tolerance is relative, like it is for asset movement matching: two balances match when
+    they differ by at most that fraction of the larger one.
     """
 
     def __init__(
@@ -221,24 +256,41 @@ class CurrentBalanceMismatchDetector:
         Buckets are grouped per address so each one costs a single chain query. Buckets of
         an address that can't be queried, or that are left when the time budget runs out, are
         skipped and neither opened nor resolved, since nothing was observed for them.
+
+        A full run (no from_ts) that runs out of its time budget records where it stopped, and
+        the next full run starts from there, so every address is eventually compared.
         """
         with self.database.conn.read_ctx() as cursor:
             ignored_assets = self.database.get_ignored_asset_ids(cursor)
+            resume_after = self.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
+            )
 
+        tracked_wallets = get_tracked_wallets(self.database)
         by_address: defaultdict[tuple[str, str], dict[str, WalletBalance]] = defaultdict(dict)
         for (location, address, asset), derived in get_derived_wallet_balances(
             database=self.database,
             from_ts=from_ts,
         ).items():
-            if asset not in ignored_assets:
+            if asset not in ignored_assets and (location, address) in tracked_wallets:
                 by_address[location, address][asset] = derived
 
-        started, compared = time.monotonic(), 0
-        for (location, address), assets in by_address.items():
+        wallets = sorted(by_address)
+        if from_ts is None and resume_after is not None:
+            start = bisect.bisect_right(wallets, _deserialize_cursor(resume_after))
+            wallets = wallets[start:] + wallets[:start]
+
+        started, compared, last_reached = time.monotonic(), 0, None
+        for location, address in wallets:
             if time.monotonic() - started > self.time_budget:
                 log.debug('Current balance detection ran out of its time budget')
+                if from_ts is None and last_reached is not None:
+                    self._save_cursor(_serialize_cursor(last_reached))
                 break
 
+            last_reached = (location, address)
+            assets = by_address[location, address]
             checkpoint()
             try:
                 observed = self.observed_balance_reader(
@@ -263,7 +315,25 @@ class CurrentBalanceMismatchDetector:
                     )
                     compared += 1
 
+        else:  # every wallet was reached, so the next full run starts from the beginning
+            if from_ts is None:
+                self._save_cursor(None)
+
         return compared
+
+    def _save_cursor(self, value: str | None) -> None:
+        with self.database.user_write() as write_cursor:
+            if value is None:
+                write_cursor.execute(
+                    'DELETE FROM key_value_cache WHERE name = ?',
+                    (DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR.value,),
+                )
+            else:
+                self.database.set_static_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
+                    value=value,
+                )
 
     def _compare(
             self,
@@ -274,7 +344,10 @@ class CurrentBalanceMismatchDetector:
             observed_balance: FVal,
             queried_at: int,
     ) -> None:
-        if abs(delta := observed_balance - derived.balance) <= self.tolerance:
+        if abs(delta := observed_balance - derived.balance) <= self.tolerance * max(
+            abs(observed_balance),
+            abs(derived.balance),
+        ):
             self.issues_manager.resolve_current_balance_mismatch(
                 location=location,
                 location_label=address,
