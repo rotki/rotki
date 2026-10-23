@@ -1,4 +1,5 @@
 import type { AccountAdditionFailure, AdditionSummary } from '@/modules/accounts/use-account-addition-service';
+import { isValidEthAddress } from '@rotki/common';
 import { errorOf } from '@/modules/core/tasks/task-result';
 
 /**
@@ -35,4 +36,20 @@ export function additionError(failed: readonly AccountAdditionFailure[], fallbac
  */
 export function isNothingButCancelled(summary: AdditionSummary): boolean {
   return summary.added.length === 0 && summary.failed.length === 0 && summary.skipped === 0 && summary.cancelled;
+}
+
+/**
+ * Whether the form has to wait for an addition of these entries before it closes.
+ *
+ * @remarks
+ * The form checks no address format, so the backend is the first to reject a mistyped address or an
+ * unresolvable ENS name, and that rejection is input to correct, which belongs on the form. Only a
+ * batch of well-formed hex addresses on a chain that takes them can no longer fail that way: every
+ * other outcome of those is reported by the task dock, so the dialog closes on submit.
+ *
+ * `takesHex` says whether the target chain takes hex addresses: an EVM or EVM-like chain, or every
+ * EVM chain at once.
+ */
+export function awaitsAddition(addresses: readonly string[], takesHex: boolean): boolean {
+  return !takesHex || !addresses.every(address => isValidEthAddress(address));
 }

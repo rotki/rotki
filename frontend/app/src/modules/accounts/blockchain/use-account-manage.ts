@@ -14,7 +14,7 @@ import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { getAccountAddress, getChain, matchKind } from '@/modules/accounts/account-utils';
 import { ALL_EVM_CHAINS, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
-import { additionError, isNothingButCancelled } from '@/modules/accounts/blockchain/addition-outcome';
+import { additionError, awaitsAddition, isNothingButCancelled } from '@/modules/accounts/blockchain/addition-outcome';
 import { useAccountEdits } from '@/modules/accounts/use-account-edits';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -23,6 +23,7 @@ import { getKeyType, guessPrefix } from '@/modules/accounts/xpub';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { isBtcChain } from '@/modules/core/common/chains';
 import { logger } from '@/modules/core/common/logging/logging';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface AccountManageMode {
@@ -166,6 +167,7 @@ export function useAccountManage(): UseAccountManageReturn {
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
   const { editAccount, editAgnosticAccount } = useAccountEdits();
   const { showErrorMessage } = useNotifications();
+  const { isEvmCompatible } = useSupportedChains();
 
   function handleErrors(error: unknown, props: Record<string, any> = {}): void {
     logger.error(error);
@@ -194,9 +196,10 @@ export function useAccountManage(): UseAccountManageReturn {
   /**
    * Adds or edits an account.
    *
-   * @returns whether the dialog should close. Nothing added with something failed keeps it open so
-   * the user can correct the input; a partial success or a skip closes it, because the task dock
-   * already reports each address's outcome and the accounts that did land are real.
+   * @returns whether the dialog should close. An addition that {@link awaitsAddition} is waited
+   * for: nothing added with something failed keeps the dialog open so the user can correct the input,
+   * while a partial success or a skip closes it. Any other addition closes it on submit, because the
+   * task dock reports each address's outcome.
    */
   async function saveAccount(state: AccountManage): Promise<boolean> {
     const edit = state.mode === 'edit';
@@ -209,11 +212,13 @@ export function useAccountManage(): UseAccountManageReturn {
         return true;
       }
 
-      const chain = state.chain === ALL_EVM_CHAINS ? EVM_PSEUDO_CHAIN : state.chain;
+      const everyEvmChain = state.chain === ALL_EVM_CHAINS;
+      const chain = everyEvmChain ? EVM_PSEUDO_CHAIN : state.chain;
+      const takesHex = everyEvmChain || isEvmCompatible(state.chain);
       const summary = await addAccounts(chain, {
-        modules: isEth || state.chain === ALL_EVM_CHAINS ? state.modules : undefined,
+        modules: isEth || everyEvmChain ? state.modules : undefined,
         payload: state.data,
-      }, { userStarted: true, wait: true });
+      }, { userStarted: true, wait: awaitsAddition(state.data.map(entry => entry.address), takesHex) });
 
       if (summary.added.length === 0 && summary.failed.length > 0) {
         handleErrors(additionError(summary.failed, additionFallback(summary.failed.length)));

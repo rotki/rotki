@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 export const EvmAccountsResult = z.object({
   added: z.record(z.string(), z.array(z.string())).optional(),
-  ethContracts: z.array(z.string()).optional(),
   existed: z.record(z.string(), z.array(z.string())).optional(),
   failed: z.record(z.string(), z.array(z.string())).optional(),
   noActivity: z.record(z.string(), z.array(z.string())).optional(),
