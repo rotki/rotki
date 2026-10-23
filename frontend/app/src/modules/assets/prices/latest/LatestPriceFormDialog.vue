@@ -36,7 +36,7 @@ const emptyPrice: () => ManualPriceFormPayload = () => ({
   toAsset: '',
 });
 
-const { save: saveAction } = useLatestPrices(t);
+const { save: saveAction } = useLatestPrices();
 
 async function save() {
   if (!isDefined(modelValue))

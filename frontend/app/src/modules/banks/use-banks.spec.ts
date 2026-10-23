@@ -112,18 +112,38 @@ describe('useBanks', () => {
     expect(store.manifestFor('qonto')).toEqual(manifest);
   });
 
-  it('should notify when listing the banks or connections fails', async () => {
-    getSupportedBanks.mockRejectedValue(new Error('down'));
-    getBanks.mockRejectedValue(new Error('down'));
+  it('should keep a failed bank or connection listing for the bank pages instead of notifying', async () => {
+    const supportedDown = new Error('supported down');
+    const connectionsDown = new Error('connections down');
+    getSupportedBanks.mockRejectedValue(supportedDown);
+    getBanks.mockRejectedValue(connectionsDown);
     const banks = useBanks();
 
     await banks.refreshSupportedBanks();
     await banks.refreshBankConnections();
 
-    expect(notifyError).toHaveBeenCalledTimes(2);
+    const store = useBankConnectionsStore();
+    expect(store.manifestsError).toBe(supportedDown);
+    expect(store.connectionsError).toBe(connectionsDown);
+    expect(notifyError).not.toHaveBeenCalled();
   });
 
-  it('should stay quiet when listing the banks or connections is cancelled, as on a logout', async () => {
+  it('should clear a kept failure once a later listing succeeds', async () => {
+    getSupportedBanks.mockRejectedValueOnce(new Error('down')).mockResolvedValueOnce([manifest]);
+    getBanks.mockRejectedValueOnce(new Error('down')).mockResolvedValueOnce([connection]);
+    const banks = useBanks();
+    await banks.refreshSupportedBanks();
+    await banks.refreshBankConnections();
+
+    await banks.refreshSupportedBanks();
+    await banks.refreshBankConnections();
+
+    const store = useBankConnectionsStore();
+    expect(store.manifestsError).toBeUndefined();
+    expect(store.connectionsError).toBeUndefined();
+  });
+
+  it('should keep nothing when listing the banks or connections is cancelled, as on a logout', async () => {
     getSupportedBanks.mockRejectedValue(new RequestCancelledError('No live session'));
     getBanks.mockRejectedValue(new RequestCancelledError('No live session'));
     const banks = useBanks();
@@ -131,6 +151,9 @@ describe('useBanks', () => {
     await banks.refreshSupportedBanks();
     await banks.refreshBankConnections();
 
+    const store = useBankConnectionsStore();
+    expect(store.manifestsError).toBeUndefined();
+    expect(store.connectionsError).toBeUndefined();
     expect(notifyError).not.toHaveBeenCalled();
   });
 

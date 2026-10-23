@@ -543,10 +543,6 @@
         "description": "Varlık hareketi eşleştirilemedi: {message}",
         "title": "Varlık hareketi eşleştirme"
       },
-      "fetch_error": {
-        "description": "Eşleştirilmemiş varlık hareketleri alınamadı: {message}",
-        "title": "Eşleştirilmemiş varlık hareketlerini alma"
-      },
       "success": {
         "description": "Varlık hareketi blokzincir olayıyla başarıyla eşleştirildi.",
         "title": "Varlık hareketi eşleştirildi"
@@ -625,10 +621,6 @@
       "error": {
         "description": "Köprü işlemi eşleştirilemedi: {error}",
         "title": "Köprü işlemi eşleştirme"
-      },
-      "fetch_error": {
-        "description": "Eşleştirilmemiş köprü işlemleri alınamadı: {error}",
-        "title": "Eşleştirilmemiş köprü işlemlerini alma"
       },
       "success": {
         "description": "Köprü işlemi karşılık olayıyla başarıyla eşleştirildi.",
@@ -745,12 +737,6 @@
       "error": {
         "description": "Seçili eylemler hariç tutulamadı: {error}",
         "title": "Eylemler hariç tutulamadı"
-      }
-    },
-    "kraken_staking": {
-      "error": {
-        "message": "Kraken staking olayları sorgulanırken hata oluştu: {message}",
-        "title": "Kraken staking olaylarını sorgulama"
       }
     },
     "manual_balances": {
@@ -1810,11 +1796,9 @@
     },
     "empty": "Henüz banka bağlantısı yok",
     "errors": {
-      "list_title": "Banka bağlantıları",
       "remove_message": "{name} adlı banka bağlantısı kaldırılamadı: {error}",
       "remove_title": "Banka bağlantısını kaldırma",
-      "setup_message": "{bank} bağlantısı kurulamadı: {error}",
-      "supported_title": "Desteklenen bankalar"
+      "setup_message": "{bank} bağlantısı kurulamadı: {error}"
     },
     "form": {
       "bank": "Banka",
@@ -3012,12 +2996,6 @@
     "message": "rotki'yi Docker'da oturum kimlik doğrulaması olmadan çalıştırıyorsunuz. Bu örneğe erişebilen herkes giriş yapmadan API'yi kullanabilir ve verilerinizi okuyabilir.",
     "proxy_note": "Bu örnek zaten her isteğin kimliğini doğrulayan bir proxy sunucusunun arkasında çalışıyorsa korumalıdır ve aşağıdan kabul edebilirsiniz.",
     "recommendation": "{0} değişkeni ayarlandığında rotki, girişte bir oturum çerezi oluşturur ve bu çerezi taşımayan istekleri reddeder."
-  },
-  "error": {
-    "generic": {
-      "message": "İsteğiniz işlenirken dahili bir hata oluştu. Sorun devam ederse lütfen aşağıdaki ayrıntılarla destek ekibimizle iletişime geçin: \nHata kodu: {code} \nHata mesajı: {message} \nYol: {path}",
-      "title": "Bir şeyler ters gitti"
-    }
   },
   "error_screen": {
     "backend_error": "Backend ile ilgili bir sorun var.",
@@ -4461,10 +4439,6 @@
       "description": "Çakışan veya yinelenen olarak tespit edilen dahili işlemler. Sistem düzenli aralıklarla otomatik olarak yeniden deneyecek.",
       "title": "Dahili işlem çakışmaları"
     },
-    "errors": {
-      "fetch": "Dahili işlem çakışmaları alınamadı: {error}",
-      "fetch_title": "Dahili işlem çakışmaları hatası"
-    },
     "filter": {
       "period": "Tarih"
     },
@@ -5568,12 +5542,6 @@
       "failure": {
         "message": "Fiyat kaydı silinirken bir hata oluştu: {message}",
         "title": "Fiyat silinemedi"
-      }
-    },
-    "fetch": {
-      "failure": {
-        "message": "Fiyatlar getirilemedi {message}",
-        "title": "Fiyatlar getirilemedi"
       }
     },
     "headers": {

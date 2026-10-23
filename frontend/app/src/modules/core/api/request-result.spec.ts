@@ -1,7 +1,7 @@
 import { FetchError } from 'ofetch';
 import { assert, describe, expect, it } from 'vitest';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
-import { fromRequest, isRequestFailure, RequestCancelled, RequestFailed } from '@/modules/core/api/request-result';
+import { fromRequest, isRequestFailure, isUnreachable, RequestCancelled, RequestFailed, toRequestError } from '@/modules/core/api/request-result';
 import { createStatusError } from '@/modules/core/api/response-handlers';
 
 describe('fromRequest', () => {
@@ -85,5 +85,25 @@ describe('fromRequest', () => {
 
     assert(!result.ok);
     expect(isRequestFailure(result.error)).toBe(true);
+  });
+});
+
+describe('isUnreachable', () => {
+  it('should hold for a request that got no response', () => {
+    const noResponse = new FetchError('[GET] "http://127.0.0.1:13024/api/1/banks": <no response> fetch failed');
+
+    expect(isUnreachable(noResponse)).toBe(true);
+    expect(isUnreachable(toRequestError(noResponse))).toBe(true);
+  });
+
+  it('should not hold for a status the backend answered, as the client rethrows it', () => {
+    const answered = createStatusError(500, 'Cache database is locked');
+
+    expect(isUnreachable(answered)).toBe(false);
+    expect(isUnreachable(toRequestError(answered))).toBe(false);
+  });
+
+  it('should not hold for an error that is not a fetch failure', () => {
+    expect(isUnreachable(new Error('boom'))).toBe(false);
   });
 });

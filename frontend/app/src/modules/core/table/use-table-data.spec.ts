@@ -27,20 +27,17 @@ describe('useTableData', () => {
     vi.clearAllMocks();
   });
 
-  it('should file one quiet drawer entry for a failed response', async () => {
+  it('should leave a failed response to the table, filing no drawer entry', async () => {
     const failure = RequestFailed({ cause: undefined, message: 'Report 3 does not exist', path: '/api/1/reports/3', status: 409 });
     const { error, refetch } = useTableData(vi.fn().mockResolvedValue(err(failure)), () => ({}));
 
     await refetch();
 
     expect(get(error)).toBe(failure);
-    expect(notifyFailure).toHaveBeenCalledExactlyOnceWith(
-      'error.generic.title',
-      expect.stringContaining('Report 3 does not exist'),
-    );
+    expect(notifyFailure).not.toHaveBeenCalled();
   });
 
-  it('should show a failure without a status inline only', async () => {
+  it('should leave a failure without a status to the table too', async () => {
     const failure = RequestFailed({ cause: new TypeError('fetch failed'), message: 'fetch failed' });
     const { error, refetch } = useTableData(vi.fn().mockResolvedValue(err(failure)), () => ({}));
 

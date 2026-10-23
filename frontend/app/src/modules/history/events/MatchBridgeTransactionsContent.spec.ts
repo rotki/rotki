@@ -9,12 +9,14 @@ import { UNMATCHED_ACTIONS } from '@/modules/history/events/unmatched-actions';
 const transactionsApi = {
   autoMatchLoading: ref<boolean>(false),
   autoMatchMinimumTier: ref<string>('premium'),
+  ignoredError: ref<unknown>(),
   ignoredLoading: ref<boolean>(false),
   ignoredTransactions: ref<UnmatchedBridgeTransaction[]>([]),
   isAutoMatchAllowed: ref<boolean>(true),
   loading: ref<boolean>(false),
   refreshUnmatchedBridgeTransactions: vi.fn(async () => Promise.resolve()),
   triggerBridgeAutoMatching: vi.fn(),
+  unmatchedError: ref<unknown>(),
   unmatchedTransactions: ref<UnmatchedBridgeTransaction[]>([]),
 };
 
@@ -44,7 +46,7 @@ vi.mock('@/modules/history/events/use-bridge-transaction-actions', () => ({
 const UnmatchedBridgesListStub = defineComponent({
   emits: ['action', 'pin'],
   name: 'UnmatchedBridgesList',
-  props: { transactions: { default: () => [], type: Array } },
+  props: { error: { default: undefined, type: null }, transactions: { default: () => [], type: Array } },
   setup(_, { emit }): () => VNode {
     return (): VNode => h('div', {
       'data-testid': 'bridges-list',
@@ -87,6 +89,8 @@ describe('modules/history/events/MatchBridgeTransactionsContent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     set(transactionsApi.unmatchedTransactions, []);
+    set(transactionsApi.unmatchedError, undefined);
+    set(transactionsApi.ignoredError, undefined);
     set(transactionsApi.ignoredTransactions, []);
     set(transactionsApi.isAutoMatchAllowed, true);
     set(actionsApi.resolutionNotice, undefined);
@@ -105,6 +109,23 @@ describe('modules/history/events/MatchBridgeTransactionsContent', () => {
 
       expect(transactionsApi.refreshUnmatchedBridgeTransactions).toHaveBeenCalledOnce();
     });
+  });
+
+  it('should hand each list the failure of its own fetch', async () => {
+    const unmatchedFailure = new Error('unmatched down');
+    const ignoredFailure = new Error('ignored down');
+    set(transactionsApi.unmatchedTransactions, [transaction(1)]);
+    set(transactionsApi.ignoredTransactions, [transaction(2)]);
+    set(transactionsApi.unmatchedError, unmatchedFailure);
+    set(transactionsApi.ignoredError, ignoredFailure);
+    const wrapper = await mountContent();
+
+    const lists = wrapper.findAllComponents(UnmatchedBridgesListStub);
+    expect(lists.length).toBeGreaterThan(0);
+    for (const list of lists) {
+      const shown = list.props('transactions') ?? [];
+      expect(list.props('error')).toBe(shown.includes(transaction(1)) ? unmatchedFailure : ignoredFailure);
+    }
   });
 
   describe('where each row action goes', () => {

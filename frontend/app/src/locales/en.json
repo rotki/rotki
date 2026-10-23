@@ -607,10 +607,6 @@
         "description": "Failed to match asset movement: {message}",
         "title": "Asset Movement Matching"
       },
-      "fetch_error": {
-        "description": "Failed to fetch unmatched asset movements: {message}",
-        "title": "Fetching Unmatched Asset Movements"
-      },
       "success": {
         "description": "Asset movement successfully matched to blockchain event.",
         "title": "Asset Movement Matched"
@@ -689,10 +685,6 @@
       "error": {
         "description": "Failed to match bridge transaction: {error}",
         "title": "Bridge Transaction Matching"
-      },
-      "fetch_error": {
-        "description": "Failed to fetch unmatched bridge transactions: {error}",
-        "title": "Fetching Unmatched Bridge Transactions"
       },
       "success": {
         "description": "Bridge transaction successfully matched to its counterpart event.",
@@ -809,12 +801,6 @@
       "error": {
         "description": "Failed to exclude the selected actions: {error}",
         "title": "Excluding actions failed"
-      }
-    },
-    "kraken_staking": {
-      "error": {
-        "message": "There was an error while querying the kraken staking events: {message}",
-        "title": "Querying Kraken staking events"
       }
     },
     "manual_balances": {
@@ -1329,6 +1315,10 @@
       "ignore": "Ignore",
       "ignore_tooltip": "Mark this asset movement as having no corresponding event.",
       "ignored_description": "These asset movements are left out of automatic matching, either because they were marked as having no corresponding event or because you unlinked them. Match one by hand at any time, or restore it to let automatic matching consider it again.",
+      "load_failed": {
+        "ignored": "Could not load the ignored asset movements",
+        "unmatched": "Could not load the unmatched asset movements"
+      },
       "manual_action": "Manual Action",
       "mark_external": "Mark external",
       "mark_external_in_tooltip": "Resolve this deposit as income from an untracked source, so its whole amount is accounted and not just the fee.",
@@ -1933,6 +1923,7 @@
   "bank_balances": {
     "add_bank": "Add a bank connection",
     "connections": "Bank connections",
+    "connections_failed": "Could not load the bank connections",
     "empty": {
       "description": "Connect a bank account and rotki reads its balances and transactions directly from this machine. It never moves money.",
       "supported": "Supported banks",
@@ -1964,6 +1955,7 @@
       "message": "Are you sure you want to remove the {bank} connection named {name} from rotki? Its credentials and sync progress are deleted. Transactions already pulled are kept.",
       "title": "Confirmation Required"
     },
+    "connections_failed": "Could not refresh the bank connections, so the list may be out of date",
     "delete": {
       "tooltip": "Remove the bank connection"
     },
@@ -1980,13 +1972,11 @@
     },
     "empty": "No bank connections yet",
     "errors": {
-      "list_title": "Bank connections",
       "remove_message": "Could not remove the bank connection {name}: {error}",
       "remove_title": "Bank connection removal",
       "setup_message": "Could not set up the {bank} connection: {error}",
       "start_over_message": "Could not drop the pending authentication of {name}: {error}",
-      "start_over_title": "Bank authentication",
-      "supported_title": "Supported banks"
+      "start_over_title": "Bank authentication"
     },
     "form": {
       "bank": "Bank",
@@ -2006,6 +1996,7 @@
       "title": "Limited bank history"
     },
     "subtitle": "rotki talks to each bank directly from this machine with the credentials you enter here. Transactions are pulled into your history and balances into your net worth.",
+    "supported_failed": "Could not load the supported banks, so no bank can be added yet",
     "sync": {
       "authentication_expired": "Authentication expired, sync again",
       "authentication_required": "Authentication required",
@@ -2119,6 +2110,10 @@
       "direction_out": "Bridge out",
       "ignore_tooltip": "Mark this bridge transaction as having no corresponding event.",
       "ignored_description": "These bridge transactions are left out of automatic matching, either because they were marked as having no corresponding event or because you unlinked them. Match one by hand at any time, or restore it to let automatic matching consider it again.",
+      "load_failed": {
+        "ignored": "Could not load the ignored bridge transactions",
+        "unmatched": "Could not load the unmatched bridge transactions"
+      },
       "manual_action": "Manual Action",
       "mark_external": "Mark external",
       "mark_external_in_tooltip": "Resolve this bridge withdrawal as income from an external (untracked) source.",
@@ -2307,6 +2302,7 @@
     "amount": "Amount",
     "asset": "Asset",
     "assets": "Assets",
+    "backend_unreachable": "rotki's backend did not respond. Check that it is still running, then try again.",
     "balance": "Balance",
     "blockchain": "Blockchain",
     "category": "Category",
@@ -3211,12 +3207,6 @@
     "message": "You are running rotki in docker without session authentication. Anyone who can reach this instance can use the API and read your data without signing in.",
     "proxy_note": "If this instance already sits behind a proxy that authenticates every request, it is protected and you can accept below.",
     "recommendation": "Setting {0} makes rotki issue a session cookie on login and reject requests that do not carry it."
-  },
-  "error": {
-    "generic": {
-      "message": "We encountered an internal error while processing your request. If this issue persists, please contact our support team with the details below: \nError Code: {code} \nError Message: {message} \nPath: {path}",
-      "title": "Something went wrong"
-    }
   },
   "error_screen": {
     "backend_error": "There is a problem with the backend.",
@@ -4767,10 +4757,6 @@
       "description": "Internal transactions that were detected as conflicted or duplicated. The system will auto-retry periodically.",
       "title": "Internal Transaction Conflicts"
     },
-    "errors": {
-      "fetch": "Failed to fetch internal transaction conflicts: {error}",
-      "fetch_title": "Internal Tx Conflicts Error"
-    },
     "filter": {
       "period": "Date"
     },
@@ -4811,6 +4797,7 @@
       "description": "rotki reads your Kraken staking rewards through a read-only API key. Add one to see what you have earned.",
       "title": "Connect Kraken to see your staking"
     },
+    "fetch_failed": "Could not load the Kraken staking events",
     "loading": "Your Kraken staking information is loading...",
     "no_premium": "Kraken staking information needs a rotki Premium plan"
   },
@@ -5991,12 +5978,6 @@
       "failure": {
         "message": "There was an error while deleting the price entry: {message}",
         "title": "Price delete failed"
-      }
-    },
-    "fetch": {
-      "failure": {
-        "message": "Failed to fetch prices {message}",
-        "title": "Price fetch failure"
       }
     },
     "headers": {

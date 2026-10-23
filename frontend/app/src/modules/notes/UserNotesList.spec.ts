@@ -128,7 +128,9 @@ describe('modules/notes/UserNotesList.vue', () => {
     it('should name the failure instead of claiming there are no notes', async () => {
       const wrapper = await createWrapper([], failure);
 
+      expect(wrapper.findAll('[data-testid=notes-fetch-error]')).toHaveLength(1);
       expect(wrapper.find('[data-testid=notes-fetch-error]').text()).toContain('backend is down');
+      expect(wrapper.find('[data-testid=table-failure-strip]').exists()).toBe(false);
       expect(wrapper.find('[data-testid=notes-empty]').exists()).toBe(false);
     });
 
@@ -143,7 +145,7 @@ describe('modules/notes/UserNotesList.vue', () => {
       const wrapper = await createWrapper([], failure);
       refetch.mockClear();
 
-      await wrapper.find('[data-testid=notes-retry]').trigger('click');
+      await wrapper.find('[data-testid=notes-fetch-error] [data-testid=table-failure-retry]').trigger('click');
       await flushPromises();
 
       expect(refetch).toHaveBeenCalledOnce();

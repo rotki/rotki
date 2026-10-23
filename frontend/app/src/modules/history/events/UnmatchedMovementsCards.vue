@@ -3,7 +3,7 @@ import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatc
 import type { UnmatchedMovementRow } from '@/modules/history/events/use-unmatched-movement-rows';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
-import { UNMATCHED_LAYOUTS, type UnmatchedActionPayload, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
+import { UNMATCHED_LAYOUTS, type UnmatchedActionPayload, type UnmatchedFailure, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
 import UnmatchedActions from '@/modules/history/events/UnmatchedActions.vue';
 import UnmatchedCardList from '@/modules/history/events/UnmatchedCardList.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
@@ -17,6 +17,8 @@ const { rows, highlightedGroupIdentifier } = defineProps<{
   rows: UnmatchedMovementRow[];
   specFor: (row: UnmatchedMovementRow) => UnmatchedRowActionSpec;
   emptyDescription: string;
+  /** why the last load failed, shown in place of the empty text or above the rows it left */
+  failure?: UnmatchedFailure;
   highlightedGroupIdentifier?: string;
   ignoreLoading?: boolean;
   loading?: boolean;
@@ -24,6 +26,7 @@ const { rows, highlightedGroupIdentifier } = defineProps<{
 
 const emit = defineEmits<{
   action: [payload: UnmatchedActionPayload<UnmatchedAssetMovement>];
+  retry: [];
 }>();
 
 defineSlots<{
@@ -41,7 +44,9 @@ const { t } = useI18n({ useScope: 'global' });
     :highlighted="(row: UnmatchedMovementRow) => row.groupIdentifier === highlightedGroupIdentifier"
     :accented="(row: UnmatchedMovementRow) => row.untrackedDestination"
     :empty-description="emptyDescription"
+    :failure="failure"
     :loading="loading"
+    @retry="emit('retry')"
   >
     <template
       v-if="$slots.alert"

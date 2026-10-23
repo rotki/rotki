@@ -543,10 +543,6 @@
         "description": "匹配资产转移失败：{message}",
         "title": "资产转移匹配"
       },
-      "fetch_error": {
-        "description": "获取未匹配的资产转移失败：{message}",
-        "title": "获取未匹配的资产转移"
-      },
       "success": {
         "description": "资产转移已成功匹配到链上事件。",
         "title": "资产转移已匹配"
@@ -622,10 +618,6 @@
       "error": {
         "description": "匹配跨链桥交易失败：{error}",
         "title": "跨链桥交易匹配"
-      },
-      "fetch_error": {
-        "description": "获取未匹配的跨链桥交易失败：{error}",
-        "title": "获取未匹配的跨链桥交易"
       },
       "success": {
         "description": "跨链桥交易已成功匹配到其对应事件。",
@@ -742,12 +734,6 @@
       "error": {
         "description": "忽略所选操作失败：{error}",
         "title": "忽略操作失败"
-      }
-    },
-    "kraken_staking": {
-      "error": {
-        "message": "查询 Kraken 质押事件时出错：{message}",
-        "title": "查询 Kraken 质押事件"
       }
     },
     "manual_balances": {
@@ -1791,11 +1777,9 @@
     },
     "empty": "暂无银行连接",
     "errors": {
-      "list_title": "银行连接",
       "remove_message": "无法移除银行连接 {name}：{error}",
       "remove_title": "移除银行连接",
-      "setup_message": "无法设置 {bank} 连接：{error}",
-      "supported_title": "支持的银行"
+      "setup_message": "无法设置 {bank} 连接：{error}"
     },
     "form": {
       "bank": "银行",
@@ -2989,12 +2973,6 @@
     "message": "你正在 docker 中运行 rotki，且未启用会话认证。任何能访问此实例的人都可以无需登录直接使用 API 并读取你的数据。",
     "proxy_note": "如果此实例已部署在会对每个请求进行认证的代理之后，则它已受保护，你可以在下方接受。",
     "recommendation": "设置 {0} 后，rotki 会在登录时签发会话 cookie，并拒绝未携带该 cookie 的请求。"
-  },
-  "error": {
-    "generic": {
-      "message": "处理你的请求时发生内部错误。如果问题持续存在，请联系我们的支持团队并提供以下详细信息：\n错误代码：{code} \n错误信息：{message} \n路径：{path}",
-      "title": "出了些问题"
-    }
   },
   "error_screen": {
     "backend_error": "后端出现问题。",
@@ -4383,10 +4361,6 @@
       "description": "被检测为冲突或重复的内部交易。系统会定期自动重试。",
       "title": "内部交易冲突"
     },
-    "errors": {
-      "fetch": "获取内部交易冲突失败：{error}",
-      "fetch_title": "内部交易冲突错误"
-    },
     "filter": {
       "period": "日期"
     },
@@ -5446,12 +5420,6 @@
       "failure": {
         "message": "删除价格条目时出错：{message}",
         "title": "删除价格失败"
-      }
-    },
-    "fetch": {
-      "failure": {
-        "message": "获取价格失败 {message}",
-        "title": "获取价格失败"
       }
     },
     "headers": {

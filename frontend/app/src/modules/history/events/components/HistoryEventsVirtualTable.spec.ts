@@ -87,7 +87,7 @@ describe('historyEventsVirtualTable', () => {
     it('should name the failure where the events would have been', () => {
       const wrapper = mountUnder(ref(RequestFailed({ cause: undefined, message: 'backend is down' })));
 
-      expect(wrapper.find('[data-testid=history-events-fetch-error]').text()).toBe('backend is down');
+      expect(wrapper.find('[data-testid=history-events-fetch-error] [data-testid=table-failure-message]').text()).toBe('backend is down');
       expect(wrapper.text()).not.toContain('transactions.empty_state.no_events');
     });
 
@@ -101,9 +101,7 @@ describe('historyEventsVirtualTable', () => {
     it('should ask its owner to fetch again from the retry', async () => {
       const wrapper = mountUnder(ref(RequestFailed({ cause: undefined, message: 'backend is down' })));
 
-      // The alert carrying the retry is stubbed in unit tests, so its action is raised directly.
-      wrapper.findComponent({ name: 'RuiTableErrorState' }).vm.$emit('action');
-      await nextTick();
+      await wrapper.find('[data-testid=history-events-fetch-error] [data-testid=table-failure-retry]').trigger('click');
 
       expect(wrapper.findComponent(HistoryEventsVirtualTable).emitted('refetch')).toHaveLength(1);
     });
@@ -130,7 +128,7 @@ describe('historyEventsVirtualTable', () => {
     it('should load the events again from the retry', async () => {
       const wrapper = mountUnder(ref<unknown>());
 
-      await wrapper.find('[data-testid=history-events-events-retry]').trigger('click');
+      await wrapper.find('[data-testid=history-events-events-error] [data-testid=table-failure-strip-retry]').trigger('click');
 
       expect(retryEvents).toHaveBeenCalledOnce();
     });

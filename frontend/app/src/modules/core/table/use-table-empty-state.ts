@@ -1,5 +1,5 @@
-import type { ComputedRef, InjectionKey, MaybeRef, MaybeRefOrGetter, Ref } from 'vue';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { type ComputedRef, hasInjectionContext, type InjectionKey, type MaybeRef, type MaybeRefOrGetter, type Ref } from 'vue';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 
 const TableFetchErrorKey: InjectionKey<Ref<unknown>> = Symbol('table-fetch-error');
 
@@ -40,7 +40,7 @@ export function provideTableFetchError(error: Ref<unknown>): void {
  * own empty state rather than handing {@link useTableEmptyState}'s text to `RuiDataTable`.
  */
 export function useTableFetchError(): Ref<unknown> | undefined {
-  return inject(TableFetchErrorKey, undefined);
+  return hasInjectionContext() ? inject(TableFetchErrorKey, undefined) : undefined;
 }
 
 /**
@@ -48,13 +48,14 @@ export function useTableFetchError(): Ref<unknown> | undefined {
  *
  * @remarks
  * A failed read leaves the collection empty, so a table that could not reach the backend renders
- * exactly like one the user genuinely has no rows for. Since rotki#12942 the read's notification is
- * `NORMAL` and no longer pops, which leaves the table itself as the only place the reason appears.
+ * exactly like one the user genuinely has no rows for. The read files no notification, which leaves
+ * the table itself as the only place the reason appears, worded by {@link useFailureMessage}.
  */
 export function useTableEmptyState(options: TableEmptyStateOptions = {}): ComputedRef<TableEmptyState> {
   const { error, fallback } = options;
   const provided = useTableFetchError();
   const { t } = useI18n({ useScope: 'global' });
+  const failureMessage = useFailureMessage();
 
   return computed<TableEmptyState>(() => {
     const source = error ?? provided;
@@ -64,7 +65,7 @@ export function useTableEmptyState(options: TableEmptyStateOptions = {}): Comput
       return toValue(fallback) ?? { description: t('data_table.no_data') };
 
     return {
-      description: getErrorMessage(failure),
+      description: failureMessage(failure),
       label: t('data_table.fetch_failed'),
     };
   });

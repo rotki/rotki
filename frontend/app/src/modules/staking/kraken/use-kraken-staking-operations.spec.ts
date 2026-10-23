@@ -88,10 +88,10 @@ describe('useKrakenStakingOperations', () => {
   });
 
   describe('fetchEvents', () => {
-    it('should stop loading on first load error', async () => {
+    it('should stop loading and keep a failed first read for the page instead of notifying', async () => {
       const { useKrakenStakingStore } = await import('@/modules/staking/use-kraken-staking-store');
-
-      mockFetchKrakenStakingEvents.mockRejectedValueOnce(new Error('Request timeout'));
+      const failure = new Error('Request timeout');
+      mockFetchKrakenStakingEvents.mockRejectedValueOnce(failure);
 
       const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
       const store = useKrakenStakingStore();
@@ -99,7 +99,21 @@ describe('useKrakenStakingOperations', () => {
       await fetchEvents();
 
       expect(get(store.loading)).toBe(false);
-      expect(mockNotify).toHaveBeenCalledOnce();
+      expect(get(store.fetchError)).toBe(failure);
+      expect(mockNotify).not.toHaveBeenCalled();
+    });
+
+    it('should clear the kept failure once a later read succeeds', async () => {
+      const { useKrakenStakingStore } = await import('@/modules/staking/use-kraken-staking-store');
+      mockFetchKrakenStakingEvents.mockRejectedValueOnce(new Error('Request timeout'));
+      const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
+      const store = useKrakenStakingStore();
+      await fetchEvents();
+
+      mockFetchKrakenStakingEvents.mockResolvedValue(defaultEvents());
+      await fetchEvents();
+
+      expect(get(store.fetchError)).toBeUndefined();
     });
 
     it('should load events successfully on first load', async () => {
@@ -136,7 +150,7 @@ describe('useKrakenStakingOperations', () => {
       await fetchEvents();
 
       expect(get(store.loading)).toBe(false);
-      expect(mockNotify).toHaveBeenCalledOnce();
+      expect(mockNotify).not.toHaveBeenCalled();
     });
 
     it('should skip a refresh when the refresh activity is already running', async () => {

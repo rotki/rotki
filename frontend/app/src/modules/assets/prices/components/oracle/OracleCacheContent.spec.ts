@@ -80,6 +80,11 @@ describe('oracleCacheContent', () => {
     return mount(OracleCacheContent, { shallow: true });
   }
 
+  /** Renders the table frame's slot, so the stubbed table and the props it gets can be found. */
+  function createWrapperWithTable(): ReturnType<typeof mount> {
+    return mount(OracleCacheContent, { global: { renderStubDefaultSlot: true }, shallow: true });
+  }
+
   it('should load caches on mount', async () => {
     const wrapper = createWrapper();
     await flushPromises();
@@ -87,6 +92,44 @@ describe('oracleCacheContent', () => {
     expect(mockGetPriceCache).toHaveBeenCalledOnce();
     expect(mockGetPriceCache).toHaveBeenCalledWith('cryptocompare');
     expect(wrapper.exists()).toBe(true);
+  });
+
+  it('should hand a failed listing to the table, filing no notification', async () => {
+    mockGetPriceCache.mockRejectedValue(new Error('backend down'));
+    const wrapper = createWrapperWithTable();
+    await flushPromises();
+
+    expect(wrapper.findComponent({ name: 'OracleCacheTable' }).props('error')).toMatchObject({ message: 'backend down' });
+    expect(mockNotify).not.toHaveBeenCalled();
+  });
+
+  it('should clear the failure once a later listing succeeds', async () => {
+    mockGetPriceCache.mockRejectedValueOnce(new Error('backend down'));
+    const wrapper = createWrapperWithTable();
+    await flushPromises();
+
+    await componentVm<CacheContentVm>(wrapper).loadCaches();
+
+    expect(wrapper.findComponent({ name: 'OracleCacheTable' }).props('error')).toBeUndefined();
+  });
+
+  it('should keep the rows of the latest listing when an older one answers last', async () => {
+    const wrapper = createWrapper();
+    await flushPromises();
+    let answerOlder: (entries: OracleCacheMeta[]) => void = () => {};
+    mockGetPriceCache
+      .mockImplementationOnce(async () => new Promise<OracleCacheMeta[]>((resolve) => {
+        answerOlder = resolve;
+      }))
+      .mockResolvedValueOnce([{ fromAsset: 'ETH', fromTimestamp: '1', toAsset: 'USD', toTimestamp: '2' }]);
+    const vm = componentVm<CacheContentVm>(wrapper);
+
+    const older = vm.loadCaches();
+    await vm.loadCaches();
+    answerOlder([]);
+    await older;
+
+    expect(vm.rows).toHaveLength(1);
   });
 
   it('should call createOracleCache with the new asset pair', async () => {

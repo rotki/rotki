@@ -255,12 +255,6 @@
         "title": "Échec de l'ignorance des actions"
       }
     },
-    "kraken_staking": {
-      "error": {
-        "message": "Une erreur s'est produite lors de l'interrogation des événements de staking Kraken : {message}",
-        "title": "Interrogation des événements de staking Kraken"
-      }
-    },
     "manual_balances": {
       "add": {
         "error": {
@@ -1245,12 +1239,6 @@
     "example": "Date de résultat ({example})",
     "subtitle": "Ce sont les options de formatage de date prises en charge",
     "title": "Format de date"
-  },
-  "error": {
-    "generic": {
-      "message": "Nous avons rencontré une erreur interne lors du traitement de votre demande. Si ce problème persiste, veuillez contacter notre équipe d'assistance avec les détails suivants : \nCode d'erreur : {code} \nMessage d'erreur : {message} \nChemin : {path}",
-      "title": "Quelque chose s'est mal passé"
-    }
   },
   "error_screen": {
     "backend_error": "Il y a un problème avec le backend.",
@@ -2323,12 +2311,6 @@
       "failure": {
         "message": "Échec de la suppression de l'entrée de prix : {message}",
         "title": "Échec de la suppression du prix"
-      }
-    },
-    "fetch": {
-      "failure": {
-        "message": "Échec de la récupération des prix {message}",
-        "title": "Échec de la récupération des prix"
       }
     },
     "headers": {

@@ -310,17 +310,34 @@ describe('use-unmatched-bridge-transactions', () => {
       expect(get(unmatchedTransactions)).toHaveLength(0);
     });
 
-    it('should report a failed fetch', async () => {
-      spies.getUnmatchedBridgeTransactions.mockRejectedValueOnce(new Error('the backend said no'));
+    it('should keep a failed fetch of the ignored legs for that list instead of a dialog', async () => {
+      const failure = new Error('the backend said no');
+      spies.getUnmatchedBridgeTransactions.mockRejectedValueOnce(failure);
       const { useUnmatchedBridgeTransactions } = await importFresh();
-      const { fetchUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
+      const { fetchUnmatchedBridgeTransactions, ignoredError, unmatchedError } = useUnmatchedBridgeTransactions();
+
+      await fetchUnmatchedBridgeTransactions(true);
+
+      expect(get(ignoredError)).toBe(failure);
+      expect(get(unmatchedError)).toBeUndefined();
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
+    });
+
+    it('should keep the legs of the last good fetch when a later one fails', async () => {
+      spies.getUnmatchedBridgeTransactions
+        .mockResolvedValueOnce([{ groupIdentifier: 'group-a', identifier: 7 }])
+        .mockRejectedValueOnce(new Error('the backend said no'));
+      spies.fetchHistoryEvents.mockResolvedValueOnce({
+        entries: [{ entry: { asset: 'ETH', eventSubtype: 'bridge', eventType: 'deposit', groupIdentifier: 'group-a', identifier: 7 } }],
+      });
+      const { useUnmatchedBridgeTransactions } = await importFresh();
+      const { fetchUnmatchedBridgeTransactions, unmatchedCount, unmatchedError } = useUnmatchedBridgeTransactions();
+      await fetchUnmatchedBridgeTransactions(false);
 
       await fetchUnmatchedBridgeTransactions(false);
 
-      expect(spies.showErrorMessage).toHaveBeenCalledWith(
-        'actions.bridge_matching.fetch_error.title',
-        expect.stringContaining('the backend said no'),
-      );
+      expect(get(unmatchedCount)).toBe(1);
+      expect(get(unmatchedError)).toBeInstanceOf(Error);
     });
 
     it('should stay quiet when the fetch is cancelled, as on a logout', async () => {

@@ -27,7 +27,7 @@ const dialogTitle = computed<string>(() =>
     : t('price_management.dialog.add_title'),
 );
 
-const { save: saveAction } = useHistoricPrices(t);
+const { save: saveAction } = useHistoricPrices();
 
 async function save() {
   if (!isDefined(modelValue))

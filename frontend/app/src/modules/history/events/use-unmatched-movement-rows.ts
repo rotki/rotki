@@ -2,8 +2,9 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
 import { HistoryEventEntryType } from '@rotki/common';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
-import { UNMATCHED_ACTIONS, type UnmatchedRowActionLabels, type UnmatchedRowActionSpec, type UnmatchedRowConfirms, type UnmatchedRowOptionalAction } from '@/modules/history/events/unmatched-actions';
+import { UNMATCHED_ACTIONS, type UnmatchedFailure, type UnmatchedRowActionLabels, type UnmatchedRowActionSpec, type UnmatchedRowConfirms, type UnmatchedRowOptionalAction } from '@/modules/history/events/unmatched-actions';
 import { getMovementDestinationAddress, useUntrackedMovementDestination } from '@/modules/history/events/use-untracked-movement-destination';
 import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
 
@@ -69,11 +70,15 @@ interface UseUnmatchedMovementRowsOptions {
   showRestore: MaybeRefOrGetter<boolean | undefined>;
   /** Matching is unavailable (no premium tier), so find-match is offered but disabled. */
   matchDisabled: MaybeRefOrGetter<boolean | undefined>;
+  /** Why the last load of the movements failed. */
+  error?: MaybeRefOrGetter<unknown>;
 }
 
 interface UseUnmatchedMovementRowsReturn {
   rows: ComputedRef<UnmatchedMovementRow[]>;
   description: ComputedRef<string>;
+  /** Why the last load failed, shown in place of the empty text or above the rows it left. */
+  failure: ComputedRef<UnmatchedFailure | undefined>;
   emptyDescription: ComputedRef<string>;
   specFor: (row: UnmatchedMovementRow) => UnmatchedRowActionSpec;
 }
@@ -84,9 +89,10 @@ interface UseUnmatchedMovementRowsReturn {
  * presentation and both are handed the same rows and the same action specs.
  */
 export function useUnmatchedMovementRows(options: UseUnmatchedMovementRowsOptions): UseUnmatchedMovementRowsReturn {
-  const { movements, showRestore, matchDisabled } = options;
+  const { error, movements, showRestore, matchDisabled } = options;
 
   const { t } = useI18n({ useScope: 'global' });
+  const failureMessage = useFailureMessage();
   const { isDestinationUntracked } = useUntrackedMovementDestination();
 
   const labels = computed<UnmatchedRowActionLabels>(() => ({
@@ -134,6 +140,18 @@ export function useUnmatchedMovementRows(options: UseUnmatchedMovementRowsOption
       ? t('asset_movement_matching.dialog.ignored_description')
       : t('asset_movement_matching.dialog.description'),
   );
+
+  const failure = computed<UnmatchedFailure | undefined>(() => {
+    const thrown = toValue(error);
+    if (!thrown)
+      return undefined;
+    return {
+      message: failureMessage(thrown),
+      title: toValue(showRestore)
+        ? t('asset_movement_matching.dialog.load_failed.ignored')
+        : t('asset_movement_matching.dialog.load_failed.unmatched'),
+    };
+  });
 
   const emptyDescription = computed<string>(() =>
     toValue(showRestore)
@@ -195,6 +213,7 @@ export function useUnmatchedMovementRows(options: UseUnmatchedMovementRowsOption
   return {
     description,
     emptyDescription,
+    failure,
     rows,
     specFor,
   };

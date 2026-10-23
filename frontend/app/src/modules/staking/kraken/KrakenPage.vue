@@ -3,7 +3,9 @@ import type { RouteLocationRaw } from 'vue-router';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { provideHistoryEventsSection } from '@/modules/history/events/use-history-events-section';
 import { usePremium } from '@/modules/premium/use-premium';
 import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
@@ -15,12 +17,13 @@ import { useKrakenStakingOperations } from '@/modules/staking/kraken/use-kraken-
 import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
 
 const store = useKrakenStakingStore();
-const { dateFilter: filters, dateFilterKey, events } = storeToRefs(store);
+const { dateFilter: filters, dateFilterKey, events, fetchError } = storeToRefs(store);
 const { fetchEvents: load } = useKrakenStakingOperations();
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 
 const { refreshPrices } = usePriceRefresh();
+const failureMessage = useFailureMessage();
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
@@ -135,9 +138,17 @@ onUnmounted(() => {
         {{ t('kraken_page.loading') }}
       </template>
     </ProgressScreen>
-    <KrakenStaking
-      v-else
-      v-model="filters"
-    />
+    <template v-else>
+      <TableFailureStrip
+        v-if="fetchError"
+        standalone
+        class="mb-4"
+        :title="t('kraken_page.fetch_failed')"
+        :message="failureMessage(fetchError)"
+        data-testid="kraken-staking-fetch-error"
+        @retry="refresh()"
+      />
+      <KrakenStaking v-model="filters" />
+    </template>
   </TablePageLayout>
 </template>

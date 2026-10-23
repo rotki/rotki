@@ -6,7 +6,6 @@ import { isRequestCancellation } from '@/modules/core/api/request-queue/is-reque
 import { fromRequest } from '@/modules/core/api/request-result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { internalTxFixedSignal } from '@/modules/core/messaging/handlers/internal-tx-fixed';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useInternalTxConflictsApi } from './internal-tx-conflicts-api';
 import { type InternalTxConflict, type InternalTxConflictsRequestPayload, type InternalTxConflictStatus, InternalTxConflictStatuses } from './types';
@@ -45,8 +44,6 @@ interface UseInternalTxConflictsReturn {
 }
 
 export const useInternalTxConflicts = createSharedComposable((): UseInternalTxConflictsReturn => {
-  const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage } = useNotifications();
   const { fetchInternalTxConflicts, fetchInternalTxConflictsCount } = useInternalTxConflictsApi();
 
   const pendingCount = ref<number>(0);
@@ -94,19 +91,9 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
     }
   }
 
+  /** A failure is shown by the table in place of its rows, since the fetch never rejects. */
   async function fetchConflicts(): Promise<void> {
-    try {
-      await fetchData();
-    }
-    catch (error: any) {
-      if (isRequestCancellation(error))
-        return;
-      logger.error('Failed to fetch internal tx conflicts:', error);
-      showErrorMessage(
-        t('internal_tx_conflicts.errors.fetch_title'),
-        t('internal_tx_conflicts.errors.fetch', { error: error.message }),
-      );
-    }
+    await fetchData();
   }
 
   function setFilter(status: InternalTxConflictStatus): void {

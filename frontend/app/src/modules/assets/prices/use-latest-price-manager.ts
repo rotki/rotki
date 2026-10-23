@@ -10,14 +10,18 @@ import { isNft } from '@/modules/assets/nft-utils';
 import { manualPriceAddActivity, manualPriceRemoveActivity } from '@/modules/assets/prices/prices.activity';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
+import { logger } from '@/modules/core/common/logging/logging';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { type TableEmptyState, useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseLatestPricesReturn {
   items: ComputedRef<ManualPriceWithUsd[]>;
+  /** The table's empty text, or why the last fetch failed: the table is the only place that says so. */
+  emptyState: ComputedRef<TableEmptyState>;
   loading: Readonly<Ref<boolean>>;
   refreshing: Readonly<Ref<boolean>>;
   getLatestPrices: () => Promise<void>;
@@ -27,19 +31,21 @@ interface UseLatestPricesReturn {
 }
 
 export function useLatestPrices(
-  t: ReturnType<typeof useI18n>['t'],
   filter?: MaybeRefOrGetter<string | undefined>,
 ): UseLatestPricesReturn {
+  const { t } = useI18n({ useScope: 'global' });
   const latestPrices = ref<ManualPrice[]>([]);
   const loading = shallowRef<boolean>(false);
   const refreshing = shallowRef<boolean>(false);
+  const fetchError = shallowRef<unknown>();
 
   const { addLatestPrice, deleteLatestPrice, fetchLatestPrices } = useAssetPricesApi();
   const { getAssetPrice } = usePriceUtils();
   const { refreshPrices } = usePriceRefresh();
-  const { notifyFailure, showErrorMessage } = useNotifications();
+  const { showErrorMessage } = useNotifications();
   const { submitTask } = useNativeTask();
   const { resolveMissingCurrentPrice } = useBackendProblemsStore();
+  const emptyState = useTableEmptyState({ error: fetchError });
 
   const latestAssets = computed<string[]>(() =>
     get(latestPrices)
@@ -77,16 +83,27 @@ export function useLatestPrices(
     });
   });
 
+  /**
+   * Loads the manual latest prices.
+   *
+   * @remarks
+   * A failure empties the list and is shown by the table through {@link UseLatestPricesReturn.emptyState},
+   * so it files no notification. The asset page also calls this, through `refreshCurrentPrices`, only
+   * to know which manual prices to refresh along with its asset; a failure there refreshes the asset
+   * alone.
+   */
   const getLatestPrices = async (): Promise<void> => {
     set(loading, true);
+    set(fetchError, undefined);
     try {
       set(latestPrices, await fetchLatestPrices());
     }
     catch (error: unknown) {
-      notifyFailure(
-        t('price_table.fetch.failure.title'),
-        t('price_table.fetch.failure.message', { message: getErrorMessage(error) }),
-      );
+      if (!isRequestCancellation(error)) {
+        logger.error(error);
+        set(latestPrices, []);
+        set(fetchError, error);
+      }
     }
     finally {
       set(loading, false);
@@ -160,6 +177,7 @@ export function useLatestPrices(
 
   return {
     deletePrice,
+    emptyState,
     getLatestPrices,
     items,
     loading: readonly(loading),

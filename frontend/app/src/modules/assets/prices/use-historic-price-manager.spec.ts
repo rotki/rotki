@@ -1,7 +1,6 @@
 import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { ProblemMessage } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { bigNumberify } from '@rotki/common';
-import { mockTranslate } from '@test/i18n';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
@@ -58,8 +57,9 @@ function formPayload(overrides: Partial<HistoricalPriceFormPayload> = {}): Histo
   };
 }
 
+/** Mounts the manager as the price table does, or with `null` as the price form does, without a filter. */
 function mountManager(
-  filter?: { fromAsset?: string; toAsset?: string },
+  filter: { fromAsset?: string; toAsset?: string } | null = {},
 ): ReturnType<typeof useHistoricPrices> {
   let captured: ReturnType<typeof useHistoricPrices> | undefined;
   let setupError: Error | undefined;
@@ -68,7 +68,7 @@ function mountManager(
   const Host = defineComponent({
     setup(): () => ReturnType<typeof h> {
       try {
-        captured = useHistoricPrices(mockTranslate, filter ? filterRef : undefined);
+        captured = useHistoricPrices(filter ? filterRef : undefined);
       }
       catch (error) {
         setupError = error instanceof Error ? error : new Error(String(error));
@@ -129,11 +129,18 @@ describe('modules/assets/prices/useHistoricPrices', () => {
       expect(fetchHistoricalPrices).toHaveBeenCalledWith({ fromAsset: 'ETH', toAsset: 'USD' });
     });
 
-    it('should ask for everything when no filter is given', async () => {
+    it('should ask for everything when the filter is empty', async () => {
       mountManager();
       await flushPromises();
 
-      expect(fetchHistoricalPrices).toHaveBeenCalledWith(undefined);
+      expect(fetchHistoricalPrices).toHaveBeenCalledWith({});
+    });
+
+    it('should load nothing for a caller without a filter, which only saves', async () => {
+      mountManager(null);
+      await flushPromises();
+
+      expect(fetchHistoricalPrices).not.toHaveBeenCalled();
     });
   });
 
@@ -163,18 +170,18 @@ describe('modules/assets/prices/useHistoricPrices', () => {
   });
 
   describe('a failed fetch', () => {
-    it('should notify and leave the previous rows in place', async () => {
-      const rows = [price()];
-      fetchHistoricalPrices.mockResolvedValue(rows);
-      const { items, refresh } = mountManager();
+    it('should drop the previous rows and name the failure in the table, filing no notification', async () => {
+      fetchHistoricalPrices.mockResolvedValue([price()]);
+      const { emptyState, items, refresh } = mountManager();
       await flushPromises();
 
       fetchHistoricalPrices.mockRejectedValue(new Error('offline'));
       await refresh();
 
-      expect(notifyFailure).toHaveBeenCalledOnce();
+      expect(get(items)).toEqual([]);
+      expect(get(emptyState)).toEqual({ description: 'offline', label: 'data_table.fetch_failed' });
+      expect(notifyFailure).not.toHaveBeenCalled();
       expect(notifyError).not.toHaveBeenCalled();
-      expect(get(items)).toEqual(rows);
     });
   });
 
@@ -225,7 +232,7 @@ describe('modules/assets/prices/useHistoricPrices', () => {
       let captured: ReturnType<typeof useHistoricPrices> | undefined;
       const Host = defineComponent({
         setup(): () => ReturnType<typeof h> {
-          captured = useHistoricPrices(mockTranslate, filter);
+          captured = useHistoricPrices(filter);
           return (): ReturnType<typeof h> => h('div');
         },
       });

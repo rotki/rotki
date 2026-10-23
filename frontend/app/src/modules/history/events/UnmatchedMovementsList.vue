@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
+import type { UnmatchedActionPayload, UnmatchedMatchAccess } from '@/modules/history/events/unmatched-actions';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
 import { HISTORY_DIALOG_MAX_HEIGHT } from '@/modules/history/events/dialog-layout';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
@@ -10,34 +10,40 @@ import { useUnmatchedMovementRows } from '@/modules/history/events/use-unmatched
 const selected = defineModel<string[]>('selected', { required: true });
 
 const {
+  error,
   movements,
   highlightedGroupIdentifier,
   ignoreLoading,
   isPinned,
   showRestore,
   loading,
-  matchDisabled,
-  matchMinimumTier,
+  matchAccess,
 } = defineProps<{
   movements: UnmatchedAssetMovement[];
   highlightedGroupIdentifier?: string;
   ignoreLoading?: boolean;
   isPinned?: boolean;
-  matchDisabled?: boolean;
-  matchMinimumTier?: string | null;
+  /** absent when matching is not gated at all */
+  matchAccess?: UnmatchedMatchAccess;
   showRestore?: boolean;
   loading?: boolean;
+  /** why the last load failed, shown in place of the empty text or above the rows it left */
+  error?: unknown;
 }>();
 
 const emit = defineEmits<{
   action: [payload: UnmatchedActionPayload<UnmatchedAssetMovement>];
   pin: [];
+  retry: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { description, emptyDescription, rows, specFor } = useUnmatchedMovementRows({
-  matchDisabled: () => matchDisabled,
+const matchDisabled = computed<boolean>(() => matchAccess !== undefined && !matchAccess.allowed);
+
+const { description, emptyDescription, failure, rows, specFor } = useUnmatchedMovementRows({
+  error: () => error,
+  matchDisabled,
   movements: () => movements,
   showRestore: () => showRestore,
 });
@@ -72,11 +78,13 @@ const { description, emptyDescription, rows, specFor } = useUnmatchedMovementRow
       :rows="rows"
       :spec-for="specFor"
       :empty-description="emptyDescription"
+      :failure="failure"
       :max-height="isPinned ? undefined : HISTORY_DIALOG_MAX_HEIGHT"
       :highlighted-group-identifier="highlightedGroupIdentifier"
       :ignore-loading="ignoreLoading"
       :loading="loading"
       @action="emit('action', $event)"
+      @retry="emit('retry')"
     >
       <template
         v-if="matchDisabled"
@@ -85,7 +93,7 @@ const { description, emptyDescription, rows, specFor } = useUnmatchedMovementRow
         <UnmatchedMatchDisabledAlert
           variant="asset-movement"
           :count="showRestore ? 0 : movements.length"
-          :match-minimum-tier="matchMinimumTier"
+          :match-minimum-tier="matchAccess?.minimumTier"
         />
       </template>
     </Component>

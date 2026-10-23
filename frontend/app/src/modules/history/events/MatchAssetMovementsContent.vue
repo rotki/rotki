@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
-import { UNMATCHED_ACTIONS, type UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
+import { UNMATCHED_ACTIONS, type UnmatchedActionPayload, type UnmatchedMatchAccess } from '@/modules/history/events/unmatched-actions';
 import UnmatchedMovementsList from '@/modules/history/events/UnmatchedMovementsList.vue';
 import UnmatchedResolutionStrip from '@/modules/history/events/UnmatchedResolutionStrip.vue';
 import { useAssetMovementActions } from '@/modules/history/events/use-asset-movement-actions';
@@ -28,13 +28,17 @@ const {
   autoMatchLoading,
   autoMatchMinimumTier,
   isAutoMatchAllowed,
+  ignoredError,
   ignoredLoading,
   ignoredMovements,
   loading,
+  unmatchedError,
   unmatchedMovements,
   refreshUnmatchedAssetMovements,
   triggerAssetMovementAutoMatching,
 } = useUnmatchedAssetMovements();
+
+const matchAccess = computed<UnmatchedMatchAccess>(() => ({ allowed: get(isAutoMatchAllowed), minimumTier: get(autoMatchMinimumTier) }));
 
 const {
   confirmIgnoreAllFiat,
@@ -129,28 +133,30 @@ onBeforeMount(async () => {
       v-if="activeTab === 0"
       v-model:selected="modelSelectedUnmatched"
       :movements="unmatchedMovements"
+      :error="unmatchedError"
       :highlighted-group-identifier="highlightedGroupIdentifier"
       :ignore-loading="ignoreLoading"
       is-pinned
       :loading="loading"
-      :match-disabled="!isAutoMatchAllowed"
-      :match-minimum-tier="autoMatchMinimumTier"
+      :match-access="matchAccess"
       @action="handleAction($event)"
       @pin="emit('pin')"
+      @retry="refreshUnmatchedAssetMovements()"
     />
     <UnmatchedMovementsList
       v-else
       v-model:selected="modelSelectedIgnored"
       :movements="ignoredMovements"
+      :error="ignoredError"
       :highlighted-group-identifier="highlightedGroupIdentifier"
       :loading="ignoredLoading"
       :ignore-loading="ignoreLoading"
       is-pinned
-      :match-disabled="!isAutoMatchAllowed"
-      :match-minimum-tier="autoMatchMinimumTier"
+      :match-access="matchAccess"
       show-restore
       @action="handleAction($event)"
       @pin="emit('pin')"
+      @retry="refreshUnmatchedAssetMovements()"
     />
   </div>
 
@@ -163,27 +169,29 @@ onBeforeMount(async () => {
       <UnmatchedMovementsList
         v-model:selected="modelSelectedUnmatched"
         :movements="unmatchedMovements"
+        :error="unmatchedError"
         :highlighted-group-identifier="highlightedGroupIdentifier"
         :ignore-loading="ignoreLoading"
         :loading="loading"
-        :match-disabled="!isAutoMatchAllowed"
-        :match-minimum-tier="autoMatchMinimumTier"
+        :match-access="matchAccess"
         @action="handleAction($event)"
         @pin="emit('pin')"
+        @retry="refreshUnmatchedAssetMovements()"
       />
     </RuiTabItem>
     <RuiTabItem>
       <UnmatchedMovementsList
         v-model:selected="modelSelectedIgnored"
         :movements="ignoredMovements"
+        :error="ignoredError"
         :highlighted-group-identifier="highlightedGroupIdentifier"
         :loading="ignoredLoading"
         :ignore-loading="ignoreLoading"
-        :match-disabled="!isAutoMatchAllowed"
-        :match-minimum-tier="autoMatchMinimumTier"
+        :match-access="matchAccess"
         show-restore
         @action="handleAction($event)"
         @pin="emit('pin')"
+        @retry="refreshUnmatchedAssetMovements()"
       />
     </RuiTabItem>
   </RuiTabItems>
