@@ -315,6 +315,44 @@ describe('createTaskOrchestrator', () => {
     expect(byId(orchestrator, id)?.status).toBe(Status.CANCELLED);
   });
 
+  it('should start the next job on a cap-1 lane when a running body that never resumes is cancelled', () => {
+    const orchestrator = createTaskOrchestrator({ caps: { default: 1 } });
+    const stuck = controllable('stuck');
+    const next = controllable('next');
+    const stuckId = orchestrator.submit(stuck.spec);
+    const nextId = orchestrator.submit(next.spec);
+    expect(byId(orchestrator, nextId)?.status).toBe(Status.PENDING);
+
+    orchestrator.cancel(stuckId);
+
+    expect(byId(orchestrator, nextId)?.status).toBe(Status.RUNNING);
+  });
+
+  it('should keep the slot of a running activity with no cancel handle', () => {
+    const orchestrator = createTaskOrchestrator({ caps: { default: 1 } });
+    const stuckId = orchestrator.submit(controllable('stuck', { cancel: undefined }).spec);
+    const nextId = orchestrator.submit(controllable('next').spec);
+
+    orchestrator.cancel(stuckId);
+
+    expect(byId(orchestrator, nextId)?.status).toBe(Status.PENDING);
+  });
+
+  it('should free a running child\'s slot when the cancel comes from its parent', async () => {
+    const orchestrator = createTaskOrchestrator({ caps: { default: 1 } });
+    const parent = controllable('parent', { lane: 'umbrella' });
+    orchestrator.submit(parent.spec);
+    const child = controllable('child', { parent: parent.spec.id });
+    orchestrator.submit(child.spec);
+    const other = controllable('other');
+    const otherId = orchestrator.submit(other.spec);
+
+    orchestrator.cancel(parent.spec.id);
+    await flush();
+
+    expect(byId(orchestrator, otherId)?.status).toBe(Status.RUNNING);
+  });
+
   describe('cancelByPrefix', () => {
     it('should cancel every non-terminal activity under the prefix', () => {
       const orchestrator = createTaskOrchestrator();
@@ -515,6 +553,65 @@ describe('createTaskOrchestrator', () => {
     const result = orchestrator.rerun(id);
     expect(isOk(result)).toBe(true);
     expect(byId(orchestrator, id)?.status).toBe(Status.RUNNING);
+  });
+
+  describe('a cancelled run still executing after a rerun', () => {
+    interface Run {
+      settle: (result: Result<unknown, TaskError>) => void;
+      report: (steps: { current: number; total: number }) => void;
+    }
+
+    function rerunAfterRunningCancel(): { cleanup: ReturnType<typeof vi.fn>; id: ActivityId; orchestrator: TaskOrchestrator; runs: Run[] } {
+      const orchestrator = createTaskOrchestrator({ caps: { default: 1 } });
+      const runs: Run[] = [];
+      const cleanup = vi.fn();
+      const id = orchestrator.submit({
+        cancel: vi.fn(),
+        cleanup,
+        id: makeActivityId(Kind.OTHER, 'again'),
+        kind: Kind.OTHER,
+        rerunnable: true,
+        run: async report => new Promise<Result<unknown, TaskError>>((settle) => {
+          runs.push({ report, settle });
+        }),
+        title: 'again',
+      });
+      orchestrator.cancel(id);
+      orchestrator.rerun(id);
+      return { cleanup, id, orchestrator, runs };
+    }
+
+    it('should start the rerun on a cap-1 lane at once', () => {
+      const { id, orchestrator, runs } = rerunAfterRunningCancel();
+
+      expect(runs).toHaveLength(2);
+      expect(byId(orchestrator, id)?.status).toBe(Status.RUNNING);
+    });
+
+    it('should not let the cancelled run settle the rerun when it returns', async () => {
+      const { cleanup, id, orchestrator, runs } = rerunAfterRunningCancel();
+      cleanup.mockClear();
+
+      runs[0].settle({ ok: true, value: 1 });
+      await flush();
+
+      expect(byId(orchestrator, id)?.status).toBe(Status.RUNNING);
+      expect(cleanup).not.toHaveBeenCalled();
+
+      runs[1].settle({ error: TaskFailed({ message: 'boom' }), ok: false });
+      await flush();
+
+      expect(byId(orchestrator, id)?.status).toBe(Status.FAILED);
+      expect(cleanup).toHaveBeenCalledOnce();
+    });
+
+    it('should not let the cancelled run report progress onto the rerun', () => {
+      const { id, orchestrator, runs } = rerunAfterRunningCancel();
+
+      runs[0].report({ current: 3, total: 4 });
+
+      expect(byId(orchestrator, id)?.steps).toBeUndefined();
+    });
   });
 
   it('should notify change listeners and prune terminal activities on clear', async () => {

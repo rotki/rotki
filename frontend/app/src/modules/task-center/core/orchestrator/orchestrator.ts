@@ -20,28 +20,11 @@ import { AlreadyTerminal, type ControlError, NotCancellable, NotFound, NotRerunn
 import { dropCompletions, markStaleAfter, recordCompletion, recordSettlement } from './ledger';
 import { endedIncomplete, liveChildrenOf, runActivity, terminalAttention, terminalReason, terminalStatus } from './lifecycle';
 import { aggregateStatus, childProgress, projectActivity, statusForId } from './projection';
+import { type ActivityRecord, pendingRecord } from './record';
 import { DEFAULT_RULES } from './rules';
-import { createScheduler } from './scheduler';
+import { createScheduler, type ScheduledJob } from './scheduler';
 import { type ActivitySpec, DEFAULT_LANE, DEFAULT_PRIORITY, type ReportProgress, type StaleAfterEdge } from './spec';
 import { holdOf } from './waiting';
-
-interface ActivityRecord {
-  readonly spec: ActivitySpec;
-  status: ActivityStatus;
-  steps?: ActivitySteps;
-  startedAt?: number;
-  /**
-   * Why this activity failed or was skipped, in the producer's words. Cleared on re-run — see
-   * {@link terminalReason} for which outcomes get one.
-   */
-  reason?: string;
-  /** Whether a skip is held for the user; cleared on re-run like {@link reason}. See {@link terminalAttention}. */
-  attention?: true;
-  /** Set when the user cancelled a running activity; forces the terminal status to CANCELLED. */
-  cancelRequested: boolean;
-  /** Guards the spec's `cleanup` to fire once per run-cycle; re-armed on re-run. */
-  cleanedUp: boolean;
-}
 
 /**
  * The execution spine of the Task Center. Owns the queue and lifecycle of every *native*
@@ -221,7 +204,10 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     record.startedAt = now();
     emit();
 
-    const report: ReportProgress = steps => reportProgress(record.spec.id, steps);
+    const report: ReportProgress = (steps) => {
+      if (records.get(record.spec.id) === record)
+        reportProgress(record.spec.id, steps);
+    };
     const outcome = await runActivity(record.spec, report);
 
     const status = terminalStatus(record.cancelRequested, outcome);
@@ -229,13 +215,15 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
   }
 
   function schedule(record: ActivityRecord): void {
-    scheduler.submit({
+    const job: ScheduledJob = {
       eligible: () => eligible(record),
       id: record.spec.id,
       lane: record.spec.lane ?? DEFAULT_LANE,
       priority: record.spec.priority ?? DEFAULT_PRIORITY,
       run: async () => execute(record),
-    });
+    };
+    record.job = job;
+    scheduler.submit(job);
   }
 
   function submit<T>(spec: ActivitySpec<T>): ActivityId {
@@ -252,7 +240,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
      */
     dropDetail(spec.id);
 
-    const record: ActivityRecord = { cancelRequested: false, cleanedUp: false, spec, status: Status.PENDING };
+    const record = pendingRecord(spec);
     records.set(spec.id, record);
     if (spec.staleAfter?.length)
       staleEdges.set(spec.id, spec.staleAfter);
@@ -284,6 +272,8 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
       return err(NotCancellable({ id }));
     record.cancelRequested = true;
     record.spec.cancel();
+    if (record.job)
+      scheduler.release(record.job);
     settleTerminal(record, Status.CANCELLED);
     return ok(undefined);
   }
@@ -315,6 +305,14 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     }
   }
 
+  /**
+   * Runs a terminal activity again under a fresh record.
+   *
+   * @remarks
+   * Never reset the old record in place. A run cancelled while RUNNING may still be executing, and
+   * the identity guards in {@link settleTerminal} and the run's progress reporter are what stop it
+   * from settling or captioning the new run when it finally returns.
+   */
   function rerun(id: ActivityId): Result<void, ControlError> {
     const record = records.get(id);
     if (!record)
@@ -322,15 +320,10 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     if (!record.spec.rerunnable || !isTerminalStatus(record.status))
       return err(NotRerunnable({ id }));
 
-    record.status = Status.PENDING;
-    record.steps = undefined;
-    record.startedAt = undefined;
-    record.reason = undefined;
-    record.attention = undefined;
-    record.cancelRequested = false;
-    record.cleanedUp = false;
+    const fresh = pendingRecord(record.spec);
+    records.set(id, fresh);
     dropDetail(id);
-    schedule(record);
+    schedule(fresh);
     emit();
     return ok(undefined);
   }
