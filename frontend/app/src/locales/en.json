@@ -6837,6 +6837,7 @@
         "failed": "{count} failed",
         "running": "{count} running"
       },
+      "dismiss_all": "Dismiss all",
       "keep_running": "Keep running",
       "outcome": {
         "attention": "{count} needs attention | {count} need attention",

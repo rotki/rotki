@@ -221,6 +221,40 @@ describe('useTaskDock', () => {
       expect(get(modelExpanded)).toBe(false);
     });
 
+    it('should dismiss every finished job at once, keeping a failure and a skip that asked for attention', async () => {
+      const report = (status: ActivityStatus): Activity => activity(ActivityKind.PNL_REPORT, 'report', status);
+      const prices = (status: ActivityStatus): Activity => activity(ActivityKind.PRICES, 'latest', status);
+      const assets = (status: ActivityStatus): Activity => activity(ActivityKind.ASSETS, 'update', status);
+      const { COMPLETE, FAILED, RUNNING, SKIPPED } = ActivityStatus;
+      set(activities, [...refresh(RUNNING), report(RUNNING), prices(RUNNING), assets(RUNNING)]);
+      const { acknowledgeFinished, failed, finished, flagged, modelExpanded, state } = dock();
+      set(modelExpanded, true);
+
+      await transition([...attentionOnChain(refresh(COMPLETE, SKIPPED)), report(FAILED), prices(COMPLETE), assets(COMPLETE)]);
+      expect(get(finished)).toHaveLength(2);
+      acknowledgeFinished();
+
+      expect(get(finished)).toEqual([]);
+      expect(get(failed).map(root => root.kind)).toEqual([ActivityKind.PNL_REPORT]);
+      expect(get(flagged).map(root => root.id)).toEqual([refreshId]);
+      expect(get(state)).toBe(DockState.FAILED);
+      expect(get(modelExpanded)).toBe(true);
+    });
+
+    it('should close the panel once dismissing the finished jobs leaves nothing to read', async () => {
+      const report = (status: ActivityStatus): Activity => activity(ActivityKind.PNL_REPORT, 'report', status);
+      set(activities, [...refresh(ActivityStatus.RUNNING), report(ActivityStatus.RUNNING)]);
+      const { acknowledgeFinished, dismissed, modelExpanded, state } = dock();
+      set(modelExpanded, true);
+
+      await transition([...refresh(ActivityStatus.COMPLETE), report(ActivityStatus.COMPLETE)]);
+      acknowledgeFinished();
+
+      expect(get(state)).toBe(DockState.DISMISSED);
+      expect(get(dismissed)).toHaveLength(2);
+      expect(get(modelExpanded)).toBe(false);
+    });
+
     it('should report a dismissed failure afresh as done once the job reruns cleanly', async () => {
       set(activities, refresh(ActivityStatus.RUNNING));
       const { acknowledge, dismissed, state } = dock();

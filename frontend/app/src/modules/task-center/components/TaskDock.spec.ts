@@ -340,6 +340,71 @@ describe('taskDock', () => {
       expect(panel.find('[data-testid=dismiss-activity]').exists()).toBe(false);
     });
 
+    const threeJobs = (refreshStatus: ActivityStatus, report: ActivityStatus, prices: ActivityStatus): Activity[] => [
+      ...refresh(refreshStatus),
+      activity(ActivityKind.PNL_REPORT, 'report', report),
+      activity(ActivityKind.PRICES, 'latest', prices),
+    ];
+
+    /** A job with a start time is timed, so one that settles at once is too brief for the panel to list. */
+    const briefPrices = (status: ActivityStatus): Activity => ({ ...activity(ActivityKind.PRICES, 'latest', status), startedAt: Date.now() });
+
+    it('should dismiss every finished row from the footer, and the brief work the panel left out with them', async () => {
+      vi.useFakeTimers();
+      const { COMPLETE, RUNNING } = ActivityStatus;
+      const report = (status: ActivityStatus): Activity => activity(ActivityKind.PNL_REPORT, 'report', status);
+      set(activities, [...refresh(RUNNING), report(RUNNING), briefPrices(RUNNING)]);
+      const wrapper = createWrapper();
+
+      await settle(wrapper, [...refresh(COMPLETE), report(COMPLETE), briefPrices(COMPLETE)]);
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+      expect(wrapper.findAll('[data-testid=dismiss-activity]')).toHaveLength(2);
+
+      const dismiss = wrapper.find('[data-testid=dock-dismiss-finished]');
+      expect(dismiss.text()).toBe('task_dock.panel.dismiss_all');
+      await dismiss.trigger('click');
+
+      expect(wrapper.find('[data-testid=task-dock-pill]').attributes('data-state')).toBe('dismissed');
+      expect(wrapper.find('[data-testid=task-dock-panel]').exists()).toBe(false);
+    });
+
+    it('should count rows rather than jobs, leaving one row beside brief work to its own dismiss', async () => {
+      vi.useFakeTimers();
+      const { COMPLETE, RUNNING } = ActivityStatus;
+      set(activities, [...refresh(RUNNING), briefPrices(RUNNING)]);
+      const wrapper = createWrapper();
+
+      await settle(wrapper, [...refresh(COMPLETE), briefPrices(COMPLETE)]);
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+
+      expect(wrapper.findAll('[data-testid=dismiss-activity]')).toHaveLength(1);
+      expect(wrapper.find('[data-testid=dock-dismiss-finished]').exists()).toBe(false);
+    });
+
+    it('should not offer to dismiss finished jobs while a failure is reported, since the panel lists only failures then', async () => {
+      const { COMPLETE, FAILED, RUNNING } = ActivityStatus;
+      set(activities, threeJobs(RUNNING, RUNNING, RUNNING));
+      const wrapper = createWrapper();
+
+      await settle(wrapper, threeJobs(COMPLETE, COMPLETE, FAILED));
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+
+      expect(wrapper.findAll('[data-testid=dismiss-activity]')).toHaveLength(1);
+      expect(wrapper.find('[data-testid=dock-dismiss-finished]').exists()).toBe(false);
+    });
+
+    it('should not offer to dismiss the finished jobs while work still runs', async () => {
+      const { COMPLETE, RUNNING } = ActivityStatus;
+      set(activities, threeJobs(RUNNING, RUNNING, RUNNING));
+      const wrapper = createWrapper();
+
+      await settle(wrapper, threeJobs(COMPLETE, COMPLETE, RUNNING));
+      await wrapper.find('[data-testid=task-dock-pill]').trigger('click');
+
+      expect(wrapper.find('[data-testid=task-dock-panel]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=dock-dismiss-finished]').exists()).toBe(false);
+    });
+
     it('should list a failed job in the panel until its own row is dismissed', async () => {
       set(activities, refresh(ActivityStatus.RUNNING));
       const wrapper = createWrapper();
