@@ -416,19 +416,19 @@ describe('useTaskDock', () => {
       expect(get(modelExpanded)).toBe(true);
     });
 
-    it('should summarize work that pauses for a moment between stages once, after the last stage', async () => {
+    it('should report a failure of work that pauses for a moment between stages once, after the last stage', async () => {
       const balances = (status: ActivityStatus): Activity => activity(ActivityKind.PNL_REPORT, 'balances', status);
       const prices = (status: ActivityStatus): Activity => activity(ActivityKind.PRICES, 'latest', status);
       set(showSummary, true);
       set(activities, [balances(ActivityStatus.RUNNING)]);
       const { modelExpanded } = dock();
 
-      await transition([balances(ActivityStatus.COMPLETE)]);
+      await transition([balances(ActivityStatus.FAILED)]);
       await vi.advanceTimersByTimeAsync(50);
       expect(get(modelExpanded)).toBe(false);
 
-      await transition([balances(ActivityStatus.COMPLETE), prices(ActivityStatus.RUNNING)]);
-      await transition([balances(ActivityStatus.COMPLETE), prices(ActivityStatus.COMPLETE)]);
+      await transition([balances(ActivityStatus.FAILED), prices(ActivityStatus.RUNNING)]);
+      await transition([balances(ActivityStatus.FAILED), prices(ActivityStatus.COMPLETE)]);
       await endBatch();
 
       expect(get(modelExpanded)).toBe(true);
