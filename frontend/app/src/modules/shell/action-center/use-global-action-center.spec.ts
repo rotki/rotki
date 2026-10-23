@@ -1,12 +1,13 @@
-import type { EffectScope } from 'vue';
+import type { EffectScope, MaybeRefOrGetter } from 'vue';
 import type { LocationQuery } from 'vue-router';
 import type { HistoryEventIssue } from '@/modules/history/events/actions-center/use-history-event-issues';
 import type { useGlobalActionCenter as UseGlobalActionCenter } from '@/modules/shell/action-center/use-global-action-center';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { type ActionItem, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
+import { type ActionCenterSection, type ActionItem, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 import { DIALOG_TYPES } from '@/modules/history/events/dialog-types';
+import { SetAside } from '@/modules/shell/action-center/use-action-center-snooze';
 
 const state = {
   accountingRows: ref<ActionItem[]>([]),
@@ -97,6 +98,10 @@ function row(id: string, overrides: Partial<ActionItem> = {}): ActionItem {
   };
 }
 
+function sectionLayout(sections: ActionCenterSection[]): string[] {
+  return sections.map(section => `${section.id}: ${section.items.map(item => item.id).join(', ')}`);
+}
+
 function runOption(item: ActionItem | undefined, id: string): void {
   const option = item?.options.find(candidate => candidate.id === id);
   assert(option?.target.kind === 'run');
@@ -108,9 +113,9 @@ let scope: EffectScope | undefined;
 /** Reloaded per test: whether a center has scanned is module-level state, so one test's scan would decide the next one's. */
 let useGlobalActionCenter: typeof UseGlobalActionCenter;
 
-function center(): ReturnType<typeof UseGlobalActionCenter> {
+function center(revealed?: MaybeRefOrGetter<SetAside[]>): ReturnType<typeof UseGlobalActionCenter> {
   scope = effectScope();
-  const result = scope.run(() => useGlobalActionCenter());
+  const result = scope.run(() => useGlobalActionCenter({ revealed }));
   assert(result);
   return result;
 }
@@ -382,21 +387,120 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     expect(state.rescanHistory).toHaveBeenCalledOnce();
   });
 
-  it('should stop counting a snoozed row and set it aside at the end of its section', async () => {
+  it('should keep a row snoozed while the center is open in its place, saying so, but stop counting it', async () => {
     set(state.integrationRows, [row('snoozed'), row('other')]);
-    const { count, sections } = center();
+    const { count, sections, setAsideCounts } = center();
     await flushPromises();
 
     runOption(get(sections)[0].items[0], 'remind-later');
     await nextTick();
 
     expect(get(count)).toBe(1);
-    expect(get(sections)[0].items.map(item => item.id)).toEqual(['other', 'snoozed']);
+    expect(sectionLayout(get(sections))).toEqual(['integrations: snoozed, other']);
+    expect(get(sections)[0].items[0].status).toContain('action_center.set_aside.snoozed_until');
+    expect(get(setAsideCounts)).toEqual({ [SetAside.MUTED]: 0, [SetAside.SNOOZED]: 1 });
+  });
+
+  it('should leave a snoozed row out of the sections once the center closes', async () => {
+    set(state.integrationRows, [row('snoozed'), row('other')]);
+    const { markSeen, sections } = center();
+    await flushPromises();
+
+    runOption(get(sections)[0].items[0], 'remind-later');
+    markSeen();
+    await nextTick();
+
+    expect(sectionLayout(get(sections))).toEqual(['integrations: other']);
+  });
+
+  it('should list revealed rows in a set-aside group ahead of every module', async () => {
+    set(state.integrationRows, [row('key')]);
+    set(state.assetRows, [row('snoozed')]);
+    const revealed = ref<SetAside[]>([]);
+    const { markSeen, sections } = center(revealed);
+    await flushPromises();
+
+    runOption(get(sections)[1].items[0], 'remind-later');
+    markSeen();
+    set(revealed, [SetAside.SNOOZED]);
+    await nextTick();
+
+    expect(sectionLayout(get(sections))).toEqual(['set-aside: snoozed', 'integrations: key']);
+  });
+
+  it('should move a row snoozed while the center is open into the set-aside group when its kind is revealed', async () => {
+    set(state.integrationRows, [row('snoozed'), row('other')]);
+    const revealed = ref<SetAside[]>([]);
+    const { sections } = center(revealed);
+    await flushPromises();
+
+    runOption(get(sections)[0].items[0], 'remind-later');
+    set(revealed, [SetAside.SNOOZED]);
+    await nextTick();
+    expect(sectionLayout(get(sections))).toEqual(['set-aside: snoozed', 'integrations: other']);
+
+    set(revealed, []);
+    await nextTick();
+    expect(sectionLayout(get(sections))).toEqual(['integrations: snoozed, other']);
+  });
+
+  it('should keep a row brought back from the set-aside group there until the center closes', async () => {
+    set(state.integrationRows, [row('muted'), row('other')]);
+    const { markSeen, sections } = center([SetAside.MUTED]);
+    await flushPromises();
+    runOption(get(sections)[0].items[0], 'mute');
+    markSeen();
+    await nextTick();
+    expect(sectionLayout(get(sections))).toEqual(['set-aside: muted', 'integrations: other']);
+
+    runOption(get(sections)[0].items[0], 'unmute');
+    await nextTick();
+    expect(sectionLayout(get(sections))).toEqual(['set-aside: muted', 'integrations: other']);
+
+    markSeen();
+    await nextTick();
+    expect(sectionLayout(get(sections))).toEqual(['integrations: muted, other']);
+  });
+
+  it('should keep a muted row out until muted rows are revealed, but not when only snoozed rows are', async () => {
+    set(state.integrationRows, [row('muted'), row('other')]);
+    const revealed = ref<SetAside[]>([]);
+    const { count, markSeen, sections, setAsideCounts } = center(revealed);
+    await flushPromises();
+
+    runOption(get(sections)[0].items[0], 'mute');
+    markSeen();
+    await nextTick();
+
+    expect(get(count)).toBe(1);
+    expect(get(setAsideCounts)).toEqual({ [SetAside.MUTED]: 1, [SetAside.SNOOZED]: 0 });
+    expect(sectionLayout(get(sections))).toEqual(['integrations: other']);
+
+    set(revealed, [SetAside.SNOOZED]);
+    await nextTick();
+    expect(sectionLayout(get(sections))).toEqual(['integrations: other']);
+
+    set(revealed, [SetAside.MUTED]);
+    await nextTick();
+    expect(sectionLayout(get(sections))).toEqual(['set-aside: muted', 'integrations: other']);
+    expect(get(sections)[0].items[0].status).toBe('action_center.set_aside.muted');
+  });
+
+  it('should drop a section whose only raised rows are put away, once the center closes', async () => {
+    set(state.chainRows, [row('no-available-indexers-base')]);
+    const { markSeen, sections } = center();
+    await flushPromises();
+
+    runOption(get(sections)[0].items[0], 'mute');
+    markSeen();
+    await nextTick();
+
+    expect(get(sections)).toEqual([]);
   });
 
   it('should mark a snoozed row as new once it is brought back, though it was seen before', async () => {
     set(state.integrationRows, [row('snoozed')]);
-    const { markSeen, newIds, sections } = center();
+    const { markSeen, newIds, sections } = center([SetAside.SNOOZED]);
     await flushPromises();
     markSeen();
     await nextTick();
@@ -408,6 +512,21 @@ describe('modules/shell/action-center/use-global-action-center', () => {
     await nextTick();
 
     expect(get(newIds)).toEqual(['snoozed']);
+  });
+
+  it('should mark a muted row as new once it is unmuted, though it was seen before', async () => {
+    set(state.integrationRows, [row('muted')]);
+    const { markSeen, newIds, sections } = center([SetAside.MUTED]);
+    await flushPromises();
+    markSeen();
+    await nextTick();
+
+    runOption(get(sections)[0].items[0], 'mute');
+    await nextTick();
+    runOption(get(sections)[0].items[0], 'unmute');
+    await nextTick();
+
+    expect(get(newIds)).toEqual(['muted']);
   });
 
   it('should show what went down since the center was last closed, and compare with that close', async () => {

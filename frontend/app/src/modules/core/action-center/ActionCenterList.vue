@@ -35,6 +35,11 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
+defineSlots<{
+  /** in the header, ahead of the re-scan button: controls a center adds to its list */
+  'header-actions'?: () => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const title = computed<string>(() => {
@@ -108,6 +113,8 @@ function setFolded(id: string, fold: boolean): void {
           {{ subtitle }}
         </p>
       </div>
+
+      <slot name="header-actions" />
 
       <RuiButton
         variant="text"

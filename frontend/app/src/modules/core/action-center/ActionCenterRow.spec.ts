@@ -143,6 +143,18 @@ describe('modules/core/action-center/ActionCenterRow', () => {
     expect(mountRow(createItem()).find('[data-testid=actions-center-row-option]').exists()).toBe(false);
   });
 
+  it('should say how the row was set aside ahead of its options, and nothing for a row without a status', () => {
+    const withStatus = mountRow(createItem({
+      options: [{ icon: 'lu-bell', id: 'unmute', label: 'Unmute', target: { kind: 'run', run: vi.fn() } }],
+      status: 'Muted',
+    }));
+    const line = withStatus.find('[data-testid=actions-center-row-status]');
+
+    expect(line.text()).toContain('Muted');
+    expect(line.element.nextElementSibling?.getAttribute('data-key')).toBe('unmute');
+    expect(mountRow(createItem()).find('[data-testid=actions-center-row-status]').exists()).toBe(false);
+  });
+
   it('should list the options in order and hand the chosen one\'s target up, not the main action', async () => {
     const guide: ActionTarget = { kind: 'external', url: 'https://docs.rotki.com' };
     const wrapper = mountRow(createItem({

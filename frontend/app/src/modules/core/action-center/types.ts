@@ -100,6 +100,8 @@ export interface ActionItem<TTarget extends { kind: string } = ActionTarget, TId
   minimumTier: string | null;
   /** nothing is pending anymore, the count is what the user chose to set aside */
   informational: boolean;
+  /** how the user set the row aside and for how long, shown ahead of its options */
+  status?: string;
   /** where the row's action leads */
   target: TTarget;
   /** where the category is opened from the cleared strip, when it has nothing pending */
