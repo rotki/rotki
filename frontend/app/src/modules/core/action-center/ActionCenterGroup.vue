@@ -1,8 +1,9 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
 import ActionCenterRow from '@/modules/core/action-center/ActionCenterRow.vue';
 import { type GroupSummary, summarizeGroup } from '@/modules/core/action-center/group-summary';
-import { type ActionCenterSection, URGENCY_COLORS } from '@/modules/core/action-center/types';
+import { type ActionCenterSection, holdsBlocking, URGENCY_COLORS } from '@/modules/core/action-center/types';
 
+/** The user's choice; a section holding a row that cannot wait shows its rows regardless. */
 const folded = defineModel<boolean>('folded', { default: false });
 
 const { newIds = [], previousCounts = {}, section } = defineProps<{
@@ -23,6 +24,10 @@ const summary = computed<GroupSummary>(() => summarizeGroup(section.items, newId
 
 const rowsId = computed<string>(() => `actions-center-group-rows-${section.id}`);
 
+const foldable = computed<boolean>(() => !holdsBlocking(section.items));
+
+const shownFolded = computed<boolean>(() => get(folded) && get(foldable));
+
 function toggle(): void {
   set(folded, !get(folded));
 }
@@ -31,22 +36,23 @@ function toggle(): void {
 <template>
   <section
     class="border-t border-default first-of-type:border-t-0"
-    :class="{ 'pb-3': folded }"
+    :class="{ 'pb-3': shownFolded }"
     data-testid="actions-center-section"
     :data-key="section.id"
   >
     <button
       type="button"
-      class="flex w-full items-center gap-2 px-4 pt-3 text-left text-rui-text-secondary hover:text-rui-text"
-      :aria-expanded="!folded"
+      class="flex w-full items-center gap-2 px-4 pt-3 text-left text-rui-text-secondary enabled:hover:text-rui-text"
+      :aria-expanded="!shownFolded"
       :aria-controls="rowsId"
+      :disabled="!foldable"
       data-testid="actions-center-section-toggle"
       @click="toggle()"
     >
       <span class="text-caption font-medium uppercase tracking-wide">
         {{ section.title }}
       </span>
-      <template v-if="folded">
+      <template v-if="shownFolded">
         <RuiChip
           size="xs"
           :color="summary.urgency ? URGENCY_COLORS[summary.urgency] : undefined"
@@ -64,13 +70,14 @@ function toggle(): void {
         </span>
       </template>
       <RuiIcon
+        v-if="foldable"
         :name="folded ? 'lu-chevron-down' : 'lu-chevron-up'"
         size="14"
         class="ml-auto"
       />
     </button>
     <div
-      v-if="!folded"
+      v-if="!shownFolded"
       :id="rowsId"
       class="px-4 divide-y divide-rui-grey-200 dark:divide-rui-grey-800"
     >

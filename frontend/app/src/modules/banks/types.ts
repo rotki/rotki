@@ -67,6 +67,8 @@ export function isBankSetupComplete(result: BankSetupResult): result is true | B
 
 const BankSyncStatus = z.object({
   authChallenge: BankAuthChallenge.nullable(),
+  /** the bank rejected or expired the last challenge; syncing again raises a fresh one */
+  authExpired: z.boolean(),
   running: z.boolean(),
   lastSyncTs: z.number().nullable(),
   lastError: z.string().nullable(),
@@ -112,11 +114,13 @@ export interface BankConnectionEditPayload extends BankConnectionPayload {
  *
  * @remarks
  * `fields` carries errors keyed by payload field, or by credential slot for a credential error.
- * `rejected` is a message for the request as a whole, such as the bank refusing the credentials.
+ * `rejected` is a message for the request as a whole, such as the bank refusing the credentials;
+ * an answer refused this way can be sent again. `expired` is an answer to a challenge the bank
+ * rejected or let lapse and has dropped: only a new sync, or a new setup, raises another.
  */
 export type BankSetupError =
   | { readonly type: 'fields'; readonly errors: ValidationErrors }
-  | { readonly type: 'rejected'; readonly message: string };
+  | { readonly type: 'rejected' | 'expired'; readonly message: string };
 
 export interface BankSyncPayload {
   readonly location?: string;

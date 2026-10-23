@@ -24,7 +24,7 @@ const search = ref<string>('');
 
 const { connections } = storeToRefs(useBankConnectionsStore());
 const { balances, banks } = useBankData();
-const { fetchBankBalances, refreshBankConnections, refreshSupportedBanks } = useBanks();
+const { fetchBankBalances, refreshBankConnections, refreshSupportedBanks, syncBanks } = useBanks();
 const { useIsActive } = useTaskCenter();
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
@@ -99,6 +99,7 @@ onBeforeMount(() => {
             v-for="connection in connections"
             :key="`${connection.location}#${connection.name}`"
             :connection="connection"
+            @sync="startPromise(syncBanks($event))"
           />
         </ul>
         <TableSearchField

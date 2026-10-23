@@ -65,6 +65,8 @@ describe('modules/shell/action-center/use-action-center-snooze', () => {
   });
 
   it.each([
+    ['a row that expires before a snooze would end', row('blocking', { urgency: ActionUrgency.BLOCKING })],
+    ['a row marked not snoozable', row('expired', { snoozable: false })],
     ['a locked row', row('locked', { locked: true })],
     ['a row already set aside', row('set-aside', { informational: true })],
     ['the history sync row, which has a dismissal of its own', row(HISTORY_SYNC_ROW_ID, { urgency: ActionUrgency.TODO })],
@@ -72,6 +74,31 @@ describe('modules/shell/action-center/use-action-center-snooze', () => {
     const { withSnooze } = snooze();
 
     expect(optionIds(withSnooze(item))).not.toContain('remind-later');
+  });
+
+  it('should not set aside a row that turned blocking under an older snooze of its id', () => {
+    const { withSnooze } = snooze();
+    run(withSnooze(row('bank')), 'remind-later');
+
+    expect(withSnooze(row('bank', { urgency: ActionUrgency.BLOCKING })).informational).toBe(false);
+  });
+
+  it('should not set aside a row marked not snoozable under an older snooze of its id', () => {
+    const { withSnooze } = snooze();
+    run(withSnooze(row('bank-expired')), 'remind-later');
+
+    expect(withSnooze(row('bank-expired', { snoozable: false })).informational).toBe(false);
+  });
+
+  it.each([
+    ['turned blocking', { urgency: ActionUrgency.BLOCKING }],
+    ['is marked not snoozable', { snoozable: false }],
+  ])('should keep a row that %s in the list under an older mute of its id', (_name, overrides) => {
+    const { setAsideOf, withSnooze } = snooze();
+    run(withSnooze(row('bank')), 'mute');
+
+    expect(setAsideOf(row('bank', overrides))).toBeUndefined();
+    expect(withSnooze(row('bank', overrides)).informational).toBe(false);
   });
 
   it('should list the snooze ahead of the option that silences a row for good', () => {

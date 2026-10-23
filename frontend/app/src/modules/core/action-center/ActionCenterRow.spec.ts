@@ -1,5 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { assert, describe, expect, it, vi } from 'vitest';
 import ActionCenterRow from '@/modules/core/action-center/ActionCenterRow.vue';
 import { type ActionItem, type ActionTarget, ActionUrgency } from '@/modules/core/action-center/types';
 
@@ -103,6 +103,21 @@ describe('modules/core/action-center/ActionCenterRow', () => {
 
     expect(wrapper.findComponent({ name: 'RuiChip' }).props('color')).not.toBe('warning');
     expect(wrapper.find('[data-testid=actions-center-row-action]').exists()).toBe(true);
+  });
+
+  it('should draw a blocking row\'s action as a filled primary button, never a red one that reads as destructive', async () => {
+    const wrapper = mountRow(createItem({ urgency: ActionUrgency.BLOCKING }));
+    const action = (): Record<string, unknown> => {
+      const button = wrapper.findAllComponents({ name: 'RuiButton' }).find(item => item.attributes('data-testid') === 'actions-center-row-action');
+      assert(button);
+      return button.props();
+    };
+
+    expect(action()).toMatchObject({ color: 'primary', variant: 'default' });
+
+    await wrapper.setProps({ item: createItem() });
+
+    expect(action()).toMatchObject({ color: 'warning', variant: 'outlined' });
   });
 
   it('should mark a row as new only when told it is', async () => {

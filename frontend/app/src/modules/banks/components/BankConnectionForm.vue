@@ -8,9 +8,9 @@ import {
   isEditing,
   toBankConnectionFormState,
 } from '@/modules/banks/bank-connection-form';
+import BankLabel from '@/modules/banks/components/BankLabel.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useMappedModelForm } from '@/modules/core/form/use-model-form';
-import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const modelValue = defineModel<BankFormData>({ required: true });
@@ -18,7 +18,7 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { required: true });
 const errorMessages = defineModel<ValidationErrors>('errorMessages', { default: () => ({}) });
 
 const { manifests } = storeToRefs(useBankConnectionsStore());
-const { manifestFor } = useBankConnectionsStore();
+const { bankNameFor, manifestFor } = useBankConnectionsStore();
 const { t } = useI18n({ useScope: 'global' });
 
 const editMode = computed<boolean>(() => isEditing(get(modelValue).mode));
@@ -73,22 +73,23 @@ defineExpose({
       @update:model-value="selectLocation($event)"
     >
       <template #selection="{ item }">
-        <LocationDisplay
-          :identifier="item.location"
-          :open-details="false"
+        <BankLabel
+          :location="item.location"
+          :name="item.displayName"
         />
       </template>
       <template #item="{ item }">
-        <LocationDisplay
-          :identifier="item.location"
-          :open-details="false"
+        <BankLabel
+          :location="item.location"
+          :name="item.displayName"
         />
       </template>
     </RuiMenuSelect>
-    <LocationDisplay
+    <BankLabel
       v-else
-      :identifier="form.state.location"
-      :open-details="false"
+      :location="form.state.location"
+      :name="bankNameFor(form.state.location)"
+      data-testid="bank-connection-bank"
     />
 
     <RuiTextField

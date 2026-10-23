@@ -49,9 +49,8 @@ test.describe.serial('bank connections', () => {
       await banksPage.openAddDialog();
       await banksPage.fillConnection('Rejected organization', 'rejected-login', 'rejected-secret');
       await banksPage.save();
-      await banksPage.expectMessage('Qonto rejected the credentials');
-      await banksPage.dismissMessage();
-      await expect(banksPage.dialog()).toBeVisible();
+      await banksPage.expectSetupError('Qonto rejected the credentials');
+      await expect(ctx.sharedPage.locator('[data-testid=message-dialog-description]')).toHaveCount(0);
       await banksPage.cancel();
     }
     finally {
@@ -124,7 +123,8 @@ test.describe.serial('bank connections', () => {
   test('should lead from a sync paused for a TAN to answering it with only the connection identity', async () => {
     await banksPage.visitConnections();
     await banksPage.syncConnection(NEEDS_TAN);
-    await banksPage.authenticateFromNotification();
+    await expect(banksPage.actionCenterButton()).toHaveAttribute('aria-label', /needs you now/, { timeout: TIMEOUT_MEDIUM });
+    await banksPage.authenticateFromActionCenter(NEEDS_TAN);
 
     await expect(banksPage.dialog().locator('[data-testid=bank-auth-challenge]')).toContainText('Enter the TAN from your banking app', { timeout: TIMEOUT_MEDIUM });
     await expect(banksPage.connectionRow(NEEDS_TAN).locator('[data-testid=bank-auth-required]')).toBeVisible();
@@ -133,6 +133,7 @@ test.describe.serial('bank connections', () => {
     await banksPage.dialog().waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
     expect(requests.authenticated).toEqual([{ location: 'qonto', name: NEEDS_TAN, response: '123456' }]);
     await expect(banksPage.connectionRow(NEEDS_TAN).locator('[data-testid=bank-auth-required]')).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
+    await expect(banksPage.actionCenterButton()).not.toHaveAttribute('aria-label', /needs you now/);
   });
 });
 

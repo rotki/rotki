@@ -226,12 +226,21 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
             </span>
             <RuiChip
               v-if="row.syncStatus.authChallenge"
-              color="warning"
+              color="error"
               variant="tonal"
               size="sm"
               data-testid="bank-auth-required"
             >
               {{ t('bank_settings.sync.authentication_required') }}
+            </RuiChip>
+            <RuiChip
+              v-else-if="row.syncStatus.authExpired"
+              color="warning"
+              variant="tonal"
+              size="sm"
+              data-testid="bank-auth-expired"
+            >
+              {{ t('bank_settings.sync.authentication_expired') }}
             </RuiChip>
             <template v-else-if="row.syncStatus.lastError">
               <RuiChip

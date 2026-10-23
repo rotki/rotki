@@ -1066,11 +1066,18 @@ class BankAuthenticationResource(BaseMethodView):
     """Continue a TAN, challenge, or decoupled app-approval request."""
 
     post_schema = BankAuthenticationSchema()
+    delete_schema = BankLocationWithNameSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
     def post(self, name: str, location: Location, response: str | None) -> Response:
         return self.rest_api.answer_bank_authentication(name, location, response)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, name: str, location: Location) -> Response:
+        """Drop the pending challenge, so the next query asks the bank for a fresh one."""
+        return self.rest_api.cancel_bank_authentication(name, location)
 
 
 class BankSyncResource(BaseMethodView):

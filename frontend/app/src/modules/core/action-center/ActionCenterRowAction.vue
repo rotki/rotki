@@ -12,9 +12,23 @@ const emit = defineEmits<{
   option: [target: TTarget];
 }>();
 
-/** Outlined while the row asks for something; plain text for what rotki retries or the user set aside. */
-const variant = computed<'text' | 'outlined'>(() =>
-  item.urgency === ActionUrgency.AUTOMATIC || item.informational ? 'text' : 'outlined');
+/** A row that cannot wait, still asking: its icon and badge carry the red, so its button stays primary. */
+const blocking = computed<boolean>(() => item.urgency === ActionUrgency.BLOCKING && !item.informational && !item.locked);
+
+/**
+ * Filled for a row that cannot wait, outlined while the row asks for something, plain text for
+ * what rotki retries or the user set aside.
+ *
+ * @remarks
+ * A blocking row's button is not drawn in red, since a red button reads as a destructive action.
+ */
+const variant = computed<'default' | 'text' | 'outlined'>(() => {
+  if (get(blocking))
+    return 'default';
+  return item.urgency === ActionUrgency.AUTOMATIC || item.informational ? 'text' : 'outlined';
+});
+
+const buttonColor = computed<ContextColorsType | undefined>(() => get(blocking) ? 'primary' : color);
 
 /** The chevron promises a trip elsewhere, so an action that works in place goes without it. */
 const leadsAway = computed<boolean>(() => leavesCenter(item.target));
@@ -29,7 +43,7 @@ const leadsAway = computed<boolean>(() => leavesCenter(item.target));
       <RuiButton
         size="sm"
         :variant="variant"
-        :color="color"
+        :color="buttonColor"
         class="shrink-0"
         :loading="item.loading"
         data-testid="actions-center-row-action"
@@ -65,7 +79,7 @@ const leadsAway = computed<boolean>(() => leavesCenter(item.target));
     v-else
     size="sm"
     :variant="variant"
-    :color="color"
+    :color="buttonColor"
     class="shrink-0"
     :loading="item.loading"
     data-testid="actions-center-row-action"

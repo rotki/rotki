@@ -436,6 +436,11 @@
         }
       },
       "integrations": {
+        "bank_authentication": {
+          "action": "验证",
+          "description": "{location} 连接“{name}”需要你确认授权，rotki 才能拉取新交易。",
+          "title": "需要银行验证"
+        },
         "binance_pairs_missing": {
           "action": "选择交易对",
           "description": "未选择任何市场交易对，因此不会导入交易。请选择你在此账户上交易的交易对。",
@@ -607,13 +612,6 @@
         "error": {
           "title": "删除手动余额"
         }
-      }
-    },
-    "bank_events": {
-      "authentication": {
-        "action": "验证",
-        "description": "{location} 连接“{name}”需要你确认授权，rotki 才能拉取新交易。",
-        "title": "需要银行验证"
       }
     },
     "bridge_matching": {
@@ -1797,7 +1795,6 @@
       "remove_message": "无法移除银行连接 {name}：{error}",
       "remove_title": "移除银行连接",
       "setup_message": "无法设置 {bank} 连接：{error}",
-      "setup_title": "设置银行连接",
       "supported_title": "支持的银行"
     },
     "form": {

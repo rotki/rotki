@@ -122,7 +122,14 @@ class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
             )
         if response.code == '3920' and self._is_ing():
             return
-        super()._process_response(dialog, segment, response)
+        try:
+            super()._process_response(dialog, segment, response)
+        except (FinTSClientPINError, FinTSClientTemporaryAuthError):
+            # python-fints blocked the PIN before raising, so leaving the dialog must not send
+            # HKEND. A fresh dialog signs with the blocked PIN and a bare Exception replaces this
+            # one; a resumed dialog signs with the copy its pause pickled and resends the PIN.
+            dialog.open = False
+            raise
 
 
 class Fints(BankConnector):
@@ -164,13 +171,15 @@ class Fints(BankConnector):
         if (changed := super().edit_exchange_credentials(credentials)):
             self._set_configuration(self.api_key)
             self._validate_connection(self.bank_code, self.endpoint)
-            self._client_data = None
-            self._pending = None
-            self._completed.clear()
-            self._accounts.clear()
-            with self.db.user_write() as write_cursor:
-                self.clear_session(write_cursor)
+            self.forget_session()
         return changed
+
+    def forget_session(self) -> None:
+        self._client_data = None
+        self._pending = None
+        self._completed.clear()
+        self._accounts.clear()
+        super().forget_session()
 
     @staticmethod
     def _validate_connection(bank_code: str, endpoint: str) -> None:
@@ -240,6 +249,11 @@ class Fints(BankConnector):
 
     def _save_state(self, client: FinTS3PinTanClient) -> None:
         self._client_data = client.deconstruct(including_private=True)
+        self._save_session()
+
+    def _save_session(self) -> None:
+        """Persist the pending request with the client state last saved, without a client."""
+        assert self._client_data is not None, 'a FinTS session is saved after a client'
         data = {
             'version': SESSION_VERSION,
             'client_data': base64.b64encode(self._client_data).decode(),
@@ -346,6 +360,15 @@ class Fints(BankConnector):
     def pending_authentication(self) -> BankAuthChallenge | None:
         return self._challenge(self._pending_response()) if self._pending is not None else None
 
+    def has_pending_authentication(self) -> bool:
+        return self._pending is not None
+
+    def cancel_authentication(self) -> None:
+        if self._pending is None:  # nothing paused, so no client state was saved either
+            return
+        self._pending = None
+        self._save_session()
+
     def pending_authentication_resumes_history(self) -> bool:
         return self._pending is not None and self._pending.get('resume_history') is True
 
@@ -442,13 +465,28 @@ class Fints(BankConnector):
         self._save_state(client)
         return result
 
+    def _drop_pending(self, client: FinTS3PinTanClient) -> None:
+        """Forget a pending authentication the bank no longer honours, so the next sync opens a
+        fresh dialog instead of raising the same stale challenge again."""
+        self._pending = None
+        self._save_state(client)
+
     def answer_authentication(self, response: str | None) -> None:
+        """Send the user's answer to the pending challenge.
+
+        May raise BankMFARequired for a further challenge, BankAuthExpired when the bank
+        rejected or expired the pending one (which is then dropped), BankError or RemoteError.
+        """
         if self._pending is None:
             raise BankError('FinTS has no pending authentication request')
         client = self._new_client()
         pending = self._pending
         try:
             retry = self._pending_response()
+        except BankError as e:
+            self._drop_pending(client)
+            raise BankAuthExpired(str(e)) from e
+        try:
             if retry.decoupled is False and not response:
                 raise BankError('A TAN is required to complete the FinTS authentication')
             with client.resume_dialog(base64.b64decode(pending['dialog'], validate=True)):
@@ -478,8 +516,10 @@ class Fints(BankConnector):
                             resume_history=pending.get('resume_history') is True,
                         )
         except (KeyError, TypeError, ValueError) as e:
-            raise BankError('The saved FinTS authentication request is invalid or expired') from e
+            self._drop_pending(client)
+            raise BankAuthExpired('The saved FinTS authentication request is invalid or expired') from e  # noqa: E501
         except (FinTSClientPINError, FinTSClientTemporaryAuthError) as e:
+            self._drop_pending(client)
             raise BankAuthExpired('The TAN was rejected by the bank') from e
         except (FinTSConnectionError, requests.exceptions.RequestException) as e:
             raise RemoteError(f'Could not connect to the FinTS endpoint: {e!s}') from e

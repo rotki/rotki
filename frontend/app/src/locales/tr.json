@@ -436,6 +436,11 @@
         }
       },
       "integrations": {
+        "bank_authentication": {
+          "action": "Kimlik doğrula",
+          "description": "rotki'nin yeni işlemleri çekebilmesi için '{name}' adlı {location} bağlantısında erişimi onaylamanız gerekiyor.",
+          "title": "Banka kimlik doğrulaması gerekli"
+        },
         "binance_pairs_missing": {
           "action": "Parite seç",
           "description": "Hiçbir piyasa çifti seçilmediği için alım satımlar içe aktarılmıyor. Bu hesapta alım satım yaptığınız çiftleri seçin.",
@@ -610,13 +615,6 @@
         "error": {
           "title": "Manuel bakiye silme"
         }
-      }
-    },
-    "bank_events": {
-      "authentication": {
-        "action": "Kimlik doğrula",
-        "description": "rotki'nin yeni işlemleri çekebilmesi için '{name}' adlı {location} bağlantısında erişimi onaylamanız gerekiyor.",
-        "title": "Banka kimlik doğrulaması gerekli"
       }
     },
     "bridge_matching": {
@@ -1816,7 +1814,6 @@
       "remove_message": "{name} adlı banka bağlantısı kaldırılamadı: {error}",
       "remove_title": "Banka bağlantısını kaldırma",
       "setup_message": "{bank} bağlantısı kurulamadı: {error}",
-      "setup_title": "Banka bağlantısı kurulumu",
       "supported_title": "Desteklenen bankalar"
     },
     "form": {

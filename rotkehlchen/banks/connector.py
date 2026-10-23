@@ -115,6 +115,13 @@ class BankConnector(ExchangeInterface, ABC):
         """Return a resumable authentication challenge restored with the connector."""
         return None
 
+    def has_pending_authentication(self) -> bool:
+        """Return whether a challenge is still waiting for an answer, without rebuilding it."""
+        return False
+
+    def cancel_authentication(self) -> None:
+        """Forget the pending challenge, so the next query asks the bank for a fresh one."""
+
     def pending_authentication_resumes_history(self) -> bool:
         """Return whether answering the pending challenge must continue a history sync."""
         return False
@@ -180,6 +187,12 @@ class BankConnector(ExchangeInterface, ABC):
             location=str(self.location),
             location_name=self._cache_location_name(),
         )
+
+    def forget_session(self) -> None:
+        """Drop the saved session and whatever the connector restored from it, so it starts
+        over as a connection that never authenticated."""
+        with self.db.user_write() as write_cursor:
+            self.clear_session(write_cursor)
 
     # ---- cursor ----
 

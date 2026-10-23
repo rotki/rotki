@@ -49,12 +49,9 @@ export class BanksPage {
     return this.page.locator('[data-testid=bottom-dialog]');
   }
 
-  async expectMessage(text: string): Promise<void> {
-    await expect(this.page.locator('[data-testid=message-dialog-description]')).toContainText(text, { timeout: TIMEOUT_MEDIUM });
-  }
-
-  async dismissMessage(): Promise<void> {
-    await this.page.locator('[data-testid=message-dialog-ok]').click();
+  /** Why the add or edit was refused, shown inside the dialog. */
+  async expectSetupError(text: string): Promise<void> {
+    await expect(this.dialog().locator('[data-testid=bank-setup-error]')).toContainText(text, { timeout: TIMEOUT_MEDIUM });
   }
 
   async syncConnection(name: string): Promise<void> {
@@ -62,9 +59,18 @@ export class BanksPage {
   }
 
   /** Follows the "Authenticate" action of the notification a sync paused for a TAN raises. */
-  async authenticateFromNotification(): Promise<void> {
-    const notification = this.page.locator('[data-id=notification]').filter({ hasText: 'Bank authentication required' });
-    await notification.getByRole('button', { name: 'Authenticate' }).click({ timeout: TIMEOUT_MEDIUM });
+  actionCenterButton(): Locator {
+    return this.page.getByTestId('actions-center-button');
+  }
+
+  /** The action center row asking for a connection's TAN. */
+  authenticationRow(name: string): Locator {
+    return this.page.locator('[data-testid=actions-center-row][data-key^=bank-authentication-qonto-]').filter({ hasText: name });
+  }
+
+  async authenticateFromActionCenter(name: string): Promise<void> {
+    await this.actionCenterButton().click();
+    await this.authenticationRow(name).getByTestId('actions-center-row-action').click({ timeout: TIMEOUT_MEDIUM });
   }
 
   async answerTan(tan: string): Promise<void> {

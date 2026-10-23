@@ -50,6 +50,7 @@ describe('modules/core/action-center/ActionCenterMenu', () => {
   });
 
   it.each([
+    [ActionUrgency.BLOCKING, 'lu-clock-alert', 'error'],
     [ActionUrgency.DECISION, 'lu-triangle-alert', 'warning'],
     [ActionUrgency.TODO, 'lu-list-todo', 'info'],
     [ActionUrgency.AUTOMATIC, 'lu-list-todo', 'secondary'],
@@ -64,6 +65,13 @@ describe('modules/core/action-center/ActionCenterMenu', () => {
     const wrapper = mountMenu({ badge: true, count: 3 });
 
     expect(wrapper.find('[data-testid=actions-center-button]').attributes('aria-label')).toBe('action_center.subtitle::3');
+  });
+
+  it('should name a row that cannot wait in the accessible name, since a red badge reaches a screen reader as nothing', () => {
+    const wrapper = mountMenu({ badge: true, count: 3, newCount: 1, urgency: ActionUrgency.BLOCKING });
+
+    expect(wrapper.find('[data-testid=actions-center-button]').attributes('aria-label'))
+      .toBe('action_center.subtitle::3, action_center.blocking, action_center.new_count::1');
   });
 
   it('should add how many are new to the accessible name', () => {

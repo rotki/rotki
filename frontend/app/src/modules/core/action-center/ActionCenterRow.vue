@@ -19,6 +19,7 @@ const emit = defineEmits<{
 
 const URGENCY_ICON_CLASSES: Record<ActionUrgency, string> = {
   [ActionUrgency.AUTOMATIC]: 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-secondary',
+  [ActionUrgency.BLOCKING]: 'bg-rui-error/10 text-rui-error',
   [ActionUrgency.DECISION]: 'bg-rui-warning/10 text-rui-warning',
   [ActionUrgency.TODO]: 'bg-rui-info/10 text-rui-info',
 };

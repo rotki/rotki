@@ -5,7 +5,9 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.banks.errors import BankAuthChallenge
 from rotkehlchen.banks.manager import BankCredentialInput
+from rotkehlchen.banks.manifest import AuthPrimitive
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -115,6 +117,7 @@ def test_bank_lifecycle(rotkehlchen_api_server: APIServer) -> None:
                 'last_sync_ts': None,
                 'last_error': None,
                 'auth_challenge': None,
+                'auth_expired': False,
             },
         }]
         connector = rotki.bank_manager.get_bank(name='Qonto 1', location=Location.QONTO)
@@ -312,6 +315,60 @@ def test_failed_bank_edit_restores_credentials(rotkehlchen_api_server: APIServer
                 credentials=BankCredentialInput(values={'api_secret': 'newsecret'}),
             )
     assert bank.session.headers['Authorization'] == 'login:secret'
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_balance_success_keeps_a_challenge_the_connector_still_waits_on(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """A balance query answered from cache succeeds while a TAN is pending"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    url = api_url_for(rotkehlchen_api_server, 'bankbalancesresource')
+    with _patch_bank_http(QontoFixtureTransport()):
+        _add_qonto(rotkehlchen_api_server)
+        bank = rotki.bank_manager.get_bank(name='Qonto 1', location=Location.QONTO)
+        assert bank is not None
+        status = rotki.bank_manager.sync_status[bank.location_id()]
+        status.set_challenge(challenge := BankAuthChallenge(
+            primitive=AuthPrimitive.OTP_INPUT,
+            prompt='Enter the TAN',
+        ))
+        with patch.object(type(bank), 'has_pending_authentication', return_value=True):
+            assert_proper_sync_response_with_result(requests.get(url))
+        assert status.auth_challenge == challenge
+
+        assert_proper_sync_response_with_result(requests.get(url))
+        assert status.serialize()['auth_challenge'] is None
+
+        # an expired TAN outlives a balance success, since transactions may still need one
+        status.expire_challenge()
+        assert_proper_sync_response_with_result(requests.get(url, json={'ignore_cache': True}))
+        assert status.serialize()['auth_expired'] is True
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_starting_over_an_authentication_clears_the_pending_challenge(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    url = api_url_for(rotkehlchen_api_server, 'bankauthenticationresource')
+    with _patch_bank_http(QontoFixtureTransport()):
+        _add_qonto(rotkehlchen_api_server)
+    bank = rotki.bank_manager.get_bank(name='Qonto 1', location=Location.QONTO)
+    assert bank is not None
+    rotki.bank_manager.sync_status[bank.location_id()].set_challenge(BankAuthChallenge(
+        primitive=AuthPrimitive.OTP_INPUT,
+        prompt='Enter the TAN',
+    ))
+
+    assert_simple_ok_response(requests.delete(url, json={'location': 'qonto', 'name': 'Qonto 1'}))
+    banks = assert_proper_sync_response_with_result(
+        requests.get(api_url_for(rotkehlchen_api_server, 'banksresource')),
+    )
+    assert banks[0]['sync_status']['auth_challenge'] is None
+
+    response = requests.delete(url, json={'location': 'qonto', 'name': 'nope'})
+    assert_error_response(response, 'does not exist', HTTPStatus.CONFLICT)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

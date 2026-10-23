@@ -26,11 +26,11 @@ const { t } = useI18n({ useScope: 'global' });
         <RuiButton
           variant="text"
           icon
-          color="warning"
+          color="error"
           data-testid="bank-authenticate"
           @click="emit('authenticate')"
         >
-          <RuiIcon name="lu-shield-check" />
+          <RuiIcon name="lu-shield-alert" />
         </RuiButton>
       </template>
       {{ t('bank_settings.authentication.tooltip') }}

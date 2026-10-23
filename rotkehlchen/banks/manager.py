@@ -16,7 +16,12 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.banks.constants import SUPPORTED_BANKS
-from rotkehlchen.banks.errors import BankAuthChallenge, BankError, BankMFARequired
+from rotkehlchen.banks.errors import (
+    BankAuthChallenge,
+    BankAuthExpired,
+    BankError,
+    BankMFARequired,
+)
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -31,7 +36,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from rotkehlchen.banks.connector import BankConnector
     from rotkehlchen.banks.manifest import BankManifest
@@ -50,6 +55,33 @@ class BankSyncStatus:
     last_sync_ts: Timestamp | None = None
     last_error: str | None = None
     auth_challenge: BankAuthChallenge | None = None
+    # The bank rejected or expired the last pending authentication, so the user has to start it
+    # again. Written only through set_challenge, drop_challenge and expire_challenge.
+    auth_expired: bool = False
+    # Guards the challenge fields: a sync and a balance query write them from separate threads.
+    lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
+
+    def set_challenge(self, challenge: BankAuthChallenge | None) -> None:
+        """Record the pending challenge, or None once none is pending. Either supersedes an
+        expired one."""
+        with self.lock:
+            self.auth_challenge = challenge
+            self.auth_expired = False
+
+    def drop_challenge(self, still_pending: Callable[[], bool]) -> None:
+        """Forget a challenge the connector no longer waits on, keeping an expired one: a bank
+        that answers a balance query may still ask a TAN for transactions.
+
+        still_pending is read under the lock, so a challenge a concurrent sync raises in the
+        meantime is kept rather than erased."""
+        with self.lock:
+            if not still_pending():
+                self.auth_challenge = None
+
+    def expire_challenge(self) -> None:
+        with self.lock:
+            self.auth_challenge = None
+            self.auth_expired = True
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -59,6 +91,7 @@ class BankSyncStatus:
             'auth_challenge': (
                 self.auth_challenge.serialize() if self.auth_challenge is not None else None
             ),
+            'auth_expired': self.auth_expired,
         }
 
 
@@ -183,7 +216,11 @@ class BankManager:
             )
         except BankError as e:
             return False, str(e)
+        self._discard_setup(self._location_id(name=name, location=location))
         bank = self._instantiate(api_credentials, database)
+        # a setup abandoned before under this name (dialog closed, restart, logout) left its
+        # session behind, and the connector restored it: this add must not resume that one
+        bank.forget_session()
         try:
             valid, message = bank.validate_api_key()
         except BankMFARequired:
@@ -208,7 +245,11 @@ class BankManager:
             location: Location,
             response: str | None,
     ) -> tuple[bool, str]:
-        """Resume a pending connector challenge and finish setup when it was an add flow."""
+        """Resume a pending connector challenge and finish setup when it was an add flow.
+
+        May raise BankMFARequired for a further challenge, and BankAuthExpired when the challenge
+        was dropped or a setup cannot be completed after its answer (the setup is then dropped).
+        """
         location_id = self._location_id(name=name, location=location)
         pending_setup = self.pending_setups.get(location_id)
         bank = pending_setup or self.get_bank(name=name, location=location)
@@ -221,17 +262,32 @@ class BankManager:
         try:
             bank.answer_authentication(response)
         except BankMFARequired as e:
-            self.sync_status[location_id].auth_challenge = e.challenge
+            if pending_setup is None:  # a setup's dialog gets its challenge from the 202
+                self.sync_status[location_id].set_challenge(e.challenge)
             raise
-        self.sync_status[location_id].auth_challenge = None
+        except BankAuthExpired:
+            if pending_setup is None:
+                self.sync_status[location_id].expire_challenge()
+            else:  # the setup cannot be resumed, so it starts over from the credentials
+                self._discard_setup(location_id)
+            raise
         if pending_setup is None:
+            self.sync_status[location_id].set_challenge(None)
             if resume_history:
-                self.sync_one(bank)
+                try:
+                    self.sync_one(bank)
+                except BankMFARequired:
+                    raise
+                except RemoteError as e:  # the answer went through; sync_one recorded the failure
+                    log.warning(
+                        'History sync after the %s authentication failed: %s', bank.name, e,
+                    )
             return True, ''
 
         valid, message = bank.validate_api_key()
-        if not valid:
-            return False, message
+        if not valid:  # the answer was used up, so nothing is left to retry: start over
+            self._discard_setup(location_id)
+            raise BankAuthExpired(message)
         assert self.database is not None, 'authentication answered before login'
         with self.registry_lock:
             self.database.add_bank_credentials(ExchangeApiCredentials(
@@ -243,6 +299,31 @@ class BankManager:
             self.connected_banks[location].append(bank)
             self.pending_setups.pop(location_id, None)
         return True, ''
+
+    def cancel_bank_authentication(self, name: str, location: Location) -> bool:
+        """Forget a connection's pending challenge so its next query asks the bank for a fresh
+        one, or drop a setup waiting on one. The bank decides when a challenge lapses, so this is
+        how the user starts over from one they will not answer.
+
+        Returns False when there is no such connection or setup.
+        """
+        location_id = self._location_id(name=name, location=location)
+        if location_id in self.pending_setups:
+            self._discard_setup(location_id)
+            return True
+        if (bank := self.get_bank(name=name, location=location)) is None:
+            return False
+        bank.cancel_authentication()
+        self.sync_status[location_id].set_challenge(None)
+        return True
+
+    def _discard_setup(self, location_id: ExchangeLocationID) -> None:
+        """Forget a setup that will never be saved, with the bank session it persisted: a later
+        setup under the same name would otherwise restore its client state."""
+        if (setup := self.pending_setups.pop(location_id, None)) is None:
+            return
+        with setup.db.user_write() as write_cursor:
+            setup.clear_session(write_cursor)
 
     def edit_bank(
             self,
@@ -354,7 +435,7 @@ class BankManager:
                     self.connected_banks[location].append(bank)
                 try:
                     if (challenge := bank.pending_authentication()) is not None:
-                        self.sync_status[bank.location_id()].auth_challenge = challenge
+                        self.sync_status[bank.location_id()].set_challenge(challenge)
                 except BankError as e:
                     log.warning(
                         'Could not restore pending authentication for %s bank %s: %s',
@@ -400,14 +481,14 @@ class BankManager:
         try:
             bank.query_history_events()
         except BankMFARequired as e:
-            status.auth_challenge = e.challenge
+            status.set_challenge(e.challenge)
             status.last_error = None
             raise
         except RemoteError as e:
             status.last_error = str(e)
             raise
         else:
-            status.auth_challenge = None
+            status.set_challenge(None)
             status.last_error = None
             status.last_sync_ts = ts_now()
         finally:
