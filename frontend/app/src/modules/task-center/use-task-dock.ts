@@ -35,6 +35,11 @@ interface UseTaskDockReturn {
    * left to read.
    */
   acknowledge: (id: ActivityId) => void;
+  /**
+   * Dismisses every reported job that finished with nothing held for the user, as {@link acknowledge}
+   * does one, including work too brief for the panel to list, which would otherwise take the rows' place.
+   */
+  acknowledgeFinished: () => void;
   /** Marks the pointer or focus as on the dock, which holds off it going away; `false` when it leaves. */
   holdInteraction: (held: boolean) => void;
 }
@@ -145,10 +150,18 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
     set(acknowledged, new Set([...get(acknowledged)].filter(id => !replaced.has(id))));
   }
 
-  function acknowledge(id: ActivityId): void {
-    set(acknowledged, new Set([...get(acknowledged), id]));
+  function acknowledgeAll(ids: ActivityId[]): void {
+    set(acknowledged, new Set([...get(acknowledged), ...ids]));
     if (get(held).length === 0 && get(finished).length === 0)
       set(modelExpanded, false);
+  }
+
+  function acknowledge(id: ActivityId): void {
+    acknowledgeAll([id]);
+  }
+
+  function acknowledgeFinished(): void {
+    acknowledgeAll(get(finished).map(root => root.id));
   }
 
   /**
@@ -204,6 +217,7 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
 
   return {
     acknowledge,
+    acknowledgeFinished,
     holdInteraction,
     dismissed,
     dismissedFailure,

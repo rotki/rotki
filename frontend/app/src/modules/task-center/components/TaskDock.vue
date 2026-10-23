@@ -21,9 +21,9 @@ const pill = useTemplateRef<HTMLDivElement>('pill');
 /** Whether the footer is asking to confirm Stop all; it asks in place and gives up once there is nothing left to stop. */
 const confirmingStopAll = ref<boolean>(false);
 
-const { acknowledge, holdInteraction, modelExpanded, state, visible } = useTaskDock();
+const { acknowledge, acknowledgeFinished, holdInteraction, modelExpanded, state, visible } = useTaskDock();
 const { children, jobs } = usePendingJobs();
-const { canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable } = useDockPanel(jobs, children);
+const { canDismissAll, canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable } = useDockPanel(jobs, children);
 const { cancel, rerun } = useTaskController();
 
 const now = useTimestamp({ scheduler: tick => useIntervalFn(tick, 1000) });
@@ -123,10 +123,20 @@ syncRefs(pillHeight, barHeight);
         </div>
       </div>
       <div
-        v-if="canRetryAll"
-        class="flex justify-end border-t border-default pt-2"
+        v-if="canRetryAll || canDismissAll"
+        class="flex justify-end gap-1 border-t border-default pt-2"
       >
         <RuiButton
+          v-if="canDismissAll"
+          variant="text"
+          size="sm"
+          data-testid="dock-dismiss-finished"
+          @click="acknowledgeFinished()"
+        >
+          {{ t('task_dock.panel.dismiss_all') }}
+        </RuiButton>
+        <RuiButton
+          v-if="canRetryAll"
           variant="text"
           color="primary"
           size="sm"

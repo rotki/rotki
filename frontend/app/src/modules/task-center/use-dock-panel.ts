@@ -32,6 +32,8 @@ interface UseDockPanelReturn {
   /** Whether the footer's bulk retry adds anything over the rows and failure groups. */
   canRetryAll: ComputedRef<boolean>;
   retryFailed: () => void;
+  /** Whether the footer's bulk dismiss adds anything over the rows: a clean run reported with more than one row. */
+  canDismissAll: ComputedRef<boolean>;
   /** Listed jobs a bulk stop may interrupt without leaving data half-written. See `isSafeToStop`. */
   stoppable: ComputedRef<Activity[]>;
   /** Listed jobs a bulk stop leaves running, because interrupting them could leave data half-written. */
@@ -106,6 +108,12 @@ export function useDockPanel(
     return root.startedAt === undefined || get(now) - root.startedAt >= APPEAR_DELAY;
   }
 
+  /** The settled jobs that had a row, so work that was over in a moment does not turn up later; all of them if none had one. */
+  function shownOrAll(settled: Activity[]): Activity[] {
+    const seen = settled.filter(root => get(shown).has(root.id));
+    return seen.length > 0 ? seen : settled;
+  }
+
   function listed(): Activity[] {
     switch (get(state)) {
       case DockState.WORKING:
@@ -115,11 +123,9 @@ export function useDockPanel(
       case DockState.ATTENTION:
         return get(flagged);
       case DockState.DISMISSED:
-        return get(dismissed);
-      case DockState.DONE: {
-        const seen = get(finished).filter(root => get(shown).has(root.id));
-        return seen.length > 0 ? seen : get(finished);
-      }
+        return shownOrAll(get(dismissed));
+      case DockState.DONE:
+        return shownOrAll(get(finished));
       case undefined:
         return [];
     }
@@ -199,6 +205,12 @@ export function useDockPanel(
     return groups.size > 1;
   });
 
+  /**
+   * A clean run lists only finished jobs, so every row is one the bulk dismiss clears. A run with a
+   * failure or a skip that asked for attention lists only those, which a bulk dismiss must not touch.
+   */
+  const canDismissAll = computed<boolean>(() => get(state) === DockState.DONE && get(roots).length > 1);
+
   function retryFailed(): void {
     for (const leaf of get(retryable))
       rerun(leaf);
@@ -216,5 +228,5 @@ export function useDockPanel(
 
   const unstoppable = computed<Activity[]>(() => get(running).filter(root => !isStoppable(root)));
 
-  return { canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable };
+  return { canDismissAll, canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable };
 }

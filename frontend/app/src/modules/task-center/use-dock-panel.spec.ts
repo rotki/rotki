@@ -10,8 +10,10 @@ import {
   ActivityStatus,
   makeActivityId,
 } from '@/modules/task-center/core/types';
+import { DockState } from './dock-state';
 import { useDockPanel } from './use-dock-panel';
 import { usePendingJobs } from './use-pending-jobs';
+import { useTaskDock } from './use-task-dock';
 
 const activities = ref<Activity[]>([]);
 const rerun = vi.fn<(activity: Activity) => void>();
@@ -242,6 +244,63 @@ describe('useDockPanel', () => {
 
       expect(get(title)).toBe('task_dock.panel.title.attention');
       expect(get(roots).map(root => root.id)).toEqual([balancesId]);
+    });
+  });
+
+  describe('bulk dismiss', () => {
+    /** Timed from now, so settling at once leaves it too brief for the panel to list. */
+    const briefPrices = (status: ActivityStatus): Activity => activity(ActivityKind.PRICES, 'latest', status, undefined, { startedAt: Date.now() });
+
+    it('should offer a bulk dismiss for a clean run reported with more than one row', async () => {
+      set(activities, [report(RUNNING), ...balances(RUNNING, RUNNING, RUNNING, RUNNING)]);
+      const { canDismissAll } = panel();
+      expect(get(canDismissAll)).toBe(false);
+
+      await transition([report(COMPLETE), ...balances(COMPLETE, COMPLETE, COMPLETE, COMPLETE)]);
+
+      expect(get(canDismissAll)).toBe(true);
+    });
+
+    it('should not offer a bulk dismiss for a clean run with a single row', async () => {
+      set(activities, [report(RUNNING)]);
+      const { canDismissAll } = panel();
+
+      await transition([report(COMPLETE)]);
+
+      expect(get(canDismissAll)).toBe(false);
+    });
+
+    it('should not offer a bulk dismiss while failures are reported, since only the failures are listed', async () => {
+      const prices = (status: ActivityStatus): Activity => activity(ActivityKind.PRICES, 'latest', status);
+      set(activities, [report(RUNNING), prices(RUNNING), ...balances(RUNNING, RUNNING, RUNNING, RUNNING)]);
+      const { canDismissAll, roots } = panel();
+
+      await transition([report(FAILED), prices(COMPLETE), ...balances(COMPLETE, COMPLETE, FAILED, COMPLETE)]);
+
+      expect(get(roots).map(root => root.kind).sort()).toEqual([ActivityKind.BLOCKCHAIN_BALANCES, ActivityKind.PNL_REPORT].sort());
+      expect(get(canDismissAll)).toBe(false);
+    });
+
+    it('should count rows rather than jobs, leaving out work too brief to list', async () => {
+      set(activities, [report(RUNNING), briefPrices(RUNNING)]);
+      const { canDismissAll, roots } = panel();
+
+      await transition([report(COMPLETE), briefPrices(COMPLETE)]);
+
+      expect(get(roots).map(root => root.kind)).toEqual([ActivityKind.PNL_REPORT]);
+      expect(get(canDismissAll)).toBe(false);
+    });
+
+    it('should keep listing only the rows that were shown once they are dismissed', async () => {
+      set(activities, [report(RUNNING), briefPrices(RUNNING)]);
+      const { roots } = panel();
+      await transition([report(COMPLETE), briefPrices(COMPLETE)]);
+
+      useTaskDock().acknowledgeFinished();
+      await nextTick();
+
+      expect(get(useTaskDock().state)).toBe(DockState.DISMISSED);
+      expect(get(roots).map(root => root.kind)).toEqual([ActivityKind.PNL_REPORT]);
     });
   });
 
