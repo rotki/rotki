@@ -1,7 +1,13 @@
 import type { FlowChild, HistoryFlow } from '@/modules/history/events/flows';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { msg } from '@/message-key';
-import { blockDecodeActivityId, targetedDecodeActivityId } from '@/modules/history/events/tx/decode.activity';
-import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import {
+  blockDecodeActivity,
+  blockDecodeActivityId,
+  targetedDecodeActivity,
+  targetedDecodeActivityId,
+  targetedRedecodeActivity,
+} from '@/modules/history/events/tx/decode.activity';
 
 /**
  * One chain's transactions within a targeted request, already resolved from location to chain.
@@ -48,33 +54,25 @@ export const targetedRedecodeFlow: HistoryFlow<TargetedRedecodeScope, TargetedRe
   children: ({ blocks, byChain }: TargetedRedecodeScope): readonly FlowChild<TargetedRedecodeWork>[] => [
     ...byChain.map(({ chain, txRefs }) => ({
       id: targetedDecodeActivityId(chain, txRefs),
-      kind: ActivityKind.TX_DECODING,
+      kind: targetedDecodeActivity.kind,
       payload: { chain, txRefs, type: 'transactions' } as const,
     })),
     ...(blocks.length > 0
       ? [{
           id: blockDecodeActivityId(blocks),
-          kind: ActivityKind.ETH_BLOCK_DECODING,
+          kind: blockDecodeActivity.kind,
           payload: { blockNumbers: blocks, type: 'blocks' } as const,
         }]
       : []),
   ],
-  /**
-   * The request *is* the identity. Members are sorted so the same set asked for in any order is one
-   * run, and joined into a single part so `activityParts` recovers the set rather than shredding it.
-   *
-   * There is no unscoped form. Omitting the scope on the chain sweep means "everything", which
-   * is a meaningful request; a targeted re-decode of nothing is not, so an empty scope still yields
-   * a distinct id rather than collapsing onto some canonical run.
-   */
-  id: (scope?: TargetedRedecodeScope): ActivityId => {
-    const members = [
+  /** The request *is* the identity. See {@link targetedRedecodeActivity}. */
+  id: (scope?: TargetedRedecodeScope): ActivityId => targetedRedecodeActivity.id({
+    members: [
       ...(scope?.byChain ?? []).flatMap(({ chain, txRefs }) => txRefs.map(txRef => `${chain}/${txRef}`)),
       ...(scope?.blocks ?? []).map(block => `block/${block}`),
-    ];
-    return makeActivityId(ActivityKind.REDECODE, ActivityPart.TARGETED, [...members].sort().join(','));
-  },
-  kind: ActivityKind.REDECODE,
+    ],
+  }),
+  kind: targetedRedecodeActivity.kind,
   resets: true,
   titleKey: msg.$t('task_center.group.targeted_redecode'),
 };

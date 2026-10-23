@@ -6,9 +6,9 @@ import { getErrorMessage, useNotifications } from '@/modules/core/notifications/
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useKrakenApi } from '@/modules/staking/api/use-kraken-api';
+import { krakenStakingActivity } from '@/modules/staking/staking.activity';
 import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { type TaskOutcome, useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseKrakenStakingOperationsReturn {
@@ -29,13 +29,13 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
   });
 
   function isRefreshRunning(): boolean {
-    return statusOf(ActivityKind.STAKING, ActivityPart.KRAKEN).running;
+    return statusOf(krakenStakingActivity.kind, ...krakenStakingActivity.partsOf()).running;
   }
 
   async function refreshEvents(): Promise<TaskOutcome> {
     return submitTask({
-      id: makeActivityId(ActivityKind.STAKING, ActivityPart.KRAKEN),
-      kind: ActivityKind.STAKING,
+      id: krakenStakingActivity.id(),
+      kind: krakenStakingActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<unknown>(
@@ -43,7 +43,7 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
         ),
         () => {},
       ),
-      subtitle: activityLabel(ActivityKind.STAKING, ActivityPart.KRAKEN),
+      subtitle: activityLabelOf(krakenStakingActivity),
       title: t('task_center.group.staking'),
     });
   }

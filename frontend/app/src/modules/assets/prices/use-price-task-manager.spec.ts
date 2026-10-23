@@ -139,7 +139,7 @@ describe('usePriceTaskManager', () => {
     await priceTaskManager.fetchExchangeRates('EUR');
     await flushPromises();
 
-    const activity = get(useTaskOrchestrator().useActivity(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES));
+    const activity = get(useTaskOrchestrator().useActivity(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES, 'EUR'));
     expect(activity?.status).toBe(ActivityStatus.FAILED);
     expect(activity?.reason).toBe('missing_exchange_rate.title (EUR)');
     expect(notifyError).not.toHaveBeenCalled();
@@ -151,7 +151,7 @@ describe('usePriceTaskManager', () => {
     await priceTaskManager.fetchExchangeRates('EUR');
     await flushPromises();
 
-    const activity = get(useTaskOrchestrator().useActivity(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES));
+    const activity = get(useTaskOrchestrator().useActivity(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES, 'EUR'));
     expect(activity?.status).toBe(ActivityStatus.COMPLETE);
   });
 

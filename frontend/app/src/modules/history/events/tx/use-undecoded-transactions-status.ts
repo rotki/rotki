@@ -1,16 +1,17 @@
 import type { TaskError } from '@/modules/core/tasks/task-result';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { map as mapResult, type Result } from 'plainfp/result';
 import { snakeCaseTransformer } from '@/modules/core/api/transformers';
 import { logger } from '@/modules/core/common/logging/logging';
 import { EvmUndecodedTransactionResponse } from '@/modules/core/messaging/types';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { undecodedBreakdownActivity } from '@/modules/history/events/history-events.activity';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 /** The undecoded-count fetch's activity, which a decode can wait for so its progress starts from it. */
-export const UNDECODED_BREAKDOWN_ID = makeActivityId(ActivityKind.HISTORY_EVENTS, ActivityPart.UNDECODED);
+export const UNDECODED_BREAKDOWN_ID = undecodedBreakdownActivity.id();
 
 interface UseUndecodedTransactionsStatusReturn {
   fetchUndecodedTransactionsBreakdown: (parent?: ActivityId) => Promise<void>;
@@ -30,14 +31,14 @@ export function useUndecodedTransactionsStatus(): UseUndecodedTransactionsStatus
   const { resetUndecodedTransactionsStatus, updateUndecodedTransactionsStatus } = useDecodingStatusStore();
 
   const fetchUndecodedTransactionsBreakdown = async (parent?: ActivityId): Promise<void> => {
-    if (statusOf(ActivityKind.HISTORY_EVENTS, ActivityPart.UNDECODED).active) {
+    if (statusOf(undecodedBreakdownActivity.kind, ...undecodedBreakdownActivity.partsOf()).active) {
       logger.debug(`was already fetching undecoded transactions`);
       return;
     }
 
     await submitTask({
       id: UNDECODED_BREAKDOWN_ID,
-      kind: ActivityKind.HISTORY_EVENTS,
+      kind: undecodedBreakdownActivity.kind,
       parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
@@ -66,7 +67,7 @@ export function useUndecodedTransactionsStatus(): UseUndecodedTransactionsStatus
           }
         },
       ),
-      subtitle: activityLabel(ActivityKind.HISTORY_EVENTS, ActivityPart.UNDECODED),
+      subtitle: activityLabelOf(undecodedBreakdownActivity),
       title: t('task_center.group.history_events'),
     });
   };

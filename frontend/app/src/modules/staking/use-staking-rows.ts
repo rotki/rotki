@@ -2,8 +2,8 @@ import type { ComputedRef, Ref } from 'vue';
 import { map as mapResult, match, type Result } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
+import { stakingRowsActivity, type StakingRowsPart } from '@/modules/staking/staking.activity';
 import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, type ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 /** What every staking query reports besides its positions. */
@@ -19,7 +19,7 @@ interface FetchedStaking<TRow> {
 
 interface UseStakingRowsOptions<TResponse extends StakingResponse, TRow, TTotal> {
   /** Which staking activity this query reports as in the task center. */
-  part: ActivityPart;
+  part: StakingRowsPart;
   /** Starts the backend query for the positions of every tracked account, which runs as a task. */
   query: () => Promise<{ taskId: number }>;
   /** Validates the task result. */
@@ -70,8 +70,8 @@ export function useStakingRows<TResponse extends StakingResponse, TRow, TTotal>(
     set(loading, true);
     try {
       const outcome = await submitTask({
-        id: makeActivityId(ActivityKind.STAKING, part),
-        kind: ActivityKind.STAKING,
+        id: stakingRowsActivity.id({ part }),
+        kind: stakingRowsActivity.kind,
         rerunnable: true,
         run: async ({ runTask }): Promise<Result<FetchedStaking<TRow>, TaskError>> => mapResult(
           await runTask<unknown>(async () => query()),
@@ -80,7 +80,7 @@ export function useStakingRows<TResponse extends StakingResponse, TRow, TTotal>(
             return { failed: response.failed, rows: toRows(response) };
           },
         ),
-        subtitle: activityLabel(ActivityKind.STAKING, part),
+        subtitle: activityLabel(stakingRowsActivity.kind, part),
         title: t('task_center.group.staking'),
       });
 

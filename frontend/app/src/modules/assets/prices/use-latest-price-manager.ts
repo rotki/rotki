@@ -7,13 +7,13 @@ import { msg } from '@/message-key';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { isNft } from '@/modules/assets/nft-utils';
+import { manualPriceAddActivity, manualPriceRemoveActivity } from '@/modules/assets/prices/prices.activity';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseLatestPricesReturn {
@@ -97,7 +97,7 @@ export function useLatestPrices(
    * Saves a manually entered price.
    *
    * @remarks
-   * Runs under its own `prices:manual:add` activity so that consumers priced off manual values,
+   * Runs under its own `prices:manual:add:<pair>` activity so that consumers priced off manual values,
    * such as NFT balances, can declare themselves stale after a hand edit without also firing on
    * every automatic price sweep.
    *
@@ -107,8 +107,8 @@ export function useLatestPrices(
    */
   const save = async (data: ManualPriceFormPayload, update: boolean): Promise<boolean> => {
     const outcome = await submitTask<boolean>({
-      id: makeActivityId(ActivityKind.PRICES, ActivityPart.MANUAL, ActivityPart.ADD),
-      kind: ActivityKind.PRICES,
+      id: manualPriceAddActivity.id(data),
+      kind: manualPriceAddActivity.kind,
       rerunnable: false,
       run: async (): Promise<Result<boolean, TaskError>> => ok(await addLatestPrice(data)),
       subtitle: activityLabelFor(msg.$t('task_center.activity.prices.manual_add'), { asset: data.fromAsset }),
@@ -141,8 +141,8 @@ export function useLatestPrices(
 
   const deletePrice = async ({ fromAsset }: { fromAsset: string }): Promise<void> => {
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.PRICES, ActivityPart.MANUAL, ActivityPart.REMOVE),
-      kind: ActivityKind.PRICES,
+      id: manualPriceRemoveActivity.id({ fromAsset }),
+      kind: manualPriceRemoveActivity.kind,
       rerunnable: false,
       run: async (): Promise<Result<void, TaskError>> => {
         await deleteLatestPrice(fromAsset);

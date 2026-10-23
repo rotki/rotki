@@ -16,10 +16,14 @@ import { downloadFileByTextContent } from '@/modules/core/common/file/download';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import {
+  accountingRulesExportActivity,
+  accountingRulesImportActivity,
+  accountingRulesResetActivity,
+} from '@/modules/settings/accounting/accounting-rules.activity';
 import { useAccountingApi } from '@/modules/settings/api/use-accounting-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseAccountingSettingsReturn {
@@ -103,8 +107,8 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
     directoryPath?: string,
   ): Promise<boolean | object | null> => {
     const outcome = await submitTask<boolean | object>({
-      id: makeActivityId(ActivityKind.ACCOUNTING_RULES, ActivityPart.EXPORT),
-      kind: ActivityKind.ACCOUNTING_RULES,
+      id: accountingRulesExportActivity.id(),
+      kind: accountingRulesExportActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<boolean | object, TaskError>> => mapResult(
         await runTask<boolean | object>(
@@ -112,7 +116,7 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
         ),
         value => value,
       ),
-      subtitle: activityLabel(ActivityKind.ACCOUNTING_RULES, ActivityPart.EXPORT),
+      subtitle: activityLabelOf(accountingRulesExportActivity),
       title: t('task_center.group.accounting_rules'),
     });
 
@@ -153,8 +157,8 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
   async function importJSON(file: File): Promise<ActionStatus | null> {
     const path = getPath(file);
     const outcome = await submitTask<boolean>({
-      id: makeActivityId(ActivityKind.ACCOUNTING_RULES, ActivityPart.IMPORT),
-      kind: ActivityKind.ACCOUNTING_RULES,
+      id: accountingRulesImportActivity.id(),
+      kind: accountingRulesImportActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
         await runTask<boolean>(
@@ -162,7 +166,7 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
         ),
         value => value,
       ),
-      subtitle: activityLabel(ActivityKind.ACCOUNTING_RULES, ActivityPart.IMPORT, { file: file.name }),
+      subtitle: activityLabelOf(accountingRulesImportActivity, { file: file.name }),
       title: t('task_center.group.accounting_rules'),
     });
 
@@ -178,8 +182,8 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
   async function resetToDefaults(): Promise<ActionStatus | null> {
     const title = t('actions.accounting_rules.reset.title');
     const outcome = await submitTask<boolean>({
-      id: makeActivityId(ActivityKind.ACCOUNTING_RULES, ActivityPart.RESET),
-      kind: ActivityKind.ACCOUNTING_RULES,
+      id: accountingRulesResetActivity.id(),
+      kind: accountingRulesResetActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
         await runTask<boolean>(
@@ -187,7 +191,7 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
         ),
         value => value,
       ),
-      subtitle: activityLabel(ActivityKind.ACCOUNTING_RULES, ActivityPart.RESET),
+      subtitle: activityLabelOf(accountingRulesResetActivity),
       title: t('task_center.group.accounting_rules'),
     });
 

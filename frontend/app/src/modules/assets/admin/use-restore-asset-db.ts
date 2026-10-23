@@ -1,13 +1,13 @@
 import type { Ref } from 'vue';
 import { NotificationKind, Severity } from '@rotki/common';
+import { assetResetActivity } from '@/modules/assets/assets.activity';
 import { useAssets } from '@/modules/assets/use-assets';
 import { DialogType } from '@/modules/core/common/dialogs';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { isActionable } from '@/modules/core/tasks/task-result';
 import { useBackendReload } from '@/modules/shell/app/use-backend-reload';
-import { ActivityPart } from '@/modules/task-center/core/types';
-import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 type ResetType = 'soft' | 'hard';
 
@@ -41,7 +41,7 @@ export function useRestoreAssetDb(): UseRestoreAssetDbReturn {
   const { show } = useConfirmStore();
   const { useIsActive } = useTaskCenter();
 
-  const loading = useIsActive(ActivityKind.ASSETS, ActivityPart.RESET);
+  const loading = useIsActive(assetResetActivity.kind, ...assetResetActivity.partsOf());
 
   async function updateComplete(): Promise<void> {
     await reload();

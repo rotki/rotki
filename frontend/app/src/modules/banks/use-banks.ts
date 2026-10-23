@@ -4,6 +4,7 @@ import { startPromise } from '@shared/utils';
 import { isOk, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { bankBalancesActivity } from '@/modules/banks/banks.activity';
 import {
   BankBalancesByLocation,
   type BankConnectionIdentity,
@@ -23,8 +24,6 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { useBankEventsRefresh } from '@/modules/history/events/tx/use-bank-events-refresh';
 import { useSetting } from '@/modules/settings/use-setting';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { EXCHANGE_LANE } from '@/modules/task-center/core/orchestrator/spec';
-import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseBanksReturn {
@@ -101,9 +100,9 @@ export function useBanks(): UseBanksReturn {
     }
 
     await submitTask({
-      id: makeActivityId(ActivityKind.BANK_BALANCES),
-      kind: ActivityKind.BANK_BALANCES,
-      lane: EXCHANGE_LANE,
+      id: bankBalancesActivity.id(),
+      kind: bankBalancesActivity.kind,
+      lane: bankBalancesActivity.laneOf?.(),
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<BankBalancesByLocation>(async () => api.queryBankBalances(ignoreCache)),

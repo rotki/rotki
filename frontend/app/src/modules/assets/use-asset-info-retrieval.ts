@@ -15,6 +15,7 @@ import {
 import { startPromise } from '@shared/utils';
 import { err, isErr, type Result } from 'plainfp/result';
 import { type AssetSearchParams, useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
+import { erc20InfoActivity } from '@/modules/assets/assets.activity';
 import { type AssetsWithId, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { processAssetInfo, useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
@@ -23,8 +24,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { type RunBackendTask, type TaskOutcome, useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface AssetResolutionOptions {
@@ -255,11 +255,11 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     });
 
     const task: Promise<TaskOutcome<ERC20Token>> = submitTask<ERC20Token>({
-      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.ERC20, payload.evmChain, payload.address),
-      kind: ActivityKind.ASSETS,
+      id: erc20InfoActivity.id(payload),
+      kind: erc20InfoActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<ERC20Token, TaskError>> => readTokenDetails(runTask, payload),
-      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.ERC20, { address: payload.address, chain: payload.evmChain }),
+      subtitle: activityLabelOf(erc20InfoActivity, { address: payload.address, chain: payload.evmChain }),
       title: t('task_center.group.assets'),
     });
 
@@ -267,7 +267,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
       const outcome = await Promise.race([task, timeout]);
 
       if (outcome === timedOut) {
-        cancelActivity(ActivityKind.ASSETS, ActivityPart.ERC20, payload.evmChain, payload.address);
+        cancelActivity(erc20InfoActivity.kind, ...erc20InfoActivity.partsOf(payload));
         return {};
       }
 

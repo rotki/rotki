@@ -44,6 +44,13 @@ describe('activitySubject', () => {
       .toEqual({ location: 'binance' });
   });
 
+  it('should name the location of a connection whose user-chosen name contains the id separator', () => {
+    expect(activitySubject(activity(exchangeEventsActivity.id({ location: 'kraken', name: 'Kraken: main' }), ActivityKind.EXCHANGE_EVENTS)))
+      .toEqual({ location: 'kraken' });
+    expect(activitySubject(activity(bankEventsActivity.id({ location: 'monerium', name: 'iban:de' }), ActivityKind.BANK_EVENTS)))
+      .toEqual({ location: 'monerium' });
+  });
+
   it('should name the chain of a balance job, with or without detection, but not of the run over several chains', () => {
     const balances = (...parts: string[]): Activity => activity(makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, ...parts), ActivityKind.BLOCKCHAIN_BALANCES);
 
@@ -64,6 +71,16 @@ describe('activitySubject', () => {
 
     expect(activitySubject(addition('optimism'))).toEqual({ address: ADDRESS, chain: 'optimism' });
     expect(activitySubject(addition(EVM_PSEUDO_CHAIN))).toEqual({ address: ADDRESS });
+  });
+
+  it('should name a Bitcoin Cash addition pasted in CashAddr form by its address without the prefix', () => {
+    const cashAddress = 'qpmmlusvvrjj9ha2xdgv8xcrpfwsqn5rngt3k26ve2';
+    const addition = activity(
+      accountAddActivity.id({ chain: 'bch', target: { address: `bitcoincash:${cashAddress}`, kind: 'address' } }),
+      ActivityKind.ACCOUNTS,
+    );
+
+    expect(activitySubject(addition)).toEqual({ address: cashAddress, chain: 'bch' });
   });
 
   it('should name nothing for a bulk addition, whose id holds several addresses', () => {

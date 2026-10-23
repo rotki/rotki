@@ -11,9 +11,9 @@ import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import DateFormatHelp from '@/modules/settings/controls/DateFormatHelp.vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { csvImportActivity } from '@/modules/user-data/csv-import.activity';
 import ImportNotes from '@/modules/user-data/ImportNotes.vue';
 import { useImportDataApi } from '@/modules/user-data/use-import-data-api';
 
@@ -84,7 +84,7 @@ const dateInputFormatExample = computed<string>(() => {
 const { submitTask } = useNativeTask();
 const { useIsActive } = useTaskCenter();
 
-const loading = useIsActive(ActivityKind.CSV_IMPORT, source);
+const loading = useIsActive(csvImportActivity.kind, ...csvImportActivity.partsOf({ source }));
 const { importDataFrom, importFile } = useImportDataApi();
 
 /**
@@ -116,8 +116,8 @@ function applyOutcome(outcome: Result<boolean, TaskError>): boolean {
 
 async function uploadPackaged(file: string): Promise<boolean> {
   const outcome = await submitTask<boolean>({
-    id: makeActivityId(ActivityKind.CSV_IMPORT, source),
-    kind: ActivityKind.CSV_IMPORT,
+    id: csvImportActivity.id({ source }),
+    kind: csvImportActivity.kind,
     rerunnable: false,
     userStarted: true,
     run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
@@ -159,8 +159,8 @@ async function uploadFile(): Promise<boolean> {
     formData.append('timezone', timezoneVal);
 
   const outcome = await submitTask<boolean>({
-    id: makeActivityId(ActivityKind.CSV_IMPORT, source),
-    kind: ActivityKind.CSV_IMPORT,
+    id: csvImportActivity.id({ source }),
+    kind: csvImportActivity.kind,
     rerunnable: false,
     userStarted: true,
     run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(

@@ -1,9 +1,11 @@
 import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { err, map as mapResult, type Result } from 'plainfp/result';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { useBalancesApi } from '@/modules/balances/api/use-balances-api';
+import { allBalancesActivity, allBalancesLoginActivity } from '@/modules/balances/balances.activity';
 import { useAutoTokenDetection } from '@/modules/balances/blockchain/use-auto-token-detection';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
@@ -14,7 +16,6 @@ import { useBanks } from '@/modules/banks/use-banks';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Skipped, type TaskError } from '@/modules/core/tasks/task-result';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
-import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export const useBalanceFetching = createSharedComposable(() => {
@@ -45,8 +46,8 @@ export const useBalanceFetching = createSharedComposable(() => {
 
     // Singleton all-balances snapshot query; liveness is read off the orchestrator.
     await submitTask({
-      id: makeActivityId(ActivityKind.ALL_BALANCES),
-      kind: ActivityKind.ALL_BALANCES,
+      id: allBalancesActivity.id(),
+      kind: allBalancesActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask(async () => queryBalancesAsync(payload)),
@@ -66,7 +67,7 @@ export const useBalanceFetching = createSharedComposable(() => {
    * never run alongside the chain queries: querying while they were still repopulating chains is
    * what wrote 0-value rows into the net-worth history.
    *
-   * Its own id, not the bare `ALL_BALANCES` one, so a forced save during the load is a second query
+   * Its own id, {@link allBalancesLoginActivity} rather than the bare one, so a forced save during the load is a second query
    * rather than a join onto this one. It carries no payload on purpose: the backend saves when
    * `requested_save_data or should_save_balances(...)`, so this asks for a snapshot rather than
    * forcing one. The schedule is read again when it runs, since the chains can take long enough for
@@ -75,8 +76,8 @@ export const useBalanceFetching = createSharedComposable(() => {
   const queueSnapshot = async (chainIds: ActivityId[], parent: ActivityId | undefined): Promise<void> => {
     await submitTask({
       deps: chainIds,
-      id: makeActivityId(ActivityKind.ALL_BALANCES, ActivityPart.LOGIN),
-      kind: ActivityKind.ALL_BALANCES,
+      id: allBalancesLoginActivity.id(),
+      kind: allBalancesLoginActivity.kind,
       parent,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => {

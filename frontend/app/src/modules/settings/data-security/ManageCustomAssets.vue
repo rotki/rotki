@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { assert, NotificationKind, Severity } from '@rotki/common';
 import { RuiFileUpload } from '@rotki/ui-library';
+import { assetExportActivity } from '@/modules/assets/assets.activity';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { isActionable } from '@/modules/core/tasks/task-result';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { ActivityPart } from '@/modules/task-center/core/types';
-import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const uploader = useTemplateRef<InstanceType<typeof RuiFileUpload>>('uploader');
 const zip = ref<File>();
@@ -20,7 +20,7 @@ const { useIsActive } = useTaskCenter();
 const { exportCustomAssets, importCustomAssets } = useAssets();
 
 const importDisabled = computed<boolean>(() => !get(zip));
-const exporting = useIsActive(ActivityKind.ASSETS, ActivityPart.EXPORT);
+const exporting = useIsActive(assetExportActivity.kind, ...assetExportActivity.partsOf());
 
 /**
  * Drops the last import's outcome once another file is picked, so it is never shown beside a

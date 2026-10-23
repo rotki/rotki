@@ -9,12 +9,14 @@ import { map as mapResult, type Result } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Module } from '@/modules/core/common/modules';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
+import { decodeActivity } from '@/modules/history/events/tx/decode.activity';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSetting } from '@/modules/settings/use-setting';
+import { liquityActivity, type LiquityPart } from '@/modules/staking/liquity/liquity.activity';
 import { useLiquityApi } from '@/modules/staking/liquity/use-liquity-api';
 import { useLiquityStore } from '@/modules/staking/liquity/use-liquity-store';
 import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { ActivityPart } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseLiquityDataFetchingReturn {
@@ -27,7 +29,7 @@ interface UseLiquityDataFetchingReturn {
 /** What separates one liquity fetch from another; everything else is shared. */
 interface FetchDefinition {
   /** Which part of the liquity activity this fetch reports as. */
-  part: ActivityPart;
+  part: LiquityPart;
   /** Whether the fetch needs premium. Balances are free; the backend rejects the other three. */
   premiumOnly: boolean;
   /** Starts the backend query, which runs as a task. */
@@ -61,8 +63,8 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
    * before and this is not a refresh. The components read that same activity for their loading
    * display, so there is no second copy of this state to keep in step.
    */
-  function canFetch(part: ActivityPart, refresh: boolean): boolean {
-    const status = statusOf(ActivityKind.LIQUITY, part);
+  function canFetch(part: LiquityPart, refresh: boolean): boolean {
+    const status = statusOf(liquityActivity.kind, ...liquityActivity.partsOf({ part }));
     return isModuleActive() && !status.active && (!status.everCompleted || refresh);
   }
 
@@ -81,16 +83,16 @@ export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
         return;
 
       const outcome = await submitTask({
-        id: makeActivityId(ActivityKind.LIQUITY, part),
-        kind: ActivityKind.LIQUITY,
+        id: liquityActivity.id({ part }),
+        kind: liquityActivity.kind,
         rerunnable: true,
         // Derived from decoded history events, so a completed decode makes this stale.
-        staleAfter: [{ kind: ActivityKind.TX_DECODING }],
+        staleAfter: [{ kind: decodeActivity.kind }],
         run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
           await runTask<unknown>(async () => query()),
           store,
         ),
-        subtitle: activityLabel(ActivityKind.LIQUITY, part),
+        subtitle: activityLabel(liquityActivity.kind, part),
         title: t('task_center.group.liquity'),
       });
 

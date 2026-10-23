@@ -2,8 +2,8 @@ import { getOr, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
+import { historicalBalancesActivity } from '@/modules/history/balances/historical-balances.activity';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseHistoricalBalancesReturn {
@@ -37,8 +37,8 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
     }
 
     const outcome = await submitTask<boolean>({
-      id: makeActivityId(ActivityKind.HISTORICAL_BALANCES),
-      kind: ActivityKind.HISTORICAL_BALANCES,
+      id: historicalBalancesActivity.id(),
+      kind: historicalBalancesActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<boolean, TaskError>> => runTask<boolean>(
         async () => processHistoricalBalances(),

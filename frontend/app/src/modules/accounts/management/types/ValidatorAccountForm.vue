@@ -4,8 +4,8 @@ import type { Eth2Validator } from '@/modules/balances/types/balances';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
 import Eth2Input from '@/modules/accounts/blockchain/Eth2Input.vue';
-import { ActivityPart } from '@/modules/task-center/core/types';
-import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
+import { validatorAddActivity } from '@/modules/staking/staking.activity';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const validator = defineModel<Eth2Validator>('validator', { required: true });
 
@@ -25,7 +25,7 @@ async function validate(): Promise<boolean> {
 }
 
 const { useIsActivePrefix } = useTaskCenter();
-const taskRunning = useIsActivePrefix(ActivityKind.STAKING, ActivityPart.ADD);
+const taskRunning = useIsActivePrefix(validatorAddActivity.kind, ...validatorAddActivity.partsWithin([]));
 
 defineExpose({
   validate,

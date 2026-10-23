@@ -1,5 +1,6 @@
 import type { ComputedRef, MaybeRef } from 'vue';
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
+import { exchangeRatesActivity, latestPricesActivity } from '@/modules/assets/prices/prices.activity';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useCollectionMappingStore } from '@/modules/assets/use-collection-mapping-store';
@@ -8,7 +9,6 @@ import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balance
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { uniqueStrings } from '@/modules/core/common/data/data';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UsePriceRefreshReturn {
@@ -36,11 +36,11 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
   const { assets: regularAssets } = useAggregatedBalances();
   const { hasCachedPrice } = usePriceUtils();
   const { refreshLatestPrices } = usePriceTaskManager();
-  const { useIsActive, useIsActivePrefix } = useTaskCenter();
+  const { useIsActivePrefix } = useTaskCenter();
 
   const refreshing = logicOr(
-    useIsActive(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES),
-    useIsActivePrefix(ActivityKind.PRICES, ActivityPart.LATEST),
+    useIsActivePrefix(exchangeRatesActivity.kind, ...exchangeRatesActivity.partsWithin([])),
+    useIsActivePrefix(latestPricesActivity.kind, ...latestPricesActivity.partsWithin([])),
   );
 
   const assets = computed<string[]>(() => [...get(regularAssets), ...get(collectionMainAssets)]);

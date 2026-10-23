@@ -1,14 +1,15 @@
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/modules/reports/report-types';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { getOr, isErr, isOk, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { convertFromTimestamp } from '@/modules/core/common/data/date';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryApi } from '@/modules/history/api/use-history-api';
+import { pnlReportActivity, pnlReportExportActivity } from '@/modules/reports/reports.activity';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { useReportsApi } from '@/modules/reports/use-reports-api';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
-import { activityLabel, activityLabelFor } from '@/modules/task-center/activity-labels';
-import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelFor, activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseReportGenerationReturn {
@@ -95,7 +96,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
     resetProgress();
     set(reportError, emptyError());
 
-    const id = makeActivityId(ActivityKind.PNL_REPORT);
+    const id = pnlReportActivity.id();
     let intervalId: NodeJS.Timeout | undefined;
     const outcome = await submitTask<number>({
       cleanup: () => {
@@ -103,7 +104,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
         resetProgress();
       },
       id,
-      kind: ActivityKind.PNL_REPORT,
+      kind: pnlReportActivity.kind,
       rerunnable: true,
       userStarted: true,
       run: async ({ runTask }): Promise<Result<number, TaskError>> => {
@@ -148,7 +149,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
     resetProgress();
     set(reportError, emptyError());
 
-    const id = makeActivityId(ActivityKind.PNL_REPORT, ActivityPart.EXPORT);
+    const id = pnlReportExportActivity.id();
     let intervalId: NodeJS.Timeout | undefined;
     const outcome = await submitTask<boolean | object>({
       cleanup: () => {
@@ -156,7 +157,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
         resetProgress();
       },
       id,
-      kind: ActivityKind.PNL_REPORT,
+      kind: pnlReportExportActivity.kind,
       rerunnable: false,
       userStarted: true,
       run: async ({ runTask }): Promise<Result<boolean | object, TaskError>> => {
@@ -165,7 +166,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
           async () => exportReportDataCaller(payload),
         );
       },
-      subtitle: activityLabel(ActivityKind.PNL_REPORT, ActivityPart.EXPORT),
+      subtitle: activityLabelOf(pnlReportExportActivity),
       title: t('task_center.group.pnl_report'),
     });
 

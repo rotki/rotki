@@ -3,15 +3,20 @@ import type { BankConnectionIdentity } from '@/modules/banks/types';
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import type { FlowChild, HistoryFlow } from '@/modules/history/events/flows';
 import type { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { groupBy } from 'es-toolkit';
 import { msg } from '@/message-key';
 import {
+  bankEventsActivity,
   bankEventsActivityId,
+  chainSyncActivity,
   chainSyncActivityId,
+  exchangeEventsActivity,
   exchangeEventsActivityId,
+  historySyncActivity,
+  onlineEventsActivity,
   onlineEventsActivityId,
 } from '@/modules/history/events/tx/sync.activity';
-import { type ActivityId, ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 
 /**
  * What a history refresh is made of, as data.
@@ -56,26 +61,26 @@ export const historySyncFlow: HistoryFlow<RefreshScope, RefreshWork> = {
   children: (scope: RefreshScope): readonly FlowChild<RefreshWork>[] => [
     ...Object.entries(groupBy(scope.accounts, account => account.chain)).map(([chain, accounts]) => ({
       id: chainSyncActivityId(chain),
-      kind: ActivityKind.TX_SYNC,
+      kind: chainSyncActivity.kind,
       payload: { accounts, chain, type: 'chain' } as const,
     })),
     ...scope.exchanges.map(exchange => ({
       id: exchangeEventsActivityId(exchange.location, exchange.name),
-      kind: ActivityKind.EXCHANGE_EVENTS,
+      kind: exchangeEventsActivity.kind,
       payload: { exchange, type: 'exchange' } as const,
     })),
     ...scope.banks.map(bank => ({
       id: bankEventsActivityId(bank.location, bank.name),
-      kind: ActivityKind.BANK_EVENTS,
+      kind: bankEventsActivity.kind,
       payload: { bank, type: 'bank' } as const,
     })),
     ...scope.queries.map(query => ({
       id: onlineEventsActivityId(query),
-      kind: ActivityKind.ONLINE_EVENTS,
+      kind: onlineEventsActivity.kind,
       payload: { query, type: 'online' } as const,
     })),
   ],
-  id: (): ActivityId => makeActivityId(ActivityKind.HISTORY_SYNC),
-  kind: ActivityKind.HISTORY_SYNC,
+  id: (): ActivityId => historySyncActivity.id(),
+  kind: historySyncActivity.kind,
   titleKey: msg.$t('task_center.group.history_sync'),
 };

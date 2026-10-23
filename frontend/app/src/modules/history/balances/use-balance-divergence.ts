@@ -6,6 +6,7 @@ import { msg } from '@/message-key';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { balanceDivergenceActivity } from '@/modules/history/balances/historical-balances.activity';
 import {
   type HistoricalBalanceDivergenceEvent,
   type HistoricalBalanceDivergencePayload,
@@ -13,7 +14,6 @@ import {
 } from '@/modules/history/balances/types';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface DivergenceBoundaryEvent {
@@ -114,8 +114,8 @@ export function useBalanceDivergence(
     payload: HistoricalBalanceDivergencePayload,
   ): Promise<Result<Option<HistoricalBalanceDivergenceResponse>, DivergenceError>> {
     const outcome = await submitTask<HistoricalBalanceDivergenceResponse>({
-      id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.DIVERGENCE, payload.asset, payload.address, payload.evmChain, payload.tolerance ?? 0, payload.toTimestamp ?? 'latest'),
-      kind: ActivityKind.HISTORICAL_BALANCES,
+      id: balanceDivergenceActivity.id(payload),
+      kind: balanceDivergenceActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<HistoricalBalanceDivergenceResponse, TaskError>> => mapResult(
         await runTask<HistoricalBalanceDivergenceResponse>(

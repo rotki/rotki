@@ -1,13 +1,13 @@
 import { type HistoricalAssetPricePayload, HistoricalAssetPriceResponse } from '@rotki/common';
 import { getOr, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
+import { dailyPricesActivity } from '@/modules/assets/prices/prices.activity';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { logger } from '@/modules/core/common/logging/logging';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseHistoricalPriceFetcherReturn {
@@ -66,15 +66,8 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
       rateLimitedPricesTimestamps: [],
     };
     const outcome = await submitTask<HistoricalAssetPriceResponse>({
-      id: makeActivityId(
-        ActivityKind.PRICES,
-        ActivityPart.DAILY,
-        asset,
-        payload.interval,
-        payload.fromTimestamp,
-        payload.toTimestamp,
-      ),
-      kind: ActivityKind.PRICES,
+      id: dailyPricesActivity.id(payload),
+      kind: dailyPricesActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<HistoricalAssetPriceResponse, TaskError>> => mapResult(
         await runTask<HistoricalAssetPriceResponse>(

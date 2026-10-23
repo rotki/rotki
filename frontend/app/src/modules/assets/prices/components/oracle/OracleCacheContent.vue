@@ -5,6 +5,7 @@ import { NotificationKind, Severity } from '@rotki/common';
 import OracleCacheFilter from '@/modules/assets/prices/components/oracle/OracleCacheFilter.vue';
 import OracleCacheFormDialog from '@/modules/assets/prices/components/oracle/OracleCacheFormDialog.vue';
 import OracleCacheTable from '@/modules/assets/prices/components/oracle/OracleCacheTable.vue';
+import { oracleCacheActivity } from '@/modules/assets/prices/prices.activity';
 import { OracleCacheFilterKeys } from '@/modules/assets/prices/use-oracle-cache-fields';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
@@ -16,7 +17,6 @@ import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { useSetting } from '@/modules/settings/use-setting';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 /** The add form's state, opened from the page header's add button. */
@@ -35,7 +35,7 @@ const { deletePriceCache, getPriceCache } = usePriceApi();
 const { getAssetField } = useAssetInfoRetrieval();
 const { notify } = useNotificationDispatcher();
 const { show } = useConfirmStore();
-const cachePending = useIsActive(ActivityKind.PRICES, ActivityPart.ORACLE_CACHE);
+const cachePending = useIsActive(oracleCacheActivity.kind, ...oracleCacheActivity.partsOf());
 
 const currencySymbol = useSetting('currencySymbol');
 

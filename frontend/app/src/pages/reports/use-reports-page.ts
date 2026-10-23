@@ -2,8 +2,8 @@ import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import type { ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import { startPromise } from '@shared/utils';
 import { firstQueryValue } from '@/modules/core/table/route';
+import { pnlReportActivity } from '@/modules/reports/reports.activity';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
-import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import { useReportsPageActions } from '@/pages/reports/use-reports-page-actions';
 
@@ -29,7 +29,7 @@ export function useReportsPage(): UseReportsPageReturn {
   const { useIsActive } = useTaskCenter();
   const { getPath } = useInterop();
 
-  const isRunning = useIsActive(ActivityKind.PNL_REPORT);
+  const isRunning = useIsActive(pnlReportActivity.kind);
   const modelImportDataDialog = shallowRef<boolean>(false);
   const modelReportDebugData = shallowRef<File | undefined>();
 

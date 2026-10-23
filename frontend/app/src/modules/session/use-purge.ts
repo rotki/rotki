@@ -3,10 +3,10 @@ import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { errorOf, isCancellation, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { protocolCacheActivityId } from '@/modules/history/protocol-cache.activity';
+import { protocolCacheActivity, protocolCacheActivityId } from '@/modules/history/protocol-cache.activity';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
+import { purgeActivity } from '@/modules/session/session.activity';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseSessionPurge {
@@ -41,10 +41,9 @@ export function useSessionPurge(): UseSessionPurge {
    * @returns see {@link settledOrThrow}
    */
   const purgeData = async (purgeable: Purgeable, value: string, deleteData: () => Promise<void>): Promise<boolean> => {
-    const parts = value ? [purgeable, value] : [purgeable];
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.PURGE, ...parts),
-      kind: ActivityKind.PURGE,
+      id: purgeActivity.id({ purgeable, value }),
+      kind: purgeActivity.kind,
       run: async (): Promise<Result<void, TaskError>> => {
         try {
           await deleteData();
@@ -69,7 +68,7 @@ export function useSessionPurge(): UseSessionPurge {
   const refreshGeneralCache = async (source: string): Promise<boolean> => {
     const outcome = await submitTask({
       id: protocolCacheActivityId(),
-      kind: ActivityKind.PROTOCOL_CACHE,
+      kind: protocolCacheActivity.kind,
       rerunnable: true,
       userStarted: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(

@@ -8,9 +8,9 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useEth2Api } from '@/modules/staking/api/use-eth2-api';
-import { activityLabel } from '@/modules/task-center/activity-labels';
+import { stakingPerformanceActivity, validatorAddActivity } from '@/modules/staking/staking.activity';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { shouldSkipFetch } from '@/modules/task-center/core/status';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseEth2StakingReturn {
@@ -48,7 +48,7 @@ export function useEth2Staking(): UseEth2StakingReturn {
     if (!get(premium))
       return false;
 
-    const status = statusOf(ActivityKind.STAKING, ActivityPart.PERFORMANCE);
+    const status = statusOf(stakingPerformanceActivity.kind, ...stakingPerformanceActivity.partsOf());
     if (shouldSkipFetch(status, userInitiated))
       return false;
 
@@ -58,17 +58,17 @@ export function useEth2Staking(): UseEth2StakingReturn {
     };
 
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.STAKING, ActivityPart.PERFORMANCE),
-      kind: ActivityKind.STAKING,
+      id: stakingPerformanceActivity.id(),
+      kind: stakingPerformanceActivity.kind,
       rerunnable: true,
-      staleAfter: [{ kind: ActivityKind.STAKING, parts: [ActivityPart.ADD] }],
+      staleAfter: [{ kind: validatorAddActivity.kind, parts: validatorAddActivity.partsWithin([]) }],
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<EthStakingPerformanceResponse>(
           async () => api.refreshStakingPerformance(defaults),
         ),
         () => {},
       ),
-      subtitle: activityLabel(ActivityKind.STAKING, ActivityPart.PERFORMANCE),
+      subtitle: activityLabelOf(stakingPerformanceActivity),
       title: t('task_center.group.staking'),
     });
 

@@ -2,9 +2,13 @@ import type { Ref } from 'vue';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
+import {
+  accountingRulesExportActivity,
+  accountingRulesImportActivity,
+  accountingRulesResetActivity,
+} from '@/modules/settings/accounting/accounting-rules.activity';
 import { useAccountingSettings } from '@/modules/settings/accounting/use-accounting-settings';
 import { useAccountingApi } from '@/modules/settings/api/use-accounting-api';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseAccountingRuleMaintenanceOptions {
@@ -69,10 +73,10 @@ export function useAccountingRuleMaintenance(
   return {
     confirmDelete,
     confirmReset,
-    exportFileLoading: useIsActive(ActivityKind.ACCOUNTING_RULES, ActivityPart.EXPORT),
+    exportFileLoading: useIsActive(accountingRulesExportActivity.kind, ...accountingRulesExportActivity.partsOf()),
     exportJSON,
-    importFileLoading: useIsActive(ActivityKind.ACCOUNTING_RULES, ActivityPart.IMPORT),
+    importFileLoading: useIsActive(accountingRulesImportActivity.kind, ...accountingRulesImportActivity.partsOf()),
     modelImportDialogOpen,
-    resetLoading: useIsActive(ActivityKind.ACCOUNTING_RULES, ActivityPart.RESET),
+    resetLoading: useIsActive(accountingRulesResetActivity.kind, ...accountingRulesResetActivity.partsOf()),
   };
 }

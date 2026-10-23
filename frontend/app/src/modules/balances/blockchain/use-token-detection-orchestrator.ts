@@ -4,6 +4,7 @@ import type { TaskError } from '@/modules/core/tasks/task-result';
 import { assert } from '@rotki/common';
 import { isEqual } from 'es-toolkit';
 import { msg } from '@/message-key';
+import { tokenDetectionActivity } from '@/modules/balances/balances.activity';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useTokenDetectionApi } from '@/modules/balances/blockchain/use-token-detection-api';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
@@ -12,9 +13,8 @@ import { arrayify } from '@/modules/core/common/data/array';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { DETECT_LANE_PREFIX, familyLane } from '@/modules/task-center/core/orchestrator/spec';
 import { isTerminalStatus } from '@/modules/task-center/core/status';
-import { type ActivityId, ActivityKind, activityParts, makeActivityId } from '@/modules/task-center/core/types';
+import { type ActivityId, activityParts } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -52,7 +52,7 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
    */
   function isDetectingTokens(blockchain: string, address: string | null): boolean {
     return get(activities).some((activity) => {
-      if (activity.kind !== ActivityKind.TOKEN_DETECTION || isTerminalStatus(activity.status))
+      if (activity.kind !== tokenDetectionActivity.kind || isTerminalStatus(activity.status))
         return false;
       const [chain, addr] = activityParts(activity.id);
       return chain === blockchain && (address === null || addr === address);
@@ -78,9 +78,9 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
       return;
 
     await Promise.all(detectable.map(async addr => submitTask({
-      id: makeActivityId(ActivityKind.TOKEN_DETECTION, chain, addr),
-      kind: ActivityKind.TOKEN_DETECTION,
-      lane: familyLane(DETECT_LANE_PREFIX, chain),
+      id: tokenDetectionActivity.id({ address: addr, chain }),
+      kind: tokenDetectionActivity.kind,
+      lane: tokenDetectionActivity.laneOf?.({ address: addr, chain }),
       parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => detectTokensForAddress(runTask, chain, addr),

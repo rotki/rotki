@@ -1,5 +1,6 @@
 import type { Ref } from 'vue';
 import type { InternalTxConflict } from './types';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { NotificationKind, Severity } from '@rotki/common';
 import { err, getOr, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
@@ -8,23 +9,16 @@ import { createPersistentSharedComposable } from '@/modules/core/common/use-pers
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { conflictResolutionActivity } from '@/modules/history/events/tx/repulling.activity';
 import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import { useTargetedRedecode } from '@/modules/history/events/tx/use-targeted-redecode';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
-import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { type ActivityContext, useNativeTask } from '@/modules/task-center/use-native-task';
 import { useInternalTxConflictSelection } from './use-internal-tx-conflict-selection';
 import { getConflictKey } from './use-internal-tx-conflicts';
 
-/**
- * The dock row for a bulk resolution, which carries its progress and parents each conflict's decode.
- *
- * @remarks
- * A re-pull, since that is what resolving does. The `RUN` part keeps it apart from the other re-pull
- * ids, and one id is enough because the panel runs a single bulk resolution at a time.
- */
-const RESOLUTION_ACTIVITY_ID = makeActivityId(ActivityKind.REPULLING, ActivityPart.RUN, 'internal-tx-conflicts');
+/** The dock row for a bulk resolution. See {@link conflictResolutionActivity}. */
+const RESOLUTION_ACTIVITY_ID = conflictResolutionActivity.id();
 
 export interface ResolutionProgress {
   completed: number;
@@ -169,8 +163,8 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
 
       const outcome = await submitTask<boolean>({
         id: RESOLUTION_ACTIVITY_ID,
-        kind: ActivityKind.REPULLING,
-        lane: UMBRELLA_LANE,
+        kind: conflictResolutionActivity.kind,
+        lane: conflictResolutionActivity.laneOf?.(),
         rerunnable: false,
         run: async (context): Promise<Result<boolean, TaskError>> => {
           const stopped = await resolveInTurn(conflicts, callbacks, context);

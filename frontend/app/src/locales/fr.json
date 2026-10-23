@@ -265,17 +265,11 @@
       "add": {
         "error": {
           "description": "Échec de l'ajout du solde manuel : {message}"
-        },
-        "task": {
-          "title": "Ajout de soldes manuels"
         }
       },
       "edit": {
         "error": {
           "description": "Échec de la modification du solde manuel : {message}"
-        },
-        "task": {
-          "title": "Modification de soldes manuels"
         }
       }
     },

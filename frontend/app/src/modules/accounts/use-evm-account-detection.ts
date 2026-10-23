@@ -1,5 +1,6 @@
 import type { EvmChainLikeAddress } from '@/modules/history/events/event-payloads';
 import { isErr, ok, type Result } from 'plainfp/result';
+import { evmAccountDetectionActivity } from '@/modules/accounts/accounts.activity';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useAccountOperations } from '@/modules/accounts/use-account-operations';
@@ -8,8 +9,8 @@ import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-a
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { type ActivityContext, ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
+import { type ActivityContext, useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseEvmAccountDetectionReturn {
   detectEvmAccounts: () => Promise<void>;
@@ -74,11 +75,11 @@ export function useEvmAccountDetection(): UseEvmAccountDetectionReturn {
 
   const detectEvmAccounts = async (): Promise<void> => {
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.DETECT),
-      kind: ActivityKind.ACCOUNTS,
+      id: evmAccountDetectionActivity.id(),
+      kind: evmAccountDetectionActivity.kind,
       rerunnable: true,
       run: runDetection,
-      subtitle: activityLabel(ActivityKind.ACCOUNTS, ActivityPart.DETECT),
+      subtitle: activityLabelOf(evmAccountDetectionActivity),
       title: t('task_center.group.accounts'),
     });
 

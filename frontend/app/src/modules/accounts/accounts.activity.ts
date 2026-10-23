@@ -1,5 +1,6 @@
 import type { AccountPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import { msg } from '@/message-key';
+import { setDigest } from '@/modules/core/common/data/digest';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
 import { ACCOUNTS_ADD_LANE_PREFIX, ACCOUNTS_REMOVE_LANE_PREFIX, familyLane } from '@/modules/task-center/core/orchestrator/spec';
@@ -38,6 +39,22 @@ export interface AccountSubject {
   readonly target: AccountTarget;
 }
 
+/** The CashAddr prefix a Bitcoin Cash address may be pasted with, in either case. */
+const CASHADDR_PREFIX = /^bitcoincash:/i;
+
+/**
+ * An address as an id part.
+ *
+ * @remarks
+ * A Bitcoin Cash address pasted in CashAddr form keeps its `bitcoincash:` prefix, and the colon is
+ * the id separator: `activityParts` split it in two, so readers recovered `bitcoincash` as the
+ * address and the row lost its chain icon and explorer link. The prefix only repeats the chain,
+ * which the key already carries, so it is dropped.
+ */
+function addressPart(address: string): string {
+  return address.replace(CASHADDR_PREFIX, '');
+}
+
 /**
  * The narrow half of an activity key: what is being acted on, as one part.
  *
@@ -48,9 +65,9 @@ export interface AccountSubject {
 function targetKey(target: AccountTarget): string {
   switch (target.kind) {
     case 'address':
-      return target.address;
+      return addressPart(target.address);
     case 'addresses':
-      return target.addresses.join(',');
+      return target.addresses.map(addressPart).join(',');
     case 'xpub':
       return `${target.xpub}/${target.derivationPath ?? ''}`;
   }
@@ -152,6 +169,26 @@ export const accountRemoveActivity = defineActivity<AccountSubject, readonly [st
   kind: ActivityKind.ACCOUNTS,
   lane: subject => familyLane(ACCOUNTS_REMOVE_LANE_PREFIX, subject.chain),
   part: ActivityPart.REMOVE,
+});
+
+/**
+ * Resolving ENS names for a set of addresses, keyed by a digest of the set.
+ *
+ * @remarks
+ * A forced resolve of other addresses is a second request, not a join onto one still in flight,
+ * which would hand it the first set's names and never resolve its own.
+ */
+export const ensResolveActivity = defineActivity<{ addresses: readonly string[] }, readonly [string]>({
+  key: subject => [setDigest(subject.addresses)],
+  kind: ActivityKind.ACCOUNTS,
+  part: ActivityPart.ENS,
+});
+
+/** Detecting which EVM chains the tracked addresses have activity on. */
+export const evmAccountDetectionActivity = defineActivity<void, readonly []>({
+  key: () => [],
+  kind: ActivityKind.ACCOUNTS,
+  part: ActivityPart.DETECT,
 });
 
 /**

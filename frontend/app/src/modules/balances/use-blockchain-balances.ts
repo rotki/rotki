@@ -1,17 +1,17 @@
 import type { BlockchainBalancePayload } from '@/modules/balances/types/blockchain-balances';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { err, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
+import { balancesRunActivity, chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { arrayify } from '@/modules/core/common/data/array';
-import { setDigest } from '@/modules/core/common/data/digest';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { Cancelled, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
 import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { BALANCES_LANE, DEFAULT_PRIORITY, Priority } from '@/modules/task-center/core/orchestrator/spec';
-import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { DEFAULT_PRIORITY, Priority } from '@/modules/task-center/core/orchestrator/spec';
 import { useActivityBatch } from '@/modules/task-center/use-activity-batch';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useBalanceProcessingService } from './services/use-balance-processing-service';
@@ -135,17 +135,11 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
      * The id of one chain's refresh job, the one the follow-up depends on.
      *
      * @remarks
-     * `detect` and the address narrowing are both part of the activity id, because `submitTask`
-     * dedups by it. Share an id and a login sweep joins an in-flight background refresh, or a second
-     * addition joins the first, and detection for those addresses silently never happens —
-     * `withDetection` still writes `lastAutoDetectAt`, so the cooldown suppresses the next sweep too.
-     *
-     * Those parts are *appended*, never substituted: every reader is prefix-based, so the kind
-     * and the chain have to stay leading.
+     * See {@link chainBalancesActivity} for why detection is part of it. A shared id would also
+     * keep `withDetection` writing `lastAutoDetectAt`, so the cooldown would suppress the next
+     * sweep too.
      */
-    const chainJobId = (chain: string): ActivityId => (detect
-      ? makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain, ActivityPart.DETECT, ...(detectAddresses?.length ? [setDigest(detectAddresses)] : []))
-      : makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain));
+    const chainJobId = (chain: string): ActivityId => chainBalancesActivity.id({ chain, detect, detectAddresses });
 
     /**
      * One chain's refresh: token detection when asked, then the network query.
@@ -164,8 +158,8 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
       await submit({
         id,
         parent,
-        kind: ActivityKind.BLOCKCHAIN_BALANCES,
-        lane: BALANCES_LANE,
+        kind: chainBalancesActivity.kind,
+        lane: chainBalancesActivity.laneOf?.({ chain }),
         priority,
         rerunnable: true,
         run: async ({ cancelled, runTask }): Promise<Result<void, TaskError>> => {
@@ -194,10 +188,10 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
 
     await runActivityBatch(
       {
-        id: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, ActivityPart.RUN, setDigest(chains), mode),
+        id: balancesRunActivity.id({ chains, mode }),
         // The chains are the subjects; this only contains them, so it records no completion.
         container: true,
-        kind: ActivityKind.BLOCKCHAIN_BALANCES,
+        kind: balancesRunActivity.kind,
         priority,
         subtitle: activityLabelFor(msg.$t('task_center.activity.blockchain_balances.run'), { count: chains.length }),
         title: t('task_center.group.blockchain_balances'),

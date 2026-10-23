@@ -2,7 +2,8 @@
 import type { LiquityStakingDetailEntry } from '@rotki/common';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import StakingHeadlineBalance from '@/modules/staking/components/StakingHeadlineBalance.vue';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { liquityActivity } from '@/modules/staking/liquity/liquity.activity';
+import { ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { stake = null } = defineProps<{
@@ -12,7 +13,7 @@ const { stake = null } = defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { useIsActive } = useTaskCenter();
-const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKE);
+const loading = useIsActive(liquityActivity.kind, ...liquityActivity.partsOf({ part: ActivityPart.STAKE }));
 </script>
 
 <template>

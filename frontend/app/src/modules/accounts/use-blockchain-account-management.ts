@@ -1,5 +1,7 @@
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { startPromise } from '@shared/utils';
+import { accountAddActivity } from '@/modules/accounts/accounts.activity';
 import { isEveryEvmChain } from '@/modules/accounts/use-account-addition-batch';
 import { type AccountAdditionParams, type AdditionSummary, useAccountAdditionService } from '@/modules/accounts/use-account-addition-service';
 import { type FetchAccountsParams, type RefreshAccountsParams, useAccountOperations } from '@/modules/accounts/use-account-operations';
@@ -7,7 +9,6 @@ import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accoun
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import { type ActivityId, ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface AddAccountsOption {
@@ -34,7 +35,7 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
 
   const { getChainName } = useSupportedChains();
   const { useWorkStatusPrefix } = useTaskCenter();
-  const addRunning = useWorkStatusPrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD);
+  const addRunning = useWorkStatusPrefix(accountAddActivity.kind, ...accountAddActivity.partsWithin([]));
   const { notifyInfo } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 

@@ -9,11 +9,11 @@ import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/modules/core/
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
+import { moduleToggleActivity } from '@/modules/settings/modules/module-toggle.activity';
 import ModuleAddressesCell from '@/modules/settings/modules/ModuleAddressesCell.vue';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import IconMark from '@/modules/shell/components/IconMark.vue';
-import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 type ModuleEntry = SupportedModule & { enabled: boolean };
@@ -70,8 +70,8 @@ async function switchModule(module: Module, enabled: boolean) {
 
   await submitTask({
     ephemeral: true,
-    id: makeActivityId(ActivityKind.MODULE_TOGGLE, module, enabled ? 'enabled' : 'disabled'),
-    kind: ActivityKind.MODULE_TOGGLE,
+    id: moduleToggleActivity.id({ enabled, module }),
+    kind: moduleToggleActivity.kind,
     run: async (): Promise<Result<void, TaskError>> => {
       try {
         await update(modules);
@@ -90,7 +90,7 @@ async function switchModule(module: Module, enabled: boolean) {
 
 /**
  * Applies a bulk module change, announcing each module whose state actually flips as its own
- * `MODULE_TOGGLE` activity.
+ * {@link moduleToggleActivity}.
  *
  * @remarks
  * One settings write, several identities. Consumers subscribe per module and direction
@@ -113,8 +113,8 @@ async function applyBulk(next: Module[]): Promise<void> {
 
   await Promise.all(changed.map(async module => submitTask({
     ephemeral: true,
-    id: makeActivityId(ActivityKind.MODULE_TOGGLE, module, next.includes(module) ? 'enabled' : 'disabled'),
-    kind: ActivityKind.MODULE_TOGGLE,
+    id: moduleToggleActivity.id({ enabled: next.includes(module), module }),
+    kind: moduleToggleActivity.kind,
     run: async (): Promise<Result<void, TaskError>> => written,
     title: t('module_selector.tasks.toggle'),
   })));

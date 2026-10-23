@@ -7,14 +7,14 @@ import { sigilBus } from '@/modules/core/sigil/event-bus';
 import { combineOutcomes, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { historySyncFlow } from '@/modules/history/events/tx/history-sync.flow';
+import { historySyncActivity } from '@/modules/history/events/tx/sync.activity';
 import { HISTORY_STALE_AFTER, type RefreshTargets, useHistoryRefreshPolicy } from '@/modules/history/events/tx/use-history-refresh-policy';
 import { useRefreshHandlers } from '@/modules/history/events/tx/use-refresh-handlers';
 import { useTransactionSync } from '@/modules/history/events/tx/use-transaction-sync';
 import { UNDECODED_BREAKDOWN_ID, useUndecodedTransactionsStatus } from '@/modules/history/events/tx/use-undecoded-transactions-status';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
-import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
-import { type ActivityId, ActivityKind, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
+import { type ActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseRefreshTransactionsReturn {
   refreshTransactions: (params?: RefreshTransactionsParams) => Promise<void>;
@@ -36,6 +36,9 @@ interface PlannedOperation {
   accounts: boolean;
   work: Promise<Result<void, TaskError>[]>;
 }
+
+/** The lane the history sync umbrella runs on, resolved once from its descriptor. */
+const HISTORY_SYNC_LANE = historySyncActivity.laneOf?.();
 
 export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   let timeout: NodeJS.Timeout;
@@ -238,7 +241,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     const allCurrentAccounts = resolveInputAccounts(payload.accounts, fullRefresh, chains);
     const novelty = detectNovelty(allCurrentAccounts, usedExchanges, usedBanks);
 
-    const status = statusOf(ActivityKind.HISTORY_SYNC);
+    const status = statusOf(historySyncActivity.kind);
     if (shouldNotRefresh({ alreadyLoaded: status.everCompleted && !userInitiated, novelty }))
       return;
 
@@ -255,12 +258,12 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       userInitiated,
     });
 
-    const umbrellaId = makeActivityId(ActivityKind.HISTORY_SYNC);
+    const umbrellaId = historySyncActivity.id();
 
     await submitTask({
       id: umbrellaId,
-      kind: ActivityKind.HISTORY_SYNC,
-      lane: UMBRELLA_LANE,
+      kind: historySyncActivity.kind,
+      lane: HISTORY_SYNC_LANE,
       rerunnable: false,
       staleAfter: HISTORY_STALE_AFTER,
       userStarted: userInitiated,

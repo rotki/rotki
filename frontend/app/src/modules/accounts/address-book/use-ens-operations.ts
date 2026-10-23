@@ -2,12 +2,12 @@ import type { AddressBookSimplePayload, EthNames } from '@/modules/accounts/addr
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import { isValidEthAddress } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { ensResolveActivity } from '@/modules/accounts/accounts.activity';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseEnsOperationsReturn {
@@ -40,8 +40,8 @@ export function useEnsOperations(): UseEnsOperationsReturn {
 
     if (forceUpdate) {
       const outcome = await submitTask<EthNames>({
-        id: makeActivityId(ActivityKind.ACCOUNTS, ActivityPart.ENS),
-        kind: ActivityKind.ACCOUNTS,
+        id: ensResolveActivity.id({ addresses: filteredAddresses }),
+        kind: ensResolveActivity.kind,
         rerunnable: true,
         run: async ({ runTask }): Promise<Result<EthNames, TaskError>> => mapResult(
           await runTask<EthNames>(
@@ -49,7 +49,7 @@ export function useEnsOperations(): UseEnsOperationsReturn {
           ),
           value => value,
         ),
-        subtitle: activityLabel(ActivityKind.ACCOUNTS, ActivityPart.ENS, { count: filteredAddresses.length }, filteredAddresses.length),
+        subtitle: activityLabelOf(ensResolveActivity, { count: filteredAddresses.length }, filteredAddresses.length),
         title: t('task_center.group.accounts'),
       });
 

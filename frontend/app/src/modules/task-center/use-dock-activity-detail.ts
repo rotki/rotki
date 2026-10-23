@@ -4,7 +4,7 @@ import { type MessageKey, msg } from '@/message-key';
 import { accountAddActivity, type AccountAdditionDetail, type AccountSubject } from '@/modules/accounts/accounts.activity';
 import { TransactionsQueryStatus } from '@/modules/core/messaging/types/status-types';
 import { decodeActivity } from '@/modules/history/events/tx/decode.activity';
-import { accountSyncActivity, bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
+import { accountSyncActivity, bankEventsActivity, eventsConnectionOf, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { protocolCacheActivity, type ProtocolCacheDetail } from '@/modules/history/protocol-cache.activity';
 import { activitySubject } from '@/modules/task-center/activity-subject';
 import { isTerminalStatus, needsAttention } from '@/modules/task-center/core/status';
@@ -135,9 +135,8 @@ export function useDockActivityDetail(activity: MaybeRefOrGetter<Activity>): Com
 
   function events(current: Activity): DockDetail | undefined {
     const descriptor = current.kind === ActivityKind.BANK_EVENTS ? bankEventsActivity : exchangeEventsActivity;
-    const [location, name] = activityParts(current.id);
-    const subject = { location: location ?? '', name: name ?? '' };
-    if (name === undefined || descriptor.id(subject) !== current.id)
+    const subject = eventsConnectionOf(descriptor, current.id);
+    if (subject === undefined)
       return undefined;
 
     const detail = peekActivityDetail(descriptor, subject);

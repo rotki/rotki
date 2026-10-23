@@ -8,16 +8,18 @@ import type { Collection } from '@/modules/core/common/collection';
 import { pipe } from 'plainfp';
 import { map as mapResult, type Result } from 'plainfp/result';
 import { map, type ResultAsync } from 'plainfp/result-async';
+import { manualPriceAddActivity } from '@/modules/assets/prices/prices.activity';
 import { useNftBalancesApi } from '@/modules/balances/api/use-nft-balances-api';
+import { nftBalancesActivity } from '@/modules/balances/balances.activity';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Module } from '@/modules/core/common/modules';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
+import { moduleToggleActivity } from '@/modules/settings/modules/module-toggle.activity';
 import { useSetting } from '@/modules/settings/use-setting';
 import { shouldSkipFetch } from '@/modules/task-center/core/status';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface NftBalancesReturn {
@@ -60,7 +62,7 @@ export function useNftBalances(): NftBalancesReturn {
     if (!get(activeModules).includes(Module.NFTS))
       return;
 
-    const status = statusOf(ActivityKind.NFT_BALANCES);
+    const status = statusOf(nftBalancesActivity.kind);
     if (shouldSkipFetch(status, userInitiated)) {
       logger.info('skipping non fungible balances refresh');
       return;
@@ -75,12 +77,12 @@ export function useNftBalances(): NftBalancesReturn {
     };
 
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.NFT_BALANCES),
-      kind: ActivityKind.NFT_BALANCES,
+      id: nftBalancesActivity.id(),
+      kind: nftBalancesActivity.kind,
       rerunnable: true,
       staleAfter: [
-        { kind: ActivityKind.PRICES, parts: [ActivityPart.MANUAL] },
-        { kind: ActivityKind.MODULE_TOGGLE, parts: [Module.NFTS, 'enabled'] },
+        { kind: manualPriceAddActivity.kind, parts: manualPriceAddActivity.partsWithin([]) },
+        { kind: moduleToggleActivity.kind, parts: moduleToggleActivity.partsOf({ enabled: true, module: Module.NFTS }) },
       ],
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<NonFungibleBalancesCollectionResponse>(

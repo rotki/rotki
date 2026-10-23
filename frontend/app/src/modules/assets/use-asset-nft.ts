@@ -1,12 +1,12 @@
 import type { ActionResult } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
+import { nftAssetsActivity } from '@/modules/assets/assets.activity';
 import { NftResponse } from '@/modules/assets/nfts';
 import { getDomain } from '@/modules/core/common/helpers/url';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseNftsReturn {
@@ -25,8 +25,8 @@ export function useNfts(): UseNftsReturn {
 
   const fetchNfts = async (ignoreCache: boolean): Promise<ActionResult<NftResponse | null>> => {
     const outcome = await submitTask<NftResponse>({
-      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.NFTS, ignoreCache ? ActivityPart.PULL : ActivityPart.CACHED),
-      kind: ActivityKind.ASSETS,
+      id: nftAssetsActivity.id({ ignoreCache }),
+      kind: nftAssetsActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<NftResponse, TaskError>> => mapResult(
         await runTask<NftResponse>(
@@ -34,7 +34,7 @@ export function useNfts(): UseNftsReturn {
         ),
         result => NftResponse.parse(result),
       ),
-      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.NFTS),
+      subtitle: activityLabelOf(nftAssetsActivity),
       title: t('task_center.group.assets'),
     });
 

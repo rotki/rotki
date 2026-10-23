@@ -13,10 +13,10 @@ import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-as
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { assetMovementMatchActivity } from './history-events.activity';
 
 export interface UnmatchedAssetMovement extends UnmatchedEventGroup {
   isFiat: boolean;
@@ -65,7 +65,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   const { signalEventsModified } = useHistoryStore();
   const { allowed: isAssetMovementMatchingAllowed, minimumTier: assetMovementMatchingMinimumTier } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
-  const autoMatchLoading = logicOr(triggerAutoMatchLoading, useIsActive(ActivityKind.HISTORY_EVENTS, ActivityPart.MATCH));
+  const autoMatchLoading = logicOr(triggerAutoMatchLoading, useIsActive(assetMovementMatchActivity.kind, ...assetMovementMatchActivity.partsOf()));
 
   function addIsFiat(movements: UnmatchedEventGroup[]): UnmatchedAssetMovement[] {
     return movements.map(movement => ({
@@ -193,14 +193,14 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   };
 
   const triggerAssetMovementAutoMatching = async (): Promise<void> => {
-    if (!get(isAssetMovementMatchingAllowed) || statusOf(ActivityKind.HISTORY_EVENTS, ActivityPart.MATCH).active)
+    if (!get(isAssetMovementMatchingAllowed) || statusOf(assetMovementMatchActivity.kind, ...assetMovementMatchActivity.partsOf()).active)
       return;
 
     set(triggerAutoMatchLoading, true);
 
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.HISTORY_EVENTS, ActivityPart.MATCH),
-      kind: ActivityKind.HISTORY_EVENTS,
+      id: assetMovementMatchActivity.id(),
+      kind: assetMovementMatchActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<boolean>(
@@ -208,7 +208,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
         ),
         () => {},
       ),
-      subtitle: activityLabel(ActivityKind.HISTORY_EVENTS, ActivityPart.MATCH),
+      subtitle: activityLabelOf(assetMovementMatchActivity),
       title: t('task_center.group.history_events'),
     });
 

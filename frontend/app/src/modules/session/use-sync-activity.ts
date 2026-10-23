@@ -2,9 +2,9 @@ import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/mess
 import { startPromise } from '@shared/utils';
 import { err, ok, type Result } from 'plainfp/result';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { automaticSyncActivity, manualSyncActivity } from '@/modules/session/session.activity';
 import { useSync } from '@/modules/session/use-session-sync';
 import { Priority } from '@/modules/task-center/core/orchestrator/spec';
-import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseSyncActivityReturn {
@@ -30,8 +30,8 @@ export const useSyncActivity = createSharedComposable((): UseSyncActivityReturn 
   const { manualSyncActive } = useSync();
   const { t } = useI18n({ useScope: 'global' });
 
-  const manualId = makeActivityId(ActivityKind.SYNC);
-  const automaticId = makeActivityId(ActivityKind.SYNC, 'automatic');
+  const manualId = manualSyncActivity.id();
+  const automaticId = automaticSyncActivity.id();
 
   /** Settles the automatic row while one is open. */
   let settleAutomatic: ((outcome: Result<void, TaskError>) => void) | undefined;
@@ -46,7 +46,7 @@ export const useSyncActivity = createSharedComposable((): UseSyncActivityReturn 
 
     startPromise(submitTask({
       id: automaticId,
-      kind: ActivityKind.SYNC,
+      kind: automaticSyncActivity.kind,
       priority: Priority.BACKGROUND,
       rerunnable: false,
       run: async (): Promise<Result<void, TaskError>> => outcome,

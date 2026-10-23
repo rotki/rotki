@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { exchangeBalancesActivity } from '@/modules/balances/balances.activity';
 import { useLocations } from '@/modules/core/common/use-locations';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
-import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { exchange } = defineProps<{ exchange: string }>();
@@ -13,7 +13,7 @@ const { getExchangeName } = useLocations();
 const { useIsActive } = useTaskCenter();
 
 // each exchange's query is its own activity, so the row spins only for its own refresh
-const loading = useIsActive(ActivityKind.EXCHANGE_BALANCES, exchange);
+const loading = useIsActive(exchangeBalancesActivity.kind, ...exchangeBalancesActivity.partsOf({ location: exchange }));
 </script>
 
 <template>

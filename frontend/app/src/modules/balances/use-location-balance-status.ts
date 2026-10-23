@@ -1,8 +1,10 @@
 import type { ComputedRef } from 'vue';
+import type { WorkStatus } from '@/modules/task-center/core/types';
+import { exchangeBalancesActivity, manualBalancesFetchActivity } from '@/modules/balances/balances.activity';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
+import { bankBalancesActivity } from '@/modules/banks/banks.activity';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { ActivityKind, type WorkStatus } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 interface UseLocationBalanceStatusReturn {
@@ -34,9 +36,9 @@ export function useLocationBalanceStatus(identifier: string): UseLocationBalance
   const { allExchanges, banks } = storeToRefs(useLocationStore());
   const { useWorkStatus } = useTaskOrchestrator();
 
-  const bankStatus = useWorkStatus(ActivityKind.BANK_BALANCES);
-  const exchangeStatus = useWorkStatus(ActivityKind.EXCHANGE_BALANCES, identifier);
-  const manualStatus = useWorkStatus(ActivityKind.MANUAL_BALANCES);
+  const bankStatus = useWorkStatus(bankBalancesActivity.kind);
+  const exchangeStatus = useWorkStatus(exchangeBalancesActivity.kind, ...exchangeBalancesActivity.partsOf({ location: identifier }));
+  const manualStatus = useWorkStatus(manualBalancesFetchActivity.kind);
 
   const status = computed<WorkStatus>(() => {
     if (get(banks).includes(identifier))

@@ -80,6 +80,34 @@ export const blockDecodeActivity = defineActivity<{ blockNumbers: readonly numbe
   lane: () => DECODE_LANE,
 });
 
+type RedecodeKey = readonly [ActivityPart] | readonly [ActivityPart, string];
+
+/**
+ * The umbrella of a chain redecode: every chain, or a named set.
+ *
+ * @remarks
+ * Chains are sorted, so the same set asked for in a different order is the same run. An empty or
+ * absent set means "everything", which is a meaningful request with its own id.
+ */
+export const redecodeActivity = defineActivity<{ chains?: readonly string[] }, RedecodeKey>({
+  key: (subject): RedecodeKey => (subject.chains?.length
+    ? [ActivityPart.CHAINS, asScope(subject.chains)]
+    : [ActivityPart.ALL]),
+  kind: ActivityKind.REDECODE,
+});
+
+/**
+ * The umbrella of a targeted redecode, keyed by its members (`chain/txRef`, `block/number`).
+ *
+ * @remarks
+ * There is no unscoped form: a targeted redecode of nothing is not "everything", so an empty set
+ * still yields a distinct id rather than collapsing onto some canonical run.
+ */
+export const targetedRedecodeActivity = defineActivity<{ members: readonly string[] }, readonly [ActivityPart, string]>({
+  key: subject => [ActivityPart.TARGETED, asScope(subject.members)],
+  kind: ActivityKind.REDECODE,
+});
+
 /**
  * The identity of one chain's decode.
  *

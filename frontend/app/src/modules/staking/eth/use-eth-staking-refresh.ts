@@ -3,15 +3,17 @@ import { Blockchain } from '@rotki/common';
 import dayjs from 'dayjs';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { logger } from '@/modules/core/common/logging/logging';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
+import { onlineEventsActivity } from '@/modules/history/events/tx/sync.activity';
+import { stakingPerformanceActivity } from '@/modules/staking/staking.activity';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
-import { ActivityPart } from '@/modules/task-center/core/types';
-import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface RefreshCallbacks {
   getPerformance: () => { entriesTotal: number };
@@ -35,7 +37,7 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
   const { refreshBlockchainBalances } = useBlockchainBalances();
   const { useIsActive, useWorkStatus, useIsActivePrefix } = useTaskCenter();
 
-  const performanceStatus = useWorkStatus(ActivityKind.STAKING, ActivityPart.PERFORMANCE);
+  const performanceStatus = useWorkStatus(stakingPerformanceActivity.kind, ...stakingPerformanceActivity.partsOf());
 
   function isFirstLoad(): boolean {
     return !get(performanceStatus).everCompleted;
@@ -50,10 +52,13 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
   const performanceRefreshing = computed<boolean>(() => get(performanceStatus).active);
   // Both layers: hydration reads eth2 balances from the DB and is not an activity the orchestrator sees.
   const eth2Loading = logicOr(
-    useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2),
+    useIsActivePrefix(chainBalancesActivity.kind, ...chainBalancesActivity.partsWithin([Blockchain.ETH2])),
     useBalanceRefreshState().useIsHydrating(Blockchain.ETH2),
   );
-  const blockProductionLoading = useIsActive(ActivityKind.ONLINE_EVENTS, OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
+  const blockProductionLoading = useIsActive(
+    onlineEventsActivity.kind,
+    ...onlineEventsActivity.partsOf({ queryType: OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS }),
+  );
 
   const refreshing = logicOr(
     performanceRefreshing,
