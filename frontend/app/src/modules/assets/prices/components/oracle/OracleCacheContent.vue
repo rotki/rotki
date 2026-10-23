@@ -10,6 +10,7 @@ import { OracleCacheFilterKeys } from '@/modules/assets/prices/use-oracle-cache-
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
+import { fromRequest, isRequestFailure } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
@@ -59,6 +60,8 @@ function pickedAsset(key: string): string {
 }
 const cacheEntries = ref<OracleCacheMeta[]>([]);
 const loadingCaches = ref<boolean>(false);
+/** why the last listing failed, shown by the table in place of its empty text */
+const cacheError = shallowRef<unknown>();
 
 const cacheSourceOptions = computed<{ identifier: PriceOracle; label: string }[]>(() => [
   { identifier: PriceOracle.CRYPTOCOMPARE, label: t('oracle_prices.sources.cryptocompare') },
@@ -73,18 +76,32 @@ const rows = computed<(OracleCacheMeta & { id: number })[]>(() => {
     .map((entry, index) => ({ ...entry, id: index + 1 }));
 });
 
+/** counts the listings started, so only the latest one writes its outcome */
+let cacheLoads = 0;
+
+/**
+ * Lists the caches of the selected source.
+ *
+ * @remarks
+ * A refresh, a delete or a new cache can start a listing while one is still running. Only the latest
+ * one writes the rows, the failure and the loading flag, so an older response that arrives last does
+ * not overwrite a newer one.
+ */
 async function loadCaches(): Promise<void> {
+  const load = ++cacheLoads;
   set(loadingCaches, true);
-  try {
-    set(cacheEntries, await getPriceCache(get(cacheSource)));
+  set(cacheError, undefined);
+  const outcome = await fromRequest(async () => getPriceCache(get(cacheSource)));
+  if (load !== cacheLoads)
+    return;
+  set(loadingCaches, false);
+  if (outcome.ok) {
+    set(cacheEntries, outcome.value);
+    return;
   }
-  catch (error: unknown) {
-    notify({ kind: NotificationKind.FAILURE, message: getErrorMessage(error), severity: Severity.ERROR, title: t('oracle_prices.cache.notification.title') });
-    set(cacheEntries, []);
-  }
-  finally {
-    set(loadingCaches, false);
-  }
+  set(cacheEntries, []);
+  if (isRequestFailure(outcome.error))
+    set(cacheError, outcome.error);
 }
 
 watch(cacheSource, async () => {
@@ -180,6 +197,7 @@ defineExpose({
 
     <OracleCacheTable
       :rows="rows"
+      :error="cacheError"
       :loading="loadingCaches"
       :disabled="cachePending"
       @delete="showDeleteConfirmation($event)"
