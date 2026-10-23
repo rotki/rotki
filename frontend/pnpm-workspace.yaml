@@ -58,11 +58,13 @@ catalog:
   '@fontsource-variable/inter': 5.3.0
   '@intlify/eslint-plugin-vue-i18n': 4.5.1
   '@intlify/unplugin-vue-i18n': 11.2.5
+  '@noble/hashes': 1.8.0
   '@pinia/testing': 2.0.1
   '@playwright/test': 1.64.0
   '@rotki/eslint-config': 8.4.1
   '@rotki/eslint-plugin': 1.10.0
   '@rotki/ui-library': 3.1.2
+  '@scure/base': 1.2.6
   '@tailwindcss/postcss': 4.3.3
   '@tsconfig/node24': 24.0.5
   '@types/node': 24.19.1

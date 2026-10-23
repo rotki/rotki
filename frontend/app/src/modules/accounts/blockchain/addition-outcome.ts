@@ -1,5 +1,5 @@
 import type { AccountAdditionFailure, AdditionSummary } from '@/modules/accounts/use-account-addition-service';
-import { isValidEthAddress } from '@rotki/common';
+import { type AddressCheck, AddressVerdict } from '@/modules/accounts/blockchain/address-check';
 import { errorOf } from '@/modules/core/tasks/task-result';
 
 /**
@@ -42,14 +42,11 @@ export function isNothingButCancelled(summary: AdditionSummary): boolean {
  * Whether the form has to wait for an addition of these entries before it closes.
  *
  * @remarks
- * The form checks no address format, so the backend is the first to reject a mistyped address or an
- * unresolvable ENS name, and that rejection is input to correct, which belongs on the form. Only a
- * batch of well-formed hex addresses on a chain that takes them can no longer fail that way: every
- * other outcome of those is reported by the task dock, so the dialog closes on submit.
- *
- * `takesHex` says whether the target chain takes hex addresses: an EVM or EVM-like chain, or every
- * EVM chain at once.
+ * A rejection the user has to correct belongs on the form, so the dialog stays open for whatever
+ * could still be refused for its input: an ENS name, which only the backend can resolve, or any entry
+ * on a chain with no {@link AddressCheck}. A batch of addresses the check accepts can no longer be
+ * refused that way, and the task dock reports every other outcome, so the dialog closes on submit.
  */
-export function awaitsAddition(addresses: readonly string[], takesHex: boolean): boolean {
-  return !takesHex || !addresses.every(address => isValidEthAddress(address));
+export function awaitsAddition(addresses: readonly string[], check: AddressCheck | undefined): boolean {
+  return check === undefined || !addresses.every(address => check(address) === AddressVerdict.ADDRESS);
 }

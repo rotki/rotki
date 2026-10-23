@@ -15,6 +15,7 @@ import { startPromise } from '@shared/utils';
 import { getAccountAddress, getChain, matchKind } from '@/modules/accounts/account-utils';
 import { ALL_EVM_CHAINS, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { additionError, awaitsAddition, isNothingButCancelled } from '@/modules/accounts/blockchain/addition-outcome';
+import { useAddressCheck } from '@/modules/accounts/blockchain/use-address-check';
 import { useAccountEdits } from '@/modules/accounts/use-account-edits';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -23,7 +24,6 @@ import { getKeyType, guessPrefix } from '@/modules/accounts/xpub';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { isBtcChain } from '@/modules/core/common/chains';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface AccountManageMode {
@@ -167,7 +167,7 @@ export function useAccountManage(): UseAccountManageReturn {
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
   const { editAccount, editAgnosticAccount } = useAccountEdits();
   const { showErrorMessage } = useNotifications();
-  const { isEvmCompatible } = useSupportedChains();
+  const { addressCheck } = useAddressCheck();
 
   function handleErrors(error: unknown, props: Record<string, any> = {}): void {
     logger.error(error);
@@ -214,11 +214,10 @@ export function useAccountManage(): UseAccountManageReturn {
 
       const everyEvmChain = state.chain === ALL_EVM_CHAINS;
       const chain = everyEvmChain ? EVM_PSEUDO_CHAIN : state.chain;
-      const takesHex = everyEvmChain || isEvmCompatible(state.chain);
       const summary = await addAccounts(chain, {
         modules: isEth || everyEvmChain ? state.modules : undefined,
         payload: state.data,
-      }, { userStarted: true, wait: awaitsAddition(state.data.map(entry => entry.address), takesHex) });
+      }, { userStarted: true, wait: awaitsAddition(state.data.map(entry => entry.address), addressCheck(state.chain)) });
 
       if (summary.added.length === 0 && summary.failed.length > 0) {
         handleErrors(additionError(summary.failed, additionFallback(summary.failed.length)));
