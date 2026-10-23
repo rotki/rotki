@@ -1,6 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { type ActionItem, type ActionUrgency, URGENCY_RANK } from '@/modules/core/action-center/types';
+import { captureSession } from '@/modules/core/session/session-lifecycle';
 
 /** One provider of counts behind a center: how to re-read it, and whether it is reading now. */
 interface ActionCenterSource {
@@ -175,10 +176,15 @@ export function useActionCenter<TTarget extends { kind: string }, TId extends st
    * and letting one escape would leave `scanned` false and pin the center to `checking` for the
    * rest of the session. A scan that lands while the domain works read counts that are about to
    * change, so it does not count as the first; the next one after the work settles does.
+   *
+   * Nor does a scan that settles after its session ended. The logged-out watcher can reset
+   * `scanned` before the scan settles (a 401 flips `logged` in the same tick that ends the session),
+   * and the stale scan would then mark the next user's center as scanned before it read anything.
    */
   const read = async (pick: (source: ActionCenterSource) => () => Promise<unknown>): Promise<void> => {
+    const sameSession = captureSession();
     await Promise.allSettled(sources.map(async source => pick(source)()));
-    if (!get(domainBusy))
+    if (sameSession() && !get(domainBusy))
       set(scanned, true);
   };
 
