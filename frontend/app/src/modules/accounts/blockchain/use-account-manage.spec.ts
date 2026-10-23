@@ -4,6 +4,7 @@ import { bigNumberify, Blockchain, Zero } from '@rotki/common';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAccountGroupId } from '@/modules/accounts/account-utils';
+import { ALL_EVM_CHAINS, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { type BlockchainAccountBalance, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { createAccount, createValidatorAccount } from '@/modules/accounts/create-account';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
@@ -58,6 +59,14 @@ vi.mock('@/modules/core/common/use-message-store', () => ({
   })),
 }));
 
+const mockIsEvmCompatible = vi.fn<(chain: string) => boolean>();
+
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
+  useSupportedChains: vi.fn(() => ({
+    isEvmCompatible: mockIsEvmCompatible,
+  })),
+}));
+
 const mockAddEth2Validator = vi.fn<() => Promise<ActionStatus<ValidationErrors | string>>>();
 const mockEditEth2Validator = vi.fn<() => Promise<ActionStatus<ValidationErrors | string>>>();
 
@@ -91,6 +100,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     vi.clearAllMocks();
+    mockIsEvmCompatible.mockImplementation(chain => chain === Blockchain.ETH || chain === Blockchain.ZKSYNC_LITE);
   });
 
   describe('saveValidator', () => {
@@ -265,25 +275,25 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     });
   });
 
-  describe('saveAccount API validation errors', () => {
-    function createSolanaAccountState(): AccountManage {
+  describe('saveAccount for an ENS name, which waits for the addition', () => {
+    function createEnsAccountState(): AccountManage {
       return {
-        chain: Blockchain.SOLANA,
-        data: [{ address: 'Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK', tags: null }],
+        chain: Blockchain.ETH,
+        data: [{ address: 'rotki.eth', tags: null }],
         mode: 'add',
         type: 'account',
       };
     }
 
     it('should map JSON-shaped api error message to inline form errors', async () => {
-      mockAddAccounts.mockRejectedValueOnce(new Error('{"address": ["Given value Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK is not a valid solana address"]}'));
+      mockAddAccounts.mockRejectedValueOnce(new Error('{"address": ["Given ENS address rotki.eth could not be resolved"]}'));
 
       const { modelErrorMessages, save } = useAccountManage();
-      const result = await save(createSolanaAccountState());
+      const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({
-        address: ['Given value Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK is not a valid solana address'],
+        address: ['Given ENS address rotki.eth could not be resolved'],
       });
       expect(mockShowErrorMessage).not.toHaveBeenCalled();
     });
@@ -292,7 +302,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       mockAddAccounts.mockRejectedValueOnce(new Error('Network unreachable'));
 
       const { modelErrorMessages, save } = useAccountManage();
-      const result = await save(createSolanaAccountState());
+      const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({});
@@ -306,7 +316,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       mockAddAccounts.mockRejectedValueOnce(new Error('{}'));
 
       const { modelErrorMessages, save } = useAccountManage();
-      const result = await save(createSolanaAccountState());
+      const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({});
@@ -321,20 +331,20 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
         added: [],
         cancelled: false,
         failed: [{
-          account: { address: 'Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK', tags: null },
+          account: { address: 'rotki.eth', tags: null },
           error: TaskFailed({
-            cause: new ApiValidationError('{"address": ["Given value Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK is not a valid solana address"]}'),
+            cause: new ApiValidationError('{"address": ["Given ENS address rotki.eth could not be resolved"]}'),
             message: 'validation failed',
           }),
         }],
       });
 
       const { modelErrorMessages, save } = useAccountManage();
-      const result = await save(createSolanaAccountState());
+      const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({
-        address: ['Given value Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK is not a valid solana address'],
+        address: ['Given ENS address rotki.eth could not be resolved'],
       });
       expect(mockShowErrorMessage).not.toHaveBeenCalled();
     });
@@ -356,7 +366,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       });
 
       const { modelErrorMessages, save } = useAccountManage();
-      const result = await save(createSolanaAccountState());
+      const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       // No single field to highlight across two addresses.
@@ -371,7 +381,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: true, failed: [], skipped: 0 });
 
       const { modelErrorMessages, save } = useAccountManage();
-      const result = await save(createSolanaAccountState());
+      const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       // The user asked for the cancellation, so nothing is reported.
@@ -384,7 +394,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
 
       const { modelErrorMessages, save } = useAccountManage();
 
-      expect(await save(createSolanaAccountState())).toBe(true);
+      expect(await save(createEnsAccountState())).toBe(true);
       expect(mockAddAccounts).toHaveBeenCalledWith(expect.any(String), expect.anything(), { userStarted: true, wait: true });
       expect(get(modelErrorMessages)).toEqual({});
       expect(mockShowErrorMessage).not.toHaveBeenCalled();
@@ -394,11 +404,84 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       mockAddAccounts.mockRejectedValueOnce(new ApiValidationError('{"address": ["already typed"]}'));
 
       const { modelErrorMessages, save } = useAccountManage();
-      const result = await save(createSolanaAccountState());
+      const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({ address: ['already typed'] });
       expect(mockShowErrorMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('saveAccount for well-formed hex addresses, which closes on submit', () => {
+    const address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c';
+
+    function createAddressState(addresses: string[], chain: string = Blockchain.ETH): AccountManage {
+      return {
+        chain,
+        data: addresses.map(address => ({ address, tags: null })),
+        mode: 'add',
+        type: 'account',
+      };
+    }
+
+    it('should close without waiting for the addition, leaving the dock to report it', async () => {
+      mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: false, failed: [], skipped: 0 });
+
+      const { modelErrorMessages, save } = useAccountManage();
+
+      expect(await save(createAddressState([address]))).toBe(true);
+      expect(mockAddAccounts).toHaveBeenCalledWith(Blockchain.ETH, expect.anything(), { userStarted: true, wait: false });
+      expect(get(modelErrorMessages)).toEqual({});
+      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+    });
+
+    it('should close without waiting when adding to every evm chain', async () => {
+      mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: false, failed: [], skipped: 0 });
+
+      const { save } = useAccountManage();
+
+      expect(await save(createAddressState([address], ALL_EVM_CHAINS))).toBe(true);
+      expect(mockAddAccounts).toHaveBeenCalledWith(EVM_PSEUDO_CHAIN, expect.anything(), { userStarted: true, wait: false });
+    });
+
+    it('should close without waiting on an evm-like chain', async () => {
+      mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: false, failed: [], skipped: 0 });
+
+      const { save } = useAccountManage();
+
+      expect(await save(createAddressState([address], Blockchain.ZKSYNC_LITE))).toBe(true);
+      expect(mockAddAccounts).toHaveBeenCalledWith(Blockchain.ZKSYNC_LITE, expect.anything(), { userStarted: true, wait: false });
+    });
+
+    it('should wait while the supported chains are not known yet', async () => {
+      mockIsEvmCompatible.mockReturnValue(false);
+      mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: false, failed: [], skipped: 0 });
+
+      const { save } = useAccountManage();
+      await save(createAddressState([address]));
+
+      expect(mockAddAccounts).toHaveBeenCalledWith(Blockchain.ETH, expect.anything(), { userStarted: true, wait: true });
+    });
+
+    it.each([
+      ['a mistyped hex address', [address.slice(0, -1)], Blockchain.ETH],
+      ['a batch holding an ENS name', [address, 'rotki.eth'], Blockchain.ETH],
+      ['an address on a chain that takes no hex', ['bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq'], Blockchain.BTC],
+    ])('should wait for %s, so a rejection stays on the form', async (_, addresses, chain) => {
+      mockAddAccounts.mockResolvedValueOnce({
+        added: [],
+        cancelled: false,
+        failed: [{
+          account: { address: addresses[0], tags: null },
+          error: TaskFailed({ cause: new ApiValidationError('{"address": ["not an address"]}'), message: 'validation failed' }),
+        }],
+      });
+
+      const { modelErrorMessages, save } = useAccountManage();
+
+      expect(await save(createAddressState(addresses, chain))).toBe(false);
+      expect(mockAddAccounts).toHaveBeenCalledWith(chain, expect.anything(), { userStarted: true, wait: true });
+      expect(get(modelErrorMessages)).toEqual({ address: ['not an address'] });
     });
   });
 
