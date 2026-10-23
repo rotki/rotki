@@ -208,6 +208,35 @@ describe('createScheduler', () => {
     });
   });
 
+  describe('release', () => {
+    it('should free a running job\'s slot before its run settles', () => {
+      const scheduler = createScheduler({ decode: 1 });
+      const stuck = controllableJob('stuck', 'decode');
+      scheduler.submit(stuck.job);
+
+      scheduler.release(stuck.job);
+      scheduler.submit(controllableJob('next', 'decode').job);
+
+      expect(scheduler.isRunning('next')).toBe(true);
+      expect(scheduler.runningCount('decode')).toBe(1);
+    });
+
+    it('should not free the slot of a newer job under the same id when the released run settles', async () => {
+      const scheduler = createScheduler({ decode: 1 });
+      const old = controllableJob('a', 'decode');
+      scheduler.submit(old.job);
+      scheduler.release(old.job);
+      const fresh = controllableJob('a', 'decode');
+      scheduler.submit(fresh.job);
+
+      old.finish();
+      await flush();
+
+      expect(scheduler.runningCount('decode')).toBe(1);
+      expect(scheduler.isRunning('a')).toBe(true);
+    });
+  });
+
   describe('clear', () => {
     it('should free the slots of running jobs, not just the queue', () => {
       const DECODE_CAP = 2;
