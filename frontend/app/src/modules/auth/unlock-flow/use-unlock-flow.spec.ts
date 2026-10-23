@@ -221,7 +221,7 @@ describe('useUnlockFlow', () => {
       expect(steps.probeSession).not.toHaveBeenCalled();
     });
 
-    it('should return to idle when there is no live session and no saved password', async () => {
+    it('should return to idle without authenticating or connecting when there is no live session and no saved password', async () => {
       const steps = makeSteps({
         probeSession: vi.fn(async () => ok(false)),
         resolveCredentials: vi.fn(async () => ok(some({ password: '', username: 'alice' }))),
@@ -231,11 +231,48 @@ describe('useUnlockFlow', () => {
 
       await flow.startAuto();
 
-      // no doomed empty-password login — straight back to the idle form
-      expect(flow.state.value.kind).toBe(UnlockPhase.idle);
+      expect(phases).toEqual([UnlockPhase.idle, UnlockPhase.resolving, UnlockPhase.probing, UnlockPhase.idle]);
+      expect(steps.authenticate).not.toHaveBeenCalled();
+      expect(steps.connect).not.toHaveBeenCalled();
       expect(steps.login).not.toHaveBeenCalled();
-      // the optimistically-opened socket is torn down so it can't 403-loop on the form
-      expect(steps.disconnect).toHaveBeenCalled();
+    });
+
+    it('should resume a live session with no saved password, probing once', async () => {
+      const steps = makeSteps({
+        probeSession: vi.fn(async () => ok(true)),
+        resolveCredentials: vi.fn(async () => ok(some({ password: '', username: 'alice' }))),
+      });
+      const flow = useUnlockFlow(steps);
+      track(flow);
+
+      await flow.startAuto();
+
+      expect(phases).toEqual([
+        UnlockPhase.idle,
+        UnlockPhase.resolving,
+        UnlockPhase.probing,
+        UnlockPhase.authenticating,
+        UnlockPhase.connecting,
+        UnlockPhase.unlocking,
+        UnlockPhase.loadingSession,
+        UnlockPhase.ready,
+      ]);
+      expect(steps.probeSession).toHaveBeenCalledOnce();
+      expect(steps.connect).toHaveBeenCalledOnce();
+      expect(steps.resume).toHaveBeenCalledOnce();
+    });
+
+    it('should fail without connecting when the early probe of a passwordless unlock fails', async () => {
+      const steps = makeSteps({
+        probeSession: vi.fn(async () => err({ kind: UnlockErrorKind.unknown, message: 'down' })),
+        resolveCredentials: vi.fn(async () => ok(some({ password: '', username: 'alice' }))),
+      });
+      const flow = useUnlockFlow(steps);
+
+      await flow.startAuto();
+
+      expect(flow.state.value.kind).toBe(UnlockPhase.error);
+      expect(steps.connect).not.toHaveBeenCalled();
     });
 
     it('should tear down the monitor when an unlock fails', async () => {
