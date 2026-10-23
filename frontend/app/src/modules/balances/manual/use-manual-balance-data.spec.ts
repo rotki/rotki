@@ -5,6 +5,7 @@ import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { ok } from 'plainfp/result';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Currency, CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useManualBalancesApi } from '@/modules/balances/api/use-manual-balances-api';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
@@ -129,6 +130,20 @@ describe('store::balances/manual', () => {
       expect(get(manualBalanceByLocation)).toMatchObject([
         { location: TRADE_LOCATION_BLOCKCHAIN, value: bigNumberify(80) },
       ]);
+    });
+
+    it('should leave ignored assets out of the location total', () => {
+      const assetsStore = useAssetsStore();
+      assetsStore.addIgnoredAsset('BTC');
+      try {
+        const { manualBalanceByLocation } = useManualBalanceData();
+        expect(get(manualBalanceByLocation)).toMatchObject([
+          { location: TRADE_LOCATION_BLOCKCHAIN, value: bigNumberify(50) },
+        ]);
+      }
+      finally {
+        set(storeToRefs(assetsStore).ignoredAssets, []);
+      }
     });
   });
 
