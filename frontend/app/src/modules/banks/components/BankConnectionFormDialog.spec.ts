@@ -11,14 +11,15 @@ import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionF
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import '@test/i18n';
 
-const { answerBankAuthentication, setupBank, validate } = vi.hoisted(() => ({
+const { answerBankAuthentication, cancelBankSetup, setupBank, validate } = vi.hoisted(() => ({
   answerBankAuthentication: vi.fn(),
+  cancelBankSetup: vi.fn<ReturnType<typeof useBanks>['cancelBankSetup']>(),
   setupBank: vi.fn<ReturnType<typeof useBanks>['setupBank']>(),
   validate: vi.fn(),
 }));
 
 vi.mock('@/modules/banks/use-banks', () => ({
-  useBanks: (): Record<string, unknown> => ({ answerBankAuthentication, setupBank }),
+  useBanks: (): Record<string, unknown> => ({ answerBankAuthentication, cancelBankSetup, setupBank }),
 }));
 
 const otp: BankAuthChallenge = {
@@ -80,6 +81,7 @@ describe('bankConnectionFormDialog', () => {
     setActivePinia(pinia);
     vi.clearAllMocks();
     validate.mockReturnValue(true);
+    cancelBankSetup.mockResolvedValue(undefined);
   });
 
   it('should save the entry and emit added with the connection identity', async () => {
@@ -89,6 +91,33 @@ describe('bankConnectionFormDialog', () => {
     expect(setupBank).toHaveBeenCalledWith(createForm());
     expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
+  });
+
+  describe('when closed', () => {
+    async function cancel(): Promise<void> {
+      wrapper.findComponent(BigDialogStub).vm.$emit('cancel');
+      await flushPromises();
+    }
+
+    it('should drop a setup waiting on its TAN, so the next add of the name starts clean', async () => {
+      setupBank.mockResolvedValue(ok(otp));
+      wrapper = createWrapper(createForm());
+      await confirm();
+
+      await cancel();
+
+      expect(cancelBankSetup).toHaveBeenCalledExactlyOnceWith({ location: 'qonto', name: 'Qonto main' });
+      expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
+    });
+
+    it('should leave the backend alone when no setup was started', async () => {
+      wrapper = createWrapper(createForm());
+
+      await cancel();
+
+      expect(cancelBankSetup).not.toHaveBeenCalled();
+      expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
+    });
   });
 
   it('should not save when the form does not validate', async () => {

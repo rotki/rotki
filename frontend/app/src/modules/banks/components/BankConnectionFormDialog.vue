@@ -2,6 +2,7 @@
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import BankAuthChallengeFields from '@/modules/banks/components/BankAuthChallengeFields.vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
 import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
@@ -24,7 +25,7 @@ const authResponse = ref<string>('');
 const setupError = ref<string>();
 const form = useTemplateRef<ComponentExposed<typeof BankConnectionForm>>('form');
 
-const { answerBankAuthentication, setupBank } = useBanks();
+const { answerBankAuthentication, cancelBankSetup, setupBank } = useBanks();
 const { bankNameFor } = useBankConnectionsStore();
 const { t } = useI18n({ useScope: 'global' });
 
@@ -106,6 +107,14 @@ async function save(): Promise<void> {
   set(authResponse, '');
 }
 
+/** Closing an add at its TAN step drops the setup, so the next add of that name starts clean. */
+function cancel(): void {
+  const payload = get(modelValue);
+  if (payload && payload.mode !== 'edit' && isDefined(authChallenge))
+    startPromise(cancelBankSetup({ location: payload.location, name: payload.name }));
+  set(modelValue, undefined);
+}
+
 watch(modelValue, (value) => {
   if (!value) {
     set(errorMessages, {});
@@ -125,7 +134,7 @@ watch(modelValue, (value) => {
     :loading="submitting"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
-    @cancel="modelValue = undefined"
+    @cancel="cancel()"
   >
     <div class="flex flex-col gap-4">
       <RuiAlert

@@ -294,6 +294,25 @@ describe('useBanks', () => {
     expect(useBankConnectionsStore().connections).toEqual([connection]);
   });
 
+  describe('dropping a setup when its dialog closes', () => {
+    it('should drop the setup through the start-over endpoint without syncing anything', async () => {
+      cancelAuthentication.mockResolvedValue(true);
+
+      await useBanks().cancelBankSetup({ location: 'fints', name: 'Main' });
+
+      expect(cancelAuthentication).toHaveBeenCalledExactlyOnceWith({ location: 'fints', name: 'Main' });
+      expect(queryAllBankEvents).not.toHaveBeenCalled();
+    });
+
+    it('should stay quiet when the backend has no such setup, since the next add discards it anyway', async () => {
+      cancelAuthentication.mockRejectedValue(new Error('fints bank connection Main does not exist'));
+
+      await expect(useBanks().cancelBankSetup({ location: 'fints', name: 'Main' })).resolves.toBeUndefined();
+
+      expect(notifyError).not.toHaveBeenCalled();
+    });
+  });
+
   describe('starting over from a pending TAN', () => {
     it('should drop the challenge, re-read the connections and sync again so the bank sends a fresh one', async () => {
       useBankConnectionsStore().setConnections([connection]);

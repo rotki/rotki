@@ -188,6 +188,12 @@ class BankConnector(ExchangeInterface, ABC):
             location_name=self._cache_location_name(),
         )
 
+    def forget_session(self) -> None:
+        """Drop the saved session and whatever the connector restored from it, so it starts
+        over as a connection that never authenticated."""
+        with self.db.user_write() as write_cursor:
+            self.clear_session(write_cursor)
+
     # ---- cursor ----
 
     def get_cursor(self, cursor: DBCursor, account_id: str) -> Timestamp | None:

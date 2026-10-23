@@ -216,7 +216,11 @@ class BankManager:
             )
         except BankError as e:
             return False, str(e)
+        self._discard_setup(self._location_id(name=name, location=location))
         bank = self._instantiate(api_credentials, database)
+        # a setup abandoned before under this name (dialog closed, restart, logout) left its
+        # session behind, and the connector restored it: this add must not resume that one
+        bank.forget_session()
         try:
             valid, message = bank.validate_api_key()
         except BankMFARequired:

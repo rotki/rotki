@@ -19,6 +19,7 @@ import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { logger } from '@/modules/core/common/logging/logging';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useBankEventsRefresh } from '@/modules/history/events/tx/use-bank-events-refresh';
@@ -35,8 +36,8 @@ interface UseBanksReturn {
    * Answers a connection's pending challenge.
    *
    * @remarks
-   * A refused answer re-reads the connections too: the backend drops a TAN the bank rejected or let
-   * expire, and the connection then reports it as expired.
+   * Every outcome re-reads the connections: the backend records a further challenge, and drops a
+   * TAN the bank rejected or let expire, which the connection then reports as expired.
    */
   answerBankAuthentication: (connection: BankConnectionIdentity, response?: string) => ResultAsync<BankSetupResult, BankSetupError>;
   removeBank: (connection: BankConnectionIdentity) => Promise<boolean>;
@@ -45,9 +46,17 @@ interface UseBanksReturn {
    *
    * @remarks
    * Only the bank knows when a challenge lapsed, so a challenge nobody answers would otherwise be
-   * raised again by every query. The sync re-reads the connections either way.
+   * raised again by every query. The connections are re-read before the sync, so the dropped
+   * challenge is not offered while the sync waits for its turn.
    */
   startOverAuthentication: (connection: BankConnectionIdentity) => Promise<void>;
+  /**
+   * Drops a setup left waiting on a TAN when its dialog closes, with the bank session it saved.
+   *
+   * @remarks
+   * A failure is only logged: the backend also discards it when the same name is added again.
+   */
+  cancelBankSetup: (connection: BankConnectionIdentity) => Promise<void>;
   /** Pulls new transactions of one connection, of one bank, or of every connection. */
   syncBanks: (payload?: BankSyncPayload) => Promise<boolean>;
   /** Queries every connected bank's balances into the per-location balance map. */
@@ -225,8 +234,18 @@ export function useBanks(): UseBanksReturn {
     await syncBanks(connection);
   };
 
+  const cancelBankSetup = async (connection: BankConnectionIdentity): Promise<void> => {
+    try {
+      await api.cancelAuthentication(connection);
+    }
+    catch (error: unknown) {
+      logger.warn(`Could not drop the ${connection.name} bank setup: ${getErrorMessage(error)}`);
+    }
+  };
+
   return {
     answerBankAuthentication,
+    cancelBankSetup,
     fetchBankBalances,
     refreshBankConnections,
     refreshSupportedBanks,

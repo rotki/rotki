@@ -171,13 +171,15 @@ class Fints(BankConnector):
         if (changed := super().edit_exchange_credentials(credentials)):
             self._set_configuration(self.api_key)
             self._validate_connection(self.bank_code, self.endpoint)
-            self._client_data = None
-            self._pending = None
-            self._completed.clear()
-            self._accounts.clear()
-            with self.db.user_write() as write_cursor:
-                self.clear_session(write_cursor)
+            self.forget_session()
         return changed
+
+    def forget_session(self) -> None:
+        self._client_data = None
+        self._pending = None
+        self._completed.clear()
+        self._accounts.clear()
+        super().forget_session()
 
     @staticmethod
     def _validate_connection(bank_code: str, endpoint: str) -> None:

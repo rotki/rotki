@@ -28,7 +28,7 @@ from rotkehlchen.banks.fints import (
     FinTSProductRegistrationError,
     RotkiFinTS3PinTanClient,
 )
-from rotkehlchen.banks.manager import BankManager, BankSyncStatus
+from rotkehlchen.banks.manager import BankCredentialInput, BankManager, BankSyncStatus
 from rotkehlchen.banks.manifest import AuthPrimitive
 from rotkehlchen.banks.normalization import BankTransactionKind
 from rotkehlchen.errors.misc import RemoteError
@@ -735,6 +735,39 @@ def test_a_further_setup_challenge_leaves_no_status_behind(
     assert manager.cancel_bank_authentication(name=connector.name, location=connector.location)
 
     assert location_id not in manager.sync_status
+
+
+@pytest.mark.parametrize('restarted', [False, True])
+def test_adding_a_connection_again_does_not_resume_an_abandoned_setup(
+        database,
+        function_scope_messages_aggregator,
+        restarted: bool,
+) -> None:
+    """A setup left at its TAN (dialog closed, or rotki restarted since) kept its session, which
+    the next connector under that name restored: adding it again raised the old challenge."""
+    abandoned = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        AuthenticationTransport(FixtureTANResponse()),
+    )
+    with pytest.raises(BankMFARequired):
+        abandoned.query_accounts()
+    manager = BankManager(function_scope_messages_aggregator)
+    if not restarted:
+        manager.pending_setups[abandoned.location_id()] = abandoned
+
+    added = create_fints(database, function_scope_messages_aggregator, FinTSFixtureTransport())
+    assert added.has_pending_authentication(), 'restored from the abandoned setup'
+    with patch.object(manager, '_instantiate', return_value=added):
+        assert manager.setup_bank(
+            name=added.name,
+            location=Location.FINTS,
+            credentials=BankCredentialInput(values=FINTS_VALUES),
+            database=database,
+        ) == (True, '')
+
+    assert manager.pending_setups == {}
+    assert manager.get_bank(name=added.name, location=Location.FINTS) is added
 
 
 def test_answer_endpoint_reports_a_dropped_challenge_as_gone(
