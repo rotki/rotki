@@ -10,7 +10,6 @@ import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/ty
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 
 const mockAddAccounts = vi.fn();
-const mockAddEvmAccounts = vi.fn();
 const mockShowErrorMessage = vi.fn();
 const mockFetchAccounts = vi.fn().mockResolvedValue(undefined);
 const mockRefreshAccounts = vi.fn().mockResolvedValue(undefined);
@@ -23,7 +22,6 @@ const mockUpdateAccounts = vi.fn();
 vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
   useBlockchainAccountManagement: vi.fn(() => ({
     addAccounts: mockAddAccounts,
-    addEvmAccounts: mockAddEvmAccounts,
     fetchAccounts: mockFetchAccounts,
     refreshAccounts: mockRefreshAccounts,
   })),

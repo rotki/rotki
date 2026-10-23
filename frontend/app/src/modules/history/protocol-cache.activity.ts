@@ -7,9 +7,9 @@ import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types'
  * @remarks
  * A row rather than an activity because nothing declares the set. The backend mints these pairs as
  * its decoders reach them and never says how many are coming, so children minted from arriving
- * frames would give their parent a denominator that grows as the run proceeds — a bar that runs
- * backwards — and a pair whose query fails sends no terminal frame at all, so its row would stay
- * live forever. Sub-items that have no activity of their own may carry their own counts; what a
+ * frames would give their parent a denominator that grows as the run proceeds (a bar that runs
+ * backwards). A pair whose query fails sends no terminal frame at all, so its row would stay live
+ * forever. Sub-items that have no activity of their own may carry their own counts; what a
  * detail may never restate is the *activity's* status.
  */
 interface ProtocolCacheRow {

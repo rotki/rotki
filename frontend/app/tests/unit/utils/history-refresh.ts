@@ -1,9 +1,9 @@
 import { neverSettles } from '@test/utils/never-settles';
 import { err, ok, type Result } from 'plainfp/result';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { decodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { decodeActivityId } from '@/modules/history/events/tx/decode.activity';
 import { historySyncFlow } from '@/modules/history/events/tx/history-sync.flow';
-import { accountSyncActivityId, chainSyncActivityId } from '@/modules/history/events/tx/sync-activity';
+import { accountSyncActivityId, chainSyncActivityId } from '@/modules/history/events/tx/sync.activity';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 

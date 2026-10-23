@@ -110,6 +110,65 @@ const noClosureResultInActivityRun = {
   },
 };
 
+/** The raw id builder that only a descriptor may call. */
+const RAW_ACTIVITY_ID_BUILDER = 'makeActivityId';
+
+/** The module that defines the builder, as any import path to it ends. */
+const BUILDER_MODULE = /(?:^|\/)core\/types$/;
+
+/**
+ * Reports any way of reaching `makeActivityId` outside an activity descriptor.
+ *
+ * @remarks
+ * An id composed at the producer and again at each reader is an agreement nothing checks: when one
+ * side grows a key part, every exact reader stops matching and nothing fails. A `*.activity.ts`
+ * descriptor (`defineActivity`) builds the id and the reader parts from one declaration, so those
+ * files, and the task-center core that implements them, are the only places the builder belongs.
+ * Which files are exempt is decided in `eslint.config.js`, not here.
+ *
+ * Covers a named import or re-export, member access through a namespace import
+ * (`types.makeActivityId`), destructuring (including from a dynamic `import()`), and an
+ * `export *` of the module that defines it.
+ */
+const noRawActivityId = {
+  meta: {
+    docs: { description: 'build activity ids through a `defineActivity` descriptor in a `*.activity.ts` file' },
+    messages: {
+      rawActivityId: 'Declare the activity with `defineActivity` in a `*.activity.ts` file and use its `id`/`partsOf`. A raw `makeActivityId` at a producer and its readers drifts apart silently.',
+    },
+    schema: [],
+    type: 'suggestion',
+  },
+  create(context) {
+    const isBuilder = node => node.type === 'Identifier' && node.name === RAW_ACTIVITY_ID_BUILDER;
+    const report = node => context.report({ messageId: 'rawActivityId', node });
+
+    return {
+      ExportAllDeclaration(node) {
+        if (BUILDER_MODULE.test(node.source.value))
+          report(node);
+      },
+      ExportSpecifier(node) {
+        if (isBuilder(node.local))
+          report(node);
+      },
+      ImportSpecifier(node) {
+        if (isBuilder(node.imported))
+          report(node);
+      },
+      MemberExpression(node) {
+        if (!node.computed && isBuilder(node.property))
+          report(node);
+      },
+      Property(node) {
+        if (node.parent.type === 'ObjectPattern' && !node.computed && isBuilder(node.key))
+          report(node);
+      },
+    };
+  },
+};
+
 export const localRules = {
   'no-closure-result-in-activity-run': noClosureResultInActivityRun,
+  'no-raw-activity-id': noRawActivityId,
 };

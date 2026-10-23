@@ -4,7 +4,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { combineSettled, onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { decodeActivity } from '@/modules/history/events/tx/decode-activity';
+import { decodeActivity } from '@/modules/history/events/tx/decode.activity';
 import { redecodeFlow } from '@/modules/history/events/tx/redecode.flow';
 import { useUndecodedTransactionsStatus } from '@/modules/history/events/tx/use-undecoded-transactions-status';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';

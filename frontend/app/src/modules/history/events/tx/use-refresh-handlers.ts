@@ -8,7 +8,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { isActionable, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
-import { onlineEventsActivity } from '@/modules/history/events/tx/sync-activity';
+import { onlineEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { useEventsRefreshSources } from '@/modules/history/events/tx/use-events-refresh-sources';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';

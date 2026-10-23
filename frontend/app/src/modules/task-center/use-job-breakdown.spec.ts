@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { decodeActivity } from '@/modules/history/events/tx/decode-activity';
+import { decodeActivity } from '@/modules/history/events/tx/decode.activity';
 import { buildTree } from './core/tree';
 import { type Activity, type ActivityId, ActivityKind, ActivitySourceType, ActivityStatus, makeActivityId } from './core/types';
 import { publishActivityDetail, useActivityDetail } from './use-activity-detail';

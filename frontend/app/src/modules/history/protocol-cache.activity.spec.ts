@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { withProtocolCacheFrame } from './protocol-cache-activity';
+import { withProtocolCacheFrame } from './protocol-cache.activity';
 
 const curve = { chain: 'ethereum', processed: 2, protocol: 'curve', total: 8 };
 const aave = { chain: 'ethereum', processed: 1, protocol: 'aave', total: 4 };

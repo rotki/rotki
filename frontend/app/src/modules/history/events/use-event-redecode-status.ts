@@ -10,7 +10,7 @@ import {
   isSolanaSwapEvent,
   toLocationAndTxRef,
 } from '@/modules/history/event-utils';
-import { blockDecodeActivityId, targetedDecodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { blockDecodeActivityId, targetedDecodeActivityId } from '@/modules/history/events/tx/decode.activity';
 import { type ActivityId, ActivityKind, activityParts } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 

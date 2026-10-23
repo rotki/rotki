@@ -7,7 +7,7 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { combineOutcomes, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { type BlockchainAddress, type ChainAddress, type TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/modules/history/events/event-payloads';
-import { accountSyncActivity, accountSyncActivityId, chainSyncActivity, chainSyncActivityId } from '@/modules/history/events/tx/sync-activity';
+import { accountSyncActivity, accountSyncActivityId, chainSyncActivity, chainSyncActivityId } from '@/modules/history/events/tx/sync.activity';
 import { useHistoryTransactionAccounts } from '@/modules/history/events/tx/use-history-transaction-accounts';
 import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';

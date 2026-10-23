@@ -13,7 +13,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { combineSettled, isActionable, onActionableError, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { blockDecodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode-activity';
+import { blockDecodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode.activity';
 import { targetedRedecodeFlow, type TargetedRedecodeScope } from '@/modules/history/events/tx/targeted-redecode.flow';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';

@@ -1,4 +1,4 @@
-import type { ProtocolCacheDetail } from '@/modules/history/protocol-cache-activity';
+import type { ProtocolCacheDetail } from '@/modules/history/protocol-cache.activity';
 import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
 import { DECODE_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { type ActivityId, ActivityKind, ActivityPart } from '@/modules/task-center/core/types';

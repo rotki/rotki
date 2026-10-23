@@ -2,7 +2,7 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { blockDecodeActivityId, targetedDecodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { blockDecodeActivityId, targetedDecodeActivityId } from '@/modules/history/events/tx/decode.activity';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useEventRedecodeStatus } from './use-event-redecode-status';
 

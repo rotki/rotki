@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { accountAddActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { TransactionsQueryStatus } from '@/modules/core/messaging/types/status-types';
-import { decodeActivity } from '@/modules/history/events/tx/decode-activity';
-import { accountSyncActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
-import { protocolCacheActivity } from '@/modules/history/protocol-cache-activity';
+import { decodeActivity } from '@/modules/history/events/tx/decode.activity';
+import { accountSyncActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
+import { protocolCacheActivity } from '@/modules/history/protocol-cache.activity';
 import { type Activity, type ActivityId, ActivityKind, ActivitySourceType, ActivityStatus } from './core/types';
 import { publishActivityDetail, useActivityDetail } from './use-activity-detail';
 import { useDockActivityDetail } from './use-dock-activity-detail';

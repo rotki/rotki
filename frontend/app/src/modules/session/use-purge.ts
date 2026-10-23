@@ -3,7 +3,7 @@ import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { errorOf, isCancellation, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { protocolCacheActivityId } from '@/modules/history/protocol-cache-activity';
+import { protocolCacheActivityId } from '@/modules/history/protocol-cache.activity';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';

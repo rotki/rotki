@@ -5,7 +5,7 @@ import type { StaleAfterEdge } from '@/modules/task-center/core/orchestrator/spe
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { accountSyncActivity, bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
+import { accountSyncActivity, bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { useHistoryTransactionAccounts } from '@/modules/history/events/tx/use-history-transaction-accounts';
 import { Purgeable } from '@/modules/session/purge';
 import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';

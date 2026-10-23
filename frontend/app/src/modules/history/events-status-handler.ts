@@ -2,7 +2,7 @@ import type { StateHandler } from '@/modules/core/messaging/interfaces';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
 import { createStateHandler } from '@/modules/core/messaging/utils';
-import { bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
+import { bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { publishActivityDetail } from '@/modules/task-center/use-activity-detail';
 import { useLiveActivityEntries } from '@/modules/task-center/use-live-activity-entries';
 

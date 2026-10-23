@@ -10,7 +10,7 @@ import {
   chainSyncActivityId,
   exchangeEventsActivityId,
   onlineEventsActivityId,
-} from '@/modules/history/events/tx/sync-activity';
+} from '@/modules/history/events/tx/sync.activity';
 import { type ActivityId, ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 
 /**

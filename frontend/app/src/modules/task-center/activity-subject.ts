@@ -1,6 +1,6 @@
 import { accountAddActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
-import { decodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode-activity';
-import { accountSyncActivity, bankEventsActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync-activity';
+import { decodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode.activity';
+import { accountSyncActivity, bankEventsActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { type Activity, ActivityKind, ActivityPart, activityParts, makeActivityId } from '@/modules/task-center/core/types';
 
 /** What an activity acts on, in the raw spelling its id carries, for the icons and links a row shows. */

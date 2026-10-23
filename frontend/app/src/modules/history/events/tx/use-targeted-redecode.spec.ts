@@ -4,7 +4,7 @@ import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err, ok, type Result } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { blockDecodeActivityId } from '@/modules/history/events/tx/decode-activity';
+import { blockDecodeActivityId } from '@/modules/history/events/tx/decode.activity';
 import { targetedRedecodeFlow } from '@/modules/history/events/tx/targeted-redecode.flow';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTargetedRedecode } from './use-targeted-redecode';

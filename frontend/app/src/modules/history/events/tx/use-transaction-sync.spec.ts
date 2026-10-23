@@ -7,7 +7,7 @@ import { IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { BackendCancelled, Cancelled, isCancellation, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 import { ActivityKind, ActivityStatus, makeActivityId } from '@/modules/task-center/core/types';
-import { accountSyncActivityId } from './sync-activity';
+import { accountSyncActivityId } from './sync.activity';
 import { useTransactionSync } from './use-transaction-sync';
 
 const mockNotifyError = vi.fn();

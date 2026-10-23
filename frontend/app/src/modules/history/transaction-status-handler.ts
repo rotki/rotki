@@ -3,7 +3,7 @@ import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { millisecondsToSeconds } from '@/modules/core/common/data/date';
 import { TransactionsQueryStatus, type UnifiedTransactionStatusData } from '@/modules/core/messaging/types';
 import { createStateHandler } from '@/modules/core/messaging/utils';
-import { accountSyncActivity } from '@/modules/history/events/tx/sync-activity';
+import { accountSyncActivity } from '@/modules/history/events/tx/sync.activity';
 import { mergeTxFrame, periodSteps, type TxAccountTracking } from '@/modules/history/tx-query-status-period';
 import { publishActivityDetail } from '@/modules/task-center/use-activity-detail';
 import { useLiveActivityEntries } from '@/modules/task-center/use-live-activity-entries';
