@@ -25,10 +25,15 @@ function removeChain(chains: Ref<Set<string>>, chain: string): void {
  * @remarks
  * Kept apart because a row's refresh spinner belongs to the first, while "nothing to show yet"
  * belongs to both. Read them through `useBalancesLoading` rather than from here.
+ *
+ * `firstLoadSettled` is the session-wide latch for the login load: it flips once that load's chain
+ * and price refreshes have settled, or at once for a restored session that fetches nothing, and
+ * stays set until logout. Readers that would misreport a half-loaded state wait on it.
  */
 export const useBalanceRefreshState = defineStore('balances/refresh-state', () => {
   const refreshingChains = ref<Set<string>>(new Set());
   const hydratingChains = ref<Set<string>>(new Set());
+  const firstLoadSettled = ref<boolean>(false);
 
   const start = (chain: string): void => {
     addChain(refreshingChains, chain);
@@ -59,18 +64,25 @@ export const useBalanceRefreshState = defineStore('balances/refresh-state', () =
   const useIsHydrating = (chain: MaybeRefOrGetter<string>): ComputedRef<boolean> =>
     computed<boolean>(() => get(hydratingChains).has(toValue(chain)));
 
+  const settleFirstLoad = (): void => {
+    set(firstLoadSettled, true);
+  };
+
   const reset = (): void => {
     set(refreshingChains, new Set());
     set(hydratingChains, new Set());
+    set(firstLoadSettled, false);
   };
 
   return {
     busyChains,
+    firstLoadSettled,
     hydratingChains,
     isHydrating,
     isRefreshing,
     refreshingChains,
     reset,
+    settleFirstLoad,
     start,
     startHydration,
     stop,

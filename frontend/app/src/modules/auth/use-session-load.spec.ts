@@ -2,6 +2,7 @@ import { captureConsoleError } from '@test/utils/capture-console-error';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDataLoader } from '@/modules/auth/use-session-load';
+import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 
 const mockOnBalancesLoaded = vi.fn();
 const mockFetchCached = vi.fn();
@@ -246,6 +247,47 @@ describe('composables::session::load', () => {
 
       // onBalancesLoaded should still be called because Promise.allSettled is used
       expect(mockOnBalancesLoaded).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('first load latch', () => {
+    it('should settle only once both the chain query and the price refresh have finished', async () => {
+      let finishChains: () => void = (): void => {};
+      mockRefreshFromChain.mockReturnValue(new Promise<void>((resolve) => {
+        finishChains = resolve;
+      }));
+      const { firstLoadSettled } = storeToRefs(useBalanceRefreshState());
+
+      useDataLoader().load();
+      await flushPromises();
+
+      expect(mockRefreshPrices).toHaveBeenCalled();
+      expect(get(firstLoadSettled)).toBe(false);
+
+      finishChains();
+      await flushPromises();
+
+      expect(get(firstLoadSettled)).toBe(true);
+    });
+
+    it('should settle when the chain query fails', async () => {
+      mockRefreshFromChain.mockRejectedValue(new Error('Refresh failed'));
+      const { firstLoadSettled } = storeToRefs(useBalanceRefreshState());
+
+      useDataLoader().load();
+      await flushPromises();
+
+      expect(get(firstLoadSettled)).toBe(true);
+    });
+
+    it('should settle at once for a restored session that fetches nothing', () => {
+      set(mockShouldFetchData, false);
+      const { firstLoadSettled } = storeToRefs(useBalanceRefreshState());
+
+      useDataLoader().load();
+
+      expect(get(firstLoadSettled)).toBe(true);
+      expect(mockRefreshFromChain).not.toHaveBeenCalled();
     });
   });
 });

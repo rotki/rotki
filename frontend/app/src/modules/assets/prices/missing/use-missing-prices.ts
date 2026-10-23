@@ -2,6 +2,7 @@ import type { ComputedRef } from 'vue';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
+import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { logger } from '@/modules/core/common/logging/logging';
 
 interface UseMissingPricesReturn {
@@ -20,20 +21,28 @@ interface UseMissingPricesReturn {
  * changes, so each asset is asked about once per session; a failed request is forgotten, letting a
  * later price tick ask again (colibri may still be starting). Shared, so the row and the dialog read
  * one cache.
+ *
+ * Nothing counts as missing until the session's first balance load has settled: while it runs, a
+ * price can read as missing only because its refresh has not landed yet, and the oracles are not
+ * asked about those assets either.
  */
 export const useMissingPrices = createSharedComposable((): UseMissingPricesReturn => {
   const { prices } = storeToRefs(useBalancePricesStore());
+  const { firstLoadSettled } = storeToRefs(useBalanceRefreshState());
   const { isAssetIgnored } = useAssetsStore();
   const { assetsHadOraclePrice } = useAssetPricesApi();
 
   const oraclePriced = ref<Record<string, boolean>>({});
   const asked = new Set<string>();
 
-  const unpricedVisibleAssets = computed<string[]>(() =>
-    Object.entries(get(prices))
+  const unpricedVisibleAssets = computed<string[]>(() => {
+    if (!get(firstLoadSettled))
+      return [];
+
+    return Object.entries(get(prices))
       .filter(([asset, price]) => price.priceMissing && !isAssetIgnored(asset))
-      .map(([asset]) => asset),
-  );
+      .map(([asset]) => asset);
+  });
 
   const missingPriceIdentifiers = computed<string[]>(() => {
     const priced = get(oraclePriced);

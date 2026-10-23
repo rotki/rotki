@@ -8,6 +8,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useMissingPrices } from '@/modules/assets/prices/missing/use-missing-prices';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
+import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 
 const assetsHadOraclePrice = vi.fn<(identifiers: string[]) => Promise<Record<string, boolean>>>();
 
@@ -32,6 +33,7 @@ function missingPrices(): ReturnType<typeof useMissingPrices> {
 describe('useMissingPrices', () => {
   beforeEach(() => {
     setActivePinia(createCustomPinia());
+    useBalanceRefreshState().settleFirstLoad();
     assetsHadOraclePrice.mockReset();
     assetsHadOraclePrice.mockImplementation(async identifiers =>
       Object.fromEntries(identifiers.map(id => [id, true])));
@@ -39,6 +41,24 @@ describe('useMissingPrices', () => {
 
   afterEach(() => {
     scope?.stop();
+  });
+
+  it('should count nothing and ask nothing until the first balance load settles', async () => {
+    const refreshState = useBalanceRefreshState();
+    refreshState.reset();
+    useBalancePricesStore().prices = { ETH: missing() };
+
+    const { missingPricesCount } = missingPrices();
+    await flushPromises();
+
+    expect(get(missingPricesCount)).toBe(0);
+    expect(assetsHadOraclePrice).not.toHaveBeenCalled();
+
+    refreshState.settleFirstLoad();
+    await flushPromises();
+
+    expect(assetsHadOraclePrice).toHaveBeenCalledExactlyOnceWith(['ETH']);
+    expect(get(missingPricesCount)).toBe(1);
   });
 
   it('should count only the assets an oracle priced before', async () => {
