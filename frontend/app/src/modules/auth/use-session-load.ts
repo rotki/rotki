@@ -7,6 +7,7 @@ import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-op
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
+import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
@@ -34,6 +35,7 @@ export function useDataLoader(): UseDataLoaderReturn {
   const { seedFromHistoric } = usePriceSeed();
   const { markCompleted } = useTaskOrchestrator();
   const { arm: armAccountLoad, release: releaseAccountLoad } = useAccountLoadState();
+  const { settleFirstLoad } = useBalanceRefreshState();
 
   /**
    * Nothing is fetched on this path: the balances are already in the DB and were restored with the
@@ -43,6 +45,13 @@ export function useDataLoader(): UseDataLoaderReturn {
   const markRestored = (): void => {
     markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH);
     markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.BTC);
+    settleFirstLoad();
+  };
+
+  /** Settles the first-load latch once the chain query and the price refresh have both finished. */
+  const refreshFromNetwork = async (): Promise<void> => {
+    await Promise.allSettled([refreshPrices(), refreshFromChain()]);
+    settleFirstLoad();
   };
 
   const { onBalancesLoaded } = useSchedulerState();
@@ -64,8 +73,7 @@ export function useDataLoader(): UseDataLoaderReturn {
       releaseAccountLoad();
     }
     await seedFromHistoric();
-    startPromise(refreshPrices());
-    startPromise(refreshFromChain());
+    startPromise(refreshFromNetwork());
     onBalancesLoaded();
     sigilBus.emit('balances:loaded');
   };
