@@ -5098,10 +5098,16 @@ def test_upgrade_db_53_to_54(
         assert cursor.execute(
             'SELECT COUNT(*) FROM rpc_nodes WHERE is_archive IS NOT NULL OR is_pruned IS NOT NULL',
         ).fetchone()[0] == 0
-        # the bitcoin query checkpoints are gone, so the full history is pulled again
+        # the bitcoin query checkpoints were reset to zero instead of deleted, so the
+        # full history is pulled again without treating the addresses as newly tracked,
+        # while unrelated cache entries were left alone
         assert cursor.execute(
-            "SELECT name FROM key_value_cache WHERE name LIKE 'last_b%'",
-        ).fetchall() == [(unrelated_cache_key,)]
+            "SELECT name, value FROM key_value_cache WHERE name LIKE 'last_b%' ORDER BY name",
+        ).fetchall() == [
+            ('last_bch_tx_block_bitcoincash:qpplh9lgfq0p5w7u4f5sq4kyv2r3hrz8qqfczq9dj8', '0'),
+            (unrelated_cache_key, '1'),
+            ('last_btc_tx_block_bc1qyy30guv6m5ez7ntj0ayr08u23w3k5s8vg3elmxdzlh8a3xskupyqn2lp5w', '0'),  # noqa: E501
+        ]
         # the coinbase transactions saved without an input got it, and nothing else changed
         assert cursor.execute(
             'SELECT tx_id, io_index, value, address, script FROM bitcoin_tx_io WHERE direction=1 ORDER BY tx_id',  # noqa: E501

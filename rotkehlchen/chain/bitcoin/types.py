@@ -40,7 +40,11 @@ class BtcApiCallback(NamedTuple):
     name: str  # Used for logging
     balances_fn: Callable[[Sequence[BTCAddress]], dict[BTCAddress, FVal]] | None
     has_transactions_fn: Callable[[Sequence[BTCAddress]], dict[BTCAddress, tuple[bool, FVal]]] | None  # noqa: E501
-    transactions_fn: Callable[[Sequence[BTCAddress], dict[str, Any]], tuple[int, list[BitcoinTx]]] | None  # noqa: E501
+    # The queried block height per address, through which that address' own history was
+    # fetched. Kept per address (rather than one height for the whole query) so a block
+    # arriving while other addresses are still being queried can't advance an address
+    # past transactions that were never fetched for it.
+    transactions_fn: Callable[[Sequence[BTCAddress], dict[str, Any]], tuple[dict[BTCAddress, int], list[BitcoinTx]]] | None  # noqa: E501
 
 
 class BtcTxIO(NamedTuple):

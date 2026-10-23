@@ -23,6 +23,7 @@ Changelog
 * :feature:`-` On all desktop platforms, the tray menu now shows the rotki version, adds links to sponsor rotki, join Discord and follow rotki on X, and labels the quit action "Quit rotki".
 * :feature:`-` The staking page now has Solana and Hyperliquid sections. Each shows the staked amount, split into stake accounts for Solana and into delegated, undelegated and pending withdrawal HYPE for Hyperliquid, together with its staking events.
 * :bug:`-` On macOS, left-clicking the tray icon now only toggles the window instead of also opening the tray menu.
+* :bug:`13182` Bitcoin transaction refreshes no longer skip transactions when a new block arrives while addresses are still being queried.
 * :bug:`-` Deleting an xpub now only removes that xpub from the accounts table. Before, the same xpub added with another derivation path, and the addresses derived from it, also disappeared until the next reload.
 * :bug:`-` Deleting a Bitcoin address tracked on both Bitcoin and Bitcoin Cash from every chain at once now works. Before, the delete failed and the address stayed on both chains.
 * :feature:`-` Detecting EVM accounts no longer raises a notification for every chain an address was added on. The accounts table instead rings the chains detection added and marks the row "New", with a tooltip naming those chains; clicking the mark dismisses it, and it also clears when you log out. After a run, the Detect EVM accounts button briefly says how many chains it added, or that it found none.

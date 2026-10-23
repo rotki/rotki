@@ -168,13 +168,16 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
           bitcoin cash failed to deserialize. Haskoin is the main bitcoin cash explorer and
           blockcypher is what bitcoin falls back to whenever blockchain.info fails, which
           leaves no trace of having happened. So the per-address last queried block of both
-          chains is reset and the next transaction query pulls the full history again.
+          chains is reset to zero and the next transaction query pulls the full history
+          again. The checkpoint rows are updated rather than deleted: a missing row means
+          the address was never queried and would be treated as newly tracked, which these
+          already-queried addresses must not go through.
 
         Transactions with customized or matched events stay marked as decoded, same as
         when redecoding a chain.
         """
         write_cursor.execute(
-            "DELETE FROM key_value_cache WHERE "
+            "UPDATE key_value_cache SET value='0' WHERE "
             "name LIKE 'last\\_btc\\_tx\\_block\\_%' ESCAPE '\\' OR "
             "name LIKE 'last\\_bch\\_tx\\_block\\_%' ESCAPE '\\'",
         )
