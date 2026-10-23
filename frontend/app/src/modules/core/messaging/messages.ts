@@ -171,6 +171,11 @@ const HistoricalBalanceProcessingCompletedMessage = z.object({
   type: z.literal(SocketMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED),
 });
 
+const CurrentBalanceDetectionCompletedMessage = z.object({
+  data: z.object({}),
+  type: z.literal(SocketMessageType.CURRENT_BALANCE_DETECTION_COMPLETED),
+});
+
 export const WebsocketMessage = z.discriminatedUnion('type', [
   UserMessageWebsocketMessage,
   BalancesSnapshotErrorMessage,
@@ -185,6 +190,7 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
   NegativeBalanceDetectedMessage,
   RefreshBalancesMessage,
   HistoricalBalanceProcessingCompletedMessage,
+  CurrentBalanceDetectionCompletedMessage,
   DbUploadResultMessage,
   AccountingRuleConflictMessage,
   CalendarReminderMessage,

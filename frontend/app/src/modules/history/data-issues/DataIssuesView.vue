@@ -2,11 +2,9 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
 import type { Filters } from '@/modules/history/data-issues/use-data-issues-filter';
-import { startPromise } from '@shared/utils';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
-import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
 import DataIssuesTable from '@/modules/history/data-issues/components/DataIssuesTable.vue';
 import DataIssueSummaryBar from '@/modules/history/data-issues/components/DataIssueSummaryBar.vue';
@@ -15,10 +13,11 @@ import { DEFAULT_LIST_STATES, IssueState } from '@/modules/history/data-issues/c
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
 import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
+import { useDataIssuesAutoReload } from '@/modules/history/data-issues/use-data-issues-auto-reload';
+import { useDataIssuesDetection } from '@/modules/history/data-issues/use-data-issues-detection';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
 
 defineOptions({
   inheritAttrs: false,
@@ -33,8 +32,6 @@ const router = useRouter();
 
 const { fetchData } = useDataIssues();
 const { baselineTotal, counts, dismissInlinePanels, refreshSummary, summaryFailed } = useDataIssuesSummary();
-const { historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
-const { syncCompleted } = useSyncCompleted();
 
 const fields = useDataIssueFields();
 
@@ -82,6 +79,8 @@ const {
   onRetry,
   openDetail,
 } = useDataIssueDetailActions(reloadAll, () => get(state).data);
+
+const { detect, detecting } = useDataIssuesDetection(reloadAll);
 
 const activeStates = computed<string[]>(() => {
   const value = get(filters).state;
@@ -173,14 +172,7 @@ watch(hasRemediatingRows, (remediating) => {
     pause();
 });
 
-// A finished sync is what detects new issues, so reload rather than wait for the 10s poll.
-watch(syncCompleted, () => {
-  startPromise(reloadAll());
-});
-
-watch(historicalBalanceProcessingCompleted, () => {
-  startPromise(reloadAll());
-});
+useDataIssuesAutoReload(reloadAll);
 
 /**
  * Closes the overlay and pinned copies of this list when it is shown as a page.
@@ -208,6 +200,24 @@ onMounted(async () => {
     v-bind="$attrs"
   >
     <template #buttons>
+      <RuiTooltip :open-delay="400">
+        <template #activator>
+          <RuiButton
+            variant="outlined"
+            color="primary"
+            :loading="detecting"
+            data-testid="data-issues-detect"
+            @click="detect()"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-scale" />
+            </template>
+            {{ t('data_issues.detect.action') }}
+          </RuiButton>
+        </template>
+        {{ t('data_issues.detect.tooltip') }}
+      </RuiTooltip>
+
       <RuiTooltip :open-delay="400">
         <template #activator>
           <RuiButton

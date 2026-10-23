@@ -12,6 +12,7 @@ from rotkehlchen.concurrency import (
     checkpoint,
     current_token,
     exception_of,
+    join_forwarding_cancellation,
     spawn,
     wait,
 )
@@ -89,6 +90,23 @@ def test_spawn_propagates_token_to_children():
     assert task.dead is True
     assert task.exception is None  # parent hit no checkpoint after the wait
     assert isinstance(exception_of(task.get()), TaskCancelledError)
+
+
+def test_join_forwarding_cancellation_cancels_a_task_with_its_own_token():
+    """A waiter cancelled while it joins a task outside its token tree cancels that task too"""
+    waited = Task(name='waited task', target=lambda: cancellable_sleep(10), token=CancellationToken()).start()  # noqa: E501
+    waiter = Task(
+        name='waiter task',
+        target=join_forwarding_cancellation,
+        args=(waited,),
+        token=(waiter_token := CancellationToken()),
+    ).start()
+    time.sleep(0.05)  # let the waiter block on the waited task
+    waiter_token.cancel('cancel the waiter')
+    waiter.join(timeout=2)
+    waited.join(timeout=2)
+    assert isinstance(waiter.exception, TaskCancelledError)
+    assert isinstance(waited.exception, TaskCancelledError)
 
 
 def test_db_statement_aborts_at_cancellation(transient_conn):

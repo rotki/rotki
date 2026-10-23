@@ -870,6 +870,7 @@ class DBHandler:
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
+            DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
         ):
             return value
 
@@ -880,6 +881,7 @@ class DBHandler:
             self,
             cursor: DBCursor,
             name: Literal[
+                DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
                 DBCacheStatic.DOCKER_DEVICE_INFO,
                 DBCacheStatic.ETHERSCAN_API_KEY_TIER,
                 DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
@@ -917,6 +919,7 @@ class DBHandler:
                 DBCacheStatic.LAST_DB_UPGRADE,
                 DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
                 DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
+                DBCacheStatic.PENDING_DETECTION_FROM_TS,
             ],
     ) -> Timestamp | None:
         ...

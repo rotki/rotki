@@ -1757,7 +1757,7 @@ Trigger an async task
 
           {"task": "historical_balance_processing"}
 
-        :reqjson str task: Name of the task to run. Valid values are ``historical_balance_processing``, ``asset_movement_matching`` and ``bridge_matching``. Both matching tasks require the premium capability ``asset_movement_matching``.
+        :reqjson str task: Name of the task to run. Valid values are ``historical_balance_processing``, ``current_balance_detection``, ``asset_movement_matching`` and ``bridge_matching``. Both matching tasks require the premium capability ``asset_movement_matching``. ``current_balance_detection`` compares the balances derived from history events with the live chain balances and records a data issue for each mismatch. The request returns only once the comparison has finished, and a ``current_balance_detection_completed`` websocket message is sent when it ends. Starting ``historical_balance_processing`` cancels a running current balance detection, since the detection must not read the balances that processing rewrites.
 
       **Example Response:**
 
@@ -1776,7 +1776,9 @@ Trigger an async task
         :statuscode 200: Task started successfully
         :statuscode 401: User is not logged in
         :statuscode 403: Task is not available for the current premium tier
-        :statuscode 500: Internal Rotki error
+        :statuscode 404: ``current_balance_detection`` was requested but the accounting update is disabled
+        :statuscode 409: ``current_balance_detection`` could not start, because historical balance processing has not completed yet or history work, processing or another detection is running, or it was cancelled before finishing, for example by a historical balance processing run
+        :statuscode 500: Internal Rotki error. For ``current_balance_detection`` also returned when the detection failed
 
 
 Enable or disable the periodic task scheduler

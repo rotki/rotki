@@ -25,6 +25,7 @@ class WSMessageType(StrEnum):
     HISTORY_EVENTS_STATUS = auto()
     REFRESH_BALANCES = auto()
     HISTORICAL_BALANCE_PROCESSING_COMPLETED = auto()
+    CURRENT_BALANCE_DETECTION_COMPLETED = auto()
     DATABASE_UPLOAD_RESULT = auto()
     ACCOUNTING_RULE_CONFLICT = auto()
     CALENDAR_REMINDER = auto()
@@ -270,7 +271,8 @@ def delivery_of(message_type: WSMessageType, data: dict[str, Any] | list[Any]) -
             WSMessageType.UNMATCHED_BRIDGE_TRANSACTIONS |
             WSMessageType.INTERNAL_TX_FIXED |
             WSMessageType.SOLANA_TOKENS_MIGRATION |
-            WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED
+            WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED |
+            WSMessageType.CURRENT_BALANCE_DETECTION_COMPLETED
         ):
             return LATEST
         case WSMessageType.REFRESH_BALANCES:
