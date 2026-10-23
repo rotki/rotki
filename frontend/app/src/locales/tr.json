@@ -543,10 +543,6 @@
         "description": "Varlık hareketi eşleştirilemedi: {message}",
         "title": "Varlık hareketi eşleştirme"
       },
-      "fetch_error": {
-        "description": "Eşleştirilmemiş varlık hareketleri alınamadı: {message}",
-        "title": "Eşleştirilmemiş varlık hareketlerini alma"
-      },
       "success": {
         "description": "Varlık hareketi blokzincir olayıyla başarıyla eşleştirildi.",
         "title": "Varlık hareketi eşleştirildi"
@@ -625,10 +621,6 @@
       "error": {
         "description": "Köprü işlemi eşleştirilemedi: {error}",
         "title": "Köprü işlemi eşleştirme"
-      },
-      "fetch_error": {
-        "description": "Eşleştirilmemiş köprü işlemleri alınamadı: {error}",
-        "title": "Eşleştirilmemiş köprü işlemlerini alma"
       },
       "success": {
         "description": "Köprü işlemi karşılık olayıyla başarıyla eşleştirildi.",

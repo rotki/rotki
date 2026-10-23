@@ -3,9 +3,11 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { UnmatchedBridgeRow } from '@/modules/history/events/use-unmatched-bridge-rows';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
+import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
-import { UNMATCHED_LAYOUTS, type UnmatchedActionPayload, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
+import { UNMATCHED_LAYOUTS, type UnmatchedActionPayload, type UnmatchedFailure, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
 import UnmatchedActions from '@/modules/history/events/UnmatchedActions.vue';
 import UnmatchedUntrackedBadge from '@/modules/history/events/UnmatchedUntrackedBadge.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
@@ -17,6 +19,8 @@ const { highlightedGroupIdentifier } = defineProps<{
   rows: UnmatchedBridgeRow[];
   specFor: (row: UnmatchedBridgeRow) => UnmatchedRowActionSpec;
   emptyDescription: string;
+  /** why the last load failed, shown in place of the empty text or above the rows it left */
+  failure?: UnmatchedFailure;
   maxHeight: string;
   highlightedGroupIdentifier?: string;
   ignoreLoading?: boolean;
@@ -25,6 +29,7 @@ const { highlightedGroupIdentifier } = defineProps<{
 
 const emit = defineEmits<{
   action: [payload: UnmatchedActionPayload<UnmatchedBridgeTransaction>];
+  retry: [];
 }>();
 
 defineSlots<{
@@ -78,14 +83,29 @@ function getRowClass(row: UnmatchedBridgeRow): string {
       dense
       multi-page-select
       :loading="loading"
-      :empty="{ description: emptyDescription }"
+      :empty="failure ? { label: failure.title } : { description: emptyDescription }"
     >
       <template
-        v-if="$slots.alert"
+        v-if="failure"
+        #empty-description
+      >
+        <TableFailureDescription
+          :message="failure.message"
+          @retry="emit('retry')"
+        />
+      </template>
+      <template
+        v-if="$slots.alert || (failure && rows.length > 0)"
         #body.prepend
       >
         <tr>
           <td :colspan="columns.length + 1">
+            <TableFailureStrip
+              v-if="failure && rows.length > 0"
+              :title="failure.title"
+              :message="failure.message"
+              @retry="emit('retry')"
+            />
             <slot name="alert" />
           </td>
         </tr>

@@ -1,20 +1,29 @@
 <script setup lang="ts" generic="T">
 import type { TablePaginationData } from '@rotki/ui-library';
+import type { UnmatchedFailure } from '@/modules/history/events/unmatched-actions';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
+import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 
 const selected = defineModel<string[]>('selected', { required: true });
 
 // Never caps its own height, so the host must be a bounded flex column or the pager scrolls away.
-const { items, rowKey, emptyDescription, highlighted, accented, loading } = defineProps<{
+const { items, rowKey, emptyDescription, failure, highlighted, accented, loading } = defineProps<{
   items: T[];
   /** Stable identity of a card, and what the selection model stores. */
   rowKey: (item: T) => string;
   emptyDescription: string;
+  /** Why the last load failed: shown above the cards it left, or in place of the empty text. */
+  failure?: UnmatchedFailure;
   /** Card that a deep link points at, highlighted the same way the table row is. */
   highlighted?: (item: T) => boolean;
   /** Card whose row cannot be matched, marked with a warning edge. */
   accented?: (item: T) => boolean;
   loading?: boolean;
+}>();
+
+const emit = defineEmits<{
+  retry: [];
 }>();
 
 defineSlots<{
@@ -102,6 +111,14 @@ watch(() => items.length, (length) => {
     data-testid="unmatched-card-list"
   >
     <div class="shrink-0">
+      <TableFailureStrip
+        v-if="failure && items.length > 0"
+        standalone
+        class="mb-2"
+        :title="failure.title"
+        :message="failure.message"
+        @retry="emit('retry')"
+      />
       <slot name="alert" />
     </div>
 
@@ -128,8 +145,21 @@ watch(() => items.length, (length) => {
     </div>
 
     <ScrollableDialogContent fill>
+      <RuiTableEmptyState
+        v-if="items.length === 0 && failure && !loading"
+        :label="failure.title"
+        class="border border-default rounded-sm px-4 pb-6"
+        data-testid="unmatched-card-error"
+      >
+        <template #description>
+          <TableFailureDescription
+            :message="failure.message"
+            @retry="emit('retry')"
+          />
+        </template>
+      </RuiTableEmptyState>
       <div
-        v-if="items.length === 0"
+        v-else-if="items.length === 0"
         class="flex flex-col items-center gap-2 py-8 border border-default rounded-sm text-body-2 text-rui-text-secondary"
         data-testid="unmatched-card-empty"
       >
@@ -146,7 +176,7 @@ watch(() => items.length, (length) => {
       </div>
 
       <div
-        v-else
+        v-else-if="items.length > 0"
         class="border-x border-b border-default rounded-b divide-y divide-rui-grey-200 dark:divide-rui-grey-800"
       >
         <div

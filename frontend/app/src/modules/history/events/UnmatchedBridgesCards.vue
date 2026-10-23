@@ -3,7 +3,7 @@ import type { UnmatchedBridgeRow } from '@/modules/history/events/use-unmatched-
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
-import { UNMATCHED_LAYOUTS, type UnmatchedActionPayload, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
+import { UNMATCHED_LAYOUTS, type UnmatchedActionPayload, type UnmatchedFailure, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
 import UnmatchedActions from '@/modules/history/events/UnmatchedActions.vue';
 import UnmatchedCardList from '@/modules/history/events/UnmatchedCardList.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
@@ -15,6 +15,8 @@ const { rows, highlightedGroupIdentifier } = defineProps<{
   rows: UnmatchedBridgeRow[];
   specFor: (row: UnmatchedBridgeRow) => UnmatchedRowActionSpec;
   emptyDescription: string;
+  /** why the last load failed, shown in place of the empty text or above the rows it left */
+  failure?: UnmatchedFailure;
   highlightedGroupIdentifier?: string;
   ignoreLoading?: boolean;
   loading?: boolean;
@@ -22,6 +24,7 @@ const { rows, highlightedGroupIdentifier } = defineProps<{
 
 const emit = defineEmits<{
   action: [payload: UnmatchedActionPayload<UnmatchedBridgeTransaction>];
+  retry: [];
 }>();
 
 defineSlots<{
@@ -37,7 +40,9 @@ defineSlots<{
     :highlighted="(row: UnmatchedBridgeRow) => row.groupIdentifier === highlightedGroupIdentifier"
     :accented="(row: UnmatchedBridgeRow) => row.untrackedCounterpart"
     :empty-description="emptyDescription"
+    :failure="failure"
     :loading="loading"
+    @retry="emit('retry')"
   >
     <template
       v-if="$slots.alert"

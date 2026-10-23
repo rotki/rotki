@@ -1,9 +1,10 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { HistoryEventEntry, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { arrayify } from '@/modules/core/common/data/array';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
-import { UNMATCHED_ACTIONS, type UnmatchedRowActionLabels, type UnmatchedRowActionSpec, type UnmatchedRowConfirms, type UnmatchedRowOptionalAction } from '@/modules/history/events/unmatched-actions';
+import { UNMATCHED_ACTIONS, type UnmatchedFailure, type UnmatchedRowActionLabels, type UnmatchedRowActionSpec, type UnmatchedRowConfirms, type UnmatchedRowOptionalAction } from '@/modules/history/events/unmatched-actions';
 import { canCreateBridgeCounterpart, getBridgeCounterpartAddress, isCounterpartUnqueryable, useUntrackedBridgeCounterpart } from '@/modules/history/events/use-untracked-bridge-counterpart';
 
 /**
@@ -39,11 +40,15 @@ interface UseUnmatchedBridgeRowsOptions {
   showRestore: MaybeRefOrGetter<boolean | undefined>;
   /** Matching is unavailable (no premium tier), so find-match is offered but disabled. */
   matchDisabled: MaybeRefOrGetter<boolean | undefined>;
+  /** Why the last load of the legs failed. */
+  error?: MaybeRefOrGetter<unknown>;
 }
 
 interface UseUnmatchedBridgeRowsReturn {
   rows: ComputedRef<UnmatchedBridgeRow[]>;
   description: ComputedRef<string>;
+  /** Why the last load failed, shown in place of the empty text or above the rows it left. */
+  failure: ComputedRef<UnmatchedFailure | undefined>;
   emptyDescription: ComputedRef<string>;
   specFor: (row: UnmatchedBridgeRow) => UnmatchedRowActionSpec;
 }
@@ -62,9 +67,10 @@ function findOwnLegEvent(transaction: UnmatchedBridgeTransaction): HistoryEventE
  * presentation and both are handed the same rows and the same action specs.
  */
 export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): UseUnmatchedBridgeRowsReturn {
-  const { transactions, showRestore, matchDisabled } = options;
+  const { error, transactions, showRestore, matchDisabled } = options;
 
   const { t } = useI18n({ useScope: 'global' });
+  const failureMessage = useFailureMessage();
   const { isCounterpartUntracked } = useUntrackedBridgeCounterpart();
 
   const labels = computed<UnmatchedRowActionLabels>(() => ({
@@ -116,6 +122,18 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
       ? t('bridge_matching.dialog.ignored_description')
       : t('bridge_matching.dialog.description'),
   );
+
+  const failure = computed<UnmatchedFailure | undefined>(() => {
+    const thrown = toValue(error);
+    if (!thrown)
+      return undefined;
+    return {
+      message: failureMessage(thrown),
+      title: toValue(showRestore)
+        ? t('bridge_matching.dialog.load_failed.ignored')
+        : t('bridge_matching.dialog.load_failed.unmatched'),
+    };
+  });
 
   const emptyDescription = computed<string>(() =>
     toValue(showRestore)
@@ -184,6 +202,7 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
   return {
     description,
     emptyDescription,
+    failure,
     rows,
     specFor,
   };

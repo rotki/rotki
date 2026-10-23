@@ -78,6 +78,18 @@ describe('use-unmatched-bridge-rows', () => {
     });
   });
 
+  it('should name the list and the reason a load failed, keeping the empty text as it is', () => {
+    const { emptyDescription, failure } = useUnmatchedBridgeRows({
+      error: new Error('backend down'),
+      matchDisabled: false,
+      showRestore: true,
+      transactions: [],
+    });
+
+    expect(get(failure)).toEqual({ message: 'backend down', title: 'bridge_matching.dialog.load_failed.ignored' });
+    expect(get(emptyDescription)).toBe('bridge_matching.dialog.no_ignored');
+  });
+
   it('should label the row by direction', () => {
     expect(rowFor('deposit').row.directionLabel).toBe('bridge_matching.dialog.direction_out');
     expect(rowFor('withdrawal').row.directionLabel).toBe('bridge_matching.dialog.direction_in');

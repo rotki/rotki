@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
-import { UNMATCHED_ACTIONS, type UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
+import { UNMATCHED_ACTIONS, type UnmatchedActionPayload, type UnmatchedMatchAccess } from '@/modules/history/events/unmatched-actions';
 import UnmatchedBridgesList from '@/modules/history/events/UnmatchedBridgesList.vue';
 import UnmatchedResolutionStrip from '@/modules/history/events/UnmatchedResolutionStrip.vue';
 import { useBridgeTransactionActions } from '@/modules/history/events/use-bridge-transaction-actions';
@@ -27,14 +27,18 @@ const activeTab = ref<number>(0);
 const {
   autoMatchLoading,
   autoMatchMinimumTier,
+  ignoredError,
   ignoredLoading,
   ignoredTransactions,
   isAutoMatchAllowed,
   loading,
   refreshUnmatchedBridgeTransactions,
   triggerBridgeAutoMatching,
+  unmatchedError,
   unmatchedTransactions,
 } = useUnmatchedBridgeTransactions();
+
+const matchAccess = computed<UnmatchedMatchAccess>(() => ({ allowed: get(isAutoMatchAllowed), minimumTier: get(autoMatchMinimumTier) }));
 
 const {
   confirmCreateCounterpart,
@@ -129,28 +133,30 @@ onBeforeMount(async () => {
       v-if="activeTab === 0"
       v-model:selected="modelSelectedUnmatched"
       :transactions="unmatchedTransactions"
+      :error="unmatchedError"
       :highlighted-group-identifier="highlightedGroupIdentifier"
       :ignore-loading="ignoreLoading"
       is-pinned
       :loading="loading"
-      :match-disabled="!isAutoMatchAllowed"
-      :match-minimum-tier="autoMatchMinimumTier"
+      :match-access="matchAccess"
       @action="handleAction($event)"
       @pin="emit('pin')"
+      @retry="refreshUnmatchedBridgeTransactions()"
     />
     <UnmatchedBridgesList
       v-else
       v-model:selected="modelSelectedIgnored"
       :transactions="ignoredTransactions"
+      :error="ignoredError"
       :highlighted-group-identifier="highlightedGroupIdentifier"
       :loading="ignoredLoading"
       :ignore-loading="ignoreLoading"
       is-pinned
-      :match-disabled="!isAutoMatchAllowed"
-      :match-minimum-tier="autoMatchMinimumTier"
+      :match-access="matchAccess"
       show-restore
       @action="handleAction($event)"
       @pin="emit('pin')"
+      @retry="refreshUnmatchedBridgeTransactions()"
     />
   </div>
 
@@ -163,27 +169,29 @@ onBeforeMount(async () => {
       <UnmatchedBridgesList
         v-model:selected="modelSelectedUnmatched"
         :transactions="unmatchedTransactions"
+        :error="unmatchedError"
         :highlighted-group-identifier="highlightedGroupIdentifier"
         :ignore-loading="ignoreLoading"
         :loading="loading"
-        :match-disabled="!isAutoMatchAllowed"
-        :match-minimum-tier="autoMatchMinimumTier"
+        :match-access="matchAccess"
         @action="handleAction($event)"
         @pin="emit('pin')"
+        @retry="refreshUnmatchedBridgeTransactions()"
       />
     </RuiTabItem>
     <RuiTabItem>
       <UnmatchedBridgesList
         v-model:selected="modelSelectedIgnored"
         :transactions="ignoredTransactions"
+        :error="ignoredError"
         :highlighted-group-identifier="highlightedGroupIdentifier"
         :loading="ignoredLoading"
         :ignore-loading="ignoreLoading"
-        :match-disabled="!isAutoMatchAllowed"
-        :match-minimum-tier="autoMatchMinimumTier"
+        :match-access="matchAccess"
         show-restore
         @action="handleAction($event)"
         @pin="emit('pin')"
+        @retry="refreshUnmatchedBridgeTransactions()"
       />
     </RuiTabItem>
   </RuiTabItems>

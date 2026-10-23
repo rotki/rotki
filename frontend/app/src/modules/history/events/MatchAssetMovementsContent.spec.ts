@@ -9,12 +9,14 @@ import { UNMATCHED_ACTIONS } from '@/modules/history/events/unmatched-actions';
 const movementsApi = {
   autoMatchLoading: ref<boolean>(false),
   autoMatchMinimumTier: ref<string>('premium'),
+  ignoredError: ref<unknown>(),
   ignoredLoading: ref<boolean>(false),
   ignoredMovements: ref<UnmatchedAssetMovement[]>([]),
   isAutoMatchAllowed: ref<boolean>(true),
   loading: ref<boolean>(false),
   refreshUnmatchedAssetMovements: vi.fn(async () => Promise.resolve()),
   triggerAssetMovementAutoMatching: vi.fn(),
+  unmatchedError: ref<unknown>(),
   unmatchedMovements: ref<UnmatchedAssetMovement[]>([]),
 };
 
@@ -45,7 +47,7 @@ vi.mock('@/modules/history/events/use-asset-movement-actions', () => ({
 const UnmatchedMovementsListStub = defineComponent({
   emits: ['action', 'pin'],
   name: 'UnmatchedMovementsList',
-  props: { movements: { default: () => [], type: Array } },
+  props: { error: { default: undefined, type: null }, movements: { default: () => [], type: Array } },
   setup(_, { emit }): () => VNode {
     return (): VNode => h('div', {
       'data-testid': 'movements-list',
@@ -89,6 +91,8 @@ describe('modules/history/events/MatchAssetMovementsContent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     set(movementsApi.unmatchedMovements, []);
+    set(movementsApi.unmatchedError, undefined);
+    set(movementsApi.ignoredError, undefined);
     set(movementsApi.ignoredMovements, []);
     set(actionsApi.resolutionNotice, undefined);
     set(actionsApi.modelSelectedUnmatched, []);
@@ -106,6 +110,23 @@ describe('modules/history/events/MatchAssetMovementsContent', () => {
 
       expect(movementsApi.refreshUnmatchedAssetMovements).toHaveBeenCalledOnce();
     });
+  });
+
+  it('should hand each list the failure of its own fetch', async () => {
+    const unmatchedFailure = new Error('unmatched down');
+    const ignoredFailure = new Error('ignored down');
+    set(movementsApi.unmatchedMovements, [movement(1)]);
+    set(movementsApi.ignoredMovements, [movement(2)]);
+    set(movementsApi.unmatchedError, unmatchedFailure);
+    set(movementsApi.ignoredError, ignoredFailure);
+    const wrapper = await mountContent();
+
+    const lists = wrapper.findAllComponents(UnmatchedMovementsListStub);
+    expect(lists.length).toBeGreaterThan(0);
+    for (const list of lists) {
+      const shown = list.props('movements') ?? [];
+      expect(list.props('error')).toBe(shown.includes(movement(1)) ? unmatchedFailure : ignoredFailure);
+    }
   });
 
   describe('where each row action goes', () => {

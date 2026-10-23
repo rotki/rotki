@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
+import type { UnmatchedActionPayload, UnmatchedMatchAccess } from '@/modules/history/events/unmatched-actions';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { HISTORY_DIALOG_MAX_HEIGHT } from '@/modules/history/events/dialog-layout';
 import UnmatchedBridgesCards from '@/modules/history/events/UnmatchedBridgesCards.vue';
@@ -10,34 +10,40 @@ import { useUnmatchedBridgeRows } from '@/modules/history/events/use-unmatched-b
 const selected = defineModel<string[]>('selected', { required: true });
 
 const {
+  error,
   transactions,
   highlightedGroupIdentifier,
   ignoreLoading,
   isPinned,
   showRestore,
   loading,
-  matchDisabled,
-  matchMinimumTier,
+  matchAccess,
 } = defineProps<{
   transactions: UnmatchedBridgeTransaction[];
   highlightedGroupIdentifier?: string;
   ignoreLoading?: boolean;
   isPinned?: boolean;
-  matchDisabled?: boolean;
-  matchMinimumTier?: string | null;
+  /** absent when matching is not gated at all */
+  matchAccess?: UnmatchedMatchAccess;
   showRestore?: boolean;
   loading?: boolean;
+  /** why the last load failed, shown in place of the empty text or above the rows it left */
+  error?: unknown;
 }>();
 
 const emit = defineEmits<{
   action: [payload: UnmatchedActionPayload<UnmatchedBridgeTransaction>];
   pin: [];
+  retry: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { description, emptyDescription, rows, specFor } = useUnmatchedBridgeRows({
-  matchDisabled: () => matchDisabled,
+const matchDisabled = computed<boolean>(() => matchAccess !== undefined && !matchAccess.allowed);
+
+const { description, emptyDescription, failure, rows, specFor } = useUnmatchedBridgeRows({
+  error: () => error,
+  matchDisabled,
   showRestore: () => showRestore,
   transactions: () => transactions,
 });
@@ -72,11 +78,13 @@ const { description, emptyDescription, rows, specFor } = useUnmatchedBridgeRows(
       :rows="rows"
       :spec-for="specFor"
       :empty-description="emptyDescription"
+      :failure="failure"
       :max-height="isPinned ? undefined : HISTORY_DIALOG_MAX_HEIGHT"
       :highlighted-group-identifier="highlightedGroupIdentifier"
       :ignore-loading="ignoreLoading"
       :loading="loading"
       @action="emit('action', $event)"
+      @retry="emit('retry')"
     >
       <template
         v-if="matchDisabled"
@@ -85,7 +93,7 @@ const { description, emptyDescription, rows, specFor } = useUnmatchedBridgeRows(
         <UnmatchedMatchDisabledAlert
           variant="bridge"
           :count="showRestore ? 0 : transactions.length"
-          :match-minimum-tier="matchMinimumTier"
+          :match-minimum-tier="matchAccess?.minimumTier"
         />
       </template>
     </Component>
