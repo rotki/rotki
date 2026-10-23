@@ -2514,7 +2514,7 @@ Answer a bank authentication
    :statuscode 202: The bank asks for a further authentication. ``result`` is the new challenge, as in ``auth_challenge``.
    :statuscode 401: No user is logged in
    :statuscode 409: The answer could not be sent or was refused, and the challenge is still pending, so it can be answered again
-   :statuscode 410: The bank rejected or expired the challenge and dropped it. A connection is marked ``auth_expired`` and its next sync asks for a fresh one; a setup has to start over.
+   :statuscode 410: The bank rejected or expired the challenge and dropped it, or the bank refused a setup after accepting its answer. A connection is marked ``auth_expired`` and its next sync asks for a fresh one; a setup has to start over.
    :statuscode 500: Internal rotki error
 
 .. http:delete:: /api/(version)/banks/auth

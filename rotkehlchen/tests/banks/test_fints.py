@@ -841,6 +841,40 @@ def test_rejected_setup_tan_drops_the_setup_without_a_connection_status(
     assert connector.load_session() is None, 'a new setup under this name would restore it'
 
 
+def test_setup_refused_after_its_answer_drops_the_setup_as_gone(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    """The accepted answer is used up, so a 409 would invite a retry that can only fail"""
+    challenge = FixtureTANResponse()
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        AuthenticationTransport(challenge),
+    )
+    manager = BankManager(function_scope_messages_aggregator)
+    with pytest.raises(BankMFARequired):
+        connector.query_accounts()
+    manager.pending_setups[location_id := connector.location_id()] = connector
+    rotki = MagicMock()
+    rotki.bank_manager = manager
+
+    with (
+        patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
+        patch.object(connector, 'validate_api_key', return_value=(False, refusal := 'No login')),
+    ):
+        result, message, status = BanksService(rotki).answer_authentication(
+            name=connector.name,
+            location=connector.location,
+            response='123456',
+        )
+
+    assert (result, message, status) == (None, refusal, HTTPStatus.GONE)
+    assert location_id not in manager.pending_setups
+    assert location_id not in manager.sync_status
+    assert connector.load_session() is None, 'a new setup under this name would restore it'
+
+
 def test_sync_requiring_authentication_has_no_success_result(
         database,
         function_scope_messages_aggregator,

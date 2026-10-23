@@ -241,7 +241,11 @@ class BankManager:
             location: Location,
             response: str | None,
     ) -> tuple[bool, str]:
-        """Resume a pending connector challenge and finish setup when it was an add flow."""
+        """Resume a pending connector challenge and finish setup when it was an add flow.
+
+        May raise BankMFARequired for a further challenge, and BankAuthExpired when the challenge
+        was dropped or a setup cannot be completed after its answer (the setup is then dropped).
+        """
         location_id = self._location_id(name=name, location=location)
         pending_setup = self.pending_setups.get(location_id)
         bank = pending_setup or self.get_bank(name=name, location=location)
@@ -263,8 +267,8 @@ class BankManager:
             else:  # the setup cannot be resumed, so it starts over from the credentials
                 self._discard_setup(location_id)
             raise
-        self.sync_status[location_id].set_challenge(None)
         if pending_setup is None:
+            self.sync_status[location_id].set_challenge(None)
             if resume_history:
                 try:
                     self.sync_one(bank)
@@ -277,8 +281,9 @@ class BankManager:
             return True, ''
 
         valid, message = bank.validate_api_key()
-        if not valid:
-            return False, message
+        if not valid:  # the answer was used up, so nothing is left to retry: start over
+            self._discard_setup(location_id)
+            raise BankAuthExpired(message)
         assert self.database is not None, 'authentication answered before login'
         with self.registry_lock:
             self.database.add_bank_credentials(ExchangeApiCredentials(
