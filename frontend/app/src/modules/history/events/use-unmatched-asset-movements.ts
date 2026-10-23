@@ -2,6 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { LinkedMovementMatch } from '@/modules/history/events/event-payloads';
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
@@ -31,6 +32,10 @@ interface UseUnmatchedAssetMovementsReturn {
   ignoredCount: ComputedRef<number>;
   loading: Ref<boolean>;
   ignoredLoading: Ref<boolean>;
+  /** Why the last fetch of the unmatched movements failed, kept until a load succeeds. */
+  unmatchedError: Readonly<Ref<unknown>>;
+  /** Why the last fetch of the ignored movements failed, kept until a load succeeds. */
+  ignoredError: Readonly<Ref<unknown>>;
   autoMatchLoading: ComputedRef<boolean>;
   autoMatchMinimumTier: Readonly<Ref<string | null>>;
   isAutoMatchAllowed: Readonly<Ref<boolean>>;
@@ -46,7 +51,23 @@ const rawUnmatchedMovements = ref<UnmatchedEventGroup[]>([]);
 const rawIgnoredMovements = ref<UnmatchedEventGroup[]>([]);
 const loading = ref<boolean>(false);
 const ignoredLoading = ref<boolean>(false);
+const unmatchedError = shallowRef<unknown>();
+const ignoredError = shallowRef<unknown>();
 const triggerAutoMatchLoading = ref<boolean>(false);
+
+/**
+ * One group per identifier that has events, in the order the backend listed the identifiers, named
+ * by the asset of its first event. An identifier with no events left is dropped.
+ */
+function groupMovements(groupIdentifiers: string[], rows: HistoryEventCollectionRow[]): UnmatchedEventGroup[] {
+  const movements: UnmatchedEventGroup[] = [];
+  for (const groupIdentifier of groupIdentifiers) {
+    const row = rows.find(candidate => arrayify(candidate).some(event => event.entry.groupIdentifier === groupIdentifier));
+    if (row)
+      movements.push({ asset: arrayify(row)[0]?.entry.asset ?? '', events: row, groupIdentifier });
+  }
+  return movements;
+}
 
 export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatchedAssetMovementsReturn => {
   const { t } = useI18n({ useScope: 'global' });
@@ -80,10 +101,19 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   const unmatchedCount = computed<number>(() => get(unmatchedMovements).length);
   const ignoredCount = computed<number>(() => get(ignoredMovements).length);
 
+  /**
+   * Loads the unmatched, or with `onlyIgnored` the ignored, movements.
+   *
+   * @remarks
+   * A websocket message triggers this in the background as well, so a failure is kept for the list
+   * to show rather than interrupting the user with a dialog. The rows of the last good load stay,
+   * since the action center counts them, and the failure is kept until a load succeeds.
+   */
   const fetchUnmatchedAssetMovements = async (onlyIgnored?: boolean): Promise<void> => {
     const isIgnored = onlyIgnored === true;
     const loadingRef = isIgnored ? ignoredLoading : loading;
     const movementsRef = isIgnored ? rawIgnoredMovements : rawUnmatchedMovements;
+    const errorRef = isIgnored ? ignoredError : unmatchedError;
 
     set(loadingRef, true);
     try {
@@ -91,6 +121,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
 
       if (groupIdentifiers.length === 0) {
         set(movementsRef, []);
+        set(errorRef, undefined);
         return;
       }
 
@@ -103,34 +134,14 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
         ascending: [false],
       });
 
-      const movements: UnmatchedEventGroup[] = [];
-
-      for (const groupId of groupIdentifiers) {
-        const eventsForGroup = response.entries.filter((row) => {
-          const events = arrayify(row);
-          return events.some(event => event.entry.groupIdentifier === groupId);
-        });
-
-        if (eventsForGroup.length > 0) {
-          const eventRow = eventsForGroup[0];
-          const events = arrayify(eventRow);
-          const asset = events[0]?.entry.asset ?? '';
-
-          movements.push({
-            asset,
-            events: eventRow,
-            groupIdentifier: groupId,
-          });
-        }
-      }
-
-      set(movementsRef, movements);
+      set(movementsRef, groupMovements(groupIdentifiers, response.entries));
+      set(errorRef, undefined);
     }
     catch (error: unknown) {
       if (isRequestCancellation(error))
         return;
       logger.error('Failed to fetch unmatched asset movements:', error);
-      showErrorMessage(t('actions.asset_movement_matching.fetch_error.title'), t('actions.asset_movement_matching.fetch_error.description', { error: getErrorMessage(error) }));
+      set(errorRef, error);
     }
     finally {
       set(loadingRef, false);
@@ -240,6 +251,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     fetchUnmatchedAssetMovements,
     isAutoMatchAllowed: isAssetMovementMatchingAllowed,
     ignoredCount,
+    ignoredError: shallowReadonly(ignoredError),
     ignoredLoading,
     ignoredMovements,
     loading,
@@ -248,6 +260,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     resolveExternal,
     triggerAssetMovementAutoMatching,
     unmatchedCount,
+    unmatchedError: shallowReadonly(unmatchedError),
     unmatchedMovements,
   };
 });

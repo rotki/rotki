@@ -607,10 +607,6 @@
         "description": "Failed to match asset movement: {message}",
         "title": "Asset Movement Matching"
       },
-      "fetch_error": {
-        "description": "Failed to fetch unmatched asset movements: {message}",
-        "title": "Fetching Unmatched Asset Movements"
-      },
       "success": {
         "description": "Asset movement successfully matched to blockchain event.",
         "title": "Asset Movement Matched"
@@ -689,10 +685,6 @@
       "error": {
         "description": "Failed to match bridge transaction: {error}",
         "title": "Bridge Transaction Matching"
-      },
-      "fetch_error": {
-        "description": "Failed to fetch unmatched bridge transactions: {error}",
-        "title": "Fetching Unmatched Bridge Transactions"
       },
       "success": {
         "description": "Bridge transaction successfully matched to its counterpart event.",
@@ -1329,6 +1321,10 @@
       "ignore": "Ignore",
       "ignore_tooltip": "Mark this asset movement as having no corresponding event.",
       "ignored_description": "These asset movements are left out of automatic matching, either because they were marked as having no corresponding event or because you unlinked them. Match one by hand at any time, or restore it to let automatic matching consider it again.",
+      "load_failed": {
+        "ignored": "Could not load the ignored asset movements",
+        "unmatched": "Could not load the unmatched asset movements"
+      },
       "manual_action": "Manual Action",
       "mark_external": "Mark external",
       "mark_external_in_tooltip": "Resolve this deposit as income from an untracked source, so its whole amount is accounted and not just the fee.",
@@ -2120,6 +2116,10 @@
       "direction_out": "Bridge out",
       "ignore_tooltip": "Mark this bridge transaction as having no corresponding event.",
       "ignored_description": "These bridge transactions are left out of automatic matching, either because they were marked as having no corresponding event or because you unlinked them. Match one by hand at any time, or restore it to let automatic matching consider it again.",
+      "load_failed": {
+        "ignored": "Could not load the ignored bridge transactions",
+        "unmatched": "Could not load the unmatched bridge transactions"
+      },
       "manual_action": "Manual Action",
       "mark_external": "Mark external",
       "mark_external_in_tooltip": "Resolve this bridge withdrawal as income from an external (untracked) source.",

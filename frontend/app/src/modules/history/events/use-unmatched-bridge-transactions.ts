@@ -94,6 +94,10 @@ interface UseUnmatchedBridgeTransactionsReturn {
   ignoredCount: ComputedRef<number>;
   loading: Ref<boolean>;
   ignoredLoading: Ref<boolean>;
+  /** Why the last fetch of the unmatched legs failed, kept until a load succeeds. */
+  unmatchedError: Readonly<Ref<unknown>>;
+  /** Why the last fetch of the ignored legs failed, kept until a load succeeds. */
+  ignoredError: Readonly<Ref<unknown>>;
   autoMatchLoading: ComputedRef<boolean>;
   autoMatchMinimumTier: Readonly<Ref<string | null>>;
   isAutoMatchAllowed: Readonly<Ref<boolean>>;
@@ -110,6 +114,8 @@ const rawUnmatchedTransactions = ref<UnmatchedBridgeTransaction[]>([]);
 const rawIgnoredTransactions = ref<UnmatchedBridgeTransaction[]>([]);
 const loading = ref<boolean>(false);
 const ignoredLoading = ref<boolean>(false);
+const unmatchedError = shallowRef<unknown>();
+const ignoredError = shallowRef<unknown>();
 const triggerAutoMatchLoading = ref<boolean>(false);
 
 export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnmatchedBridgeTransactionsReturn => {
@@ -135,10 +141,19 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
   const unmatchedCount = computed<number>(() => get(unmatchedTransactions).length);
   const ignoredCount = computed<number>(() => get(ignoredTransactions).length);
 
+  /**
+   * Loads the unmatched, or with `onlyIgnored` the ignored, bridge legs.
+   *
+   * @remarks
+   * A websocket message triggers this in the background as well, so a failure is kept for the list
+   * to show rather than interrupting the user with a dialog. The rows of the last good load stay,
+   * since the action center counts them, and the failure is kept until a load succeeds.
+   */
   const fetchUnmatchedBridgeTransactions = async (onlyIgnored?: boolean): Promise<void> => {
     const isIgnored = onlyIgnored === true;
     const loadingRef = isIgnored ? ignoredLoading : loading;
     const transactionsRef = isIgnored ? rawIgnoredTransactions : rawUnmatchedTransactions;
+    const errorRef = isIgnored ? ignoredError : unmatchedError;
 
     set(loadingRef, true);
     try {
@@ -146,6 +161,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
 
       if (legs.length === 0) {
         set(transactionsRef, []);
+        set(errorRef, undefined);
         return;
       }
 
@@ -182,12 +198,13 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
       }
 
       set(transactionsRef, transactions);
+      set(errorRef, undefined);
     }
     catch (error: unknown) {
       if (isRequestCancellation(error))
         return;
       logger.error('Failed to fetch unmatched bridge transactions:', error);
-      showErrorMessage(t('actions.bridge_matching.fetch_error.title'), t('actions.bridge_matching.fetch_error.description', { error: getErrorMessage(error) }));
+      set(errorRef, error);
     }
     finally {
       set(loadingRef, false);
@@ -308,6 +325,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
     autoMatchMinimumTier: bridgeMatchingMinimumTier,
     fetchUnmatchedBridgeTransactions,
     ignoredCount,
+    ignoredError: shallowReadonly(ignoredError),
     ignoredLoading,
     ignoredTransactions,
     isAutoMatchAllowed: isBridgeMatchingAllowed,
@@ -318,6 +336,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
     resolveExternal,
     triggerBridgeAutoMatching,
     unmatchedCount,
+    unmatchedError: shallowReadonly(unmatchedError),
     unmatchedTransactions,
   };
 });

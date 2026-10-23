@@ -1,6 +1,7 @@
+import type { UnmatchedFailure } from '@/modules/history/events/unmatched-actions';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import UnmatchedCardList from '@/modules/history/events/UnmatchedCardList.vue';
 
 interface TestItem {
@@ -21,13 +22,16 @@ const selected = ref<string[]>([]);
  * Mounted through a host component: the list is generic, so this is what pins the
  * item type and lets the selection model be asserted the way a caller sees it.
  */
-function mountList(items: TestItem[], highlightedId?: string): VueWrapper {
+function mountList(items: TestItem[], highlightedId?: string, state: { failure?: UnmatchedFailure; loading?: boolean; onRetry?: () => void } = {}): VueWrapper {
   return mount({
     components: { UnmatchedCardList },
     setup() {
       return {
+        failure: state.failure,
         highlighted: (item: TestItem): boolean => item.id === highlightedId,
         items,
+        loading: state.loading,
+        onRetry: state.onRetry ?? ((): void => {}),
         rowKey: (item: TestItem): string => item.id,
         selected,
       };
@@ -38,7 +42,10 @@ function mountList(items: TestItem[], highlightedId?: string): VueWrapper {
         :items="items"
         :row-key="rowKey"
         :highlighted="highlighted"
+        :failure="failure"
+        :loading="loading"
         empty-description="Nothing here"
+        @retry="onRetry()"
       >
         <template #header="{ item }">
           <span>{{ item.label }}</span>
@@ -68,6 +75,42 @@ describe('modules/history/events/UnmatchedCardList', () => {
 
     expect(wrapper.find('[data-testid=unmatched-card-empty]').text()).toContain('Nothing here');
     expect(wrapper.find('[data-testid=unmatched-card-select-all]').exists()).toBe(false);
+  });
+
+  describe('a failed load', () => {
+    const failure: UnmatchedFailure = { message: 'backend down', title: 'Could not load' };
+
+    it('should name the failure in place of the empty description', () => {
+      const wrapper = mountList([], undefined, { failure });
+
+      expect(wrapper.find('[data-testid=unmatched-card-error]').text()).toContain('backend down');
+      expect(wrapper.find('[data-testid=unmatched-card-error]').text()).toContain('Could not load');
+      expect(wrapper.find('[data-testid=unmatched-card-empty]').exists()).toBe(false);
+    });
+
+    it('should name the failure above the cards an earlier load left', () => {
+      const wrapper = mountList(createItems(2), undefined, { failure });
+
+      expect(wrapper.find('[data-testid=table-failure-strip]').text()).toContain('backend down');
+      expect(wrapper.find('[data-testid=unmatched-card-error]').exists()).toBe(false);
+      expect(wrapper.findAll('[data-testid=unmatched-card]')).toHaveLength(2);
+    });
+
+    it('should show the spinner instead while a retry is loading', () => {
+      const wrapper = mountList([], undefined, { failure, loading: true });
+
+      expect(wrapper.find('[data-testid=unmatched-card-error]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=unmatched-card-empty]').exists()).toBe(true);
+    });
+
+    it('should ask its host to retry from the failure', async () => {
+      const onRetry = vi.fn();
+      const wrapper = mountList([], undefined, { failure, onRetry });
+
+      await wrapper.find('[data-testid=unmatched-card-error] [data-testid=table-failure-retry]').trigger('click');
+
+      expect(onRetry).toHaveBeenCalledOnce();
+    });
   });
 
   it('should page like the table instead of rendering everything', async () => {

@@ -140,19 +140,46 @@ describe('use-unmatched-asset-movements', () => {
       expect(get(unmatchedCount)).toBe(1);
     });
 
-    /** A failed fetch leaves no movements behind, and must not leave the list loading forever. */
-    it('should report a failed fetch and stop loading', async () => {
-      spies.getUnmatchedAssetMovements.mockRejectedValueOnce(new Error('the backend said no'));
+    /** A background websocket message triggers this too, so a dialog would interrupt whatever the user is doing. */
+    it('should keep a failed fetch for the list instead of a dialog, and stop loading', async () => {
+      const failure = new Error('the backend said no');
+      spies.getUnmatchedAssetMovements.mockRejectedValueOnce(failure);
       const { useUnmatchedAssetMovements } = await importFresh();
-      const { fetchUnmatchedAssetMovements, loading } = useUnmatchedAssetMovements();
+      const { fetchUnmatchedAssetMovements, ignoredError, loading, unmatchedError } = useUnmatchedAssetMovements();
 
       await fetchUnmatchedAssetMovements(false);
 
-      expect(spies.showErrorMessage).toHaveBeenCalledWith(
-        'actions.asset_movement_matching.fetch_error.title',
-        expect.stringContaining('the backend said no'),
-      );
+      expect(get(unmatchedError)).toBe(failure);
+      expect(get(ignoredError)).toBeUndefined();
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(get(loading)).toBe(false);
+    });
+
+    /** The action center counts these rows, so emptying them on a blip would hide its unmatched row. */
+    it('should keep the rows of the last good fetch when a later one fails', async () => {
+      spies.getUnmatchedAssetMovements.mockResolvedValueOnce(['group-a']).mockRejectedValueOnce(new Error('the backend said no'));
+      spies.fetchHistoryEvents.mockResolvedValueOnce({
+        entries: [{ entry: { asset: 'ETH', groupIdentifier: 'group-a' } }],
+      });
+      const { useUnmatchedAssetMovements } = await importFresh();
+      const { fetchUnmatchedAssetMovements, unmatchedCount, unmatchedError } = useUnmatchedAssetMovements();
+      await fetchUnmatchedAssetMovements(false);
+
+      await fetchUnmatchedAssetMovements(false);
+
+      expect(get(unmatchedCount)).toBe(1);
+      expect(get(unmatchedError)).toBeInstanceOf(Error);
+    });
+
+    it('should clear the kept failure once a later fetch succeeds', async () => {
+      spies.getUnmatchedAssetMovements.mockRejectedValueOnce(new Error('the backend said no')).mockResolvedValueOnce([]);
+      const { useUnmatchedAssetMovements } = await importFresh();
+      const { fetchUnmatchedAssetMovements, unmatchedError } = useUnmatchedAssetMovements();
+      await fetchUnmatchedAssetMovements(false);
+
+      await fetchUnmatchedAssetMovements(false);
+
+      expect(get(unmatchedError)).toBeUndefined();
     });
 
     it('should stay quiet when the fetch is cancelled, as on a logout, and stop loading', async () => {

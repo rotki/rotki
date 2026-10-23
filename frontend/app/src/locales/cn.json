@@ -543,10 +543,6 @@
         "description": "匹配资产转移失败：{message}",
         "title": "资产转移匹配"
       },
-      "fetch_error": {
-        "description": "获取未匹配的资产转移失败：{message}",
-        "title": "获取未匹配的资产转移"
-      },
       "success": {
         "description": "资产转移已成功匹配到链上事件。",
         "title": "资产转移已匹配"
@@ -622,10 +618,6 @@
       "error": {
         "description": "匹配跨链桥交易失败：{error}",
         "title": "跨链桥交易匹配"
-      },
-      "fetch_error": {
-        "description": "获取未匹配的跨链桥交易失败：{error}",
-        "title": "获取未匹配的跨链桥交易"
       },
       "success": {
         "description": "跨链桥交易已成功匹配到其对应事件。",

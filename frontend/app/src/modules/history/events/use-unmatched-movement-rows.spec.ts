@@ -121,6 +121,40 @@ describe('use-unmatched-movement-rows', () => {
     });
   });
 
+  describe('the empty text', () => {
+    it('should say there is nothing to match while nothing failed', () => {
+      const { emptyDescription } = useUnmatchedMovementRows({ matchDisabled: false, movements: [], showRestore: false });
+
+      expect(get(emptyDescription)).toBe('asset_movement_matching.dialog.no_unmatched');
+    });
+
+    it('should keep the empty text when a load failed, leaving the failure to the list', () => {
+      const { emptyDescription } = useUnmatchedMovementRows({ error: new Error('backend down'), matchDisabled: false, movements: [], showRestore: false });
+
+      expect(get(emptyDescription)).toBe('asset_movement_matching.dialog.no_unmatched');
+    });
+  });
+
+  describe('the failure', () => {
+    it('should name the unmatched list and the reason it got back', () => {
+      const { failure } = useUnmatchedMovementRows({ error: new Error('backend down'), matchDisabled: false, movements: [], showRestore: false });
+
+      expect(get(failure)).toEqual({ message: 'backend down', title: 'asset_movement_matching.dialog.load_failed.unmatched' });
+    });
+
+    it('should name the ignored list on the ignored tab', () => {
+      const { failure } = useUnmatchedMovementRows({ error: new Error('backend down'), matchDisabled: false, movements: [], showRestore: true });
+
+      expect(get(failure)?.title).toBe('asset_movement_matching.dialog.load_failed.ignored');
+    });
+
+    it('should name no failure while nothing failed', () => {
+      const { failure } = useUnmatchedMovementRows({ matchDisabled: false, movements: [], showRestore: false });
+
+      expect(get(failure)).toBeUndefined();
+    });
+  });
+
   it('should label the row by direction', () => {
     expect(rowFor('spend').row.direction).toBe('withdrawal');
     expect(rowFor('receive').row.direction).toBe('deposit');

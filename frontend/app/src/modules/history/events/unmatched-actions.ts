@@ -15,6 +15,12 @@ export const UNMATCHED_ACTIONS = {
 export type UnmatchedAction = typeof UNMATCHED_ACTIONS[keyof typeof UNMATCHED_ACTIONS];
 
 /** What a list reports upwards: the action, and the row it was triggered on. */
+/** Whether matching is open to the user's premium tier, and which tier opens it when it is not. */
+export interface UnmatchedMatchAccess {
+  allowed: boolean;
+  minimumTier: string | null;
+}
+
 export interface UnmatchedActionPayload<T> {
   action: UnmatchedAction;
   item: T;
@@ -74,6 +80,12 @@ export interface UnmatchedRowActionSpec {
 }
 
 /** How a row's actions are arranged. The strip is the only place this distinction lives. */
+/** Why the last load of a list failed: a heading naming the list, and the reason it got back. */
+export interface UnmatchedFailure {
+  title: string;
+  message: string;
+}
+
 export const UNMATCHED_LAYOUTS = {
   /** Pinned width: one labelled primary, the rest as icons, the remainder in an overflow. */
   CARD: 'card',
