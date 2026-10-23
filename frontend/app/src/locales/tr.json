@@ -1810,11 +1810,9 @@
     },
     "empty": "Henüz banka bağlantısı yok",
     "errors": {
-      "list_title": "Banka bağlantıları",
       "remove_message": "{name} adlı banka bağlantısı kaldırılamadı: {error}",
       "remove_title": "Banka bağlantısını kaldırma",
-      "setup_message": "{bank} bağlantısı kurulamadı: {error}",
-      "supported_title": "Desteklenen bankalar"
+      "setup_message": "{bank} bağlantısı kurulamadı: {error}"
     },
     "form": {
       "bank": "Banka",

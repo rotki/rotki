@@ -1791,11 +1791,9 @@
     },
     "empty": "暂无银行连接",
     "errors": {
-      "list_title": "银行连接",
       "remove_message": "无法移除银行连接 {name}：{error}",
       "remove_title": "移除银行连接",
-      "setup_message": "无法设置 {bank} 连接：{error}",
-      "supported_title": "支持的银行"
+      "setup_message": "无法设置 {bank} 连接：{error}"
     },
     "form": {
       "bank": "银行",

@@ -68,8 +68,8 @@ describe('banks page', () => {
           LocationDisplay: true,
           RouterLink: true,
           RuiDataTable: {
-            props: ['rows'],
-            template: `<div><div v-for="row in rows" :key="row.name" data-testid="row"><slot name="item.syncStatus" :row="row" /><slot name="item.actions" :row="row" /></div></div>`,
+            props: ['rows', 'empty'],
+            template: `<div><slot name="body.prepend" /><div v-if="rows.length === 0" data-testid="table-empty">{{ empty?.label }}|<slot name="empty-description">{{ empty?.description }}</slot></div><div v-for="row in rows" :key="row.name" data-testid="row"><slot name="item.syncStatus" :row="row" /><slot name="item.actions" :row="row" /></div></div>`,
           },
           TablePageLayout: { template: '<div><slot name="buttons" /><slot /></div>' },
           Teleport: { template: '<span><slot /></span>' },
@@ -89,6 +89,80 @@ describe('banks page', () => {
     refreshSupportedBanks.mockResolvedValue(undefined);
     refreshBankConnections.mockResolvedValue(undefined);
     syncBanks.mockResolvedValue(true);
+  });
+
+  describe('when loading fails', () => {
+    it('should say the supported banks could not be loaded, and retry from there', async () => {
+      const store = useBankConnectionsStore();
+      store.setManifests([]);
+      store.setManifestsError(new Error('backend down'));
+      wrapper = createWrapper();
+      await flushPromises();
+      refreshSupportedBanks.mockClear();
+
+      const alert = wrapper.find('[data-testid=bank-manifests-error]');
+      expect(alert.text()).toContain('bank_settings.supported_failed');
+      expect(alert.text()).toContain('backend down');
+      await alert.find('[data-testid=table-failure-strip-retry]').trigger('click');
+      expect(refreshSupportedBanks).toHaveBeenCalledOnce();
+    });
+
+    it('should not warn while the supported banks of an earlier load still allow adding one', async () => {
+      useBankConnectionsStore().setManifestsError(new Error('backend down'));
+      wrapper = createWrapper();
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid=bank-manifests-error]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=add-bank]').attributes('disabled')).toBeUndefined();
+    });
+
+    it('should say a failed refresh above the connections it left, and retry from there', async () => {
+      useBankConnectionsStore().setConnectionsError(new Error('backend down'));
+      wrapper = createWrapper();
+      await flushPromises();
+      refreshBankConnections.mockClear();
+
+      const alert = wrapper.find('[data-testid=bank-connections-error]');
+      expect(alert.text()).toContain('backend down');
+      expect(wrapper.findAll('[data-testid=row]')).toHaveLength(1);
+      await alert.find('[data-testid=table-failure-strip-retry]').trigger('click');
+      expect(refreshBankConnections).toHaveBeenCalledOnce();
+    });
+
+    it('should name why the connections could not be loaded in place of the empty text', async () => {
+      const store = useBankConnectionsStore();
+      store.setConnections([]);
+      store.setConnectionsError(new Error('backend down'));
+      wrapper = createWrapper();
+      await flushPromises();
+
+      const empty = wrapper.find('[data-testid=table-empty]');
+      expect(empty.text()).toContain('data_table.fetch_failed');
+      expect(empty.find('[data-testid=table-failure-message]').text()).toBe('backend down');
+      expect(wrapper.find('[data-testid=bank-connections-error]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=bank-manifests-error]').exists()).toBe(false);
+    });
+
+    it('should load the connections again from the empty state', async () => {
+      const store = useBankConnectionsStore();
+      store.setConnections([]);
+      store.setConnectionsError(new Error('backend down'));
+      wrapper = createWrapper();
+      await flushPromises();
+      refreshBankConnections.mockClear();
+
+      await wrapper.find('[data-testid=table-empty] [data-testid=table-failure-retry]').trigger('click');
+
+      expect(refreshBankConnections).toHaveBeenCalledOnce();
+    });
+
+    it('should show the plain empty text while nothing failed', async () => {
+      useBankConnectionsStore().setConnections([]);
+      wrapper = createWrapper();
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid=table-empty]').text()).toBe('|bank_settings.empty');
+    });
   });
 
   it('should load the supported banks and the connections when it mounts', async () => {

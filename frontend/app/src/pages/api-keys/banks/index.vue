@@ -9,7 +9,10 @@ import BankConnectionActions from '@/modules/banks/components/BankConnectionActi
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
@@ -32,12 +35,14 @@ const sort = ref<DataTableSortColumn<BankConnection>>({
   direction: 'asc',
 });
 
-const { connections: rows, manifests } = storeToRefs(useBankConnectionsStore());
+const { connections: rows, connectionsError, manifests, manifestsError } = storeToRefs(useBankConnectionsStore());
 const { manifestFor } = useBankConnectionsStore();
 const { refreshBankConnections, refreshSupportedBanks, removeBank, syncBanks } = useBanks();
 const { show } = useConfirmStore();
+const failureMessage = useFailureMessage();
 
 const { t } = useI18n({ useScope: 'global' });
+
 const router = useRouter();
 const route = useRoute('/api-keys/banks/');
 
@@ -187,6 +192,16 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
       </RuiButton>
     </template>
 
+    <TableFailureStrip
+      v-if="manifestsError && manifests.length === 0"
+      standalone
+      class="mb-4"
+      :title="t('bank_settings.supported_failed')"
+      :message="failureMessage(manifestsError)"
+      data-testid="bank-manifests-error"
+      @retry="refreshSupportedBanks()"
+    />
+
     <TableFrame>
       <template #toolbar>
         <p class="text-sm text-rui-text-secondary m-0">
@@ -200,8 +215,32 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
         :rows="rows"
         :cols="cols"
         :item-class="rowClass"
-        :empty="{ description: t('bank_settings.empty') }"
+        :empty="connectionsError ? { label: t('data_table.fetch_failed') } : { description: t('bank_settings.empty') }"
       >
+        <template
+          v-if="connectionsError"
+          #empty-description
+        >
+          <TableFailureDescription
+            :message="failureMessage(connectionsError)"
+            @retry="refreshBankConnections()"
+          />
+        </template>
+        <template
+          v-if="connectionsError && rows.length > 0"
+          #body.prepend
+        >
+          <tr>
+            <td :colspan="cols.length">
+              <TableFailureStrip
+                :title="t('bank_settings.connections_failed')"
+                :message="failureMessage(connectionsError)"
+                data-testid="bank-connections-error"
+                @retry="refreshBankConnections()"
+              />
+            </td>
+          </tr>
+        </template>
         <template #item.location="{ row }">
           <div class="flex items-center gap-2">
             <LocationIcon
