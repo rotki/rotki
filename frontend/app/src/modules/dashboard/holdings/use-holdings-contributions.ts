@@ -28,8 +28,7 @@ export interface HoldingsInputs {
  *
  * @remarks
  * Each value leaves ignored assets out, as net worth does, so the sources minus liabilities add up
- * to the headline. That is not true of every existing per-source total: the blockchain card summed
- * ignored assets, and so does `manualBalanceByLocation`.
+ * to the headline.
  */
 export function useHoldingsContributions(): HoldingsInputs {
   const { balances, manualBalances } = storeToRefs(useBalancesStore());
