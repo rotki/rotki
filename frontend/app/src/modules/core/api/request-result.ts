@@ -32,6 +32,21 @@ export function isRequestFailure(error: RequestError): error is RequestFailure {
   return hasTag(error, 'RequestFailed');
 }
 
+/**
+ * True when a request got no response at all, so the backend was unreachable rather than refusing.
+ *
+ * @remarks
+ * ofetch's message for that case is the raw request line (`[GET] "http://…": <no response>`), which
+ * is not fit to show, so a surface names the cause in its own words instead. An answered request is
+ * told apart by its status: the client rethrows one as its own `FetchError` from `createStatusError`,
+ * which carries `statusCode` but no `response`. Takes the thrown value or the {@link RequestFailure}
+ * that carries it.
+ */
+export function isUnreachable(failure: unknown): boolean {
+  const thrown = hasTag(failure, 'RequestFailed') && 'cause' in failure ? failure.cause : failure;
+  return thrown instanceof FetchError && thrown.statusCode === undefined && thrown.response === undefined;
+}
+
 /** The message the backend put in the response body, which reads better than the error's own. */
 function responseMessage(data: unknown): string | undefined {
   if (typeof data !== 'object' || data === null || !('message' in data))

@@ -2990,12 +2990,6 @@
     "proxy_note": "如果此实例已部署在会对每个请求进行认证的代理之后，则它已受保护，你可以在下方接受。",
     "recommendation": "设置 {0} 后，rotki 会在登录时签发会话 cookie，并拒绝未携带该 cookie 的请求。"
   },
-  "error": {
-    "generic": {
-      "message": "处理你的请求时发生内部错误。如果问题持续存在，请联系我们的支持团队并提供以下详细信息：\n错误代码：{code} \n错误信息：{message} \n路径：{path}",
-      "title": "出了些问题"
-    }
-  },
   "error_screen": {
     "backend_error": "后端出现问题。",
     "copy_tooltip": "将错误文本复制到剪贴板",
@@ -4382,10 +4376,6 @@
     "dialog": {
       "description": "被检测为冲突或重复的内部交易。系统会定期自动重试。",
       "title": "内部交易冲突"
-    },
-    "errors": {
-      "fetch": "获取内部交易冲突失败：{error}",
-      "fetch_title": "内部交易冲突错误"
     },
     "filter": {
       "period": "日期"

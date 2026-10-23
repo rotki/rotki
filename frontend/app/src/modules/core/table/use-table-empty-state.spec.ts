@@ -1,6 +1,9 @@
 import { mount } from '@vue/test-utils';
+import { FetchError } from 'ofetch';
 import { describe, expect, it } from 'vitest';
 import { type Component, defineComponent, h } from 'vue';
+import { toRequestError } from '@/modules/core/api/request-result';
+import { createStatusError } from '@/modules/core/api/response-handlers';
 import { provideTableFetchError, useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import '@test/i18n';
 
@@ -40,6 +43,20 @@ describe('useTableEmptyState', () => {
     const wrapper = mount(leaf({ error: ref<unknown>(new Error('backend is down')) }));
 
     expect(wrapper.text()).toBe('data_table.fetch_failed|backend is down');
+  });
+
+  it('should name an unreachable backend in words instead of the raw request line', () => {
+    const unreachable = toRequestError(new FetchError('[GET] "http://127.0.0.1:13024/api/1/nfts/balances": <no response> fetch failed'));
+    const wrapper = mount(leaf({ error: ref<unknown>(unreachable) }));
+
+    expect(wrapper.text()).toBe('data_table.fetch_failed|common.backend_unreachable');
+  });
+
+  it('should keep the backend\'s own message for a request it answered', () => {
+    const refused = createStatusError(500, 'Report 3 does not exist', { message: 'Report 3 does not exist' });
+    const wrapper = mount(leaf({ error: ref<unknown>(toRequestError(refused)) }));
+
+    expect(wrapper.text()).toBe('data_table.fetch_failed|Report 3 does not exist');
   });
 
   it('should go back to the empty text once a later fetch succeeds', async () => {

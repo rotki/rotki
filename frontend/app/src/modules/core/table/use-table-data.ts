@@ -5,7 +5,6 @@ import { fromRequest, isRequestFailure, type RequestError, type RequestFailure }
 import { api } from '@/modules/core/api/rotki-api';
 import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 /**
  * Fetches one page of a server table. A failure is carried in the result, never thrown, so the
@@ -22,14 +21,16 @@ export interface UseTableDataReturn<TItem> {
 }
 
 /**
- * Owns the fetch side of a server table: the collection, the error reporting, and the optional
+ * Owns the fetch side of a server table: the collection, the last failure, and the optional
  * cancellation of in-flight requests.
  *
  * @remarks
  * Only the newest fetch writes its outcome, so an older one settling late cannot overwrite it. A
  * failure empties the collection, because the table shows the reason in its empty state and stale
- * rows would read as the answer to the new request. A cancelled fetch keeps its rows and is never
- * reported. A fetch that throws instead of returning its failure is treated as one.
+ * rows would read as the answer to the new request. That empty state is the only place a failure
+ * appears: it is logged, but files no notification, since the table already says why it is empty.
+ * A cancelled fetch keeps its rows and is never reported. A fetch that throws instead of returning
+ * its failure is treated as one.
  *
  * `requestPayload` is taken as a getter so the payload can be assembled after this
  * composable is created; it is only read when a fetch actually happens.
@@ -39,26 +40,11 @@ export function useTableData<TItem extends NonNullable<unknown>, TPayload>(
   requestPayload: () => MaybeRef<TPayload>,
   cancelTag?: string,
 ): UseTableDataReturn<TItem> {
-  const { t } = useI18n({ useScope: 'global' });
-  const { notifyFailure } = useNotifications();
-
   const collection = shallowRef<Collection<TItem>>(defaultCollectionState<TItem>());
   const isLoading = shallowRef<boolean>(false);
   const error = shallowRef<RequestFailure>();
 
   let latest = 0;
-
-  function report(failure: RequestFailure): void {
-    const { message, path = '', status } = failure;
-
-    logger.error(failure.cause);
-    if (status !== undefined && status >= 400) {
-      notifyFailure(
-        t('error.generic.title'),
-        t('error.generic.message', { code: status.toString(), message, path }),
-      );
-    }
-  }
 
   /** Hits the api for the current pagination and filter state, cancelling any request in flight. */
   const refetch = async (): Promise<void> => {
@@ -86,7 +72,7 @@ export function useTableData<TItem extends NonNullable<unknown>, TPayload>(
 
     set(collection, defaultCollectionState<TItem>());
     set(error, result.error);
-    report(result.error);
+    logger.error(result.error.cause);
   };
 
   return {

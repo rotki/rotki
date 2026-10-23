@@ -2307,6 +2307,7 @@
     "amount": "Amount",
     "asset": "Asset",
     "assets": "Assets",
+    "backend_unreachable": "rotki's backend did not respond. Check that it is still running, then try again.",
     "balance": "Balance",
     "blockchain": "Blockchain",
     "category": "Category",
@@ -3211,12 +3212,6 @@
     "message": "You are running rotki in docker without session authentication. Anyone who can reach this instance can use the API and read your data without signing in.",
     "proxy_note": "If this instance already sits behind a proxy that authenticates every request, it is protected and you can accept below.",
     "recommendation": "Setting {0} makes rotki issue a session cookie on login and reject requests that do not carry it."
-  },
-  "error": {
-    "generic": {
-      "message": "We encountered an internal error while processing your request. If this issue persists, please contact our support team with the details below: \nError Code: {code} \nError Message: {message} \nPath: {path}",
-      "title": "Something went wrong"
-    }
   },
   "error_screen": {
     "backend_error": "There is a problem with the backend.",
@@ -4766,10 +4761,6 @@
     "dialog": {
       "description": "Internal transactions that were detected as conflicted or duplicated. The system will auto-retry periodically.",
       "title": "Internal Transaction Conflicts"
-    },
-    "errors": {
-      "fetch": "Failed to fetch internal transaction conflicts: {error}",
-      "fetch_title": "Internal Tx Conflicts Error"
     },
     "filter": {
       "period": "Date"
