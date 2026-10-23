@@ -43,10 +43,6 @@ vi.mock('@/modules/assets/prices/use-price-refresh', () => ({
   }),
 }));
 
-function t(key: string): string {
-  return key;
-}
-
 function fileMissingPrice(asset: string, timestamp: number | null): void {
   const source: ProblemMessage = {
     fields: { asset, timestamp },
@@ -100,7 +96,7 @@ describe('useLatestPrices', () => {
       ];
       vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
 
-      const { items, getLatestPrices } = useLatestPrices(t);
+      const { items, getLatestPrices } = useLatestPrices();
       await getLatestPrices();
 
       const result = get(items);
@@ -120,7 +116,7 @@ describe('useLatestPrices', () => {
       ];
       vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
 
-      const { items, getLatestPrices } = useLatestPrices(t);
+      const { items, getLatestPrices } = useLatestPrices();
       await getLatestPrices();
 
       const result = get(items);
@@ -142,7 +138,7 @@ describe('useLatestPrices', () => {
       vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
 
       const filter = ref<string | undefined>('ETH');
-      const { items, getLatestPrices } = useLatestPrices(t, filter);
+      const { items, getLatestPrices } = useLatestPrices(filter);
       await getLatestPrices();
 
       const result = get(items);
@@ -162,7 +158,7 @@ describe('useLatestPrices', () => {
       ];
       vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
 
-      const { items, getLatestPrices } = useLatestPrices(t);
+      const { items, getLatestPrices } = useLatestPrices();
       await getLatestPrices();
 
       expect(get(items)).toHaveLength(2);
@@ -174,7 +170,7 @@ describe('useLatestPrices', () => {
         { fromAsset: '_nft_0xabc_1', price: bigNumberify(2), toAsset: 'ETH' },
       ]);
 
-      const { items, getLatestPrices } = useLatestPrices(t);
+      const { items, getLatestPrices } = useLatestPrices();
       await getLatestPrices();
 
       expect(get(items)[0].usdPrice).toEqual(bigNumberify(4000));
@@ -192,15 +188,25 @@ describe('useLatestPrices', () => {
       vi.mocked(api.fetchLatestPrices).mockResolvedValue([]);
     });
 
-    it('should report a price list that cannot be read and stop loading', async () => {
+    it('should name a price list that cannot be read in the table, filing no notification', async () => {
       vi.mocked(api.fetchLatestPrices).mockRejectedValue(new Error('offline'));
 
-      const { getLatestPrices, loading } = useLatestPrices(t);
+      const { emptyState, getLatestPrices, loading } = useLatestPrices();
       await getLatestPrices();
 
-      expect(spies.notifyFailure).toHaveBeenCalledOnce();
-      expect(spies.notifyFailure.mock.calls[0][0]).toBe('price_table.fetch.failure.title');
+      expect(get(emptyState)).toEqual({ description: 'offline', label: 'data_table.fetch_failed' });
+      expect(spies.notifyFailure).not.toHaveBeenCalled();
       expect(get(loading)).toBe(false);
+    });
+
+    it('should go back to the plain empty text once a later fetch succeeds', async () => {
+      vi.mocked(api.fetchLatestPrices).mockRejectedValueOnce(new Error('offline'));
+      const { emptyState, getLatestPrices } = useLatestPrices();
+      await getLatestPrices();
+
+      await getLatestPrices();
+
+      expect(get(emptyState)).toEqual({ description: 'data_table.no_data' });
     });
 
     it('should refresh every priced asset except usd, plus the extra ones', async () => {
@@ -209,7 +215,7 @@ describe('useLatestPrices', () => {
         { fromAsset: 'BTC', price: bigNumberify(1), toAsset: 'EUR' },
       ]);
 
-      const { refreshCurrentPrices, refreshing } = useLatestPrices(t);
+      const { refreshCurrentPrices, refreshing } = useLatestPrices();
       await refreshCurrentPrices(['DAI']);
 
       expect(refreshPrices).toHaveBeenCalledExactlyOnceWith(false, ['ETH', 'BTC', 'EUR', 'DAI']);
@@ -221,7 +227,7 @@ describe('useLatestPrices', () => {
         { fromAsset: 'BTC', price: bigNumberify(1), toAsset: 'EUR' },
       ]);
 
-      const { deletePrice } = useLatestPrices(t);
+      const { deletePrice } = useLatestPrices();
       await deletePrice({ fromAsset: 'ETH' });
 
       expect(api.deleteLatestPrice).toHaveBeenCalledExactlyOnceWith('ETH');
@@ -232,7 +238,7 @@ describe('useLatestPrices', () => {
     it('should leave a failed delete to its task centre row and leave the prices as they are', async () => {
       spies.submitTask.mockResolvedValue(err(TaskFailed({ message: 'locked' })));
 
-      const { deletePrice } = useLatestPrices(t);
+      const { deletePrice } = useLatestPrices();
       await deletePrice({ fromAsset: 'ETH' });
 
       expect(spies.submitTask).toHaveBeenCalledOnce();
@@ -242,7 +248,7 @@ describe('useLatestPrices', () => {
     });
 
     it('should save the price and report it saved', async () => {
-      const { save } = useLatestPrices(t);
+      const { save } = useLatestPrices();
 
       await expect(save(payload, false)).resolves.toBe(true);
       expect(api.addLatestPrice).toHaveBeenCalledExactlyOnceWith(payload);
@@ -251,7 +257,7 @@ describe('useLatestPrices', () => {
     it('should clear the drawer\'s missing current price for the asset it saved, and no other asset\'s', async () => {
       fileMissingPrice('ETH', null);
       fileMissingPrice('BTC', null);
-      const { save } = useLatestPrices(t);
+      const { save } = useLatestPrices();
 
       await save(payload, false);
 
@@ -261,7 +267,7 @@ describe('useLatestPrices', () => {
 
     it('should keep a missing historic price of the asset, which a latest price does not fix', async () => {
       fileMissingPrice('ETH', 1700000000);
-      const { save } = useLatestPrices(t);
+      const { save } = useLatestPrices();
 
       await save(payload, false);
 
@@ -271,7 +277,7 @@ describe('useLatestPrices', () => {
     it('should keep the missing current price when the save fails', async () => {
       spies.submitTask.mockResolvedValue(err(TaskFailed({ message: 'bad pair' })));
       fileMissingPrice('ETH', null);
-      const { save } = useLatestPrices(t);
+      const { save } = useLatestPrices();
 
       await save(payload, false);
 
@@ -280,23 +286,23 @@ describe('useLatestPrices', () => {
 
     it('should report a failed add as an add', async () => {
       spies.submitTask.mockResolvedValue(err(TaskFailed({ message: 'bad pair' })));
-      const { save } = useLatestPrices(t);
+      const { save } = useLatestPrices();
 
       await expect(save(payload, false)).resolves.toBe(false);
       expect(spies.showErrorMessage).toHaveBeenCalledExactlyOnceWith(
         'price_management.add.error.title',
-        'price_management.add.error.description',
+        'price_management.add.error.description::bad pair',
       );
     });
 
     it('should report a failed edit as an edit', async () => {
       spies.submitTask.mockResolvedValue(err(TaskFailed({ message: 'bad pair' })));
-      const { save } = useLatestPrices(t);
+      const { save } = useLatestPrices();
 
       await expect(save(payload, true)).resolves.toBe(false);
       expect(spies.showErrorMessage).toHaveBeenCalledExactlyOnceWith(
         'price_management.edit.error.title',
-        'price_management.edit.error.description',
+        'price_management.edit.error.description::bad pair',
       );
     });
   });

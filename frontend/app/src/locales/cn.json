@@ -5438,12 +5438,6 @@
         "title": "删除价格失败"
       }
     },
-    "fetch": {
-      "failure": {
-        "message": "获取价格失败 {message}",
-        "title": "获取价格失败"
-      }
-    },
     "headers": {
       "from_asset": "源资产"
     },

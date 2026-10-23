@@ -1,4 +1,4 @@
-import type { ComputedRef, InjectionKey, MaybeRef, MaybeRefOrGetter, Ref } from 'vue';
+import { type ComputedRef, hasInjectionContext, type InjectionKey, type MaybeRef, type MaybeRefOrGetter, type Ref } from 'vue';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 
 const TableFetchErrorKey: InjectionKey<Ref<unknown>> = Symbol('table-fetch-error');
@@ -40,7 +40,7 @@ export function provideTableFetchError(error: Ref<unknown>): void {
  * own empty state rather than handing {@link useTableEmptyState}'s text to `RuiDataTable`.
  */
 export function useTableFetchError(): Ref<unknown> | undefined {
-  return inject(TableFetchErrorKey, undefined);
+  return hasInjectionContext() ? inject(TableFetchErrorKey, undefined) : undefined;
 }
 
 /**

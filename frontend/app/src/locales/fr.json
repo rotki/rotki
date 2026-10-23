@@ -2319,12 +2319,6 @@
         "title": "Échec de la suppression du prix"
       }
     },
-    "fetch": {
-      "failure": {
-        "message": "Échec de la récupération des prix {message}",
-        "title": "Échec de la récupération des prix"
-      }
-    },
     "headers": {
       "from_asset": "De la devise"
     },

@@ -5560,12 +5560,6 @@
         "title": "Fiyat silinemedi"
       }
     },
-    "fetch": {
-      "failure": {
-        "message": "Fiyatlar getirilemedi {message}",
-        "title": "Fiyatlar getirilemedi"
-      }
-    },
     "headers": {
       "from_asset": "Kaynak varlık"
     },
