@@ -1,6 +1,9 @@
 import type { useActionCenter as UseActionCenter } from '@/modules/core/action-center/use-action-center';
+import { logoutThenLogin, sessionRequest } from '@test/utils/realistic-logout';
+import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/types';
+import { endSession } from '@/modules/core/session/session-lifecycle';
 
 const state = {
   logged: ref(true),
@@ -262,5 +265,38 @@ describe('modules/core/action-center/useActionCenter', () => {
     await nextTick();
 
     expect(get(checking)).toBe(true);
+  });
+
+  describe('across a realistic logout', () => {
+    function centerWithAScanInFlight(): ReturnType<typeof useActionCenter> {
+      const refresh = vi.fn<() => Promise<void>>(async () => sessionRequest<void>().promise);
+      return useActionCenter({ id: 'test', items: ref([]), sources: [{ loading: ref(false), refresh }] });
+    }
+
+    it('should stay pending for the next user when the scan settles before `logged` flips', async () => {
+      const { checking, refreshAll } = centerWithAScanInFlight();
+
+      const reading = refreshAll();
+      endSession();
+      await flushPromises();
+      set(state.logged, false);
+      await nextTick();
+      await logoutThenLogin();
+      set(state.logged, true);
+      await reading;
+
+      expect(get(checking)).toBe(true);
+    });
+
+    it('should stay pending for the next user when `logged` flips before the scan settles, as on a 401', async () => {
+      const { checking, refreshAll } = centerWithAScanInFlight();
+
+      const reading = refreshAll();
+      await logoutThenLogin([(): void => set(state.logged, false)]);
+      set(state.logged, true);
+      await reading;
+
+      expect(get(checking)).toBe(true);
+    });
   });
 });
