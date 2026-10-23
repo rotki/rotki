@@ -28,7 +28,15 @@ import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseBanksReturn {
+  /** Loads the supported banks; a failure is kept in the store for the bank pages to show, not notified. */
   refreshSupportedBanks: () => Promise<void>;
+  /**
+   * Loads the connections; a failure is kept in the store for the bank pages to show, not notified.
+   *
+   * @remarks
+   * Background work (a balance refresh, the load at login) calls this too, so the failure waits for
+   * a bank page to be opened instead of interrupting whatever the user is doing.
+   */
   refreshBankConnections: () => Promise<void>;
   /** Adds or edits a connection, refreshing the connections and balances once the backend accepts it. */
   setupBank: (form: BankFormData) => ResultAsync<BankSetupResult, BankSetupError>;
@@ -98,7 +106,7 @@ export function useBanks(): UseBanksReturn {
     }
     catch (error: unknown) {
       if (!isRequestCancellation(error))
-        notifyError(t('bank_settings.errors.supported_title'), getErrorMessage(error));
+        store.setManifestsError(error);
     }
   };
 
@@ -108,7 +116,7 @@ export function useBanks(): UseBanksReturn {
     }
     catch (error: unknown) {
       if (!isRequestCancellation(error))
-        notifyError(t('bank_settings.errors.list_title'), getErrorMessage(error));
+        store.setConnectionsError(error);
     }
   };
 

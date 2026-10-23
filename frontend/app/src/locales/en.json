@@ -1933,6 +1933,7 @@
   "bank_balances": {
     "add_bank": "Add a bank connection",
     "connections": "Bank connections",
+    "connections_failed": "Could not load the bank connections",
     "empty": {
       "description": "Connect a bank account and rotki reads its balances and transactions directly from this machine. It never moves money.",
       "supported": "Supported banks",
@@ -1964,6 +1965,7 @@
       "message": "Are you sure you want to remove the {bank} connection named {name} from rotki? Its credentials and sync progress are deleted. Transactions already pulled are kept.",
       "title": "Confirmation Required"
     },
+    "connections_failed": "Could not refresh the bank connections, so the list may be out of date",
     "delete": {
       "tooltip": "Remove the bank connection"
     },
@@ -1980,13 +1982,11 @@
     },
     "empty": "No bank connections yet",
     "errors": {
-      "list_title": "Bank connections",
       "remove_message": "Could not remove the bank connection {name}: {error}",
       "remove_title": "Bank connection removal",
       "setup_message": "Could not set up the {bank} connection: {error}",
       "start_over_message": "Could not drop the pending authentication of {name}: {error}",
-      "start_over_title": "Bank authentication",
-      "supported_title": "Supported banks"
+      "start_over_title": "Bank authentication"
     },
     "form": {
       "bank": "Bank",
@@ -2006,6 +2006,7 @@
       "title": "Limited bank history"
     },
     "subtitle": "rotki talks to each bank directly from this machine with the credentials you enter here. Transactions are pulled into your history and balances into your net worth.",
+    "supported_failed": "Could not load the supported banks, so no bank can be added yet",
     "sync": {
       "authentication_expired": "Authentication expired, sync again",
       "authentication_required": "Authentication required",
