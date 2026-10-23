@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Final, cast
 
 from web3.exceptions import BadFunctionCallOutput
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.tokens import get_rpc_first_chunk_size_call_order
 from rotkehlchen.chain.structures import EvmTokenDetectionData
@@ -38,6 +39,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ChecksumEvmAddress
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -374,13 +376,16 @@ class CurrentBalanceMismatchDetector:
 def run_current_balance_detection(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
+        msg_aggregator: MessagesAggregator,
         from_ts: TimestampMS | None = None,
         time_budget: int = DEFAULT_DETECTION_TIME_BUDGET,
 ) -> int:
     """Task entrypoint. Returns the number of wallet buckets that were compared.
 
     Only a full run (no from_ts) restarts the daily cooldown, so partial runs after each
-    processing pass don't postpone the daily full comparison.
+    processing pass don't postpone the daily full comparison. Every run, even a failed or
+    cancelled one, ends with a CURRENT_BALANCE_DETECTION_COMPLETED message, since it may have
+    opened or resolved issues before stopping.
     """
     try:
         return CurrentBalanceMismatchDetector(
@@ -388,11 +393,17 @@ def run_current_balance_detection(
             observed_balance_reader=make_evm_observed_balance_reader(chains_aggregator),
             time_budget=time_budget,
         ).run(from_ts=from_ts)
-    finally:  # a crash must not leave the periodic task due again on the very next tick
-        if from_ts is None:
-            with database.user_write() as write_cursor:
-                database.set_static_cache(
-                    write_cursor=write_cursor,
-                    name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
-                    value=ts_now(),
-                )
+    finally:
+        try:  # a crash must not leave the periodic task due again on the very next tick
+            if from_ts is None:
+                with database.user_write() as write_cursor:
+                    database.set_static_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
+                        value=ts_now(),
+                    )
+        finally:  # a cancelled task can't write, but its issues may still have changed
+            msg_aggregator.add_message(
+                message_type=WSMessageType.CURRENT_BALANCE_DETECTION_COMPLETED,
+                data={},
+            )

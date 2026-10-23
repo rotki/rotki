@@ -19,7 +19,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.concurrency import cancellable_sleep, wait
+from rotkehlchen.concurrency import TaskCancelledError, cancellable_sleep, wait
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -56,6 +56,7 @@ from rotkehlchen.tasks.assets import (
 )
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
 from rotkehlchen.tasks.manager import (
+    CURRENT_BALANCE_DETECTION_TASK_NAME,
     CURRENT_BALANCE_DETECTION_TIME_BUDGET,
     DATA_ISSUE_REMEDIATION_TASK_NAME,
     HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
@@ -97,6 +98,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -168,6 +171,58 @@ def test_trigger_historical_balance_processing_reports_whether_it_runs(
         is_history_fetching.return_value = False
         assert task_manager.trigger_historical_balance_processing() is True
         spawn.assert_called_once_with(from_ts=None)
+
+
+@pytest.mark.parametrize('start_processing', [
+    lambda task_manager: task_manager.trigger_historical_balance_processing(),
+    lambda task_manager: task_manager.retry_data_issue_auto_remediation(
+        issue_id=1,
+        from_ts=TimestampMS(0),
+    ),
+])
+def test_requested_processing_cancels_a_running_balance_detection(
+        task_manager: TaskManager,
+        start_processing: Callable[[TaskManager], bool],
+) -> None:
+    """The detection must have stopped before processing starts rewriting its balances."""
+    detection = task_manager.task_supervisor.spawn_and_track(
+        after_seconds=None,
+        task_name=CURRENT_BALANCE_DETECTION_TASK_NAME,
+        exception_is_error=True,
+        method=cancellable_sleep,
+        seconds=10,
+    )
+    detection_dead_at_spawn: list[bool] = []
+    with (
+        patch('rotkehlchen.tasks.manager.is_accounting_update_enabled', return_value=True),
+        patch.object(
+            task_manager.task_supervisor,
+            'spawn_and_track',
+            side_effect=lambda **_: detection_dead_at_spawn.append(detection.dead),
+        ),
+    ):
+        assert start_processing(task_manager) is True
+
+    assert detection_dead_at_spawn == [True]
+    assert isinstance(detection.exception, TaskCancelledError)
+
+
+def test_balance_work_admission_is_exclusive(task_manager: TaskManager) -> None:
+    """A detection can't check whether processing runs while a processing run is being admitted."""
+    with patch.object(
+        task_manager.history_processing_coordinator,
+        'is_history_fetching',
+        return_value=True,
+    ) as is_history_fetching:
+        with task_manager._balance_work_admission:
+            (detection := threading.Thread(
+                target=task_manager._maybe_detect_current_balance_mismatches,
+            )).start()
+            detection.join(timeout=0.1)
+            is_history_fetching.assert_not_called()
+
+        detection.join(timeout=2)
+        is_history_fetching.assert_called_once()
 
 
 def test_data_issue_remediation_runs_daily_after_initial_processing(

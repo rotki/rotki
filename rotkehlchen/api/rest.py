@@ -86,6 +86,7 @@ from rotkehlchen.concurrency import (
     Task,
     TaskCancelledError,
     exception_of,
+    join_forwarding_cancellation,
     wait,
 )
 from rotkehlchen.constants.misc import (
@@ -4086,8 +4087,13 @@ class RestAPI:
                     status_code=HTTPStatus.CONFLICT,
                 )
             for detection_task in tasks:  # finish before answering so the caller sees its issues
-                detection_task.join()
-                if (exception := exception_of(detection_task)) is not None:
+                join_forwarding_cancellation(detection_task)
+                if isinstance(exception := exception_of(detection_task), TaskCancelledError):
+                    return wrap_in_fail_result(  # e.g. preempted by a processing run
+                        message='Current balance detection was cancelled',
+                        status_code=HTTPStatus.CONFLICT,
+                    )
+                if exception is not None:
                     return wrap_in_fail_result(
                         message=f'Current balance detection failed: {exception!s}',
                         status_code=HTTPStatus.INTERNAL_SERVER_ERROR,

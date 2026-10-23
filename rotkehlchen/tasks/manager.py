@@ -2,6 +2,7 @@ import logging
 import random
 import threading
 from collections import defaultdict, deque
+from functools import wraps
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple, cast
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -17,6 +18,7 @@ from rotkehlchen.chain.evm.decoding.flying_tulip.lend.constants import (
 from rotkehlchen.chain.evm.decoding.flying_tulip.lend.discovery import (
     query_deposit_for_transactions,
 )
+from rotkehlchen.concurrency import join_forwarding_cancellation
 from rotkehlchen.constants import WEEK_IN_SECONDS
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
@@ -98,6 +100,7 @@ CURRENT_BALANCE_DETECTION_TIME_BUDGET: Final = 300  # seconds a single detection
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
+    from typing import Concatenate
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.banks.manager import BankManager
@@ -133,6 +136,24 @@ PREMIUM_CHECK_RETRY_LIMIT = 3
 
 def exchange_fail_cb(error: str) -> None:
     log.error(error)
+
+
+def _admitting_balance_work[**P, R](
+        method: Callable[Concatenate[TaskManager, P], R],
+) -> Callable[Concatenate[TaskManager, P], R]:
+    """Run the method holding the lock that admits balance processing work.
+
+    Processing, remediation and the current balance detection check that none of the others
+    runs before they spawn. Holding the lock across the check and the spawn keeps two of them
+    from both passing the check, which would let the detection read derived balances that a
+    processing run is rewriting batch by batch.
+    """
+    @wraps(method)
+    def wrapper(self: TaskManager, *args: P.args, **kwargs: P.kwargs) -> R:
+        with self._balance_work_admission:
+            return method(self, *args, **kwargs)
+
+    return wrapper
 
 
 class CCHistoQuery(NamedTuple):
@@ -192,6 +213,7 @@ class TaskManager:
         self.data_updater = data_updater
         self.username = username
         self.history_processing_coordinator = history_processing_coordinator
+        self._balance_work_admission = threading.Lock()  # see _admitting_balance_work
 
         self.potential_tasks: list[SchedulerTask] = [
             self._maybe_schedule_cryptocompare_query,
@@ -630,13 +652,35 @@ class TaskManager:
             chains_aggregator=self.chains_aggregator,
         )]
 
+    def _preempting_current_balance_detection(self, admit: Callable[[], bool | None]) -> bool:
+        """Start work a user asked for, cancelling a current balance detection in its way.
+
+        ``admit`` returns None while a detection blocks it. The detection must not read the
+        balances that the admitted work rewrites, and it compares the touched buckets again
+        once processing completes, so cancelling it loses nothing. It is awaited outside the
+        admission lock, since it can take a while to reach its next checkpoint.
+
+        May raise TaskCancelledError.
+        """
+        while (started := admit()) is None:
+            for task in self.task_supervisor.running_tasks(CURRENT_BALANCE_DETECTION_TASK_NAME):
+                task.request_cancellation('Cancelled for historical balance processing')
+                join_forwarding_cancellation(task)
+
+        return started
+
     def trigger_historical_balance_processing(self) -> bool:
         """Start historical balance processing unless it cannot run now.
 
         Returns True when a run was started or one is already running, so a
         HISTORICAL_BALANCE_PROCESSING_COMPLETED message will follow. Returns False
         when nothing started, because the feature is disabled or a PnL report is gathering history.
+        A running current balance detection is cancelled to let the run start.
         """
+        return self._preempting_current_balance_detection(self._admit_manual_processing)
+
+    @_admitting_balance_work
+    def _admit_manual_processing(self) -> bool | None:
         if self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME):
             return True
         if (
@@ -644,6 +688,8 @@ class TaskManager:
             self.history_processing_coordinator.is_history_fetching()
         ):
             return False
+        if self.task_supervisor.has_task(CURRENT_BALANCE_DETECTION_TASK_NAME):
+            return None
         self._spawn_historical_balance_processing(from_ts=None)
         return True
 
@@ -652,11 +698,24 @@ class TaskManager:
             issue_id: int,
             from_ts: TimestampMS,
     ) -> bool:
+        """Reprocess the balances of a data issue. Returns False if processing is running.
+
+        A running current balance detection is cancelled to let the reprocessing start.
+        """
+        return self._preempting_current_balance_detection(lambda: self._admit_issue_reprocessing(
+            issue_id=issue_id,
+            from_ts=from_ts,
+        ))
+
+    @_admitting_balance_work
+    def _admit_issue_reprocessing(self, issue_id: int, from_ts: TimestampMS) -> bool | None:
         if (
             self.history_processing_coordinator.is_history_fetching() or
             self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
         ):
             return False
+        if self.task_supervisor.has_task(CURRENT_BALANCE_DETECTION_TASK_NAME):
+            return None
 
         self.task_supervisor.spawn_and_track(
             after_seconds=None,
@@ -671,6 +730,7 @@ class TaskManager:
         )
         return True
 
+    @_admitting_balance_work
     def _maybe_process_historical_balances(self) -> list[Task] | None:
         if (
             self.history_processing_coordinator.is_history_fetching() or
@@ -700,6 +760,7 @@ class TaskManager:
             from_ts=TimestampMS(int(stale_from_ts)) if stale_from_ts is not None else None,
         )
 
+    @_admitting_balance_work
     def _maybe_run_data_issue_remediation(self, force: bool = False) -> list[Task] | None:
         """Schedule remediation, optionally bypassing the daily cooldown."""
         if (
@@ -737,6 +798,7 @@ class TaskManager:
     def trigger_data_issue_remediation(self) -> bool:
         return self._maybe_run_data_issue_remediation(force=True) is not None
 
+    @_admitting_balance_work
     def _maybe_detect_current_balance_mismatches(
             self,
             force: bool = False,
@@ -793,6 +855,7 @@ class TaskManager:
             method=run_current_balance_detection,
             database=self.database,
             chains_aggregator=self.chains_aggregator,
+            msg_aggregator=self.msg_aggregator,
             from_ts=from_ts,
             time_budget=CURRENT_BALANCE_DETECTION_TIME_BUDGET,
         )]

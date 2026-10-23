@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -278,7 +280,7 @@ def test_unexpected_reader_failure_skips_the_address_instead_of_crashing(
     assert _get_issues(database) == []
 
 
-def test_crashed_detection_still_records_its_run(database: DBHandler) -> None:
+def test_crashed_detection_still_records_its_run_and_reports_it(database: DBHandler) -> None:
     with (
         patch(
             'rotkehlchen.history.data_issues.detectors.current_balance.'
@@ -287,13 +289,48 @@ def test_crashed_detection_still_records_its_run(database: DBHandler) -> None:
         ),
         pytest.raises(ZeroDivisionError),
     ):
-        run_current_balance_detection(database=database, chains_aggregator=None)  # type: ignore[arg-type]  # never reached
+        run_current_balance_detection(
+            database=database,
+            chains_aggregator=None,  # type: ignore[arg-type]  # never reached
+            msg_aggregator=(msg_aggregator := MagicMock()),
+        )
 
     with database.conn.read_ctx() as cursor:
         assert database.get_static_cache(
             cursor=cursor,
             name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
         ) is not None
+    msg_aggregator.add_message.assert_called_once_with(
+        message_type=WSMessageType.CURRENT_BALANCE_DETECTION_COMPLETED,
+        data={},
+    )
+
+
+def test_cancelled_detection_still_reports_its_end(database: DBHandler) -> None:
+    """A cancelled task's write of its run timestamp can raise too, the message must still go"""
+    with (
+        patch(
+            'rotkehlchen.history.data_issues.detectors.current_balance.'
+            'CurrentBalanceMismatchDetector.run',
+            side_effect=TaskCancelledError('cancelled'),
+        ),
+        patch(
+            'rotkehlchen.history.data_issues.detectors.current_balance.'
+            'make_evm_observed_balance_reader',
+        ),
+        patch.object(database, 'user_write', side_effect=TaskCancelledError('cancelled')),
+        pytest.raises(TaskCancelledError),
+    ):
+        run_current_balance_detection(
+            database=database,
+            chains_aggregator=None,  # type: ignore[arg-type]  # never reached
+            msg_aggregator=(msg_aggregator := MagicMock()),
+        )
+
+    msg_aggregator.add_message.assert_called_once_with(
+        message_type=WSMessageType.CURRENT_BALANCE_DETECTION_COMPLETED,
+        data={},
+    )
 
 
 def test_partial_detection_keeps_the_daily_full_run_due(database: DBHandler) -> None:
@@ -308,6 +345,7 @@ def test_partial_detection_keeps_the_daily_full_run_due(database: DBHandler) -> 
         run_current_balance_detection(
             database=database,
             chains_aggregator=None,  # type: ignore[arg-type]  # never reached
+            msg_aggregator=MagicMock(),
             from_ts=TimestampMS(5_000),
         )
 

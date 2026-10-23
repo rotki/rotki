@@ -6,16 +6,17 @@ import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-complet
  * Reloads the issues when something that detects them has finished.
  *
  * @remarks
- * A finished sync and a finished historical balance processing are what detect new issues, so the
- * list reloads on them rather than waiting for the poll.
+ * A finished sync, a finished historical balance processing and a finished current balance
+ * detection are what detect new issues, so the list reloads on them rather than waiting for the
+ * poll. The detection runs after the processing it follows has already reported completion.
  *
  * @param reload - reloads the list and its summary
  */
 export function useDataIssuesAutoReload(reload: () => Promise<void>): void {
-  const { historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
+  const { currentBalanceDetectionCompleted, historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
   const { syncCompleted } = useSyncCompleted();
 
-  watch([syncCompleted, historicalBalanceProcessingCompleted], () => {
+  watch([syncCompleted, historicalBalanceProcessingCompleted, currentBalanceDetectionCompleted], () => {
     startPromise(reload());
   });
 }
