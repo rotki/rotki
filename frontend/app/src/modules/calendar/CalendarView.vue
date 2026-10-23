@@ -12,10 +12,13 @@ import CalendarUpcomingEventsPanel from '@/modules/calendar/CalendarUpcomingEven
 import { useCalendarData } from '@/modules/calendar/use-calendar-data';
 import { useCalendarDateManagement } from '@/modules/calendar/use-calendar-date-management';
 import { useCalendarOperations } from '@/modules/calendar/use-calendar-operations';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
+const failureMessage = useFailureMessage();
 
 const accounts = ref<AddressAccount[]>([]);
 
@@ -95,26 +98,15 @@ onMounted(async () => {
             :field="{ dense: true, label: t('calendar.all_addresses') }"
           />
         </template>
-        <RuiAlert
+        <TableFailureStrip
           v-if="error"
-          type="error"
+          standalone
           class="m-3"
           :title="t('data_table.fetch_failed')"
+          :message="failureMessage(error)"
           data-testid="calendar-fetch-error"
-        >
-          <div class="flex flex-col items-start gap-2">
-            <span>{{ error.message }}</span>
-            <RuiButton
-              size="sm"
-              color="error"
-              variant="outlined"
-              data-testid="calendar-retry"
-              @click="fetchData()"
-            >
-              {{ t('common.actions.retry') }}
-            </RuiButton>
-          </div>
-        </RuiAlert>
+          @retry="fetchData()"
+        />
         <CalendarGrid
           :today="today"
           :selected-date="modelSelectedDate"

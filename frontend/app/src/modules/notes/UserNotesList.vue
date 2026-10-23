@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { NoteLocation } from '@/modules/core/common/notes';
+import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
+import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { useUserNotesList } from '@/modules/notes/use-user-notes-list';
 import UserNotesFormDialog from '@/modules/notes/UserNotesFormDialog.vue';
 import PlanLimitMessage from '@/modules/premium/PlanLimitMessage.vue';
@@ -10,6 +14,7 @@ const open = defineModel<boolean>('open', { required: true });
 const { location = NoteLocation.GLOBAL } = defineProps<{ location?: string }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const failureMessage = useFailureMessage();
 
 const wrapper = useTemplateRef<HTMLDivElement>('wrapper');
 const { arrivedState } = useScroll(wrapper);
@@ -95,26 +100,15 @@ onMounted(async () => {
     ref="wrapper"
     class="px-4 pb-4 max-h-[calc(100%-120px)] overflow-auto flex-1"
   >
-    <RuiAlert
-      v-if="error"
-      type="error"
+    <TableFailureStrip
+      v-if="error && data.length > 0"
+      standalone
       class="mb-4"
       :title="t('data_table.fetch_failed')"
+      :message="failureMessage(error)"
       data-testid="notes-fetch-error"
-    >
-      <div class="flex flex-col items-start gap-2">
-        <span>{{ error.message }}</span>
-        <RuiButton
-          size="sm"
-          color="error"
-          variant="outlined"
-          data-testid="notes-retry"
-          @click="refreshNotes()"
-        >
-          {{ t('common.actions.retry') }}
-        </RuiButton>
-      </div>
-    </RuiAlert>
+      @retry="refreshNotes()"
+    />
 
     <RuiAlert
       v-if="showUpgradeRow"
@@ -306,6 +300,18 @@ onMounted(async () => {
         </RuiButton>
       </template>
     </div>
+
+    <TableEmptyNotice
+      v-else
+      icon="lu-notebook-pen"
+      :title="t('data_table.fetch_failed')"
+      data-testid="notes-fetch-error"
+    >
+      <TableFailureDescription
+        :message="failureMessage(error)"
+        @retry="refreshNotes()"
+      />
+    </TableEmptyNotice>
   </div>
 
   <UserNotesFormDialog
