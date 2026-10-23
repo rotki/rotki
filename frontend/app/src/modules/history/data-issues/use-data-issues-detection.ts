@@ -4,8 +4,8 @@ import { msg } from '@/message-key';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
+import { currentBalanceDetectionActivity } from '@/modules/history/balances/historical-balances.activity';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseDataIssuesDetectionReturn {
@@ -30,8 +30,8 @@ export function useDataIssuesDetection(reload: () => Promise<void>): UseDataIssu
 
   async function runDetection(): Promise<void> {
     const outcome = await submitTask<boolean>({
-      id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.DETECT),
-      kind: ActivityKind.HISTORICAL_BALANCES,
+      id: currentBalanceDetectionActivity.id(),
+      kind: currentBalanceDetectionActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<boolean, TaskError>> => runTask<boolean>(
         async () => triggerTask('current_balance_detection'),
