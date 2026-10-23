@@ -1,9 +1,11 @@
+import type { MaybeRefOrGetter } from 'vue';
 import type { ActionUrgency } from '@/modules/core/action-center/types';
+import type { SetAside } from '@/modules/shell/action-center/use-action-center-snooze';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import MissingPricesDialog from '@/modules/assets/prices/missing/MissingPricesDialog.vue';
 import { useMissingPricesDialog } from '@/modules/assets/prices/missing/use-missing-prices-dialog';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
@@ -13,6 +15,9 @@ import { useSettingsHighlight } from '@/modules/settings/use-settings-highlight'
 import GlobalActionCenter from '@/modules/shell/action-center/GlobalActionCenter.vue';
 
 const { openUrl } = vi.hoisted(() => ({ openUrl: vi.fn<(url: string) => Promise<void>>() }));
+
+/** what the component asked the center to reveal, as it handed it over */
+let revealed: MaybeRefOrGetter<SetAside[]> | undefined;
 
 const state = {
   markSeen: vi.fn<() => void>(),
@@ -30,18 +35,22 @@ vi.mock('@/modules/shell/app/use-electron-interop', () => ({
 }));
 
 vi.mock('@/modules/shell/action-center/use-global-action-center', () => ({
-  useGlobalActionCenter: (): object => ({
-    awaitingFirstScan: computed(() => false),
-    cleared: computed(() => []),
-    count: computed(() => 2),
-    markSeen: state.markSeen,
-    newCount: computed(() => 1),
-    newIds: computed(() => ['missing-prices']),
-    refreshAll: state.refreshAll,
-    refreshing: computed(() => false),
-    sections: computed(() => []),
-    urgency: state.urgency,
-  }),
+  useGlobalActionCenter: (options: { revealed?: MaybeRefOrGetter<SetAside[]> }): object => {
+    revealed = options.revealed;
+    return {
+      awaitingFirstScan: computed(() => false),
+      cleared: computed(() => []),
+      count: computed(() => 2),
+      markSeen: state.markSeen,
+      newCount: computed(() => 1),
+      newIds: computed(() => ['missing-prices']),
+      refreshAll: state.refreshAll,
+      refreshing: computed(() => false),
+      sections: computed(() => []),
+      setAsideCounts: computed(() => ({ muted: 1, snoozed: 2 })),
+      urgency: state.urgency,
+    };
+  },
 }));
 
 vi.mock('vue-router', () => ({
@@ -104,6 +113,23 @@ describe('modules/shell/action-center/GlobalActionCenter', () => {
     await nextTick();
 
     expect(state.markSeen).toHaveBeenCalledOnce();
+  });
+
+  it('should reveal put-away rows only when asked from the strip, and hide them again when the menu closes', async () => {
+    const wrapper = mountCenter();
+    await openMenu(wrapper);
+    expect(toValue(revealed)).toEqual([]);
+
+    const toggle = document.body.querySelector<HTMLButtonElement>('[data-testid="actions-center-set-aside-toggle"][data-key="snoozed"]');
+    assert(toggle);
+    toggle.click();
+    await nextTick();
+    expect(toValue(revealed)).toEqual(['snoozed']);
+
+    wrapper.findComponent({ name: 'RuiMenu' }).vm.$emit('update:modelValue', false);
+    await nextTick();
+
+    expect(toValue(revealed)).toEqual([]);
   });
 
   it('should navigate on a route target and close the menu', async () => {

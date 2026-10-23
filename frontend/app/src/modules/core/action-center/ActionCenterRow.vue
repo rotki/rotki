@@ -114,9 +114,20 @@ const showCount = computed<boolean>(() => item.count > 1 || get(wentDown));
         {{ item.locked ? lockedHint : item.description }}
       </p>
       <div
-        v-if="!item.locked && item.options.length > 0"
-        class="mt-1 flex flex-wrap gap-x-1 -ml-1.5"
+        v-if="!item.locked && (item.options.length > 0 || item.status)"
+        class="mt-1 flex flex-wrap items-center gap-x-1 -ml-1.5"
       >
+        <span
+          v-if="item.status"
+          class="inline-flex items-center gap-2 px-1.5 py-0.5 text-caption font-medium text-rui-text-secondary"
+          data-testid="actions-center-row-status"
+        >
+          {{ item.status }}
+          <span
+            aria-hidden="true"
+            class="h-3 w-px bg-rui-grey-300 dark:bg-rui-grey-700"
+          />
+        </span>
         <RuiButton
           v-for="option in item.options"
           :key="option.id"

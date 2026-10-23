@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { SetAside } from '@/modules/shell/action-center/use-action-center-snooze';
 import { startPromise } from '@shared/utils';
 import MissingPricesDialog from '@/modules/assets/prices/missing/MissingPricesDialog.vue';
 import { useMissingPrices } from '@/modules/assets/prices/missing/use-missing-prices';
@@ -6,12 +7,14 @@ import { useMissingPricesDialog } from '@/modules/assets/prices/missing/use-miss
 import ActionCenterList from '@/modules/core/action-center/ActionCenterList.vue';
 import ActionCenterMenu from '@/modules/core/action-center/ActionCenterMenu.vue';
 import { useOpenActionTarget } from '@/modules/core/action-center/use-open-action-target';
+import ActionCenterSetAsideFilters from '@/modules/shell/action-center/ActionCenterSetAsideFilters.vue';
 import { useActionCenterFolds } from '@/modules/shell/action-center/use-action-center-folds';
 import { useGlobalActionCenter } from '@/modules/shell/action-center/use-global-action-center';
 
 const open = ref<boolean>(false);
+const revealed = ref<SetAside[]>([]);
 
-const { awaitingFirstScan, cleared, count, markSeen, newCount, newIds, previousCounts, refreshAll, refreshing, sections, urgency } = useGlobalActionCenter();
+const { awaitingFirstScan, cleared, count, markSeen, newCount, newIds, previousCounts, refreshAll, refreshing, sections, setAsideCounts, urgency } = useGlobalActionCenter({ revealed });
 const { modelFolded } = useActionCenterFolds();
 const { openTarget } = useOpenActionTarget();
 const { missingPriceIdentifiers } = useMissingPrices();
@@ -23,8 +26,10 @@ function close(): void {
 
 // Marking on close rather than on open keeps the new markers up while the user reads them.
 watch(open, (isOpen, wasOpen) => {
-  if (wasOpen && !isOpen)
+  if (wasOpen && !isOpen) {
     markSeen();
+    set(revealed, []);
+  }
 });
 </script>
 
@@ -48,7 +53,14 @@ watch(open, (isOpen, wasOpen) => {
       :refreshing="refreshing"
       @open="openTarget($event, close)"
       @refresh="startPromise(refreshAll())"
-    />
+    >
+      <template #header-actions>
+        <ActionCenterSetAsideFilters
+          v-model:revealed="revealed"
+          :counts="setAsideCounts"
+        />
+      </template>
+    </ActionCenterList>
   </ActionCenterMenu>
   <MissingPricesDialog
     v-if="missingPricesOpen"

@@ -403,6 +403,7 @@
     "locked": "Premium",
     "locked_hint": "This requires the {tier} tier.",
     "locked_hint_generic": "This requires a rotki Premium plan.",
+    "mute": "Mute",
     "new": "New",
     "new_count": "{count} new | {count} new",
     "remind_later": "Remind me later",
@@ -548,14 +549,22 @@
       "assets": "Assets",
       "chains": "Chains & nodes",
       "history": "History",
-      "integrations": "Integrations & keys"
+      "integrations": "Integrations & keys",
+      "set_aside": "Set aside"
+    },
+    "set_aside": {
+      "muted": "Muted",
+      "snoozed": "Snoozed",
+      "snoozed_until": "Snoozed until {date}",
+      "toggle_hint": "Show or hide these rows"
     },
     "subtitle": "{count} category to look at | {count} categories to look at",
     "subtitle_checking": "Checking for anything that needs your attention.",
     "subtitle_clear": "Everything has been checked.",
     "title": "Actions needed",
     "title_checking": "Checking for actions",
-    "title_clear": "No actions needed"
+    "title_clear": "No actions needed",
+    "unmute": "Unmute"
   },
   "actions": {
     "accounting_rules": {

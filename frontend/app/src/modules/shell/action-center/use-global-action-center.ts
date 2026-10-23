@@ -1,4 +1,4 @@
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { LocationQuery } from 'vue-router';
 import { startPromise } from '@shared/utils';
 import { type ActionCenterSection, type ActionItem, type ActionTarget, type ActionUrgency, URGENCY_RANK } from '@/modules/core/action-center/types';
@@ -10,7 +10,7 @@ import { HISTORY_SYNC_ROW_ID } from '@/modules/shell/action-center/row-ids';
 import { useAccountingRows } from '@/modules/shell/action-center/use-accounting-rows';
 import { useActionCenterProgress } from '@/modules/shell/action-center/use-action-center-progress';
 import { useActionCenterSeen } from '@/modules/shell/action-center/use-action-center-seen';
-import { useActionCenterSnooze } from '@/modules/shell/action-center/use-action-center-snooze';
+import { SetAside, type SetAsideChange, useActionCenterSnooze } from '@/modules/shell/action-center/use-action-center-snooze';
 import { useAssetRows } from '@/modules/shell/action-center/use-asset-rows';
 import { useBinancePairsRows } from '@/modules/shell/action-center/use-binance-pairs-rows';
 import { useChainRows } from '@/modules/shell/action-center/use-chain-rows';
@@ -19,9 +19,19 @@ import { useHistorySyncRow } from '@/modules/shell/action-center/use-history-syn
 import { useIntegrationRows } from '@/modules/shell/action-center/use-integration-rows';
 import { usePremiumRows } from '@/modules/shell/action-center/use-premium-rows';
 
+interface UseGlobalActionCenterOptions {
+  /** the kinds of put-away rows the user asked to see; the others stay out of the sections */
+  revealed?: MaybeRefOrGetter<SetAside[]>;
+}
+
 interface UseGlobalActionCenterReturn {
-  /** Rows asking for something, grouped by module, with empty modules left out. */
+  /**
+   * Rows asking for something, grouped by module, with empty modules and unrevealed put-away rows left out.
+   * Revealed put-away rows come first, in a group of their own.
+   */
   sections: ComputedRef<ActionCenterSection[]>;
+  /** How many raised rows the user snoozed or muted, revealed or not. */
+  setAsideCounts: ComputedRef<Record<SetAside, number>>;
   /** Categories that were checked and came back with nothing pending. */
   cleared: ComputedRef<ActionItem[]>;
   /** How many categories are asking for something. */
@@ -34,7 +44,10 @@ interface UseGlobalActionCenterReturn {
   newCount: ComputedRef<number>;
   /** The count each lower or cleared category had when the user last closed the center. */
   previousCounts: ComputedRef<Record<string, number>>;
-  /** Records the current counts as seen, and as what the next visit's progress compares with; called when the center closes. */
+  /**
+   * Records the current counts as seen, and as what the next visit's progress compares with, and lets the rows
+   * changed during this visit move to their places; called when the center closes.
+   */
   markSeen: () => void;
   /** No scan has finished yet this session; later re-scans only show as {@link UseGlobalActionCenterReturn.refreshing}. */
   awaitingFirstScan: ComputedRef<boolean>;
@@ -58,6 +71,17 @@ function isRaised(item: ActionItem): boolean {
   return item.count > 0;
 }
 
+/** Where a raised row is listed: under its module, in the set-aside group at the top, or not at all. */
+const Placement = {
+  HIDDEN: 'hidden',
+  SECTION: 'section',
+  SET_ASIDE: 'set-aside',
+} as const;
+
+type Placement = (typeof Placement)[keyof typeof Placement];
+
+const SET_ASIDE_SECTION_ID = 'set-aside';
+
 /**
  * The re-scan of a source that history work cannot change, so it is read only on the first scan and
  * when the user asks for a re-scan.
@@ -77,7 +101,8 @@ async function noRescan(): Promise<void> {}
  * without scanning them a second time. Settled means after the auto-matching that follows a sync
  * as well, since that moves the unmatched counts again.
  */
-export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
+export function useGlobalActionCenter(options: UseGlobalActionCenterOptions = {}): UseGlobalActionCenterReturn {
+  const { revealed = [] } = options;
   const { t } = useI18n({ useScope: 'global' });
 
   const history = useHistoryEventIssues();
@@ -104,14 +129,27 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     }));
   });
 
-  const { onSnoozeChange, withSnooze } = useActionCenterSnooze();
+  const { onSnoozeChange, setAsideOf, withSnooze } = useActionCenterSnooze();
 
-  const groups = computed<ActionCenterSection[]>(() => [
+  const raisedGroups = computed<ActionCenterSection[]>(() => [
     { id: 'integrations', items: [...get(premiumRows), ...get(integrationRows), ...get(gnosisPaySafeRows), ...get(binancePairsRows)], title: t('action_center.sections.integrations') },
     { id: 'chains', items: get(chainRows), title: t('action_center.sections.chains') },
     { id: 'history', items: [...get(historySyncRow), ...get(historyRows), ...get(accountingRows)], title: t('action_center.sections.history') },
     { id: 'assets', items: get(assetRows), title: t('action_center.sections.assets') },
-  ].map(group => ({ ...group, items: group.items.map(withSnooze) })));
+  ]);
+
+  /** How the user put each row away, read off the rows as their sources raised them, by row id. */
+  const setAsideIds = computed<Map<string, SetAside>>(() => {
+    const ids = new Map<string, SetAside>();
+    for (const item of get(raisedGroups).flatMap(group => group.items)) {
+      const setAside = setAsideOf(item);
+      if (setAside !== undefined)
+        ids.set(item.id, setAside);
+    }
+    return ids;
+  });
+
+  const groups = computed<ActionCenterSection[]>(() => get(raisedGroups).map(group => ({ ...group, items: group.items.map(withSnooze) })));
 
   const center = useActionCenter<ActionTarget, string>({
     busy: history.checking,
@@ -126,9 +164,56 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     ],
   });
 
-  const sections = computed<ActionCenterSection[]>(() => get(groups)
-    .map(group => ({ ...group, items: group.items.map(center.present).filter(isRaised).sort((a, b) => rowRank(a) - rowRank(b)) }))
-    .filter(section => section.items.length > 0));
+  /** Rows the user changed by hand while the center is open, by id, with the place they had just before. */
+  const settled = shallowRef<ReadonlyMap<string, Placement>>(new Map());
+
+  function isRevealed(setAside: SetAside | undefined): boolean {
+    return setAside !== undefined && toValue(revealed).includes(setAside);
+  }
+
+  /**
+   * Where a row is listed.
+   *
+   * @remarks
+   * A row the user changed while the center is open keeps the place it had, so nothing slides under the pointer
+   * after a click; revealing its kind still moves it to the set-aside group, since the user asked for that.
+   */
+  function placementOf(id: string, setAside: SetAside | undefined): Placement {
+    if (isRevealed(setAside))
+      return Placement.SET_ASIDE;
+    return get(settled).get(id) ?? (setAside === undefined ? Placement.SECTION : Placement.HIDDEN);
+  }
+
+  /** A row keeps its rank while it settles, so turning it into a set-aside row does not move it to the end. */
+  function sectionRank(item: ActionItem): number {
+    return rowRank(get(settled).has(item.id) ? { ...item, informational: false } : item);
+  }
+
+  const presentedGroups = computed<ActionCenterSection[]>(() => get(groups)
+    .map(group => ({ ...group, items: group.items.map(center.present).filter(isRaised) })));
+
+  function placed(items: ActionItem[], placement: Placement): ActionItem[] {
+    return items.filter(item => placementOf(item.id, get(setAsideIds).get(item.id)) === placement);
+  }
+
+  const sections = computed<ActionCenterSection[]>(() => [
+    {
+      id: SET_ASIDE_SECTION_ID,
+      items: placed(get(presentedGroups).flatMap(group => group.items), Placement.SET_ASIDE),
+      title: t('action_center.sections.set_aside'),
+    },
+    ...get(presentedGroups).map(group => ({ ...group, items: placed(group.items, Placement.SECTION).sort((a, b) => sectionRank(a) - sectionRank(b)) })),
+  ].filter(section => section.items.length > 0));
+
+  const setAsideCounts = computed<Record<SetAside, number>>(() => {
+    const counts: Record<SetAside, number> = { [SetAside.MUTED]: 0, [SetAside.SNOOZED]: 0 };
+    for (const item of get(presentedGroups).flatMap(group => group.items)) {
+      const setAside = get(setAsideIds).get(item.id);
+      if (setAside !== undefined)
+        counts[setAside] += 1;
+    }
+    return counts;
+  });
 
   const { forget, markSeen, newIds } = useActionCenterSeen({
     active: center.activeItems,
@@ -141,11 +226,16 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     items: () => get(groups).flatMap(group => group.items).map(center.present),
   });
 
-  onSnoozeChange(forget);
+  function settle({ from, id }: SetAsideChange): void {
+    forget(id);
+    set(settled, new Map([...get(settled), [id, placementOf(id, from)]]));
+  }
 
-  const settled = useRefWithDebounce(history.busy, 200);
+  onSnoozeChange(settle);
 
-  watchImmediate(settled, (busy) => {
+  const historySettled = useRefWithDebounce(history.busy, 200);
+
+  watchImmediate(historySettled, (busy) => {
     if (!busy)
       startPromise(center.rescan());
   });
@@ -157,6 +247,7 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     markSeen: (): void => {
       markSeen();
       markClosed();
+      set(settled, new Map());
     },
     newCount: computed<number>(() => get(newIds).length),
     newIds,
@@ -164,6 +255,7 @@ export function useGlobalActionCenter(): UseGlobalActionCenterReturn {
     refreshAll: center.refreshAll,
     refreshing: center.refreshing,
     sections,
+    setAsideCounts,
     urgency: center.urgency,
   };
 }

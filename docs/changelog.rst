@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Rows in the action center can now be muted, which keeps them out of the list and the badge until you unmute them, next to "Remind me later" for a week. Snoozed and muted rows are hidden by default: the Snoozed and Muted filters next to Re-scan show them in a Set aside group at the top, each saying how long it is snoozed for or that it is muted. Rows that rotki retries on its own, such as internal transaction conflicts, can now be snoozed and muted too.
 * :feature:`10259` Dogecoin addresses can now be tracked under Accounts, with their DOGE balances. The balances are queried from SoChain, or from Dogechain when SoChain can't answer. Neither needs an API key.
 * :bug:`-` Exporting accounting rules in the browser no longer downloads a file containing only ``false`` when the export fails. A failed automatic match of asset movements or bridge transactions, accounting rules export or reset, PnL debug data import, price delete, token details lookup or Gnosis Pay sign-in is now reported only by its row in the task centre, without a second popup.
 * :bug:`-` Logging out no longer resets preferences kept on this device. The login screen now stays in your language instead of switching to English, the pinned panel keeps its width, the remembered WalletConnect wallet is kept, and newly detected tokens your own limits keep are no longer deleted.
