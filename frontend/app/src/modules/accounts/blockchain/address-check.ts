@@ -206,9 +206,6 @@ function ss58ChecksumLength(length: number, formatLength: number): number | unde
 
 /** The network an ss58 address names, in one byte or two, and how many bytes it takes. */
 function ss58Format(bytes: Uint8Array): { network: number; length: number } | undefined {
-  if (bytes.length === 0)
-    return undefined;
-
   if ((bytes[0] & 0x40) === 0)
     return { length: 1, network: bytes[0] };
 
