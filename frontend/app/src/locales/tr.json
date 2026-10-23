@@ -739,12 +739,6 @@
         "title": "Eylemler hariç tutulamadı"
       }
     },
-    "kraken_staking": {
-      "error": {
-        "message": "Kraken staking olayları sorgulanırken hata oluştu: {message}",
-        "title": "Kraken staking olaylarını sorgulama"
-      }
-    },
     "manual_balances": {
       "add": {
         "error": {

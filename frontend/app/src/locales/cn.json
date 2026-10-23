@@ -736,12 +736,6 @@
         "title": "忽略操作失败"
       }
     },
-    "kraken_staking": {
-      "error": {
-        "message": "查询 Kraken 质押事件时出错：{message}",
-        "title": "查询 Kraken 质押事件"
-      }
-    },
     "manual_balances": {
       "add": {
         "error": {

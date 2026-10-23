@@ -2,7 +2,6 @@ import type { KrakenStakingPagination } from '@/modules/staking/staking-types';
 import { map as mapResult, type Result } from 'plainfp/result';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useKrakenApi } from '@/modules/staking/api/use-kraken-api';
@@ -19,9 +18,8 @@ interface UseKrakenStakingOperationsReturn {
 export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
   const api = useKrakenApi();
   const { statusOf, submitTask } = useNativeTask();
-  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
-  const { loadedOnce, loading, pagination, rawEvents } = storeToRefs(useKrakenStakingStore());
+  const { fetchError, loadedOnce, loading, pagination, rawEvents } = storeToRefs(useKrakenStakingStore());
   const itemsPerPage = useSetting('itemsPerPage');
 
   watchImmediate(itemsPerPage, (newValue: number) => {
@@ -68,7 +66,8 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
    * @remarks
    * Every call cancels the reads before it, so `loading` belongs to the newest one alone. A read
    * that finds itself cancelled therefore leaves the flag as it is: clearing it would hide the
-   * spinner while the read that superseded it is still running.
+   * spinner while the read that superseded it is still running. A failed read is kept in the store
+   * for the page to show, not notified.
    *
    * @param refresh - whether the user asked for this, rather than it being the page's first load
    */
@@ -81,6 +80,7 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
 
       const firstLoad = !get(loadedOnce);
       set(loading, true);
+      set(fetchError, undefined);
 
       // On first load, show cached data immediately while the backend refreshes
       if (firstLoad)
@@ -102,12 +102,7 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
       set(loading, false);
 
       logger.error(error);
-      notifyError(
-        t('actions.kraken_staking.error.title'),
-        t('actions.kraken_staking.error.message', {
-          message: getErrorMessage(error),
-        }),
-      );
+      set(fetchError, error);
     }
   }
 
