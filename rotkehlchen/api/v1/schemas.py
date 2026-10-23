@@ -41,6 +41,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_btc_address,
 )
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
+from rotkehlchen.chain.dogecoin.validation import is_valid_dogecoin_address
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
@@ -2596,6 +2597,21 @@ def _validate_blockchain_account_schemas(
                 )
             given_addresses.add(address)
 
+    elif chain == SupportedBlockchain.DOGECOIN:
+        for account_data in data['accounts']:
+            address = address_getter(account_data)
+            if not is_valid_dogecoin_address(address):
+                raise ValidationError(
+                    f'Given value {address} is not a valid dogecoin address',
+                    field_name='address',
+                )
+            if address in given_addresses:
+                raise ValidationError(
+                    f'Address {address} appears multiple times in the request data',
+                    field_name='address',
+                )
+            given_addresses.add(address)
+
     # Make sure substrate addresses are valid (either ss58 format or ENS domain)
     elif chain.is_substrate():
         for account_data in data['accounts']:
@@ -4641,12 +4657,17 @@ def _is_valid_solana(address: str, _chain: SupportedBlockchain) -> bool:
     return is_valid_solana_address(address)
 
 
+def _is_valid_dogecoin(address: str, _chain: SupportedBlockchain) -> bool:
+    return is_valid_dogecoin_address(address)
+
+
 ADDRESS_VALIDATORS: Final[dict[ChainType, Callable[[str, SupportedBlockchain], bool]]] = {
     ChainType.BITCOIN: _is_valid_btc,
     ChainType.SUBSTRATE: _is_valid_substrate,
     ChainType.EVM: _is_valid_evm,
     ChainType.EVMLIKE: _is_valid_evm,
     ChainType.SOLANA: _is_valid_solana,
+    ChainType.DOGECOIN: _is_valid_dogecoin,
 }
 
 

@@ -1,9 +1,18 @@
 import hashlib
+from typing import TYPE_CHECKING, Final
 
 import bech32
 
 from rotkehlchen.chain.bitcoin.segwit import is_valid_bech32m_segwit_address
 from rotkehlchen.utils.base58 import b58decode, b58encode
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
+
+# Version bytes of the bitcoin mainnet P2PKH and P2SH base58 addresses
+BTC_BASE58_VERSIONS: Final = frozenset({0x00, 0x05})
+# A version byte, the 20-byte hash of the key or script and a 4-byte checksum
+BASE58_ADDRESS_BYTES: Final = 25
 
 
 def is_valid_btc_address(value: str) -> bool:
@@ -37,13 +46,17 @@ def is_valid_bech32_bip350_address(value: str) -> bool:
     return is_valid_bech32m_segwit_address('bc', value)
 
 
-def is_valid_base58_address(value: str) -> bool:
-    """Validates a bitcoin base58 address for the mainnet
+def is_valid_base58_address(
+        value: str,
+        versions: Collection[int] = BTC_BASE58_VERSIONS,
+) -> bool:
+    """Validates a base58check address whose version byte is one of the given versions.
+    By default these are the versions of the bitcoin mainnet addresses.
 
     Code is taken from:
     https://github.com/joeblackwaslike/coinaddr/blob/ae35c7ae550a687d9a7c2e0cb090d52edbb29cb5/coinaddr/validation.py#L67-L87
     """
-    if 25 > len(value) > 35:
+    if not 25 <= len(value) <= 35:
         return False
 
     try:
@@ -51,7 +64,7 @@ def is_valid_base58_address(value: str) -> bool:
     except ValueError:
         return False
 
-    if len(abytes) == 0 or abytes[0] not in {0x00, 0x05}:
+    if len(abytes) != BASE58_ADDRESS_BYTES or abytes[0] not in versions:
         return False
 
     checksum = hashlib.sha256(hashlib.sha256(abytes[:-4]).digest()).digest()[:4]

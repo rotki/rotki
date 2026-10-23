@@ -25,6 +25,7 @@ from rotkehlchen.constants.assets import (
     A_1INCH,
     A_BSC_BNB,
     A_BTC,
+    A_DOGE,
     A_ETH,
     A_LINK,
     A_OPTIMISM_ETH,
@@ -38,7 +39,6 @@ from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsuppo
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import CurrentPriceOracle
-from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, Price, SupportedBlockchain, Timestamp, TokenKind

@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 export const ChainType = {
   BITCOIN: 'bitcoin',
+  DOGECOIN: 'dogecoin',
   EVM: 'evm',
   EVMLIKE: 'evmlike',
   SOLANA: 'solana',
@@ -16,6 +17,7 @@ export type AccountCategory = Exclude<ChainType, typeof ChainType.EVMLIKE>;
 
 const ACCOUNT_CATEGORIES: ReadonlySet<string> = new Set<AccountCategory>([
   ChainType.BITCOIN,
+  ChainType.DOGECOIN,
   ChainType.EVM,
   ChainType.SOLANA,
   ChainType.SUBSTRATE,

@@ -17,6 +17,7 @@ NON_BITCOIN_CHAINS = [
     SupportedBlockchain.ETHEREUM_BEACONCHAIN,
     SupportedBlockchain.KUSAMA,
     SupportedBlockchain.SOLANA,
+    SupportedBlockchain.DOGECOIN,
 ] + list(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys()) + list(SUPPORTED_EVMLIKE_CHAINS)
 
 

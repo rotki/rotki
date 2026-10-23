@@ -35,6 +35,7 @@ from substrateinterface.utils.ss58 import is_valid_ss58_address
 
 from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
+from rotkehlchen.chain.dogecoin.validation import is_valid_dogecoin_address
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -432,6 +433,7 @@ class ChainType(SerializableEnumNameMixin):
     BITCOIN = auto()
     ETH2 = auto()
     SOLANA = auto()
+    DOGECOIN = auto()
 
     def type_to_blockchains(self) -> Sequence[SupportedBlockchain]:
         """Return the set of valid blockchains for the chain type"""
@@ -447,6 +449,9 @@ class ChainType(SerializableEnumNameMixin):
         if self == ChainType.SOLANA:
             return [SupportedBlockchain.SOLANA]
 
+        if self == ChainType.DOGECOIN:
+            return [SupportedBlockchain.DOGECOIN]
+
         raise InputError(f'Invalid chain type {self} when removing accounts')
 
 
@@ -458,6 +463,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     ETHEREUM_BEACONCHAIN = 'ETH2'
     BITCOIN = 'BTC'
     BITCOIN_CASH = 'BCH'
+    DOGECOIN = 'DOGE'
     KUSAMA = 'KSM'
     AVALANCHE = 'AVAX'
     POLKADOT = 'DOT'
@@ -536,6 +542,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         ChainType.SUBSTRATE,
         ChainType.ETH2,
         ChainType.SOLANA,
+        ChainType.DOGECOIN,
     ]:
         """Chain type to return to the API supported chains endpoint"""
         if self.is_evm():
@@ -548,6 +555,8 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return ChainType.BITCOIN
         if self == SupportedBlockchain.SOLANA:
             return ChainType.SOLANA
+        if self == SupportedBlockchain.DOGECOIN:
+            return ChainType.DOGECOIN
         # else
         return ChainType.ETH2  # the outlier
 
@@ -556,6 +565,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         ChainType.BITCOIN,
         ChainType.SUBSTRATE,
         ChainType.SOLANA,
+        ChainType.DOGECOIN,
     ]:
         match (chain_type := self.get_chain_type()):
             case ChainType.EVM | ChainType.EVMLIKE | ChainType.ETH2:
@@ -621,6 +631,7 @@ SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
     SupportedBlockchain.ETHEREUM_BEACONCHAIN: 'ethereum.svg',
     SupportedBlockchain.BITCOIN: 'bitcoin.svg',
     SupportedBlockchain.BITCOIN_CASH: 'bitcoin-cash.svg',
+    SupportedBlockchain.DOGECOIN: 'dogecoin.svg',
     SupportedBlockchain.KUSAMA: 'kusama.svg',
     SupportedBlockchain.AVALANCHE: 'avalanche.svg',
     SupportedBlockchain.POLKADOT: 'polkadot.svg',
@@ -743,6 +754,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.ROBINHOOD,
     SupportedBlockchain.INK,
     SupportedBlockchain.SOLANA,
+    SupportedBlockchain.DOGECOIN,
 ]
 
 SUPPORTED_BITCOIN_CHAINS_TYPE = Literal[
@@ -784,7 +796,7 @@ NON_EVM_CHAINS = set(SupportedBlockchain) - set(SUPPORTED_BLOCKCHAIN_TO_CHAINID.
 CHAINS_WITH_NODES_TYPE = CHAINS_WITH_TRANSACTION_DECODERS_TYPE
 CHAINS_WITH_NODES: tuple[CHAINS_WITH_NODES_TYPE, ...] = CHAINS_WITH_TRANSACTION_DECODERS
 
-CHAINS_WITH_CHAIN_MANAGER = SUPPORTED_EVM_CHAINS_TYPE | SUPPORTED_EVMLIKE_CHAINS_TYPE | SUPPORTED_BITCOIN_CHAINS_TYPE | SUPPORTED_SUBSTRATE_CHAINS_TYPE | Literal[SupportedBlockchain.SOLANA]  # noqa: E501
+CHAINS_WITH_CHAIN_MANAGER = SUPPORTED_EVM_CHAINS_TYPE | SUPPORTED_EVMLIKE_CHAINS_TYPE | SUPPORTED_BITCOIN_CHAINS_TYPE | SUPPORTED_SUBSTRATE_CHAINS_TYPE | Literal[SupportedBlockchain.SOLANA, SupportedBlockchain.DOGECOIN]  # noqa: E501
 
 
 class Location(DBCharEnumMixIn):
@@ -1088,6 +1100,7 @@ class AddressbookEntry(NamedTuple):
         ChainType.EVMLIKE,
         ChainType.SUBSTRATE,
         ChainType.SOLANA,
+        ChainType.DOGECOIN,
     ]:
         """Get the chain ecosystem for the provided address.
 
@@ -1107,6 +1120,8 @@ class AddressbookEntry(NamedTuple):
             return ChainType.SUBSTRATE
         if is_valid_solana_address(address=address):
             return ChainType.SOLANA
+        if is_valid_dogecoin_address(address):
+            return ChainType.DOGECOIN
 
         # Whenever we add a new ecosystem we need to update this function.
         raise AddressNotSupported(f'Unsupported address {address}')

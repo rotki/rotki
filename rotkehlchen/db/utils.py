@@ -8,6 +8,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
+from rotkehlchen.chain.dogecoin.validation import is_valid_dogecoin_address
 from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
 from rotkehlchen.db.checks import db_script_normalizer
 from rotkehlchen.db.constants import KDF_ITER, SQL_VARIABLE_CHUNK_SIZE
@@ -279,6 +280,9 @@ def is_valid_db_blockchain_account(
 
     if blockchain.is_substrate():  # mypy does not understand the type narrowing here
         return is_valid_substrate_address(blockchain, account)  # type: ignore[arg-type]
+
+    if blockchain == SupportedBlockchain.DOGECOIN:
+        return is_valid_dogecoin_address(account)
 
     raise AssertionError(f'Should not store blockchain: {blockchain} addresses in the DB')
 

@@ -4,7 +4,7 @@ import type {
   AddressBookSimplePayload,
   AddressNameRequestPayload,
 } from '@/modules/accounts/address-book/eth-names';
-import { Blockchain, isValidAddress, isValidBchAddress, isValidBtcAddress, isValidEthAddress, isValidSolanaAddress } from '@rotki/common';
+import { Blockchain, isValidAddress, isValidBchAddress, isValidBtcAddress, isValidDogeAddress, isValidEthAddress, isValidSolanaAddress } from '@rotki/common';
 import { useAddressNamesStore } from '@/modules/accounts/address-book/use-address-names-store';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
@@ -70,6 +70,12 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
       .map(chain => chain.id),
   );
 
+  const dogecoinChainIds = computed<string[]>(() =>
+    get(supportedChains)
+      .filter(chain => chain.type === 'dogecoin')
+      .map(chain => chain.id),
+  );
+
   const allChainIds = computed<string[]>(() =>
     get(supportedChains).map(chain => chain.id),
   );
@@ -106,6 +112,9 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
 
     if (get(bitcoinChainIds).includes(chain))
       return isValidBtcAddress(address) || isValidBchAddress(address);
+
+    if (get(dogecoinChainIds).includes(chain))
+      return isValidDogeAddress(address);
 
     return isValidAddress(address);
   }
