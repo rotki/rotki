@@ -72,6 +72,21 @@ describe('useDockActivityDetail', () => {
     expect(get(detail)).toEqual({ period: { from: 1, to: 2 }, step: 'task_dock.detail.querying_event_type::Trades', type: 'query' });
   });
 
+  it('should name the query of an exchange whose name contains the id separator', () => {
+    const exchange = { location: 'kraken', name: 'Kraken: main' };
+    publishActivityDetail(exchangeEventsActivity, exchange, { eventType: 'trades', period: [1, 2] });
+
+    const detail = useDockActivityDetail(activity(exchangeEventsActivity.id(exchange), ActivityKind.EXCHANGE_EVENTS));
+
+    expect(get(detail)).toEqual({ period: { from: 1, to: 2 }, step: 'task_dock.detail.querying_event_type::Trades', type: 'query' });
+  });
+
+  it('should give an exchange-kind row its descriptor never mints nothing', () => {
+    const detail = useDockActivityDetail(activity(chainSyncActivity.id({ chain: 'eth' }), ActivityKind.EXCHANGE_EVENTS));
+
+    expect(get(detail)).toBeUndefined();
+  });
+
   it('should list every protocol cache a decode touched, split into filling and filled', () => {
     const decoding = { chain: 'eth', ignoreCache: false };
     publishActivityDetail(decodeActivity, decoding, {

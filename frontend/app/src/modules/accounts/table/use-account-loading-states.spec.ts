@@ -8,9 +8,11 @@ import { useAccountLoadingStates } from './use-account-loading-states';
 
 interface OrchestratorStatus { active: boolean; everCompleted: boolean }
 
-const state = vi.hoisted((): { chainIds: string[]; everCompleted: boolean } => ({
+const state = vi.hoisted((): { chainIds: string[]; everCompleted: boolean; prefixReads: unknown[][]; kindReads: unknown[][] } => ({
   chainIds: ['eth'],
   everCompleted: false,
+  kindReads: [],
+  prefixReads: [],
 }));
 
 vi.mock('@/modules/accounts/use-account-category-helper', () => ({
@@ -27,8 +29,14 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
 
 vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
   useTaskOrchestrator: vi.fn(() => ({
-    statusOf: (): OrchestratorStatus => ({ active: false, everCompleted: state.everCompleted }),
-    statusOfPrefix: (): OrchestratorStatus => ({ active: false, everCompleted: state.everCompleted }),
+    statusOf: (...args: unknown[]): OrchestratorStatus => {
+      state.kindReads.push(args);
+      return { active: false, everCompleted: state.everCompleted };
+    },
+    statusOfPrefix: (...args: unknown[]): OrchestratorStatus => {
+      state.prefixReads.push(args);
+      return { active: false, everCompleted: state.everCompleted };
+    },
     version: computed<number>(() => 0),
   })),
 }));
@@ -38,6 +46,29 @@ describe('useAccountLoadingStates', () => {
     setActivePinia(createCustomPinia());
     state.chainIds = ['eth'];
     state.everCompleted = false;
+    state.kindReads = [];
+    state.prefixReads = [];
+  });
+
+  it('should read each chain by the chain balance prefix its refresh jobs sit under', () => {
+    const { isInitialLoading } = useAccountLoadingStates<BlockchainAccountBalance>('evm');
+
+    get(isInitialLoading);
+
+    expect(state.prefixReads).toStrictEqual([['blockchain-balances', 'eth']]);
+    expect(state.kindReads).toStrictEqual([]);
+  });
+
+  it('should fall back to every chain while the category\'s chain list has not resolved', () => {
+    state.chainIds = [];
+    const { startHydration } = useBalanceRefreshState();
+    const { isInitialLoading } = useAccountLoadingStates<BlockchainAccountBalance>('evm');
+
+    startHydration('optimism');
+
+    expect(get(isInitialLoading)).toBe(true);
+    expect(state.kindReads.at(-1)).toStrictEqual(['blockchain-balances']);
+    expect(state.prefixReads).toStrictEqual([]);
   });
 
   it('should report initial loading while a chain is only hydrating', () => {

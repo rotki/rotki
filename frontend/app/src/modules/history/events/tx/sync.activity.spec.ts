@@ -92,6 +92,10 @@ describe('eventsConnectionOf', () => {
     expect(eventsConnectionOf(bankEventsActivity, exchangeEventsActivity.id(connection))).toBeUndefined();
     expect(eventsConnectionOf(exchangeEventsActivity, chainSyncActivity.id({ chain: 'eth' }))).toBeUndefined();
   });
+
+  it('should refuse a bare kind id, which names no location', () => {
+    expect(eventsConnectionOf(exchangeEventsActivity, makeActivityId(ActivityKind.EXCHANGE_EVENTS))).toBeUndefined();
+  });
 });
 
 describe('history sync umbrella', () => {
