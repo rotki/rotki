@@ -1,4 +1,5 @@
 import { z, type ZodType } from 'zod';
+import { type AddressCheck, AddressVerdict } from '@/modules/accounts/blockchain/address-check';
 
 /** The two fields the addresses are typed into, one of which is on screen at a time. */
 export interface AddressFormState {
@@ -38,18 +39,38 @@ export function replaceSelection(current: string, replacement: string, start: nu
   return current.slice(0, start) + replacement + current.slice(end);
 }
 
+/** What the entries are checked against, and how a refused batch is reported. */
+export interface AddressEntryCheck {
+  readonly check: AddressCheck;
+  readonly message: (refused: readonly string[]) => string;
+}
+
 /**
  * One address or a list of them, never both: whichever field is on screen is the one that has to be
  * filled in, and the other is left alone rather than reported as missing behind the scenes.
+ *
+ * With an `entryCheck`, every entry the backend would refuse for its form is reported on that field
+ * before anything is sent.
  */
-export function addressEntrySchema(message: string, multiple: boolean): ZodType {
+export function addressEntrySchema(message: string, multiple: boolean, entryCheck?: AddressEntryCheck): ZodType {
   return z.object({
     address: z.string(),
     userAddresses: z.string(),
   }).superRefine((state, ctx) => {
     const field = multiple ? 'userAddresses' : 'address';
+    const value = state[field].trim();
 
-    if (state[field].trim() === '')
+    if (value === '') {
       ctx.addIssue({ code: 'custom', message, path: [field] });
+      return;
+    }
+
+    if (!entryCheck)
+      return;
+
+    const entries = multiple ? parseAddressEntries(value) : [value];
+    const refused = entries.filter(entry => entryCheck.check(entry) === AddressVerdict.INVALID);
+    if (refused.length > 0)
+      ctx.addIssue({ code: 'custom', message: entryCheck.message(refused), path: [field] });
   });
 }

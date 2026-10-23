@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { AddressVerdict } from '@/modules/accounts/blockchain/address-check';
 import {
+  type AddressEntryCheck,
   addressEntrySchema,
   isXpubPrefix,
   parseAddressEntries,
@@ -85,6 +87,37 @@ describe('modules/accounts/blockchain/address-entries', () => {
       ['several', true],
     ])('should treat whitespace as missing when entering %s', (_label, multiple) => {
       expect(messagesFor({ address: '   ', userAddresses: '   ' }, multiple)).toHaveLength(1);
+    });
+
+    const entryCheck: AddressEntryCheck = {
+      check: entry => (entry.startsWith('0x') ? AddressVerdict.ADDRESS : AddressVerdict.INVALID),
+      message: refused => `refused ${refused.join(' ')}`,
+    };
+
+    function checkedMessagesFor(state: { address: string; userAddresses: string }, multiple: boolean): string[] {
+      const result = addressEntrySchema(MESSAGE, multiple, entryCheck).safeParse(state);
+      if (result.success)
+        return [];
+      return result.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`);
+    }
+
+    it('should refuse a single entry its check refuses, as typed but trimmed', () => {
+      expect(checkedMessagesFor({ address: ' nope ', userAddresses: '' }, false)).toEqual(['address: refused nope']);
+      expect(checkedMessagesFor({ address: ADDRESS, userAddresses: '' }, false)).toEqual([]);
+    });
+
+    it('should name every entry of a list its check refuses in one message', () => {
+      expect(checkedMessagesFor({ address: '', userAddresses: `${ADDRESS}\nnope,also` }, true))
+        .toEqual(['userAddresses: refused nope also']);
+    });
+
+    it('should report an empty field as empty even with a check', () => {
+      expect(checkedMessagesFor({ address: '', userAddresses: '' }, false)).toEqual([`address: ${MESSAGE}`]);
+    });
+
+    it('should let a name its check cannot judge through, for the backend to resolve', () => {
+      const names: AddressEntryCheck = { ...entryCheck, check: () => AddressVerdict.NAME };
+      expect(addressEntrySchema(MESSAGE, false, names).safeParse({ address: 'rotki.eth', userAddresses: '' }).success).toBe(true);
     });
   });
 });

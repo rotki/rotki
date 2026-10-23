@@ -4,6 +4,7 @@ import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { Module } from '@/modules/core/common/modules';
 import { assert, Blockchain } from '@rotki/common';
 import AddressInput from '@/modules/accounts/blockchain/AddressInput.vue';
+import { useAddressCheck } from '@/modules/accounts/blockchain/use-address-check';
 import AccountDataInput from '@/modules/accounts/management/inputs/AccountDataInput.vue';
 import ModuleActivator from '@/modules/accounts/ModuleActivator.vue';
 import { isBtcChain } from '@/modules/core/common/chains';
@@ -25,6 +26,7 @@ const address = useTemplateRef<InstanceType<typeof AddressInput>>('address');
 const selectedModules = ref<Module[]>([]);
 
 const { isEvm } = useSupportedChains();
+const { addressCheck } = useAddressCheck();
 
 const editMode = computed(() => get(modelValue).mode === 'edit');
 
@@ -147,6 +149,7 @@ defineExpose({
         :multi="!editMode"
         :force-multiple="!editMode && isBtcChain(modelValue.chain)"
         :show-wallet-import="showWalletImport"
+        :check="editMode ? undefined : addressCheck(modelValue.chain)"
         @detected-xpub="emit('detected-xpub', $event)"
       />
       <AccountDataInput

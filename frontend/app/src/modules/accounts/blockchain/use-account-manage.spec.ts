@@ -412,7 +412,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     });
   });
 
-  describe('saveAccount for well-formed hex addresses, which closes on submit', () => {
+  describe('saveAccount for addresses the chain check accepts, which closes on submit', () => {
     const address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c';
 
     function createAddressState(addresses: string[], chain: string = Blockchain.ETH): AccountManage {
@@ -444,6 +444,15 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       expect(mockAddAccounts).toHaveBeenCalledWith(EVM_PSEUDO_CHAIN, expect.anything(), { userStarted: true, wait: false });
     });
 
+    it('should close without waiting for a bitcoin address', async () => {
+      mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: false, failed: [], skipped: 0 });
+
+      const { save } = useAccountManage();
+
+      expect(await save(createAddressState(['bc1qmxg4v90jk7r6m3sk0pgxwzjy3cqkcdzu66738s'], Blockchain.BTC))).toBe(true);
+      expect(mockAddAccounts).toHaveBeenCalledWith(Blockchain.BTC, expect.anything(), { userStarted: true, wait: false });
+    });
+
     it('should close without waiting on an evm-like chain', async () => {
       mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: false, failed: [], skipped: 0 });
 
@@ -466,7 +475,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     it.each([
       ['a mistyped hex address', [address.slice(0, -1)], Blockchain.ETH],
       ['a batch holding an ENS name', [address, 'rotki.eth'], Blockchain.ETH],
-      ['an address on a chain that takes no hex', ['bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq'], Blockchain.BTC],
+      ['an address on a chain the form cannot judge', [address], 'new_chain'],
     ])('should wait for %s, so a rejection stays on the form', async (_, addresses, chain) => {
       mockAddAccounts.mockResolvedValueOnce({
         added: [],

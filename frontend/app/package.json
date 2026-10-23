@@ -50,8 +50,10 @@
   "dependencies": {
     "@fontsource-variable/geist-mono": "catalog:",
     "@fontsource-variable/inter": "catalog:",
+    "@noble/hashes": "catalog:",
     "@rotki/common": "workspace:*",
     "@rotki/ui-library": "catalog:",
+    "@scure/base": "catalog:",
     "@types/ws": "catalog:",
     "@vueuse/core": "catalog:",
     "@vueuse/math": "catalog:",

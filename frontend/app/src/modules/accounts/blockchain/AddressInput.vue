@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
+import type { AddressCheck } from '@/modules/accounts/blockchain/address-check';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import {
   addressEntrySchema,
@@ -16,11 +17,13 @@ import { noSubmit, useForm } from '@/modules/core/form/use-form';
 const addresses = defineModel<string[]>('addresses', { required: true });
 const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
 
-const { disabled, multi, showWalletImport, forceMultiple = false } = defineProps<{
+const { disabled, multi, showWalletImport, forceMultiple = false, check } = defineProps<{
   disabled: boolean;
   multi: boolean;
   showWalletImport?: boolean;
   forceMultiple?: boolean;
+  /** The chain's address check; without one, only an empty field is refused. */
+  check?: AddressCheck;
 }>();
 
 const emit = defineEmits<{
@@ -34,6 +37,10 @@ const multiple = ref<boolean>(forceMultiple);
 const schema = computed<ZodType>(() => addressEntrySchema(
   t('account_form.validation.address_non_empty'),
   get(multiple),
+  check && {
+    check,
+    message: refused => t('account_form.validation.address_invalid', { addresses: refused.join(', ') }, refused.length),
+  },
 ));
 
 const { errors: fieldErrors, setServerErrors, state, touch, validate } = useForm<AddressFormState, AddressFormState>({

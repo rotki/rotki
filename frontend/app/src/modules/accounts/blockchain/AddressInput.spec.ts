@@ -2,6 +2,7 @@ import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
+import { type AddressCheck, AddressVerdict } from '@/modules/accounts/blockchain/address-check';
 import AddressInput from '@/modules/accounts/blockchain/AddressInput.vue';
 
 const ADDRESS = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
@@ -143,6 +144,45 @@ describe('modules/accounts/blockchain/AddressInput', () => {
     expect(shownValue()).toBe('');
     expect(lastAddresses()).toEqual([ADDRESS]);
     expect(await wrapper.vm.validate()).toBe(false);
+  });
+
+  describe('with a chain check', () => {
+    const check: AddressCheck = entry => (entry === ADDRESS || entry === OTHER_ADDRESS ? AddressVerdict.ADDRESS : AddressVerdict.INVALID);
+
+    it('should refuse an entry the check refuses before anything is sent', async () => {
+      wrapper = createWrapper({ check });
+      await type('0x9531');
+
+      expect(await wrapper.vm.validate()).toBe(false);
+      await nextTick();
+
+      expect(messages()).toEqual(['account_form.validation.address_invalid::0x9531']);
+    });
+
+    it('should accept an entry the check accepts', async () => {
+      wrapper = createWrapper({ check });
+      await type(ADDRESS);
+
+      expect(await wrapper.vm.validate()).toBe(true);
+    });
+
+    it('should name every refused entry of a list in one message', async () => {
+      wrapper = createWrapper({ check });
+      await useMultiple();
+      await type(`${ADDRESS}\nbad,worse`);
+
+      expect(await wrapper.vm.validate()).toBe(false);
+      await nextTick();
+
+      expect(messages()).toEqual(['account_form.validation.address_invalid::bad, worse']);
+    });
+
+    it('should check nothing but emptiness without one', async () => {
+      wrapper = createWrapper();
+      await type('0x9531');
+
+      expect(await wrapper.vm.validate()).toBe(true);
+    });
   });
 
   it('should show the address error the backend reports against the single field', async () => {

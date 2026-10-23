@@ -1,6 +1,7 @@
 import type { AccountAdditionFailure, AdditionSummary } from '@/modules/accounts/use-account-addition-service';
 import { describe, expect, it } from 'vitest';
 import { additionError, awaitsAddition, isNothingButCancelled } from '@/modules/accounts/blockchain/addition-outcome';
+import { type AddressCheck, AddressVerdict } from '@/modules/accounts/blockchain/address-check';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 
@@ -59,19 +60,24 @@ describe('isNothingButCancelled', () => {
 describe('awaitsAddition', () => {
   const address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c';
 
-  it('should not wait for well-formed hex addresses on a chain that takes them', () => {
-    expect(awaitsAddition([address, address.toLowerCase()], true)).toBe(false);
+  const check: AddressCheck = (entry) => {
+    if (entry === address)
+      return AddressVerdict.ADDRESS;
+    return entry.includes('.') ? AddressVerdict.NAME : AddressVerdict.INVALID;
+  };
+
+  it('should not wait for a batch of addresses the check accepts', () => {
+    expect(awaitsAddition([address, address], check)).toBe(false);
   });
 
   it.each([
-    ['a mistyped hex address', address.slice(0, -1)],
-    ['an ENS name', 'rotki.eth'],
-    ['an empty entry', ''],
-  ])('should wait for %s', (_, entry) => {
-    expect(awaitsAddition([address, entry], true)).toBe(true);
+    ['a name the backend has to resolve', 'rotki.eth'],
+    ['an entry the check refuses', 'nope'],
+  ])('should wait for a batch holding %s', (_, entry) => {
+    expect(awaitsAddition([address, entry], check)).toBe(true);
   });
 
-  it('should wait for any address on a chain that takes no hex', () => {
-    expect(awaitsAddition([address], false)).toBe(true);
+  it('should wait for every entry on a chain with no check', () => {
+    expect(awaitsAddition([address], undefined)).toBe(true);
   });
 });
