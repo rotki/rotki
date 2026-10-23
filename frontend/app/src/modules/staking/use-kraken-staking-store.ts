@@ -37,6 +37,8 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
    */
   const loading = shallowRef<boolean>(false);
   const loadedOnce = shallowRef<boolean>(false);
+  /** Why the last events read failed, until a later one succeeds: the page shows it above the events. */
+  const fetchError = shallowRef<unknown>();
 
   const isInitialLoading = computed<boolean>(() => get(loading) && !get(loadedOnce));
 
@@ -98,6 +100,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     dateFilter,
     dateFilterKey,
     events,
+    fetchError,
     isInitialLoading,
     loadedOnce,
     loading,

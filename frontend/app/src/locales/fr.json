@@ -255,12 +255,6 @@
         "title": "Échec de l'ignorance des actions"
       }
     },
-    "kraken_staking": {
-      "error": {
-        "message": "Une erreur s'est produite lors de l'interrogation des événements de staking Kraken : {message}",
-        "title": "Interrogation des événements de staking Kraken"
-      }
-    },
     "manual_balances": {
       "add": {
         "error": {

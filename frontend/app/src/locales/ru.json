@@ -420,12 +420,6 @@
         "title": "Ошибка исключения"
       }
     },
-    "kraken_staking": {
-      "error": {
-        "message": "Ошибка при запросе событий стейкинга Kraken: {message}",
-        "title": "Запрос событий стейкинга Kraken"
-      }
-    },
     "manual_balances": {
       "add": {
         "error": {

@@ -803,12 +803,6 @@
         "title": "Excluding actions failed"
       }
     },
-    "kraken_staking": {
-      "error": {
-        "message": "There was an error while querying the kraken staking events: {message}",
-        "title": "Querying Kraken staking events"
-      }
-    },
     "manual_balances": {
       "add": {
         "error": {
@@ -4803,6 +4797,7 @@
       "description": "rotki reads your Kraken staking rewards through a read-only API key. Add one to see what you have earned.",
       "title": "Connect Kraken to see your staking"
     },
+    "fetch_failed": "Could not load the Kraken staking events",
     "loading": "Your Kraken staking information is loading...",
     "no_premium": "Kraken staking information needs a rotki Premium plan"
   },
