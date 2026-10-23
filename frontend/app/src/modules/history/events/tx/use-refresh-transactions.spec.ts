@@ -1,13 +1,16 @@
 import type { RefreshTransactionsParams } from './types';
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import { logoutThenLogin, sessionRequest } from '@test/utils/realistic-logout';
 import flushPromises from 'flush-promises';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
+import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { ActivityKind, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import { useRefreshTransactions } from './use-refresh-transactions';
 import { UNDECODED_BREAKDOWN_ID } from './use-undecoded-transactions-status';
@@ -707,6 +710,74 @@ describe('useRefreshTransactions', () => {
       await refreshTransactions({ chains: [] });
 
       expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('across a realistic logout', () => {
+    /** What the app's session cleaner resets at session end, for the parts this spec runs for real. */
+    function cleanerWork(): (() => void)[] {
+      return [useTaskOrchestrator().reset, useNativeTask().reset];
+    }
+
+    /** A chain sync whose children the session end settles as cancelled, as `useNativeTask().reset` does. */
+    function syncSettledBySessionEnd(): void {
+      mockTransactionSync.syncTransactionsByChains.mockImplementationOnce(async (): SyncOutcomes => {
+        try {
+          await sessionRequest<void>().promise;
+          return [ok(undefined)];
+        }
+        catch {
+          return [err(Cancelled({ message: 'session ended' }))];
+        }
+      });
+    }
+
+    it('should not run the finish hooks in the next session', async () => {
+      const finishedWithASession: boolean[] = [];
+      mockOnHistoryFinished.mockImplementation(() => finishedWithASession.push(hasLiveSession()));
+      syncSettledBySessionEnd();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+
+      const refreshing = refreshTransactions();
+      await vi.waitFor(() => expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalled());
+      await logoutThenLogin(cleanerWork());
+      await refreshing;
+      await settleRefresh();
+
+      expect(finishedWithASession).not.toContain(true);
+    });
+
+    it('should not submit in the next session when the logout lands during the account read', async () => {
+      const { useAccountLoadState } = await import('@/modules/accounts/use-account-load-state');
+      const tracked = useAccountLoadState().track(sessionRequest<void>().promise.catch(() => {}));
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+
+      const refreshing = refreshTransactions();
+      await Promise.resolve();
+      await logoutThenLogin([...cleanerWork(), useAccountLoadState().reset]);
+      await tracked;
+      await refreshing;
+      await settleRefresh();
+
+      expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
+    });
+
+    it('should not start a continuation wave in the next session', async () => {
+      vi.useFakeTimers();
+      const addedMidRefresh: ChainAddress = { address: '0x9531C059098e3d194fF87FebB587aB07B30B1306', chain: 'eth' };
+      syncSettledBySessionEnd();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+
+      const refreshing = refreshTransactions();
+      await vi.waitFor(() => expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalled());
+      mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts, ...mockBitcoinAccounts, addedMidRefresh]);
+      await logoutThenLogin(cleanerWork());
+      await refreshing;
+      await vi.advanceTimersByTimeAsync(150);
+      await settleRefresh();
+
+      expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledOnce();
+      vi.useRealTimers();
     });
   });
 
