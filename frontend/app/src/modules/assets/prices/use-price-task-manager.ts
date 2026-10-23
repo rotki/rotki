@@ -4,7 +4,13 @@ import { type BigNumber, One } from '@rotki/common';
 import { err, flatMap, getOr, isErr, isOk, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { type HistoricPricePayload, HistoricPrices, type OracleCachePayload } from '@/modules/assets/prices/price-types';
-import { assetSetDigest, useFetchPrices } from '@/modules/assets/prices/use-fetch-prices';
+import {
+  exchangeRatesActivity,
+  historicPriceActivity,
+  latestPricesRefreshActivity,
+  oracleCacheActivity,
+} from '@/modules/assets/prices/prices.activity';
+import { useFetchPrices } from '@/modules/assets/prices/use-fetch-prices';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
@@ -15,8 +21,6 @@ import { Cancelled, onActionableError, type TaskError, TaskFailed } from '@/modu
 import { ExchangeRates } from '@/modules/settings/types/user-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { PRICE_REFRESH_LANE } from '@/modules/task-center/core/orchestrator/spec';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { type RunBackendTask, useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UsePriceTaskManagerReturn {
@@ -73,8 +77,8 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     const selectedCurrency = symbol ?? get(currencySymbol);
 
     await submitTask({
-      id: makeActivityId(ActivityKind.PRICES, ActivityPart.EXCHANGE_RATES),
-      kind: ActivityKind.PRICES,
+      id: exchangeRatesActivity.id({ currency: selectedCurrency }),
+      kind: exchangeRatesActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => queryExchangeRates(runTask, selectedCurrency),
       subtitle: activityLabelFor(msg.$t('task_center.activity.prices.exchange_rates'), { currency: selectedCurrency }),
@@ -84,7 +88,7 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
 
   /**
    * Refreshes the latest prices of `payload.selectedAssets` as one PRICES activity on
-   * {@link PRICE_REFRESH_LANE}, then calls `onFetched` to apply them.
+   * the price refresh lane, then calls `onFetched` to apply them.
    *
    * @remarks
    * The lane runs one refresh at a time, so two overlapping refreshes cannot race their writes; one
@@ -95,16 +99,16 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
    * fetch does not stop the prices, but the activity still reports it. Nothing is applied once
    * the activity is cancelled.
    *
-   * The id ends in `balances` so it never joins a plain {@link fetchPrices} of the same set,
-   * which neither fetches the rates nor applies anything.
+   * Its identity is {@link latestPricesRefreshActivity}, which never joins a plain
+   * {@link fetchPrices} of the same set.
    */
   const refreshLatestPrices = async (payload: FetchPricePayload, onFetched: () => void): Promise<void> => {
     const { ignoreCache, selectedAssets } = payload;
     const assetCount = selectedAssets.length;
     await submitTask({
-      id: makeActivityId(ActivityKind.PRICES, ActivityPart.LATEST, assetSetDigest(selectedAssets), ignoreCache ? ActivityPart.PULL : ActivityPart.CACHED, ActivityPart.BALANCES),
-      kind: ActivityKind.PRICES,
-      lane: PRICE_REFRESH_LANE,
+      id: latestPricesRefreshActivity.id(payload),
+      kind: latestPricesRefreshActivity.kind,
+      lane: latestPricesRefreshActivity.laneOf?.(payload),
       rerunnable: true,
       run: async (context): Promise<Result<void, TaskError>> => {
         const rates = ignoreCache ? await queryExchangeRates(context.runTask, get(currencySymbol)) : ok(undefined);
@@ -120,14 +124,15 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     });
   };
 
-  const getHistoricPrice = async ({ fromAsset, timestamp, toAsset }: HistoricPricePayload): Promise<BigNumber> => {
+  const getHistoricPrice = async (payload: HistoricPricePayload): Promise<BigNumber> => {
+    const { fromAsset, timestamp, toAsset } = payload;
     if (fromAsset === toAsset) {
       return One;
     }
 
     const outcome = await submitTask<BigNumber>({
-      id: makeActivityId(ActivityKind.PRICES, ActivityPart.HISTORIC, fromAsset, toAsset, timestamp),
-      kind: ActivityKind.PRICES,
+      id: historicPriceActivity.id(payload),
+      kind: historicPriceActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<BigNumber, TaskError>> => mapResult(
         await runTask<HistoricPrices>(
@@ -150,7 +155,7 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     source,
     toAsset,
   }: OracleCachePayload): Promise<Result<void, TaskError>> => {
-    if (statusOf(ActivityKind.PRICES, ActivityPart.ORACLE_CACHE).active)
+    if (statusOf(oracleCacheActivity.kind, ...oracleCacheActivity.partsOf()).active)
       return err(TaskFailed({ message: t('actions.balances.create_oracle_cache.already_running') }));
 
     const cacheTitle = t('actions.balances.create_oracle_cache.task', {
@@ -160,8 +165,8 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     });
 
     return submitTask({
-      id: makeActivityId(ActivityKind.PRICES, ActivityPart.ORACLE_CACHE),
-      kind: ActivityKind.PRICES,
+      id: oracleCacheActivity.id(),
+      kind: oracleCacheActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<true>(

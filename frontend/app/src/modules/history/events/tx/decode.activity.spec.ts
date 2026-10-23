@@ -4,8 +4,10 @@ import {
   blockDecodeActivityId,
   decodeActivity,
   decodeActivityId,
+  redecodeActivity,
   targetedDecodeActivity,
   targetedDecodeActivityId,
+  targetedRedecodeActivity,
 } from '@/modules/history/events/tx/decode.activity';
 
 /**
@@ -50,5 +52,22 @@ describe('decode activity ids', () => {
     expect(decodeActivityId('eth')).toBe(decodeActivity.id({ chain: 'eth', ignoreCache: false }));
     expect(targetedDecodeActivityId('eth', ['0xa'])).toBe(targetedDecodeActivity.id({ chain: 'eth', txRefs: ['0xa'] }));
     expect(blockDecodeActivityId([7])).toBe(blockDecodeActivity.id({ blockNumbers: [7] }));
+  });
+});
+
+describe('redecode umbrella ids', () => {
+  it('should give a redecode of everything its own id, absent or empty alike', () => {
+    expect(redecodeActivity.id({})).toBe('redecode:all');
+    expect(redecodeActivity.id({ chains: [] })).toBe('redecode:all');
+  });
+
+  it('should key a chain redecode by the sorted chain set, as one part', () => {
+    expect(redecodeActivity.id({ chains: ['optimism', 'eth'] })).toBe('redecode:chains:eth,optimism');
+  });
+
+  it('should key a targeted redecode by its sorted members, and keep an empty one distinct from everything', () => {
+    expect(targetedRedecodeActivity.id({ members: ['eth/0xb', 'block/7', 'eth/0xa'] })).toBe('redecode:targeted:block/7,eth/0xa,eth/0xb');
+    expect(targetedRedecodeActivity.id({ members: [] })).toBe('redecode:targeted:');
+    expect(targetedRedecodeActivity.id({ members: [] })).not.toBe(redecodeActivity.id({}));
   });
 });

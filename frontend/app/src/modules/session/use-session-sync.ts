@@ -9,10 +9,10 @@ import { serializer } from '@/modules/core/messaging/use-dynamic-messages';
 import { captureSession } from '@/modules/core/session/session-lifecycle';
 import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useSyncApi } from '@/modules/session/api/use-sync-api';
+import { manualSyncActivity } from '@/modules/session/session.activity';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 import { type RestoreOutcome, RestoreOutcomeKind, useRestoreOutcomeNotice } from '@/modules/session/use-restore-outcome-notice';
 import { useSetting } from '@/modules/settings/use-setting';
-import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 /**
@@ -100,7 +100,7 @@ export const useSync = createSharedComposable(() => {
    * when it failed before locking colibri; a download that locked it ends in {@link finishDownload}.
    */
   const forceSync = async (logout: () => Promise<void>): Promise<void> => {
-    if (statusOf(ActivityKind.SYNC).active)
+    if (statusOf(manualSyncActivity.kind).active)
       return;
 
     api.cancelAllQueued();
@@ -112,10 +112,10 @@ export const useSync = createSharedComposable(() => {
     set(manualSyncActive, true);
     const sameSessionLive = captureSession();
     const outcome = await submitTask<ForceSyncResult>({
-      id: makeActivityId(ActivityKind.SYNC),
+      id: manualSyncActivity.id(),
       // A download replaces the user db file, and core must not be stopped half way through.
       interruptible: action === SYNC_UPLOAD,
-      kind: ActivityKind.SYNC,
+      kind: manualSyncActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<ForceSyncResult, TaskError>> => {
         if (action === SYNC_DOWNLOAD) {

@@ -3,13 +3,13 @@ import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-t
 import { Zero } from '@rotki/common';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
+import { historicPriceActivity } from '@/modules/assets/prices/prices.activity';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
 import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { useSetting } from '@/modules/settings/use-setting';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseSnapshotAssetPriceOptions {
@@ -74,7 +74,7 @@ export function useSnapshotAssetPrice(
   const { addHistoricalPrice } = useAssetPricesApi();
 
   const isCurrentCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);
-  const fetching = useIsActivePrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
+  const fetching = useIsActivePrefix(historicPriceActivity.kind, ...historicPriceActivity.partsWithin([]));
 
   // The same historic USD -> display-currency rate the snapshot display converts back with.
   const { rate: usdToFiatRate } = useHistoricFiatConversion(timestamp);

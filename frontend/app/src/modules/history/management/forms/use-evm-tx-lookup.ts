@@ -11,8 +11,8 @@ import {
   EvmTransactionLookupResultSchema,
   useHistoryEventsApi,
 } from '@/modules/history/api/events/use-history-events-api';
+import { txLookupActivity } from '@/modules/history/events/history-events.activity';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface EvmTxAutoFillOptions {
@@ -130,7 +130,7 @@ export function useEvmTxAutoFill(options: EvmTxAutoFillOptions): UseEvmTxAutoFil
 
   async function performLookup(payload: EvmTransactionLookupPayload): Promise<void> {
     const requestId = ++currentRequestId;
-    cancelByPrefix(ActivityKind.HISTORY_EVENTS, ActivityPart.LOOKUP);
+    cancelByPrefix(txLookupActivity.kind, ...txLookupActivity.partsWithin([]));
 
     set(loading, true);
     set(canRetry, false);
@@ -138,8 +138,8 @@ export function useEvmTxAutoFill(options: EvmTxAutoFillOptions): UseEvmTxAutoFil
     writeError(errorFields.relatedAddress, '');
 
     const outcome = await submitTask<EvmTransactionLookupResult>({
-      id: makeActivityId(ActivityKind.HISTORY_EVENTS, ActivityPart.LOOKUP, requestId, payload.txHash),
-      kind: ActivityKind.HISTORY_EVENTS,
+      id: txLookupActivity.id({ requestId, txHash: payload.txHash }),
+      kind: txLookupActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<EvmTransactionLookupResult, TaskError>> => {
         try {

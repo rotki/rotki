@@ -1,6 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { WorkStatus } from '@/modules/task-center/core/types';
+import { chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 interface UseBalanceStatusReturn {
@@ -30,12 +31,18 @@ interface UseBalanceStatusReturn {
  *   this is the "user asked for fresh data" spinner, and a DB read is not that.
  */
 export function useBalanceStatus(chain?: MaybeRefOrGetter<string>): UseBalanceStatusReturn {
-  const { useWorkStatus, useWorkStatusPrefix } = useTaskOrchestrator();
+  const { statusOfPrefix, useWorkStatus, version } = useTaskOrchestrator();
   const refreshState = useBalanceRefreshState();
 
+  /** The chain's prefix comes from the descriptor, re-read when the chain or the ledger changes. */
+  const chainStatus = (selected: MaybeRefOrGetter<string>): ComputedRef<WorkStatus> => computed<WorkStatus>(() => {
+    get(version);
+    return statusOfPrefix(chainBalancesActivity.kind, ...chainBalancesActivity.partsWithin([toValue(selected)]));
+  });
+
   const status = chain === undefined
-    ? useWorkStatus(ActivityKind.BLOCKCHAIN_BALANCES)
-    : useWorkStatusPrefix(ActivityKind.BLOCKCHAIN_BALANCES, () => toValue(chain));
+    ? useWorkStatus(chainBalancesActivity.kind)
+    : chainStatus(chain);
 
   const { isHydrating: anyIsHydrating } = storeToRefs(refreshState);
   const hydrating = chain === undefined

@@ -4,9 +4,9 @@ import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/mess
 import { useLogout } from '@/modules/auth/use-logout';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
+import { manualSyncActivity } from '@/modules/session/session.activity';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 import { useSync } from '@/modules/session/use-session-sync';
-import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 /** How often the cloud icon alternates while a sync is in flight, in milliseconds. */
@@ -87,7 +87,7 @@ export function useSyncIndicator(): UseSyncIndicatorReturn {
   const { logout } = useLogout();
   const { loadingBalancesAndDetection: waitingForBalances } = useBalancesLoading();
 
-  const isSyncing = useIsActive(ActivityKind.SYNC);
+  const isSyncing = useIsActive(manualSyncActivity.kind);
 
   const isDownload = computed<boolean>(() => get(syncAction) === SYNC_DOWNLOAD);
 

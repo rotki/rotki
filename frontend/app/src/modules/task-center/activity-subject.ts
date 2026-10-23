@@ -1,7 +1,14 @@
 import { accountAddActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
+import { exchangeBalancesActivity, tokenDetectionActivity } from '@/modules/balances/balances.activity';
 import { decodeActivity, targetedDecodeActivity } from '@/modules/history/events/tx/decode.activity';
-import { accountSyncActivity, bankEventsActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
-import { type Activity, ActivityKind, ActivityPart, activityParts, makeActivityId } from '@/modules/task-center/core/types';
+import {
+  accountSyncActivity,
+  bankEventsActivity,
+  chainSyncActivity,
+  eventsConnectionOf,
+  exchangeEventsActivity,
+} from '@/modules/history/events/tx/sync.activity';
+import { type Activity, ActivityKind, ActivityPart, activityParts } from '@/modules/task-center/core/types';
 
 /** What an activity acts on, in the raw spelling its id carries, for the icons and links a row shows. */
 export interface ActivitySubject {
@@ -31,11 +38,10 @@ function decodeSubject(activity: Activity, [chain, part, scope]: string[]): Acti
   return whole || targeted ? { chain } : undefined;
 }
 
-function eventsSubject(activity: Activity, [location, name]: string[]): ActivitySubject | undefined {
-  if (location === undefined || name === undefined)
-    return undefined;
+function eventsSubject(activity: Activity): ActivitySubject | undefined {
   const descriptor = activity.kind === ActivityKind.BANK_EVENTS ? bankEventsActivity : exchangeEventsActivity;
-  return descriptor.id({ location, name }) === activity.id ? { location } : undefined;
+  const connection = eventsConnectionOf(descriptor, activity.id);
+  return connection === undefined ? undefined : { location: connection.location };
 }
 
 /** A chain's balance job is `[chain]` or `[chain, detect, …]`; the run over several chains is `[run, …]`. */
@@ -48,7 +54,7 @@ function chainBalancesSubject(_activity: Activity, [chain, part]: string[]): Act
 function detectionSubject(activity: Activity, [chain, address]: string[]): ActivitySubject | undefined {
   if (chain === undefined || address === undefined)
     return undefined;
-  return makeActivityId(ActivityKind.TOKEN_DETECTION, chain, address) === activity.id ? { address, chain } : undefined;
+  return tokenDetectionActivity.id({ address, chain }) === activity.id ? { address, chain } : undefined;
 }
 
 /**
@@ -72,7 +78,7 @@ function additionSubject(activity: Activity, [, chain, address]: string[]): Acti
 function exchangeBalancesSubject(activity: Activity, [location]: string[]): ActivitySubject | undefined {
   if (location === undefined)
     return undefined;
-  return makeActivityId(ActivityKind.EXCHANGE_BALANCES, location) === activity.id ? { location } : undefined;
+  return exchangeBalancesActivity.id({ location }) === activity.id ? { location } : undefined;
 }
 
 /** The kinds whose ids name a chain, an account or a location, each read the way its producer builds it. */

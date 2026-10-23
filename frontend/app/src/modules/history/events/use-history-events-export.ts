@@ -9,10 +9,10 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { historyEventsExportActivity } from './history-events.activity';
 
 /** What the backend reports: `true` for a file it wrote itself, a path for one to stream back. */
 type ExportResult = boolean | { filePath: string };
@@ -55,8 +55,8 @@ export function useHistoryEventsExport(
    */
   async function createCsv(directoryPath?: string): Promise<ExportOutcome | null> {
     const outcome = await submitTask<ExportResult>({
-      id: makeActivityId(ActivityKind.HISTORY_EVENTS, ActivityPart.EXPORT),
-      kind: ActivityKind.HISTORY_EVENTS,
+      id: historyEventsExportActivity.id(),
+      kind: historyEventsExportActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<ExportResult, TaskError>> => mapResult(
         await runTask<ExportResult>(
@@ -67,7 +67,7 @@ export function useHistoryEventsExport(
         ),
         value => value,
       ),
-      subtitle: activityLabel(ActivityKind.HISTORY_EVENTS, ActivityPart.EXPORT),
+      subtitle: activityLabelOf(historyEventsExportActivity),
       title: t('task_center.group.history_events'),
     });
 
@@ -139,6 +139,6 @@ export function useHistoryEventsExport(
 
   return {
     showConfirmation,
-    taskRunning: useIsActive(ActivityKind.HISTORY_EVENTS, ActivityPart.EXPORT),
+    taskRunning: useIsActive(historyEventsExportActivity.kind, ...historyEventsExportActivity.partsOf()),
   };
 }

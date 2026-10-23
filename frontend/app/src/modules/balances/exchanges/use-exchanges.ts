@@ -6,6 +6,7 @@ import { map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
+import { exchangeBalancesActivity } from '@/modules/balances/balances.activity';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { AssetBalances } from '@/modules/balances/types/balances';
 import { type EditExchange, Exchange, type ExchangeFormData } from '@/modules/balances/types/exchanges';
@@ -15,8 +16,6 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { EXCHANGE_LANE } from '@/modules/task-center/core/orchestrator/spec';
-import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseExchangesReturn {
@@ -46,17 +45,17 @@ export function useExchanges(): UseExchangesReturn {
    * Refreshes one exchange's balances.
    *
    * @remarks
-   * One native activity per location, so liveness and freshness are read off the orchestrator:
-   * `useWorkStatus(ActivityKind.EXCHANGE_BALANCES)` for all of them, or with a `location` for one.
+   * One native activity per location, {@link exchangeBalancesActivity}, so liveness and freshness
+   * are read off the orchestrator: by its kind for all of them, or by its parts for one.
    */
   const fetchExchangeBalances = async (payload: ExchangeBalancePayload): Promise<void> => {
     const { ignoreCache, location } = payload;
     const threshold = get(valueThreshold);
 
     await submitTask({
-      id: makeActivityId(ActivityKind.EXCHANGE_BALANCES, location),
-      kind: ActivityKind.EXCHANGE_BALANCES,
-      lane: EXCHANGE_LANE,
+      id: exchangeBalancesActivity.id({ location }),
+      kind: exchangeBalancesActivity.kind,
+      lane: exchangeBalancesActivity.laneOf?.({ location }),
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<AssetBalances>(

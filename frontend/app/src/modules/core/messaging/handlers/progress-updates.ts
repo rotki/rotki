@@ -1,13 +1,17 @@
 import type { MessageHandler } from '../interfaces';
 import type { ProgressUpdateResultData } from '../types/status-types';
 import type { ProtocolCacheUpdatesData } from '@/modules/core/messaging/types';
+import { dailyPricesActivity, historicPriceBatchActivity } from '@/modules/assets/prices/prices.activity';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { createConditionalHandler } from '@/modules/core/messaging/utils';
+import { historicalBalancesActivity } from '@/modules/history/balances/historical-balances.activity';
 import { decodeActivity, decodeActivityId, type DecodeSubject } from '@/modules/history/events/tx/decode.activity';
 import { protocolCacheActivity, withProtocolCacheFrame } from '@/modules/history/protocol-cache.activity';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
-import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { liquityActivity } from '@/modules/staking/liquity/liquity.activity';
+import { krakenStakingActivity } from '@/modules/staking/staking.activity';
+import { type ActivityId, ActivityPart } from '@/modules/task-center/core/types';
 import { peekActivityDetail, publishActivityDetail } from '@/modules/task-center/use-activity-detail';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import { SocketMessageProgressUpdateSubType } from '../types/base';
@@ -47,8 +51,8 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
    * frontend has an activity for it, and a wrong id would caption unrelated work.
    */
   const statsPriceActivities = new Map<string, ActivityId>([
-    ['kraken', makeActivityId(ActivityKind.STAKING, ActivityPart.KRAKEN)],
-    ['liquity', makeActivityId(ActivityKind.LIQUITY, ActivityPart.STATISTICS)],
+    ['kraken', krakenStakingActivity.id()],
+    ['liquity', liquityActivity.id({ part: ActivityPart.STATISTICS })],
   ]);
 
   /**
@@ -61,7 +65,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
    */
   function liveDecodeSubject(chain: string): DecodeSubject | undefined {
     return [{ chain, ignoreCache: false }, { chain, ignoreCache: true }]
-      .find(subject => statusOf(ActivityKind.TX_DECODING, ...decodeActivity.partsOf(subject)).running);
+      .find(subject => statusOf(decodeActivity.kind, ...decodeActivity.partsOf(subject)).running);
   }
 
   /**
@@ -78,7 +82,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
    * same check keeps a cancelled run's rows as they were when it stopped.
    */
   function publishProtocolCacheDetail(data: ProtocolCacheUpdatesData): void {
-    if (statusOf(ActivityKind.PROTOCOL_CACHE).running) {
+    if (statusOf(protocolCacheActivity.kind).running) {
       const rows = peekActivityDetail(protocolCacheActivity, undefined)?.protocols ?? [];
       publishActivityDetail(protocolCacheActivity, undefined, { protocols: withProtocolCacheFrame(rows, data) });
     }
@@ -114,9 +118,8 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
   function reportBatchPriceProgress(data: { processed: number; total: number }): void {
     reportProgressByPrefix(
       { current: data.processed, total: data.total },
-      ActivityKind.PRICES,
-      ActivityPart.HISTORIC,
-      ActivityPart.BATCH,
+      historicPriceBatchActivity.kind,
+      ...historicPriceBatchActivity.partsWithin([ActivityPart.BATCH]),
     );
   }
 
@@ -140,13 +143,13 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
         setHistoricalDailyPriceStatus(data);
         reportProgressByPrefix(
           { current: data.processed, total: data.total },
-          ActivityKind.PRICES,
-          ActivityPart.DAILY,
+          dailyPricesActivity.kind,
+          ...dailyPricesActivity.partsWithin([]),
         );
         break;
       case SocketMessageProgressUpdateSubType.LIQUITY_STAKING_QUERY:
         reportProgress(
-          makeActivityId(ActivityKind.LIQUITY, ActivityPart.STAKE),
+          liquityActivity.id({ part: ActivityPart.STAKE }),
           { current: data.processed, total: data.total },
         );
         break;
@@ -159,7 +162,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
         reportBatchPriceProgress(data);
         break;
       case SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING:
-        reportProgress(makeActivityId(ActivityKind.HISTORICAL_BALANCES), { current: data.processed, total: data.total });
+        reportProgress(historicalBalancesActivity.id(), { current: data.processed, total: data.total });
         break;
     }
 

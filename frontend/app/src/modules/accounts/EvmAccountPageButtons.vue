@@ -3,9 +3,10 @@ import { Blockchain } from '@rotki/common';
 import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExportImport.vue';
 import AccountsRefreshButton from '@/modules/accounts/AccountsRefreshButton.vue';
 import EvmAccountsRefreshMenu from '@/modules/accounts/EvmAccountsRefreshMenu.vue';
+import { chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { ActivityPart } from '@/modules/task-center/core/types';
-import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
+import { validatorsActivity } from '@/modules/staking/staking.activity';
+import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const { addDisabled = false } = defineProps<{
   isAccountsTabSelected: boolean;
@@ -21,13 +22,13 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { useIsActive, useIsActivePrefix } = useTaskCenter();
-const eth2Querying = useIsActivePrefix(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH2);
+const eth2Querying = useIsActivePrefix(chainBalancesActivity.kind, ...chainBalancesActivity.partsWithin([Blockchain.ETH2]));
 const eth2Hydrating = useBalanceRefreshState().useIsHydrating(Blockchain.ETH2);
 const eth2Loading = logicOr(eth2Querying, eth2Hydrating);
 
 const isEth2Loading = logicOr(
   eth2Loading,
-  useIsActive(ActivityKind.STAKING, ActivityPart.VALIDATORS),
+  useIsActive(validatorsActivity.kind, ...validatorsActivity.partsOf()),
 );
 </script>
 

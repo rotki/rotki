@@ -6,11 +6,14 @@ import {
   bankEventsActivityId,
   chainSyncActivity,
   chainSyncActivityId,
+  eventsConnectionOf,
   exchangeEventsActivity,
   exchangeEventsActivityId,
+  historySyncActivity,
   onlineEventsActivity,
   onlineEventsActivityId,
 } from '@/modules/history/events/tx/sync.activity';
+import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 
 /**
@@ -70,5 +73,30 @@ describe('sync activity ids', () => {
     expect(accountSyncActivityId('eth', '0xabc')).toBe(accountSyncActivity.id({ address: '0xabc', chain: 'eth' }));
     expect(exchangeEventsActivityId('kraken', 'main')).toBe(exchangeEventsActivity.id({ location: 'kraken', name: 'main' }));
     expect(onlineEventsActivityId('eth_withdrawals')).toBe(onlineEventsActivity.id({ queryType: 'eth_withdrawals' }));
+  });
+});
+
+describe('eventsConnectionOf', () => {
+  it('should recover a connection whose name contains the id separator, which one part cannot hold', () => {
+    const connection = { location: 'kraken', name: 'Kraken: main' };
+    expect(eventsConnectionOf(exchangeEventsActivity, exchangeEventsActivity.id(connection))).toStrictEqual(connection);
+  });
+
+  it('should recover a plain connection for either descriptor', () => {
+    const connection = { location: 'monerium', name: 'iban' };
+    expect(eventsConnectionOf(bankEventsActivity, bankEventsActivity.id(connection))).toStrictEqual(connection);
+  });
+
+  it('should refuse an id another descriptor mints', () => {
+    const connection = { location: 'kraken', name: 'main' };
+    expect(eventsConnectionOf(bankEventsActivity, exchangeEventsActivity.id(connection))).toBeUndefined();
+    expect(eventsConnectionOf(exchangeEventsActivity, chainSyncActivity.id({ chain: 'eth' }))).toBeUndefined();
+  });
+});
+
+describe('history sync umbrella', () => {
+  it('should give the refresh the bare kind, on the umbrella lane', () => {
+    expect(historySyncActivity.id()).toBe('history-sync');
+    expect(historySyncActivity.laneOf?.()).toBe(UMBRELLA_LANE);
   });
 });

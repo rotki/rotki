@@ -85,6 +85,20 @@ export function activityLabel(
 }
 
 /**
+ * {@link activityLabel} for the activity a descriptor declares, so a producer names its subtitle by
+ * the same kind and part it submits under rather than restating them.
+ *
+ * @returns `undefined` for a descriptor without a fixed part, or a pair with no entry
+ */
+export function activityLabelOf(
+  activity: { readonly kind: ActivityKind; readonly part?: ActivityPart },
+  params?: Record<string, unknown>,
+  plural?: number,
+): TranslatableText | undefined {
+  return activity.part === undefined ? undefined : activityLabel(activity.kind, activity.part, params, plural);
+}
+
+/**
  * Description for a kind that has no distinguishing part — a singleton activity whose group title
  * still does not say what it does (historical balances, latest prices).
  */

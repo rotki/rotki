@@ -13,8 +13,8 @@ import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import { completeStoredSettings } from '@/modules/settings/types/frontend-settings-migrations';
 import { type SettingsUpdate, UserAccount, UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
-import { SESSION_LANE } from '@/modules/task-center/core/orchestrator/spec';
-import { ActivityKind, ActivityPart, isActionable, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
+import { isActionable, useNativeTask } from '@/modules/task-center/use-native-task';
+import { sessionCreateActivity, sessionLoginActivity } from './unlock.activity';
 import { useAssetUpdateSteps } from './use-asset-update-steps';
 import { useStoredCredentials } from './use-stored-credentials';
 import {
@@ -136,9 +136,9 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
     authStore.resetIncompleteUpgradeConflict();
     const outcome = await submitTask<{ settings: SettingsUpdate; exchanges: Exchange[] }>({
       ephemeral: true,
-      id: makeActivityId(ActivityKind.SESSION, ActivityPart.LOGIN),
-      kind: ActivityKind.SESSION,
-      lane: SESSION_LANE,
+      id: sessionLoginActivity.id(),
+      kind: sessionLoginActivity.kind,
+      lane: sessionLoginActivity.laneOf?.(),
       run: async ({ runTask }) => runTask<{ settings: SettingsUpdate; exchanges: Exchange[] }>(
         async () => callLogin(credentials),
       ),
@@ -279,9 +279,9 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
     guarded(async () => {
       const outcome = await submitTask<UserAccount>({
         ephemeral: true,
-        id: makeActivityId(ActivityKind.SESSION, ActivityPart.CREATE),
-        kind: ActivityKind.SESSION,
-        lane: SESSION_LANE,
+        id: sessionCreateActivity.id(),
+        kind: sessionCreateActivity.kind,
+        lane: sessionCreateActivity.laneOf?.(),
         run: async ({ runTask }) => runTask<UserAccount>(
           async () => {
             const pending = await callCreateAccount(payload);

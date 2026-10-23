@@ -15,8 +15,9 @@ import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useBridgeMatchSettings } from '@/modules/settings/use-bridge-match-settings';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, isActionable, makeActivityId, type TaskOutcome, useNativeTask } from '@/modules/task-center/use-native-task';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
+import { isActionable, type TaskOutcome, useNativeTask } from '@/modules/task-center/use-native-task';
+import { bridgeMatchActivity } from './history-events.activity';
 
 /** The bridge leg metadata the decoders record in the event's extra data. */
 const BridgeExtraData = z.object({
@@ -126,7 +127,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
   const { signalEventsModified } = useHistoryStore();
   const { allowed: isBridgeMatchingAllowed, minimumTier: bridgeMatchingMinimumTier } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
-  const autoMatchLoading = logicOr(triggerAutoMatchLoading, useIsActive(ActivityKind.HISTORY_EVENTS, ActivityPart.BRIDGE));
+  const autoMatchLoading = logicOr(triggerAutoMatchLoading, useIsActive(bridgeMatchActivity.kind, ...bridgeMatchActivity.partsOf()));
 
   const unmatchedTransactions = computed<UnmatchedBridgeTransaction[]>(() => get(rawUnmatchedTransactions));
   const ignoredTransactions = computed<UnmatchedBridgeTransaction[]>(() => get(rawIgnoredTransactions));
@@ -261,14 +262,14 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
   };
 
   const triggerBridgeAutoMatching = async (): Promise<void> => {
-    if (!get(isBridgeMatchingAllowed) || statusOf(ActivityKind.HISTORY_EVENTS, ActivityPart.BRIDGE).active)
+    if (!get(isBridgeMatchingAllowed) || statusOf(bridgeMatchActivity.kind, ...bridgeMatchActivity.partsOf()).active)
       return;
 
     set(triggerAutoMatchLoading, true);
 
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.HISTORY_EVENTS, ActivityPart.BRIDGE),
-      kind: ActivityKind.HISTORY_EVENTS,
+      id: bridgeMatchActivity.id(),
+      kind: bridgeMatchActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<TaskOutcome> => mapResult(
         await runTask<boolean>(
@@ -276,7 +277,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
         ),
         () => {},
       ),
-      subtitle: activityLabel(ActivityKind.HISTORY_EVENTS, ActivityPart.BRIDGE),
+      subtitle: activityLabelOf(bridgeMatchActivity),
       title: t('task_center.group.history_events'),
     });
 

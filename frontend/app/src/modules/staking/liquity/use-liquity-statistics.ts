@@ -8,7 +8,8 @@ import {
   repriceStatistic,
   StatisticView,
 } from '@/modules/staking/liquity/liquity-statistics';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { liquityActivity } from '@/modules/staking/liquity/liquity.activity';
+import { ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseLiquityStatisticsOptions {
@@ -34,7 +35,7 @@ export function useLiquityStatistics(options: UseLiquityStatisticsOptions): UseL
   const { useIsActive } = useTaskCenter();
 
   const modelSelection = shallowRef<StatisticView>(StatisticView.HISTORICAL);
-  const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STATISTICS);
+  const loading = useIsActive(liquityActivity.kind, ...liquityActivity.partsOf({ part: ActivityPart.STATISTICS }));
 
   const lusdPrice = useAssetPrice(LUSD_ID);
   const lusdPriceOrOne = computed<BigNumber>(() => orOne(get(lusdPrice)));

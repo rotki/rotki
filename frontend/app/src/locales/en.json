@@ -806,17 +806,11 @@
       "add": {
         "error": {
           "description": "Failed to add manual balance: {message}"
-        },
-        "task": {
-          "title": "Adding manual balances"
         }
       },
       "edit": {
         "error": {
           "description": "Failed to edit manual balance: {message}"
-        },
-        "task": {
-          "title": "Editing manual balances"
         }
       }
     },

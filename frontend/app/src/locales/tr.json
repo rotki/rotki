@@ -759,17 +759,11 @@
       "add": {
         "error": {
           "description": "Manuel bakiye eklenemedi: {message}"
-        },
-        "task": {
-          "title": "Manuel bakiyeler ekleniyor"
         }
       },
       "edit": {
         "error": {
           "description": "Manuel bakiye düzenlenemedi: {message}"
-        },
-        "task": {
-          "title": "Manuel bakiyeler düzenleniyor"
         }
       }
     },

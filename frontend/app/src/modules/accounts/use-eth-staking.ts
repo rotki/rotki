@@ -3,21 +3,19 @@ import type { Eth2Validator } from '@/modules/balances/types/balances';
 import type { ActionStatus } from '@/modules/core/common/action';
 import { type BigNumber, Blockchain, type EthValidatorFilter } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
-import { msg } from '@/message-key';
 import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useEthValidatorFetching } from '@/modules/staking/eth/use-eth-validator-fetching';
+import { validatorAddActivity, validatorAddLabel } from '@/modules/staking/staking.activity';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
-import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseEthStakingReturn {
   validatorsLimitInfo: Readonly<Ref<{ showWarning: boolean; limit: number; total: number }>>;
@@ -53,10 +51,9 @@ export function useEthStaking(): UseEthStakingReturn {
         success: false,
       };
     }
-    const id = payload.publicKey ?? payload.validatorIndex;
     const outcome = await submitTask<boolean>({
-      id: makeActivityId(ActivityKind.STAKING, ActivityPart.ADD, id ?? ''),
-      kind: ActivityKind.STAKING,
+      id: validatorAddActivity.id(payload),
+      kind: validatorAddActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
         await runTask<boolean>(
@@ -64,7 +61,7 @@ export function useEthStaking(): UseEthStakingReturn {
         ),
         result => result,
       ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.staking.add_validator'), { validator: id ? truncateAddress(String(id)) : '' }),
+      subtitle: validatorAddLabel(payload),
       title: t('task_center.group.staking'),
       userStarted: true,
     });

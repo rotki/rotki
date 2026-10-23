@@ -12,8 +12,9 @@ import { onActionableError, type TaskError } from '@/modules/core/tasks/task-res
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSetting } from '@/modules/settings/use-setting';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { ActivityPart } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
+import { liquidityPoolsActivity, type LiquidityPoolsPart } from './liquidity-pools.activity';
 import { PoolBalances } from './types';
 import { usePoolApi } from './use-pool-api';
 import { usePoolBalancesStore } from './use-pool-balances-store';
@@ -48,7 +49,7 @@ export const usePoolDataFetching = createSharedComposable((): UsePoolDataFetchin
    */
   interface Protocol {
     readonly module: Module;
-    readonly part: ActivityPart;
+    readonly part: LiquidityPoolsPart;
     readonly label: string;
     readonly query: () => Promise<{ taskId: number }>;
     readonly target: Ref<PoolBalances>;
@@ -58,13 +59,13 @@ export const usePoolDataFetching = createSharedComposable((): UsePoolDataFetchin
     if (!get(activeModules).includes(protocol.module))
       return;
 
-    const status = statusOf(ActivityKind.LIQUIDITY_POOLS, protocol.part);
+    const status = statusOf(liquidityPoolsActivity.kind, ...liquidityPoolsActivity.partsOf({ part: protocol.part }));
     if (status.active || (status.everCompleted && !refresh))
       return;
 
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.LIQUIDITY_POOLS, protocol.part),
-      kind: ActivityKind.LIQUIDITY_POOLS,
+      id: liquidityPoolsActivity.id({ part: protocol.part }),
+      kind: liquidityPoolsActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<PoolBalances>(

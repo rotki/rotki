@@ -14,6 +14,7 @@ import {
 } from '@rotki/common';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { isNft } from '@/modules/assets/nft-utils';
+import { dailyPricesActivity, historicPriceActivity } from '@/modules/assets/prices/prices.activity';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useHistoricalPriceFetcher } from '@/modules/assets/prices/use-historical-price-fetcher';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
@@ -25,7 +26,7 @@ import { rankOwnedAssets } from '@/modules/premium/rank-owned-assets';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
-import { ActivityKind, ActivityPart, useNativeTask } from '@/modules/task-center/use-native-task';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 export function assetsApi(): AssetsApi {
@@ -66,14 +67,14 @@ export function statisticsApi(): StatisticsApi {
     },
     // Both stay `async` — they are part of the premium bundle's external StatisticsApi contract.
     async cancelDailyHistoricPriceTask(): Promise<void> {
-      cancelByPrefix(ActivityKind.PRICES, ActivityPart.DAILY);
+      cancelByPrefix(dailyPricesActivity.kind, ...dailyPricesActivity.partsWithin([]));
     },
     async cancelHistoricPriceTask(): Promise<void> {
-      cancelByPrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
+      cancelByPrefix(historicPriceActivity.kind, ...historicPriceActivity.partsWithin([]));
     },
     failedDailyPrices,
     historicalDailyPriceStatus,
-    isQueryingDailyPrices: useIsActivePrefix(ActivityKind.PRICES, ActivityPart.DAILY),
+    isQueryingDailyPrices: useIsActivePrefix(dailyPricesActivity.kind, ...dailyPricesActivity.partsWithin([])),
     async locationValueDistribution(): Promise<LocationData> {
       return queryLatestLocationValueDistribution();
     },

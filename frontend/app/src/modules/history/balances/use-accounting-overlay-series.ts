@@ -3,9 +3,10 @@ import { msg } from '@/message-key';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { mergeSameScopeBuckets, type PreparedBucket } from '@/modules/history/balances/accounting-overlay-helpers';
+import { overlaySeriesActivity } from '@/modules/history/balances/historical-balances.activity';
 import { HistoricalBalanceSeriesResponse } from '@/modules/history/balances/types';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface UseAccountingOverlaySeriesReturn {
   /** The merged balance series for one account and asset, or undefined when it could not be loaded. */
@@ -31,8 +32,8 @@ export function useAccountingOverlaySeries(): UseAccountingOverlaySeriesReturn {
   async function fetchSeries(locationLabel: string, asset: string): Promise<PreparedBucket[] | undefined> {
     try {
       const outcome = await submitTask<HistoricalBalanceSeriesResponse>({
-        id: makeActivityId(ActivityKind.HISTORICAL_BALANCES, ActivityPart.SERIES, locationLabel, asset),
-        kind: ActivityKind.HISTORICAL_BALANCES,
+        id: overlaySeriesActivity.id({ asset, locationLabel }),
+        kind: overlaySeriesActivity.kind,
         rerunnable: false,
         run: async ({ runTask }) => runTask<HistoricalBalanceSeriesResponse>(async () => fetchHistoricalBalanceSeries({ asset, locationLabel })),
         subtitle: activityLabelFor(msg.$t('task_center.activity.historical_balances.series'), { asset }),

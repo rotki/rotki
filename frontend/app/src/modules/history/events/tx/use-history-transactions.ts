@@ -16,33 +16,19 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import {
+  repullEthStakingActivity,
+  repullExchangeEventsActivity,
+  repullTransactionsActivity,
+} from '@/modules/history/events/tx/repulling.activity';
 import { useRefreshTransactions } from '@/modules/history/events/tx/use-refresh-transactions';
 import { useSetting } from '@/modules/settings/use-setting';
-import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 export interface RepullingTransactionResult {
   newHistoryEventsCount: number;
   newTransactionsCount: number;
   newTransactions: Record<string, string[]>;
-}
-
-/**
- * The identity of one transaction re-pull.
- *
- * Extracted rather than inlined: every optional field needs its own fallback, and those branches
- * pushed `repullingTransactions` past the complexity cap. An absent bound is still part of the
- * identity — "everything before X" is a different request from "X to Y".
- */
-function repullTransactionsActivityId(payload: RepullingTransactionPayload): ActivityId {
-  return makeActivityId(
-    ActivityKind.REPULLING,
-    ActivityPart.TRANSACTIONS,
-    payload.address ?? '',
-    payload.chain ?? '',
-    payload.fromTimestamp ?? 0,
-    payload.toTimestamp ?? 0,
-  );
 }
 
 export const useHistoryTransactions = createSharedComposable(() => {
@@ -114,8 +100,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
       : t('actions.repulling_transaction.task.no_address_or_chain_transaction', messagePayload);
 
     const outcome = await submitTask<RepullingTransactionResponse | undefined>({
-      id: repullTransactionsActivityId(payload),
-      kind: ActivityKind.REPULLING,
+      id: repullTransactionsActivity.id(payload),
+      kind: repullTransactionsActivity.kind,
       rerunnable: false,
       userStarted: true,
       run: async ({ runTask }): Promise<Result<RepullingTransactionResponse | undefined, TaskError>> => mapResult(
@@ -146,15 +132,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
     const subtitle = t('actions.repulling_exchange_events.task.description', messagePayload);
 
     const outcome = await submitTask<RepullingExchangeEventsResponse>({
-      id: makeActivityId(
-        ActivityKind.REPULLING,
-        ActivityPart.EXCHANGE,
-        payload.location,
-        payload.name,
-        payload.fromTimestamp ?? 0,
-        payload.toTimestamp ?? 0,
-      ),
-      kind: ActivityKind.REPULLING,
+      id: repullExchangeEventsActivity.id(payload),
+      kind: repullExchangeEventsActivity.kind,
       rerunnable: false,
       userStarted: true,
       run: async ({ runTask }): Promise<Result<RepullingExchangeEventsResponse, TaskError>> => mapResult(
@@ -191,14 +170,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
     const subtitle = t('actions.repulling_eth_staking.task.description', messagePayload);
 
     const outcome = await submitTask<RepullingEthStakingResponse>({
-      id: makeActivityId(
-        ActivityKind.REPULLING,
-        ActivityPart.STAKE,
-        payload.entryType,
-        payload.fromTimestamp ?? 0,
-        payload.toTimestamp ?? 0,
-      ),
-      kind: ActivityKind.REPULLING,
+      id: repullEthStakingActivity.id(payload),
+      kind: repullEthStakingActivity.kind,
       rerunnable: false,
       userStarted: true,
       run: async ({ runTask }): Promise<Result<RepullingEthStakingResponse, TaskError>> => mapResult(

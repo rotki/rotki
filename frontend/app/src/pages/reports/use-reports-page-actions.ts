@@ -6,6 +6,7 @@ import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isCancellation, type TaskError } from '@/modules/core/tasks/task-result';
+import { pnlReportImportActivity } from '@/modules/reports/reports.activity';
 import { useReportGeneration } from '@/modules/reports/use-report-generation';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { useReportsApi } from '@/modules/reports/use-reports-api';
@@ -14,7 +15,7 @@ import { useSetting } from '@/modules/settings/use-setting';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseReportsPageActionsOptions {
@@ -123,8 +124,8 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
     const path = getPath(file);
 
     const outcome = await submitTask<boolean>({
-      id: makeActivityId(ActivityKind.PNL_REPORT, ActivityPart.IMPORT),
-      kind: ActivityKind.PNL_REPORT,
+      id: pnlReportImportActivity.id(),
+      kind: pnlReportImportActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<boolean, TaskError>> => runTask<boolean>(
         async () => path ? importReportData(path) : uploadReportData(file),

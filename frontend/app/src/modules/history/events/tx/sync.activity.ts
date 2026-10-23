@@ -7,8 +7,9 @@ import {
   CHAIN_SYNC_LANE,
   EXCHANGE_EVENTS_LANE_PREFIX,
   familyLane,
+  UMBRELLA_LANE,
 } from '@/modules/task-center/core/orchestrator/spec';
-import { type ActivityId, ActivityKind } from '@/modules/task-center/core/types';
+import { type ActivityId, ActivityKind, activityParts } from '@/modules/task-center/core/types';
 
 /**
  * The identities of everything a history refresh is made of.
@@ -68,6 +69,17 @@ export interface ExchangeEventsDetail {
 }
 
 /**
+ * The umbrella of a whole history refresh. A singleton: one refresh at a time, which `submitTask`
+ * dedup enforces from every surface. On the umbrella lane, so waiting for its children never holds
+ * one of their slots.
+ */
+export const historySyncActivity = defineActivity<void, readonly []>({
+  key: () => [],
+  kind: ActivityKind.HISTORY_SYNC,
+  lane: () => UMBRELLA_LANE,
+});
+
+/**
  * One chain's sync: the group its accounts and its decode hang from.
  *
  * Its key is the leading slice of {@link accountSyncActivity}'s, so the chain row's id is also the
@@ -117,6 +129,28 @@ export const onlineEventsActivity = defineActivity<{ queryType: OnlineHistoryEve
   key: subject => [subject.queryType],
   kind: ActivityKind.ONLINE_EVENTS,
 });
+
+/**
+ * The connection an exchange or bank events id names.
+ *
+ * @remarks
+ * The name is chosen by the user and may contain the id separator, so it is read as everything
+ * after the location rather than as one part; `activityParts` would split "Kraken: main" in two.
+ *
+ * @returns `undefined` for an id the descriptor does not mint
+ */
+export function eventsConnectionOf(
+  descriptor: typeof exchangeEventsActivity | typeof bankEventsActivity,
+  id: ActivityId,
+): ExchangeEventsSubject | undefined {
+  const [location] = activityParts(id);
+  if (location === undefined)
+    return undefined;
+
+  const head = descriptor.id({ location, name: '' });
+  const subject = { location, name: id.slice(head.length) };
+  return id.startsWith(head) && descriptor.id(subject) === id ? subject : undefined;
+}
 
 /** One chain's sync. See {@link chainSyncActivity}. */
 export function chainSyncActivityId(chain: string): ActivityId {

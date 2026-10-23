@@ -1,10 +1,11 @@
 import type { Ref } from 'vue';
 import { map as mapResult, type Result } from 'plainfp/result';
 import { Airdrops } from '@/modules/airdrops/airdrops';
+import { airdropsActivity } from '@/modules/airdrops/airdrops.activity';
 import { useDefiApi } from '@/modules/airdrops/use-defi-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
-import { ActivityKind, makeActivityId, useNativeTask } from '@/modules/task-center/use-native-task';
+import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseAirdropsReturn {
   airdrops: Readonly<Ref<Airdrops>>;
@@ -24,8 +25,8 @@ export function useAirdrops(): UseAirdropsReturn {
     set(loading, true);
 
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.AIRDROPS),
-      kind: ActivityKind.AIRDROPS,
+      id: airdropsActivity.id(),
+      kind: airdropsActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<Airdrops>(

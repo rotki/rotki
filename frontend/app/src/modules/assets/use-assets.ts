@@ -3,6 +3,13 @@ import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import {
+  assetExportActivity,
+  assetImportActivity,
+  assetResetActivity,
+  assetUpdateActivity,
+  assetVersionsActivity,
+} from '@/modules/assets/assets.activity';
+import {
   ApplyUpdateKind,
   type ApplyUpdateResult,
   type AssetDBVersion,
@@ -16,8 +23,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { isActionable, onActionableError, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
-import { activityLabel, activityLabelFor } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelFor, activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface ExportCustomAssetsResult {
@@ -57,8 +63,8 @@ export function useAssets(): UseAssetsReturn {
 
   const checkForUpdate = async (): Promise<Result<AssetUpdateCheckResult, TaskError>> => {
     const outcome = await submitTask<AssetDBVersion>({
-      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.VERSIONS),
-      kind: ActivityKind.ASSETS,
+      id: assetVersionsActivity.id(),
+      kind: assetVersionsActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<AssetDBVersion, TaskError>> => mapResult(
         await runTask<AssetDBVersion>(
@@ -66,7 +72,7 @@ export function useAssets(): UseAssetsReturn {
         ),
         result => result,
       ),
-      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.VERSIONS),
+      subtitle: activityLabelOf(assetVersionsActivity),
       title: t('task_center.group.assets'),
     });
 
@@ -82,8 +88,8 @@ export function useAssets(): UseAssetsReturn {
 
   const applyUpdates = async ({ resolution, version }: AssetUpdatePayload): Promise<Result<ApplyUpdateResult, TaskError>> => {
     const outcome = await submitTask<AssetUpdateResult>({
-      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.UPDATE),
-      kind: ActivityKind.ASSETS,
+      id: assetUpdateActivity.id(),
+      kind: assetUpdateActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<AssetUpdateResult, TaskError>> => mapResult(
         await runTask<AssetUpdateResult>(
@@ -91,7 +97,7 @@ export function useAssets(): UseAssetsReturn {
         ),
         result => result,
       ),
-      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.UPDATE, { version }),
+      subtitle: activityLabelOf(assetUpdateActivity, { version }),
       title: t('task_center.group.assets'),
     });
 
@@ -125,8 +131,8 @@ export function useAssets(): UseAssetsReturn {
   const importCustomAssets = async (file: File): Promise<ActionStatus> => {
     const path = getPath(file);
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.IMPORT),
-      kind: ActivityKind.ASSETS,
+      id: assetImportActivity.id(),
+      kind: assetImportActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<boolean>(
@@ -134,7 +140,7 @@ export function useAssets(): UseAssetsReturn {
         ),
         () => {},
       ),
-      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.IMPORT, { file: file.name }),
+      subtitle: activityLabelOf(assetImportActivity, { file: file.name }),
       title: t('task_center.group.assets'),
     });
 
@@ -160,8 +166,8 @@ export function useAssets(): UseAssetsReturn {
     }
 
     const outcome = await submitTask<string>({
-      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.EXPORT),
-      kind: ActivityKind.ASSETS,
+      id: assetExportActivity.id(),
+      kind: assetExportActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<string, TaskError>> => mapResult(
         await runTask<{ filePath: string }>(
@@ -169,7 +175,7 @@ export function useAssets(): UseAssetsReturn {
         ),
         result => result.filePath,
       ),
-      subtitle: activityLabel(ActivityKind.ASSETS, ActivityPart.EXPORT),
+      subtitle: activityLabelOf(assetExportActivity),
       title: t('task_center.group.assets'),
     });
 
@@ -187,8 +193,8 @@ export function useAssets(): UseAssetsReturn {
 
   const restoreAssetsDatabase = async (resetType: 'hard' | 'soft'): Promise<Result<void, TaskError>> => {
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.ASSETS, ActivityPart.RESET),
-      kind: ActivityKind.ASSETS,
+      id: assetResetActivity.id(),
+      kind: assetResetActivity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<boolean>(

@@ -4,6 +4,7 @@ import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { convertBtcBalances } from '@/modules/accounts/core/bitcoin-accounts';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
+import { chainBalancesActivity } from '@/modules/balances/balances.activity';
 import {
   BlockchainBalances,
   type BtcBalances,
@@ -18,7 +19,6 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Cancelled, isActionable, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
-import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 function isBtcBalances(data?: BtcBalances | any): data is BtcBalances {
@@ -119,7 +119,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
         liabilities: {},
       },
     });
-    markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
+    markCompleted(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
   };
 
   /**
@@ -153,11 +153,11 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     if (isErr(result)) {
       if (isActionable(result.error))
         logger.error(result.error.message);
-      invalidate(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
+      invalidate(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
     }
     else {
       processBalanceResult(blockchain, result.value);
-      markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, blockchain);
+      markCompleted(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
     }
 
     return mapResult(result, () => {});

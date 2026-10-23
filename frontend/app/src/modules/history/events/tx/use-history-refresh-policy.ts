@@ -2,14 +2,15 @@ import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { BankConnectionIdentity } from '@/modules/banks/types';
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import type { StaleAfterEdge } from '@/modules/task-center/core/orchestrator/spec';
+import type { ActivityKind } from '@/modules/task-center/core/types';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { accountSyncActivity, bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { useHistoryTransactionAccounts } from '@/modules/history/events/tx/use-history-transaction-accounts';
 import { Purgeable } from '@/modules/session/purge';
+import { purgeActivity } from '@/modules/session/session.activity';
 import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
-import { ActivityKind } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface NoveltyDetection {
@@ -38,8 +39,8 @@ export interface RefreshTargets {
  * (`purge:transactions:eth`) satisfies the `transactions` edge too.
  */
 export const HISTORY_STALE_AFTER: readonly StaleAfterEdge[] = [
-  { kind: ActivityKind.PURGE, parts: [Purgeable.TRANSACTIONS] },
-  { kind: ActivityKind.PURGE, parts: [Purgeable.CENTRALIZED_EXCHANGES] },
+  { kind: purgeActivity.kind, parts: purgeActivity.partsWithin([Purgeable.TRANSACTIONS]) },
+  { kind: purgeActivity.kind, parts: purgeActivity.partsWithin([Purgeable.CENTRALIZED_EXCHANGES]) },
 ];
 
 interface ResolvedTargets {

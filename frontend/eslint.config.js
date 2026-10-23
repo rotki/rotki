@@ -23,66 +23,6 @@ const i18nIgnoreKeys = [
   ...translationKeys(),
 ];
 
-/*
- * Files that still build activity ids with a raw `makeActivityId`, from before descriptors existed.
- * They warn instead of failing; anything new fails. Move a file onto a `*.activity.ts` descriptor,
- * then delete its line here. The list only shrinks.
- */
-const rawActivityIdCallers = [
-  'app/src/modules/accounts/address-book/use-ens-operations.ts',
-  'app/src/modules/accounts/use-eth-staking.ts',
-  'app/src/modules/accounts/use-evm-account-detection.ts',
-  'app/src/modules/airdrops/use-airdrops.ts',
-  'app/src/modules/assets/prices/use-fetch-prices.ts',
-  'app/src/modules/assets/prices/use-historic-price-cache.ts',
-  'app/src/modules/assets/prices/use-historical-price-fetcher.ts',
-  'app/src/modules/assets/prices/use-latest-price-manager.ts',
-  'app/src/modules/assets/prices/use-price-task-manager.ts',
-  'app/src/modules/assets/use-asset-info-retrieval.ts',
-  'app/src/modules/assets/use-asset-nft.ts',
-  'app/src/modules/assets/use-assets.ts',
-  'app/src/modules/auth/unlock-flow/use-unlock-steps.ts',
-  'app/src/modules/balances/blockchain/use-token-detection-orchestrator.ts',
-  'app/src/modules/balances/exchanges/use-binance-savings.ts',
-  'app/src/modules/balances/exchanges/use-exchanges.ts',
-  'app/src/modules/balances/manual/use-manual-balances.ts',
-  'app/src/modules/balances/nft/use-nft-balances.ts',
-  'app/src/modules/balances/use-balance-fetching.ts',
-  'app/src/modules/balances/use-blockchain-balances.ts',
-  'app/src/modules/banks/use-banks.ts',
-  'app/src/modules/core/messaging/handlers/progress-updates.ts',
-  'app/src/modules/dashboard/liquidity-pools/use-pool-data-fetching.ts',
-  'app/src/modules/history/balances/use-accounting-overlay-series.ts',
-  'app/src/modules/history/balances/use-balance-divergence.ts',
-  'app/src/modules/history/balances/use-historical-balances.ts',
-  'app/src/modules/history/events/tx/history-sync.flow.ts',
-  'app/src/modules/history/events/tx/redecode.flow.ts',
-  'app/src/modules/history/events/tx/targeted-redecode.flow.ts',
-  'app/src/modules/history/events/tx/use-history-transactions.ts',
-  'app/src/modules/history/events/tx/use-refresh-transactions.ts',
-  'app/src/modules/history/events/tx/use-undecoded-transactions-status.ts',
-  'app/src/modules/history/events/use-history-events-export.ts',
-  'app/src/modules/history/events/use-unmatched-asset-movements.ts',
-  'app/src/modules/history/events/use-unmatched-bridge-transactions.ts',
-  'app/src/modules/history/internal-tx-conflicts/use-internal-tx-conflict-resolution.ts',
-  'app/src/modules/history/management/forms/use-evm-tx-lookup.ts',
-  'app/src/modules/integrations/gnosis-pay/use-gnosis-pay-signing.ts',
-  'app/src/modules/reports/use-report-generation.ts',
-  'app/src/modules/session/use-purge.ts',
-  'app/src/modules/session/use-session-sync.ts',
-  'app/src/modules/session/use-sync-activity.ts',
-  'app/src/modules/settings/accounting/use-accounting-settings.ts',
-  'app/src/modules/settings/modules/ModuleSelector.vue',
-  'app/src/modules/staking/eth/use-eth-validator-fetching.ts',
-  'app/src/modules/staking/eth2/use-eth2.ts',
-  'app/src/modules/staking/kraken/use-kraken-staking-operations.ts',
-  'app/src/modules/staking/liquity/use-liquity-data-fetching.ts',
-  'app/src/modules/staking/use-staking-rows.ts',
-  'app/src/modules/task-center/activity-subject.ts',
-  'app/src/modules/user-data/ImportSource.vue',
-  'app/src/pages/reports/use-reports-page-actions.ts',
-];
-
 export default rotki({
   /*
    * The gitignore integration reads only the root `.gitignore`, so what `app/.gitignore` hides
@@ -355,11 +295,6 @@ export default rotki({
   ],
   rules: {
     'local/no-raw-activity-id': 'off',
-  },
-}, {
-  files: rawActivityIdCallers,
-  rules: {
-    'local/no-raw-activity-id': 'warn',
   },
 }, {
   // `events/composables.ts` keeps HistoryEventsView.vue under @rotki/max-dependencies.

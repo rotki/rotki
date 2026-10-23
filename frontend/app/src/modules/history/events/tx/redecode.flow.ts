@@ -1,7 +1,7 @@
 import type { FlowChild, HistoryFlow } from '@/modules/history/events/flows';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { msg } from '@/message-key';
-import { decodeActivityId } from '@/modules/history/events/tx/decode.activity';
-import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { decodeActivity, decodeActivityId, redecodeActivity } from '@/modules/history/events/tx/decode.activity';
 
 /** The `ignoreCache` a re-decode submits with, and therefore the one its children must be named for. */
 const IGNORE_CACHE = true;
@@ -26,18 +26,12 @@ export const redecodeFlow: HistoryFlow<readonly string[], string> = {
    */
   children: (chains: readonly string[]): readonly FlowChild<string>[] => chains.map(chain => ({
     id: decodeActivityId(chain, IGNORE_CACHE),
-    kind: ActivityKind.TX_DECODING,
+    kind: decodeActivity.kind,
     payload: chain,
   })),
-  /**
-   * Chains are sorted, so the same set asked for in a different order is the same run; and joined
-   * with a comma rather than the id separator, so `activityParts` recovers the set as one part
-   * instead of shredding it into members.
-   */
-  id: (chains?: readonly string[]): ActivityId => chains === undefined || chains.length === 0
-    ? makeActivityId(ActivityKind.REDECODE, ActivityPart.ALL)
-    : makeActivityId(ActivityKind.REDECODE, ActivityPart.CHAINS, [...chains].sort().join(',')),
-  kind: ActivityKind.REDECODE,
+  /** See {@link redecodeActivity}. */
+  id: (chains?: readonly string[]): ActivityId => redecodeActivity.id({ chains }),
+  kind: redecodeActivity.kind,
   resets: true,
   titleKey: msg.$t('task_center.group.redecode'),
 };

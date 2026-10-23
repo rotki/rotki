@@ -1,5 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { TaskError } from '@/modules/core/tasks/task-result';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import {
   type BigNumber,
   type CommonQueryStatusData,
@@ -9,14 +10,18 @@ import {
 import { startPromise } from '@shared/utils';
 import { getOr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { HistoricPrices } from '@/modules/assets/prices/price-types';
+import {
+  dailyPricesActivity,
+  historicPriceActivity,
+  historicPriceBatchActivity,
+  historicPriceWaveActivity,
+} from '@/modules/assets/prices/prices.activity';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { SECONDS_PER_HOUR } from '@/modules/core/common/constraints';
 import { createItemCache } from '@/modules/core/common/use-item-cache';
 import { onSessionCleared } from '@/modules/core/session/session-lifecycle';
 import { useSetting } from '@/modules/settings/use-setting';
-import { UMBRELLA_LANE } from '@/modules/task-center/core/orchestrator/spec';
-import { type ActivityId, ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseHistoricPriceCacheReturn {
@@ -55,7 +60,7 @@ let batchSequence = 0;
  * @remarks
  * Batches arrive one at a time from the debounced item cache, so unlike a known list the umbrella
  * opens with the first batch and closes when the last one in flight settles. It runs on
- * {@link UMBRELLA_LANE}, never the batches' own lane, which it would otherwise throttle while waiting
+ * the umbrella lane, never the batches' own lane, which it would otherwise throttle while waiting
  * on them. Module-scoped for the same reason as {@link batchSequence}.
  */
 let wave: { id: ActivityId; pending: number; close: () => void; closing?: ReturnType<typeof setTimeout> } | undefined;
@@ -86,12 +91,13 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
       const settled = new Promise<void>((resolve) => {
         close = resolve;
       });
-      const id = makeActivityId(ActivityKind.PRICES, ActivityPart.HISTORIC, ActivityPart.BATCH, 'all', ++waveSequence);
+      const subject = { sequence: ++waveSequence };
+      const id = historicPriceWaveActivity.id(subject);
       wave = { close, id, pending: 0 };
       startPromise(submitTask({
         id,
-        kind: ActivityKind.PRICES,
-        lane: UMBRELLA_LANE,
+        kind: historicPriceWaveActivity.kind,
+        lane: historicPriceWaveActivity.laneOf?.(subject),
         rerunnable: false,
         run: async (): Promise<Result<void, TaskError>> => {
           await settled;
@@ -140,8 +146,8 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
 
     const parent = joinWave();
     const outcome = await submitTask<HistoricPrices>({
-      id: makeActivityId(ActivityKind.PRICES, ActivityPart.HISTORIC, ActivityPart.BATCH, ++batchSequence),
-      kind: ActivityKind.PRICES,
+      id: historicPriceBatchActivity.id({ sequence: ++batchSequence }),
+      kind: historicPriceBatchActivity.kind,
       parent,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<HistoricPrices, TaskError>> => mapResult(
@@ -236,8 +242,8 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
    * and each batch carries an id of its own.
    */
   function discardPricesInOldCurrency(): void {
-    cancelByPrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
-    cancelByPrefix(ActivityKind.PRICES, ActivityPart.DAILY);
+    cancelByPrefix(historicPriceActivity.kind, ...historicPriceActivity.partsWithin([]));
+    cancelByPrefix(dailyPricesActivity.kind, ...dailyPricesActivity.partsWithin([]));
     set(failedDailyPrices, {});
     set(resolvedFailedDailyPrices, {});
     reset();

@@ -1,10 +1,11 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
+import { accountAddActivity, accountRemoveActivity } from '@/modules/accounts/accounts.activity';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
+import { chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -26,8 +27,8 @@ export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
   const { chainIds } = useAccountCategoryHelper(category);
 
   const accountOperation = logicOr(
-    useIsActivePrefix(ActivityKind.ACCOUNTS, ActivityPart.ADD),
-    useIsActivePrefix(ActivityKind.ACCOUNTS, ActivityPart.REMOVE),
+    useIsActivePrefix(accountAddActivity.kind, ...accountAddActivity.partsWithin([])),
+    useIsActivePrefix(accountRemoveActivity.kind, ...accountRemoveActivity.partsWithin([])),
     isSectionLoading,
   );
 
@@ -44,11 +45,11 @@ export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
     const hydrating = get(hydratingChains);
     const chains = get(chainIds);
     if (chains.length === 0) {
-      const { active, everCompleted } = statusOf(ActivityKind.BLOCKCHAIN_BALANCES);
+      const { active, everCompleted } = statusOf(chainBalancesActivity.kind);
       return (active || hydrating.size > 0) && !everCompleted;
     }
     return chains.some((chain) => {
-      const { active, everCompleted } = statusOfPrefix(ActivityKind.BLOCKCHAIN_BALANCES, chain);
+      const { active, everCompleted } = statusOfPrefix(chainBalancesActivity.kind, ...chainBalancesActivity.partsWithin([chain]));
       return (active || hydrating.has(chain)) && !everCompleted;
     });
   });

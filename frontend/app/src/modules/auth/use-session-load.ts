@@ -6,6 +6,7 @@ import { usePriceSeed } from '@/modules/assets/prices/use-price-seed';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -15,7 +16,6 @@ import { useHistoryApi } from '@/modules/history/api/use-history-api';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useTagOperations } from '@/modules/tags/use-tag-operations';
-import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 const isAutoFetchDisabled = import.meta.env.VITE_NO_AUTO_FETCH === 'true';
@@ -43,8 +43,8 @@ export function useDataLoader(): UseDataLoaderReturn {
    * "never loaded" and show a loading screen over data that is right there.
    */
   const markRestored = (): void => {
-    markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH);
-    markCompleted(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.BTC);
+    markCompleted(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: Blockchain.ETH }));
+    markCompleted(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: Blockchain.BTC }));
     settleFirstLoad();
   };
 

@@ -5,14 +5,14 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useInjectedWallet } from '@/modules/wallet/bridge/use-injected-wallet';
 import { isUserRejectedError, WALLET_MODES } from '@/modules/wallet/constants';
 import { useWalletConnect } from '@/modules/wallet/use-wallet-connect';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 import { getAddress, type ViemWalletClient } from '@/modules/wallet/viem-client';
+import { gnosisPayNonceActivity, gnosisPayVerifyActivity } from './gnosis-pay.activity';
 import { GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySiweApi } from './use-gnosis-pay-api';
 
@@ -132,8 +132,8 @@ Issued At: ${issuedAt}`;
       }
 
       const nonceOutcome = await submitTask<string>({
-        id: makeActivityId(ActivityKind.GNOSIS_PAY, ActivityPart.NONCE),
-        kind: ActivityKind.GNOSIS_PAY,
+        id: gnosisPayNonceActivity.id(),
+        kind: gnosisPayNonceActivity.kind,
         rerunnable: false,
         run: async ({ runTask }): Promise<Result<string, TaskError>> => mapResult(
           await runTask<string>(
@@ -141,7 +141,7 @@ Issued At: ${issuedAt}`;
           ),
           value => value,
         ),
-        subtitle: activityLabel(ActivityKind.GNOSIS_PAY, ActivityPart.NONCE),
+        subtitle: activityLabelOf(gnosisPayNonceActivity),
         title: t('task_center.group.gnosis_pay'),
       });
 
@@ -155,8 +155,8 @@ Issued At: ${issuedAt}`;
       const signature = await signMessage(client, address, message);
 
       const verifyOutcome = await submitTask<boolean>({
-        id: makeActivityId(ActivityKind.GNOSIS_PAY, ActivityPart.VERIFY),
-        kind: ActivityKind.GNOSIS_PAY,
+        id: gnosisPayVerifyActivity.id(),
+        kind: gnosisPayVerifyActivity.kind,
         rerunnable: false,
         run: async ({ runTask }): Promise<Result<boolean, TaskError>> => flatMap(
           await runTask<boolean>(
@@ -164,7 +164,7 @@ Issued At: ${issuedAt}`;
           ),
           verified => verified ? ok(true) : err(TaskFailed({ message: t('external_services.gnosispay.siwe.failed') })),
         ),
-        subtitle: activityLabel(ActivityKind.GNOSIS_PAY, ActivityPart.VERIFY),
+        subtitle: activityLabelOf(gnosisPayVerifyActivity),
         title: t('task_center.group.gnosis_pay'),
       });
 

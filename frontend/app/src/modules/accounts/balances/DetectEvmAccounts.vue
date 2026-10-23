@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { evmAccountDetectionActivity } from '@/modules/accounts/accounts.activity';
 import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { useEvmAccountDetection } from '@/modules/accounts/use-evm-account-detection';
 import { uniqueStrings } from '@/modules/core/common/data/data';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 /** How long the button shows the outcome of a run before its label returns, in milliseconds. */
@@ -15,7 +15,7 @@ const outcome = ref<string>();
 const { lastRun } = storeToRefs(useDetectedAccountsStore());
 
 const { useIsActive } = useTaskCenter();
-const isEvmAccountsDetecting = useIsActive(ActivityKind.ACCOUNTS, ActivityPart.DETECT);
+const isEvmAccountsDetecting = useIsActive(evmAccountDetectionActivity.kind, ...evmAccountDetectionActivity.partsOf());
 const { detectEvmAccounts } = useEvmAccountDetection();
 
 const { start: clearOutcomeLater, stop: keepOutcome } = useTimeoutFn(() => set(outcome, undefined), OUTCOME_DURATION, { immediate: false });

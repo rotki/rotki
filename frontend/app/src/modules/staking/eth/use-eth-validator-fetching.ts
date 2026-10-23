@@ -5,9 +5,9 @@ import { createValidatorAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { logger } from '@/modules/core/common/logging/logging';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
+import { validatorAddActivity, validatorsActivity } from '@/modules/staking/staking.activity';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
+import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseEthValidatorFetchingReturn {
@@ -29,11 +29,11 @@ export function useEthValidatorFetching(): UseEthValidatorFetchingReturn {
       return;
 
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.STAKING, ActivityPart.VALIDATORS),
-      kind: ActivityKind.STAKING,
+      id: validatorsActivity.id(),
+      kind: validatorsActivity.kind,
       rerunnable: true,
       // A newly added validator belongs in this list; see the matching edge in `use-eth2.ts`.
-      staleAfter: [{ kind: ActivityKind.STAKING, parts: [ActivityPart.ADD] }],
+      staleAfter: [{ kind: validatorAddActivity.kind, parts: validatorAddActivity.partsWithin([]) }],
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<Eth2Validators>(
           async () => getEth2Validators(payload),
@@ -47,7 +47,7 @@ export function useEthValidatorFetching(): UseEthValidatorFetchingReturn {
           set(stakingValidatorsLimits, { limit: validators.entriesLimit, total: validators.entriesFound });
         },
       ),
-      subtitle: activityLabel(ActivityKind.STAKING, ActivityPart.VALIDATORS),
+      subtitle: activityLabelOf(validatorsActivity),
       title: t('task_center.group.staking'),
     });
 

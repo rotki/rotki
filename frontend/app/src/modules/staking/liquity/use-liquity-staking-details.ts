@@ -12,8 +12,9 @@ import {
   collectAvailableAddresses,
   collectProxies,
 } from '@/modules/staking/liquity/liquity-aggregation';
+import { liquityActivity } from '@/modules/staking/liquity/liquity.activity';
 import { useLiquityStore } from '@/modules/staking/liquity/use-liquity-store';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
+import { ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseLiquityStakingDetailsReturn {
@@ -34,7 +35,7 @@ export function useLiquityStakingDetails(): UseLiquityStakingDetailsReturn {
   const modelSelectedAccounts = ref<AddressAccount[]>([]);
 
   // What is being read, and how far along, is reported in the task dock; the page only needs to know a refresh runs.
-  const loading = useIsActive(ActivityKind.LIQUITY, ActivityPart.STAKE);
+  const loading = useIsActive(liquityActivity.kind, ...liquityActivity.partsOf({ part: ActivityPart.STAKE }));
 
   const selectedAddresses = computed<string[]>(() =>
     get(modelSelectedAccounts).map(({ address }) => address));

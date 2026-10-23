@@ -1,10 +1,10 @@
 import type { BigNumber } from '@rotki/common';
 import type { DeepReadonly, MaybeRefOrGetter, Ref, ShallowRef } from 'vue';
+import { historicPriceActivity } from '@/modules/assets/prices/prices.activity';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
 import { millisecondsToSeconds } from '@/modules/core/common/data/date';
 import { useSetting } from '@/modules/settings/use-setting';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseEventPriceConversionOptions {
@@ -43,7 +43,7 @@ export function useEventPriceConversion({
   const { getHistoricPrice } = usePriceTaskManager();
   const currencySymbol = useSetting('currencySymbol');
 
-  const fetching = useIsActivePrefix(ActivityKind.PRICES, ActivityPart.HISTORIC);
+  const fetching = useIsActivePrefix(historicPriceActivity.kind, ...historicPriceActivity.partsWithin([]));
 
   const numericAssetToFiatPrice = bigNumberifyFromRef(modelAssetToFiatPrice);
   const numericFiatValue = bigNumberifyFromRef(modelFiatValue);

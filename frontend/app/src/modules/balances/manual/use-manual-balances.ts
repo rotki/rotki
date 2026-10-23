@@ -1,8 +1,14 @@
 import type { ActionStatus } from '@/modules/core/common/action';
+import type { ActivityId, ActivityKind } from '@/modules/task-center/core/types';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useManualBalancesApi } from '@/modules/balances/api/use-manual-balances-api';
+import {
+  manualBalanceAddActivity,
+  manualBalanceEditActivity,
+  manualBalancesFetchActivity,
+} from '@/modules/balances/balances.activity';
 import { BalanceType } from '@/modules/balances/types/balances';
 import {
   type ManualBalance,
@@ -20,7 +26,6 @@ import { isActionable, onActionableError, type TaskError } from '@/modules/core/
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { shouldSkipFetch } from '@/modules/task-center/core/status';
-import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseManualBalancesReturn {
@@ -57,7 +62,7 @@ export function useManualBalances(): UseManualBalancesReturn {
   }
 
   const fetchManualBalances = async (userInitiated = false): Promise<void> => {
-    const status = statusOf(ActivityKind.MANUAL_BALANCES, ActivityPart.FETCH);
+    const status = statusOf(manualBalancesFetchActivity.kind, ...manualBalancesFetchActivity.partsOf());
     if (shouldSkipFetch(status, userInitiated)) {
       logger.debug('skipping manual balance refresh');
       return;
@@ -66,8 +71,8 @@ export function useManualBalances(): UseManualBalancesReturn {
     const threshold = get(valueThreshold);
 
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.MANUAL_BALANCES, ActivityPart.FETCH),
-      kind: ActivityKind.MANUAL_BALANCES,
+      id: manualBalancesFetchActivity.id(),
+      kind: manualBalancesFetchActivity.kind,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<ManualBalances>(
@@ -85,23 +90,20 @@ export function useManualBalances(): UseManualBalancesReturn {
   };
 
   /**
-   * Add and edit differ only in task type, part, endpoint and identity, so they share one
-   * submission. The id carries the balance's identity (`identifier` for edit, location+asset+label
-   * for add) rather than being a per-part singleton: `submitTask` dedups by id, so a shared id
-   * would hand two concurrent saves the same promise and report one the other's outcome.
+   * Add and edit differ only in identity and endpoint, so they share one submission. The identity
+   * comes from {@link manualBalanceAddActivity} or {@link manualBalanceEditActivity}, which key it
+   * by the balance.
    */
   async function saveManualBalance<T extends ManualBalance | RawManualBalance>(
     balance: T,
-    part: ActivityPart,
-    identity: (string | number)[],
-    title: string,
+    activity: { readonly id: ActivityId; readonly kind: ActivityKind },
     apiCall: () => Promise<{ taskId: number }>,
   ): Promise<ActionStatus<ValidationErrors | string>> {
-    cancelActivity(ActivityKind.MANUAL_BALANCES, ActivityPart.FETCH);
+    cancelActivity(manualBalancesFetchActivity.kind, ...manualBalancesFetchActivity.partsOf());
 
     const outcome = await submitTask({
-      id: makeActivityId(ActivityKind.MANUAL_BALANCES, part, ...identity),
-      kind: ActivityKind.MANUAL_BALANCES,
+      id: activity.id,
+      kind: activity.kind,
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<ManualBalances>(apiCall),
@@ -133,18 +135,14 @@ export function useManualBalances(): UseManualBalancesReturn {
   const addManualBalance = async (balance: RawManualBalance): Promise<ActionStatus<ValidationErrors | string>> =>
     saveManualBalance(
       balance,
-      ActivityPart.ADD,
-      [balance.location, balance.asset, balance.label],
-      t('actions.manual_balances.add.task.title'),
+      { id: manualBalanceAddActivity.id(balance), kind: manualBalanceAddActivity.kind },
       async () => addManualBalances([balance]),
     );
 
   const editManualBalance = async (balance: ManualBalance): Promise<ActionStatus<ValidationErrors | string>> =>
     saveManualBalance(
       balance,
-      ActivityPart.EDIT,
-      [balance.identifier],
-      t('actions.manual_balances.edit.task.title'),
+      { id: manualBalanceEditActivity.id(balance), kind: manualBalanceEditActivity.kind },
       async () => editManualBalances([balance]),
     );
 

@@ -6,19 +6,19 @@ import type {
   ExchangeSavingsRequestPayload,
 } from '@/modules/balances/types/exchanges';
 import type { TaskError } from '@/modules/core/tasks/task-result';
+import type { WorkStatus } from '@/modules/task-center/core/types';
 import { toSentenceCase } from '@rotki/common';
 import { pipe } from 'plainfp';
 import { filter, unique } from 'plainfp/arrays';
 import { map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
+import { exchangeSavingsActivity } from '@/modules/balances/balances.activity';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { EXCHANGE_LANE } from '@/modules/task-center/core/orchestrator/spec';
-import { ActivityKind, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
@@ -46,7 +46,7 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
   const { getExchangeSavings, getExchangeSavingsTask } = useExchangeApi();
   const { t } = useI18n({ useScope: 'global' });
 
-  const savingsStatus = useWorkStatus(ActivityKind.EXCHANGE_SAVINGS);
+  const savingsStatus = useWorkStatus(exchangeSavingsActivity.kind);
 
   const fetchExchangeSavings = async (
     payload: MaybeRef<ExchangeSavingsRequestPayload>,
@@ -76,9 +76,9 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
     };
 
     await submitTask({
-      id: makeActivityId(ActivityKind.EXCHANGE_SAVINGS, location),
-      kind: ActivityKind.EXCHANGE_SAVINGS,
-      lane: EXCHANGE_LANE,
+      id: exchangeSavingsActivity.id({ location }),
+      kind: exchangeSavingsActivity.kind,
+      lane: exchangeSavingsActivity.laneOf?.({ location }),
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
         await runTask<ExchangeSavingsCollectionResponse>(

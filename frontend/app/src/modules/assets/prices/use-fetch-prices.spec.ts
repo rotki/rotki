@@ -3,7 +3,7 @@ import { bigNumberify } from '@rotki/common';
 import flushPromises from 'flush-promises';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { assetSetDigest, useFetchPrices } from '@/modules/assets/prices/use-fetch-prices';
+import { useFetchPrices } from '@/modules/assets/prices/use-fetch-prices';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
@@ -197,20 +197,5 @@ describe('useFetchPrices', () => {
 
       expect(usePriceApi().queryPrices).toHaveBeenCalledTimes(2);
     });
-  });
-});
-
-describe('assetSetDigest', () => {
-  it('should be independent of member order', () => {
-    expect(assetSetDigest(['ETH', 'DAI', 'BTC'])).toBe(assetSetDigest(['BTC', 'ETH', 'DAI']));
-  });
-
-  it('should differ for different sets', () => {
-    expect(assetSetDigest(['DAI'])).not.toBe(assetSetDigest(['ETH']));
-    expect(assetSetDigest(['DAI'])).not.toBe(assetSetDigest(['DAI', 'ETH']));
-  });
-
-  it('should not collide on a shifted separator, an unfolded one making [ab, c] and [a, bc] the same byte stream', () => {
-    expect(assetSetDigest(['ab', 'c'])).not.toBe(assetSetDigest(['a', 'bc']));
   });
 });

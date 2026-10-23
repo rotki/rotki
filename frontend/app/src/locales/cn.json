@@ -756,17 +756,11 @@
       "add": {
         "error": {
           "description": "添加手动余额失败：{message}"
-        },
-        "task": {
-          "title": "添加手动余额"
         }
       },
       "edit": {
         "error": {
           "description": "编辑手动余额失败：{message}"
-        },
-        "task": {
-          "title": "编辑手动余额"
         }
       }
     },
