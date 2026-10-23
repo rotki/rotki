@@ -2,13 +2,16 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 type CacheRow = OracleCacheMeta & { id: number };
 
-const { disabled = false, loading = false, rows } = defineProps<{
+const { disabled = false, error, loading = false, rows } = defineProps<{
   disabled?: boolean;
+  /** why the caches could not be listed, named in place of the empty text */
+  error?: unknown;
   loading?: boolean;
   rows: CacheRow[];
 }>();
@@ -18,6 +21,11 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const emptyState = useTableEmptyState({
+  error: toRef(() => error),
+  fallback: () => ({ label: t('oracle_prices.cache.dialog.empty') }),
+});
 
 const columns = computed<DataTableColumn<CacheRow>[]>(() => [
   {
@@ -55,7 +63,7 @@ const columns = computed<DataTableColumn<CacheRow>[]>(() => [
     :loading="loading"
     :rows="rows"
     row-attr="id"
-    :empty="{ label: t('oracle_prices.cache.dialog.empty') }"
+    :empty="emptyState"
     data-testid="oracle-cache-table"
   >
     <template #item.fromAsset="{ row }">
