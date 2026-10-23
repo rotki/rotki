@@ -373,9 +373,8 @@ def test_borrow_with_weth_collateral(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount := '0.074531395131486305'),
+        amount=FVal('0.074531395131486305'),
         location_label=user_address,
-        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_ref=tx_hash,
