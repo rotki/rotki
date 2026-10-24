@@ -317,9 +317,9 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
             prices_and_tokens[0] = prices_and_tokens[0].swap_tokens()
 
         # For the possible intermediate steps also make sure that we use the correct price
-        for pos, item in enumerate(prices_and_tokens[1:-1]):
+        for pos, item in enumerate(prices_and_tokens[1:-1], start=1):
             if item.token_0 != prices_and_tokens[pos - 1].token_1:
-                prices_and_tokens[pos - 1] = prices_and_tokens[pos - 1].swap_tokens()
+                prices_and_tokens[pos] = prices_and_tokens[pos].swap_tokens()
 
         # Finally for the tail query the price
         if prices_and_tokens[-1].token_1 != to_token:

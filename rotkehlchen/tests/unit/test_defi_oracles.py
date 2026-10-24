@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.oracles.constants import (
     A_OPTIMISM_USDT,
     A_POLYGON_USDC,
 )
+from rotkehlchen.chain.ethereum.oracles.uniswap import PoolPrice
 from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     NodeName,
@@ -340,3 +341,80 @@ def test_uniswap_oracle_query_multiple_handles_exceptions(inquirer_defi):
     # At least some valid tokens should have prices (assuming pools exist)
     valid_erc20_tokens = [asset for asset in from_assets if asset != nft_token]
     assert any(token in prices for token in valid_erc20_tokens)
+
+
+@pytest.mark.parametrize(
+    ('hop_count', 'reversed_hops', 'expected_price'),
+    [
+        pytest.param(1, (), 2, id='one-hop-forward'),
+        pytest.param(1, (0,), 2, id='one-hop-reversed'),
+        pytest.param(2, (), 8, id='two-hops-forward'),
+        pytest.param(2, (0,), 8, id='two-hops-head-reversed'),
+        pytest.param(2, (1,), 8, id='two-hops-tail-reversed'),
+        pytest.param(2, (0, 1), 8, id='two-hops-head-tail-reversed'),
+        pytest.param(3, (), 64, id='three-hops-forward'),
+        pytest.param(3, (0,), 64, id='three-hops-head-reversed'),
+        pytest.param(3, (1,), 64, id='three-hops-middle-reversed'),
+        pytest.param(3, (2,), 64, id='three-hops-tail-reversed'),
+        pytest.param(3, (0, 1), 64, id='three-hops-head-middle-reversed'),
+        pytest.param(3, (0, 2), 64, id='three-hops-head-tail-reversed'),
+        pytest.param(3, (1, 2), 64, id='three-hops-middle-tail-reversed'),
+        pytest.param(3, (0, 1, 2), 64, id='three-hops-all-reversed'),
+    ],
+)
+def test_route_orientation(
+        inquirer_defi: Inquirer,
+        hop_count: int,
+        reversed_hops: tuple[int, ...],
+        expected_price: int,
+) -> None:
+    """Check that every pool direction is normalized before the route price is multiplied."""
+    assets = [asset.resolve_to_evm_token() for asset in (A_1INCH, A_LINK, A_WETH, A_USDC)]
+    forward_prices = (FVal(2), FVal(4), FVal(8))
+    pool_addresses = [
+        '0x0000000000000000000000000000000000000001',
+        '0x0000000000000000000000000000000000000002',
+        '0x0000000000000000000000000000000000000003',
+    ]
+    pool_prices = {}
+    for index in range(hop_count):
+        token_0, token_1 = assets[index], assets[index + 1]
+        price = forward_prices[index]
+        if index in reversed_hops:
+            token_0, token_1 = token_1, token_0
+            price = 1 / price
+        pool_prices[pool_addresses[index]] = PoolPrice(
+            price=price,
+            token_0=token_0,
+            token_1=token_1,
+        )
+
+    assert (oracle := inquirer_defi._uniswapv3) is not None
+    block_identifier = 12345678
+
+    def mock_get_pool_price(
+            pool_addr,
+            chain_id,  # pylint: disable=unused-argument
+            block_identifier,  # pylint: disable=unused-argument
+    ):
+        return pool_prices[pool_addr]
+
+    with (
+        patch.object(oracle, 'find_route', return_value=pool_addresses[:hop_count]) as find_route,
+        patch.object(oracle, 'get_pool_price', side_effect=mock_get_pool_price) as get_pool_price,
+    ):
+        price = oracle.get_price(
+            from_token=assets[0],
+            to_token=assets[hop_count],
+            block_identifier=block_identifier,
+        )
+
+    assert price == Price(FVal(expected_price))
+    find_route.assert_called_once_with(assets[0], assets[hop_count])
+    assert get_pool_price.call_count == hop_count
+    for index, call in enumerate(get_pool_price.call_args_list):
+        assert call.kwargs == {
+            'pool_addr': pool_addresses[index],
+            'chain_id': ChainID.ETHEREUM,
+            'block_identifier': block_identifier,
+        }
