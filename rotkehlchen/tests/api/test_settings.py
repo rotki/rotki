@@ -215,6 +215,8 @@ def test_set_settings(rotkehlchen_api_server: APIServer) -> None:
             value = 'http://polkadot.node.com:9934'
         elif setting == 'beacon_rpc_endpoint':
             value = 'http://lighthouse.mynode.com:6969'
+        elif setting == 'nuthatch_api_endpoint':
+            value = 'http://127.0.0.1:18288'
         elif setting == 'btc_mempool_api':
             value = 'http://localhost:4080'
         elif setting == 'current_price_oracles':
@@ -349,6 +351,7 @@ def test_default_evm_indexers_orders(rotkehlchen_api_server: APIServer) -> None:
     ('ksm_rpc_endpoint', 'http://kusama.example:9933'),
     ('dot_rpc_endpoint', 'http://polkadot.example:9934'),
     ('beacon_rpc_endpoint', 'http://lighthouse.mynode.com:6969'),
+    ('nuthatch_api_endpoint', 'http://127.0.0.1:18288'),
     ('btc_mempool_api', 'http://localhost:4080'),
 ])
 def test_unset_rpc_endpoint(
@@ -409,6 +412,7 @@ def test_unset_rpc_endpoint(
     'ksm_rpc_endpoint',
     'dot_rpc_endpoint',
     'beacon_rpc_endpoint',
+    'nuthatch_api_endpoint',
     'btc_mempool_api',
 ])
 def test_empty_rpc_endpoint_in_db_treated_as_default(
