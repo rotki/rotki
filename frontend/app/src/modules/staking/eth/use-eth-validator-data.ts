@@ -6,7 +6,7 @@ import type {
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import type { Filters } from '@/modules/staking/eth/use-eth-validator-filter';
+import type { Filters } from '@/modules/staking/eth/eth-validator-filter-keys';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useEthValidatorFields } from '@/modules/staking/eth/use-eth-validator-fields';

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
+import type { Filters } from '@/modules/assets/admin/counterparty-mapping/counterparty-mapping-filter-keys';
 import type { CounterpartyMapping } from '@/modules/assets/admin/counterparty-mapping/schema';
-import type { Filters } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-filter';
 import type { Collection } from '@/modules/core/common/collection';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';

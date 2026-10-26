@@ -5,7 +5,7 @@ import {
   readSnapshotFilters,
   SnapshotBalanceFilterKeys,
   SnapshotCategories,
-} from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
+} from '@/modules/dashboard/snapshots/composables/snapshot-balance-filter';
 
 describe('readSnapshotFilters', () => {
   it('should read an empty bag as the table defaults', () => {

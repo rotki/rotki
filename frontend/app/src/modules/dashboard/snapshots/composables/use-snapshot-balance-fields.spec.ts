@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { resolveText } from '@/modules/core/table/pill/core/text';
 import { ZeroValueFilter } from '@/modules/dashboard/snapshots';
+import { SnapshotBalanceFilterKeys } from '@/modules/dashboard/snapshots/composables/snapshot-balance-filter';
 import { useSnapshotBalanceFields } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-fields';
-import { SnapshotBalanceFilterKeys } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 
 const counts = { ignored: 2, spam: 3, zeroValue: 4 };
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { manualBalanceTagsParams } from '@/modules/accounts/manual-balances/use-manual-balances-filter';
+import { manualBalanceTagsParams } from '@/modules/accounts/manual-balances/manual-balance-filter-keys';
 
 describe('manualBalanceTagsParams', () => {
   it('should split a comma-separated tags string into an array', () => {

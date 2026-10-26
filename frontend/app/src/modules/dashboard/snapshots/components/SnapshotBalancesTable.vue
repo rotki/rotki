@@ -13,8 +13,8 @@ import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remem
 import SnapshotBalanceDeleteDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog.vue';
 import SnapshotBalanceEntryDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
+import { type Filters, revealHidden } from '@/modules/dashboard/snapshots/composables/snapshot-balance-filter';
 import { useSnapshotBalanceDisplay } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-display';
-import { type Filters, revealHidden } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 import {
   type IndexedBalanceSnapshot,
   useSnapshotBalanceRows,

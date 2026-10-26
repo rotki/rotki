@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { Filters } from '@/modules/assets/prices/oracle-price-filter-keys';
 import type { OraclePriceEntry, OraclePricesQuery } from '@/modules/assets/prices/price-types';
-import type { Filters } from '@/modules/assets/prices/use-oracle-prices-filter';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import OraclePriceEditDialog from '@/modules/assets/prices/components/oracle/OraclePriceEditDialog.vue';

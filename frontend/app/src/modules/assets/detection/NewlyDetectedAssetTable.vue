@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { Filters } from '@/modules/assets/detection/use-newly-detected-filter';
+import type { Filters } from '@/modules/assets/detection/newly-detected-filter-keys';
 import { type BigNumber, getAddressFromEvmIdentifier, getAddressFromSolanaIdentifier } from '@rotki/common';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';

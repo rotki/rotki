@@ -1,7 +1,7 @@
 import type { AssetsWithId } from '@/modules/assets/types';
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { OraclePriceFilterKeys } from '@/modules/assets/prices/use-oracle-prices-filter';
+import { OraclePriceFilterKeys } from '@/modules/assets/prices/oracle-price-filter-keys';
 import { toAssetField } from '@/modules/core/table/filters/shared/asset-field';
 import { toPeriodField } from '@/modules/core/table/filters/shared/period-field';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';

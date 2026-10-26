@@ -2,11 +2,11 @@
 import type { DataTableColumn, RuiIcons } from '@rotki/ui-library';
 import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
 import { isEqual } from 'es-toolkit';
+import { type Filters, manualBalanceTagsParams } from '@/modules/accounts/manual-balances/manual-balance-filter-keys';
 import ManualBalanceMissingAssetWarning
   from '@/modules/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
 import { useManualBalanceFields } from '@/modules/accounts/manual-balances/use-manual-balance-fields';
 import { useManualBalanceTableActions } from '@/modules/accounts/manual-balances/use-manual-balance-table-actions';
-import { type Filters, manualBalanceTagsParams } from '@/modules/accounts/manual-balances/use-manual-balances-filter';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';

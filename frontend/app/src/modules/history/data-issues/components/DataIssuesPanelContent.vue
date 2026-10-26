@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
-import type { Filters } from '@/modules/history/data-issues/use-data-issues-filter';
 import { startPromise } from '@shared/utils';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';

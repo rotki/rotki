@@ -5,7 +5,7 @@ import { dateBoundParser, dateDeserializer } from '@/modules/core/common/data/da
 import { FilterOps, FilterValueTypes } from '@/modules/core/table/filtering';
 import { toDateFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { useSetting } from '@/modules/settings/use-setting';
-import { validStatuses } from '@/modules/staking/eth/use-eth-validator-filter';
+import { validStatuses } from '@/modules/staking/eth/eth-validator-filter-keys';
 
 /** The wire keys the combined filter is stored and sent under. */
 export const EthStakingFilterValueKeys = {

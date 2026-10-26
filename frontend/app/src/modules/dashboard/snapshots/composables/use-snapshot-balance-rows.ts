@@ -4,12 +4,12 @@ import { isNft } from '@/modules/assets/nft-utils';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { type BalanceSnapshot, ZeroValueFilter } from '@/modules/dashboard/snapshots';
+import { type Filters, readSnapshotFilters, SnapshotCategories, type SnapshotCategory } from '@/modules/dashboard/snapshots/composables/snapshot-balance-filter';
 import { useSnapshotAssetFilters } from '@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters';
 import {
   type SnapshotHiddenCounts,
   useSnapshotBalanceFields,
 } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-fields';
-import { type Filters, readSnapshotFilters, SnapshotCategories, type SnapshotCategory } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
 
 export type IndexedBalanceSnapshot = BalanceSnapshot & { index: number; categoryLabel: string };
 

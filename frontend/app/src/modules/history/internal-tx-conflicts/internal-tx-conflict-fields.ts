@@ -3,7 +3,7 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { toPeriodField } from '@/modules/core/table/filters/shared/period-field';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
-import { InternalTxConflictFilterKeys } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts-filter';
+import { InternalTxConflictFilterKeys } from '@/modules/history/internal-tx-conflicts/internal-tx-conflict-filter-keys';
 
 type Translate = (key: string) => string;
 

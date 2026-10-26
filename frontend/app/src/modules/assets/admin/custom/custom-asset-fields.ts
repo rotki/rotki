@@ -1,5 +1,5 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { CustomAssetFilterKeys } from '@/modules/assets/admin/custom/use-custom-assets-filter';
+import { CustomAssetFilterKeys } from '@/modules/assets/admin/custom/custom-asset-filter-keys';
 import { toNameField } from '@/modules/core/table/filters/shared/name-field';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 

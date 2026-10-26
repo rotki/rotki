@@ -8,7 +8,7 @@ import {
   SnapshotBalanceFilterKeys,
   SnapshotCategories,
   zeroValueChoices,
-} from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
+} from '@/modules/dashboard/snapshots/composables/snapshot-balance-filter';
 
 /** How many rows each hide-filter is currently keeping off screen. */
 export interface SnapshotHiddenCounts {

@@ -2,12 +2,12 @@
 import type { CounterpartyMapping, CounterpartyMappingRequestPayload } from '@/modules/assets/admin/counterparty-mapping/schema';
 import { omit } from 'es-toolkit';
 import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
+import { CounterpartyMappingFilterKeys, type Filters } from '@/modules/assets/admin/counterparty-mapping/counterparty-mapping-filter-keys';
 import ManageCounterpartyMappingFormDialog
   from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingFormDialog.vue';
 import ManageCounterpartyMappingTable from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingTable.vue';
 import { useCounterpartyMappingApi } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-api';
 import { useCounterpartyMappingFields } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-fields';
-import { CounterpartyMappingFilterKeys, type Filters } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-filter';
 import { useMappingAdmin } from '@/modules/assets/admin/use-mapping-admin';
 import { fromRequest } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';

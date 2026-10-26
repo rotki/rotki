@@ -1,9 +1,9 @@
 import type { Ref, WritableComputedRef } from 'vue';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import { assert, Blockchain, type Eth2ValidatorEntry, type EthStakingCombinedFilter, type EthStakingFilter } from '@rotki/common';
+import { isValidStatus } from '@/modules/staking/eth/eth-validator-filter-keys';
 import { EthStakingFilterValueKeys } from '@/modules/staking/eth/use-eth-staking-filter-fields';
 import { EthStakingSelectionKeys } from '@/modules/staking/eth/use-eth-staking-selection-fields';
-import { isValidStatus } from '@/modules/staking/eth/use-eth-validator-filter';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 interface UseEthStakingSelectionReturn {

@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import { type Filters, tokenKindOf } from '@/modules/assets/detection/use-newly-detected-filter';
+import { type Filters, tokenKindOf } from '@/modules/assets/detection/newly-detected-filter-keys';
 import { useNewlyDetectedTokens } from '@/modules/assets/detection/use-newly-detected-tokens';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { arrayify } from '@/modules/core/common/data/array';

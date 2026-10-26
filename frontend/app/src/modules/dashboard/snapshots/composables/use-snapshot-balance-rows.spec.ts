@@ -2,7 +2,7 @@ import { bigNumberify } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { ZeroValueFilter } from '@/modules/dashboard/snapshots';
-import { type Filters, SnapshotBalanceFilterKeys, SnapshotCategories } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
+import { type Filters, SnapshotBalanceFilterKeys, SnapshotCategories } from '@/modules/dashboard/snapshots/composables/snapshot-balance-filter';
 import { type IndexedBalanceSnapshot, useSnapshotBalanceRows } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-rows';
 
 let spamIds: string[] = [];

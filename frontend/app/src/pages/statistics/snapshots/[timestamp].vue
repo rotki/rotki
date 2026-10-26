@@ -15,7 +15,7 @@ import {
   type Filters,
   isolateZeroValue,
   revealExcluded,
-} from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
+} from '@/modules/dashboard/snapshots/composables/snapshot-balance-filter';
 import { useSnapshotDraft } from '@/modules/dashboard/snapshots/composables/use-snapshot-draft';
 import { useSnapshotList } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import { useSnapshotStore } from '@/modules/dashboard/snapshots/use-snapshot-store';

@@ -1,6 +1,6 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import type { Filters } from '@/modules/history/events/history-event-filter-keys';
 import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
-import type { Filters } from '@/modules/history/events/use-events-filter';
 import { HistoryEventEntryType } from '@rotki/common';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';

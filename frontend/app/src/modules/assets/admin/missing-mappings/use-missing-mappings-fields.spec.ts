@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { MissingMappingsFilterKeys } from '@/modules/assets/admin/missing-mappings/missing-mapping-filter-keys';
 import { useMissingMappingsFields } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-fields';
-import { MissingMappingsFilterKeys } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-filter';
 import { resolveText } from '@/modules/core/table/pill/core/text';
 import { DisplayKinds } from '@/modules/core/table/pill/core/types';
 

@@ -18,7 +18,7 @@ import {
   isSolanaEventType,
   isWithdrawalEventType,
 } from '@/modules/history/event-utils';
-import { HistoryEventFilterKeys } from '@/modules/history/events/use-events-filter';
+import { HistoryEventFilterKeys } from '@/modules/history/events/history-event-filter-keys';
 
 type Translate = (key: string) => string;
 

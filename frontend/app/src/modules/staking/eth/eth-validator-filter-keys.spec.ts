@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isValidStatus, validStatuses } from '@/modules/staking/eth/use-eth-validator-filter';
+import { isValidStatus, validStatuses } from '@/modules/staking/eth/eth-validator-filter-keys';
 
 describe('isValidStatus', () => {
   it('should accept known statuses', () => {

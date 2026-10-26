@@ -2,10 +2,10 @@
 import type { CexMapping, CexMappingRequestPayload } from '@/modules/assets/types';
 import { omit } from 'es-toolkit';
 import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
+import { CexMappingFilterKeys, type Filters } from '@/modules/assets/admin/cex-mapping/cex-mapping-filter-keys';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
 import ManageCexMappingTable from '@/modules/assets/admin/cex-mapping/ManageCexMappingTable.vue';
 import { useCexMappingFields } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-fields';
-import { CexMappingFilterKeys, type Filters } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-filter';
 import { useMappingAdmin } from '@/modules/assets/admin/use-mapping-admin';
 import { useAssetCexMappingApi } from '@/modules/assets/api/use-asset-cex-mapping-api';
 import { fromRequest } from '@/modules/core/api/request-result';

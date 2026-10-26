@@ -9,7 +9,7 @@ import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { type Snapshot, ZeroValueFilter } from '@/modules/dashboard/snapshots';
 import SnapshotBalanceEntryDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog.vue';
 import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/SnapshotBalancesTable.vue';
-import { SnapshotBalanceFilterKeys } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-filter';
+import { SnapshotBalanceFilterKeys } from '@/modules/dashboard/snapshots/composables/snapshot-balance-filter';
 
 let spamIds: string[] = [];
 vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters', () => ({

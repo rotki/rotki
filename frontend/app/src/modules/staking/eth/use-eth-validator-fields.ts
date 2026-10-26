@@ -1,7 +1,7 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { toHumanReadable } from '@rotki/common';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
-import { EthValidatorFilterKeys, validStatuses } from '@/modules/staking/eth/use-eth-validator-filter';
+import { EthValidatorFilterKeys, validStatuses } from '@/modules/staking/eth/eth-validator-filter-keys';
 
 /** `all` is the absence of the pill rather than a value to send. */
 const selectableStatuses = validStatuses.filter(status => status !== 'all');

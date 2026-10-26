@@ -2,7 +2,7 @@
 import type { SavedViewState } from '@/modules/core/table/pill/composables/use-saved-views';
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import type { Filters } from '@/modules/staking/eth/use-eth-validator-filter';
+import type { Filters } from '@/modules/staking/eth/eth-validator-filter-keys';
 import { SavedFilterLocations } from '@/modules/core/table/filtering';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';

@@ -1,6 +1,6 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { AssetFilterKeys } from '@/modules/assets/admin/managed/use-assets-filter';
+import { AssetFilterKeys } from '@/modules/assets/admin/managed/asset-filter-keys';
 import { AssetFlag, IgnoredAssetHandlingType } from '@/modules/assets/types';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { FilterValueTypes } from '@/modules/core/table/filtering';

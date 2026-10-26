@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Filters, NewlyDetectedFilterKeys } from '@/modules/assets/detection/newly-detected-filter-keys';
 import { NewDetectedTokenKind } from '@/modules/assets/detection/types';
-import { type Filters, NewlyDetectedFilterKeys } from '@/modules/assets/detection/use-newly-detected-filter';
 import { useNewlyDetectedSelection } from '@/modules/assets/detection/use-newly-detected-selection';
 
 const getAllIdentifiers = vi.fn<(kind?: NewDetectedTokenKind) => Promise<string[]>>();
