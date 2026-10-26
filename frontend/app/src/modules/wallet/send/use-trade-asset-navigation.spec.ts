@@ -228,6 +228,16 @@ describe('useTradeAssetNavigation', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
+  it('should stay open on escape while an IME is composing, since there escape only cancels the candidate', () => {
+    const { onKeydown } = useTradeAssetNavigation([option('A')], { onClose, onSelect, scrollTo });
+
+    onKeydown(createMock<KeyboardEvent>({ isComposing: true, key: 'Escape', preventDefault: vi.fn() }));
+    expect(onClose).not.toHaveBeenCalled();
+
+    onKeydown(key('Escape'));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('should reset to the first result when the list contents change', async () => {
     const items = ref<TradeAssetOption[]>([option('A'), option('B'), option('C')]);
     const { highlighted, onKeydown } = useTradeAssetNavigation(items, { onClose, onSelect, scrollTo });

@@ -192,4 +192,15 @@ describe('valueSelectList', () => {
     await input.trigger('keydown', { key: 'Enter' });
     expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([['aave']]);
   });
+
+  it('should stay open on escape while an IME is composing, since there escape only cancels the candidate', async () => {
+    const wrapper = createWrapper([]);
+    const input = wrapper.get('[data-testid=value-select-search]');
+
+    await input.trigger('keydown', { isComposing: true, key: 'Escape' });
+    expect(wrapper.emitted('close')).toBeUndefined();
+
+    await input.trigger('keydown', { key: 'Escape' });
+    expect(wrapper.emitted('close')).toHaveLength(1);
+  });
 });
