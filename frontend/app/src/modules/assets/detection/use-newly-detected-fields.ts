@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { NewlyDetectedFilterKeys } from '@/modules/assets/detection/use-newly-detected-filter';
+import { NewlyDetectedFilterKeys } from '@/modules/assets/detection/newly-detected-filter-keys';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';

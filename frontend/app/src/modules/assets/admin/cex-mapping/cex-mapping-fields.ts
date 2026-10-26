@@ -1,6 +1,6 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { CexMappingFilterKeys } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-filter';
+import { CexMappingFilterKeys } from '@/modules/assets/admin/cex-mapping/cex-mapping-filter-keys';
 import { toNameField } from '@/modules/core/table/filters/shared/name-field';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';

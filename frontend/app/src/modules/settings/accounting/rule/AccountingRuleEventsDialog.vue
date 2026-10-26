@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import type { Filters } from '@/modules/history/events/history-event-filter-keys';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableSource } from '@/modules/history/events/types';
-import type { Filters } from '@/modules/history/events/use-events-filter';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';

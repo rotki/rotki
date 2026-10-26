@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
+import type { Filters } from '@/modules/assets/admin/managed/asset-filter-keys';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PillParams } from '@/modules/core/table/param-refs';

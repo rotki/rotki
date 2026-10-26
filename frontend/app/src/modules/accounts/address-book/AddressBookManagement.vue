@@ -5,12 +5,12 @@ import type {
   AddressBookPayload,
   AddressBookRequestPayload,
 } from '@/modules/accounts/address-book/eth-names';
+import { addressBookChainParams, type Filters } from '@/modules/accounts/address-book/address-book-filter-keys';
 import AddressBookFormDialog from '@/modules/accounts/address-book/AddressBookFormDialog.vue';
 import AddressBookManagementMore from '@/modules/accounts/address-book/AddressBookManagementMore.vue';
 import AddressBookTable from '@/modules/accounts/address-book/AddressBookTable.vue';
 import EthNamesHint from '@/modules/accounts/address-book/EthNamesHint.vue';
 import { useAddressBookFields } from '@/modules/accounts/address-book/use-address-book-fields';
-import { addressBookChainParams, type Filters } from '@/modules/accounts/address-book/use-address-book-filter';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';

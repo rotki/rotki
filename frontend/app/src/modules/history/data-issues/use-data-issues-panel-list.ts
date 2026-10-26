@@ -1,8 +1,8 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
+import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription } from '@/modules/history/data-issues/types';
-import type { Filters } from '@/modules/history/data-issues/use-data-issues-filter';
 import { isRequestFailure, type RequestFailure } from '@/modules/core/api/request-result';
 import { IssueState } from '@/modules/history/data-issues/constants';
 import { buildPanelPayload, PANEL_PAGE_SIZE } from '@/modules/history/data-issues/data-issues-panel-utils';

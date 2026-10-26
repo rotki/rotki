@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
+import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
 import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
-import type { Filters } from '@/modules/history/data-issues/use-data-issues-filter';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';

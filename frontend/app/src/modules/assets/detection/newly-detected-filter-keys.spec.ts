@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { NewlyDetectedFilterKeys, tokenKindOf } from '@/modules/assets/detection/newly-detected-filter-keys';
 import { NewDetectedTokenKind } from '@/modules/assets/detection/types';
-import { NewlyDetectedFilterKeys, tokenKindOf } from '@/modules/assets/detection/use-newly-detected-filter';
 
 describe('tokenKindOf', () => {
   it('should read the kind the pill narrowed to', () => {

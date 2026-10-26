@@ -1,7 +1,7 @@
 import type { AssetsWithId } from '@/modules/assets/types';
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { ManualBalanceFilterKeys } from '@/modules/accounts/manual-balances/use-manual-balances-filter';
+import { ManualBalanceFilterKeys } from '@/modules/accounts/manual-balances/manual-balance-filter-keys';
 import { toAssetField } from '@/modules/core/table/filters/shared/asset-field';
 import { toNameField } from '@/modules/core/table/filters/shared/name-field';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';

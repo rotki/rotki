@@ -2,7 +2,7 @@ import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/u
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
-import { AccountingRuleFilterKeys } from '@/modules/settings/accounting/rule/use-accounting-rule-filter';
+import { AccountingRuleFilterKeys } from '@/modules/settings/accounting/rule/accounting-rule-filter-keys';
 
 type Translate = (key: string) => string;
 

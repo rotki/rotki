@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
+import type { Filters } from '@/modules/history/events/history-event-filter-keys';
 import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
 import type { HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
-import type { Filters } from '@/modules/history/events/use-events-filter';
 import AccountingOverlayToggle from '@/modules/history/balances/AccountingOverlayToggle.vue';
 import BalanceDivergenceToggle from '@/modules/history/balances/BalanceDivergenceToggle.vue';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';

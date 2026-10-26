@@ -1,7 +1,7 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
 import { NON_TERMINAL_STATES } from '@/modules/history/data-issues/constants';
-import { DataIssuesFilterKeys, type Filters } from '@/modules/history/data-issues/use-data-issues-filter';
+import { DataIssuesFilterKeys, type Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
 
 /**
  * The panel is a glanceable inbox preview: it loads one page at a time and appends

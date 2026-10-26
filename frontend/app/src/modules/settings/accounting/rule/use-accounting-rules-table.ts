@@ -2,7 +2,7 @@ import type { TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import type { Filters } from '@/modules/settings/accounting/rule/use-accounting-rule-filter';
+import type { Filters } from '@/modules/settings/accounting/rule/accounting-rule-filter-keys';
 import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/modules/settings/types/accounting';
 import { enumParam, refParams } from '@/modules/core/table/param-refs';
 import { useServerTable } from '@/modules/core/table/use-server-table';

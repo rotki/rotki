@@ -4,7 +4,7 @@ import type { ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vu
 import type { Collection } from '@/modules/core/common/collection';
 import type { PillParams } from '@/modules/core/table/param-refs';
 import { keyBy } from 'es-toolkit';
-import { type Filters, managedAssetStatusParams } from '@/modules/assets/admin/managed/use-assets-filter';
+import { type Filters, managedAssetStatusParams } from '@/modules/assets/admin/managed/asset-filter-keys';
 import { useManagedAssetFields } from '@/modules/assets/admin/managed/use-managed-asset-fields';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { type AssetRequestPayload, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';

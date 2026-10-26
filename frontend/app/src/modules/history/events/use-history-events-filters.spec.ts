@@ -1,9 +1,9 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
+import type { Filters } from '@/modules/history/events/history-event-filter-keys';
 import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { Filters } from '@/modules/history/events/use-events-filter';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryEventsFilters } from './use-history-events-filters';
 

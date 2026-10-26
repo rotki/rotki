@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { managedAssetStatusParams } from '@/modules/assets/admin/managed/use-assets-filter';
+import { managedAssetStatusParams } from '@/modules/assets/admin/managed/asset-filter-keys';
 import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
 
 function setup(

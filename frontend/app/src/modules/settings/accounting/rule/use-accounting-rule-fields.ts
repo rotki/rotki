@@ -1,6 +1,6 @@
 import type { MaybeRefOrGetter } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import type { Filters } from '@/modules/settings/accounting/rule/use-accounting-rule-filter';
+import type { Filters } from '@/modules/settings/accounting/rule/accounting-rule-filter-keys';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { subtypesForTypes } from '@/modules/history/events/mapping/event-type-subtypes';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';

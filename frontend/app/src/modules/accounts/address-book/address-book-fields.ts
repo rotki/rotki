@@ -1,6 +1,6 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { AddressBookFilterKeys } from '@/modules/accounts/address-book/use-address-book-filter';
+import { AddressBookFilterKeys } from '@/modules/accounts/address-book/address-book-filter-keys';
 import { FilterValueTypes } from '@/modules/core/table/filtering';
 import { toNameField } from '@/modules/core/table/filters/shared/name-field';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';

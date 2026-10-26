@@ -1,6 +1,6 @@
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { CounterpartyMappingFilterKeys } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-filter';
+import { CounterpartyMappingFilterKeys } from '@/modules/assets/admin/counterparty-mapping/counterparty-mapping-filter-keys';
 import { toNameField } from '@/modules/core/table/filters/shared/name-field';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';

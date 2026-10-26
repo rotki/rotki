@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Filters } from '@/modules/assets/detection/use-newly-detected-filter';
+import type { Filters } from '@/modules/assets/detection/newly-detected-filter-keys';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';

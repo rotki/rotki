@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Filters } from '@/modules/assets/admin/managed/use-assets-filter';
+import type { Filters } from '@/modules/assets/admin/managed/asset-filter-keys';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { PillParams } from '@/modules/core/table/param-refs';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';

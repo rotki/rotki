@@ -6,7 +6,7 @@ import { toAssetField } from '@/modules/core/table/filters/shared/asset-field';
 import { toPeriodField } from '@/modules/core/table/filters/shared/period-field';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { IssueKind, IssueState } from '@/modules/history/data-issues/constants';
-import { DataIssuesFilterKeys } from '@/modules/history/data-issues/use-data-issues-filter';
+import { DataIssuesFilterKeys } from '@/modules/history/data-issues/data-issue-filter-keys';
 
 type Translate = (key: string) => string;
 

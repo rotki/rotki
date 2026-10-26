@@ -1,6 +1,6 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
-import type { Filters } from '@/modules/assets/admin/custom/use-custom-assets-filter';
+import type { Filters } from '@/modules/assets/admin/custom/custom-asset-filter-keys';
 import type { CustomAsset, CustomAssetRequestPayload } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import { useCustomAssetFields } from '@/modules/assets/admin/custom/use-custom-asset-fields';

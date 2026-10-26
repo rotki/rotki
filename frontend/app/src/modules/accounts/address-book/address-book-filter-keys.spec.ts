@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addressBookChainParams } from '@/modules/accounts/address-book/use-address-book-filter';
+import { addressBookChainParams } from '@/modules/accounts/address-book/address-book-filter-keys';
 
 function setup(chainValue?: string, strictValue = false): {
   chain: Ref<string | undefined>;

@@ -1,5 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue';
-import type { Filters } from '@/modules/accounts/manual-balances/use-manual-balances-filter';
+import type { Filters } from '@/modules/accounts/manual-balances/manual-balance-filter-keys';
 import type { AssetsWithId } from '@/modules/assets/types';
 import type { TagFieldOption } from '@/modules/core/table/filters/shared/tag-field';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';

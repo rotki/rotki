@@ -1,6 +1,6 @@
 import type { Collection } from '@/modules/core/common/collection';
+import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
-import type { Filters } from '@/modules/history/data-issues/use-data-issues-filter';
 import { get, set } from '@vueuse/core';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

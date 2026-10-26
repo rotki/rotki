@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AssetsWithId } from '@/modules/assets/types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import type { Filters } from '@/modules/history/events/use-events-filter';
+import type { Filters } from '@/modules/history/events/history-event-filter-keys';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
-import type { Filters } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-filter';
+import type { Filters } from '@/modules/assets/admin/cex-mapping/cex-mapping-filter-keys';
 import type { CexMapping } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';

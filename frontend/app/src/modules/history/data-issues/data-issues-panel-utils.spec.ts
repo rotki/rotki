@@ -2,6 +2,7 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { createMock } from '@test/utils/create-mock';
 import { describe, expect, it } from 'vitest';
 import { IssueKind, IssueState, NON_TERMINAL_STATES } from '@/modules/history/data-issues/constants';
+import { DataIssuesFilterKeys } from '@/modules/history/data-issues/data-issue-filter-keys';
 import {
   asMulti,
   asSingle,
@@ -9,7 +10,6 @@ import {
   PANEL_PAGE_SIZE,
   panelFilterFields,
 } from '@/modules/history/data-issues/data-issues-panel-utils';
-import { DataIssuesFilterKeys } from '@/modules/history/data-issues/use-data-issues-filter';
 
 function field(key: string): FieldDef {
   return createMock<FieldDef>({ key });

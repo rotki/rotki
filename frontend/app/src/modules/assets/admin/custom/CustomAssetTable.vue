@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { Filters } from '@/modules/assets/admin/custom/use-custom-assets-filter';
+import type { Filters } from '@/modules/assets/admin/custom/custom-asset-filter-keys';
 import type { CustomAsset } from '@/modules/assets/types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { useCustomAssetTable } from '@/modules/assets/admin/custom/use-custom-asset-table';

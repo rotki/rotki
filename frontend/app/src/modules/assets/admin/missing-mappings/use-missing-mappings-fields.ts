@@ -1,5 +1,5 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { MissingMappingsFilterKeys } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-filter';
+import { MissingMappingsFilterKeys } from '@/modules/assets/admin/missing-mappings/missing-mapping-filter-keys';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { toNameField } from '@/modules/core/table/filters/shared/name-field';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';

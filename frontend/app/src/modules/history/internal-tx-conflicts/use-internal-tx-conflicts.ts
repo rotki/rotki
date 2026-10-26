@@ -1,6 +1,6 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
-import type { Filters } from './use-internal-tx-conflicts-filter';
+import type { Filters } from './internal-tx-conflict-filter-keys';
 import { startPromise } from '@shared/utils';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { fromRequest } from '@/modules/core/api/request-result';

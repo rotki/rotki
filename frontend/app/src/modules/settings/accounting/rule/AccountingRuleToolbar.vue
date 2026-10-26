@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import type { Filters } from '@/modules/settings/accounting/rule/use-accounting-rule-filter';
+import type { Filters } from '@/modules/settings/accounting/rule/accounting-rule-filter-keys';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { CustomRuleHandling } from '@/modules/settings/accounting/rule/accounting-rule-query';

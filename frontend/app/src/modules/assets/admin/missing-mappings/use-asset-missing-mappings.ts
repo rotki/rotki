@@ -1,6 +1,6 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
-import type { Filters } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-filter';
+import type { Filters } from '@/modules/assets/admin/missing-mappings/missing-mapping-filter-keys';
 import type { CexMapping } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import type { MissingMapping } from '@/modules/user-data/schemas';
