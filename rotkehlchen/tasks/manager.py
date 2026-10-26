@@ -842,12 +842,6 @@ class TaskManager:
         ) is False:
             return None
 
-        with self.database.user_write() as write_cursor:
-            write_cursor.execute(
-                'DELETE FROM key_value_cache WHERE name=?',
-                (DBCacheStatic.PENDING_DETECTION_FROM_TS.value,),
-            )
-
         return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name=CURRENT_BALANCE_DETECTION_TASK_NAME,

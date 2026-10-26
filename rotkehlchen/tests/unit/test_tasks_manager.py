@@ -297,7 +297,17 @@ def test_current_balance_detection_scope_follows_processing_passes(
         ]
         assert spawn_task.call_args.kwargs['from_ts'] == 5_000
         assert spawn_task.call_args.kwargs['time_budget'] == CURRENT_BALANCE_DETECTION_TIME_BUDGET
-        assert task_manager._maybe_detect_current_balance_mismatches() is None  # consumed
+        with task_manager.database.conn.read_ctx() as cursor:  # only the finished task clears it
+            assert task_manager.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.PENDING_DETECTION_FROM_TS,
+            ) == 5_000
+        with task_manager.database.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name = ?',
+                (DBCacheStatic.PENDING_DETECTION_FROM_TS.value,),
+            )
+        assert task_manager._maybe_detect_current_balance_mismatches() is None
 
         set_cache(DBCacheStatic.PENDING_DETECTION_FROM_TS, 0)  # a full processing pass
         assert task_manager._maybe_detect_current_balance_mismatches() is not None

@@ -15,6 +15,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.detectors.current_balance import (
+    DEFAULT_DETECTION_TIME_BUDGET,
     CurrentBalanceMismatchDetector,
     run_current_balance_detection,
 )
@@ -128,6 +129,25 @@ def _get_issues(database: DBHandler) -> list:
     return DataIssuesManager(database).list_issues(
         DataIssueFilters(kind=IssueKind.CURRENT_BALANCE_MISMATCH),
     )
+
+
+def _set_pending(database: DBHandler, from_ts: int) -> None:
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.PENDING_DETECTION_FROM_TS,
+            value=Timestamp(from_ts),
+        )
+
+
+def _get_pending(database: DBHandler) -> int | None:
+    with database.conn.read_ctx() as cursor:
+        pending = database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.PENDING_DETECTION_FROM_TS,
+        )
+
+    return None if pending is None else int(pending)
 
 
 def test_divergence_outside_tolerance_writes_an_issue(database: DBHandler) -> None:
@@ -341,6 +361,7 @@ def test_full_run_out_of_budget_resumes_where_it_stopped(database: DBHandler) ->
 
 
 def test_crashed_detection_still_records_its_run_and_reports_it(database: DBHandler) -> None:
+    _set_pending(database, 0)
     with (
         patch(
             'rotkehlchen.history.data_issues.detectors.current_balance.'
@@ -359,6 +380,7 @@ def test_crashed_detection_still_records_its_run_and_reports_it(database: DBHand
             cursor=cursor,
             name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
         ) is not None
+    assert _get_pending(database) is None
     msg_aggregator.add_message.assert_called_once_with(
         message_type=WSMessageType.CURRENT_BALANCE_DETECTION_COMPLETED,
         data={},
@@ -403,3 +425,39 @@ def test_partial_detection_keeps_the_daily_full_run_due(database: DBHandler) -> 
             cursor=cursor,
             name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
         ) is None
+
+
+def test_cancelled_detection_keeps_the_pending_marker(database: DBHandler) -> None:
+    _set_pending(database, 0)
+    with (
+        patch(
+            'rotkehlchen.history.data_issues.detectors.current_balance.'
+            'CurrentBalanceMismatchDetector.run',
+            side_effect=TaskCancelledError('cancelled'),
+        ),
+        pytest.raises(TaskCancelledError),
+    ):
+        run_current_balance_detection(database=database, msg_aggregator=MagicMock())
+
+    assert _get_pending(database) == 0
+
+
+@pytest.mark.parametrize(('time_budget', 'expected_pending'), [
+    (-1, 0),  # out of budget: a scoped run can't resume, so a full run is requested
+    (DEFAULT_DETECTION_TIME_BUDGET, None),
+])
+def test_scoped_detection_settles_the_pending_marker(
+        database: DBHandler,
+        time_budget: int,
+        expected_pending: int | None,
+) -> None:
+    _add_balance(database, TEST_ADDR1, '5')
+    _cache_balance(database, TEST_ADDR1, '3')
+    _set_pending(database, 5_000)
+    run_current_balance_detection(
+        database=database,
+        msg_aggregator=MagicMock(),
+        from_ts=TimestampMS(0),
+        time_budget=time_budget,
+    )
+    assert _get_pending(database) == expected_pending

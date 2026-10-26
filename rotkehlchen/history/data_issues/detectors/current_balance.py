@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Final
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.concurrency import checkpoint
+from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DEFAULT_DETECTION_TIME_BUDGET: Final = 300  # seconds
+FULL_RUN_PENDING: Final = 0  # value of the pending marker that asks for a full comparison
 
 
 @dataclass
@@ -194,6 +195,7 @@ class CurrentBalanceMismatchDetector:
             if tolerance is None else tolerance
         )
         self.issues_manager = DataIssuesManager(database)
+        self.reached_end_of_scope = False  # False when the time budget cut the last run short
 
     def run(self, from_ts: TimestampMS | None = None) -> int:
         """Check the wallet buckets and return how many of them were compared.
@@ -275,6 +277,7 @@ class CurrentBalanceMismatchDetector:
                     compared += 1
 
         else:  # every wallet was reached, so the next full run starts from the beginning
+            self.reached_end_of_scope = True
             if from_ts is None:
                 self._save_cursor(None)
 
@@ -330,6 +333,22 @@ class CurrentBalanceMismatchDetector:
         )
 
 
+def _set_pending_detection(database: DBHandler, from_ts: int | None) -> None:
+    """Set the marker of the processing passes the detection has not covered, None clears it."""
+    with database.user_write() as write_cursor:
+        if from_ts is None:
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name = ?',
+                (DBCacheStatic.PENDING_DETECTION_FROM_TS.value,),
+            )
+        else:
+            database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.PENDING_DETECTION_FROM_TS,
+                value=Timestamp(from_ts),
+            )
+
+
 def run_current_balance_detection(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
@@ -342,12 +361,25 @@ def run_current_balance_detection(
     processing pass don't postpone the daily full comparison. Every run, even a failed or
     cancelled one, ends with a CURRENT_BALANCE_DETECTION_COMPLETED message, since it may have
     opened or resolved issues before stopping.
+
+    The pending marker left by the processing passes is settled by how the run ends:
+    - cancelled: kept, since the work that preempted the run folds its own pass into it;
+    - crashed: cleared, so a failure that repeats doesn't respawn the task on every tick and the
+      daily full run retries it;
+    - a scoped run that ran out of its time budget: turned into a full run request, since a
+      scoped run has no cursor to resume from and would start over at the same wallets;
+    - otherwise cleared. A full run that ran out of budget resumes from its cursor.
     """
+    detector: CurrentBalanceMismatchDetector | None = None
+    cancelled, compared = False, None
     try:
-        return CurrentBalanceMismatchDetector(
-            database=database,
-            time_budget=time_budget,
-        ).run(from_ts=from_ts)
+        detector = CurrentBalanceMismatchDetector(database=database, time_budget=time_budget)
+        compared = detector.run(from_ts=from_ts)
+    except TaskCancelledError:
+        cancelled = True
+        raise
+    else:
+        return compared
     finally:
         try:  # a crash must not leave the periodic task due again on the very next tick
             if from_ts is None:
@@ -358,7 +390,19 @@ def run_current_balance_detection(
                         value=ts_now(),
                     )
         finally:  # a cancelled task can't write, but its issues may still have changed
-            msg_aggregator.add_message(
-                message_type=WSMessageType.CURRENT_BALANCE_DETECTION_COMPLETED,
-                data={},
-            )
+            try:
+                if cancelled is False:
+                    _set_pending_detection(
+                        database=database,
+                        from_ts=FULL_RUN_PENDING if (
+                            compared is not None and
+                            from_ts is not None and
+                            detector is not None and
+                            detector.reached_end_of_scope is False
+                        ) else None,
+                    )
+            finally:
+                msg_aggregator.add_message(
+                    message_type=WSMessageType.CURRENT_BALANCE_DETECTION_COMPLETED,
+                    data={},
+                )
