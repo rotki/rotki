@@ -39,3 +39,10 @@ export const balanceDivergenceActivity = defineActivity<
   kind: ActivityKind.HISTORICAL_BALANCES,
   part: ActivityPart.DIVERGENCE,
 });
+
+/** Comparing the derived balances with the live chain balances. A singleton under the kind. */
+export const currentBalanceDetectionActivity = defineActivity<void, readonly []>({
+  key: () => [],
+  kind: ActivityKind.HISTORICAL_BALANCES,
+  part: ActivityPart.DETECT,
+});

@@ -52,6 +52,33 @@ def test_trigger_data_issue_remediation(
         )
 
 
+@pytest.mark.parametrize('can_schedule', [False, True])
+def test_trigger_current_balance_detection(
+        rotkehlchen_api_server: APIServer,
+        can_schedule: bool,
+) -> None:
+    task_manager = rotkehlchen_api_server.rest_api.rotkehlchen.task_manager
+    assert task_manager is not None
+    with patch.object(
+        task_manager,
+        'trigger_current_balance_detection',
+        return_value=[] if can_schedule else None,
+    ) as schedule:
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'triggertaskresource'),
+            json={'task': 'current_balance_detection', 'async_query': False},
+        )
+    schedule.assert_called_once_with()
+    if can_schedule:
+        assert assert_proper_sync_response_with_result(response) is True
+    else:
+        assert_error_response(
+            response,
+            contained_in_msg='Current balance detection cannot start',
+            status_code=HTTPStatus.CONFLICT,
+        )
+
+
 def _write_issue(
         server: APIServer,
         event_identifier: int = 1,

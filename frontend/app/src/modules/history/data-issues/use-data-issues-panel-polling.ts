@@ -10,8 +10,9 @@ const POLL_INTERVAL = 10_000;
  * Keeps the panel's list fresh without letting a backgrounded panel hit the network.
  *
  * Two triggers reload it: a slow poll while any row is auto-remediating, and the
- * completion of a history sync (so the inbox reflects freshly detected issues, or
- * the all-clear shield, without waiting for the poll or a manual refresh).
+ * completion of a history sync, a historical balance processing or a current balance
+ * detection (so the inbox reflects freshly detected issues, or the all-clear shield,
+ * without waiting for the poll or a manual refresh).
  *
  * Both are gated on activation, because under `<KeepAlive>` a hidden panel keeps its
  * reactivity live. A sync that completes while hidden is not dropped: it is recorded
@@ -22,7 +23,7 @@ export function useDataIssuesPanelPolling(
   reload: () => Promise<void>,
 ): void {
   const { syncCompleted } = useSyncCompleted();
-  const { historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
+  const { currentBalanceDetectionCompleted, historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
   const { pause, resume } = useIntervalFn(() => {
     startPromise(reload());
   }, POLL_INTERVAL, { immediate: false });
@@ -46,7 +47,7 @@ export function useDataIssuesPanelPolling(
       set(pendingRefresh, true);
   });
 
-  watch(historicalBalanceProcessingCompleted, () => {
+  watch([historicalBalanceProcessingCompleted, currentBalanceDetectionCompleted], () => {
     if (get(active))
       startPromise(reload());
     else

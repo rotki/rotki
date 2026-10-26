@@ -158,6 +158,32 @@ describe('useDataIssuesPanelPolling', () => {
     panel.unmount();
   });
 
+  it('should reload when current balance detection completes while visible', async () => {
+    const reload = vi.fn().mockResolvedValue(undefined);
+    const panel = mountPanel(ref(false), reload);
+
+    useHistoricalBalanceProcessingStore().notifyCurrentBalanceDetectionCompleted();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(reload).toHaveBeenCalledOnce();
+    panel.unmount();
+  });
+
+  it('should catch up a current balance detection that completes while hidden', async () => {
+    const reload = vi.fn().mockResolvedValue(undefined);
+    const panel = mountPanel(ref(false), reload);
+    await panel.show(false);
+    useHistoricalBalanceProcessingStore().notifyCurrentBalanceDetectionCompleted();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(reload).not.toHaveBeenCalled();
+
+    await panel.show(true);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(reload).toHaveBeenCalledOnce();
+    panel.unmount();
+  });
+
   it('should defer a sync that completes while hidden instead of dropping it', async () => {
     const reload = vi.fn().mockResolvedValue(undefined);
     const panel = mountPanel(ref(false), reload);

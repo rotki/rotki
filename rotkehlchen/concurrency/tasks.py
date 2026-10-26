@@ -21,7 +21,9 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.concurrency.cancellation import (
     CancellationToken,
+    TaskCancelledError,
     cancellable_sleep,
+    checkpoint,
     current_token,
     run_cancellable,
 )
@@ -190,6 +192,24 @@ def wait(tasks: Sequence[Task], timeout: float | None = None) -> None:
         if (remaining := deadline - time.monotonic()) <= 0:
             return
         task.join(remaining)
+
+
+def join_forwarding_cancellation(task: Task, poll_seconds: float = 0.5) -> None:
+    """Wait for a task, cancelling it as well if the waiting task gets cancelled.
+
+    A task spawned through the TaskSupervisor carries its own token, so cancelling the task
+    that waits on it would otherwise leave it running. Without a current token this is a
+    plain join.
+
+    May raise TaskCancelledError.
+    """
+    try:
+        while task.dead is False:
+            task.join(poll_seconds)
+            checkpoint()
+    except TaskCancelledError as e:
+        task.request_cancellation(str(e) or 'Cancelled because its waiter was cancelled')
+        raise
 
 
 def exception_of(task: Task) -> BaseException | None:
