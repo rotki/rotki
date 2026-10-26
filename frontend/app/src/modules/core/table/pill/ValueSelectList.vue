@@ -125,21 +125,22 @@ function onPointerMove(event: MouseEvent, index: number): void {
  * Drives the list from the keyboard: dismiss, move the highlight, commit a row.
  *
  * @remarks
- * Escape is handled here rather than left to the surrounding menu, and before anything else. The
- * menu can only dismiss itself while its own content holds focus, and this list is what holds it;
- * an empty list has to be dismissable too, so the check cannot sit behind the row count.
+ * A composing IME is left alone, Escape included. Mid-word, Enter confirms the candidate, the
+ * arrows walk the candidate list and Escape cancels it, so acting on any of them commits a row or
+ * closes the list under the user.
  *
- * A composing IME is left alone. Mid-word, Enter confirms the candidate and the arrows walk the
- * candidate list, so acting on them commits a row and closes the list under the user.
+ * Escape is handled here rather than left to the surrounding menu. The menu can only dismiss
+ * itself while its own content holds focus, and this list is what holds it; an empty list has to
+ * be dismissable too, so the check cannot sit behind the row count.
  */
 function onKeydown(event: KeyboardEvent): void {
+  if (event.isComposing)
+    return;
+
   if (event.key === 'Escape') {
     emit('close');
     return;
   }
-
-  if (event.isComposing)
-    return;
 
   const items = get(filtered);
   if (items.length === 0)

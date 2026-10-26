@@ -110,21 +110,21 @@ export function useTradeAssetNavigation(
    * Drives the list from the search field, which is where focus sits.
    *
    * @remarks
-   * Escape is answered here rather than left to the dialog, ahead of the row check, since an empty
-   * list has to be dismissable too. A composing IME is left entirely alone: there, Enter confirms
-   * the candidate and the arrows walk the candidate list, so acting on either would commit a row
-   * and close the dialog mid-word.
+   * A composing IME is left entirely alone, Escape included: there, Enter confirms the candidate,
+   * the arrows walk the candidate list and Escape cancels it, so acting on any of them would commit
+   * a row or close the dialog mid-word. Escape is otherwise answered here rather than left to the
+   * dialog, ahead of the row check, since an empty list has to be dismissable too.
    *
    * @param event - the keydown from the search input
    */
   function onKeydown(event: KeyboardEvent): void {
+    if (event.isComposing)
+      return;
+
     if (event.key === 'Escape') {
       onClose();
       return;
     }
-
-    if (event.isComposing)
-      return;
 
     const items = toValue(options);
     if (event.key === 'ArrowDown') {
