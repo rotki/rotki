@@ -324,14 +324,13 @@ def _bypass_rate_limiter(monkeypatch: pytest.MonkeyPatch) -> None:
 def _drain_session_messages_aggregator(request: pytest.FixtureRequest) -> None:
     """Start every test with an empty session-scoped messages aggregator.
 
-    The aggregator lives for the whole session, so warnings and errors a test leaves
-    unconsumed (in its deques, or in the mock notifier when one is attached) are
+    The aggregator lives for the whole session, so messages a test leaves unconsumed
+    (held by the aggregator, or in the mock notifier when one is attached) are
     otherwise read by whichever test runs next on the same xdist worker, and that
     unrelated test is the one that fails.
     """
     aggregator: MessagesAggregator = request.getfixturevalue('messages_aggregator')
-    aggregator.consume_warnings()
-    aggregator.consume_errors()
+    aggregator.clear()
     if isinstance(notifier := aggregator.rotki_notifier, MockRotkiNotifier):
         notifier.reset()  # type: ignore[unreachable]  # the mock is not a RotkiNotifier subtype
 
