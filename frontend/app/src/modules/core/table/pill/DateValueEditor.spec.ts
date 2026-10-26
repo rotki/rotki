@@ -1,6 +1,6 @@
 import type { ActiveFilter, FieldDef } from '@/modules/core/table/pill/core/types';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { assert, describe, expect, it, type Mock, vi } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { defineComponent } from 'vue';
 import DateValueEditor from '@/modules/core/table/pill/DateValueEditor.vue';
 
@@ -77,14 +77,6 @@ function bounds(wrapper: VueWrapper<InstanceType<typeof DateValueEditor>>): {
     fromMax: boundProp(wrapper, 'date-from', 'maxDate'),
     toMin: boundProp(wrapper, 'date-to', 'minDate'),
   };
-}
-
-function hostWithEscapeListener(): { escaped: Mock; host: HTMLElement } {
-  const host = document.createElement('div');
-  document.body.appendChild(host);
-  const escaped = vi.fn();
-  host.addEventListener('keydown', escaped);
-  return { escaped, host };
 }
 
 describe('dateValueEditor', () => {
@@ -170,24 +162,19 @@ describe('dateValueEditor', () => {
     wrapper.unmount();
   });
 
-  it('should keep escape inside the editor while the calendar is up', async () => {
-    const { escaped, host } = hostWithEscapeListener();
-    const wrapper = createWrapper({ fieldKey: 'period', op: 'between', values: [] }, host);
+  it('should stay open on escape while the calendar is up, and ask the bar to persist it, since that press belongs to the calendar', async () => {
+    const wrapper = createWrapper({ fieldKey: 'period', op: 'between', values: [] });
 
     wrapper.findComponent(DateTimePickerStub).vm.$emit('update:menuOpen', true);
     await nextTick();
     await wrapper.find('[data-testid=date-from]').trigger('keydown.esc');
 
     expect(wrapper.emitted('close')).toBeUndefined();
-    expect(escaped).not.toHaveBeenCalled();
-
-    wrapper.unmount();
-    host.remove();
+    expect(wrapper.emitted('persist')?.at(-1)).toStrictEqual([true]);
   });
 
-  it('should let escape out once the calendar is shut', async () => {
-    const { escaped, host } = hostWithEscapeListener();
-    const wrapper = createWrapper({ fieldKey: 'period', op: 'between', values: [] }, host);
+  it('should close on escape once the calendar is shut, and release the persist', async () => {
+    const wrapper = createWrapper({ fieldKey: 'period', op: 'between', values: [] });
 
     const picker = wrapper.findComponent(DateTimePickerStub).vm;
     picker.$emit('update:menuOpen', true);
@@ -197,10 +184,7 @@ describe('dateValueEditor', () => {
     await wrapper.find('[data-testid=date-from]').trigger('keydown.esc');
 
     expect(wrapper.emitted('close')).toHaveLength(1);
-    expect(escaped).toHaveBeenCalledTimes(1);
-
-    wrapper.unmount();
-    host.remove();
+    expect(wrapper.emitted('persist')?.at(-1)).toStrictEqual([false]);
   });
 
   it('should close on escape from either bound', async () => {
