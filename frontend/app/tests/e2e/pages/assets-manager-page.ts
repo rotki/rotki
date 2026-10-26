@@ -142,7 +142,7 @@ export class AssetsManagerPage {
     // The search box narrows on a label, and this list of two would only risk hiding the target.
     const option = this.page.locator(`[data-testid=value-select-option][data-key="${SHOW_ALL}"]`);
     await option.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
-    if (await option.getAttribute('aria-checked') !== 'true')
+    if (await option.getAttribute('aria-selected') !== 'true')
       await option.click();
     await this.pill.closeEditor(IGNORED_FIELD);
     await this.pill.expectPillVisible(IGNORED_FIELD);

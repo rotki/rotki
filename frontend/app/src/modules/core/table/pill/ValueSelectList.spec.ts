@@ -1,5 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import ValueSelectList, { type SelectOption } from '@/modules/core/table/pill/ValueSelectList.vue';
 
 const { scrollTo } = vi.hoisted(() => ({ scrollTo: vi.fn<(index: number) => void>() }));
@@ -41,6 +41,47 @@ describe('valueSelectList', () => {
   it('should render an option per choice', () => {
     const wrapper = createWrapper([]);
     expect(wrapper.findAll('[data-testid=value-select-option]')).toHaveLength(3);
+  });
+
+  it('should make the search a combobox controlling a listbox whose options are selected when ticked', () => {
+    const wrapper = createWrapper(['uniswap']);
+    const search = wrapper.get('[data-testid=value-select-search]');
+    const listbox = wrapper.get('[role=listbox]');
+    const rows = wrapper.findAll('[data-testid=value-select-option]');
+
+    expect(search.attributes('role')).toBe('combobox');
+    expect(search.attributes('aria-controls')).toBe(listbox.attributes('id'));
+    expect(listbox.attributes('aria-multiselectable')).toBe('true');
+    expect(rows.map(row => row.attributes('role'))).toStrictEqual(['option', 'option', 'option']);
+    expect(rows.map(row => row.attributes('aria-selected'))).toStrictEqual(['false', 'true', 'false']);
+  });
+
+  it('should mark a single-choice list as not multiselectable', () => {
+    const wrapper = createWrapper([], false);
+    expect(wrapper.get('[role=listbox]').attributes('aria-multiselectable')).toBe('false');
+  });
+
+  it('should name the highlighted row as the search field\'s active option, so a screen reader follows the arrows', async () => {
+    const wrapper = createWrapper([]);
+    const search = wrapper.get('[data-testid=value-select-search]');
+    const rowIds = wrapper.findAll('[data-testid=value-select-option]').map(row => row.attributes('id'));
+    assert(rowIds.every(id => id !== undefined), 'every row needs an id to be named by');
+
+    expect(search.attributes('aria-activedescendant')).toBe(rowIds[0]);
+
+    await search.trigger('keydown', { key: 'ArrowDown' });
+
+    expect(search.attributes('aria-activedescendant')).toBe(rowIds[1]);
+  });
+
+  it('should name no active option once the search matches nothing', async () => {
+    const wrapper = createWrapper([]);
+    const search = wrapper.get('[data-testid=value-select-search]');
+    expect(search.attributes('aria-activedescendant')).toBeDefined();
+
+    await search.setValue('zzz');
+
+    expect(search.attributes('aria-activedescendant')).toBeUndefined();
   });
 
   it('should add a value on toggle when multiple', async () => {

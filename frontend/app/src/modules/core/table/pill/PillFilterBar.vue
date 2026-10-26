@@ -9,6 +9,7 @@ import { hasWritableValue } from '@/modules/core/table/pill/core/codec';
 import { resolveEditor } from '@/modules/core/table/pill/core/field-adapter';
 import { narrowActiveId } from '@/modules/core/table/pill/core/narrow-ids';
 import { defaultOp } from '@/modules/core/table/pill/core/operators';
+import { resolveText } from '@/modules/core/table/pill/core/text';
 import FilterPill from '@/modules/core/table/pill/FilterPill.vue';
 import PillMenu from '@/modules/core/table/pill/PillMenu.vue';
 import PillNarrowList from '@/modules/core/table/pill/PillNarrowList.vue';
@@ -351,6 +352,8 @@ function focusInput(event: MouseEvent): void {
       :persistent="editorPersistent && openEditorKey === entry.filter.fieldKey"
       :options="{ placement: 'bottom-start' }"
       disable-auto-focus
+      role="dialog"
+      :menu-label="resolveText(entry.field.label)"
       @update:model-value="setEditorOpen(entry.field, $event)"
     >
       <template #activator="{ attrs }">

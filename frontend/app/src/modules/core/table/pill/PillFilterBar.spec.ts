@@ -28,6 +28,7 @@ const RuiMenuStub = defineComponent({
   props: {
     disabled: { default: false, type: Boolean },
     modelValue: { default: false, type: Boolean },
+    menuLabel: { default: undefined, type: String },
     persistent: { default: false, type: Boolean },
     role: { default: 'menu', type: String },
   },
@@ -199,6 +200,14 @@ describe('pillFilterBar', () => {
     await nextTick();
     const open = wrapper.findAllComponents(RuiMenuStub).filter(menu => menu.props('modelValue') === true);
     expect(open).toHaveLength(1);
+  });
+
+  it('should open each value editor as a dialog named after its field, since an editor holds a form, not menu items', () => {
+    const wrapper = createWrapper({ protocols: ['aave'] });
+
+    const editorMenus = wrapper.findAllComponents(RuiMenuStub).filter(menu => menu.findComponent(PillValueEditor).exists());
+
+    expect(editorMenus.map(menu => [menu.props('role'), menu.props('menuLabel')])).toStrictEqual([['dialog', 'Protocol']]);
   });
 
   it('should hold the open editor\'s menu persistent while the editor asks, since that is what keeps escape and outside clicks from closing it under a calendar', async () => {

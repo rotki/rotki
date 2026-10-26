@@ -64,6 +64,16 @@ const filtered = computed<SelectOption[]>(() => {
 
 const selectedSet = computed<Set<string>>(() => new Set(get(selected)));
 
+const listId = useId();
+
+function rowId(index: number): string {
+  return `${listId}-${index}`;
+}
+
+/** The row the search field names as active, so a screen reader follows the arrow keys. */
+const activeRowId = computed<string | undefined>(() =>
+  get(filtered).length > 0 ? rowId(get(highlighted)) : undefined);
+
 // Selected values pinned above the list as chips, so the choice stays visible once it scrolls away.
 const labelByValue = computed<Map<string, string>>(() => new Map(options.map(option => [option.value, option.label])));
 const selectedChips = computed<SelectOption[]>(() =>
@@ -200,6 +210,11 @@ function onKeydown(event: KeyboardEvent): void {
         class="flex-1 min-w-0 bg-transparent py-2.5 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary"
         :placeholder="searchPlaceholder"
         :aria-label="searchPlaceholder"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded="true"
+        :aria-controls="listId"
+        :aria-activedescendant="activeRowId"
         autocomplete="off"
         spellcheck="false"
         data-testid="value-select-search"
@@ -219,20 +234,25 @@ function onKeydown(event: KeyboardEvent): void {
 
     <div
       v-if="filtered.length > 0"
+      :id="listId"
       v-bind="containerProps"
       class="max-h-60 p-1"
+      role="listbox"
+      :aria-multiselectable="multiple"
+      :aria-label="searchPlaceholder"
     >
       <div v-bind="wrapperProps">
         <button
           v-for="item in list"
+          :id="rowId(item.index)"
           :key="item.data.value"
           type="button"
           class="flex items-center gap-2.5 w-full px-2.5 h-8 rounded-md text-sm text-left transition-colors"
           :class="item.index === highlighted
             ? 'bg-rui-primary/10'
             : 'hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800'"
-          role="menuitemcheckbox"
-          :aria-checked="selectedSet.has(item.data.value)"
+          role="option"
+          :aria-selected="selectedSet.has(item.data.value)"
           data-testid="value-select-option"
           :data-key="item.data.value"
           @mousemove="onPointerMove($event, item.index)"
