@@ -1,6 +1,8 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ValueSelectList, { type SelectOption } from '@/modules/core/table/pill/ValueSelectList.vue';
+
+const { scrollTo } = vi.hoisted(() => ({ scrollTo: vi.fn<(index: number) => void>() }));
 
 vi.mock('@vueuse/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@vueuse/core')>();
@@ -11,7 +13,7 @@ vi.mock('@vueuse/core', async (importOriginal) => {
     return {
       containerProps: { onScroll: (): void => {}, ref: ref(), style: {} },
       list: computed(() => toValue(source).map((data, index) => ({ data, index }))),
-      scrollTo: (): void => {},
+      scrollTo,
       wrapperProps: { style: {} },
     };
   }
@@ -32,6 +34,10 @@ function createWrapper(selected: string[], multiple = true, pinned = 0): VueWrap
 }
 
 describe('valueSelectList', () => {
+  beforeEach(() => {
+    scrollTo.mockClear();
+  });
+
   it('should render an option per choice', () => {
     const wrapper = createWrapper([]);
     expect(wrapper.findAll('[data-testid=value-select-option]')).toHaveLength(3);
@@ -88,6 +94,38 @@ describe('valueSelectList', () => {
     await input.trigger('keydown', { key: 'ArrowDown' });
     await input.trigger('keydown', { key: 'Enter' });
     expect(wrapper.emitted('update:modelValue')?.[0]).toStrictEqual([['uniswap']]);
+  });
+
+  it('should scroll every arrow move into view, since the list is virtualized and the highlight could land off screen', async () => {
+    const wrapper = createWrapper([]);
+    const input = wrapper.find('input');
+
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    await input.trigger('keydown', { key: 'ArrowUp' });
+
+    expect(scrollTo.mock.calls).toStrictEqual([[1], [2], [1]]);
+  });
+
+  it('should scroll back to the first result after a search', async () => {
+    const wrapper = createWrapper([]);
+    const input = wrapper.find('input');
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    scrollTo.mockClear();
+
+    await input.setValue('a');
+
+    expect(scrollTo).toHaveBeenCalledExactlyOnceWith(0);
+  });
+
+  it('should not scroll when the pointer moves the highlight, since the row is already under the cursor', async () => {
+    const wrapper = createWrapper([]);
+    const rows = wrapper.findAll('[data-testid="value-select-option"]');
+
+    await rows[2].trigger('mousemove', { clientX: 10, clientY: 10 });
+
+    expect(scrollTo).not.toHaveBeenCalled();
   });
 
   it('should move the highlight to a hovered option', async () => {
