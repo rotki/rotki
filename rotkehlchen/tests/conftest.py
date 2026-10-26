@@ -34,6 +34,7 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
+from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.args import default_args
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 from rotkehlchen.utils.network import create_session
@@ -44,6 +45,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
     from vcr import VCR
+
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 # freezegun's default ignore list contains 'threading', and its call-stack inspection
@@ -264,6 +267,22 @@ def _bypass_rate_limiter(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(TokenBucket, 'acquire', lambda self, weight=1: None)
     for client in (Coingecko, Cryptocompare, Defillama):
         monkeypatch.setattr(client, '_maybe_probe', lambda self: None)
+
+
+@pytest.fixture(autouse=True)
+def _drain_session_messages_aggregator(request: pytest.FixtureRequest) -> None:
+    """Start every test with an empty session-scoped messages aggregator.
+
+    The aggregator lives for the whole session, so warnings and errors a test leaves
+    unconsumed (in its deques, or in the mock notifier when one is attached) are
+    otherwise read by whichever test runs next on the same xdist worker, and that
+    unrelated test is the one that fails.
+    """
+    aggregator: MessagesAggregator = request.getfixturevalue('messages_aggregator')
+    aggregator.consume_warnings()
+    aggregator.consume_errors()
+    if isinstance(notifier := aggregator.rotki_notifier, MockRotkiNotifier):
+        notifier.reset()  # type: ignore[unreachable]  # the mock is not a RotkiNotifier subtype
 
 
 if sys.platform == 'darwin':
