@@ -2,9 +2,9 @@ import type { StubInstance } from '@test/utils/component-vm';
 import type { NftAsset } from '@/modules/assets/nfts';
 import type { AssetActions, AssetDisplay, AssetResolution } from '@/modules/assets/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 
 type AnyPropsWrapper = VueWrapper<StubInstance>;
@@ -38,6 +38,7 @@ const AssetDetailsMenuContent = {
 /** Pass-through stand-in for the real menu, which needs a popper. */
 const RuiMenu = {
   name: 'RuiMenu',
+  props: ['modelValue'],
   template: '<div data-testid="rui-menu"><slot name="activator" :attrs="{}" /><slot /></div>',
 };
 
@@ -49,8 +50,9 @@ describe('assetDetailsBase', () => {
     resolution?: AssetResolution;
   }
 
-  function createWrapper(props: Props = {}): VueWrapper {
+  function createWrapper(props: Props = {}, options: { attachTo?: HTMLElement } = {}): VueWrapper {
     return mount(AssetDetailsBase, {
+      ...options,
       global: {
         plugins: [createCustomPinia()],
         stubs: { AppImage, AssetDetailsMenuContent, AssetIcon, RuiMenu },
@@ -73,6 +75,12 @@ describe('assetDetailsBase', () => {
 
   function appImage(wrapper: VueWrapper): AnyPropsWrapper {
     return wrapper.findComponent<StubInstance>({ name: 'AppImage' });
+  }
+
+  /** Moves the pointer onto the row, which is what builds its menu. */
+  async function hovered(wrapper: VueWrapper): Promise<VueWrapper> {
+    await listItem(wrapper).trigger('pointerenter');
+    return wrapper;
   }
 
   beforeEach(() => {
@@ -133,19 +141,61 @@ describe('assetDetailsBase', () => {
       expect(icon(createWrapper({ resolution: { forceChain: 'optimism' } })).props('forceChain')).toBe('optimism');
     });
 
-    it('should tell the menu content whether this is a collection parent', () => {
-      const wrapper = createWrapper({ resolution: { isCollectionParent: true } });
+    it('should tell the menu content whether this is a collection parent', async () => {
+      const wrapper = await hovered(createWrapper({ resolution: { isCollectionParent: true } }));
 
       expect(menuContent(wrapper).props('isCollectionParent')).toBe(true);
     });
   });
 
   describe('actions', () => {
-    it('should render the menu by default', () => {
+    it('should render the row without building its menu until the row is used', () => {
       const wrapper = createWrapper();
 
-      expect(wrapper.find('[data-testid="rui-menu"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="rui-menu"]').exists()).toBe(false);
       expect(listItem(wrapper).exists()).toBe(true);
+      expect(wrapper.find('button[aria-label="common.actions.more"]').exists()).toBe(true);
+    });
+
+    it('should build the menu once the pointer enters the row', async () => {
+      const wrapper = await hovered(createWrapper());
+
+      expect(wrapper.find('[data-testid="rui-menu"]').exists()).toBe(true);
+      expect(menuContent(wrapper).exists()).toBe(true);
+    });
+
+    it('should leave the menu unbuilt when a finger enters the row, so the tap reaches the same button', async () => {
+      const wrapper = createWrapper();
+      const button = wrapper.find('button[aria-label="common.actions.more"]');
+
+      listItem(wrapper).element.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'touch' }));
+      button.element.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'touch' }));
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid="rui-menu"]').exists()).toBe(false);
+      expect(wrapper.find('button[aria-label="common.actions.more"]').element).toBe(button.element);
+    });
+
+    it('should build and open the menu from a tap on the unbuilt button', async () => {
+      const wrapper = createWrapper();
+
+      await wrapper.find('button[aria-label="common.actions.more"]').trigger('click');
+      await flushPromises();
+
+      expect(wrapper.findComponent({ name: 'RuiMenu' }).props('modelValue')).toBe(true);
+    });
+
+    it('should hand keyboard focus to the menu\'s button when tabbing onto the unbuilt one built it', async () => {
+      const wrapper = createWrapper({}, { attachTo: document.body });
+      const before = wrapper.find<HTMLButtonElement>('button[aria-label="common.actions.more"]');
+
+      before.element.focus();
+      await flushPromises();
+
+      const after = wrapper.find<HTMLButtonElement>('button[aria-label="common.actions.more"]');
+      expect(wrapper.find('[data-testid="rui-menu"]').exists()).toBe(true);
+      expect(after.element).not.toBe(before.element);
+      expect(document.activeElement).toBe(after.element);
     });
 
     it('should skip the menu entirely when hideMenu is set', () => {
@@ -163,14 +213,52 @@ describe('assetDetailsBase', () => {
       expect(icon(wrapper).exists()).toBe(true);
     });
 
-    it('should forward hideActions to the menu content', () => {
-      const wrapper = createWrapper({ actions: { hideActions: true } });
+    it('should forward hideActions to the menu content', async () => {
+      const wrapper = await hovered(createWrapper({ actions: { hideActions: true } }));
 
       expect(menuContent(wrapper).props('hideActions')).toBe(true);
     });
 
-    it('should not hide the menu actions by default', () => {
-      expect(menuContent(createWrapper()).props('hideActions')).toBe(false);
+    it('should not hide the menu actions by default', async () => {
+      expect(menuContent(await hovered(createWrapper())).props('hideActions')).toBe(false);
+    });
+  });
+
+  describe('with the real menu', () => {
+    function createRealMenuWrapper(): VueWrapper {
+      return mount(AssetDetailsBase, {
+        attachTo: document.body,
+        global: {
+          plugins: [createCustomPinia()],
+          stubs: { AppImage, AssetDetailsMenuContent, AssetIcon },
+        },
+        props: { asset: ASSET },
+      });
+    }
+
+    function moreButton(wrapper: VueWrapper): Element {
+      return wrapper.find('button[aria-label="common.actions.more"]').element;
+    }
+
+    it('should open the menu a right click builds on a row the pointer never entered', async () => {
+      const wrapper = createRealMenuWrapper();
+
+      await listItem(wrapper).trigger('contextmenu');
+      await flushPromises();
+
+      await vi.waitFor(() => expect(document.body.querySelector('[data-testid="menu-content"]')).not.toBeNull());
+    });
+
+    it('should wrap the unbuilt activator exactly as the menu does, so building it moves nothing', async () => {
+      const wrapper = createRealMenuWrapper();
+      const pendingWrapper = moreButton(wrapper).parentElement?.parentElement;
+      const pending = [pendingWrapper?.className, pendingWrapper?.parentElement?.className];
+
+      await hovered(wrapper);
+
+      const builtWrapper = moreButton(wrapper).parentElement?.parentElement;
+      expect(wrapper.find('[data-testid="asset-details-menu-pending"]').exists()).toBe(false);
+      expect([builtWrapper?.className, builtWrapper?.parentElement?.className]).toStrictEqual(pending);
     });
   });
 
