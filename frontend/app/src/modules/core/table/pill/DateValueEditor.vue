@@ -33,23 +33,16 @@ watch([fromMenuOpen, toMenuOpen], ([from, to]) => emit('persist', from || to));
  *
  * The picker binds escape inside its calendar to close it and hand focus back to the field, so
  * emitting unconditionally meant one press collapsed both layers at once. Innermost first: the
- * calendar goes, then the pill's editor.
- *
- * Withholding the emit is not enough on its own: `RuiMenu` closes itself on escape without
- * consulting `persistent` (rotki/ui-library#567), so a key that reaches the popover takes the
- * editor with it whatever this decides. While a calendar is up the key therefore stops here, on
- * the editor's own root, which sits below that popover in the bubble path. Once that issue is
- * fixed the `persist` channel covers this and the `stopPropagation` can go.
+ * calendar goes, then the pill's editor. The editor's own popover stays up through that press
+ * because `persist` holds it `persistent`, and a persistent `RuiMenu` ignores escape.
  *
  * The flags are read mid-dispatch on purpose. The picker mirrors its calendar into `menu-open`
  * from a watcher, so during the event they still hold the state from before the press, which is
  * the question being asked: was a calendar open when escape landed?
  */
-function onEscape(event: KeyboardEvent): void {
-  if (get(fromMenuOpen) || get(toMenuOpen)) {
-    event.stopPropagation();
+function onEscape(): void {
+  if (get(fromMenuOpen) || get(toMenuOpen))
     return;
-  }
 
   emit('close');
 }
@@ -126,7 +119,7 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
 <template>
   <div
     class="flex flex-col gap-3 p-3 min-w-64"
-    @keydown.esc="onEscape($event)"
+    @keydown.esc="onEscape()"
   >
     <RuiButtonGroup
       v-if="operators.length > 1"

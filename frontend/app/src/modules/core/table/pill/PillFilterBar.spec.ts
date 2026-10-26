@@ -28,6 +28,7 @@ const RuiMenuStub = defineComponent({
   props: {
     disabled: { default: false, type: Boolean },
     modelValue: { default: false, type: Boolean },
+    persistent: { default: false, type: Boolean },
     role: { default: 'menu', type: String },
   },
   emits: ['update:modelValue'],
@@ -198,6 +199,28 @@ describe('pillFilterBar', () => {
     await nextTick();
     const open = wrapper.findAllComponents(RuiMenuStub).filter(menu => menu.props('modelValue') === true);
     expect(open).toHaveLength(1);
+  });
+
+  it('should hold the open editor\'s menu persistent while the editor asks, since that is what keeps escape and outside clicks from closing it under a calendar', async () => {
+    const wrapper = createWrapper({ protocols: ['aave'] });
+    wrapper.findComponent(PillMenu).vm.$emit('select', account);
+    await nextTick();
+    await nextTick();
+    const openMenuPersistent = (): boolean | undefined => {
+      const open = wrapper.findAllComponents(RuiMenuStub).find(menu => menu.props('modelValue') === true);
+      assert(open, 'the added field\'s editor must be open');
+      return open.props('persistent');
+    };
+    const editor = wrapper.findAllComponents(PillValueEditor).at(-1);
+    assert(editor);
+
+    editor.vm.$emit('persist', true);
+    await nextTick();
+    expect(openMenuPersistent()).toBe(true);
+
+    editor.vm.$emit('persist', false);
+    await nextTick();
+    expect(openMenuPersistent()).toBe(false);
   });
 
   it('should emit updated matches when the editor changes a matcher field', async () => {
