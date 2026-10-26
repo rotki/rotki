@@ -98,7 +98,8 @@ watch(() => highlighted, (index) => {
         :key="keyOf(suggestion)"
         ref="rows"
         type="button"
-        role="menuitem"
+        role="option"
+        :aria-selected="index === highlighted"
         class="flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-md text-sm text-left transition-colors"
         :class="index === highlighted
           ? 'bg-rui-primary/10 text-rui-primary'
@@ -180,15 +181,23 @@ watch(() => highlighted, (index) => {
     <div
       v-if="examples.length > 0"
       class="flex flex-wrap items-center gap-1.5 px-3 py-2 border-t border-rui-grey-200 dark:border-rui-grey-700"
+      role="group"
+      :aria-label="examplesLabel"
       data-testid="pill-narrow-syntax"
     >
-      <span class="text-xs text-rui-text-secondary shrink-0">{{ examplesLabel }}</span>
+      <span
+        class="text-xs text-rui-text-secondary shrink-0"
+        aria-hidden="true"
+      >
+        {{ examplesLabel }}
+      </span>
       <button
         v-for="(example, index) in examples"
         :id="narrowExampleId(index)"
         :key="example"
         type="button"
-        role="menuitem"
+        role="option"
+        :aria-selected="suggestions.length + index === highlighted"
         class="px-1.5 py-0.5 rounded-sm transition-colors"
         :class="suggestions.length + index === highlighted
           ? 'bg-rui-primary/10 text-rui-primary'

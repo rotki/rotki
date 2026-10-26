@@ -120,14 +120,16 @@ describe('pillNarrowList', () => {
     expect(chip.attributes('type')).toBe('button');
   });
 
-  it('should name the example the index past the last row points at as a highlighted menuitem, the only way the footer is keyboard-reachable', () => {
+  it('should name the example the index past the last row points at as the selected option, the only way the footer is keyboard-reachable', () => {
     const wrapper = mount(PillNarrowList, {
       props: { examples: ['after 15/01/2024', '>100'], highlighted: suggestions.length + 1, suggestions },
     });
 
     const chips = wrapper.findAll('[data-testid=pill-narrow-syntax-chip]');
     expect(chips[1].attributes('id')).toBe('pill-narrow-example-1');
-    expect(chips[1].attributes('role')).toBe('menuitem');
+    expect(chips[1].attributes('role')).toBe('option');
+    expect(chips[1].attributes('aria-selected')).toBe('true');
+    expect(chips[0].attributes('aria-selected')).toBe('false');
     expect(chips[1].classes()).toContain('text-rui-primary');
     // And only that one: a highlight in two places names neither.
     expect(chips[0].classes()).not.toContain('text-rui-primary');
