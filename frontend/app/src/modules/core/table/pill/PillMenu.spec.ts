@@ -69,6 +69,28 @@ describe('pillMenu', () => {
     await input.trigger('keydown', { key: 'Enter' });
     expect(wrapper.emitted('select')?.[0]?.[0]).toMatchObject({ key: 'location' });
   });
+  it('should name the highlighted row as the search field\'s active option, so a screen reader follows the arrows', async () => {
+    const wrapper = createWrapper();
+    const input = wrapper.get('[data-testid=pill-menu-search]');
+
+    await input.trigger('keydown', { key: 'ArrowDown' });
+
+    const rows = wrapper.findAll('[data-testid=pill-menu-field]');
+    expect(input.attributes('role')).toBe('combobox');
+    expect(wrapper.get('[role=listbox]').attributes('id')).toBe(input.attributes('aria-controls'));
+    expect(input.attributes('aria-activedescendant')).toBe(rows[1].attributes('id'));
+    expect(rows.map(row => row.attributes('aria-selected'))).toStrictEqual(['false', 'true', 'false']);
+  });
+
+  it('should name no active option once the search matches nothing', async () => {
+    const wrapper = createWrapper();
+    const input = wrapper.get('[data-testid=pill-menu-search]');
+
+    await input.setValue('zzz');
+
+    expect(input.attributes('aria-activedescendant')).toBeUndefined();
+  });
+
   it('should bring the highlighted row into view as the arrows move it', async () => {
     const wrapper = createWrapper();
     scrollIntoView.mockClear();

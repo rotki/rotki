@@ -40,6 +40,16 @@ const filtered = computed<FieldDef[]>(() => {
 // Keep the highlight in range as the list narrows while typing.
 watch(filtered, () => set(highlighted, 0));
 
+const listId = useId();
+
+function rowId(index: number): string {
+  return `${listId}-${index}`;
+}
+
+/** The row the search field names as active, so a screen reader follows the arrow keys. */
+const activeRowId = computed<string | undefined>(() =>
+  get(filtered).length > 0 ? rowId(get(highlighted)) : undefined);
+
 const rows = useTemplateRef<HTMLButtonElement[]>('rows');
 
 /**
@@ -117,6 +127,11 @@ function onKeydown(event: KeyboardEvent): void {
         class="flex-1 min-w-0 bg-transparent py-2.5 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary"
         :placeholder="searchPlaceholder"
         :aria-label="searchPlaceholder"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded="true"
+        :aria-controls="listId"
+        :aria-activedescendant="activeRowId"
         autocomplete="off"
         spellcheck="false"
         data-testid="pill-menu-search"
@@ -124,13 +139,20 @@ function onKeydown(event: KeyboardEvent): void {
       />
     </div>
 
-    <div class="flex flex-col gap-0.5 p-1.5 max-h-68 overflow-y-auto">
+    <div
+      :id="listId"
+      class="flex flex-col gap-0.5 p-1.5 max-h-68 overflow-y-auto"
+      role="listbox"
+      :aria-label="searchPlaceholder"
+    >
       <button
         v-for="(field, index) in filtered"
+        :id="rowId(index)"
         :key="field.key"
         ref="rows"
         type="button"
-        role="menuitem"
+        role="option"
+        :aria-selected="index === highlighted"
         class="flex items-center gap-2.5 w-full px-2.5 py-1.5 rounded-md text-sm text-left transition-colors"
         :class="index === highlighted
           ? 'bg-rui-primary/10 text-rui-primary'
@@ -161,7 +183,10 @@ function onKeydown(event: KeyboardEvent): void {
       </div>
     </div>
 
-    <div class="flex items-center gap-1.5 px-3 py-1.5 border-t border-rui-grey-200 dark:border-rui-grey-700 text-xs text-rui-text-secondary">
+    <div
+      class="flex items-center gap-1.5 px-3 py-1.5 border-t border-rui-grey-200 dark:border-rui-grey-700 text-xs text-rui-text-secondary"
+      aria-hidden="true"
+    >
       <kbd
         v-for="hint in keyHints"
         :key="hint"

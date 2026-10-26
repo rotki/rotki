@@ -381,19 +381,22 @@ function focusInput(event: MouseEvent): void {
       disable-auto-focus
       persist-on-activator-click
       full-width
+      role="listbox"
       class="flex-1 min-w-32"
     >
       <template #activator="{ attrs }">
         <div
-          v-bind="attrs"
           class="flex-1 min-w-32"
+          @click="attrs.onClick?.()"
         >
           <input
             ref="narrowInput"
             v-model="query"
             type="text"
-            aria-haspopup="menu"
-            aria-controls="pill-narrow-list"
+            role="combobox"
+            aria-autocomplete="list"
+            :aria-haspopup="attrs['aria-haspopup']"
+            :aria-controls="attrs['aria-controls']"
             :aria-expanded="narrowOpen"
             :aria-activedescendant="activeSuggestionId"
             :aria-label="labels.narrow"
@@ -409,7 +412,6 @@ function focusInput(event: MouseEvent): void {
         </div>
       </template>
       <PillNarrowList
-        id="pill-narrow-list"
         :suggestions="suggestions"
         :loading="searching"
         :search-error="searchErrorText"
@@ -438,6 +440,8 @@ function focusInput(event: MouseEvent): void {
       v-model="addMenuOpen"
       :disabled="disabled || availableFields.length === 0"
       :options="{ placement: 'bottom-start' }"
+      role="dialog"
+      :menu-label="labels.add"
       class="flex"
     >
       <template #activator="{ attrs }">

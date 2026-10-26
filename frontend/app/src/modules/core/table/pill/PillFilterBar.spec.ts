@@ -22,11 +22,25 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): { updateFrontendSetting: typeof updateFrontendSetting } => ({ updateFrontendSetting }),
 }));
 
+/** Hands its activator the popup attributes the real `RuiMenu` does, keyed off `role` and the model. */
 const RuiMenuStub = defineComponent({
   name: 'RuiMenu',
-  props: { disabled: { default: false, type: Boolean }, modelValue: { default: false, type: Boolean } },
+  props: {
+    disabled: { default: false, type: Boolean },
+    modelValue: { default: false, type: Boolean },
+    role: { default: 'menu', type: String },
+  },
   emits: ['update:modelValue'],
-  template: '<div><slot name="activator" :attrs="{}" /><slot /></div>',
+  computed: {
+    attrs(): Record<string, unknown> {
+      return {
+        'aria-controls': this.modelValue ? 'stub-menu' : undefined,
+        'aria-expanded': this.modelValue,
+        'aria-haspopup': this.role,
+      };
+    },
+  },
+  template: '<div><slot name="activator" :attrs="attrs" /><slot /></div>',
 });
 
 const protocol: FieldDef = {
@@ -411,6 +425,20 @@ describe('pillFilterBar', () => {
 
     expect(wrapper.get<HTMLInputElement>('[data-testid=pill-narrow-input]').element.value).toBe(examples[0]);
     expect(wrapper.emitted('update:matches')).toBeUndefined();
+  });
+
+  it('should make the narrow input a combobox that controls the open suggestion listbox', async () => {
+    const wrapper = createWrapper();
+    const input = wrapper.get('[data-testid=pill-narrow-input]');
+    expect(input.attributes('role')).toBe('combobox');
+    expect(input.attributes('aria-haspopup')).toBe('listbox');
+    expect(input.attributes('aria-expanded')).toBe('false');
+    expect(input.attributes('aria-controls')).toBeUndefined();
+
+    await input.setValue('a');
+
+    expect(input.attributes('aria-expanded')).toBe('true');
+    expect(input.attributes('aria-controls')).toBe('stub-menu');
   });
 
   it('should wrap between the rows and the footer', async () => {
