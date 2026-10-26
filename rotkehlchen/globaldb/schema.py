@@ -387,6 +387,10 @@ CREATE INDEX IF NOT EXISTS idx_binance_pairs_identifier ON binance_pairs (base_a
 CREATE INDEX IF NOT EXISTS idx_multiasset_mappings_identifier ON multiasset_mappings (asset);
 CREATE INDEX IF NOT EXISTS idx_solana_tokens_identifier ON solana_tokens (identifier, protocol);
 CREATE INDEX IF NOT EXISTS idx_hyperliquid_tokens_identifier ON hyperliquid_tokens (identifier, address);
+CREATE INDEX IF NOT EXISTS idx_evm_tokens_address_chain ON evm_tokens (address, chain);
+CREATE INDEX IF NOT EXISTS idx_evm_tokens_chain_protocol ON evm_tokens (chain, protocol);
+CREATE INDEX IF NOT EXISTS idx_common_asset_details_symbol_nocase ON common_asset_details (symbol COLLATE NOCASE);
+CREATE INDEX IF NOT EXISTS idx_multiasset_mappings_asset_nocase ON multiasset_mappings (asset COLLATE NOCASE);
 """  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""
