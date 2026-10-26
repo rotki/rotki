@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useListHighlight } from '@/modules/core/common/use-list-highlight';
+
 export interface SelectOption {
   value: string;
   label: string;
@@ -43,8 +45,6 @@ defineSlots<{
 
 const ITEM_HEIGHT = 32;
 
-const highlighted = ref<number>(0);
-
 const searchField = useTemplateRef<HTMLInputElement>('searchField');
 
 onMounted(async () => {
@@ -70,10 +70,6 @@ function rowId(index: number): string {
   return `${listId}-${index}`;
 }
 
-/** The row the search field names as active, so a screen reader follows the arrow keys. */
-const activeRowId = computed<string | undefined>(() =>
-  get(filtered).length > 0 ? rowId(get(highlighted)) : undefined);
-
 // Selected values pinned above the list as chips, so the choice stays visible once it scrolls away.
 const labelByValue = computed<Map<string, string>>(() => new Map(options.map(option => [option.value, option.label])));
 const selectedChips = computed<SelectOption[]>(() =>
@@ -83,17 +79,17 @@ const selectedChips = computed<SelectOption[]>(() =>
 // Virtualize the rows: option lists (protocols, assets, …) can run to hundreds of entries.
 const { containerProps, list, scrollTo, wrapperProps } = useVirtualList(filtered, { itemHeight: ITEM_HEIGHT, overscan: 8 });
 
-// The first row the highlight may land on: past any pinned rows, unless they are all there is.
-const firstSelectable = computed<number>(() => (pinned < get(filtered).length ? pinned : 0));
-
-// Order-independent, so pinning a selection to the top never reads as a new list.
-const filteredValues = computed<string>(() => [...get(filtered).map(option => option.value)].sort().join(','));
-
-// Virtualized, so the highlight has to be scrolled to as well or it lands off screen.
-watch(filteredValues, () => {
-  set(highlighted, get(firstSelectable));
-  scrollTo(get(highlighted));
+const { highlighted, onKeydown, onPointerMove } = useListHighlight(filtered, {
+  firstSelectable: () => pinned,
+  keyOf: option => option.value,
+  onClose: () => emit('close'),
+  onSelect: option => toggle(option.value),
+  scrollTo,
 });
+
+/** The row the search field names as active, so a screen reader follows the arrow keys. */
+const activeRowId = computed<string | undefined>(() =>
+  get(filtered).length > 0 ? rowId(get(highlighted)) : undefined);
 
 /**
  * Picks a row's indicator icon: checkbox squares when several values may be held, circles otherwise.
@@ -115,59 +111,6 @@ function toggle(value: string): void {
   else {
     // Single select: picking the active value clears it, otherwise it becomes the only value.
     set(selected, get(selectedSet).has(value) ? [] : [value]);
-  }
-}
-
-// A wheel scroll slides rows under a stationary cursor and still reports a mousemove.
-let lastX = Number.NaN;
-let lastY = Number.NaN;
-
-function onPointerMove(event: MouseEvent, index: number): void {
-  if (event.clientX === lastX && event.clientY === lastY)
-    return;
-
-  lastX = event.clientX;
-  lastY = event.clientY;
-  set(highlighted, index);
-}
-
-/**
- * Drives the list from the keyboard: dismiss, move the highlight, commit a row.
- *
- * @remarks
- * A composing IME is left alone, Escape included. Mid-word, Enter confirms the candidate, the
- * arrows walk the candidate list and Escape cancels it, so acting on any of them commits a row or
- * closes the list under the user.
- *
- * Escape is handled here rather than left to the surrounding menu. The menu can only dismiss
- * itself while its own content holds focus, and this list is what holds it; an empty list has to
- * be dismissable too, so the check cannot sit behind the row count.
- */
-function onKeydown(event: KeyboardEvent): void {
-  if (event.isComposing)
-    return;
-
-  if (event.key === 'Escape') {
-    emit('close');
-    return;
-  }
-
-  const items = get(filtered);
-  if (items.length === 0)
-    return;
-  if (event.key === 'ArrowDown') {
-    event.preventDefault();
-    set(highlighted, (get(highlighted) + 1) % items.length);
-    scrollTo(get(highlighted));
-  }
-  else if (event.key === 'ArrowUp') {
-    event.preventDefault();
-    set(highlighted, (get(highlighted) - 1 + items.length) % items.length);
-    scrollTo(get(highlighted));
-  }
-  else if (event.key === 'Enter') {
-    event.preventDefault();
-    toggle(items[get(highlighted)].value);
   }
 }
 </script>
