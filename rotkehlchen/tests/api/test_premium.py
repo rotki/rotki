@@ -1,5 +1,6 @@
 import json
-from contextlib import ExitStack
+import sqlite3
+from contextlib import ExitStack, closing
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -28,12 +29,42 @@ from rotkehlchen.tests.utils.premium import create_patched_requests_get_for_prem
 from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from tempfile import _TemporaryFileWrapper
+
     from rotkehlchen.api.server import APIServer
 
 CURRENT_DEVICE_ID = machineid.hashed_id('yabirgb')
 
 
+@pytest.fixture
+def mock_upload_preparation(rotkehlchen_api_server: APIServer) -> Iterator[None]:
+    """Keep upload-result tests independent of full database export and backup encryption."""
+    def export_small_db(tempdbfile: _TemporaryFileWrapper[bytes]) -> Path:
+        tempdbpath = Path(tempdbfile.name)
+        tempdbfile.close()
+        with closing(sqlite3.connect(tempdbpath)) as conn:
+            conn.execute('CREATE TABLE backup(payload BLOB)')
+        return tempdbpath
+
+    def prepared_backup(tempdbpath: Path, **_kwargs: object) -> tuple[bytearray, str]:
+        tempdbpath.unlink()
+        return bytearray(b'backup payload'), 'backup-hash'
+
+    data = rotkehlchen_api_server.rest_api.rotkehlchen.data
+    with (
+        patch.object(data.db, 'export_unencrypted', side_effect=export_small_db),
+        patch.object(
+            data,
+            'compress_and_encrypt_db',
+            side_effect=prepared_backup,
+        ),
+    ):
+        yield
+
+
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.usefixtures('mock_upload_preparation')
 def test_upload_db(rotkehlchen_api_server: APIServer) -> None:
     """Just a smoke test that the api works fine. Would have prevented:
     https://github.com/rotki/rotki/issues/6524.
@@ -101,6 +132,7 @@ def _force_upload(rotkehlchen_api_server: APIServer, post_response: MockResponse
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.usefixtures('mock_upload_preparation')
 def test_upload_db_failure_reason_is_returned(rotkehlchen_api_server: APIServer) -> None:
     """A failed forced upload must return its reason as an error, not as result False with the
     reason in the message, which the frontend would drop. A server error that is not marked
@@ -116,6 +148,7 @@ def test_upload_db_failure_reason_is_returned(rotkehlchen_api_server: APIServer)
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.usefixtures('mock_upload_preparation')
 def test_upload_db_refused_by_server_for_size(rotkehlchen_api_server: APIServer) -> None:
     """A backup the server refuses for exceeding the tier's size is a conflict with the plan,
     not a gateway error, and retrying it is pointless"""

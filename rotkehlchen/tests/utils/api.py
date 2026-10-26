@@ -1,6 +1,9 @@
 import os
 import platform
+import sys
+import threading
 import time
+import traceback
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
@@ -176,6 +179,29 @@ def assert_ok_async_response(response: requests.Response) -> int:
     return int(data['result']['task_id'])
 
 
+def _async_task_timeout_message(server: APIServer, task_id: int) -> str:
+    """Capture task state and thread stacks only after polling times out.
+
+    Reads the tasks from a copy without taking task_lock, since a thread stuck holding
+    that lock may be the reason for the timeout and waiting on it would hang the test."""
+    tasks = [
+        f'{task.task_name!r} (dead={task.dead})'
+        for task in list(server.rest_api.rotkehlchen.api_tasks)
+        if task.task_id == task_id
+    ]
+    details = [
+        f'Timed out waiting for task id {task_id}',
+        f'Tracked task: {", ".join(tasks) if tasks else "not tracked"}',
+    ]
+    threads = {thread.ident: thread.name for thread in threading.enumerate()}
+    for ident, frame in sys._current_frames().items():
+        details.append(
+            f'Thread {threads.get(ident, "unknown")!r} (ident={ident}):\n'
+            f'{"".join(traceback.format_stack(frame))}',
+        )
+    return '\n'.join(details)
+
+
 def wait_for_async_task(
         server: APIServer,
         task_id: int,
@@ -183,10 +209,11 @@ def wait_for_async_task(
 ) -> dict[str, Any]:
     """Waits until an async task is ready and when it is returns the response's outcome
 
-    If the task's outcome is not ready within timeout seconds then the test fails"""
+    If the task's outcome is not ready within timeout seconds then the test fails
+    with its tracked task state and thread stacks."""
     deadline = time.monotonic() + timeout
     while True:
-        assert time.monotonic() < deadline, f'Timed out waiting for task id {task_id}'
+        assert time.monotonic() < deadline, _async_task_timeout_message(server, task_id)
         response = requests.get(
             api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
         )
