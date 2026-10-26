@@ -16,18 +16,29 @@ export const useAssetsStore = defineStore('assets', () => {
 
   const { assetImageUrl } = useAssetIconApi();
 
+  /**
+   * The ignored assets as a set, rebuilt only when the list changes.
+   *
+   * @remarks
+   * Balance aggregation asks once per asset on every pass, and the list holds the whole spam list,
+   * thousands of entries, so every membership check goes through this set rather than the list.
+   */
+  const ignoredAssetSet = computed<Set<string>>(() => new Set(get(ignoredAssets)));
+
+  /** The whitelisted assets as a set, for the same reason as {@link ignoredAssetSet}. */
+  const whitelistedAssetSet = computed<Set<string>>(() => new Set(get(whitelistedAssets)));
+
   function isAssetIgnored(asset: string): boolean {
-    return get(ignoredAssets).includes(asset);
+    return get(ignoredAssetSet).has(asset);
   }
 
   function addIgnoredAsset(asset: string): void {
-    const ignored = get(ignoredAssets);
-    if (!ignored.includes(asset))
-      set(ignoredAssets, [...ignored, asset]);
+    if (!isAssetIgnored(asset))
+      set(ignoredAssets, [...get(ignoredAssets), asset]);
   }
 
   function isAssetWhitelisted(asset: string): boolean {
-    return get(whitelistedAssets).includes(asset);
+    return get(whitelistedAssetSet).has(asset);
   }
 
   function setLastRefreshedAssetIcon(): void {

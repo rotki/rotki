@@ -38,14 +38,26 @@ describe('useBlockie', () => {
     expect(second).toEqual(first);
   });
 
-  it('should evict the oldest entry once the cache limit is reached', () => {
+  it('should draw each blockie of a 500-token list once, however often the list renders', () => {
+    const tokens = Array.from({ length: 500 }, (_, index) => `0x${index.toString(16).padStart(40, '0')}`);
+
+    tokens.forEach(token => getBlockie(token));
+    tokens.forEach(token => getBlockie(token));
+
+    expect(createBlockie).toHaveBeenCalledTimes(500);
+  });
+
+  it('should evict the least recently used entry once the cache limit is reached', () => {
+    getBlockie('0xkept');
     getBlockie(address);
-    expect(cache.size).toBe(1);
-    expect(cache.has(address)).toBe(true);
+    expect(cache.size).toBe(2);
 
-    for (let i = 0; i < 100; i++) getBlockie(i.toString());
+    for (let i = 0; i < 998; i++) getBlockie(i.toString());
+    getBlockie('0xkept');
+    getBlockie('overflow');
 
-    expect(cache.size).toBe(100);
+    expect(cache.size).toBe(1000);
     expect(cache.has(address)).toBe(false);
+    expect(cache.has('0xkept')).toBe(true);
   });
 });

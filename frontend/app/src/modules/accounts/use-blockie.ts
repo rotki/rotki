@@ -1,9 +1,15 @@
 import { assert } from '@rotki/common';
 import { createBlockie } from '@rotki/ui-library';
-import { logger } from '@/modules/core/common/logging/logging';
-import { useSetting } from '@/modules/settings/use-setting';
 
-const CACHE_SIZE = 100;
+/**
+ * Blockies kept at once.
+ *
+ * @remarks
+ * Every unknown token gets a blockie drawn on a canvas, so an address holding a few hundred spam
+ * tokens needs that many in one list. A cache smaller than the list redraws them each time the list
+ * renders again. An entry is a small data URL, so a thousand of them stay well under a few MB.
+ */
+const CACHE_SIZE = 1000;
 
 interface UseBlockieReturn {
   cache: Map<string, string>;
@@ -13,13 +19,9 @@ interface UseBlockieReturn {
 export const useBlockie = createSharedComposable((): UseBlockieReturn => {
   const cache: Map<string, string> = new Map();
 
-  const itemsPerPage = useSetting('itemsPerPage');
-
+  /** Stores a blockie, dropping the least recently used one once the cache is full. */
   const put = (address: string, image: string): void => {
-    const cacheSize = Math.max(CACHE_SIZE, 3 * get(itemsPerPage));
-
-    if (cache.size === cacheSize) {
-      logger.debug(`Hit cache size of ${cacheSize} going to evict items`);
+    if (cache.size >= CACHE_SIZE) {
       const removeKey = cache.keys().next().value;
       assert(removeKey, 'removeKey is null');
       cache.delete(removeKey);
@@ -32,16 +34,16 @@ export const useBlockie = createSharedComposable((): UseBlockieReturn => {
       return '';
 
     const formatted = address.toLowerCase();
-
-    if (!cache.has(formatted)) {
-      const blockie = createBlockie({
-        seed: formatted,
-      });
-
-      put(formatted, blockie);
+    const cached = cache.get(formatted);
+    if (cached !== undefined) {
+      cache.delete(formatted);
+      cache.set(formatted, cached);
+      return cached;
     }
 
-    return cache.get(formatted) ?? '';
+    const blockie = createBlockie({ seed: formatted });
+    put(formatted, blockie);
+    return blockie;
   };
 
   return {

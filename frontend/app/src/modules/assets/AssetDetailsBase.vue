@@ -35,6 +35,19 @@ const { t } = useI18n({ useScope: 'global' });
 
 const menuOpened = ref<boolean>(false);
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
+const menuButton = useTemplateRef<{ $el: HTMLElement }>('menuButton');
+
+/**
+ * Whether the row has built its menu yet.
+ *
+ * @remarks
+ * A `RuiMenu` reads its activator's size when it mounts, which forces a synchronous layout. A table
+ * mounting many rows at once paid that once per row for menus nobody opened, so the menu is built
+ * when the pointer first enters the row or focus first lands in it, before it can be opened. Once
+ * built it stays. Until then the activator sits in the same two wrappers `RuiMenu` puts around it,
+ * so building the menu moves nothing on screen.
+ */
+const menuBuilt = shallowRef<boolean>(false);
 
 const { isPending } = useAssetInfoCache();
 const shouldShowAmount = useSetting('shouldShowAmount');
@@ -67,11 +80,62 @@ const subtitle = computed<string>(() => {
 const { navigateToDetails } = useAssetPageNavigation(() => asset.identifier, () => get(isCollectionParent));
 
 const [DefineImage, ReuseImage] = createReusableTemplate();
+const [DefineActivator, ReuseActivator] = createReusableTemplate<{ attrs: Record<string, unknown> }>();
 
-function openMenuHandler(event: MouseEvent) {
+/**
+ * Whether a pointer event comes from a finger.
+ *
+ * @remarks
+ * A touch fires `pointerenter` in the same gesture as its tap, so building the menu then would swap
+ * the button out from under the tap and lose its click. A touch builds the menu from the tap itself.
+ */
+function isTouch(event: Event): boolean {
+  return event instanceof PointerEvent && event.pointerType === 'touch';
+}
+
+/**
+ * Builds the menu ahead of its first use.
+ *
+ * @remarks
+ * Building it swaps the row's activator for the menu's own copy, so a keyboard user whose focus
+ * brought it here would lose the focus with the old button. It is handed to the new one.
+ */
+async function buildMenu(event: Event): Promise<void> {
+  if (get(menuBuilt) || isTouch(event))
+    return;
+
+  const hadButtonFocus = event.type === 'focusin' && event.target === get(menuButton)?.$el;
+  set(menuBuilt, true);
+  if (!hadButtonFocus)
+    return;
+
+  await nextTick();
+  get(menuButton)?.$el.focus();
+}
+
+const buildTriggers: Record<string, unknown> = {
+  onFocusin: buildMenu,
+  onPointerenter: buildMenu,
+};
+
+/**
+ * Toggles the menu, building it first when nothing has yet.
+ *
+ * @remarks
+ * `RuiMenu` opens on a change of its `v-model` after it has mounted, never on the value it mounts
+ * with, so a menu built by this click is opened once it is in place.
+ */
+async function openMenuHandler(event: MouseEvent): Promise<void> {
   event.preventDefault();
   event.stopPropagation();
-  set(menuOpened, !get(menuOpened));
+  if (get(menuBuilt)) {
+    set(menuOpened, !get(menuOpened));
+    return;
+  }
+
+  set(menuBuilt, true);
+  await nextTick();
+  set(menuOpened, true);
 }
 
 function useContextMenu(attrs: Record<string, unknown>) {
@@ -111,6 +175,51 @@ watch(menuOpened, (menuOpened) => {
       :optimize-for-virtual-scroll="optimizeForVirtualScroll"
     />
   </DefineImage>
+  <DefineActivator #default="{ attrs }">
+    <ReuseImage
+      v-if="iconOnly"
+      v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
+    />
+    <div
+      v-else
+      class="w-max max-w-full min-w-0 flex items-center gap-1 cursor-pointer group"
+    >
+      <ListItem
+        no-padding
+        no-hover
+        class="max-w-80"
+        :class="inline ? 'py-0.5' : 'py-2'"
+        v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
+        :size="dense ? 'sm' : 'md'"
+        :inline="inline"
+        :loading="loading"
+        :blur-content="!shouldShowAmount"
+        :title="title"
+        :subtitle="subtitle"
+      >
+        <template #avatar>
+          <ReuseImage />
+        </template>
+      </ListItem>
+
+      <RuiButton
+        ref="menuButton"
+        variant="text"
+        icon
+        size="sm"
+        class="shrink-0 text-rui-text-secondary! transition-opacity opacity-0 group-hover:opacity-100 [tr:hover_&]:opacity-100 focus-visible:opacity-100 motion-reduce:transition-none"
+        :class="{ 'opacity-100': menuOpened }"
+        :aria-label="t('common.actions.more')"
+        v-bind="attrs"
+        @click.stop="openMenuHandler($event)"
+      >
+        <RuiIcon
+          name="lu-ellipsis-vertical"
+          :size="16"
+        />
+      </RuiButton>
+    </div>
+  </DefineActivator>
   <ReuseImage
     v-if="hideMenu && iconOnly"
     v-bind="$attrs"
@@ -134,7 +243,7 @@ watch(menuOpened, (menuOpened) => {
     </template>
   </ListItem>
   <RuiMenu
-    v-else
+    v-else-if="menuBuilt"
     :key="asset.identifier"
     v-model="menuOpened"
     class="flex min-w-0"
@@ -142,48 +251,7 @@ watch(menuOpened, (menuOpened) => {
     :options="{ placement: 'bottom-start' }"
   >
     <template #activator="{ attrs }">
-      <ReuseImage
-        v-if="iconOnly"
-        v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
-      />
-      <div
-        v-else
-        class="w-max max-w-full min-w-0 flex items-center gap-1 cursor-pointer group"
-      >
-        <ListItem
-          no-padding
-          no-hover
-          class="max-w-80"
-          :class="inline ? 'py-0.5' : 'py-2'"
-          v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
-          :size="dense ? 'sm' : 'md'"
-          :inline="inline"
-          :loading="loading"
-          :blur-content="!shouldShowAmount"
-          :title="title"
-          :subtitle="subtitle"
-        >
-          <template #avatar>
-            <ReuseImage />
-          </template>
-        </ListItem>
-
-        <RuiButton
-          variant="text"
-          icon
-          size="sm"
-          class="shrink-0 text-rui-text-secondary! transition-opacity opacity-0 group-hover:opacity-100 [tr:hover_&]:opacity-100 focus-visible:opacity-100 motion-reduce:transition-none"
-          :class="{ 'opacity-100': menuOpened }"
-          :aria-label="t('common.actions.more')"
-          v-bind="attrs"
-          @click.stop="openMenuHandler($event)"
-        >
-          <RuiIcon
-            name="lu-ellipsis-vertical"
-            :size="16"
-          />
-        </RuiButton>
-      </div>
+      <ReuseActivator :attrs="attrs" />
     </template>
 
     <AssetDetailsMenuContent
@@ -195,4 +263,13 @@ watch(menuOpened, (menuOpened) => {
       @refresh="emit('refresh')"
     />
   </RuiMenu>
+  <div
+    v-else
+    class="flex min-w-0"
+    data-testid="asset-details-menu-pending"
+  >
+    <div class="relative inline-flex max-w-full">
+      <ReuseActivator :attrs="buildTriggers" />
+    </div>
+  </div>
 </template>
