@@ -42,6 +42,7 @@ from rotkehlchen.db.bitcointx import DBBitcoinTx
 from rotkehlchen.db.cache import (
     AddressArgType,
     BinancePairLastTradeArgsType,
+    BlockchainAddressArgType,
     BlockchainArgType,
     DBCacheDynamic,
     DBCacheStatic,
@@ -870,6 +871,7 @@ class DBHandler:
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
+            DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
         ):
             return value
 
@@ -880,6 +882,7 @@ class DBHandler:
             self,
             cursor: DBCursor,
             name: Literal[
+                DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
                 DBCacheStatic.DOCKER_DEVICE_INFO,
                 DBCacheStatic.ETHERSCAN_API_KEY_TIER,
                 DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
@@ -917,6 +920,7 @@ class DBHandler:
                 DBCacheStatic.LAST_DB_UPGRADE,
                 DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
                 DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
+                DBCacheStatic.PENDING_DETECTION_FROM_TS,
             ],
     ) -> Timestamp | None:
         ...
@@ -1135,6 +1139,15 @@ class DBHandler:
             cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
             **kwargs: Unpack[BlockchainArgType],
+    ) -> Timestamp | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
+            name: Literal[DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS],
+            **kwargs: Unpack[BlockchainAddressArgType],
     ) -> Timestamp | None:
         ...
 
@@ -1361,6 +1374,16 @@ class DBHandler:
             name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
             value: Timestamp,
             **kwargs: Unpack[BlockchainArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS],
+            value: Timestamp,
+            **kwargs: Unpack[BlockchainAddressArgType],
     ) -> None:
         ...
 

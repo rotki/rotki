@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   balanceDivergenceActivity,
+  currentBalanceDetectionActivity,
   historicalBalancesActivity,
   overlaySeriesActivity,
 } from '@/modules/history/balances/historical-balances.activity';
@@ -11,6 +12,10 @@ const address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c';
 describe('historical balance activity ids', () => {
   it('should give the processing the bare kind, which its progress frames report onto', () => {
     expect(historicalBalancesActivity.id()).toBe('historical-balances');
+  });
+
+  it('should give the current balance detection a singleton id under the kind', () => {
+    expect(currentBalanceDetectionActivity.id()).toBe('historical-balances:detect');
   });
 
   it('should key an overlay series by account and asset', () => {

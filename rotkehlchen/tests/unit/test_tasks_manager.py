@@ -19,7 +19,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.concurrency import cancellable_sleep, wait
+from rotkehlchen.concurrency import TaskCancelledError, cancellable_sleep, wait
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -56,6 +56,8 @@ from rotkehlchen.tasks.assets import (
 )
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
 from rotkehlchen.tasks.manager import (
+    CURRENT_BALANCE_DETECTION_TASK_NAME,
+    CURRENT_BALANCE_DETECTION_TIME_BUDGET,
     DATA_ISSUE_REMEDIATION_TASK_NAME,
     HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
     PREMIUM_STATUS_CHECK,
@@ -96,6 +98,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -117,6 +121,7 @@ def test_potential_maybe_schedule_task(task_manager: TaskManager):
     if is_accounting_update_enabled() is False:
         expected_tasks.remove('_maybe_process_historical_balances')
         expected_tasks.remove('_maybe_run_data_issue_remediation')
+        expected_tasks.remove('_maybe_detect_current_balance_mismatches')
 
     assert expected_tasks == tasks
     assert [function.__name__ for function in task_manager.priority_tasks_queue] == [
@@ -168,6 +173,58 @@ def test_trigger_historical_balance_processing_reports_whether_it_runs(
         spawn.assert_called_once_with(from_ts=None)
 
 
+@pytest.mark.parametrize('start_processing', [
+    lambda task_manager: task_manager.trigger_historical_balance_processing(),
+    lambda task_manager: task_manager.retry_data_issue_auto_remediation(
+        issue_id=1,
+        from_ts=TimestampMS(0),
+    ),
+])
+def test_requested_processing_cancels_a_running_balance_detection(
+        task_manager: TaskManager,
+        start_processing: Callable[[TaskManager], bool],
+) -> None:
+    """The detection must have stopped before processing starts rewriting its balances."""
+    detection = task_manager.task_supervisor.spawn_and_track(
+        after_seconds=None,
+        task_name=CURRENT_BALANCE_DETECTION_TASK_NAME,
+        exception_is_error=True,
+        method=cancellable_sleep,
+        seconds=10,
+    )
+    detection_dead_at_spawn: list[bool] = []
+    with (
+        patch('rotkehlchen.tasks.manager.is_accounting_update_enabled', return_value=True),
+        patch.object(
+            task_manager.task_supervisor,
+            'spawn_and_track',
+            side_effect=lambda **_: detection_dead_at_spawn.append(detection.dead),
+        ),
+    ):
+        assert start_processing(task_manager) is True
+
+    assert detection_dead_at_spawn == [True]
+    assert isinstance(detection.exception, TaskCancelledError)
+
+
+def test_balance_work_admission_is_exclusive(task_manager: TaskManager) -> None:
+    """A detection can't check whether processing runs while a processing run is being admitted."""
+    with patch.object(
+        task_manager.history_processing_coordinator,
+        'is_history_fetching',
+        return_value=True,
+    ) as is_history_fetching:
+        with task_manager._balance_work_admission:
+            (detection := threading.Thread(
+                target=task_manager._maybe_detect_current_balance_mismatches,
+            )).start()
+            detection.join(timeout=0.1)
+            is_history_fetching.assert_not_called()
+
+        detection.join(timeout=2)
+        is_history_fetching.assert_called_once()
+
+
 def test_data_issue_remediation_runs_daily_after_initial_processing(
         task_manager: TaskManager,
 ) -> None:
@@ -216,6 +273,48 @@ def test_data_issue_remediation_runs_daily_after_initial_processing(
             )
 
         assert task_manager._maybe_run_data_issue_remediation() == [spawn_task.return_value]
+
+
+def test_current_balance_detection_scope_follows_processing_passes(
+        task_manager: TaskManager,
+) -> None:
+    def set_cache(name: DBCacheStatic, value: int) -> None:
+        with task_manager.database.user_write() as write_cursor:
+            task_manager.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=name,
+                value=Timestamp(value),
+            )
+
+    with patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task:
+        set_cache(DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS, ts_now())
+        set_cache(DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS, ts_now())
+        assert task_manager._maybe_detect_current_balance_mismatches() is None  # nothing due
+
+        set_cache(DBCacheStatic.PENDING_DETECTION_FROM_TS, 5_000)
+        assert task_manager._maybe_detect_current_balance_mismatches() == [
+            spawn_task.return_value,
+        ]
+        assert spawn_task.call_args.kwargs['from_ts'] == 5_000
+        assert spawn_task.call_args.kwargs['time_budget'] == CURRENT_BALANCE_DETECTION_TIME_BUDGET
+        with task_manager.database.conn.read_ctx() as cursor:  # only the finished task clears it
+            assert task_manager.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.PENDING_DETECTION_FROM_TS,
+            ) == 5_000
+        with task_manager.database.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name = ?',
+                (DBCacheStatic.PENDING_DETECTION_FROM_TS.value,),
+            )
+        assert task_manager._maybe_detect_current_balance_mismatches() is None
+
+        set_cache(DBCacheStatic.PENDING_DETECTION_FROM_TS, 0)  # a full processing pass
+        assert task_manager._maybe_detect_current_balance_mismatches() is not None
+        assert spawn_task.call_args.kwargs['from_ts'] is None
+
+        assert task_manager._maybe_detect_current_balance_mismatches(force=True) is not None
+        assert spawn_task.call_args.kwargs['from_ts'] is None
 
 
 @pytest.mark.parametrize('force', [False, True])

@@ -129,11 +129,32 @@ COWSWAP_ORDER_EVENTS_TO_IGNORE: Final[EventTypeSubtypePairs] = {
     (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REFUND),
 }
 
+HYPERCORE_BUCKET_PROTOCOL: Final = 'bucket_hypercore'
+"""Protocol of the buckets that hold HyperCore balances.
+
+It is deliberately not a counterparty, so no decoded or user-edited event can share these
+buckets with the HyperEVM ones of the same address.
+"""
+
 METRICS_BATCH_SIZE: Final = 500
 # How many events to process before voluntarily releasing the GIL, so concurrent
 # DB readers (e.g. the history page) interleave instead of waiting out the switch
 # interval per row while this pure-Python loop runs.
 MIN_EVENTS_PROCESSED_TO_SLEEP: Final = 25
+
+
+def _get_wallet_protocol(event: HistoryBaseEntry) -> str | None:
+    """Protocol of the bucket that holds what the event's account owns outright.
+
+    HyperCore and HyperEVM share the hyperliquid location and the address, but only HyperEVM
+    balances live on chain. Every hyperliquid event that is not an EVM event is HyperCore
+    activity, so it is kept in its own bucket and the wallet bucket holds only what a HyperEVM
+    node reports.
+    """
+    if event.location == Location.HYPERLIQUID and not isinstance(event, EvmEvent):
+        return HYPERCORE_BUCKET_PROTOCOL
+
+    return None
 
 
 class Bucket(NamedTuple):
@@ -176,9 +197,11 @@ class Bucket(NamedTuple):
         - Transfers: affects sender (OUT) and receiver (IN) wallet buckets.
         - Wrapped token deposits/redemptions: tracked as wallet-held asset conversions
         - Debt positions: tracked in protocol bucket
-        - Everything else: tracked in wallet bucket
+        - Everything else: tracked in wallet bucket, which for HyperCore activity is its own
+          hyperliquid bucket (see _get_wallet_protocol)
         """
         location = event.location.serialize_for_db()
+        wallet_protocol = _get_wallet_protocol(event)
         asset = (
             A_ETH.identifier if treat_eth2_as_eth is True and event.asset == A_ETH2 else
             event.asset.resolve_swapped_for().identifier
@@ -229,7 +252,7 @@ class Bucket(NamedTuple):
                 (cls(  # type: ignore[list-item]  # wallet_direction will not be neutral for dual bucket protocol events.
                     location=location,
                     location_label=event.location_label,
-                    protocol=None,
+                    protocol=wallet_protocol,
                     asset=asset,
                 ), wallet_direction),
                 (cls(
@@ -248,13 +271,13 @@ class Bucket(NamedTuple):
                 (cls(
                     location=location,
                     location_label=event.location_label,
-                    protocol=None,
+                    protocol=wallet_protocol,
                     asset=asset,
                 ), EventDirection.OUT),
                 (cls(
                     location=location,
                     location_label=address,
-                    protocol=None,
+                    protocol=wallet_protocol,
                     asset=asset,
                 ), EventDirection.IN),
             ]
@@ -278,7 +301,7 @@ class Bucket(NamedTuple):
         return [(cls(
             location=location,
             location_label=event.location_label,
-            protocol=None,
+            protocol=wallet_protocol,
             asset=asset,
         ), direction)]
 
@@ -547,6 +570,7 @@ def process_historical_balances(
         _finalize_processing(
             database=database,
             modification_ts_at_start=modification_ts_at_start,
+            from_ts=from_ts,
         )
         msg_aggregator.add_message(
             message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
@@ -634,7 +658,11 @@ def process_historical_balances(
         },
     )
     _detect_unmatched_bridge_issues(database=database)
-    _finalize_processing(database=database, modification_ts_at_start=modification_ts_at_start)
+    _finalize_processing(
+        database=database,
+        modification_ts_at_start=modification_ts_at_start,
+        from_ts=from_ts,
+    )
     msg_aggregator.add_message(
         message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
         data={},
@@ -792,8 +820,12 @@ def _detect_unmatched_bridge_issues(database: DBHandler) -> None:
 def _finalize_processing(
         database: DBHandler,
         modification_ts_at_start: int | None,
+        from_ts: TimestampMS | None,
 ) -> None:
     """Update cache timestamps. Only clears stale marker if no modifications during processing.
+
+    Also records the earliest ``from_ts`` of the passes the current balance detection has not
+    seen yet, with 0 meaning a full pass, so the detection only compares the touched buckets.
 
     Uses a snapshot of the modification timestamp taken after reading events. If the current
     modification timestamp is strictly greater than the snapshot, events were modified during
@@ -804,6 +836,18 @@ def _finalize_processing(
             write_cursor=write_cursor,
             name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
             value=ts_now(),
+        )
+        pending_from_ts = write_cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name = ?',
+            (DBCacheStatic.PENDING_DETECTION_FROM_TS.value,),
+        ).fetchone()
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.PENDING_DETECTION_FROM_TS,
+            value=Timestamp(min(
+                this_pass_from_ts := from_ts or 0,
+                this_pass_from_ts if pending_from_ts is None else int(pending_from_ts[0]),
+            )),
         )
 
         if (

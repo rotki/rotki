@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, cast
 from rotkehlchen.db.filtering import DataIssuesFilterQuery
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError, NotFoundError
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import (
     ALLOWED_STATE_TRANSITIONS,
     ISSUE_KIND_SEVERITY,
@@ -14,6 +15,7 @@ from rotkehlchen.history.data_issues.constants import (
 )
 from rotkehlchen.history.data_issues.types import (
     AutoRemediationAttempt,
+    CurrentBalanceMismatchIssuePayload,
     DataIssue,
     DataIssueFilters,
     DataIssuePayload,
@@ -259,6 +261,76 @@ class DataIssuesManager:
                         IssueState.DISMISSED,
                     ],
                 )
+
+    def report_current_balance_mismatch(
+            self,
+            location: str,
+            location_label: str,
+            asset: str,
+            payload: CurrentBalanceMismatchIssuePayload,
+            ts_start: int,
+            ts_end: int,
+    ) -> IssueState | str:
+        """Write or refresh the mismatch issue of a wallet bucket and return its resulting state.
+
+        An unresolved issue whose divergence grew is made open again for a new attempt, since the
+        earlier attempt did not account for the larger difference. Dismissed issues are untouched.
+        """
+        previous_delta: FVal | None = None
+        if len(existing := self.list_issues(DataIssueFilters(
+            kind=IssueKind.CURRENT_BALANCE_MISMATCH,
+            location=location,
+            location_label=location_label,
+            protocol='',
+            asset=asset,
+        ))) != 0 and existing[0].state == IssueState.UNRESOLVED:
+            previous_delta = FVal(existing[0].payload['delta'])
+
+        issue_id, state = self.write_issue_with_state(
+            kind=IssueKind.CURRENT_BALANCE_MISMATCH,
+            location=location,
+            location_label=location_label,
+            protocol=None,
+            asset=asset,
+            payload=payload,
+            ts_start=ts_start,
+            ts_end=ts_end,
+        )
+        if previous_delta is not None and abs(FVal(payload['delta'])) > abs(previous_delta):
+            with self.db.user_write() as write_cursor:
+                write_cursor.execute(
+                    'UPDATE data_issues SET state = ?, resolved_at = NULL WHERE id = ?',
+                    (IssueState.OPEN, issue_id),
+                )
+            return IssueState.OPEN
+
+        return state
+
+    def resolve_current_balance_mismatch(
+            self,
+            location: str,
+            location_label: str,
+            asset: str,
+    ) -> None:
+        """Resolve, attributed to the system, a mismatch that is back within tolerance."""
+        with self.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'UPDATE data_issues SET state = ?, resolved_at = ?, '
+                "payload_json = json_set(payload_json, '$.resolution', json(?)) "
+                "WHERE kind = ? AND location = ? AND location_label = ? AND protocol = '' "
+                'AND asset = ? AND state NOT IN (?, ?)',
+                (
+                    IssueState.RESOLVED,
+                    ts_now(),
+                    json.dumps({'reason': 'within_tolerance'}),
+                    IssueKind.CURRENT_BALANCE_MISMATCH,
+                    location,
+                    location_label,
+                    asset,
+                    IssueState.RESOLVED,
+                    IssueState.DISMISSED,
+                ),
+            )
 
     def reset_orphaned_remediations(self) -> None:
         """Make remediation rows left by a previous process retryable after login."""

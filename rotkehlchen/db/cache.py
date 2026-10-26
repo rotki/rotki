@@ -49,6 +49,9 @@ class DBCacheStatic(Enum):
     STALE_BALANCES_MODIFICATION_TS: Final = 'stale_balances_modification_ts'
     LAST_HISTORICAL_BALANCE_PROCESSING_TS: Final = 'last_historical_balance_processing_ts'
     LAST_DATA_ISSUE_REMEDIATION_TS: Final = 'last_data_issue_remediation_ts'
+    LAST_CURRENT_BALANCE_DETECTION_TS: Final = 'last_current_balance_detection_ts'
+    PENDING_DETECTION_FROM_TS: Final = 'pending_detection_from_ts'
+    CURRENT_BALANCE_DETECTION_CURSOR: Final = 'current_balance_detection_cursor'
     LAST_INTERNAL_TX_CONFLICTS_REPULL_TS: Final = 'last_internal_tx_conflicts_repull_ts'
     BEACONCHAIN_VALIDATOR_QUERY_LIMIT: Final = 'beaconchain_validator_query_limit'
     ETHERSCAN_API_KEY_TIER: Final = 'etherscan_api_key_tier'
@@ -73,6 +76,12 @@ class AddressArgType(TypedDict):
 class BlockchainArgType(TypedDict):
     """Type of kwargs, used to get the value of `LAST_BLOCKCHAIN_BALANCES_QUERY_TS`"""
     blockchain: str
+
+
+class BlockchainAddressArgType(TypedDict):
+    """Type of kwargs, used to get the value of `LAST_ADDRESS_BALANCES_QUERY_TS`"""
+    blockchain: str
+    address: str
 
 
 class IndexArgType(TypedDict):
@@ -145,6 +154,11 @@ class DBCacheDynamic(Enum):
         '{blockchain}_last_balances_query_ts',
         _deserialize_timestamp_from_str,
     )
+    # unlike the chain-wide timestamp, this one is set only for the addresses a refresh covered
+    LAST_ADDRESS_BALANCES_QUERY_TS: Final = (
+        'address_balances_query_ts_{blockchain}_{address}',
+        _deserialize_timestamp_from_str,
+    )
     # identifier of the last token of the chain the details retry task went through
     TOKEN_DETAILS_RETRY_CURSOR: Final = '{blockchain}_token_details_retry_cursor', lambda x: x
 
@@ -166,6 +180,10 @@ class DBCacheDynamic(Enum):
 
     @overload
     def get_db_key(self, **kwargs: Unpack[BlockchainArgType]) -> str:
+        ...
+
+    @overload
+    def get_db_key(self, **kwargs: Unpack[BlockchainAddressArgType]) -> str:
         ...
 
     @overload

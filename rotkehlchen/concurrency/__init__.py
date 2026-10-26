@@ -20,6 +20,7 @@ from rotkehlchen.concurrency.cancellation import (
 from rotkehlchen.concurrency.tasks import (
     Task,
     exception_of,
+    join_forwarding_cancellation,
     result_of,
     spawn,
     spawn_later,
@@ -35,6 +36,7 @@ __all__ = [
     'checkpoint',
     'current_token',
     'exception_of',
+    'join_forwarding_cancellation',
     'result_of',
     'run_cancellable',
     'spawn',

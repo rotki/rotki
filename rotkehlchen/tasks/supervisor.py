@@ -111,8 +111,12 @@ class TaskSupervisor:
 
     def has_task(self, name: str) -> bool:
         """Check if there is a running task with the given name"""
+        return len(self.running_tasks(name)) != 0
+
+    def running_tasks(self, name: str) -> list[Task]:
+        """The running tasks whose name starts with the given name"""
         with self.lock:
-            return any(task.dead is False and task.task_name.startswith(name) for task in self.tasks)  # noqa: E501
+            return [task for task in self.tasks if task.dead is False and task.task_name.startswith(name)]  # noqa: E501
 
     def _handle_finished_task(self, task: Task) -> None:
         if task.exception is None:

@@ -2983,6 +2983,11 @@
       "title": "Issue details",
       "whats_wrong": "What's wrong"
     },
+    "detect": {
+      "action": "Check balances",
+      "error": "Could not check balances against the chain: {error}",
+      "tooltip": "Compare the balances rotki calculated with the chain balances from the last refresh and flag any difference."
+    },
     "empty": {
       "all_clear_subtitle": "Your accounting data looks healthy. rotki checks continuously and will flag anything here.",
       "all_clear_title": "No data issues detected",
@@ -6685,6 +6690,7 @@
         "verify": "Verifying signature and generating token"
       },
       "historical_balances": {
+        "detection": "Comparing calculated balances with the chain",
         "divergence": "Looking for divergence in {asset}",
         "processing": "Processing historical events to calculate balances",
         "series": "Building the {asset} balance series"

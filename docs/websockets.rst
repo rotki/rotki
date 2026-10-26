@@ -377,6 +377,19 @@ When a historical balance processing run finishes, the backend sends this messag
     }
 
 
+Current balance detection completed
+===================================
+
+When a run comparing the balances derived from history events with the cached chain balances ends, the backend sends this message so the frontend can reload the data issues list, which the run may have added mismatches to or resolved them in. It is sent whether the run finished, failed or was cancelled, since it may have changed issues before stopping.
+
+::
+
+    {
+        "type": "current_balance_detection_completed",
+        "data": {}
+    }
+
+
 Premium Database Upload Progress
 ========================================
 
