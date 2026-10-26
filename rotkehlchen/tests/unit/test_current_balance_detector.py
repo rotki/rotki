@@ -97,11 +97,19 @@ def _cache_balance(
             blockchain=blockchain,
             balances={address: sheet},
         )
+        refresh_ts = ts_now() if refreshed_at is None else Timestamp(refreshed_at)
         database.set_dynamic_cache(
             write_cursor=write_cursor,
             name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
-            value=ts_now() if refreshed_at is None else Timestamp(refreshed_at),
+            value=refresh_ts,
             blockchain=blockchain.serialize(),
+        )
+        database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS,
+            value=refresh_ts,
+            blockchain=blockchain.serialize(),
+            address=address,
         )
 
 
@@ -231,6 +239,14 @@ def test_nothing_cached_neither_opens_nor_resolves(database: DBHandler) -> None:
 def test_event_newer_than_the_balance_refresh_is_not_compared(database: DBHandler) -> None:
     _add_balance(database, TEST_ADDR1, '5', ts=10_000_000)
     _cache_balance(database, TEST_ADDR1, '3', refreshed_at=9_999)
+    assert CurrentBalanceMismatchDetector(database=database, tolerance=TOLERANCE).run() == 0
+    assert _get_issues(database) == []
+
+
+def test_refresh_of_another_address_does_not_make_the_cache_current(database: DBHandler) -> None:
+    _add_balance(database, TEST_ADDR1, '5', ts=10_000_000)
+    _cache_balance(database, TEST_ADDR1, '3', refreshed_at=9_999)
+    _cache_balance(database, TEST_ADDR2, '3', refreshed_at=20_000)
     assert CurrentBalanceMismatchDetector(database=database, tolerance=TOLERANCE).run() == 0
     assert _get_issues(database) == []
 

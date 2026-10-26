@@ -78,6 +78,12 @@ class BlockchainArgType(TypedDict):
     blockchain: str
 
 
+class BlockchainAddressArgType(TypedDict):
+    """Type of kwargs, used to get the value of `LAST_ADDRESS_BALANCES_QUERY_TS`"""
+    blockchain: str
+    address: str
+
+
 class IndexArgType(TypedDict):
     """Type of kwargs, used to get the value of `DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS`"""
     index: int
@@ -148,6 +154,11 @@ class DBCacheDynamic(Enum):
         '{blockchain}_last_balances_query_ts',
         _deserialize_timestamp_from_str,
     )
+    # unlike the chain-wide timestamp, this one is set only for the addresses a refresh covered
+    LAST_ADDRESS_BALANCES_QUERY_TS: Final = (
+        'address_balances_query_ts_{blockchain}_{address}',
+        _deserialize_timestamp_from_str,
+    )
     # identifier of the last token of the chain the details retry task went through
     TOKEN_DETAILS_RETRY_CURSOR: Final = '{blockchain}_token_details_retry_cursor', lambda x: x
 
@@ -169,6 +180,10 @@ class DBCacheDynamic(Enum):
 
     @overload
     def get_db_key(self, **kwargs: Unpack[BlockchainArgType]) -> str:
+        ...
+
+    @overload
+    def get_db_key(self, **kwargs: Unpack[BlockchainAddressArgType]) -> str:
         ...
 
     @overload

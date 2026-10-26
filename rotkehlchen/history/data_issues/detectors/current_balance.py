@@ -173,7 +173,7 @@ class CurrentBalanceMismatchDetector:
     Meant to run in its own task after a successful historical balance processing pass, never
     inline with it. It only reads the cached balances and writes data issues, and it never
     queries a chain, so how current the comparison is depends on the last balance refresh of the
-    chain. A bucket with an event newer than that refresh is left alone, since the cache can't
+    address. A bucket with an event newer than that refresh is left alone, since the cache can't
     know about it. Locating the events that cause a divergence is left to the archive node
     search of the issue.
 
@@ -199,7 +199,7 @@ class CurrentBalanceMismatchDetector:
         """Check the wallet buckets and return how many of them were compared.
 
         Buckets are grouped per address so each one costs a single cache read. Buckets that
-        have nothing cached, that have an event newer than the last refresh of their chain, or
+        have nothing cached, that have an event newer than the last refresh of their address, or
         that are left when the time budget runs out are skipped and neither opened nor
         resolved, since nothing was observed for them.
 
@@ -212,17 +212,6 @@ class CurrentBalanceMismatchDetector:
                 cursor=cursor,
                 name=DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
             )
-            refreshed_at = {
-                blockchain: refresh_ts
-                for blockchain in (
-                    SupportedBlockchain.from_location(location) for location in EVM_LOCATIONS
-                )
-                if (refresh_ts := self.database.get_dynamic_cache(
-                    cursor=cursor,
-                    name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
-                    blockchain=blockchain.serialize(),
-                )) is not None
-            }
 
         tracked_wallets = get_tracked_wallets(self.database)
         by_address: defaultdict[tuple[str, str], dict[str, WalletBalance]] = defaultdict(dict)
@@ -251,9 +240,17 @@ class CurrentBalanceMismatchDetector:
             last_reached = (location, address)
             assets = by_address[location, address]
             checkpoint()
-            if (queried_at := refreshed_at.get(blockchain := SupportedBlockchain.from_location(
+            blockchain = SupportedBlockchain.from_location(
                 location=Location.deserialize_from_db(location),  # type: ignore[arg-type]  # only EVM locations are tracked
-            ))) is None:
+            )
+            with self.database.conn.read_ctx() as cursor:
+                queried_at = self.database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS,
+                    blockchain=blockchain.serialize(),
+                    address=address,
+                )
+            if queried_at is None:
                 continue
 
             observed = read_cached_wallet_balances(

@@ -960,6 +960,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             blockchain: SupportedBlockchain,
             addresses: ListOfBlockchainAddresses | None = None,
     ) -> None:
+        refresh_ts = ts_now()  # before the snapshot, so it never postdates the rows
         with self.balances_lock:  # snapshot before the DB write so query tasks can't mutate mid-iteration  # noqa: E501
             chain_balances: dict[str, BalanceSheet | Balance] = dict(self.balances.get(blockchain).items())  # noqa: E501
 
@@ -984,6 +985,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     if address in addresses
                 }
 
+            for refreshed_address in addresses or ():  # drop the stamp of what is no longer cached
+                self.database.delete_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS,
+                    blockchain=blockchain.serialize(),
+                    address=refreshed_address,
+                )
+
             if len(balances_to_store) == 0:
                 self.database.delete_dynamic_cache(
                     write_cursor=write_cursor,
@@ -997,13 +1006,20 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 blockchain=blockchain,
                 balances=balances_to_store,
             )
-            refresh_ts = ts_now()
             self.database.set_dynamic_cache(
                 write_cursor=write_cursor,
                 name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
                 value=refresh_ts,
                 blockchain=blockchain.serialize(),
             )
+            for stored_address in balances_to_store:
+                self.database.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS,
+                    value=refresh_ts,
+                    blockchain=blockchain.serialize(),
+                    address=stored_address,
+                )
 
     def sync_bitcoin_accounts_with_db(
             self,
@@ -1181,6 +1197,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self.database.delete_blockchain_balances_cache(
                 write_cursor=write_cursor,
                 blockchain=blockchain,
+                address=account,
+            )
+            self.database.delete_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS,
+                blockchain=blockchain.serialize(),
                 address=account,
             )
         self.database.delete_dynamic_cache(

@@ -42,6 +42,7 @@ from rotkehlchen.db.bitcointx import DBBitcoinTx
 from rotkehlchen.db.cache import (
     AddressArgType,
     BinancePairLastTradeArgsType,
+    BlockchainAddressArgType,
     BlockchainArgType,
     DBCacheDynamic,
     DBCacheStatic,
@@ -1145,6 +1146,15 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
+            name: Literal[DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS],
+            **kwargs: Unpack[BlockchainAddressArgType],
+    ) -> Timestamp | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.TOKEN_DETAILS_RETRY_CURSOR],
             **kwargs: Unpack[BlockchainArgType],
     ) -> str | None:
@@ -1364,6 +1374,16 @@ class DBHandler:
             name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
             value: Timestamp,
             **kwargs: Unpack[BlockchainArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS],
+            value: Timestamp,
+            **kwargs: Unpack[BlockchainAddressArgType],
     ) -> None:
         ...
 
