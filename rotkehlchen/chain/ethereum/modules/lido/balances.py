@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, ClaimEntry
 from rotkehlchen.assets.utils import token_normalized_value_decimals
@@ -8,8 +8,9 @@ from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, Pr
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_STETH
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
@@ -71,7 +72,7 @@ class LidoBalances(ProtocolWithBalance):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_LIDO,
-            deposit_event_types=set(),
+            deposit_event_types={(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED)},
         )
         self.queue = EvmContract(
             address=WITHDRAWAL_QUEUE,
@@ -84,87 +85,127 @@ class LidoBalances(ProtocolWithBalance):
             deployed_block=0,
         )
 
-    def _withdrawal_claims(self, address: ChecksumEvmAddress) -> list[ClaimEntry]:
-        """Return the unclaimed withdrawal requests currently owned by address.
+    def _multicall(
+            self,
+            contract: EvmContract,
+            method_name: str,
+            arguments: list[list[Any]],
+    ) -> list[tuple[Any, ...]]:
+        """Call method_name once per arguments entry in a single multicall and decode each result.
+
+        May raise:
+            RemoteError: If the multicall fails.
+            DeserializationError: If a result cannot be decoded.
+        """
+        results = self.evm_inquirer.multicall(calls=[
+            (contract.address, contract.encode(method_name=method_name, arguments=args))
+            for args in arguments
+        ])
+        return [
+            contract.decode(result=result, method_name=method_name, arguments=args)
+            for args, result in zip(arguments, results, strict=True)
+        ]
+
+    def _withdrawal_claims(
+            self,
+            addresses: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, list[ClaimEntry]]:
+        """Return the unclaimed withdrawal requests currently owned by each address.
 
         Finalized requests use the actual reserved ETH. For unfinalized requests the
         redeemable amount is capped at the original stETH, but can fall if shares lose
         value before finalization. Requests already claimed or transferred are excluded.
         """
-        request_ids = self.queue.call(
-            node_inquirer=self.evm_inquirer,
+        request_ids = [ids for (ids,) in self._multicall(
+            contract=self.queue,
             method_name='getWithdrawalRequests',
-            arguments=[address],
-        )
-        if not request_ids:
-            return []
+            arguments=[[address] for address in addresses],
+        )]
+        owners_with_requests = [
+            (address, list(ids)) for address, ids in zip(addresses, request_ids, strict=True)
+            if len(ids) != 0
+        ]
+        if len(owners_with_requests) == 0:
+            return {}
 
-        statuses = self.queue.call(
-            node_inquirer=self.evm_inquirer,
+        statuses = self._multicall(
+            contract=self.queue,
             method_name='getWithdrawalStatus',
-            arguments=[request_ids],
+            arguments=[[ids] for _, ids in owners_with_requests],
         )
-        finalized: list[tuple[int, int]] = []
-        claims: list[ClaimEntry] = []
-        for request_id, status in zip(request_ids, statuses, strict=True):
-            steth_amount, shares, owner, requested_at, is_finalized, is_claimed = status
-            if is_claimed or owner.lower() != address.lower():
-                continue
-            if is_finalized:
-                finalized.append((request_id, requested_at))
-                continue
+        pending: list[tuple[ChecksumEvmAddress, int, int, int, int]] = []
+        finalized: dict[ChecksumEvmAddress, list[tuple[int, int]]] = defaultdict(list)
+        for (address, ids), (address_statuses,) in zip(owners_with_requests, statuses, strict=True):  # noqa: E501
+            for request_id, status in zip(ids, address_statuses, strict=True):
+                steth_amount, shares, owner, requested_at, is_finalized, is_claimed = status
+                if is_claimed or owner.lower() != address.lower():
+                    continue
+                if is_finalized:
+                    finalized[address].append((request_id, requested_at))
+                else:
+                    pending.append((address, request_id, steth_amount, shares, requested_at))
 
-            share_value = self.steth.call(
-                node_inquirer=self.evm_inquirer,
+        claims: dict[ChecksumEvmAddress, list[ClaimEntry]] = defaultdict(list)
+        if len(pending) != 0:
+            share_values = self._multicall(
+                contract=self.steth,
                 method_name='getPooledEthByShares',
-                arguments=[shares],
+                arguments=[[shares] for _, _, _, shares, _ in pending],
             )
-            claims.append(ClaimEntry(
-                amount=token_normalized_value_decimals(min(steth_amount, share_value), 18),
-                request_id=str(request_id),
-                requested_at=Timestamp(requested_at),
-            ))
+            for (address, request_id, steth_amount, _, requested_at), (share_value,) in zip(pending, share_values, strict=True):  # noqa: E501
+                claims[address].append(ClaimEntry(
+                    amount=token_normalized_value_decimals(min(steth_amount, share_value), 18),
+                    request_id=str(request_id),
+                    requested_at=Timestamp(requested_at),
+                ))
 
-        if finalized:
-            finalized_ids = [request_id for request_id, _ in finalized]
-            last_checkpoint = self.queue.call(
-                node_inquirer=self.evm_inquirer,
+        if len(finalized) != 0:
+            finalized_ids = {
+                address: [request_id for request_id, _ in entries]
+                for address, entries in finalized.items()
+            }
+            ((last_checkpoint,),) = self._multicall(
+                contract=self.queue,
                 method_name='getLastCheckpointIndex',
+                arguments=[[]],
             )
-            hints = self.queue.call(
-                node_inquirer=self.evm_inquirer,
+            hints = self._multicall(
+                contract=self.queue,
                 method_name='findCheckpointHints',
-                arguments=[finalized_ids, 1, last_checkpoint],
+                arguments=[[ids, 1, last_checkpoint] for ids in finalized_ids.values()],
             )
-            payouts = self.queue.call(
-                node_inquirer=self.evm_inquirer,
+            payouts = self._multicall(
+                contract=self.queue,
                 method_name='getClaimableEther',
-                arguments=[finalized_ids, hints],
+                arguments=[
+                    [ids, address_hints]
+                    for ids, (address_hints,) in zip(finalized_ids.values(), hints, strict=True)
+                ],
             )
-            claims.extend(ClaimEntry(
-                amount=token_normalized_value_decimals(payout, 18),
-                request_id=str(request_id),
-                finalized=True,
-                requested_at=Timestamp(requested_at),
-            ) for (request_id, requested_at), payout in zip(finalized, payouts, strict=True))
+            for (address, entries), (address_payouts,) in zip(finalized.items(), payouts, strict=True):  # noqa: E501
+                claims[address].extend(ClaimEntry(
+                    amount=token_normalized_value_decimals(payout, 18),
+                    request_id=str(request_id),
+                    finalized=True,
+                    requested_at=Timestamp(requested_at),
+                ) for (request_id, requested_at), payout in zip(entries, address_payouts, strict=True))  # noqa: E501
 
         return claims
 
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        address_claims: dict[ChecksumEvmAddress, list[ClaimEntry]] = {}
-        for address in addresses:
-            try:
-                claims = self._withdrawal_claims(address)
-            except RemoteError as e:
-                log.error('Failed to query Lido withdrawal queue for %s: %s', address, e)
-                continue
-            if len(claims) != 0:
-                address_claims[address] = claims
+        if len(owners := list(self.addresses_with_deposits(location_labels=addresses))) == 0:
+            return balances
+
+        try:
+            address_claims = self._withdrawal_claims(owners)
+        except (RemoteError, DeserializationError) as e:
+            log.error('Failed to query Lido withdrawal queue: %s', e)
+            return balances
 
         if len(address_claims) == 0:
             return balances
-        price = Inquirer.find_price(from_asset=A_ETH, to_asset=CachedSettings().main_currency)
+        price = Inquirer.find_main_currency_price(A_ETH)
         for address, claims in address_claims.items():
             amount = sum((claim.amount for claim in claims), ZERO)
             balances[address].assets[A_ETH][self.counterparty] += Balance(

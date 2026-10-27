@@ -21,7 +21,14 @@ def test_venice_pending_withdrawals() -> None:
         WEB3.codec.encode(['uint256', 'uint256', 'uint256'], [30, 0, 0]),
     ]
     protocol = VeniceBalances(evm_inquirer=inquirer, tx_decoder=MagicMock())
-    with patch('rotkehlchen.chain.base.modules.venice.balances.Inquirer.find_main_currency_price', return_value=FVal(4)):  # noqa: E501
+    with (
+        patch.object(
+            protocol,
+            'addresses_with_deposits',
+            return_value={address: [] for address in addresses},
+        ),
+        patch('rotkehlchen.chain.base.modules.venice.balances.Inquirer.find_main_currency_price', return_value=FVal(4)),  # noqa: E501
+    ):
         balances = protocol.query_balances(addresses)
 
     asset = Asset(VVV_TOKEN_ID)
@@ -39,3 +46,11 @@ def test_venice_pending_withdrawals() -> None:
     )
     assert addresses[2] not in balances
     assert len(inquirer.multicall.call_args.kwargs['calls']) == len(addresses)
+
+
+def test_venice_skips_rpc_without_unstake_events() -> None:
+    inquirer = MagicMock()
+    protocol = VeniceBalances(evm_inquirer=inquirer, tx_decoder=MagicMock())
+    with patch.object(protocol, 'addresses_with_deposits', return_value={}):
+        assert len(protocol.query_balances([string_to_evm_address(f'0x{1:040x}')])) == 0
+    inquirer.multicall.assert_not_called()

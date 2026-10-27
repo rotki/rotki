@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
@@ -53,13 +54,13 @@ class VeniceBalances(ProtocolWithBalance):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_VENICE,
-            deposit_event_types=set(),
+            deposit_event_types={(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED)},
         )
 
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Count only unclaimed withdrawals; active sVVV is already a wallet balance."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if not addresses:
+        if len(addresses := list(self.addresses_with_deposits(location_labels=addresses))) == 0:
             return balances
 
         contract = EvmContract(
