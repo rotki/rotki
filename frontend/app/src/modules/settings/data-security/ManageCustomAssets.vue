@@ -3,7 +3,9 @@ import { assert, NotificationKind, Severity } from '@rotki/common';
 import { RuiFileUpload } from '@rotki/ui-library';
 import { assetExportActivity } from '@/modules/assets/assets.activity';
 import { useAssets } from '@/modules/assets/use-assets';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { isActionable } from '@/modules/core/tasks/task-result';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -13,9 +15,12 @@ const zip = ref<File>();
 const importError = ref<string>('');
 const uploading = ref<boolean>(false);
 const uploaded = ref<boolean>(false);
+/** Why the last export failed; the dock row reports it too, this keeps it beside the button. */
+const exportError = shallowRef<unknown>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { notify } = useNotificationDispatcher();
+const failureMessage = useFailureMessage();
 const { useIsActive } = useTaskCenter();
 const { exportCustomAssets, importCustomAssets } = useAssets();
 
@@ -54,39 +59,35 @@ async function importZip(): Promise<void> {
 }
 
 /**
- * The notification an export result deserves, if any.
+ * Exports the custom assets and reports where the file went.
  *
  * @remarks
- * A success in the web build earns none. The browser shows its own download prompt, and a second
- * confirmation from the app would only repeat it. A desktop export picks a directory first, so its
- * path is worth reporting, because nothing else tells the user where the file went. A cancelled
- * export earns none either.
- *
- * @param outcome - what the export returned, which names either a failure or a written file
- * @returns the payload to notify with, or `undefined` when the export should pass silently
+ * A failure is named beside the button. A success in the web build earns no notification: the
+ * browser shows its own download prompt, and a second confirmation would only repeat it. A desktop
+ * export picks a directory first, so its path is worth reporting, because nothing else tells the
+ * user where the file went. A cancelled export, such as a closed directory picker, reports nothing.
  */
-function exportNotification(outcome: Awaited<ReturnType<typeof exportCustomAssets>>): Parameters<typeof notify>[0] | undefined {
-  const title = t('manage_user_assets.export.title');
-
-  if (!outcome.ok) {
-    return isActionable(outcome.error)
-      ? { kind: NotificationKind.RESULT, message: t('manage_user_assets.export.error', { message: outcome.error.message }), severity: Severity.ERROR, title }
-      : undefined;
-  }
-
-  const { directory, filePath } = outcome.value;
-  return directory
-    ? { kind: NotificationKind.RESULT, message: t('manage_user_assets.export.success', { filePath }), severity: Severity.INFO, title }
-    : undefined;
-}
-
 async function exportZip(): Promise<void> {
   if (get(exporting))
     return;
 
-  const notification = exportNotification(await exportCustomAssets());
-  if (notification)
-    notify(notification);
+  set(exportError, undefined);
+  const outcome = await exportCustomAssets();
+  if (!outcome.ok) {
+    if (isActionable(outcome.error))
+      set(exportError, outcome.error);
+    return;
+  }
+
+  const { directory, filePath } = outcome.value;
+  if (directory) {
+    notify({
+      kind: NotificationKind.RESULT,
+      message: t('manage_user_assets.export.success', { filePath }),
+      severity: Severity.INFO,
+      title: t('manage_user_assets.export.title'),
+    });
+  }
 }
 </script>
 
@@ -113,6 +114,15 @@ async function exportZip(): Promise<void> {
       </template>
       {{ t('manage_user_assets.export.button') }}
     </RuiButton>
+    <TableFailureStrip
+      v-if="exportError"
+      standalone
+      :retryable="false"
+      class="mt-3"
+      :title="t('manage_user_assets.export.failed')"
+      :message="failureMessage(exportError)"
+      data-testid="user-assets-export-error"
+    />
   </SettingsItem>
   <SettingsItem>
     <template #title>

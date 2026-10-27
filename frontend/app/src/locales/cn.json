@@ -4522,7 +4522,6 @@
   "manage_user_assets": {
     "export": {
       "button": "导出",
-      "error": "导出资产失败：{message}",
       "subtitle": "将你的资产打包为 zip 压缩包",
       "success": "压缩包已成功创建于 {filePath}",
       "title": "导出"

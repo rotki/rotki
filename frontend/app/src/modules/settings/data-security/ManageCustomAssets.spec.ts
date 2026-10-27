@@ -67,21 +67,34 @@ describe('manageCustomAssets export', () => {
     vi.clearAllMocks();
   });
 
-  it('should report a failed export', async () => {
+  it('should name a failed export beside the button instead of a toast', async () => {
     exportCustomAssets.mockResolvedValue(err(TaskFailed({ message: 'disk full' })));
+    const wrapper = createWrapper();
 
-    await clickExport(createWrapper());
+    await clickExport(wrapper);
 
-    expect(notify).toHaveBeenCalledOnce();
-    expect(notify.mock.calls[0][0]).toMatchObject({ severity: Severity.ERROR });
+    expect(wrapper.find('[data-testid=user-assets-export-error]').text()).toContain('disk full');
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('should drop a failed export once the next export succeeds', async () => {
+    exportCustomAssets.mockResolvedValueOnce(err(TaskFailed({ message: 'disk full' }))).mockResolvedValueOnce(ok({ filePath: 'assets.zip' }));
+    const wrapper = createWrapper();
+    await clickExport(wrapper);
+
+    await clickExport(wrapper);
+
+    expect(wrapper.find('[data-testid=user-assets-export-error]').exists()).toBe(false);
   });
 
   it('should pass silently on a cancelled export', async () => {
     exportCustomAssets.mockResolvedValue(err(Cancelled({ message: '' })));
+    const wrapper = createWrapper();
 
-    await clickExport(createWrapper());
+    await clickExport(wrapper);
 
     expect(notify).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid=user-assets-export-error]').exists()).toBe(false);
   });
 
   it('should report where a desktop export wrote the file', async () => {
