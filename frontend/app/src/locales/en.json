@@ -3279,10 +3279,7 @@
   },
   "event_asset_price_update": {
     "description": "Set the price of this asset at the event's timestamp.",
-    "fetch_error": {
-      "description": "Could not load the existing price entry: {error}",
-      "title": "Failed to load existing price"
-    },
+    "fetch_error": "Could not load the existing price",
     "mode": {
       "manual": {
         "label": "Save as manual"
@@ -3293,10 +3290,7 @@
     },
     "price_error": "Price must be a positive number.",
     "price_label": "Price ({symbol})",
-    "save_error": {
-      "description": "Could not save the price: {error}",
-      "title": "Failed to update price"
-    },
+    "save_error": "Could not save the price",
     "success": {
       "description": "The price has been updated.",
       "title": "Price updated"

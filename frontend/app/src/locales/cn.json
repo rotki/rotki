@@ -3002,10 +3002,6 @@
   },
   "event_asset_price_update": {
     "description": "设置该资产在此事件时间点的价格。",
-    "fetch_error": {
-      "description": "无法加载现有价格记录：{error}",
-      "title": "加载现有价格失败"
-    },
     "mode": {
       "manual": {
         "label": "保存为手动价格"
@@ -3016,10 +3012,6 @@
     },
     "price_error": "价格必须为正数。",
     "price_label": "价格（{symbol}）",
-    "save_error": {
-      "description": "无法保存价格：{error}",
-      "title": "更新价格失败"
-    },
     "success": {
       "description": "价格已更新。",
       "title": "价格已更新"

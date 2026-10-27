@@ -2,6 +2,8 @@
 import type { EventPriceUpdatePayload } from '@/modules/history/events/prices/use-event-price-update-trigger';
 import { toSentenceCase } from '@rotki/common';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { useEventPriceUpdateDialog } from '@/modules/history/events/prices/use-event-price-update-dialog';
 import { useSetting } from '@/modules/settings/use-setting';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
@@ -12,17 +14,21 @@ const modelValue = defineModel<EventPriceUpdatePayload | undefined>({ required: 
 
 const { t } = useI18n({ useScope: 'global' });
 const currencySymbol = useSetting('currencySymbol');
+const failureMessage = useFailureMessage();
 
 const {
   close,
   existingEntry,
+  loadError,
   loading,
   modelMode: mode,
   modelPrice: price,
   open,
   priceErrors,
   priceValid,
+  retryLoad,
   save,
+  saveError,
   saving,
   showModeChoice,
 } = useEventPriceUpdateDialog(modelValue);
@@ -57,6 +63,23 @@ const {
         <div class="text-sm text-rui-text-secondary">
           {{ t('event_asset_price_update.description') }}
         </div>
+
+        <TableFailureStrip
+          v-if="loadError"
+          standalone
+          :title="t('event_asset_price_update.fetch_error')"
+          :message="failureMessage(loadError)"
+          data-testid="event-price-load-error"
+          @retry="retryLoad()"
+        />
+        <TableFailureStrip
+          v-else-if="saveError"
+          standalone
+          :retryable="false"
+          :title="t('event_asset_price_update.save_error')"
+          :message="failureMessage(saveError)"
+          data-testid="event-price-save-error"
+        />
 
         <div class="flex items-center justify-between gap-3 rounded-md bg-rui-grey-50 dark:bg-rui-grey-900 px-3 py-2">
           <AssetDetails
@@ -133,7 +156,7 @@ const {
           <RuiButton
             color="primary"
             :loading="saving"
-            :disabled="loading || !priceValid"
+            :disabled="loading || !!loadError || !priceValid"
             @click="save()"
           >
             {{ t('common.actions.save') }}
