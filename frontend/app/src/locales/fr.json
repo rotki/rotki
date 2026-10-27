@@ -473,7 +473,6 @@
     "add_error": "Échec de la sauvegarde de l'actif",
     "edit_error": "Échec de la modification de l'actif",
     "fetch_latest_icon": {
-      "description": "Échec de la récupération de la dernière icône pour {identifier} : {message}",
       "title": "Récupérer la dernière icône"
     },
     "help_coingecko": "Cliquer pour obtenir de l'aide sur la façon de trouver l'identifiant CoinGecko",

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
@@ -17,7 +19,10 @@ const icon = ref<File>();
 
 const refreshIconLoading = ref<boolean>(false);
 const refreshKey = ref<number>(0);
-const { notifyError, showErrorMessage } = useNotifications();
+/** Why the last icon refresh failed, named under the icon with a retry. */
+const refreshError = shallowRef<unknown>();
+const { showErrorMessage } = useNotifications();
+const failureMessage = useFailureMessage();
 const { getPath } = useInterop();
 const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
 
@@ -30,19 +35,13 @@ async function refreshIcon() {
     return;
 
   set(refreshIconLoading, true);
-  const identifierVal = identifier;
+  set(refreshError, undefined);
   try {
-    await refresh(identifierVal);
+    await refresh(identifier);
     set(refreshKey, get(refreshKey) + 1);
   }
   catch (error: unknown) {
-    notifyError(
-      t('asset_form.fetch_latest_icon.title'),
-      t('asset_form.fetch_latest_icon.description', {
-        identifier: identifierVal,
-        message: getErrorMessage(error),
-      }),
-    );
+    set(refreshError, error);
   }
   set(refreshIconLoading, false);
   setLastRefreshedAssetIcon();
@@ -108,6 +107,7 @@ defineExpose({
               icon
               color="primary"
               :loading="refreshIconLoading"
+              data-testid="asset-icon-refresh"
               @click="refreshIcon()"
             >
               <RuiIcon
@@ -151,5 +151,13 @@ defineExpose({
         data-testid="asset-icon-upload"
       />
     </div>
+    <TableFailureStrip
+      v-if="refreshError"
+      standalone
+      :title="t('asset_form.fetch_latest_icon.failed')"
+      :message="failureMessage(refreshError)"
+      data-testid="asset-icon-refresh-error"
+      @retry="refreshIcon()"
+    />
   </div>
 </template>
