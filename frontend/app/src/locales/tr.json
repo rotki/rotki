@@ -20,7 +20,6 @@
     "liabilities": "Borçlar"
   },
   "account_balances": {
-    "aggregated_assets": "Birleştirilmiş varlıklar",
     "chain_filter": {
       "add": "\"{chain}\" zincirini filtreye ekle",
       "clear": "Tüm zincirleri etkinleştir",

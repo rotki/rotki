@@ -660,6 +660,25 @@ describe('filter-persistence', () => {
 
       expect(restorePersistedFilterSpy).not.toHaveBeenCalled();
     });
+
+    it('should restore persisted filter when the route holds only keys another component keeps', async () => {
+      await mockRouter.push({ query: { account: '0xabc' } });
+      await nextTick();
+
+      restorePersistedFilterSpy.mockClear();
+
+      scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
+        fetch: mockRequestData(),
+        urlState: { keep: ['account'], mode: 'route' },
+        ...createTestFilterOptions(),
+        persist: { tableId: TableId.HISTORY },
+      }));
+
+      await nextTick();
+      await flushPromises();
+
+      expect(restorePersistedFilterSpy).toHaveBeenCalled();
+    });
   });
 
   describe('edge cases', () => {
@@ -1206,6 +1225,25 @@ describe('source destinations', () => {
     expect(pushedQuery).toHaveProperty('urlParam', 'url');
     expect(pushedQuery).toHaveProperty('bothParam', 'both');
     expect(pushedQuery).not.toHaveProperty('requestParam');
+  });
+
+  it('should carry the keys another component owns through its own URL write, and drop the rest', async () => {
+    const { filter } = scope.run(() => useServerTable<TestItem, TestPayload, TestFilters>({
+      fetch: mockRequestData(),
+      urlState: { keep: ['account'], mode: 'route' },
+      ...createTestFilterOptions(),
+    }))!;
+
+    await nextTick();
+    await flushPromises();
+    await navigateTo({ account: '0xabc', stray: 'x' });
+    mockRouter.push.mockClear();
+
+    await userSetsFilter(filter, { asset: 'ETH' });
+
+    expect(getLastPushedQuery()).toHaveProperty('account', '0xabc');
+    expect(getLastPushedQuery()).toHaveProperty('asset', 'ETH');
+    expect(getLastPushedQuery()).not.toHaveProperty('stray');
   });
 
   it('should write the URL when the filter changes, since the internal page reset must not clear the pending user intent', async () => {

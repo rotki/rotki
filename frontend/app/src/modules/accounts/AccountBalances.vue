@@ -3,11 +3,11 @@ import type { RuiIcons } from '@rotki/ui-library';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
-import type { LocationQuery } from '@/modules/core/table/route';
+import { startPromise } from '@shared/utils';
 import { getGroupId } from '@/modules/accounts/account-utils';
 import AccountAssetSelectionActions from '@/modules/accounts/AccountAssetSelectionActions.vue';
 import AccountBalancesFilterBar from '@/modules/accounts/AccountBalancesFilterBar.vue';
-import AccountExpandedRowContent from '@/modules/accounts/AccountExpandedRowContent.vue';
+import AccountDetailsDrawer from '@/modules/accounts/details/AccountDetailsDrawer.vue';
 import AccountBalancesTable from '@/modules/accounts/table/AccountBalancesTable.vue';
 import { useAccountAssetSelection } from '@/modules/accounts/use-account-asset-selection';
 import { useAccountBalancesPagination } from '@/modules/accounts/use-account-balances-pagination';
@@ -34,10 +34,7 @@ const visibleTags = ref<string[]>([]);
 const addresses = ref<string[]>([]);
 const chains = ref<string[]>([]);
 const chainExclusionFilter = ref<Record<string, string[]>>({});
-const expandedRowContent = useTemplateRef<ComponentExposed<typeof AccountExpandedRowContent>>('expandedRowContent');
-const tab = ref<number>(0);
-const expanded = ref<string[]>([]);
-const query = ref<LocationQuery>({});
+const detailsDrawer = useTemplateRef<ComponentExposed<typeof AccountDetailsDrawer>>('detailsDrawer');
 
 const { balances } = storeToRefs(useBalancesStore());
 const accountsStore = useBlockchainAccountsStore();
@@ -55,9 +52,6 @@ const {
   chains,
   category: () => category,
   chainExclusionFilter,
-  expanded,
-  query,
-  tab,
   visibleTags,
 });
 
@@ -78,6 +72,9 @@ const {
   selectionMode,
   toggleSelectionMode,
 } = useAccountAssetSelection(fetchData);
+
+/** The selection bar, drawn on the page and again inside the details drawer while it is in use. */
+const [DefineSelectionActions, ReuseSelectionActions] = createReusableTemplate();
 
 const isSolana = computed<boolean>(() => category === 'solana');
 const showSelectionToggle = computed<boolean>(() => get(isEvm) || get(isSolana));
@@ -121,10 +118,9 @@ function clearFilters(): void {
   set(chains, []);
 }
 
-function getChains(row: BlockchainAccountGroupWithBalance): string[] {
-  const chains = row.chains;
-  const excludedChains = get(chainExclusionFilter)[getGroupId(row)];
-  return excludedChains ? chains.filter(chain => !excludedChains.includes(chain)) : chains;
+function openDetails(row: BlockchainAccountGroupWithBalance): void {
+  if (isDefined(detailsDrawer))
+    startPromise(get(detailsDrawer).open(getGroupId(row)));
 }
 
 watchDebounced(isLoadingActive, async (isLoading, wasLoading) => {
@@ -139,28 +135,31 @@ watchImmediate([accountsState, balances], () => {
 defineExpose({
   refresh: async () => {
     await fetchData();
-    if (!isDefined(expandedRowContent))
+    if (!isDefined(detailsDrawer))
       return;
 
-    await get(expandedRowContent).refresh();
+    await get(detailsDrawer).refresh();
   },
   refreshClick,
 });
 </script>
 
 <template>
+  <DefineSelectionActions>
+    <AccountAssetSelectionActions
+      :selected-count="selectedAssets?.length"
+      :selection-mode="selectionMode"
+      :show-selection-toggle="showSelectionToggle"
+      :disabled="accounts.data.length === 0 || !anyExpansion"
+      @clear-selection="selectedAssets = []"
+      @ignore="handleIgnoreSelected($event)"
+      @mark-spam="handleMarkSelectedAsSpam()"
+      @toggle-mode="toggleSelectionMode()"
+    />
+  </DefineSelectionActions>
   <TableFrame data-testid="account-balances">
     <template #toolbar>
-      <AccountAssetSelectionActions
-        :selected-count="selectedAssets?.length"
-        :selection-mode="selectionMode"
-        :show-selection-toggle="showSelectionToggle"
-        :disabled="accounts.data.length === 0 || !anyExpansion"
-        @clear-selection="selectedAssets = []"
-        @ignore="handleIgnoreSelected($event)"
-        @mark-spam="handleMarkSelectedAsSpam()"
-        @toggle-mode="toggleSelectionMode()"
-      />
+      <ReuseSelectionActions />
 
       <template v-if="!showSelectionToggle || !selectionMode">
         <AccountBalancesFilterBar
@@ -176,16 +175,17 @@ defineExpose({
       v-model:pagination="pagination"
       v-model:sort="sort"
       v-model:chain-filter="chainExclusionFilter"
-      v-model:expanded-ids="expanded"
       :data-category="category"
       :category="category"
       framed
-      :class="{ '[&_[data-id=expand-button]]:animate-pulse-highlight!': expanded.length === 0 && selectionMode }"
+      details-in-drawer
+      :class="{ '[&_[data-id=expand-button]]:animate-pulse-highlight!': selectionMode && !detailsDrawer?.isOpen }"
       group="evm"
       :accounts="accounts"
       :fetching="awaitingAccounts"
       @edit="emit('edit', $event)"
       @refresh="fetchData()"
+      @open-details="openDetails($event)"
     >
       <template #empty>
         <TableEmptyNotice
@@ -215,19 +215,19 @@ defineExpose({
           </RuiButton>
         </TableEmptyNotice>
       </template>
-      <template #details="{ row }">
-        <AccountExpandedRowContent
-          ref="expandedRowContent"
-          v-model:tab="tab"
-          v-model:query="query"
-          v-model:selected-assets="selectedAssets"
-          :row="row"
-          :visible-tags="visibleTags"
-          :chains="getChains(row)"
-          :selection-mode="selectionMode"
-          @edit="emit('edit', $event)"
-        />
-      </template>
     </AccountBalancesTable>
+    <AccountDetailsDrawer
+      ref="detailsDrawer"
+      v-model:selected-assets="selectedAssets"
+      v-model:chain-exclusion-filter="chainExclusionFilter"
+      :category="category"
+      :visible-tags="visibleTags"
+      :selection-mode="selectionMode"
+      @edit="emit('edit', $event)"
+    >
+      <template #selection-actions>
+        <ReuseSelectionActions />
+      </template>
+    </AccountDetailsDrawer>
   </TableFrame>
 </template>

@@ -20,7 +20,6 @@
     "liabilities": "负债"
   },
   "account_balances": {
-    "aggregated_assets": "汇总资产",
     "chain_filter": {
       "add": "将“{chain}”加入筛选",
       "clear": "启用所有链",

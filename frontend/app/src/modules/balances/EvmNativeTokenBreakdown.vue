@@ -64,7 +64,6 @@ const sort = ref<DataTableSortData<AssetBreakdown>>({
 
 const cols = computed<DataTableColumn<AssetBreakdown>[]>(() => {
   const cols: DataTableColumn<AssetBreakdown>[] = [{
-    align: 'center',
     cellClass: 'py-2',
     class: 'text-no-wrap',
     key: 'location',
@@ -131,6 +130,7 @@ function getAssets(location: string): AssetBalance[] {
       <LocationDisplay
         :identifier="row.location"
         :detail-path="row.detailPath"
+        horizontal
       />
     </template>
     <template #item.tokens="{ row }">

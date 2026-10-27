@@ -238,6 +238,15 @@ describe('evm-native-token-breakdown', () => {
     });
   });
 
+  it('should show each location on one line, its name beside its icon', async () => {
+    wrapper = createWrapper({ props: { identifier: 'ETH', assets: [] } });
+    await nextTick();
+
+    const locations = wrapper.findAllComponents({ name: 'LocationDisplay' });
+    expect(locations.length).toBeGreaterThan(0);
+    expect(locations.every(location => location.props('horizontal') === true)).toBe(true);
+  });
+
   it('should show correct entries for blockchainOnly=true', async () => {
     wrapper = createWrapper({
       props: { identifier: 'ETH', blockchainOnly: true, assets: [] },

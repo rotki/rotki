@@ -4,6 +4,7 @@ import { type Balance, Blockchain, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import {
   getAccountAddress,
+  getAccountGroupId,
   getAccountLabel,
   getXpubGroupId,
   isAddressAccount,
@@ -172,4 +173,23 @@ export function accountGroups(accounts: Accounts, balances: Balances, ports: Acc
     ...addressGroups(chainAccounts, chainBalances, ports),
     ...xpubGroups(chainAccounts, chainBalances, ports),
   ];
+}
+
+/**
+ * The addresses whose balances make up an account group.
+ *
+ * @remarks
+ * Balances are kept per address, while a group is named by its id: the address itself, or for an xpub
+ * `<xpub>#<chain>`, whose balances sit under the addresses derived from it. The id is always included,
+ * so an address that is not among the tracked accounts still matches its own balances.
+ */
+export function groupAddresses(accounts: Accounts, groupId: string): Set<string> {
+  const addresses = new Set<string>([groupId]);
+  for (const chainAccounts of Object.values(accounts)) {
+    for (const account of chainAccounts) {
+      if (!isXpubAccount(account) && getAccountGroupId(account) === groupId)
+        addresses.add(getAccountAddress(account));
+    }
+  }
+  return addresses;
 }

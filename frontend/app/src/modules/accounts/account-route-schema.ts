@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { arrayify } from '@/modules/core/common/data/array';
-import { CommaSeparatedStringSchema, RouterExpandedIdsSchema } from '@/modules/core/table/route';
+import { CommaSeparatedStringSchema } from '@/modules/core/table/route';
 
 /**
  * A repeated query key (`?chain=eth&chain=optimism`) or a comma-joined one (`?chain=eth,optimism`).
@@ -16,14 +16,11 @@ const MultipleStringSchema = z
   .transform(value => value ?? []);
 
 /**
- * Everything the blockchain accounts table reads back out of the URL: its three filter pills plus
- * the expansion state of the table itself.
+ * Everything the blockchain accounts table reads back out of the URL: its three filter pills. The
+ * details drawer keeps its own keys (`use-account-details-route.ts`).
  */
 export const AccountExternalFilterSchema = z.object({
   addresses: CommaSeparatedStringSchema,
   chain: MultipleStringSchema,
-  q: z.string().optional(),
-  tab: z.coerce.number().optional(),
   tags: CommaSeparatedStringSchema,
-  ...RouterExpandedIdsSchema.shape,
 });

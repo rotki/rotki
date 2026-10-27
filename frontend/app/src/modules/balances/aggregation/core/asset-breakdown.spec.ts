@@ -59,6 +59,28 @@ describe('assetBreakdown', () => {
     expect(locations({ blockchainOnly: true })).toEqual(['optimism:0x1', 'ethereum:0x1']);
   });
 
+  it('should narrow an xpub group to the addresses derived from it', () => {
+    const xpub = { derivationPath: 'm/0', xpub: 'xpub1' };
+    const xpubInputs: BreakdownInputs = {
+      accounts: {
+        btc: [
+          createAccount({ address: 'bc1a', label: null, tags: null }, 'btc', xpub),
+          createAccount({ address: 'bc1other', label: null, tags: null }, 'btc'),
+        ],
+      },
+      balances: {
+        btc: {
+          bc1a: { assets: { BTC: { address: createTestBalance(1, 10) } }, liabilities: {} },
+          bc1other: { assets: { BTC: { address: createTestBalance(2, 20) } }, liabilities: {} },
+        },
+      },
+      exchanges: {},
+      manual: [],
+    };
+
+    expect(assetBreakdown('BTC', xpubInputs, false, { groupId: 'xpub1#m/0#btc' }, ports).map(row => row.address)).toEqual(['bc1a']);
+  });
+
   it('should read liabilities from accounts and manual liabilities, never from exchanges', () => {
     const liabilities = { ...inputs, manual: [createTestManualBalance('ETH', 2, 20, 'bank', BalanceType.LIABILITY, 3)] };
     expect(plain(assetBreakdown('ETH', liabilities, true, {}, ports))).toEqual([
