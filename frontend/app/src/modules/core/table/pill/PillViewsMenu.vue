@@ -79,8 +79,10 @@ async function save(): Promise<void> {
   set(error, status.message ?? '');
 }
 
+/** Removes a view; a failure is named on the menu's error line, as a rejected save is. */
 async function remove(index: number): Promise<void> {
-  await deleteView(index);
+  const result = await deleteView(index);
+  set(error, result.success ? '' : t('table_filter.saved_views.remove_failed', { message: result.message }));
   // The list shrank under the highlight, which would otherwise point past its end.
   set(highlighted, Math.min(get(highlighted), Math.max(get(views).length - 1, 0)));
   // The button that was just clicked is gone, so focus would otherwise fall back to the body.
@@ -305,18 +307,18 @@ watch([open, list], ([isOpen, element]: [boolean, HTMLDivElement | null]): void 
         </div>
 
         <div
-          v-if="!hasFilters"
-          class="text-xs text-rui-text-secondary px-1.5"
-          data-testid="pill-views-hint"
-        >
-          {{ t('table_filter.saved_views.nothing_to_save') }}
-        </div>
-        <div
-          v-else-if="error"
+          v-if="error"
           class="text-xs text-rui-error px-1.5"
           data-testid="pill-views-error"
         >
           {{ error }}
+        </div>
+        <div
+          v-else-if="!hasFilters"
+          class="text-xs text-rui-text-secondary px-1.5"
+          data-testid="pill-views-hint"
+        >
+          {{ t('table_filter.saved_views.nothing_to_save') }}
         </div>
       </div>
     </div>

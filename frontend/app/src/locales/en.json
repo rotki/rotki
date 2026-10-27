@@ -6598,6 +6598,7 @@
       },
       "name_placeholder": "Name these filters…",
       "nothing_to_save": "Add a filter to save it as a view.",
+      "remove_failed": "Could not remove the saved view: {message}",
       "title": "Views"
     }
   },

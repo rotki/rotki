@@ -131,15 +131,25 @@ export function useHistoryEventsOperations(
     show(text, async () => onConfirmDelete(payload));
   }
 
+  /**
+   * Runs the confirmed ignore or delete.
+   *
+   * @remarks
+   * The confirmation has already closed by the time this runs, so a failed delete has no dialog left
+   * to show it in and toasts instead.
+   */
   async function onConfirmDelete(payload: HistoryEventDeletePayload): Promise<void> {
     if (payload.type === 'ignore') {
       await ignoreSingle(payload.event, true);
     }
     else {
-      const { success } = await deleteHistoryEvent(payload.ids);
-      if (success) {
+      const result = await deleteHistoryEvent(payload.ids);
+      if (result.success) {
         emit('refresh');
         taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
+      }
+      else {
+        notifyError(t('transactions.events.delete.error.title'), result.message || t('transactions.events.delete.error.message'));
       }
     }
   }

@@ -5,13 +5,18 @@ import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/typ
 import { usePremiumRows } from '@/modules/shell/action-center/use-premium-rows';
 import { PremiumInactiveCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
-const { deletePremium, show } = vi.hoisted(() => ({
-  deletePremium: vi.fn<() => Promise<{ success: boolean }>>(),
+const { deletePremium, notifyError, show } = vi.hoisted(() => ({
+  deletePremium: vi.fn<() => Promise<{ success: true } | { message: string; success: false }>>(),
+  notifyError: vi.fn<(title: string, message: string) => void>(),
   show: vi.fn<(message: { title: string; message: string }, onConfirm: () => Promise<void>) => void>(),
 }));
 
 vi.mock('@/modules/premium/use-premium-operations', () => ({
   usePremiumOperations: (): object => ({ deletePremium }),
+}));
+
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: (): object => ({ notifyError }),
 }));
 
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
@@ -83,5 +88,16 @@ describe('modules/shell/action-center/use-premium-rows', () => {
     await onConfirm();
 
     expect(deletePremium).toHaveBeenCalledOnce();
+  });
+
+  it('should toast a failed removal, the confirmation having closed before it ran', async () => {
+    deletePremium.mockResolvedValue({ message: 'server refused', success: false });
+    const option = premiumRow(PremiumInactiveCause.EXPIRED).options.find(({ id }) => id === 'remove-premium-key');
+    assert(option?.target.kind === 'run');
+    option.target.run();
+
+    await show.mock.calls[0][1]();
+
+    expect(notifyError).toHaveBeenCalledExactlyOnceWith('premium_settings.error.removing_failed', 'server refused');
   });
 });

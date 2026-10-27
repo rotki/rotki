@@ -149,6 +149,15 @@ describe('useHistoryEventsOperations', () => {
     expect(emit).toHaveBeenCalledWith('refresh');
   });
 
+  it('should toast a failed delete, the confirmation having closed before it ran', async () => {
+    spies.deleteHistoryEvent.mockResolvedValue({ message: 'event is locked', success: false });
+    setup().confirmDelete({ ids: [1, 2], type: 'delete' });
+    await spies.show.mock.calls[0][1]();
+
+    expect(spies.notifyError).toHaveBeenCalledExactlyOnceWith('transactions.events.delete.error.title', 'event is locked');
+    expect(emit).not.toHaveBeenCalledWith('refresh');
+  });
+
   it('should ignore an event through the confirmation callback', async () => {
     const event = createMock<HistoryEventEntry>({ identifier: 1 });
     setup().confirmDelete({ event, type: 'ignore' });
