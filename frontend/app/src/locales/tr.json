@@ -5460,7 +5460,6 @@
   "price_management": {
     "add": {
       "error": {
-        "description": "Fiyat eklenemedi: {message}",
         "title": "Fiyat eklenemedi"
       }
     },
@@ -5470,7 +5469,6 @@
     },
     "edit": {
       "error": {
-        "description": "Fiyat düzenlenemedi: {message}",
         "title": "Fiyat düzenlenemedi"
       }
     },

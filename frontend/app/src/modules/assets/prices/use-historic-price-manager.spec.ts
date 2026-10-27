@@ -2,6 +2,7 @@ import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/modules/asse
 import type { ProblemMessage } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { bigNumberify } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
@@ -257,7 +258,7 @@ describe('modules/assets/prices/useHistoricPrices', () => {
 
       expect(addHistoricalPrice).toHaveBeenCalledWith(formPayload());
       expect(editHistoricalPrice).not.toHaveBeenCalled();
-      expect(saved).toBe(true);
+      expect(saved).toEqual(ok(true));
     });
 
     it('should edit when it is an update', async () => {
@@ -268,7 +269,7 @@ describe('modules/assets/prices/useHistoricPrices', () => {
 
       expect(editHistoricalPrice).toHaveBeenCalledWith(formPayload());
       expect(addHistoricalPrice).not.toHaveBeenCalled();
-      expect(saved).toBe(true);
+      expect(saved).toEqual(ok(true));
     });
 
     it('should clear the drawer\'s missing-price item for the asset it saved, and no other asset\'s', async () => {
@@ -309,36 +310,21 @@ describe('modules/assets/prices/useHistoricPrices', () => {
       const { save } = mountManager();
       await flushPromises();
 
-      expect(await save(formPayload(), false)).toBe(false);
+      expect(await save(formPayload(), false)).toEqual(ok(false));
       expect(showErrorMessage).not.toHaveBeenCalled();
     });
 
-    it('should report a failed add as a message rather than a notification', async () => {
-      addHistoricalPrice.mockRejectedValue(new Error('rejected'));
+    it('should hand a failed save back for the open form to name, instead of a message', async () => {
+      const failure = new Error('rejected');
+      addHistoricalPrice.mockRejectedValue(failure);
       const { save } = mountManager();
       await flushPromises();
 
       const saved = await save(formPayload(), false);
 
-      expect(saved).toBe(false);
-      expect(showErrorMessage).toHaveBeenCalledWith(
-        'price_management.add.error.title',
-        'price_management.add.error.description::rejected',
-      );
+      expect(saved).toEqual(err(failure));
+      expect(showErrorMessage).not.toHaveBeenCalled();
       expect(notifyError).not.toHaveBeenCalled();
-    });
-
-    it('should name the edit, not the add, when an update fails', async () => {
-      editHistoricalPrice.mockRejectedValue(new Error('rejected'));
-      const { save } = mountManager();
-      await flushPromises();
-
-      await save(formPayload(), true);
-
-      expect(showErrorMessage).toHaveBeenCalledWith(
-        'price_management.edit.error.title',
-        'price_management.edit.error.description::rejected',
-      );
     });
   });
 

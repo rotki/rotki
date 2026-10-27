@@ -1,6 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/modules/assets/prices/price-types';
 import { startPromise } from '@shared/utils';
+import { err, ok, type Result } from 'plainfp/result';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
@@ -16,7 +17,7 @@ interface UseHistoricPricesReturn {
   /** The table's empty text, or why the last fetch failed: the table is the only place that says so. */
   emptyState: ComputedRef<TableEmptyState>;
   loading: Readonly<Ref<boolean>>;
-  save: (data: HistoricalPriceFormPayload, update: boolean) => Promise<boolean>;
+  save: (data: HistoricalPriceFormPayload, update: boolean) => Promise<Result<boolean, unknown>>;
   deletePrice: (item: HistoricalPrice) => Promise<void>;
   refresh: (payload?: { modified?: boolean; additionalEntry?: HistoricalPrice }) => Promise<void>;
 }
@@ -40,7 +41,7 @@ export function useHistoricPrices(
 
   const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
   const { resetHistoricalPricesData } = useHistoricPriceCache();
-  const { notifyError, showErrorMessage } = useNotifications();
+  const { notifyError } = useNotifications();
   const { resolveMissingPrice } = useBackendProblemsStore();
   const emptyState = useTableEmptyState({ error: fetchError });
 
@@ -80,25 +81,22 @@ export function useHistoricPrices(
    *
    * @remarks
    * A saved price fixes the backend's missing-price report for that asset and time, so its item
-   * leaves the notification drawer rather than asking for a price the user has just added.
+   * leaves the notification drawer rather than asking for a price the user has just added. A failure
+   * is handed back for the open form to name.
+   *
+   * @returns whether the price was saved, or why it could not be
    */
-  const save = async (data: HistoricalPriceFormPayload, update: boolean): Promise<boolean> => {
+  const save = async (data: HistoricalPriceFormPayload, update: boolean): Promise<Result<boolean, unknown>> => {
     try {
       const saved = update ? await editHistoricalPrice(data) : await addHistoricalPrice(data);
       if (saved)
         resolveMissingPrice(data.fromAsset, data.timestamp);
 
-      return saved;
+      return ok(saved);
     }
     catch (error: unknown) {
-      const values = { message: getErrorMessage(error) };
-      const title = update ? t('price_management.edit.error.title') : t('price_management.add.error.title');
-      const description = update
-        ? t('price_management.edit.error.description', values)
-        : t('price_management.add.error.description', values);
-      showErrorMessage(title, description);
-
-      return false;
+      logger.error('Failed to save a historic price:', error);
+      return err(error);
     }
   };
 

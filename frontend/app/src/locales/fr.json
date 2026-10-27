@@ -2261,7 +2261,6 @@
   "price_management": {
     "add": {
       "error": {
-        "description": "L'ajout du prix n'a pas abouti : {message}",
         "title": "Échec de l'ajout du prix"
       }
     },
@@ -2271,7 +2270,6 @@
     },
     "edit": {
       "error": {
-        "description": "La modification du prix n'a pas abouti : {message}",
         "title": "Échec de la modification du prix"
       }
     },

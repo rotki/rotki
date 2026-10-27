@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
+import { isErr } from 'plainfp/result';
 import { useTemplateRef } from 'vue';
 import LatestPriceForm from '@/modules/assets/prices/latest/LatestPriceForm.vue';
 import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const open = defineModel<boolean>('open', { required: true });
@@ -24,9 +27,12 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const failureMessage = useFailureMessage();
 
 const modelValue = ref<ManualPriceFormPayload>();
 const loading = ref(false);
+/** Why the last save failed; the form keeps what was typed, and Save is the retry. */
+const saveError = shallowRef<unknown>();
 const form = useTemplateRef<InstanceType<typeof LatestPriceForm>>('form');
 const stateUpdated = ref(false);
 
@@ -47,18 +53,27 @@ async function save() {
   if (!valid)
     return false;
 
-  const data = get(modelValue);
-  const isEdit = editMode ?? !!editableItem;
   set(loading, true);
-  const success = await saveAction(data, isEdit);
-
+  set(saveError, undefined);
+  const outcome = await saveAction(get(modelValue));
   set(loading, false);
-  if (success) {
+
+  if (isErr(outcome)) {
+    set(saveError, outcome.error);
+    return false;
+  }
+  if (outcome.value) {
     set(modelValue, undefined);
     emit('refresh');
   }
-  return success;
+  return outcome.value;
 }
+
+const saveErrorTitle = computed<string>(() =>
+  (editMode ?? !!editableItem)
+    ? t('price_management.edit.error.title')
+    : t('price_management.add.error.title'),
+);
 
 const dialogTitle = computed<string>(() =>
   editableItem
@@ -67,6 +82,7 @@ const dialogTitle = computed<string>(() =>
 );
 
 watchImmediate([open, () => editableItem, () => prefill], ([open, editableItemVal, prefillVal]) => {
+  set(saveError, undefined);
   if (!open) {
     set(modelValue, undefined);
   }
@@ -95,6 +111,15 @@ watchImmediate([open, () => editableItem, () => prefill], ([open, editableItemVa
     @confirm="save()"
     @cancel="open = false"
   >
+    <TableFailureStrip
+      v-if="saveError"
+      standalone
+      :retryable="false"
+      class="mb-4"
+      :title="saveErrorTitle"
+      :message="failureMessage(saveError)"
+      data-testid="latest-price-save-error"
+    />
     <LatestPriceForm
       v-if="modelValue"
       ref="form"
