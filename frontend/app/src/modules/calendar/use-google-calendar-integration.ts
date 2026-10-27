@@ -18,6 +18,11 @@ interface UseGoogleCalendarIntegrationReturn {
   connectedUserEmail: Readonly<Ref<string>>;
   /** Only the packaged app gets the tokens back over IPC; elsewhere they are pasted in. */
   showTokenInput: Readonly<Ref<boolean>>;
+  /**
+   * What the last authorization, sync or disconnect failed with, for the card to name: on the token
+   * field while the token form is open, otherwise in the card. Cleared when the next one starts.
+   */
+  failure: Readonly<Ref<string | undefined>>;
   checkStatus: () => Promise<void>;
   connect: () => Promise<void>;
   cancelAuthorization: () => void;
@@ -52,13 +57,12 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
   const showTokenInput = shallowRef<boolean>(false);
   const modelManualToken = shallowRef<string>('');
   const modelManualRefreshToken = shallowRef<string>('');
+  const failure = shallowRef<string>();
 
-  function notifyMessage(message: string): void {
-    notify({ message, kind: NotificationKind.RESULT, severity: Severity.ERROR, title: t('external_services.google_calendar.error') });
-  }
-
-  function notifyError(error: unknown, fallback: string): void {
-    notifyMessage(getErrorMessage(error) || fallback);
+  /** Keeps why an action failed, for the card to name, and logs it. */
+  function fail(error: unknown, fallback: string): void {
+    logger.error('Google Calendar action failed:', error);
+    set(failure, getErrorMessage(error) || fallback);
   }
 
   async function checkStatus(): Promise<void> {
@@ -74,6 +78,7 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
 
   async function connect(): Promise<void> {
     set(isAuthorizing, true);
+    set(failure, undefined);
     try {
       const oauthUrl = `${websiteUrl}/oauth/google?mode=${isPackaged ? 'app' : 'docker'}`;
 
@@ -90,7 +95,7 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
       notify({ message: t('external_services.google_calendar.opening_browser'), kind: NotificationKind.RESULT, severity: Severity.INFO, title: t('external_services.google_calendar.authorizing') });
     }
     catch (error: unknown) {
-      notifyError(error, t('external_services.google_calendar.auth_failed'));
+      fail(error, t('external_services.google_calendar.auth_failed'));
       set(isAuthorizing, false);
     }
   }
@@ -99,77 +104,80 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
     set(isAuthorizing, false);
   }
 
-  function notifyOAuthError(error: unknown): void {
-    logger.error('OAuth failed:', error);
-    notifyError(error, t('external_services.google_calendar.auth_failed'));
-  }
-
-  async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
-    if (oAuthResult.service !== 'google')
-      return;
-
+  /**
+   * Hands the tokens to the backend.
+   *
+   * @returns whether rotki is now connected, so a pasted token is only cleared once it worked
+   */
+  async function completeAuthorization(oAuthResult: OAuthResult): Promise<boolean> {
+    set(failure, undefined);
     try {
       if (!oAuthResult.success) {
-        notifyOAuthError(oAuthResult.error);
-        return;
+        fail(oAuthResult.error, t('external_services.google_calendar.auth_failed'));
+        return false;
       }
 
       const { accessToken, refreshToken } = oAuthResult;
       if (!refreshToken) {
-        notifyMessage(t('external_services.google_calendar.auth_failed'));
-        return;
+        set(failure, t('external_services.google_calendar.auth_failed'));
+        return false;
       }
 
       const result = await completeOAuth(accessToken, refreshToken);
       logger.debug('received oauth result', result);
 
       if (!result.success) {
-        notifyOAuthError(result);
-        return;
+        fail(result, t('external_services.google_calendar.auth_failed'));
+        return false;
       }
 
       set(isConnected, true);
       set(connectedUserEmail, result.userEmail ?? '');
       await checkStatus();
+      return true;
     }
     catch (error: unknown) {
-      notifyOAuthError(error);
+      fail(error, t('external_services.google_calendar.auth_failed'));
+      return false;
     }
     finally {
       set(isAuthorizing, false);
     }
+  }
+
+  async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
+    if (oAuthResult.service === 'google')
+      await completeAuthorization(oAuthResult);
   }
 
   async function submitManualToken(): Promise<void> {
     const accessToken = get(modelManualToken).trim();
     if (!accessToken) {
-      notifyMessage(t('external_services.google_calendar.token_required'));
+      set(failure, t('external_services.google_calendar.token_required'));
       return;
     }
 
     set(isAuthorizing, true);
-    try {
-      await handleOAuthCallback({
-        accessToken,
-        refreshToken: get(modelManualRefreshToken).trim(),
-        service: 'google',
-        success: true,
-      });
-      set(modelManualToken, '');
-      set(showTokenInput, false);
-    }
-    finally {
-      set(isAuthorizing, false);
-    }
+    const connected = await completeAuthorization({
+      accessToken,
+      refreshToken: get(modelManualRefreshToken).trim(),
+      service: 'google',
+      success: true,
+    });
+    if (connected)
+      cancelTokenInput();
   }
 
   function cancelTokenInput(): void {
     set(modelManualToken, '');
+    set(modelManualRefreshToken, '');
+    set(failure, undefined);
     set(showTokenInput, false);
   }
 
   async function sync(): Promise<void> {
     set(isSyncing, true);
+    set(failure, undefined);
     try {
       const result = await syncCalendar();
 
@@ -187,7 +195,7 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
       });
     }
     catch (error: unknown) {
-      notifyError(error, t('external_services.google_calendar.sync_failed'));
+      fail(error, t('external_services.google_calendar.sync_failed'));
     }
     finally {
       set(isSyncing, false);
@@ -195,13 +203,14 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
   }
 
   async function disconnect(): Promise<void> {
+    set(failure, undefined);
     try {
       await disconnectApi();
       set(isConnected, false);
       set(connectedUserEmail, '');
     }
     catch (error: unknown) {
-      notifyError(error, t('external_services.google_calendar.disconnect_failed'));
+      fail(error, t('external_services.google_calendar.disconnect_failed'));
     }
   }
 
@@ -212,6 +221,7 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
     connect,
     connectedUserEmail: readonly(connectedUserEmail),
     disconnect,
+    failure: readonly(failure),
     handleOAuthCallback,
     isAuthorizing: readonly(isAuthorizing),
     isConnected: readonly(isConnected),
