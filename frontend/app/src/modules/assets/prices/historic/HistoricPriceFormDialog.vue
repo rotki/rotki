@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
+import { isErr } from 'plainfp/result';
 import { useTemplateRef } from 'vue';
 import HistoricPriceForm from '@/modules/assets/prices/historic/HistoricPriceForm.vue';
 import { useHistoricPrices } from '@/modules/assets/prices/use-historic-price-manager';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<HistoricalPriceFormPayload | undefined>({ required: true });
@@ -16,8 +19,11 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const failureMessage = useFailureMessage();
 
 const loading = ref<boolean>(false);
+/** Why the last save failed; the form keeps what was typed, and Save is the retry. */
+const saveError = shallowRef<unknown>();
 const form = useTemplateRef<InstanceType<typeof HistoricPriceForm>>('form');
 const stateUpdated = ref<boolean>(false);
 
@@ -38,17 +44,26 @@ async function save() {
   if (!valid)
     return false;
 
-  const data = get(modelValue);
   set(loading, true);
-  const success = await saveAction(data, editMode);
-
+  set(saveError, undefined);
+  const outcome = await saveAction(get(modelValue), editMode);
   set(loading, false);
-  if (success) {
+
+  if (isErr(outcome)) {
+    set(saveError, outcome.error);
+    return false;
+  }
+  if (outcome.value) {
     set(modelValue, undefined);
     emit('refresh');
   }
-  return success;
+  return outcome.value;
 }
+
+watch(modelValue, (value, previous) => {
+  if (!value || !previous)
+    set(saveError, undefined);
+});
 </script>
 
 <template>
@@ -62,6 +77,15 @@ async function save() {
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
+    <TableFailureStrip
+      v-if="saveError"
+      standalone
+      :retryable="false"
+      class="mb-4"
+      :title="editMode ? t('price_management.edit.error.title') : t('price_management.add.error.title')"
+      :message="failureMessage(saveError)"
+      data-testid="historic-price-save-error"
+    />
     <HistoricPriceForm
       v-if="modelValue"
       ref="form"

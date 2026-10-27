@@ -5946,7 +5946,6 @@
   "price_management": {
     "add": {
       "error": {
-        "description": "Adding the price was not successful: {message}",
         "title": "Price addition failed"
       }
     },
@@ -5956,7 +5955,6 @@
     },
     "edit": {
       "error": {
-        "description": "Editing the price was not successful: {message}",
         "title": "Price edit failed"
       }
     },

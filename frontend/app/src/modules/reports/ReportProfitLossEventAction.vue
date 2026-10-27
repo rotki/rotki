@@ -7,9 +7,9 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { requiredField } from '@/modules/core/form/fields';
 import { useForm } from '@/modules/core/form/use-form';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
@@ -28,10 +28,14 @@ const { t } = useI18n({ useScope: 'global' });
 const { resetHistoricalPricesData } = useHistoricPriceCache();
 const { getHistoricPrice } = usePriceTaskManager();
 const { addHistoricalPrice } = useAssetPricesApi();
-const { setMessage } = useMessageStore();
 
 const fetchingPrice = ref<boolean>(false);
 const showDialog = ref<boolean>(false);
+/**
+ * Why the last save failed, set even when the error carried no message; the dialog stays open with
+ * the typed price, and Save is the retry.
+ */
+const saveError = shallowRef<string>();
 
 const schema = computed<ZodType>(() => z.object({
   price: requiredField(t('price_form.price_non_empty')),
@@ -60,6 +64,7 @@ const form = useForm<PriceState, HistoricalPriceFormPayload>({
 });
 
 async function openEditHistoricPriceDialog(): Promise<void> {
+  set(saveError, undefined);
   set(showDialog, true);
   set(fetchingPrice, true);
   const { assetIdentifier, timestamp } = event;
@@ -73,17 +78,12 @@ async function openEditHistoricPriceDialog(): Promise<void> {
 }
 
 async function updatePrice(): Promise<void> {
+  set(saveError, undefined);
   const result = await form.submit();
-  if (result.outcome === 'success') {
+  if (result.outcome === 'success')
     set(showDialog, false);
-  }
-  else if (result.outcome === 'error') {
-    setMessage({
-      description: t('price_management.add.error.description', { message: result.message ?? '' }),
-      success: false,
-      title: t('price_management.add.error.title'),
-    });
-  }
+  else if (result.outcome === 'error')
+    set(saveError, result.message ?? '');
 }
 </script>
 
@@ -126,6 +126,14 @@ async function updatePrice(): Promise<void> {
           </template>
 
           <div class="flex flex-col gap-4">
+            <TableFailureStrip
+              v-if="saveError !== undefined"
+              standalone
+              :retryable="false"
+              :title="t('price_management.add.error.title')"
+              :message="saveError"
+              data-testid="edit-historic-price-save-error"
+            />
             <dl
               class="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 text-sm rounded-rui-control bg-rui-grey-50 dark:bg-rui-grey-900 px-3 py-2.5"
               data-testid="edit-historic-price-summary"

@@ -5338,7 +5338,6 @@
   "price_management": {
     "add": {
       "error": {
-        "description": "添加价格失败：{message}",
         "title": "添加价格失败"
       }
     },
@@ -5348,7 +5347,6 @@
     },
     "edit": {
       "error": {
-        "description": "编辑价格失败：{message}",
         "title": "编辑价格失败"
       }
     },

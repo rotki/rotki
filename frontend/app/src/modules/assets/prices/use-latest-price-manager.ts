@@ -1,8 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/modules/assets/prices/price-types';
-import type { TaskError } from '@/modules/core/tasks/task-result';
 import { type BigNumber, Zero } from '@rotki/common';
-import { isErr, ok, type Result } from 'plainfp/result';
+import { err, isErr, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
@@ -13,8 +12,8 @@ import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { type TableEmptyState, useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -25,7 +24,7 @@ interface UseLatestPricesReturn {
   loading: Readonly<Ref<boolean>>;
   refreshing: Readonly<Ref<boolean>>;
   getLatestPrices: () => Promise<void>;
-  save: (data: ManualPriceFormPayload, update: boolean) => Promise<boolean>;
+  save: (data: ManualPriceFormPayload) => Promise<Result<boolean, TaskError>>;
   refreshCurrentPrices: (additionalAssets?: string[]) => Promise<void>;
   deletePrice: ({ fromAsset }: { fromAsset: string }) => Promise<void>;
 }
@@ -42,7 +41,6 @@ export function useLatestPrices(
   const { addLatestPrice, deleteLatestPrice, fetchLatestPrices } = useAssetPricesApi();
   const { getAssetPrice } = usePriceUtils();
   const { refreshPrices } = usePriceRefresh();
-  const { showErrorMessage } = useNotifications();
   const { submitTask } = useNativeTask();
   const { resolveMissingCurrentPrice } = useBackendProblemsStore();
   const emptyState = useTableEmptyState({ error: fetchError });
@@ -118,11 +116,12 @@ export function useLatestPrices(
    * such as NFT balances, can declare themselves stale after a hand edit without also firing on
    * every automatic price sweep.
    *
-   * Pass `update` true to overwrite an existing manual price, false to add a new one.
+   * A failure also shows in the task's dock row; it is handed back so the open form can name it
+   * too. A cancelled task hands back an ok `false`, as there is nothing to name.
    *
-   * @returns whether the price was saved
+   * @returns whether the price was saved, or why it could not be
    */
-  const save = async (data: ManualPriceFormPayload, update: boolean): Promise<boolean> => {
+  const save = async (data: ManualPriceFormPayload): Promise<Result<boolean, TaskError>> => {
     const outcome = await submitTask<boolean>({
       id: manualPriceAddActivity.id(data),
       kind: manualPriceAddActivity.kind,
@@ -132,20 +131,12 @@ export function useLatestPrices(
       title: t('task_center.group.prices'),
     });
 
-    if (!isErr(outcome)) {
-      if (outcome.value)
-        resolveMissingCurrentPrice(data.fromAsset);
-      return outcome.value;
-    }
+    if (isErr(outcome))
+      return isActionable(outcome.error) ? err(outcome.error) : ok(false);
 
-    const values = { message: outcome.error.message };
-    const title = update ? t('price_management.edit.error.title') : t('price_management.add.error.title');
-    const description = update
-      ? t('price_management.edit.error.description', values)
-      : t('price_management.add.error.description', values);
-
-    showErrorMessage(title, description);
-    return false;
+    if (outcome.value)
+      resolveMissingCurrentPrice(data.fromAsset);
+    return ok(outcome.value);
   };
 
   const refreshCurrentPrices = async (additionalAssets: string[] = []): Promise<void> => {

@@ -207,7 +207,7 @@ describe('reportProfitLossEventAction', () => {
     expect(messages()).toEqual(['price_form.price_non_empty']);
   });
 
-  it('should report a failed save', async () => {
+  it('should name a failed save in the dialog, keeping it open, instead of a message', async () => {
     addHistoricalPrice.mockRejectedValue(new Error('nope'));
     wrapper = createWrapper();
     await openDialog();
@@ -215,6 +215,18 @@ describe('reportProfitLossEventAction', () => {
     await edit('42');
     await submit();
 
-    expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+    expect(wrapper.find('[data-testid=edit-historic-price-save-error]').text()).toContain('nope');
+    expect(setMessage).not.toHaveBeenCalled();
+  });
+
+  it('should still name a failed save whose error carries no message', async () => {
+    addHistoricalPrice.mockRejectedValue(Object.assign(new Error('placeholder'), { message: '' }));
+    wrapper = createWrapper();
+    await openDialog();
+
+    await edit('42');
+    await submit();
+
+    expect(wrapper.find('[data-testid=edit-historic-price-save-error]').text()).toContain('price_management.add.error.title');
   });
 });

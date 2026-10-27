@@ -3,7 +3,7 @@ import type { ProblemMessage } from '@/modules/core/notifications/problems/backe
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { runSpecWith } from '@test/utils/mocks/native-task';
-import { err } from 'plainfp/result';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
@@ -11,7 +11,7 @@ import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manage
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
-import { TaskFailed } from '@/modules/core/tasks/task-result';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
@@ -250,7 +250,7 @@ describe('useLatestPrices', () => {
     it('should save the price and report it saved', async () => {
       const { save } = useLatestPrices();
 
-      await expect(save(payload, false)).resolves.toBe(true);
+      await expect(save(payload)).resolves.toEqual(ok(true));
       expect(api.addLatestPrice).toHaveBeenCalledExactlyOnceWith(payload);
     });
 
@@ -259,7 +259,7 @@ describe('useLatestPrices', () => {
       fileMissingPrice('BTC', null);
       const { save } = useLatestPrices();
 
-      await save(payload, false);
+      await save(payload);
 
       const fields = useBackendProblemsStore().problems.flatMap(problem => problem.items.map(item => item.source.fields));
       expect(fields).toEqual([{ asset: 'BTC', timestamp: null }]);
@@ -269,7 +269,7 @@ describe('useLatestPrices', () => {
       fileMissingPrice('ETH', 1700000000);
       const { save } = useLatestPrices();
 
-      await save(payload, false);
+      await save(payload);
 
       expect(useBackendProblemsStore().problems).toHaveLength(1);
     });
@@ -279,31 +279,25 @@ describe('useLatestPrices', () => {
       fileMissingPrice('ETH', null);
       const { save } = useLatestPrices();
 
-      await save(payload, false);
+      await save(payload);
 
       expect(useBackendProblemsStore().problems).toHaveLength(1);
     });
 
-    it('should report a failed add as an add', async () => {
-      spies.submitTask.mockResolvedValue(err(TaskFailed({ message: 'bad pair' })));
+    it('should hand a failed save back for the open form to name, instead of a message', async () => {
+      const failure = TaskFailed({ message: 'bad pair' });
+      spies.submitTask.mockResolvedValue(err(failure));
       const { save } = useLatestPrices();
 
-      await expect(save(payload, false)).resolves.toBe(false);
-      expect(spies.showErrorMessage).toHaveBeenCalledExactlyOnceWith(
-        'price_management.add.error.title',
-        'price_management.add.error.description::bad pair',
-      );
+      await expect(save(payload)).resolves.toEqual(err(failure));
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
     });
 
-    it('should report a failed edit as an edit', async () => {
-      spies.submitTask.mockResolvedValue(err(TaskFailed({ message: 'bad pair' })));
+    it('should hand back nothing to name when the save task was cancelled', async () => {
+      spies.submitTask.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
       const { save } = useLatestPrices();
 
-      await expect(save(payload, true)).resolves.toBe(false);
-      expect(spies.showErrorMessage).toHaveBeenCalledExactlyOnceWith(
-        'price_management.edit.error.title',
-        'price_management.edit.error.description::bad pair',
-      );
+      await expect(save(payload)).resolves.toEqual(ok(false));
     });
   });
 });
