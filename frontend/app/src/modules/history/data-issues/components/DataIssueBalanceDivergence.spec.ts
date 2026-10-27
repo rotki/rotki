@@ -34,6 +34,7 @@ const { state, diagnostic, boundary } = await vi.hoisted(async () => {
     missingArchive: ref<boolean>(false),
     status: ref<HistoricalBalanceDivergenceResponse['status']>(),
     summary: ref<string>(),
+    summaryInFooter: ref<boolean>(false),
   };
   return {
     boundary,
@@ -50,6 +51,7 @@ const { state, diagnostic, boundary } = await vi.hoisted(async () => {
       search: vi.fn<() => Promise<void>>(),
       status: computed<HistoricalBalanceDivergenceResponse['status'] | undefined>(() => get(state.status)),
       summary: computed<string | undefined>(() => get(state.summary)),
+      summaryInFooter: computed<boolean>(() => get(state.summaryInFooter)),
       view: vi.fn<(boundary: DivergenceBoundaryEvent) => void>(),
     } satisfies ReturnType<typeof useDataIssueDivergence>,
     state,
@@ -65,15 +67,17 @@ function mountDiagnostic(busy = false): ReturnType<typeof mount> {
     global: {
       stubs: {
         DateDisplay: { name: 'DateDisplay', props: { timestamp: Number, milliseconds: Boolean }, template: '<span>{{ timestamp }}</span>' },
-        DivergenceBoundaryCard: {
+        DivergenceComparison: {
           emits: ['view'],
-          props: ['boundary', 'asset', 'location'],
-          template: '<button data-testid="test-divergence-boundary" @click="$emit(\'view\')">{{ boundary.event.eventIdentifier }}</button>',
+          props: ['boundaries', 'asset', 'location'],
+          template: '<div><button v-for="boundary in boundaries" :key="boundary.key" data-testid="test-divergence-boundary" @click="$emit(\'view\', boundary)">{{ boundary.event.eventIdentifier }}</button><p data-testid="test-divergence-footer"><slot name="footer" /></p></div>',
         },
         I18nT: { template: '<span><slot name="chain" /><slot name="link" /><slot name="date" /></span>' },
         InternalLink: { template: '<a><slot /></a>' },
+        RuiAlert: { props: ['type', 'title', 'description'], template: '<div :data-type="type" :data-title="title">{{ description }}<slot /></div>' },
         RuiButton: { props: ['disabled', 'loading'], template: '<button :disabled="disabled" :data-loading="loading"><slot /></button>' },
         RuiIcon: true,
+        RuiTooltip: { template: '<span><slot name="activator" /><slot /></span>' },
       },
     },
     props: {
@@ -93,6 +97,7 @@ describe('dataIssueBalanceDivergence detail-panel diagnostic', () => {
     set(state.missingArchive, false);
     set(state.boundaries, []);
     set(state.summary, undefined);
+    set(state.summaryInFooter, false);
     set(state.status, undefined);
     set(diagnostic.error, undefined);
   });
@@ -150,35 +155,78 @@ describe('dataIssueBalanceDivergence detail-panel diagnostic', () => {
   });
 
   it('should render the diagnosis summary including a no-divergence outcome', () => {
+    set(state.status, 'no_divergence');
     set(state.summary, 'No persistent divergence found');
     const wrapper = mountDiagnostic();
-    expect(wrapper.get('[data-testid="data-issue-divergence-summary"]').text()).toBe('No persistent divergence found');
+    expect(wrapper.get('[data-testid="divergence-outcome-summary"]').text()).toBe('No persistent divergence found');
+  });
+
+  it('should show no status for a diverged result, whose comparison is the outcome', () => {
+    set(state.status, 'diverged');
+    set(state.summary, 'balance_divergence.checked');
+    set(state.summaryInFooter, true);
+    set(state.boundaries, [boundary]);
+    const wrapper = mountDiagnostic();
+    expect(wrapper.find('[data-testid="divergence-outcome"]').exists()).toBe(false);
   });
 
   it('should explain a no-checkpoints outcome without an error, boundary or mismatch advice', () => {
     set(state.status, 'no_checkpoints');
     set(state.summary, 'balance_divergence.no_checkpoints');
     const wrapper = mountDiagnostic();
-    expect(wrapper.get('[data-testid="data-issue-divergence-summary"]').text()).toBe('balance_divergence.no_checkpoints');
+    expect(wrapper.get('[data-testid="divergence-outcome-summary"]').text()).toBe('balance_divergence.no_checkpoints');
     expect(wrapper.find('[data-testid="test-divergence-boundary"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="data-issue-divergence-error"]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid="data-issue-divergence-next-step"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="divergence-outcome-next-step"]').exists()).toBe(false);
     expect(wrapper.get('[data-testid="data-issue-find-divergence"]').attributes('disabled')).toBeUndefined();
   });
 
+  it('should leave the next step of a diverged result to its search window', () => {
+    set(state.status, 'diverged');
+    set(state.boundaries, [boundary]);
+    const wrapper = mountDiagnostic();
+    expect(wrapper.find('[data-testid="divergence-outcome-next-step"]').exists()).toBe(false);
+  });
+
+  it('should move the summary into the comparison footer once there are boundary events', () => {
+    set(state.status, 'diverged');
+    set(state.summary, 'balance_divergence.checked');
+    set(state.summaryInFooter, true);
+    set(state.boundaries, [boundary]);
+    const wrapper = mountDiagnostic();
+    expect(wrapper.find('[data-testid="divergence-outcome-summary"]').exists()).toBe(false);
+    expect(wrapper.get('[data-testid="test-divergence-footer"]').text()).toBe('balance_divergence.checked');
+  });
+
+  it('should keep a no-divergence summary as the result even though it returns a last matching event', () => {
+    set(state.status, 'no_divergence');
+    set(state.summary, 'balance_divergence.no_divergence');
+    set(state.boundaries, [boundary]);
+    const wrapper = mountDiagnostic();
+    expect(wrapper.get('[data-testid="divergence-outcome-summary"]').text()).toBe('balance_divergence.no_divergence');
+    expect(wrapper.get('[data-testid="test-divergence-footer"]').text()).toBe('');
+  });
+
+  it('should offer to search again once a search has run', () => {
+    const before = mountDiagnostic();
+    expect(before.get('[data-testid="data-issue-find-divergence"]').text()).toBe('balance_divergence.action');
+    set(state.status, 'no_divergence');
+    const after = mountDiagnostic();
+    expect(after.get('[data-testid="data-issue-find-divergence"]').text()).toBe('balance_divergence.search_again');
+  });
+
   it.each([
-    ['diverged', 'data_issues.detail.divergence_next_step'],
     ['diverged_from_start', 'data_issues.detail.divergence_from_start'],
     ['no_divergence', 'data_issues.detail.divergence_no_mismatch'],
   ] as const)('should suggest the next step for a %s result', (status, message) => {
     set(state.status, status);
     const wrapper = mountDiagnostic();
-    expect(wrapper.get('[data-testid="data-issue-divergence-next-step"]').text()).toBe(message);
+    expect(wrapper.get('[data-testid="divergence-outcome-next-step"]').text()).toBe(message);
   });
 
   it('should suggest no next step before a search has run', () => {
     const wrapper = mountDiagnostic();
-    expect(wrapper.find('[data-testid="data-issue-divergence-next-step"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="divergence-outcome-next-step"]').exists()).toBe(false);
   });
 
   it('should refer a failed search to the dock without repeating its error or hiding the result and retry action', () => {

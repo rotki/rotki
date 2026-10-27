@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import DivergenceBoundaryCard from '@/modules/history/balances/DivergenceBoundaryCard.vue';
+import DivergenceComparison from '@/modules/history/balances/DivergenceComparison.vue';
+import DivergenceOutcome from '@/modules/history/balances/DivergenceOutcome.vue';
 import { useArchiveNodes } from '@/modules/history/balances/use-archive-nodes';
 import { useBalanceDivergence } from '@/modules/history/balances/use-balance-divergence';
 import { useDivergenceSelection } from '@/modules/history/balances/use-divergence-selection';
@@ -20,7 +21,7 @@ const {
   selectedEvmChain,
 } = useDivergenceSelection();
 
-const { boundaries, clear, error, find, loading, navigate, summary } = useBalanceDivergence();
+const { boundaries, clear, error, find, loading, navigate, result, summary, summaryInFooter } = useBalanceDivergence();
 const { getChainName } = useSupportedChains();
 
 const { hasArchiveNode, loading: archiveLoading } = useArchiveNodes(chainOptions);
@@ -82,9 +83,9 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
         />
       </div>
 
-      <div
+      <RuiAlert
         v-if="missingArchiveNode"
-        class="text-sm text-rui-text-secondary"
+        type="warning"
         data-testid="balance-divergence-missing-archive"
       >
         <i18n-t
@@ -101,7 +102,7 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
             </InternalLink>
           </template>
         </i18n-t>
-      </div>
+      </RuiAlert>
 
       <div
         v-if="chainOptions.length === 0 || locationLabelOptions.length === 0"
@@ -128,35 +129,33 @@ watch([modelSelectedAsset, modelSelectedChain, modelSelectedLocationLabel], clea
         </RuiButton>
       </div>
 
-      <div
-        v-if="summary"
-        class="text-sm text-rui-text-secondary"
-      >
-        {{ summary }}
-      </div>
+      <DivergenceOutcome
+        v-if="result"
+        :status="result.status"
+        :summary="summaryInFooter ? undefined : summary"
+      />
 
-      <div
+      <DivergenceComparison
         v-if="boundaries.length > 0"
-        class="flex flex-col gap-3"
-        data-testid="divergence-boundaries"
+        :boundaries="boundaries"
+        :asset="modelSelectedAsset"
+        :location="modelSelectedChain"
+        @view="navigate($event.event, modelSelectedAsset ?? '')"
       >
-        <DivergenceBoundaryCard
-          v-for="boundary in boundaries"
-          :key="boundary.key"
-          :boundary="boundary"
-          :asset="modelSelectedAsset"
-          :location="modelSelectedChain"
-          @view="navigate(boundary.event, modelSelectedAsset ?? '')"
-        />
-      </div>
+        <template
+          v-if="summary && summaryInFooter"
+          #footer
+        >
+          {{ summary }}
+        </template>
+      </DivergenceComparison>
 
-      <p
+      <RuiAlert
         v-if="error"
-        class="text-sm text-rui-text-secondary"
+        type="error"
+        :description="t('balance_divergence.search_failed')"
         data-testid="divergence-error"
-      >
-        {{ t('balance_divergence.search_failed') }}
-      </p>
+      />
     </div>
   </div>
 </template>

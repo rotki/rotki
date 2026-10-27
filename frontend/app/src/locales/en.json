@@ -1898,26 +1898,44 @@
   },
   "balance_divergence": {
     "action": "Find divergence",
+    "apart": {
+      "days": "{count} day apart | {count} days apart",
+      "hours": "{count} hour apart | {count} hours apart",
+      "minutes": "under a minute apart | {count} minute apart | {count} minutes apart",
+      "rounded": "Rounded. The dates above are exact."
+    },
     "asset": "Asset",
     "block": "Block",
+    "block_range": "blocks {from} → {to}",
     "chain": "Chain",
     "chain_missing_archive_node": "This check requires an archive node. No archive node is connected for {chain}. Add or connect one in {link}.",
     "checked": "Checked {probes} points.",
     "difference": "Difference",
     "event": "Tx",
-    "first_diverged": "First diverged event",
-    "last_matching": "Last matching event",
+    "first_diverged": "First diverged",
+    "last_matching": "Last match",
     "location_label": "Location label",
+    "match": "Match",
     "missing_group": "No transaction",
     "new_search": "New search",
     "no_checkpoints": "No tracked wallet balance checkpoints are available up to this time. Check for a missing earlier receive or an incorrectly recorded spend.",
     "no_divergence": "The tracked and on-chain balances match at the end of the searched history. No persistent divergence to locate. Checked {probes} points.",
     "no_options": "No EVM location labels are available.",
     "onchain": "On-chain",
+    "search_again": "Search again",
     "search_failed": "The last search failed. See the activity dock for details.",
+    "search_window": "Search this window",
     "settings_link": "RPC node settings",
+    "status": {
+      "diverged": "Divergence found",
+      "diverged_from_start": "Diverged from the first event",
+      "no_checkpoints": "Nothing to compare",
+      "no_divergence": "No divergence found"
+    },
     "title": "Find balance divergence",
     "tracked": "Tracked",
+    "tracked_higher": "At the first diverged event, the tracked balance is higher than on-chain.",
+    "tracked_lower": "At the first diverged event, the tracked balance is lower than on-chain.",
     "view_event": "View event"
   },
   "bank_balances": {
@@ -2941,6 +2959,8 @@
       "unmatched_bridge_withdrawal": "Unmatched {asset} bridge withdrawal. Match it manually."
     },
     "detail": {
+      "after_event": "After the event",
+      "before_event": "Before the event",
       "checked_customizations": "Checked customized transactions",
       "comparison": {
         "added": "Added",
@@ -2978,6 +2998,8 @@
       "divergence_scope": "Compares the tracked wallet balance with the on-chain balance up to {date}.",
       "event_date": "Affected event:",
       "match_in_history": "Match in history",
+      "mismatch_cause": "Some {asset} transactions are probably missing or recorded incorrectly.",
+      "negative_balance_cause": "An earlier {asset} transaction is probably missing or recorded incorrectly.",
       "no_attempts": "No automatic checks or fixes have been attempted yet.",
       "open_event": "Open event #{id}",
       "redecoding_failed": "rotki could not compare the customized transactions with the current decoder. Your saved events were left unchanged.",
@@ -2986,6 +3008,7 @@
       "remediation_history": "Automatic checks and fixes",
       "resolution_note": "Resolution note",
       "title": "Issue details",
+      "untracked_exchange_cause": "The event is a withdrawal from an exchange rotki does not track. Track the exchange and sync its history, or change the event to Receive / Payment.",
       "whats_wrong": "What's wrong"
     },
     "detect": {

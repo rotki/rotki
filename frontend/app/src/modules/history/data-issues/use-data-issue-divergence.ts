@@ -23,6 +23,7 @@ interface UseDataIssueDivergenceReturn {
   search: () => Promise<void>;
   status: ComputedRef<HistoricalBalanceDivergenceResponse['status'] | undefined>;
   summary: ComputedRef<string | undefined>;
+  summaryInFooter: ComputedRef<boolean>;
   view: (boundary: DivergenceBoundaryEvent) => void;
 }
 
@@ -116,6 +117,7 @@ export function useDataIssueDivergence(issue: MaybeRefOrGetter<DataIssue>): UseD
     search,
     status,
     summary: divergence.summary,
+    summaryInFooter: divergence.summaryInFooter,
     view,
   };
 }

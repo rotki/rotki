@@ -2,7 +2,7 @@ import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { describe, expect, it } from 'vitest';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
-import { describeIssue, humanizeStrategy, relatedEventRoute, strategyMessageKey, toTimelineItems } from '@/modules/history/data-issues/transforms';
+import { describeIssue, humanizeStrategy, negativeBalanceValues, relatedEventRoute, strategyMessageKey, toTimelineItems } from '@/modules/history/data-issues/transforms';
 
 function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
   return {
@@ -208,6 +208,32 @@ describe('data-issues transforms', () => {
       expect(result.shortMessageKey).toBe('data_issues.description_short.unknown');
       expect(result.eventIdentifier).toBeUndefined();
       expect(result.amounts).toEqual({});
+    });
+  });
+
+  describe('negativeBalanceValues', () => {
+    const payload = { derivedBalanceBeforeEvent: '0.5', eventIdentifier: 42, inMemoryNegativeAmount: '-0.25' };
+
+    it('should read the balance before and after the event', () => {
+      const values = negativeBalanceValues(createIssue({ payload }));
+
+      expect(values?.before.toString()).toBe('0.5');
+      expect(values?.after.toString()).toBe('-0.25');
+      expect(values?.untrackedExchange).toBe(false);
+    });
+
+    it('should flag a withdrawal from an untracked exchange', () => {
+      const values = negativeBalanceValues(createIssue({ payload: { ...payload, reason: 'untracked_exchange' } }));
+
+      expect(values?.untrackedExchange).toBe(true);
+    });
+
+    it('should leave any other kind of issue alone, even with a matching payload', () => {
+      expect(negativeBalanceValues(createIssue({ kind: IssueKind.UNMATCHED_BRIDGE, payload }))).toBeUndefined();
+    });
+
+    it('should give nothing for a payload it cannot read', () => {
+      expect(negativeBalanceValues(createIssue({ payload: {} }))).toBeUndefined();
     });
   });
 

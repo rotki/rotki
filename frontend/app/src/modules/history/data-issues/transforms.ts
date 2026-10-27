@@ -1,3 +1,4 @@
+import type { BigNumber } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
 import type {
   IssueDescription,
@@ -160,6 +161,27 @@ export function describeIssue(issue: DataIssue): IssueDescription {
     amounts: {},
     messageKey: msg.$t('data_issues.description.unknown'),
     shortMessageKey: msg.$t('data_issues.description_short.unknown'),
+  };
+}
+
+/** The balance a negative-balance event started from and fell to, for laying the issue out as values. */
+export interface NegativeBalanceValues {
+  before: BigNumber;
+  after: BigNumber;
+  /** The event is a withdrawal from an exchange the user does not track, which has its own remedy. */
+  untrackedExchange: boolean;
+}
+
+export function negativeBalanceValues(issue: DataIssue): NegativeBalanceValues | undefined {
+  if (issue.kind !== IssueKind.NEGATIVE_BALANCE)
+    return undefined;
+  const parsed = NegativeBalancePayload.safeParse(issue.payload);
+  if (!parsed.success)
+    return undefined;
+  return {
+    after: parsed.data.inMemoryNegativeAmount,
+    before: parsed.data.derivedBalanceBeforeEvent,
+    untrackedExchange: parsed.data.reason === 'untracked_exchange',
   };
 }
 

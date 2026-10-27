@@ -109,7 +109,7 @@ const stubs = {
   I18nT: { template: '<span><slot name="chain" /><slot name="link" /></span>' },
   InternalLink: { template: '<a><slot /></a>' },
   HashLink: { props: ['text'], template: '<span class="hash">{{ text }}</span>' },
-  RuiAlert: { template: '<div class="alert"><slot /></div>' },
+  RuiAlert: { props: ['type', 'title', 'description'], template: '<div class="alert" :data-type="type">{{ title }}{{ description }}<slot /></div>' },
   HistoryEventNote: { props: ['notes'], template: '<div class="notes">{{ notes }}</div>' },
 };
 
@@ -193,6 +193,8 @@ describe('balanceDivergenceView.vue', () => {
     });
     expect(wrapper.find('[data-testid=divergence-boundary][data-key=last_matching]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=divergence-boundary][data-key=first_diverged]').exists()).toBe(true);
+    expect(wrapper.get('[data-testid=divergence-footer]').text()).toContain('balance_divergence.checked');
+    expect(wrapper.find('[data-testid=divergence-outcome]').exists()).toBe(false);
 
     await wrapper.find('[data-testid=view-divergence][data-key=last_matching]').trigger('click');
 

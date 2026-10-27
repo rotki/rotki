@@ -90,7 +90,19 @@ describe('useBalanceDivergence', () => {
     expect(get(divergence.loading)).toBe(false);
     expect(get(divergence.boundaries).map(boundary => boundary.key)).toStrictEqual(['last_matching', 'first_diverged']);
     expect(get(divergence.summary)).toContain('balance_divergence.checked');
+    expect(get(divergence.summaryInFooter)).toBe(true);
     expect(get(divergence.error)).toBeUndefined();
+  });
+
+  it('should keep a no-divergence summary out of the footer even though it returns a last matching event', () => {
+    const divergence = useBalanceDivergence(HistoricalBalanceDivergenceResponse.parse({
+      ...divergedResult(),
+      firstDiverged: null,
+      status: 'no_divergence',
+    }));
+
+    expect(get(divergence.boundaries).map(boundary => boundary.key)).toStrictEqual(['last_matching']);
+    expect(get(divergence.summaryInFooter)).toBe(false);
   });
 
   it('should restore the completed boundaries without running another task', () => {
@@ -125,6 +137,7 @@ describe('useBalanceDivergence', () => {
     const divergence = useBalanceDivergence();
     await divergence.find({ address: '0xA', asset: 'ETH', evmChain: 'ethereum' });
     expect(get(divergence.summary)).toBe('balance_divergence.no_checkpoints');
+    expect(get(divergence.summaryInFooter)).toBe(false);
     expect(get(divergence.boundaries)).toEqual([]);
     expect(get(divergence.error)).toBeUndefined();
   });

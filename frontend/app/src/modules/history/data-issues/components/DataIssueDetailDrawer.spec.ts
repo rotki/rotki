@@ -53,9 +53,11 @@ function createWrapper(issue?: DataIssue): VueWrapper<InstanceType<typeof DataIs
         AssetDetails: true,
         CounterpartyDisplay: true,
         DataIssueBalanceDivergence: true,
+        DataIssueBalanceMismatchSummary: true,
         DataIssueDescription: true,
         DataIssueDetectedTime: true,
         DataIssueKindChip: true,
+        DataIssueNegativeBalanceSummary: true,
         DataIssueRemediationTimeline: true,
         DataIssueStateChip: true,
         DateDisplay: true,
@@ -86,6 +88,52 @@ describe('dataIssueDetailDrawer', () => {
     divergence.vm.$emit('navigate');
     await nextTick();
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
+  });
+
+  it('should lay out a balance mismatch as values instead of its sentence', () => {
+    const wrapper = createWrapper(createIssue({
+      kind: IssueKind.CURRENT_BALANCE_MISMATCH,
+      payload: { delta: '-0.01', derivedBalance: '0.1', latestEventIdentifier: 5, observedBalance: '0.09', queriedAtTs: 1 },
+    }));
+
+    const summary = wrapper.findComponent({ name: 'DataIssueBalanceMismatchSummary' });
+    expect(summary.props('derived').toString()).toBe('0.1');
+    expect(summary.props('observed').toString()).toBe('0.09');
+    expect(summary.props('delta').toString()).toBe('-0.01');
+    expect(summary.props('asset')).toBe('ETH');
+    expect(wrapper.findComponent({ name: 'DataIssueDescription' }).exists()).toBe(false);
+  });
+
+  it('should collapse the remediation section to one line when nothing has been attempted', () => {
+    const wrapper = createWrapper(createIssue());
+
+    expect(wrapper.get('[data-testid="data-issue-no-attempts"]').text()).toBe('data_issues.detail.no_attempts');
+    expect(wrapper.findComponent({ name: 'DataIssueRemediationTimeline' }).exists()).toBe(false);
+    expect(wrapper.text()).not.toContain('data_issues.detail.remediation_history');
+  });
+
+  it('should lay out a negative balance as the balance before and after its event', () => {
+    const wrapper = createWrapper(createIssue({
+      payload: { derivedBalanceBeforeEvent: '5', eventIdentifier: 123, inMemoryNegativeAmount: '-2', reason: 'untracked_exchange' },
+    }));
+
+    const summary = wrapper.findComponent({ name: 'DataIssueNegativeBalanceSummary' });
+    expect(summary.props('before').toString()).toBe('5');
+    expect(summary.props('after').toString()).toBe('-2');
+    expect(summary.props('untrackedExchange')).toBe(true);
+    expect(summary.props('asset')).toBe('ETH');
+    expect(wrapper.findComponent({ name: 'DataIssueDescription' }).exists()).toBe(false);
+  });
+
+  it('should keep the sentence for any other kind of issue', () => {
+    const wrapper = createWrapper(createIssue({
+      kind: IssueKind.UNMATCHED_BRIDGE,
+      payload: { direction: 'deposit', eventIdentifier: 123, groupIdentifier: 'grp-1' },
+    }));
+
+    expect(wrapper.findComponent({ name: 'DataIssueDescription' }).exists()).toBe(true);
+    expect(wrapper.findComponent({ name: 'DataIssueBalanceMismatchSummary' }).exists()).toBe(false);
+    expect(wrapper.findComponent({ name: 'DataIssueNegativeBalanceSummary' }).exists()).toBe(false);
   });
 
   it('should render a related-event link for an issue that carries an event identifier', () => {
@@ -134,6 +182,7 @@ describe('dataIssueDetailDrawer', () => {
           DataIssueBalanceDivergence: true,
           DataIssueDescription: true,
           DataIssueKindChip: true,
+          DataIssueNegativeBalanceSummary: true,
           DataIssueStateChip: true,
           DateDisplay: true,
           HistoryEventAccount: true,
