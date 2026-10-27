@@ -1922,11 +1922,15 @@ def test_upgrade_v18_v19(
         messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test the global DB upgrade from v18 to v19 that adds Birdeye to the
-    historical price sources table."""
+    historical price sources table and the asset lookup indexes."""
     assert globaldb.get_setting_value('version', 0) == 18
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
             "SELECT COUNT(*) FROM price_history_source_types WHERE type='L'",
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=?",
+            ('idx_evm_tokens_address_chain',),
         ).fetchone()[0] == 0
 
     with ExitStack() as stack:
@@ -1943,6 +1947,16 @@ def test_upgrade_v18_v19(
         assert cursor.execute(
             "SELECT seq FROM price_history_source_types WHERE type='L'",
         ).fetchone() == (12,)
+        for index_name, index_definition in (
+                ('idx_evm_tokens_address_chain', 'onevm_tokens(address,chain)'),
+                ('idx_evm_tokens_chain_protocol', 'onevm_tokens(chain,protocol)'),
+                ('idx_common_asset_details_symbol_nocase', 'oncommon_asset_details(symbolcollatenocase)'),  # noqa: E501
+                ('idx_multiasset_mappings_asset_nocase', 'onmultiasset_mappings(assetcollatenocase)'),  # noqa: E501
+        ):
+            assert cursor.execute(
+                "SELECT sql FROM sqlite_master WHERE type='index' AND name=?",
+                (index_name,),
+            ).fetchone()[0].replace(' ', '').lower().endswith(index_definition)
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
