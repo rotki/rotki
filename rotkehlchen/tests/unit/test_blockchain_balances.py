@@ -357,7 +357,10 @@ def test_blockchain_balances_cache_preserves_awaiting_claim(blockchain: ChainsAg
         addresses=[address],
     )
     with blockchain.database.conn.read_ctx() as cursor:
-        cached = blockchain.database.get_blockchain_balances_cache(cursor, SupportedBlockchain.ETHEREUM)
+        cached = blockchain.database.get_blockchain_balances_cache(
+            cursor,
+            SupportedBlockchain.ETHEREUM,
+        )
     assert cached.eth[address].assets[A_ETH]['lido'].serialize() == {
         'amount': '2',
         'value': '0',
