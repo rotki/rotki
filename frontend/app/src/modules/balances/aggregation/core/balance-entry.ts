@@ -1,11 +1,11 @@
-import { type Balance, type ClaimAccount, Zero } from '@rotki/common';
+import { type Balance, type ClaimRequest, Zero } from '@rotki/common';
 import { balanceSum } from '@/modules/core/common/data/calculation';
 
 /** A balance held under one protocol, possibly merged from several sources, chains or assets. */
 export type BalanceEntry = Balance & {
   awaitingClaim?: Balance['amount'];
-  /** The accounts holding `awaitingClaim`. */
-  awaitingClaimAccounts?: ClaimAccount[];
+  /** The withdrawal requests that make up `awaitingClaim`. */
+  claims?: ClaimRequest[];
   /** Some of it comes from a balance the user entered manually. */
   containsManual?: boolean;
   /** The per-chain split, carried by the on-chain `address` protocol only. */
@@ -26,16 +26,21 @@ function mergeChains(
   return merged;
 }
 
-function mergeClaimAccounts(a: ClaimAccount[] | undefined, b: ClaimAccount[] | undefined): ClaimAccount[] | undefined {
+function claimSortKey(claim: ClaimRequest): string {
+  const time = String(claim.requestedAt ?? claim.availableAt ?? 0).padStart(12, '0');
+  return [time, claim.id ?? '', claim.account?.chain ?? '', claim.account?.address ?? ''].join('|');
+}
+
+/** Oldest first, so the merged list does not depend on which side came first. */
+export function compareClaims(a: ClaimRequest, b: ClaimRequest): number {
+  return claimSortKey(a).localeCompare(claimSortKey(b));
+}
+
+function mergeClaims(a: ClaimRequest[] | undefined, b: ClaimRequest[] | undefined): ClaimRequest[] | undefined {
   if (!a || !b)
     return a ?? b;
 
-  const merged = [...a];
-  for (const account of b) {
-    if (!merged.some(({ address, chain }) => address === account.address && chain === account.chain))
-      merged.push(account);
-  }
-  return merged.sort((x, y) => x.chain.localeCompare(y.chain) || x.address.localeCompare(y.address));
+  return [...a, ...b].sort(compareClaims);
 }
 
 /**
@@ -47,13 +52,13 @@ function mergeClaimAccounts(a: ClaimAccount[] | undefined, b: ClaimAccount[] | u
  */
 export function combineBalanceEntries(a: BalanceEntry, b: BalanceEntry): BalanceEntry {
   const chains = mergeChains(a.chains, b.chains);
-  const awaitingClaimAccounts = mergeClaimAccounts(a.awaitingClaimAccounts, b.awaitingClaimAccounts);
+  const claims = mergeClaims(a.claims, b.claims);
   return {
     ...balanceSum(a, b),
     ...(a.awaitingClaim || b.awaitingClaim
       ? { awaitingClaim: (a.awaitingClaim ?? Zero).plus(b.awaitingClaim ?? Zero) }
       : {}),
-    ...(awaitingClaimAccounts ? { awaitingClaimAccounts } : {}),
+    ...(claims ? { claims } : {}),
     ...(chains ? { chains } : {}),
     ...(a.containsManual || b.containsManual ? { containsManual: true } : {}),
   };

@@ -13,21 +13,18 @@ const onEthAndBase: BalanceEntry = {
   chains: { base: createTestBalance(3, 30), eth: createTestBalance(2, 20) },
 };
 const manual: BalanceEntry = { ...createTestBalance(4, 40), containsManual: true };
-const claimOnB: BalanceEntry = {
-  ...createTestBalance(1, 10),
-  awaitingClaim: bigNumberify(1),
-  awaitingClaimAccounts: [{ address: '0xB', chain: 'eth' }],
-};
-const claimOnA: BalanceEntry = {
-  ...createTestBalance(2, 20),
-  awaitingClaim: bigNumberify(2),
-  awaitingClaimAccounts: [{ address: '0xA', chain: 'eth' }],
-};
-const claimOnCBase: BalanceEntry = {
-  ...createTestBalance(3, 30),
-  awaitingClaim: bigNumberify(3),
-  awaitingClaimAccounts: [{ address: '0xC', chain: 'base' }],
-};
+
+function claimOn(id: string, requestedAt: number, address: string, chain = 'eth'): BalanceEntry {
+  return {
+    ...createTestBalance(1, 10),
+    awaitingClaim: bigNumberify(1),
+    claims: [{ account: { address, chain }, amount: bigNumberify(1), finalized: false, id, requestedAt }],
+  };
+}
+
+const claimOnB = claimOn('2', 20, '0xB');
+const claimOnA = claimOn('1', 10, '0xA');
+const claimOnCBase = claimOn('3', 30, '0xC', 'base');
 
 describe('combineBalanceEntries', () => {
   it('should sum amount and value', () => {
@@ -53,25 +50,11 @@ describe('combineBalanceEntries', () => {
     expect(combineBalanceEntries(onEth, onEthAndBase)).not.toHaveProperty('containsManual');
   });
 
-  it('should sum the amount awaiting claim and list each claiming account once', () => {
-    const first: BalanceEntry = {
-      ...createTestBalance(1, 10),
-      awaitingClaim: bigNumberify(1),
-      awaitingClaimAccounts: [{ address: '0xA', chain: 'eth' }],
-    };
-    const second: BalanceEntry = {
-      ...createTestBalance(2, 20),
-      awaitingClaim: bigNumberify(2),
-      awaitingClaimAccounts: [{ address: '0xA', chain: 'eth' }, { address: '0xB', chain: 'eth' }],
-    };
+  it('should sum the amount awaiting claim and keep every request, oldest first', () => {
+    const combined = combineBalanceEntries(claimOnB, claimOnA);
 
-    const combined = combineBalanceEntries(first, second);
-
-    expect(combined.awaitingClaim?.toFixed()).toBe('3');
-    expect(combined.awaitingClaimAccounts).toEqual([
-      { address: '0xA', chain: 'eth' },
-      { address: '0xB', chain: 'eth' },
-    ]);
+    expect(combined.awaitingClaim?.toFixed()).toBe('2');
+    expect(combined.claims?.map(claim => claim.id)).toEqual(['1', '2']);
   });
 
   it('should not depend on the order of its arguments', () => {

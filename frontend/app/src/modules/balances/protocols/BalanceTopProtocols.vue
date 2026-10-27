@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import type { ProtocolBalance } from '@rotki/common';
+import ClaimAwaitingBadge from '@/modules/balances/protocols/components/ClaimAwaitingBadge.vue';
 import ProtocolMenuItem from '@/modules/balances/protocols/ProtocolMenuItem.vue';
 import ProtocolTooltipIcon from '@/modules/balances/protocols/ProtocolTooltipIcon.vue';
+import { hasAwaitingClaim } from '@/modules/core/common/display/balances';
 
 const { protocols, visible = 3 } = defineProps<{
   protocols: ProtocolBalance[];
@@ -10,9 +12,8 @@ const { protocols, visible = 3 } = defineProps<{
   visible?: number;
 }>();
 
-const { t } = useI18n({ useScope: 'global' });
-
 const showMore = computed<number>(() => protocols.length - visible);
+const claimable = computed<ProtocolBalance[]>(() => protocols.filter(hasAwaitingClaim));
 </script>
 
 <template>
@@ -20,12 +21,13 @@ const showMore = computed<number>(() => protocols.length - visible);
     v-if="protocols.length > 0"
     class="flex items-center justify-end gap-1 pl-2"
   >
-    <span
-      v-if="protocols.some(protocol => protocol.awaitingClaim?.gt(0))"
-      class="text-rui-warning text-xs"
-    >
-      {{ t('common.awaiting_claim') }}
-    </span>
+    <ClaimAwaitingBadge
+      v-for="protocolBalance in claimable"
+      :key="protocolBalance.protocol"
+      :protocol-balance="protocolBalance"
+      :asset="asset"
+      compact
+    />
     <ProtocolTooltipIcon
       v-if="protocols.length === 1"
       :protocol-balance="protocols[0]"

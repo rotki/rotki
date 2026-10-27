@@ -17,14 +17,15 @@ interface BlockchainSourceFilter {
   readonly address?: string;
 }
 
-/** One account's balance under `protocol`, tagged with the account when it has something to claim. */
+/** One account's balance under `protocol`, with each withdrawal request tagged with the account that owns it. */
 function toAccountEntry(protocol: string, balance: BalanceEntry, chain: string, address: string): BalanceEntry {
   if (protocol === ADDRESS_PROTOCOL)
     return { ...balance, chains: { [chain]: balance } };
 
-  return balance.awaitingClaim?.gt(0)
-    ? { ...balance, awaitingClaimAccounts: [{ address, chain }] }
-    : balance;
+  if (!balance.claims)
+    return balance;
+
+  return { ...balance, claims: balance.claims.map(claim => ({ ...claim, account: { address, chain } })) };
 }
 
 /** Adds one account's balances on `chain`, keeping the per-chain split for the `address` protocol. */

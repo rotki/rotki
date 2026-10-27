@@ -62,16 +62,16 @@ describe('fromBlockchain', () => {
     expect(fromBlockchain(balances, { address: '0x5678' }).ETH.address.amount.toFixed()).toBe('4');
   });
 
-  it('should name the accounts that hold an amount awaiting claim, and only those', () => {
-    const claimable = { ...createTestBalance(1, 100), awaitingClaim: bigNumberify(1) };
+  it('should tag each withdrawal request with the account that owns it', () => {
+    const claims = [{ amount: bigNumberify(1), finalized: true, id: '7' }];
     const result = fromBlockchain({
       eth: {
-        '0x1234': { assets: { ETH: { lido: claimable } }, liabilities: {} },
+        '0x1234': { assets: { ETH: { lido: { ...createTestBalance(1, 100), awaitingClaim: bigNumberify(1), claims } } }, liabilities: {} },
         '0x5678': { assets: { ETH: { lido: createTestBalance(2, 200) } }, liabilities: {} },
       },
     });
 
-    expect(result.ETH.lido.awaitingClaimAccounts).toEqual([{ address: '0x1234', chain: 'eth' }]);
+    expect(result.ETH.lido.claims).toEqual([{ ...claims[0], account: { address: '0x1234', chain: 'eth' } }]);
   });
 
   it('should read liabilities when asked', () => {

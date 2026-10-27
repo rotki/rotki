@@ -38,10 +38,26 @@ export interface ClaimAccount {
   chain: string;
 }
 
+/**
+ * A withdrawal request that waits for its owner to claim it.
+ *
+ * @remarks
+ * Timestamps are in seconds. Whether it is ready is not stored: it is if `finalized`, or once
+ * `availableAt` has passed.
+ */
+export interface ClaimRequest {
+  amount: Balance['amount'];
+  /** Where the request sits, filled in when the balances of the accounts are combined. */
+  account?: ClaimAccount;
+  availableAt?: number;
+  finalized: boolean;
+  id?: string;
+  requestedAt?: number;
+}
+
 export type ProtocolBalance = Balance & {
   awaitingClaim?: Balance['amount'];
-  /** The accounts that hold the amount awaiting claim. */
-  awaitingClaimAccounts?: ClaimAccount[];
+  claims?: ClaimRequest[];
   containsManual?: boolean;
   protocol: string;
 };

@@ -3,20 +3,15 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import { type ProtocolBalanceWithChains, transformCase } from '@rotki/common';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import ChainBalances from '@/modules/balances/protocols/components/ChainBalances.vue';
+import ClaimAwaitingBadge from '@/modules/balances/protocols/components/ClaimAwaitingBadge.vue';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
-import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
-import HashLink from '@/modules/shell/components/HashLink.vue';
+import { hasAwaitingClaim } from '@/modules/core/common/display/balances';
 
 defineProps<{
   data: ProtocolBalanceWithChains[];
   asset?: string;
   loading?: boolean;
 }>();
-
-const claimPages = new Map<string, string>([
-  ['lido', 'https://stake.lido.fi/withdrawals/claim'],
-  ['venice', 'https://venice.ai/token'],
-]);
 
 const sort = ref<DataTableSortData<ProtocolBalanceWithChains>>({
   column: 'value',
@@ -75,38 +70,11 @@ const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
             </div>
           </template>
         </ProtocolIcon>
-        <span
-          v-if="row.awaitingClaim?.gt(0)"
-          class="text-rui-warning text-xs"
-        >
-          {{ t('common.awaiting_claim') }}
-          <AssetAmountDisplay
-            v-if="asset"
-            :asset="asset"
-            :amount="row.awaitingClaim"
-          />
-        </span>
-        <ExternalLink
-          v-if="row.awaitingClaim?.gt(0) && claimPages.has(row.protocol)"
-          :url="claimPages.get(row.protocol)"
-          data-testid="asset-protocol-claim-link"
-          class="text-xs"
-        >
-          {{ t('common.claim_page') }}
-        </ExternalLink>
-        <div
-          v-if="row.awaitingClaim?.gt(0) && row.awaitingClaimAccounts?.length"
-          class="flex flex-wrap items-center gap-1 text-xs"
-          data-testid="asset-protocol-claim-accounts"
-        >
-          <span class="text-rui-text-secondary">{{ t('common.claim_with') }}</span>
-          <HashLink
-            v-for="account in row.awaitingClaimAccounts"
-            :key="`${account.chain}-${account.address}`"
-            :text="account.address"
-            :location="account.chain"
-          />
-        </div>
+        <ClaimAwaitingBadge
+          v-if="hasAwaitingClaim(row)"
+          :protocol-balance="row"
+          :asset="asset"
+        />
         <ChainBalances
           v-if="row.protocol.toLowerCase() === 'address' && row.chains && Object.keys(row.chains).length > 0"
           :chains="row.chains"

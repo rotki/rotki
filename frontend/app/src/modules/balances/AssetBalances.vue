@@ -12,7 +12,7 @@ import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocol
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { useValuePending } from '@/modules/balances/value-pending';
 import { bigNumberSum, calculatePercentage } from '@/modules/core/common/data/calculation';
-import { sortAssetBalances } from '@/modules/core/common/display/balances';
+import { hasAwaitingClaim, sortAssetBalances } from '@/modules/core/common/display/balances';
 import { TableColumn } from '@/modules/core/table/table-column';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
@@ -77,7 +77,7 @@ const isExpanded = (asset: string) => some(get(expanded), { asset });
 function shouldShowRowExpander(row: AssetBalanceWithPrice): boolean {
   const hasBreakdown = Boolean(row.breakdown);
   const shouldShowNativeBreakdown = (!breakdown?.hide && isEvmNativeToken(row.asset)) ?? false;
-  const hasPerProtocolDetails = row.perProtocol?.some(protocol => protocol.awaitingClaim?.gt(0)) || (row.perProtocol && row.perProtocol.length > 1) || false;
+  const hasPerProtocolDetails = row.perProtocol?.some(hasAwaitingClaim) || (row.perProtocol && row.perProtocol.length > 1) || false;
   return hasBreakdown || shouldShowNativeBreakdown || hasPerProtocolDetails;
 }
 

@@ -2,6 +2,7 @@ import type {
   AssetBalance,
   AssetBalanceWithPrice,
   BigNumber,
+  ProtocolBalance,
   Writeable,
 } from '@rotki/common';
 import type { DataTableSortData } from '@rotki/ui-library';
@@ -28,6 +29,11 @@ export function groupAssetBreakdown(
   }, initial);
 
   return Object.values(grouped).sort((a, b) => sortDesc(a.value, b.value));
+}
+
+/** Whether part of the protocol balance is a withdrawal the user still has to claim. */
+export function hasAwaitingClaim(balance: Pick<ProtocolBalance, 'awaitingClaim'>): boolean {
+  return balance.awaitingClaim?.gt(0) ?? false;
 }
 
 export function sum(balances: readonly { value: BigNumber }[]): BigNumber {

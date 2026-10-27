@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import { isEvmNativeToken } from '@/modules/assets/types';
+import { hasAwaitingClaim } from '@/modules/core/common/display/balances';
 
 const { row } = defineProps<{
   row: AssetBalanceWithPrice;
@@ -17,7 +18,7 @@ const tab = ref(0);
 
 const hasPerProtocol = computed<boolean>(() => {
   const perProtocol = row.perProtocol;
-  return (perProtocol && (perProtocol.length > 1 || perProtocol.some(protocol => protocol.awaitingClaim?.gt(0)))) ?? false;
+  return (perProtocol && (perProtocol.length > 1 || perProtocol.some(hasAwaitingClaim))) ?? false;
 });
 
 const hasBreakdown = computed<boolean>(() => {
