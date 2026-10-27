@@ -1823,12 +1823,10 @@
       "valid": "{count} çift başarıyla seçildi | {count} çift başarıyla seçildi"
     },
     "query_all": {
-      "error": "Binance piyasa listesi alınamadı.",
-      "title": "Binance piyasalarını sorgula"
+      "error": "Binance piyasa listesi alınamadı. {message}"
     },
     "query_user": {
-      "error": "Binance için sorgulanmak üzere seçilen piyasaların listesi alınamadı.",
-      "title": "Seçili Binance piyasalarını sorgula"
+      "error": "Binance için sorgulanmak üzere seçilen piyasaların listesi alınamadı. {message}"
     },
     "refresh_tooltip": "Binance piyasa çiftlerini yenile"
   },

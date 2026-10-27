@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { NotificationKind, Severity } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { trimOnPaste } from '@/modules/core/common/helpers/event';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import { logger } from '@/modules/core/common/logging/logging';
 
 defineOptions({
   inheritAttrs: false,
@@ -29,6 +28,11 @@ const queriedMarkets = ref<string[]>([]);
 const selection = ref<string[]>([]);
 const allMarkets = ref<string[]>([]);
 const loading = ref<boolean>(false);
+/**
+ * Why the markets could not be loaded. Named on the field in place of the form's own errors: an
+ * empty list after a failed load would otherwise read as a plain "required".
+ */
+const loadFailure = shallowRef<string>();
 
 interface PasteResult {
   valid: string[];
@@ -94,7 +98,12 @@ function onSelectionChange(value: string[]) {
 const { t } = useI18n({ useScope: 'global' });
 const api = useExchangeApi();
 
-const { notify } = useNotificationDispatcher();
+const failureMessage = useFailureMessage();
+
+const fieldErrors = computed<string[]>(() => {
+  const failure = get(loadFailure);
+  return failure ? [failure] : errorMessages ?? [];
+});
 
 async function queryAllMarkets() {
   try {
@@ -106,11 +115,8 @@ async function queryAllMarkets() {
     set(allMarkets, markets);
   }
   catch (error: unknown) {
-    const title = t('binance_market_selector.query_all.title');
-    const description = t('binance_market_selector.query_all.error', {
-      message: getErrorMessage(error),
-    });
-    notify({ kind: NotificationKind.FAILURE, message: description, severity: Severity.ERROR, title });
+    logger.error('Failed to load the Binance markets:', error);
+    set(loadFailure, t('binance_market_selector.query_all.error', { message: failureMessage(error) }));
   }
 }
 
@@ -122,17 +128,15 @@ async function loadUserMarkets() {
       set(selection, markets);
     }
     catch (error: unknown) {
-      const title = t('binance_market_selector.query_user.title');
-      const description = t('binance_market_selector.query_user.error', {
-        message: getErrorMessage(error),
-      });
-      notify({ kind: NotificationKind.FAILURE, message: description, severity: Severity.ERROR, title });
+      logger.error('Failed to load the selected Binance markets:', error);
+      set(loadFailure, t('binance_market_selector.query_user.error', { message: failureMessage(error) }));
     }
   }
 }
 
 async function refreshMarkets(refreshUserMarkets = false) {
   set(loading, true);
+  set(loadFailure, undefined);
   if (refreshUserMarkets) {
     await loadUserMarkets();
   }
@@ -153,7 +157,8 @@ onMounted(() => {
         :options="allMarkets"
         :loading="loading"
         :disabled="loading"
-        :error-messages="errorMessages"
+        :error-messages="fieldErrors"
+        data-testid="binance-pairs-select"
         hide-selected
         chips
         clearable

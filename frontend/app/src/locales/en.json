@@ -2031,12 +2031,10 @@
       "valid": "{count} pair selected successfully | {count} pairs selected successfully"
     },
     "query_all": {
-      "error": "Couldn't get the list of markets for binance.",
-      "title": "Query Binance markets"
+      "error": "Couldn't get the list of markets for binance. {message}"
     },
     "query_user": {
-      "error": "Couldn't get the list of markets selected to be queried for binance.",
-      "title": "Query selected Binance markets"
+      "error": "Couldn't get the list of markets selected to be queried for binance. {message}"
     },
     "refresh_tooltip": "Refresh Binance market pairs"
   },
