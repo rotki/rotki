@@ -1123,7 +1123,7 @@
     "add_error": "Couldn't save asset",
     "edit_error": "Couldn't edit asset",
     "fetch_latest_icon": {
-      "description": "Failed to fetch the latest icon for {identifier}: {message}",
+      "failed": "Could not refresh the icon",
       "title": "Fetch the latest icon"
     },
     "help_coingecko": "Click for help on how to locate the CoinGecko identifier",

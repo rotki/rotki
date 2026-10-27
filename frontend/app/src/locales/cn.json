@@ -1033,7 +1033,6 @@
     "add_error": "无法保存资产",
     "edit_error": "无法编辑资产",
     "fetch_latest_icon": {
-      "description": "获取 {identifier} 的最新图标失败：{message}",
       "title": "获取最新图标"
     },
     "help_coingecko": "点击查看如何找到 CoinGecko 标识符",

@@ -1032,7 +1032,6 @@
     "add_error": "Varlık kaydedilemedi",
     "edit_error": "Varlık düzenlenemedi",
     "fetch_latest_icon": {
-      "description": "{identifier} için en son simge alınamadı: {message}",
       "title": "En son simgeyi al"
     },
     "help_coingecko": "CoinGecko tanımlayıcısını nasıl bulacağınızla ilgili yardım için tıklayın",
