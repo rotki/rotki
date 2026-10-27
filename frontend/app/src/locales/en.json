@@ -609,10 +609,6 @@
       }
     },
     "asset_movement_matching": {
-      "error": {
-        "description": "Failed to match asset movement: {message}",
-        "title": "Asset Movement Matching"
-      },
       "success": {
         "description": "Asset movement successfully matched to blockchain event.",
         "title": "Asset Movement Matched"
@@ -687,10 +683,6 @@
       "create_counterpart_success": {
         "description": "A synthetic counterpart event was created on the other chain and linked to the bridge transaction.",
         "title": "Bridge Counterpart Created"
-      },
-      "error": {
-        "description": "Failed to match bridge transaction: {error}",
-        "title": "Bridge Transaction Matching"
       },
       "success": {
         "description": "Bridge transaction successfully matched to its counterpart event.",
@@ -1272,6 +1264,7 @@
     }
   },
   "asset_movement_matching": {
+    "action_failed": "Could not update the asset movement",
     "actions": {
       "auto_match": "Trigger automatic matching",
       "auto_match_tooltip": "Automatically match asset movements with corresponding events based on amount, asset, and timestamp.",
@@ -1321,6 +1314,7 @@
       "mark_external": "Mark external",
       "mark_external_in_tooltip": "Resolve this deposit as income from an untracked source, so its whole amount is accounted and not just the fee.",
       "mark_external_tooltip": "Resolve this withdrawal as a payment to an untracked address, so its whole amount is accounted and not just the fee.",
+      "match_failed": "Could not link the matches",
       "matching_for": "Finding matches for the following asset movement.",
       "matching_hint": "You can select one or more events to link.",
       "no_ignored": "No ignored asset movements.",
@@ -1335,7 +1329,7 @@
       "restore": "Restore",
       "restore_tooltip": "Restore this asset movement to the unmatched list.",
       "search_description": "Search for events within the specified criteria:",
-      "search_error": "Could not search for matches: {error}",
+      "search_failed": "Could not search for matches",
       "select": "Select",
       "select_match_title": "Select Matching Event",
       "selected": "Selected",
@@ -2102,6 +2096,7 @@
     }
   },
   "bridge_matching": {
+    "action_failed": "Could not update the bridge transaction",
     "actions": {
       "auto_match_tooltip": "Automatically match bridge transactions with their counterpart events on the other chain based on amount, asset, and timestamp.",
       "create_counterpart": "Create Counterpart Event",
@@ -2324,6 +2319,7 @@
     "blockchain": "Blockchain",
     "category": "Category",
     "chain": "Chains",
+    "change_not_applied": "rotki's backend did not apply the change.",
     "claim_page": "Open claim page",
     "claim_pending": "Pending",
     "claim_pending_ready_on": "Pending, ready on {date}",

@@ -4,7 +4,6 @@ import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas
 import { bigNumberify } from '@rotki/common';
 import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
@@ -20,6 +19,8 @@ interface UsePotentialMatchesReturn {
   confirmMatch: () => Promise<boolean>;
   /** True while a match is being written. */
   matchingLoading: Readonly<Ref<boolean>>;
+  /** Why the last match failed, for the panel to name; cleared when the next match or search starts. */
+  matchError: Readonly<Ref<unknown>>;
   /** Restrict the search to assets the unmatched entry could plausibly pair with. */
   modelOnlyExpectedAssets: Ref<boolean>;
   /** The identifiers the user picked to match against. */
@@ -30,8 +31,8 @@ interface UsePotentialMatchesReturn {
   modelTolerancePercentage: Ref<string>;
   /** Candidate events for the current search, close matches first. */
   potentialMatches: Readonly<Ref<PotentialMatchRow[]>>;
-  /** Message describing why the last search failed, if it did. */
-  searchError: Readonly<Ref<string | undefined>>;
+  /** Why the last search failed, if it did; cleared when the next search starts. */
+  searchError: Readonly<Ref<unknown>>;
   /** True while candidates are being fetched. */
   searchLoading: Readonly<Ref<boolean>>;
   /** Fetches candidates for the current filters. */
@@ -56,10 +57,10 @@ export function usePotentialMatches(
 ): UsePotentialMatchesReturn {
   const searchLoading = shallowRef<boolean>(false);
   const matchingLoading = shallowRef<boolean>(false);
-  const searchError = ref<string>();
+  const searchError = shallowRef<unknown>();
+  const matchError = shallowRef<unknown>();
   const potentialMatches = ref<PotentialMatchRow[]>([]);
 
-  const { t } = useI18n({ useScope: 'global' });
   const { matchAssetMovement, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
   const { fetchHistoryEvents } = useHistoryEventsApi();
   const { getAssetMovementMatches } = useAssetMovementMatchingApi();
@@ -97,6 +98,7 @@ export function usePotentialMatches(
 
   async function searchPotentialMatches(): Promise<void> {
     set(searchError, undefined);
+    set(matchError, undefined);
     set(potentialMatches, []);
     set(searchLoading, true);
 
@@ -141,7 +143,7 @@ export function usePotentialMatches(
     }
     catch (error) {
       logger.error('Failed to search potential matches:', error);
-      set(searchError, t('asset_movement_matching.dialog.search_error', { error: getErrorMessage(error) }));
+      set(searchError, error);
     }
     finally {
       set(searchLoading, false);
@@ -155,6 +157,7 @@ export function usePotentialMatches(
       return false;
 
     set(matchingLoading, true);
+    set(matchError, undefined);
 
     try {
       const group = toValue(movement);
@@ -168,8 +171,10 @@ export function usePotentialMatches(
         ? await selectedFlow.match(unmatchedId, matchIds)
         : await matchAssetMovement(unmatchedId, matchIds);
 
-      if (!result.success)
+      if (!result.success) {
+        set(matchError, result.message);
         return false;
+      }
 
       if (selectedFlow)
         await selectedFlow.refresh(true);
@@ -194,13 +199,14 @@ export function usePotentialMatches(
 
   return {
     confirmMatch,
+    matchError: shallowReadonly(matchError),
     matchingLoading: readonly(matchingLoading),
     modelOnlyExpectedAssets,
     modelSearchTimeRange,
     modelSelectedMatchIds,
     modelTolerancePercentage,
     potentialMatches: shallowReadonly(potentialMatches),
-    searchError: readonly(searchError),
+    searchError: shallowReadonly(searchError),
     searchLoading: readonly(searchLoading),
     searchPotentialMatches,
   };

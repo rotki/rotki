@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import type { PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { canWidenSearch, type SearchCriteria, widenedSearch } from '@/modules/history/events/matching/search-widening';
+import { type MatchingFailure, MatchingFailureKind, type PotentialMatchRow, type UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import PotentialMatchesCards from '@/modules/history/events/PotentialMatchesCards.vue';
 import PotentialMatchesEmpty from '@/modules/history/events/PotentialMatchesEmpty.vue';
 import PotentialMatchesTable from '@/modules/history/events/PotentialMatchesTable.vue';
@@ -19,7 +21,7 @@ const onlyExpectedAssets = defineModel<boolean>('onlyExpectedAssets', { required
 
 const tolerancePercentage = defineModel<string>('tolerancePercentage', { required: true });
 
-const { movement, matches, loading, isPinned, highlightedIdentifier, entryLabels } = defineProps<{
+const { movement, matches, loading, isPinned, highlightedIdentifier, entryLabels, failure } = defineProps<{
   movement: UnmatchedEventGroup;
   matches: PotentialMatchRow[];
   loading: boolean;
@@ -31,8 +33,8 @@ const { movement, matches, loading, isPinned, highlightedIdentifier, entryLabels
    * it falls back to the asset-movement type and the exchange header.
    */
   entryLabels?: { type: string; locationHeader: string; matchingFor?: string };
-  /** When set, the last search failed; the message is shown above the results. */
-  searchError?: string;
+  /** Why the last search or match failed, named above the results. */
+  failure?: MatchingFailure;
   /** Shown when a search returns no matches, explaining why none can be found. */
   emptyExplanation?: string;
 }>();
@@ -44,6 +46,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const failureMessage = useFailureMessage();
 
 const movementEntry = computed<HistoryEventEntry>(() => {
   const { entry, ...meta } = getEventEntryFromCollection(movement.events);
@@ -162,14 +165,16 @@ watchDebounced(onlyExpectedAssets, () => {
     </div>
 
     <div class="flex-1 min-h-0 flex flex-col">
-      <RuiAlert
-        v-if="searchError"
-        type="error"
-        size="sm"
+      <TableFailureStrip
+        v-if="failure"
+        standalone
+        :retryable="failure.kind === MatchingFailureKind.SEARCH"
         class="mb-4 shrink-0"
-      >
-        {{ searchError }}
-      </RuiAlert>
+        :title="failure.kind === MatchingFailureKind.SEARCH ? t('asset_movement_matching.dialog.search_failed') : t('asset_movement_matching.dialog.match_failed')"
+        :message="failureMessage(failure.error)"
+        data-testid="potential-matches-failure"
+        @retry="emit('search')"
+      />
 
       <p
         v-if="matches.length > 0"

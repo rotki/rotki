@@ -7,7 +7,7 @@ const { spies } = vi.hoisted(() => ({
     matchAssetMovements: vi.fn<(id: number) => Promise<boolean>>().mockResolvedValue(true),
     unlinkAssetMovement: vi.fn<(id: number) => Promise<boolean>>().mockResolvedValue(true),
     refreshUnmatchedAssetMovements: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
-    resolveExternal: vi.fn<(id: number) => Promise<{ message: string; success: boolean }>>().mockResolvedValue({ message: '', success: true }),
+    resolveExternal: vi.fn<(id: number) => Promise<{ message: unknown; success: boolean }>>().mockResolvedValue({ message: '', success: true }),
     showConfirm: vi.fn(),
   },
 }));
@@ -181,12 +181,14 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
-    it('should reset ignoreLoading on error', async () => {
+    it('should keep the failure for the panel and reset ignoreLoading', async () => {
       const movement = createMockMovement();
       spies.matchAssetMovements.mockRejectedValueOnce(new Error('API error'));
       const { composable } = setupWithCallback();
 
-      await expect(composable.ignoreMovement(movement)).rejects.toThrow('API error');
+      await composable.ignoreMovement(movement);
+
+      expect(get(composable.actionFailure)).toMatchObject({ message: 'API error' });
 
       expect(get(composable.ignoreLoading)).toBe(false);
     });
@@ -238,12 +240,14 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
-    it('should reset ignoreLoading on error', async () => {
+    it('should keep the failure for the panel and reset ignoreLoading', async () => {
       const movement = createMockMovement();
       spies.unlinkAssetMovement.mockRejectedValueOnce(new Error('API error'));
       const { composable } = setupWithCallback();
 
-      await expect(composable.restoreMovement(movement)).rejects.toThrow('API error');
+      await composable.restoreMovement(movement);
+
+      expect(get(composable.actionFailure)).toMatchObject({ message: 'API error' });
 
       expect(get(composable.ignoreLoading)).toBe(false);
     });
@@ -310,7 +314,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.modelSelectedUnmatched)).toEqual([]);
     });
 
-    it('should reset ignoreLoading on error', async () => {
+    it('should keep the failure for the panel and reset ignoreLoading', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
       ]);
@@ -320,7 +324,9 @@ describe('use-asset-movement-actions', () => {
       set(composable.modelSelectedUnmatched, ['g1']);
       composable.confirmIgnoreSelected();
 
-      await expect(extractAndCallConfirmCallback()).rejects.toThrow('fail');
+      await extractAndCallConfirmCallback();
+
+      expect(get(composable.actionFailure)).toMatchObject({ message: 'fail' });
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
@@ -412,7 +418,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.modelSelectedIgnored)).toEqual([]);
     });
 
-    it('should reset ignoreLoading on error', async () => {
+    it('should keep the failure for the panel and reset ignoreLoading', async () => {
       set(ignoredMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
       ]);
@@ -422,7 +428,9 @@ describe('use-asset-movement-actions', () => {
       set(composable.modelSelectedIgnored, ['g1']);
       composable.confirmRestoreSelected();
 
-      await expect(extractAndCallConfirmCallback()).rejects.toThrow('fail');
+      await extractAndCallConfirmCallback();
+
+      expect(get(composable.actionFailure)).toMatchObject({ message: 'fail' });
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
@@ -514,7 +522,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.modelSelectedUnmatched)).toEqual([]);
     });
 
-    it('should reset ignoreLoading on error', async () => {
+    it('should keep the failure for the panel and reset ignoreLoading', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ isFiat: true, identifier: 1 }),
       ]);
@@ -523,7 +531,9 @@ describe('use-asset-movement-actions', () => {
       const composable = setupWithoutCallback();
       composable.confirmIgnoreAllFiat();
 
-      await expect(extractAndCallConfirmCallback()).rejects.toThrow('fail');
+      await extractAndCallConfirmCallback();
+
+      expect(get(composable.actionFailure)).toMatchObject({ message: 'fail' });
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
@@ -579,13 +589,38 @@ describe('use-asset-movement-actions', () => {
       expect(onActionComplete).not.toHaveBeenCalled();
     });
 
-    it('should clear the loading flag when the resolution throws', async () => {
+    it('should keep the failure for the panel and clear the loading flag when the resolution throws', async () => {
       spies.resolveExternal.mockRejectedValueOnce(new Error('boom'));
       const composable = setupWithoutCallback();
 
-      await expect(composable.markExternal(createMockMovement())).rejects.toThrow('boom');
+      await composable.markExternal(createMockMovement());
+
+      expect(get(composable.actionFailure)).toMatchObject({ message: 'boom' });
 
       expect(get(composable.ignoreLoading)).toBe(false);
+    });
+  });
+
+  describe('a failed action', () => {
+    it('should keep a resolution the backend refused for the panel, leaving no notice', async () => {
+      const failure = new Error('refused');
+      spies.resolveExternal.mockResolvedValueOnce({ message: failure, success: false });
+      const composable = setupWithoutCallback();
+
+      await composable.markExternal(createMockMovement());
+
+      expect(get(composable.actionFailure)).toBe(failure);
+      expect(get(composable.resolutionNotice)).toBeUndefined();
+    });
+
+    it('should clear the kept failure when the next action starts', async () => {
+      spies.matchAssetMovements.mockRejectedValueOnce(new Error('API error'));
+      const composable = setupWithoutCallback();
+      await composable.ignoreMovement(createMockMovement());
+
+      await composable.ignoreMovement(createMockMovement());
+
+      expect(get(composable.actionFailure)).toBeUndefined();
     });
   });
 

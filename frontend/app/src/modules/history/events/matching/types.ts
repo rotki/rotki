@@ -41,7 +41,8 @@ export interface MatchingFlow {
     onlyExpectedAssets: boolean,
     tolerance: string,
   ) => Promise<MatchSuggestions>;
-  match: (identifier: number, matchedEventIds: number[]) => Promise<ActionStatus>;
+  /** Links the matches; a failure carries the thrown error, for the matching panel to name. */
+  match: (identifier: number, matchedEventIds: number[]) => Promise<ActionStatus<unknown>>;
   refresh: (skipIgnored?: boolean) => Promise<void>;
   /**
    * Search window the dialog pre-fills, in seconds. Falls back to the asset movement
@@ -50,4 +51,15 @@ export interface MatchingFlow {
   defaultTimeRangeSeconds?: number;
   /** Amount tolerance the dialog pre-fills, as a decimal fraction (0.01 is 1%). */
   defaultTolerance?: string;
+}
+
+export const MatchingFailureKind = {
+  MATCH: 'match',
+  SEARCH: 'search',
+} as const;
+
+/** What the matching panel failed at, and why: a failed search offers a retry, a failed match does not. */
+export interface MatchingFailure {
+  kind: typeof MatchingFailureKind[keyof typeof MatchingFailureKind];
+  error: unknown;
 }

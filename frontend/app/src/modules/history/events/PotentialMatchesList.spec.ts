@@ -1,8 +1,8 @@
-import type { PotentialMatchRow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventCollectionRow, HistoryEventEntry } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MatchingFailureKind, type PotentialMatchRow, type UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import PotentialMatchesList from '@/modules/history/events/PotentialMatchesList.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
@@ -134,10 +134,23 @@ describe('potentialMatchesList', () => {
       expect(wrapper.findComponent(EmptyStub).exists()).toBe(false);
     });
 
-    it('should show what the last search failed with', () => {
-      const wrapper = createWrapper({ searchError: 'the backend said no' });
+    it('should name a failed search, and search again from there', async () => {
+      const wrapper = createWrapper({ failure: { error: new Error('the backend said no'), kind: MatchingFailureKind.SEARCH } });
 
-      expect(wrapper.text()).toContain('the backend said no');
+      const strip = wrapper.find('[data-testid=potential-matches-failure]');
+      expect(strip.text()).toContain('asset_movement_matching.dialog.search_failed');
+      expect(strip.text()).toContain('the backend said no');
+      await strip.find('[data-testid=table-failure-strip-retry]').trigger('click');
+
+      expect(wrapper.emitted('search')).toHaveLength(1);
+    });
+
+    it('should name a failed match without a retry of its own, the match button being the retry', () => {
+      const wrapper = createWrapper({ failure: { error: new Error('refused'), kind: MatchingFailureKind.MATCH } });
+
+      const strip = wrapper.find('[data-testid=potential-matches-failure]');
+      expect(strip.text()).toContain('asset_movement_matching.dialog.match_failed');
+      expect(strip.find('[data-testid=table-failure-strip-retry]').exists()).toBe(false);
     });
 
     it('should say nothing about a search that did not fail', () => {

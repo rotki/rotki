@@ -225,31 +225,31 @@ describe('use-unmatched-asset-movements', () => {
       const result = await useUnmatchedAssetMovements().matchAssetMovement(1, [2, 3]);
 
       expect(spies.matchAssetMovements).toHaveBeenCalledWith(1, [2, 3]);
-      expect(result).toEqual({ message: '', success: true });
+      expect(result).toEqual({ success: true });
       expect(spies.showSuccessMessage).toHaveBeenCalled();
       expect(spies.signalEventsModified).toHaveBeenCalledTimes(1);
     });
 
-    /** A refused match changed nothing, so nothing is announced and nothing is invalidated. */
-    it('should stay quiet when the match was refused', async () => {
+    /** A refused match changed nothing, so nothing is announced or invalidated, but the panel still names it. */
+    it('should hand a refused match back with a reason, announcing nothing', async () => {
       spies.matchAssetMovements.mockResolvedValueOnce(false);
       const { useUnmatchedAssetMovements } = await importFresh();
 
       const result = await useUnmatchedAssetMovements().matchAssetMovement(1, [2]);
 
-      expect(result).toEqual({ message: '', success: false });
+      expect(result).toEqual({ message: new Error('common.change_not_applied'), success: false });
       expect(spies.showSuccessMessage).not.toHaveBeenCalled();
       expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
 
-    it('should report a failure and hand the message back', async () => {
+    it('should hand the thrown error back for the panel, instead of a dialog', async () => {
       spies.matchAssetMovements.mockRejectedValueOnce(new Error('the backend said no'));
       const { useUnmatchedAssetMovements } = await importFresh();
 
       const result = await useUnmatchedAssetMovements().matchAssetMovement(1, [2]);
 
-      expect(result).toEqual({ message: 'the backend said no', success: false });
-      expect(spies.showErrorMessage).toHaveBeenCalled();
+      expect(result).toMatchObject({ message: { message: 'the backend said no' }, success: false });
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
   });
@@ -263,7 +263,7 @@ describe('use-unmatched-asset-movements', () => {
       const result = await useUnmatchedAssetMovements().resolveExternal(1);
 
       expect(spies.matchAssetMovements).toHaveBeenCalledWith(1, undefined, true);
-      expect(result).toEqual({ message: '', success: true });
+      expect(result).toEqual({ success: true });
       expect(spies.signalEventsModified).toHaveBeenCalledTimes(1);
     });
 
@@ -277,14 +277,14 @@ describe('use-unmatched-asset-movements', () => {
       expect(spies.showSuccessMessage).not.toHaveBeenCalled();
     });
 
-    it('should report a failure and hand the message back', async () => {
+    it('should hand the thrown error back for the panel, instead of a dialog', async () => {
       spies.matchAssetMovements.mockRejectedValueOnce(new Error('the backend said no'));
       const { useUnmatchedAssetMovements } = await importFresh();
 
       const result = await useUnmatchedAssetMovements().resolveExternal(1);
 
-      expect(result).toEqual({ message: 'the backend said no', success: false });
-      expect(spies.showErrorMessage).toHaveBeenCalled();
+      expect(result).toMatchObject({ message: { message: 'the backend said no' }, success: false });
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
   });
