@@ -275,6 +275,7 @@
         "event_specific_exists": "An event-specific rule already exists for this event.",
         "for_all_similar": "For all events with this type, subtype, and counterparty",
         "general_rule_exists": "A general accounting rule exists for this event type.",
+        "load_failed": "Could not read the rules for this event",
         "no_rule_exists": "No accounting rule exists for this event.",
         "only_this_event": "Only applies to this specific event",
         "override_general": "Override the general rule for this specific event",

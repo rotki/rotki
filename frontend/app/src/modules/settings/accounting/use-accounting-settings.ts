@@ -27,7 +27,14 @@ import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseAccountingSettingsReturn {
-  getAccountingRule: (payload: MaybeRef<AccountingRuleRequestPayload>, counterparty: string | null) => Promise<AccountingRuleEntry | undefined>;
+  /**
+   * The general rule for an event type, subtype and counterparty.
+   *
+   * @remarks
+   * Carries a failure as a value, so a caller can tell "there is no such rule" (an ok `undefined`)
+   * from "it could not be read", and never offers to add a rule that may already exist.
+   */
+  getAccountingRule: (payload: MaybeRef<AccountingRuleRequestPayload>, counterparty: string | null) => ResultAsync<AccountingRuleEntry | undefined, RequestError>;
   getAccountingRules: (payload: MaybeRef<AccountingRuleRequestPayload>) => ResultAsync<Collection<AccountingRuleEntry>, RequestError>;
   getAccountingRulesConflicts: (payload: MaybeRef<AccountingRuleConflictRequestPayload>) => ResultAsync<Collection<AccountingRuleConflict>, RequestError>;
   resolveAccountingRuleConflicts: (payload: AccountingRuleConflictResolution) => Promise<ActionStatus>;
@@ -50,29 +57,13 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { notifyFailure, showErrorMessage, showSuccessMessage } = useNotifications();
+  const { showErrorMessage, showSuccessMessage } = useNotifications();
 
   const getAccountingRule = async (
     payload: MaybeRef<AccountingRuleRequestPayload>,
     counterparty: string | null,
-  ): Promise<AccountingRuleEntry | undefined> => {
-    try {
-      return await fetchAccountingRule(get(payload), counterparty) ?? undefined;
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      const message = getErrorMessage(error);
-
-      notifyFailure(
-        t('accounting_settings.rule.fetch_error.title'),
-        t('accounting_settings.rule.fetch_error.message', {
-          message,
-        }),
-      );
-
-      return undefined;
-    }
-  };
+  ): ResultAsync<AccountingRuleEntry | undefined, RequestError> =>
+    fromRequest(async () => await fetchAccountingRule(get(payload), counterparty) ?? undefined);
 
   const getAccountingRules = async (
     payload: MaybeRef<AccountingRuleRequestPayload>,

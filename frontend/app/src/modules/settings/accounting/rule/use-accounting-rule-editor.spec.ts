@@ -2,7 +2,7 @@ import type { LocationQuery } from 'vue-router';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type RequestError, RequestFailed } from '@/modules/core/api/request-result';
+import { RequestCancelled, type RequestError, RequestFailed } from '@/modules/core/api/request-result';
 import { useAccountingRuleEditor } from '@/modules/settings/accounting/rule/use-accounting-rule-editor';
 
 const replace = vi.fn(async (): Promise<void> => {});
@@ -15,7 +15,7 @@ vi.mock('vue-router', () => ({
   useRouter: (): { replace: typeof replace } => ({ replace }),
 }));
 
-const getAccountingRule = vi.fn(async (): Promise<AccountingRuleEntry | undefined> => undefined);
+const getAccountingRule = vi.fn(async (): Promise<Result<AccountingRuleEntry | undefined, RequestError>> => ok(undefined));
 const getAccountingRules = vi.fn(async (): Promise<Result<{ data: AccountingRuleEntry[] }, RequestError>> => ok({ data: [] }));
 const notifyError = vi.fn();
 
@@ -48,7 +48,7 @@ describe('useAccountingRuleEditor', () => {
   beforeEach(() => {
     query = {};
     replace.mockClear();
-    getAccountingRule.mockClear().mockResolvedValue(undefined);
+    getAccountingRule.mockClear().mockResolvedValue(ok(undefined));
     getAccountingRules.mockClear().mockResolvedValue(ok({ data: [] }));
     notifyError.mockClear();
   });
@@ -117,7 +117,7 @@ describe('useAccountingRuleEditor', () => {
 
     it('should open the found rule from an edit link', async () => {
       query = { 'edit-rule': 'true', 'eventSubtype': 'fee', 'eventType': 'spend' };
-      getAccountingRule.mockResolvedValue(buildRule());
+      getAccountingRule.mockResolvedValue(ok(buildRule()));
       const { applyRouteIntent, modelEditMode, modelRule } = useAccountingRuleEditor();
       await applyRouteIntent();
 
@@ -141,7 +141,7 @@ describe('useAccountingRuleEditor', () => {
 
     it('should offer both the general rule and the event\'s own when the edit link names an event', async () => {
       query = { 'edit-rule': 'true', 'eventId': '42', 'eventSubtype': 'fee', 'eventType': 'spend' };
-      getAccountingRule.mockResolvedValue(buildRule({ identifier: 1 }));
+      getAccountingRule.mockResolvedValue(ok(buildRule({ identifier: 1 })));
       getAccountingRules.mockResolvedValue(ok({ data: [buildRule({ eventIds: [42], identifier: 2 })] }));
       const { actionDialog, applyRouteIntent } = useAccountingRuleEditor();
       await applyRouteIntent();
@@ -155,20 +155,82 @@ describe('useAccountingRuleEditor', () => {
       });
     });
 
-    it('should report a failed lookup of the event\'s rules instead of offering to add a duplicate', async () => {
+    it('should name a failed lookup of the event\'s rules in the dialog, offering no action, instead of a toast', async () => {
       query = { 'edit-rule': 'true', 'eventId': '42', 'eventType': 'spend' };
-      getAccountingRules.mockResolvedValue(err(RequestFailed({ cause: new Error('boom'), message: 'boom' })));
+      const failure = RequestFailed({ cause: new Error('boom'), message: 'boom' });
+      getAccountingRules.mockResolvedValue(err(failure));
       const { actionDialog, applyRouteIntent } = useAccountingRuleEditor();
       await applyRouteIntent();
 
+      expect(get(actionDialog)).toMatchObject({ hasEventSpecificRule: false, hasGeneralRule: false, loadError: failure, open: true });
+      expect(notifyError).not.toHaveBeenCalled();
+      expect(replace).not.toHaveBeenCalled();
+    });
+
+    it('should name a failed lookup of the general rule too, rather than offering to add one', async () => {
+      query = { 'edit-rule': 'true', 'eventId': '42', 'eventType': 'spend' };
+      const failure = RequestFailed({ cause: new Error('boom'), message: 'boom' });
+      getAccountingRule.mockResolvedValue(err(failure));
+      const { actionDialog, applyRouteIntent } = useAccountingRuleEditor();
+      await applyRouteIntent();
+
+      expect(get(actionDialog)).toMatchObject({ hasGeneralRule: false, loadError: failure, open: true });
+    });
+
+    it('should read the rules again on a retry, and drop the failure once they read', async () => {
+      query = { 'edit-rule': 'true', 'eventId': '42', 'eventType': 'spend' };
+      getAccountingRule.mockResolvedValueOnce(err(RequestFailed({ cause: new Error('boom'), message: 'boom' })));
+      const { actionDialog, applyRouteIntent, retryActionDialog } = useAccountingRuleEditor();
+      await applyRouteIntent();
+      getAccountingRule.mockResolvedValue(ok(buildRule()));
+
+      await retryActionDialog();
+
+      expect(get(actionDialog)).toMatchObject({ hasGeneralRule: true, loadError: undefined, open: true });
+    });
+
+    it('should retry with the rule the link named, even once the route query is gone', async () => {
+      query = { 'edit-rule': 'true', 'eventId': '42', 'eventSubtype': 'fee', 'eventType': 'spend' };
+      getAccountingRule.mockResolvedValueOnce(err(RequestFailed({ cause: new Error('boom'), message: 'boom' })));
+      const { applyRouteIntent, retryActionDialog } = useAccountingRuleEditor();
+      await applyRouteIntent();
+      query = {};
+
+      await retryActionDialog();
+
+      expect(getAccountingRule).toHaveBeenLastCalledWith(
+        { eventSubtypes: ['fee'], eventTypes: ['spend'], limit: 2, offset: 0 },
+        null,
+      );
+    });
+
+    it('should close the dialog when a retry is cancelled, rather than leave the earlier failure up', async () => {
+      query = { 'edit-rule': 'true', 'eventId': '42', 'eventType': 'spend' };
+      getAccountingRule.mockResolvedValueOnce(err(RequestFailed({ cause: new Error('boom'), message: 'boom' })));
+      const { actionDialog, applyRouteIntent, retryActionDialog } = useAccountingRuleEditor();
+      await applyRouteIntent();
+      getAccountingRule.mockResolvedValueOnce(err(RequestCancelled({ message: 'cancelled' })));
+
+      await retryActionDialog();
+
       expect(get(actionDialog).open).toBe(false);
+      expect(replace).toHaveBeenCalledWith({ query: {} });
+    });
+
+    it('should toast a failed lookup from an edit link that names no event, having no dialog to show it in', async () => {
+      query = { 'edit-rule': 'true', 'eventType': 'spend' };
+      getAccountingRule.mockResolvedValue(err(RequestFailed({ cause: new Error('boom'), message: 'boom' })));
+      const { applyRouteIntent, modelRule } = useAccountingRuleEditor();
+      await applyRouteIntent();
+
       expect(notifyError).toHaveBeenCalledOnce();
+      expect(get(modelRule)).toBeUndefined();
       expect(replace).toHaveBeenCalledWith({ query: {} });
     });
 
     it('should report only the general rule when the event has none of its own', async () => {
       query = { 'edit-rule': 'true', 'eventId': '42', 'eventType': 'spend' };
-      getAccountingRule.mockResolvedValue(buildRule());
+      getAccountingRule.mockResolvedValue(ok(buildRule()));
       const { actionDialog, applyRouteIntent } = useAccountingRuleEditor();
       await applyRouteIntent();
 
@@ -203,7 +265,7 @@ describe('useAccountingRuleEditor', () => {
 
     it('should edit the general rule when that is chosen', async () => {
       query = { 'edit-rule': 'true', 'eventId': '42', 'eventType': 'spend' };
-      getAccountingRule.mockResolvedValue(buildRule({ identifier: 1 }));
+      getAccountingRule.mockResolvedValue(ok(buildRule({ identifier: 1 })));
       const { applyRouteIntent, handleRuleAction, modelEditMode, modelRule } = useAccountingRuleEditor();
       await applyRouteIntent();
       await handleRuleAction('edit-general');

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { AccountingRuleAction } from '@/modules/settings/types/accounting';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import AccountingRuleActionButton from '@/modules/settings/accounting/rule/AccountingRuleActionButton.vue';
 import AccountingRuleEventsDialog from '@/modules/settings/accounting/rule/AccountingRuleEventsDialog.vue';
 import AccountingRuleViewEventsButton from '@/modules/settings/accounting/rule/AccountingRuleViewEventsButton.vue';
@@ -8,16 +10,20 @@ interface Props {
   hasEventSpecificRule: boolean;
   hasGeneralRule: boolean;
   eventIds?: number[];
+  /** why the rules could not be read; no action is offered then, since which rules exist is unknown */
+  loadError?: unknown;
 }
 
 const { eventIds } = defineProps<Props>();
 
 const emit = defineEmits<{
   close: [];
+  retry: [];
   select: [action: AccountingRuleAction];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const failureMessage = useFailureMessage();
 
 const display = ref<boolean>(true);
 const showEventsList = ref<boolean>(false);
@@ -46,8 +52,16 @@ watch(display, (value) => {
       </template>
 
       <div class="space-y-4">
+        <TableFailureStrip
+          v-if="loadError"
+          standalone
+          :title="t('accounting_settings.rule.action_dialog.load_failed')"
+          :message="failureMessage(loadError)"
+          data-testid="accounting-rule-action-load-error"
+          @retry="emit('retry')"
+        />
         <div
-          v-if="hasEventSpecificRule"
+          v-else-if="hasEventSpecificRule"
           class="space-y-3"
         >
           <div class="text-rui-text-secondary text-sm">

@@ -37,6 +37,7 @@ const {
   modelEditMode,
   modelEventIds,
   modelRule,
+  retryActionDialog,
 } = useAccountingRuleEditor();
 
 const { viewEvents } = useRuleEventsLink();
@@ -118,7 +119,9 @@ onMounted(async () => {
       :has-event-specific-rule="actionDialog.hasEventSpecificRule"
       :has-general-rule="actionDialog.hasGeneralRule"
       :event-ids="actionDialog.eventIds"
+      :load-error="actionDialog.loadError"
       @close="closeActionDialog()"
+      @retry="retryActionDialog()"
       @select="handleRuleAction($event)"
     />
 
