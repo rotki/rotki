@@ -307,8 +307,11 @@ onMounted(() => {
                 :loading="loading"
                 type="submit"
                 data-testid="login-submit"
+                class="[&_[data-spinner]]:absolute [&_[data-spinner]]:top-1/2 [&_[data-spinner]]:left-1/2 [&_[data-spinner]]:-translate-x-1/2 [&_[data-spinner]]:-translate-y-1/2"
               >
-                {{ t('common.actions.continue') }}
+                <span :class="{ 'opacity-0': loading }">
+                  {{ t('common.actions.continue') }}
+                </span>
               </RuiButton>
 
               <LoginWelcomeMessageDialog :loading="loading" />
