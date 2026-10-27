@@ -64,6 +64,8 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'pendle',
     'runmoney',
     'lido-csm',
+    'lido',
+    'venice',
     'woo-fi',
     'morpho_blue',
     'yearn-vesting',

@@ -1,8 +1,11 @@
-import type { Balance } from '@rotki/common';
+import { type Balance, type ClaimAccount, Zero } from '@rotki/common';
 import { balanceSum } from '@/modules/core/common/data/calculation';
 
 /** A balance held under one protocol, possibly merged from several sources, chains or assets. */
 export type BalanceEntry = Balance & {
+  awaitingClaim?: Balance['amount'];
+  /** The accounts holding `awaitingClaim`. */
+  awaitingClaimAccounts?: ClaimAccount[];
   /** Some of it comes from a balance the user entered manually. */
   containsManual?: boolean;
   /** The per-chain split, carried by the on-chain `address` protocol only. */
@@ -23,6 +26,18 @@ function mergeChains(
   return merged;
 }
 
+function mergeClaimAccounts(a: ClaimAccount[] | undefined, b: ClaimAccount[] | undefined): ClaimAccount[] | undefined {
+  if (!a || !b)
+    return a ?? b;
+
+  const merged = [...a];
+  for (const account of b) {
+    if (!merged.some(({ address, chain }) => address === account.address && chain === account.chain))
+      merged.push(account);
+  }
+  return merged.sort((x, y) => x.chain.localeCompare(y.chain) || x.address.localeCompare(y.address));
+}
+
 /**
  * Merges two entries for the same asset and protocol.
  *
@@ -32,8 +47,13 @@ function mergeChains(
  */
 export function combineBalanceEntries(a: BalanceEntry, b: BalanceEntry): BalanceEntry {
   const chains = mergeChains(a.chains, b.chains);
+  const awaitingClaimAccounts = mergeClaimAccounts(a.awaitingClaimAccounts, b.awaitingClaimAccounts);
   return {
     ...balanceSum(a, b),
+    ...(a.awaitingClaim || b.awaitingClaim
+      ? { awaitingClaim: (a.awaitingClaim ?? Zero).plus(b.awaitingClaim ?? Zero) }
+      : {}),
+    ...(awaitingClaimAccounts ? { awaitingClaimAccounts } : {}),
     ...(chains ? { chains } : {}),
     ...(a.containsManual || b.containsManual ? { containsManual: true } : {}),
   };

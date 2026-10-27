@@ -32,7 +32,19 @@ export const Percentage = z.string().refine((arg) => {
   message: 'Percentage must be between 0 and 100',
 });
 
-export type ProtocolBalance = Balance & { containsManual?: boolean; protocol: string };
+/** An account holding a position that has to be claimed by the user. */
+export interface ClaimAccount {
+  address: string;
+  chain: string;
+}
+
+export type ProtocolBalance = Balance & {
+  awaitingClaim?: Balance['amount'];
+  /** The accounts that hold the amount awaiting claim. */
+  awaitingClaimAccounts?: ClaimAccount[];
+  containsManual?: boolean;
+  protocol: string;
+};
 
 export type ProtocolBalanceWithChains = ProtocolBalance & { chains?: Record<string, Balance> };
 

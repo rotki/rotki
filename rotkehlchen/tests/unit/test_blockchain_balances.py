@@ -346,6 +346,25 @@ def test_blockchain_balances_cache_adds_missing_asset_identifier(
         ).fetchone()[0] == '1'
 
 
+def test_blockchain_balances_cache_preserves_awaiting_claim(blockchain: ChainsAggregator) -> None:
+    address = make_evm_address()
+    blockchain.balances.eth[address].assets[A_ETH]['lido'] = Balance(
+        amount=FVal('2'),
+        awaiting_claim=FVal('1'),
+    )
+    blockchain._update_blockchain_balances_cache(
+        blockchain=SupportedBlockchain.ETHEREUM,
+        addresses=[address],
+    )
+    with blockchain.database.conn.read_ctx() as cursor:
+        cached = blockchain.database.get_blockchain_balances_cache(cursor, SupportedBlockchain.ETHEREUM)
+    assert cached.eth[address].assets[A_ETH]['lido'].serialize() == {
+        'amount': '2',
+        'value': '0',
+        'awaiting_claim': '1',
+    }
+
+
 def test_blockchain_balances_cache_removes_spent_token(blockchain: ChainsAggregator) -> None:
     """Test that refreshing an address removes token balances no longer returned."""
     address = make_evm_address()

@@ -1416,7 +1416,7 @@ class DBHandler:
             blockchain: SupportedBlockchain,
             balances: dict[str, BalanceSheet | Balance],
     ) -> None:
-        rows: list[tuple[str, str, str, str, str, str]] = []
+        rows: list[tuple[str, str, str, str, str, str, str]] = []
         for address, entry in balances.items():
             if isinstance(entry, Balance):
                 rows.append((
@@ -1426,6 +1426,7 @@ class DBHandler:
                     '',
                     BalanceType.ASSET.serialize_for_db(),
                     str(entry.amount),
+                    str(entry.awaiting_claim),
                 ))
                 continue
 
@@ -1442,6 +1443,7 @@ class DBHandler:
                             label,
                             category.serialize_for_db(),
                             str(balance.amount),
+                            str(balance.awaiting_claim),
                         ))
 
         if len(rows) == 0:
@@ -1453,8 +1455,8 @@ class DBHandler:
         )
         write_cursor.executemany(
             'INSERT OR REPLACE INTO blockchain_balances_cache('
-            'blockchain, address, asset, label, category, amount'
-            ') VALUES (?, ?, ?, ?, ?, ?)',
+            'blockchain, address, asset, label, category, amount, awaiting_claim'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?)',
             rows,
         )
 
@@ -1533,7 +1535,7 @@ class DBHandler:
             addresses: ListOfBlockchainAddresses | None = None,
     ) -> BlockchainBalances:
         query = (
-            'SELECT blockchain, address, asset, label, category, amount '
+            'SELECT blockchain, address, asset, label, category, amount, awaiting_claim '
             'FROM blockchain_balances_cache'
         )
         bindings: list[str] = []
@@ -1550,12 +1552,10 @@ class DBHandler:
         query += ' ORDER BY blockchain, address, asset, label'
 
         result = BlockchainBalances(db=self)
-        for chain_str, address, asset_identifier, label, category, amount in cursor.execute(
-                query,
-                bindings,
-        ):
+        for row in cursor.execute(query, bindings):
+            chain_str, address, asset_identifier, label, category, amount, awaiting_claim = row
             chain = SupportedBlockchain.deserialize(chain_str)
-            balance = Balance(amount=FVal(amount))
+            balance = Balance(amount=FVal(amount), awaiting_claim=FVal(awaiting_claim))
             if chain.is_bitcoin():
                 cast('dict[BTCAddress, Balance]', result.get(chain))[address] += balance
                 continue

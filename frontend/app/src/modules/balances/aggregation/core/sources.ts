@@ -17,15 +17,27 @@ interface BlockchainSourceFilter {
   readonly address?: string;
 }
 
+/** One account's balance under `protocol`, tagged with the account when it has something to claim. */
+function toAccountEntry(protocol: string, balance: BalanceEntry, chain: string, address: string): BalanceEntry {
+  if (protocol === ADDRESS_PROTOCOL)
+    return { ...balance, chains: { [chain]: balance } };
+
+  return balance.awaitingClaim?.gt(0)
+    ? { ...balance, awaitingClaimAccounts: [{ address, chain }] }
+    : balance;
+}
+
 /** Adds one account's balances on `chain`, keeping the per-chain split for the `address` protocol. */
-function addAccountBalances(into: AssetBalanceEntries, chain: string, assets: AssetProtocolBalances): void {
+function addAccountBalances(
+  into: AssetBalanceEntries,
+  chain: string,
+  address: string,
+  assets: AssetProtocolBalances,
+): void {
   for (const [asset, protocols] of Object.entries(assets)) {
     const assetEntries = into[asset] ??= {};
     for (const [protocol, balance] of Object.entries(protocols)) {
-      const entry: BalanceEntry = protocol === ADDRESS_PROTOCOL
-        ? { ...balance, chains: { [chain]: balance } }
-        : balance;
-      addBalanceEntry(assetEntries, protocol, entry);
+      addBalanceEntry(assetEntries, protocol, toAccountEntry(protocol, balance, chain, address));
     }
   }
 }
@@ -46,7 +58,7 @@ export function fromBlockchain(balances: Balances, filter: BlockchainSourceFilte
 
     for (const [accountAddress, accountBalances] of Object.entries(accounts)) {
       if (!address || accountAddress === address)
-        addAccountBalances(entries, chain, accountBalances[key]);
+        addAccountBalances(entries, chain, accountAddress, accountBalances[key]);
     }
   }
 

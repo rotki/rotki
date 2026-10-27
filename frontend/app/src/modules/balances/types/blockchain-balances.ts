@@ -1,7 +1,7 @@
-import { Balance } from '@rotki/common';
+import { Balance, NumericString } from '@rotki/common';
 import { z } from 'zod';
 
-const ProtocolBalances = z.record(z.string(), Balance);
+const ProtocolBalances = z.record(z.string(), Balance.extend({ awaitingClaim: NumericString.optional() }));
 
 export type ProtocolBalances = z.infer<typeof ProtocolBalances>;
 

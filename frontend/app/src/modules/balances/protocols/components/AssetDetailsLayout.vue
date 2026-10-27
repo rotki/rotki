@@ -17,7 +17,7 @@ const tab = ref(0);
 
 const hasPerProtocol = computed<boolean>(() => {
   const perProtocol = row.perProtocol;
-  return (perProtocol && perProtocol.length > 1) ?? false;
+  return (perProtocol && (perProtocol.length > 1 || perProtocol.some(protocol => protocol.awaitingClaim?.gt(0)))) ?? false;
 });
 
 const hasBreakdown = computed<boolean>(() => {

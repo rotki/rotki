@@ -1,4 +1,3 @@
-import type { Balance } from '@rotki/common';
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import type { AssetBalances } from '@/modules/balances/types/balances';
 import type {
@@ -36,11 +35,10 @@ export function updateBalancesPrices(
 
     for (const protocol of protocolKeys) {
       const balance = protocols[protocol];
-      const newBalance: Balance = {
-        amount: balance.amount,
+      protocolResult[protocol] = {
+        ...balance,
         value: assetPrice.value?.gt(0) ? balance.amount.times(assetPrice.value) : balance.value,
       };
-      protocolResult[protocol] = newBalance;
     }
     result[asset] = protocolResult;
   }

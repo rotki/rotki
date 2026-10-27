@@ -77,7 +77,7 @@ const isExpanded = (asset: string) => some(get(expanded), { asset });
 function shouldShowRowExpander(row: AssetBalanceWithPrice): boolean {
   const hasBreakdown = Boolean(row.breakdown);
   const shouldShowNativeBreakdown = (!breakdown?.hide && isEvmNativeToken(row.asset)) ?? false;
-  const hasPerProtocolDetails = (row.perProtocol && row.perProtocol.length > 1) ?? false;
+  const hasPerProtocolDetails = row.perProtocol?.some(protocol => protocol.awaitingClaim?.gt(0)) || (row.perProtocol && row.perProtocol.length > 1) || false;
   return hasBreakdown || shouldShowNativeBreakdown || hasPerProtocolDetails;
 }
 

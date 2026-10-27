@@ -24,21 +24,26 @@ class BalanceType(DBCharEnumMixIn):
 class Balance:
     amount: FVal = ZERO
     value: FVal = ZERO
+    awaiting_claim: FVal = ZERO
 
     def serialize(self) -> dict[str, str]:
-        return {
-            'amount': str(self.amount),
-            'value': str(self.value),
-        }
+        result = {'amount': str(self.amount), 'value': str(self.value)}
+        if self.awaiting_claim != ZERO:
+            result['awaiting_claim'] = str(self.awaiting_claim)
+        return result
 
     def to_dict(self) -> dict[str, FVal]:
-        return {'amount': self.amount, 'value': self.value}
+        result = {'amount': self.amount, 'value': self.value}
+        if self.awaiting_claim != ZERO:
+            result['awaiting_claim'] = self.awaiting_claim
+        return result
 
     def __add__(self, other: Any) -> Balance:
         other = _evaluate_balance_input(other, 'addition')
         return Balance(
             amount=self.amount + other.amount,
             value=self.value + other.value,
+            awaiting_claim=self.awaiting_claim + other.awaiting_claim,
         )
 
     def __radd__(self, other: Any) -> Balance:
@@ -49,6 +54,7 @@ class Balance:
         return Balance(
             amount=self.amount + other.amount,
             value=self.value + other.value,
+            awaiting_claim=self.awaiting_claim + other.awaiting_claim,
         )
 
     def __sub__(self, other: Any) -> Balance:
@@ -56,6 +62,7 @@ class Balance:
         return Balance(
             amount=self.amount - other.amount,
             value=self.value - other.value,
+            awaiting_claim=self.awaiting_claim - other.awaiting_claim,
         )
 
     def __mul__(self, other: Any) -> Balance:
@@ -65,27 +72,33 @@ class Balance:
         return Balance(
             amount=self.amount * other,
             value=self.value * other,
+            awaiting_claim=self.awaiting_claim * other,
         )
 
     def __neg__(self) -> Balance:
-        return Balance(amount=-self.amount, value=-self.value)
+        return Balance(amount=-self.amount, value=-self.value, awaiting_claim=-self.awaiting_claim)
 
     def __abs__(self) -> Balance:
-        return Balance(amount=abs(self.amount), value=abs(self.value))
+        return Balance(
+            amount=abs(self.amount),
+            value=abs(self.value),
+            awaiting_claim=abs(self.awaiting_claim),
+        )
 
 
 def _evaluate_balance_input(other: Any, operation: str) -> Balance:
     transformed_input = other
     if isinstance(other, dict):
-        if len(other) == 2 and 'amount' in other and 'value' in other:
+        if set(other) in ({'amount', 'value'}, {'amount', 'value', 'awaiting_claim'}):
             try:
                 amount = FVal(other['amount'])
                 value = FVal(other['value'])
+                awaiting_claim = FVal(other.get('awaiting_claim', ZERO))
             except (ValueError, KeyError) as e:
                 raise InputError(
                     f'Found valid dict object but with invalid values during Balance {operation}',
                 ) from e
-            transformed_input = Balance(amount=amount, value=value)
+            transformed_input = Balance(amount=amount, value=value, awaiting_claim=awaiting_claim)
         else:
             raise InputError(f'Found invalid dict object during Balance {operation}')
     elif not isinstance(other, Balance):

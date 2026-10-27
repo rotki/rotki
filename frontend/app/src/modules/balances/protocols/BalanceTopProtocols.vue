@@ -10,6 +10,8 @@ const { protocols, visible = 3 } = defineProps<{
   visible?: number;
 }>();
 
+const { t } = useI18n({ useScope: 'global' });
+
 const showMore = computed<number>(() => protocols.length - visible);
 </script>
 
@@ -18,6 +20,12 @@ const showMore = computed<number>(() => protocols.length - visible);
     v-if="protocols.length > 0"
     class="flex items-center justify-end gap-1 pl-2"
   >
+    <span
+      v-if="protocols.some(protocol => protocol.awaitingClaim?.gt(0))"
+      class="text-rui-warning text-xs"
+    >
+      {{ t('common.awaiting_claim') }}
+    </span>
     <ProtocolTooltipIcon
       v-if="protocols.length === 1"
       :protocol-balance="protocols[0]"
