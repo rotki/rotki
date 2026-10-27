@@ -317,3 +317,69 @@ def test_burn_diem(
             address=VENICE_STAKING_CONTRACT,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base-open-rpc',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ),
+        active=True,
+        weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('base_accounts', [['0x2E0940A7934A11a2ba03A8297A0e72b047196235']])
+def test_initiate_unstake(
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x737133084775e9498610fa23b1b309520aa59f47687328bad6f85966ab60ce50')  # noqa: E501
+    with patch(
+        'rotkehlchen.chain.evm.transactions.EvmTransactions._query_internal_transactions_for_parent_hash',
+        return_value=([], None, None),
+    ):
+        events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1790697011000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.000000872003726757'),
+            location_label=(user_address := base_accounts[0]),
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=736,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset(VVV_TOKEN_ID),
+            amount=FVal(reward_amount := '0.106295798552176191'),
+            location_label=user_address,
+            notes=f'Claim {reward_amount} VVV staking reward from Venice',
+            counterparty=CPT_VENICE,
+            address=VENICE_STAKING_CONTRACT,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=738,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset(SVVV_TOKEN_ID),
+            amount=FVal(amount := '5.852258590759048706'),
+            location_label=user_address,
+            notes=f'Request unstaking of {amount} sVVV from Venice',
+            counterparty=CPT_VENICE,
+            address=ZERO_ADDRESS,
+        ),
+    ]

@@ -22,7 +22,10 @@ from .constants import (
     CPT_LIDO,
     LIDO_STETH_SUBMITTED,
     LIDO_STETH_TRANSFER_SHARES,
+    LIDO_WITHDRAWAL_CLAIMED,
+    LIDO_WITHDRAWAL_REQUESTED,
     STETH_MAX_ROUND_ERROR_WEI,
+    WITHDRAWAL_QUEUE,
 )
 
 if TYPE_CHECKING:
@@ -185,10 +188,49 @@ class LidoDecoder(EvmDecoderInterface):
         else:
             return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_withdrawal_queue(self, context: DecoderContext) -> EvmDecodingOutput:
+        topic = context.tx_log.topics[0]
+        if topic == LIDO_WITHDRAWAL_REQUESTED:
+            user = bytes_to_address(context.tx_log.topics[2])
+            asset, event_type = A_STETH, HistoryEventType.SPEND
+        elif topic == LIDO_WITHDRAWAL_CLAIMED:
+            user = bytes_to_address(context.tx_log.topics[3])
+            asset, event_type = A_ETH, HistoryEventType.RECEIVE
+        else:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if not self.base.is_tracked(user):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        amount = from_wei(int.from_bytes(context.tx_log.data[:32]))
+        for event in context.decoded_events:
+            if (
+                event.event_type == event_type and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset == asset and
+                event.amount == amount and
+                event.location_label == user and
+                event.address == WITHDRAWAL_QUEUE
+            ):
+                if topic == LIDO_WITHDRAWAL_REQUESTED:
+                    event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                    event.notes = f'Request withdrawal of {amount} stETH from Lido'
+                else:
+                    event.event_type = HistoryEventType.WITHDRAWAL
+                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                    event.notes = f'Claim {amount} ETH from Lido withdrawal'
+                event.counterparty = CPT_LIDO
+                break
+
+        return EvmDecodingOutput(matched_counterparty=CPT_LIDO)
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {self.steth.evm_address: (self._decode_lido_eth_staking_contract,)}
+        return {
+            self.steth.evm_address: (self._decode_lido_eth_staking_contract,),
+            WITHDRAWAL_QUEUE: (self._decode_withdrawal_queue,),
+        }
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

@@ -22,5 +22,9 @@ VENICE_STAKING_REWARD_CLAIMED: Final = (
     b'\xd8\x13\x8f\x8a?7|RY\xcaT\x8ep\xe4\xc2\xde\x94\xf1)'
     b'\xf5\xa1\x106\xa1[iQ<\xba+Bj'
 )
+VENICE_UNSTAKE_INITIATED: Final = (
+    b'\xc6\x06\xa9\xf5_\xc4,\xd3\x15\x9f\xcf\xc8\xdd\xcdt\x9d'
+    b'\xd2\x1cEt\xcc\xa0\xb6\x8aZe\xd5\xf9\x84\xb6\xc4,'
+)
 SVVV_TOKEN_ID: Final = 'eip155:8453/erc20:0x321b7ff75154472B18EDb199033fF4D116F340Ff'
 VVV_TOKEN_ID: Final = 'eip155:8453/erc20:0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf'
