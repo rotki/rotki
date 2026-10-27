@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==83.0.0", "setuptools-scm==7.1.0", "wheel==0.45.1"]
+requires = ["setuptools==84.2.1", "setuptools-scm==7.1.0", "wheel==0.45.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -133,7 +133,7 @@ lint = [
 docs = [
     # sphinxcontrib-httpexample imports pkg_resources, which no longer comes
     # with the venv by default (gevent's zope deps used to pull setuptools in)
-    "setuptools==83.0.0",
+    "setuptools==84.2.1",
     "sphinx==8.2.3",
     "sphinx-autobuild==2025.8.25",
     "sphinx_inline_tabs==2025.12.21.14",
@@ -145,7 +145,7 @@ docs = [
 ]
 
 packaging = [
-    "setuptools==83.0.0",
+    "setuptools==84.2.1",
     "setuptools-scm==7.1.0",
     "wheel==0.46.2",
 ]
@@ -552,7 +552,10 @@ ignored-classes = "rsqlite"
 
 [tool.uv]
 exclude-newer = "1 week"
-exclude-newer-package = { certifi = "2026-10-20T03:00:00Z", mypy = "2026-10-02T00:00:00Z" }
+exclude-newer-package = { certifi = "2026-10-20T03:00:00Z", mypy = "2026-10-02T00:00:00Z", setuptools = "2026-10-20T20:00:00Z" }
+# setuptools 84.2.0 names free-threaded limited-API extensions `.abi3t.so`, which
+# pycryptodome's loader does not look for. 84.2.1 restored the regular suffix.
+build-constraint-dependencies = ["setuptools==84.2.1"]
 exclude-dependencies = [
     # Rotki only uses HTTP/WebSocket providers. Windows IPC is the only Web3 path using pywin32.
     { package = { name = "web3", version = "8.0.0" }, dependencies = ["pywin32"] },
