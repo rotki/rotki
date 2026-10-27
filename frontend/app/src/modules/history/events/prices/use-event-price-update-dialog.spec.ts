@@ -111,14 +111,26 @@ describe('modules/history/events/prices/useEventPriceUpdateDialog', () => {
       expect(get(showModeChoice)).toBe(false);
     });
 
-    it('should notify and stay usable when the read fails', async () => {
-      fetchExistingEntry.mockRejectedValue(new Error('offline'));
+    it('should keep a failed read for the dialog to show instead of notifying', async () => {
+      const failure = new Error('offline');
+      fetchExistingEntry.mockRejectedValue(failure);
 
-      const { existingEntry, loading } = await dialog(ref(payload()));
+      const { existingEntry, loadError, loading } = await dialog(ref(payload()));
 
-      expect(notifyError).toHaveBeenCalledOnce();
+      expect(get(loadError)).toBe(failure);
+      expect(notifyError).not.toHaveBeenCalled();
       expect(get(existingEntry)).toBeUndefined();
       expect(get(loading)).toBe(false);
+    });
+
+    it('should clear the failure once a retried read succeeds', async () => {
+      fetchExistingEntry.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(undefined);
+      const { loadError, retryLoad } = await dialog(ref(payload()));
+
+      await retryLoad();
+
+      expect(get(loadError)).toBeUndefined();
+      expect(fetchExistingEntry).toHaveBeenCalledTimes(2);
     });
 
     it('should read nothing while no event is being priced', async () => {
@@ -237,17 +249,31 @@ describe('modules/history/events/prices/useEventPriceUpdateDialog', () => {
       expect(updatePrice).toHaveBeenCalledOnce();
     });
 
-    it('should notify and stay open when the write fails', async () => {
-      updatePrice.mockRejectedValue(new Error('rejected'));
+    it('should keep a failed write for the dialog to show and stay open with the typed price', async () => {
+      const failure = new Error('rejected');
+      updatePrice.mockRejectedValue(failure);
       const model = ref<EventPriceUpdatePayload | undefined>(payload());
-      const { modelPrice, save, saving } = await dialog(model);
+      const { modelPrice, save, saveError, saving } = await dialog(model);
       set(modelPrice, '1600');
 
       await save();
 
-      expect(notifyError).toHaveBeenCalledOnce();
+      expect(get(saveError)).toBe(failure);
+      expect(notifyError).not.toHaveBeenCalled();
       expect(get(model)).toBeDefined();
+      expect(get(modelPrice)).toBe('1600');
       expect(get(saving)).toBe(false);
+    });
+
+    it('should clear the failure when the next write starts', async () => {
+      updatePrice.mockRejectedValueOnce(new Error('rejected')).mockResolvedValueOnce(undefined);
+      const { modelPrice, save, saveError } = await dialog(ref(payload()));
+      set(modelPrice, '1600');
+      await save();
+
+      await save();
+
+      expect(get(saveError)).toBeUndefined();
     });
   });
 

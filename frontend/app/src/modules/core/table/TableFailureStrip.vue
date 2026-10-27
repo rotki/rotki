@@ -1,15 +1,17 @@
 <script setup lang="ts">
 /**
- * One line saying a refresh failed, for above the rows an earlier load left.
+ * One line saying a load or a save failed, above the content it concerns.
  *
  * @remarks
- * The rows stay usable, so this stays quiet: a tinted line inside the table rather than an alert box.
- * Pass `standalone` where it sits outside a table and needs its own border.
+ * The content stays usable, so this stays quiet: a tinted line rather than an alert box. Pass
+ * `standalone` where it sits outside a table and needs its own border, and `retryable: false` for a
+ * failed save, whose own button is the retry.
  */
-const { standalone = false } = defineProps<{
+const { retryable = true, standalone = false } = defineProps<{
   title: string;
   message: string;
   standalone?: boolean;
+  retryable?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -36,6 +38,7 @@ const { t } = useI18n({ useScope: 'global' });
       {{ message }}
     </span>
     <button
+      v-if="retryable"
       type="button"
       class="shrink-0 underline underline-offset-2 hover:no-underline"
       data-testid="table-failure-strip-retry"

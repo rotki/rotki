@@ -3025,10 +3025,6 @@
   },
   "event_asset_price_update": {
     "description": "Bu varlığın olayın zaman damgasındaki fiyatını ayarlayın.",
-    "fetch_error": {
-      "description": "Mevcut fiyat kaydı yüklenemedi: {error}",
-      "title": "Mevcut fiyat yüklenemedi"
-    },
     "mode": {
       "manual": {
         "label": "Manuel olarak kaydet"
@@ -3039,10 +3035,6 @@
     },
     "price_error": "Fiyat pozitif bir sayı olmalıdır.",
     "price_label": "Fiyat ({symbol})",
-    "save_error": {
-      "description": "Fiyat kaydedilemedi: {error}",
-      "title": "Fiyat güncellenemedi"
-    },
     "success": {
       "description": "Fiyat güncellendi.",
       "title": "Fiyat güncellendi"

@@ -4,7 +4,6 @@ import type { OraclePriceEntry } from '@/modules/assets/prices/price-types';
 import type { EventPriceUpdatePayload } from '@/modules/history/events/prices/use-event-price-update-trigger';
 import { startPromise } from '@shared/utils';
 import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { type EventPriceUpdateMode, useEventPriceUpdate } from '@/modules/history/events/prices/use-event-price-update';
@@ -20,6 +19,18 @@ interface UseEventPriceUpdateDialogReturn {
   existingIsManual: ComputedRef<boolean>;
   /** True while the existing price is being read. */
   loading: Readonly<Ref<boolean>>;
+  /**
+   * Why the existing price could not be read.
+   *
+   * @remarks
+   * Saving stays blocked while it is set: without the existing entry a save cannot tell an edit from
+   * an addition, and would add a second manual price next to the one it failed to read.
+   */
+  loadError: Readonly<Ref<unknown>>;
+  /** Reads the existing price again after a failed read. */
+  retryLoad: () => Promise<void>;
+  /** Why the last save failed; cleared when the next save starts. The dialog stays open with the typed price. */
+  saveError: Readonly<Ref<unknown>>;
   /** Whether the dialog is showing, derived from the payload it was handed. */
   open: ComputedRef<boolean>;
   /** Whether the new price is written as a manual entry or against the oracle. */
@@ -61,10 +72,12 @@ export function useEventPriceUpdateDialog(
   const modelMode = shallowRef<EventPriceUpdateMode>('manual');
   const existingEntry = ref<OraclePriceEntry>();
   const loading = shallowRef<boolean>(false);
+  const loadError = shallowRef<unknown>();
   const saving = shallowRef<boolean>(false);
+  const saveError = shallowRef<unknown>();
 
   const { t } = useI18n({ useScope: 'global' });
-  const { notifyError, notifyInfo } = useNotifications();
+  const { notifyInfo } = useNotifications();
   const currencySymbol = useSetting('currencySymbol');
   const { fetchExistingEntry, updatePrice } = useEventPriceUpdate();
 
@@ -90,6 +103,8 @@ export function useEventPriceUpdateDialog(
 
   async function load(payload: EventPriceUpdatePayload): Promise<void> {
     set(loading, true);
+    set(loadError, undefined);
+    set(saveError, undefined);
     set(existingEntry, undefined);
     set(modelPrice, '');
     try {
@@ -105,10 +120,7 @@ export function useEventPriceUpdateDialog(
     }
     catch (error: unknown) {
       logger.error('Failed to load existing oracle price entry:', error);
-      notifyError(
-        t('event_asset_price_update.fetch_error.title'),
-        t('event_asset_price_update.fetch_error.description', { error: getErrorMessage(error) }),
-      );
+      set(loadError, error);
     }
     finally {
       set(loading, false);
@@ -136,6 +148,7 @@ export function useEventPriceUpdateDialog(
     }
 
     set(saving, true);
+    set(saveError, undefined);
     try {
       await updatePrice({
         existingEntry: entry,
@@ -153,14 +166,17 @@ export function useEventPriceUpdateDialog(
     }
     catch (error: unknown) {
       logger.error('Failed to update event price:', error);
-      notifyError(
-        t('event_asset_price_update.save_error.title'),
-        t('event_asset_price_update.save_error.description', { error: getErrorMessage(error) }),
-      );
+      set(saveError, error);
     }
     finally {
       set(saving, false);
     }
+  }
+
+  async function retryLoad(): Promise<void> {
+    const payload = get(modelValue);
+    if (payload)
+      await load(payload);
   }
 
   watch(modelValue, (payload) => {
@@ -172,13 +188,16 @@ export function useEventPriceUpdateDialog(
     close,
     existingEntry: shallowReadonly(existingEntry),
     existingIsManual,
+    loadError: shallowReadonly(loadError),
     loading: readonly(loading),
     modelMode,
     modelPrice,
     open,
     priceErrors,
     priceValid,
+    retryLoad,
     save,
+    saveError: shallowReadonly(saveError),
     saving: readonly(saving),
     showModeChoice,
   };
