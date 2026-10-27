@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
 import { useGoogleCalendarIntegration } from '@/modules/calendar/use-google-calendar-integration';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { useBackendMessages } from '@/modules/shell/app/use-backend-messages';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
@@ -16,6 +17,7 @@ const {
   connect,
   connectedUserEmail,
   disconnect,
+  failure,
   handleOAuthCallback,
   isAuthorizing,
   isConnected,
@@ -42,6 +44,16 @@ onUnmounted(() => {
     <div class="text-sm font-semibold text-rui-text">
       {{ t('external_services.google_calendar.title') }}
     </div>
+
+    <TableFailureStrip
+      v-if="failure && !(showTokenInput && !isPackaged)"
+      standalone
+      :retryable="false"
+      class="my-2"
+      :title="t('external_services.google_calendar.error')"
+      :message="failure"
+      data-testid="google-calendar-error"
+    />
 
     <div
       v-if="!isConnected"
@@ -92,6 +104,7 @@ onUnmounted(() => {
           data-testid="google-calendar-access-token"
           :label="t('external_services.google_calendar.access_token')"
           placeholder="ya29.a0AfH6..."
+          :error-messages="failure ? [failure] : []"
           color="primary"
           rows="4"
           dense

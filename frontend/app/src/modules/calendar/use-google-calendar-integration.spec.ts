@@ -105,7 +105,8 @@ describe('useGoogleCalendarIntegration', () => {
 
       await calendar.connect();
 
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'no browser', severity: Severity.ERROR }));
+      expect(get(calendar.failure)).toBe('no browser');
+      expect(notify).not.toHaveBeenCalled();
       expect(get(calendar.isAuthorizing)).toBe(false);
     });
   });
@@ -133,16 +134,16 @@ describe('useGoogleCalendarIntegration', () => {
       await calendar.handleOAuthCallback({ error: new Error('denied'), service: 'google', success: false });
 
       expect(completeOAuth).not.toHaveBeenCalled();
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'denied', severity: Severity.ERROR }));
+      expect(get(calendar.failure)).toBe('denied');
+      expect(notify).not.toHaveBeenCalled();
     });
 
     it('should refuse a success without a refresh token', async () => {
       await calendar.handleOAuthCallback({ accessToken: 'a', service: 'google', success: true });
 
       expect(completeOAuth).not.toHaveBeenCalled();
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({
-        message: 'external_services.google_calendar.auth_failed',
-      }));
+      expect(get(calendar.failure)).toBe('external_services.google_calendar.auth_failed');
+      expect(notify).not.toHaveBeenCalled();
     });
 
     it('should report a rejected exchange and stop authorizing', async () => {
@@ -150,7 +151,8 @@ describe('useGoogleCalendarIntegration', () => {
 
       await calendar.handleOAuthCallback({ accessToken: 'a', refreshToken: 'r', service: 'google', success: true });
 
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'backend said no' }));
+      expect(get(calendar.failure)).toBe('backend said no');
+      expect(notify).not.toHaveBeenCalled();
       expect(get(calendar.isConnected)).toBe(false);
       expect(get(calendar.isAuthorizing)).toBe(false);
     });
@@ -161,7 +163,8 @@ describe('useGoogleCalendarIntegration', () => {
       await calendar.handleOAuthCallback({ accessToken: 'a', refreshToken: 'r', service: 'google', success: true });
 
       expect(get(calendar.isConnected)).toBe(false);
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ severity: Severity.ERROR }));
+      expect(get(calendar.failure)).toBe('token rejected');
+      expect(notify).not.toHaveBeenCalled();
     });
   });
 
@@ -172,9 +175,8 @@ describe('useGoogleCalendarIntegration', () => {
       await calendar.submitManualToken();
 
       expect(completeOAuth).not.toHaveBeenCalled();
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({
-        message: 'external_services.google_calendar.token_required',
-      }));
+      expect(get(calendar.failure)).toBe('external_services.google_calendar.token_required');
+      expect(notify).not.toHaveBeenCalled();
     });
 
     it('should send the trimmed tokens and put the form away', async () => {
@@ -187,6 +189,29 @@ describe('useGoogleCalendarIntegration', () => {
       expect(get(calendar.modelManualToken)).toBe('');
       expect(get(calendar.showTokenInput)).toBe(false);
       expect(get(calendar.isAuthorizing)).toBe(false);
+    });
+  });
+
+  describe('a rejected pasted token', () => {
+    it('should keep the form and both tokens, naming the rejection on the field', async () => {
+      set(calendar.modelManualToken, 'access');
+      set(calendar.modelManualRefreshToken, 'refresh');
+      completeOAuth.mockResolvedValue({ message: 'token rejected', success: false });
+
+      await calendar.submitManualToken();
+
+      expect(get(calendar.modelManualToken)).toBe('access');
+      expect(get(calendar.modelManualRefreshToken)).toBe('refresh');
+      expect(get(calendar.failure)).toBe('token rejected');
+    });
+
+    it('should clear the failure when the next authorization starts', async () => {
+      completeOAuth.mockResolvedValueOnce({ message: 'token rejected', success: false });
+      await calendar.handleOAuthCallback({ accessToken: 'a', refreshToken: 'r', service: 'google', success: true });
+
+      await calendar.handleOAuthCallback({ accessToken: 'a', refreshToken: 'r', service: 'google', success: true });
+
+      expect(get(calendar.failure)).toBeUndefined();
     });
   });
 
@@ -216,7 +241,8 @@ describe('useGoogleCalendarIntegration', () => {
 
       await calendar.sync();
 
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'sync broke', severity: Severity.ERROR }));
+      expect(get(calendar.failure)).toBe('sync broke');
+      expect(notify).not.toHaveBeenCalled();
       expect(get(calendar.isSyncing)).toBe(false);
     });
   });
@@ -240,7 +266,8 @@ describe('useGoogleCalendarIntegration', () => {
       await calendar.disconnect();
 
       expect(get(calendar.isConnected)).toBe(true);
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'still connected' }));
+      expect(get(calendar.failure)).toBe('still connected');
+      expect(notify).not.toHaveBeenCalled();
     });
   });
 });

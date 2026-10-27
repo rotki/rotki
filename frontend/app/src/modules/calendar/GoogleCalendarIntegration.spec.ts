@@ -28,6 +28,7 @@ const calendarApi = {
   connect: vi.fn(async () => Promise.resolve()),
   connectedUserEmail: ref<string>(''),
   disconnect: vi.fn(async () => Promise.resolve()),
+  failure: ref<string>(),
   handleOAuthCallback,
   isAuthorizing: ref<boolean>(false),
   isConnected: ref<boolean>(false),
@@ -56,6 +57,7 @@ describe('googleCalendarIntegration', () => {
     set(calendarApi.connectedUserEmail, '');
     set(calendarApi.modelManualToken, '');
     set(calendarApi.modelManualRefreshToken, '');
+    set(calendarApi.failure, undefined);
     wrapper = mount(GoogleCalendarIntegration);
   });
 
@@ -124,6 +126,14 @@ describe('googleCalendarIntegration', () => {
       expect(calendarApi.submitManualToken).toHaveBeenCalledOnce();
     });
 
+    it('should name a rejected token on the token field rather than in the card', async () => {
+      set(calendarApi.failure, 'token rejected');
+      await nextTick();
+
+      expect(wrapper.find('[data-testid=google-calendar-access-token]').text()).toContain('token rejected');
+      expect(wrapper.find('[data-testid=google-calendar-error]').exists()).toBe(false);
+    });
+
     it('should hand the cancel back to the composable', async () => {
       await wrapper.find('[data-testid=google-calendar-cancel-token]').trigger('click');
 
@@ -162,5 +172,14 @@ describe('googleCalendarIntegration', () => {
 
       expect(wrapper.find('[data-testid=google-calendar-sync]').attributes('disabled')).toBeDefined();
     });
+  });
+
+  it('should name a failure in the card while the token form is closed', async () => {
+    set(calendarApi.failure, 'sync broke');
+    await nextTick();
+
+    const strip = wrapper.find('[data-testid=google-calendar-error]');
+    expect(strip.text()).toContain('sync broke');
+    expect(strip.find('[data-testid=table-failure-strip-retry]').exists()).toBe(false);
   });
 });
