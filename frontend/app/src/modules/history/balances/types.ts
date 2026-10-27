@@ -60,6 +60,7 @@ export const HistoricalBalanceDivergenceEvent = z.object({
   eventIdentifier: z.number(),
   groupIdentifier: z.string().nullable(),
   txHash: z.string().nullable(),
+  /** Seconds, unlike the millisecond timestamps of history events. */
   timestamp: z.number(),
   blockNumber: z.number(),
   trackedBalance: NumericString,

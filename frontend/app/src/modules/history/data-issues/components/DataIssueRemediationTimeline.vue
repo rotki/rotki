@@ -38,16 +38,7 @@ function getResultText(item: RemediationTimelineItem): string | undefined {
 
 <template>
   <div data-testid="data-issue-timeline">
-    <div
-      v-if="items.length === 0"
-      class="text-body-2 text-rui-text-secondary"
-    >
-      {{ t('data_issues.detail.no_attempts') }}
-    </div>
-    <ol
-      v-else
-      class="flex flex-col gap-3"
-    >
+    <ol class="flex flex-col gap-3">
       <li
         v-for="(item, index) in items"
         :key="index"

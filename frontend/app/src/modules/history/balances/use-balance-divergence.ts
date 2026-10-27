@@ -32,6 +32,8 @@ interface UseBalanceDivergenceReturn {
   error: Readonly<Ref<string | undefined>>;
   boundaries: ComputedRef<DivergenceBoundaryEvent[]>;
   summary: ComputedRef<string | undefined>;
+  /** A diverged result's summary is only a probe count, so it belongs in the comparison's footer, not in its status. */
+  summaryInFooter: ComputedRef<boolean>;
   find: (payload: HistoricalBalanceDivergencePayload) => Promise<void>;
   navigate: (event: HistoricalBalanceDivergenceEvent, asset: string) => void;
   clear: () => void;
@@ -83,6 +85,11 @@ export function useBalanceDivergence(
       return t('balance_divergence.no_checkpoints');
 
     return t('balance_divergence.checked', { probes: current.probes.length });
+  });
+
+  const summaryInFooter = computed<boolean>(() => {
+    const status = get(result)?.status;
+    return get(boundaries).length > 0 && (status === 'diverged' || status === 'diverged_from_start');
   });
 
   function clear(): void {
@@ -164,5 +171,6 @@ export function useBalanceDivergence(
     navigate,
     result: shallowReadonly(result),
     summary,
+    summaryInFooter,
   };
 }

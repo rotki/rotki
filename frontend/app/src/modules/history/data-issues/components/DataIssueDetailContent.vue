@@ -1,15 +1,18 @@
 <script setup lang="ts">
+import type { BigNumber } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription, RemediationTimelineItem } from '@/modules/history/data-issues/types';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import DataIssueBalanceDivergence from '@/modules/history/data-issues/components/DataIssueBalanceDivergence.vue';
+import DataIssueBalanceMismatchSummary from '@/modules/history/data-issues/components/DataIssueBalanceMismatchSummary.vue';
 import DataIssueDescription from '@/modules/history/data-issues/components/DataIssueDescription.vue';
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
+import DataIssueNegativeBalanceSummary from '@/modules/history/data-issues/components/DataIssueNegativeBalanceSummary.vue';
 import DataIssueRemediationTimeline from '@/modules/history/data-issues/components/DataIssueRemediationTimeline.vue';
 import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
 import { canDismiss, canResolveManually, canRetry, IssueKind, IssueState } from '@/modules/history/data-issues/constants';
-import { describeIssue, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
+import { describeIssue, type NegativeBalanceValues, negativeBalanceValues, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
 import { dataIssueDivergenceKey } from '@/modules/history/data-issues/use-data-issue-divergence-store';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
@@ -38,6 +41,16 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
 const description = computed<IssueDescription | undefined>(() => issue ? describeIssue(issue) : undefined);
+
+const negativeBalance = computed<NegativeBalanceValues | undefined>(() => issue ? negativeBalanceValues(issue) : undefined);
+
+/** Balance mismatches and negative balances show their amounts as values; every other kind keeps its sentence. */
+const mismatch = computed<{ derived: BigNumber; observed: BigNumber; delta: BigNumber } | undefined>(() => {
+  const amounts = get(description)?.amounts;
+  if (issue?.kind !== IssueKind.CURRENT_BALANCE_MISMATCH || !amounts?.derived || !amounts.observed || !amounts.delta)
+    return undefined;
+  return { delta: amounts.delta, derived: amounts.derived, observed: amounts.observed };
+});
 
 /** Deep-link to the offending history event (shared with the inbox panel). */
 const relatedEventLink = computed<RouteLocationRaw | undefined>(() =>
@@ -90,7 +103,7 @@ const resolutionNote = computed<string | undefined>(() => {
           <RuiIcon name="lu-x" />
         </RuiButton>
       </div>
-      <div class="flex flex-wrap items-center gap-2 pb-2 text-xs text-rui-text-secondary">
+      <div class="flex flex-wrap items-center gap-2 text-xs text-rui-text-secondary">
         <DataIssueKindChip :kind="issue.kind" />
         <DataIssueStateChip :state="issue.state" />
         <span class="ml-1">
@@ -98,105 +111,102 @@ const resolutionNote = computed<string | undefined>(() => {
           <TimeAgoDisplay :timestamp="issue.createdAt" />
         </span>
       </div>
+      <div
+        class="flex flex-wrap items-center gap-x-5 gap-y-2 pb-2 text-sm"
+        data-testid="data-issue-subject"
+      >
+        <span class="inline-flex items-center">
+          <span class="sr-only">{{ t('common.account') }}</span>
+          <HistoryEventAccount
+            v-if="issue.locationLabel"
+            :location="issue.location"
+            :location-label="issue.locationLabel"
+          />
+          <span
+            v-else
+            class="text-rui-text-secondary"
+          >
+            -
+          </span>
+        </span>
+        <span class="inline-flex items-center">
+          <span class="sr-only">{{ t('common.location') }}</span>
+          <LocationDisplay
+            :identifier="issue.location"
+            horizontal
+            size="20px"
+            class="w-fit"
+          />
+        </span>
+        <span
+          v-if="issue.asset"
+          class="inline-flex items-center"
+        >
+          <span class="sr-only">{{ t('common.asset') }}</span>
+          <AssetDetails
+            :asset="issue.asset"
+            :display="{ dense: true, inline: true, size: '20px' }"
+          />
+        </span>
+        <span
+          v-if="issue.protocol"
+          class="inline-flex items-center"
+        >
+          <span class="sr-only">{{ t('common.protocol') }}</span>
+          <CounterpartyDisplay :counterparty="issue.protocol" />
+        </span>
+      </div>
     </div>
 
-    <div class="flex flex-col p-4 overflow-y-auto grow between:border-t between:border-rui-divider between:mt-5 between:pt-5">
+    <div class="flex flex-col p-4 overflow-y-auto grow between:border-t between:border-rui-divider between:mt-4 between:pt-4">
       <section class="flex flex-col gap-2">
         <h3 class="text-xs font-medium text-rui-text-secondary">
           {{ t('data_issues.detail.whats_wrong') }}
         </h3>
+        <DataIssueBalanceMismatchSummary
+          v-if="mismatch"
+          v-bind="mismatch"
+          :asset="issue.asset ?? undefined"
+        />
+        <DataIssueNegativeBalanceSummary
+          v-else-if="negativeBalance"
+          v-bind="negativeBalance"
+          :asset="issue.asset ?? undefined"
+        />
         <DataIssueDescription
-          v-if="description"
+          v-else-if="description"
           :description="description"
           tag="p"
           class="text-sm text-rui-text"
         />
         <div
           v-if="description?.eventIdentifier !== undefined"
-          class="text-xs text-rui-text-secondary"
-          data-testid="data-issue-event-date"
+          class="mt-1 flex flex-wrap items-center justify-between gap-x-2 text-xs text-rui-text-secondary"
         >
-          {{ t('data_issues.detail.event_date') }}
-          <DateDisplay
-            :timestamp="issue.tsEnd"
-            milliseconds
-          />
-        </div>
-        <RuiButton
-          v-if="description?.eventIdentifier !== undefined && relatedEventLink"
-          variant="outlined"
-          color="primary"
-          size="sm"
-          class="self-start mt-1"
-          data-testid="data-issue-related-event"
-          @click="goToRelatedEvent()"
-        >
-          {{ relatedEventLabel }}
-          <template #append>
-            <RuiIcon
-              name="lu-arrow-right"
-              size="16"
+          <span data-testid="data-issue-event-date">
+            {{ t('data_issues.detail.event_date') }}
+            <DateDisplay
+              :timestamp="issue.tsEnd"
+              milliseconds
             />
-          </template>
-        </RuiButton>
-      </section>
-
-      <section class="grid grid-cols-2 gap-x-4 gap-y-3">
-        <div class="flex flex-col gap-1">
-          <div class="text-xs font-medium text-rui-text-secondary">
-            {{ t('common.account') }}
-          </div>
-          <div class="flex items-center grow min-h-8">
-            <HistoryEventAccount
-              v-if="issue.locationLabel"
-              :location="issue.location"
-              :location-label="issue.locationLabel"
-            />
-            <span
-              v-else
-              class="text-body-2 text-rui-text-secondary"
-            >
-              -
-            </span>
-          </div>
-        </div>
-        <div class="flex flex-col gap-1">
-          <div class="text-xs font-medium text-rui-text-secondary">
-            {{ t('common.location') }}
-          </div>
-          <div class="flex items-center grow min-h-8">
-            <LocationDisplay
-              :identifier="issue.location"
-              horizontal
-              size="20px"
-              class="w-fit text-sm"
-            />
-          </div>
-        </div>
-        <div
-          v-if="issue.asset"
-          class="flex flex-col gap-1"
-        >
-          <div class="text-xs font-medium text-rui-text-secondary">
-            {{ t('common.asset') }}
-          </div>
-          <div class="flex items-center grow min-h-8">
-            <AssetDetails
-              :asset="issue.asset"
-              :display="{ dense: true, inline: true, size: '20px' }"
-            />
-          </div>
-        </div>
-        <div
-          v-if="issue.protocol"
-          class="flex flex-col gap-1"
-        >
-          <div class="text-xs font-medium text-rui-text-secondary">
-            {{ t('common.protocol') }}
-          </div>
-          <div class="flex items-center grow min-h-8">
-            <CounterpartyDisplay :counterparty="issue.protocol" />
-          </div>
+          </span>
+          <RuiButton
+            v-if="relatedEventLink"
+            variant="text"
+            color="primary"
+            size="sm"
+            class="-mr-2"
+            data-testid="data-issue-related-event"
+            @click="goToRelatedEvent()"
+          >
+            {{ relatedEventLabel }}
+            <template #append>
+              <RuiIcon
+                name="lu-arrow-right"
+                size="14"
+              />
+            </template>
+          </RuiButton>
         </div>
       </section>
 
@@ -207,7 +217,17 @@ const resolutionNote = computed<string | undefined>(() => {
         @navigate="emit('close')"
       />
 
-      <section class="flex flex-col gap-2">
+      <p
+        v-if="timeline.length === 0"
+        class="mt-3! border-t-0! pt-0! text-xs text-rui-text-secondary"
+        data-testid="data-issue-no-attempts"
+      >
+        {{ t('data_issues.detail.no_attempts') }}
+      </p>
+      <section
+        v-else
+        class="flex flex-col gap-2"
+      >
         <h3 class="text-xs font-medium text-rui-text-secondary">
           {{ t('data_issues.detail.remediation_history') }}
         </h3>

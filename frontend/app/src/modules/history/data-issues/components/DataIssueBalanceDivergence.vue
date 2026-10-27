@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { DivergenceBoundaryEvent } from '@/modules/history/balances/use-balance-divergence';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
-import DivergenceBoundaryCard from '@/modules/history/balances/DivergenceBoundaryCard.vue';
+import DivergenceComparison from '@/modules/history/balances/DivergenceComparison.vue';
+import DivergenceOutcome from '@/modules/history/balances/DivergenceOutcome.vue';
 import { useDataIssueDivergence } from '@/modules/history/data-issues/use-data-issue-divergence';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
@@ -29,13 +30,13 @@ const {
   search,
   status,
   summary,
+  summaryInFooter,
   view,
 } = useDataIssueDivergence(() => issue);
 
+/** A diverged result has no line here: its search window carries that advice. */
 const nextStep = computed<string | undefined>(() => {
   switch (get(status)) {
-    case 'diverged':
-      return t('data_issues.detail.divergence_next_step');
     case 'diverged_from_start':
       return t('data_issues.detail.divergence_from_start');
     case 'no_divergence':
@@ -59,27 +60,56 @@ function viewBoundary(boundary: DivergenceBoundaryEvent): void {
     class="flex flex-col gap-2"
     data-testid="data-issue-balance-divergence"
   >
-    <h3 class="text-xs font-medium text-rui-text-secondary">
-      {{ t('balance_divergence.title') }}
-    </h3>
-    <i18n-t
-      keypath="data_issues.detail.divergence_scope"
-      tag="p"
-      class="text-body-2 text-rui-text-secondary"
-      scope="global"
-      data-testid="data-issue-divergence-scope"
-    >
-      <template #date>
-        <DateDisplay
-          :timestamp="issue.tsEnd"
-          milliseconds
-          class="text-rui-text"
-        />
-      </template>
-    </i18n-t>
-    <div
+    <div class="flex items-center justify-between gap-2">
+      <h3 class="inline-flex items-center gap-1 text-xs font-medium text-rui-text-secondary">
+        {{ t('balance_divergence.title') }}
+        <RuiTooltip
+          :open-delay="200"
+          :options="{ placement: 'top' }"
+          class="inline-flex"
+        >
+          <template #activator>
+            <RuiIcon
+              name="lu-info"
+              size="14"
+            />
+          </template>
+          <i18n-t
+            keypath="data_issues.detail.divergence_scope"
+            tag="span"
+            scope="global"
+            data-testid="data-issue-divergence-scope"
+          >
+            <template #date>
+              <DateDisplay
+                :timestamp="issue.tsEnd"
+                milliseconds
+              />
+            </template>
+          </i18n-t>
+        </RuiTooltip>
+      </h3>
+      <RuiButton
+        color="primary"
+        variant="outlined"
+        size="sm"
+        :disabled="busy || !canSearch"
+        :loading="loading || checkingArchive"
+        data-testid="data-issue-find-divergence"
+        @click="search()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-search"
+            size="14"
+          />
+        </template>
+        {{ status ? t('balance_divergence.search_again') : t('balance_divergence.action') }}
+      </RuiButton>
+    </div>
+    <RuiAlert
       v-if="missingArchive"
-      class="text-body-2 text-rui-text-secondary"
+      type="warning"
       data-testid="data-issue-divergence-missing-archive"
     >
       <i18n-t
@@ -96,52 +126,32 @@ function viewBoundary(boundary: DivergenceBoundaryEvent): void {
           </InternalLink>
         </template>
       </i18n-t>
-    </div>
-    <RuiButton
-      class="self-start"
-      color="primary"
-      variant="outlined"
-      :disabled="busy || !canSearch"
-      :loading="loading || checkingArchive"
-      data-testid="data-issue-find-divergence"
-      @click="search()"
-    >
-      <template #prepend>
-        <RuiIcon
-          name="lu-search"
-          size="16"
-        />
-      </template>
-      {{ t('balance_divergence.action') }}
-    </RuiButton>
-    <p
-      v-if="summary"
-      class="text-body-2 text-rui-text-secondary"
-      data-testid="data-issue-divergence-summary"
-    >
-      {{ summary }}
-    </p>
-    <p
-      v-if="nextStep"
-      class="text-body-2"
-      data-testid="data-issue-divergence-next-step"
-    >
-      {{ nextStep }}
-    </p>
-    <DivergenceBoundaryCard
-      v-for="boundary in boundaries"
-      :key="boundary.key"
-      :boundary="boundary"
+    </RuiAlert>
+    <DivergenceOutcome
+      v-if="status"
+      :status="status"
+      :summary="summaryInFooter ? undefined : summary"
+      :next-step="nextStep"
+    />
+    <DivergenceComparison
+      v-if="boundaries.length > 0"
+      :boundaries="boundaries"
       :asset="issue.asset ?? undefined"
       :location="chain"
-      @view="viewBoundary(boundary)"
-    />
-    <p
-      v-if="error"
-      class="text-body-2 text-rui-text-secondary"
-      data-testid="data-issue-divergence-error"
+      @view="viewBoundary($event)"
     >
-      {{ t('balance_divergence.search_failed') }}
-    </p>
+      <template
+        v-if="summary && summaryInFooter"
+        #footer
+      >
+        {{ summary }}
+      </template>
+    </DivergenceComparison>
+    <RuiAlert
+      v-if="error"
+      type="error"
+      :description="t('balance_divergence.search_failed')"
+      data-testid="data-issue-divergence-error"
+    />
   </section>
 </template>
