@@ -1,12 +1,13 @@
 from unittest.mock import MagicMock, patch
 
-from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.balance import Balance, ClaimEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.base.modules.venice.balances import VeniceBalances
 from rotkehlchen.chain.base.modules.venice.constants import CPT_VENICE, VVV_TOKEN_ID
 from rotkehlchen.chain.evm.contracts import WEB3
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
+from rotkehlchen.types import Timestamp
 
 
 def test_venice_pending_withdrawals() -> None:
@@ -25,10 +26,16 @@ def test_venice_pending_withdrawals() -> None:
 
     asset = Asset(VVV_TOKEN_ID)
     assert balances[addresses[0]].assets[asset][CPT_VENICE] == Balance(
-        amount=FVal(2), value=FVal(8), awaiting_claim=FVal(2),
+        amount=FVal(2),
+        value=FVal(8),
+        awaiting_claim=FVal(2),
+        claims=(ClaimEntry(amount=FVal(2), available_at=Timestamp(9999999999)),),
     )
     assert balances[addresses[1]].assets[asset][CPT_VENICE] == Balance(
-        amount=FVal(3), value=FVal(12), awaiting_claim=FVal(3),
+        amount=FVal(3),
+        value=FVal(12),
+        awaiting_claim=FVal(3),
+        claims=(ClaimEntry(amount=FVal(3), available_at=Timestamp(1)),),
     )
     assert addresses[2] not in balances
     assert len(inquirer.multicall.call_args.kwargs['calls']) == len(addresses)

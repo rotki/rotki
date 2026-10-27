@@ -25,6 +25,10 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
             'ALTER TABLE blockchain_balances_cache '
             "ADD COLUMN awaiting_claim TEXT NOT NULL DEFAULT '0'",
         )
+        write_cursor.execute(
+            'ALTER TABLE blockchain_balances_cache '
+            "ADD COLUMN claims TEXT NOT NULL DEFAULT '[]'",
+        )
 
     @progress_step(description='Add capability statuses to RPC nodes.')
     def _add_rpc_node_capabilities(write_cursor: DBCursor) -> None:

@@ -2,15 +2,17 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, ClaimEntry
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_STETH
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Timestamp
 
 from .constants import CPT_LIDO, WITHDRAWAL_QUEUE
 
@@ -82,8 +84,8 @@ class LidoBalances(ProtocolWithBalance):
             deployed_block=0,
         )
 
-    def _withdrawal_amount(self, address: ChecksumEvmAddress) -> int:
-        """Return wei owed or estimated for unfinalized requests owned by address.
+    def _withdrawal_claims(self, address: ChecksumEvmAddress) -> list[ClaimEntry]:
+        """Return the unclaimed withdrawal requests currently owned by address.
 
         Finalized requests use the actual reserved ETH. For unfinalized requests the
         redeemable amount is capped at the original stETH, but can fall if shares lose
@@ -95,30 +97,36 @@ class LidoBalances(ProtocolWithBalance):
             arguments=[address],
         )
         if not request_ids:
-            return 0
+            return []
 
         statuses = self.queue.call(
             node_inquirer=self.evm_inquirer,
             method_name='getWithdrawalStatus',
             arguments=[request_ids],
         )
-        finalized = []
-        amount = 0
+        finalized: list[tuple[int, int]] = []
+        claims: list[ClaimEntry] = []
         for request_id, status in zip(request_ids, statuses, strict=True):
-            steth_amount, shares, owner, _, is_finalized, is_claimed = status
+            steth_amount, shares, owner, requested_at, is_finalized, is_claimed = status
             if is_claimed or owner.lower() != address.lower():
                 continue
             if is_finalized:
-                finalized.append(request_id)
-            else:
-                share_value = self.steth.call(
-                    node_inquirer=self.evm_inquirer,
-                    method_name='getPooledEthByShares',
-                    arguments=[shares],
-                )
-                amount += min(steth_amount, share_value)
+                finalized.append((request_id, requested_at))
+                continue
+
+            share_value = self.steth.call(
+                node_inquirer=self.evm_inquirer,
+                method_name='getPooledEthByShares',
+                arguments=[shares],
+            )
+            claims.append(ClaimEntry(
+                amount=token_normalized_value_decimals(min(steth_amount, share_value), 18),
+                request_id=str(request_id),
+                requested_at=Timestamp(requested_at),
+            ))
 
         if finalized:
+            finalized_ids = [request_id for request_id, _ in finalized]
             last_checkpoint = self.queue.call(
                 node_inquirer=self.evm_inquirer,
                 method_name='getLastCheckpointIndex',
@@ -126,34 +134,43 @@ class LidoBalances(ProtocolWithBalance):
             hints = self.queue.call(
                 node_inquirer=self.evm_inquirer,
                 method_name='findCheckpointHints',
-                arguments=[finalized, 1, last_checkpoint],
+                arguments=[finalized_ids, 1, last_checkpoint],
             )
-            amount += sum(self.queue.call(
+            payouts = self.queue.call(
                 node_inquirer=self.evm_inquirer,
                 method_name='getClaimableEther',
-                arguments=[finalized, hints],
-            ))
-        return amount
+                arguments=[finalized_ids, hints],
+            )
+            claims.extend(ClaimEntry(
+                amount=token_normalized_value_decimals(payout, 18),
+                request_id=str(request_id),
+                finalized=True,
+                requested_at=Timestamp(requested_at),
+            ) for (request_id, requested_at), payout in zip(finalized, payouts, strict=True))
+
+        return claims
 
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        amounts = {}
+        address_claims: dict[ChecksumEvmAddress, list[ClaimEntry]] = {}
         for address in addresses:
             try:
-                amount = self._withdrawal_amount(address)
+                claims = self._withdrawal_claims(address)
             except RemoteError as e:
                 log.error(f'Failed to query Lido withdrawal queue for {address}: {e}')
                 continue
-            if amount != 0:
-                amounts[address] = token_normalized_value_decimals(amount, 18)
+            if len(claims) != 0:
+                address_claims[address] = claims
 
-        if not amounts:
+        if len(address_claims) == 0:
             return balances
         price = Inquirer.find_price(from_asset=A_ETH, to_asset=CachedSettings().main_currency)
-        for address, amount in amounts.items():
+        for address, claims in address_claims.items():
+            amount = sum((claim.amount for claim in claims), ZERO)
             balances[address].assets[A_ETH][self.counterparty] += Balance(
                 amount=amount,
                 value=amount * price,
                 awaiting_claim=amount,
+                claims=tuple(claims),
             )
         return balances

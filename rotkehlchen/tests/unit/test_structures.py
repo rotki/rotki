@@ -2,8 +2,8 @@ from collections import defaultdict
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, ClaimEntry
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_USD
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import InputError
@@ -37,6 +37,27 @@ def test_balance_addition():
         result = a + {'amount': 'fasd', 'value': 1}
     with pytest.raises(InputError):
         result = a + {'amount': 1, 'value': 'dsad'}
+
+
+def test_balance_claims():
+    first = ClaimEntry(amount=ONE, request_id='1', finalized=True, requested_at=100)
+    second = ClaimEntry(amount=FVal(2), available_at=200)
+    a = Balance(amount=ONE, awaiting_claim=ONE, claims=(first,))
+    b = Balance(amount=FVal(2), awaiting_claim=FVal(2), claims=(second,))
+
+    total = a + b
+    assert total.claims == (first, second)
+    assert sum((claim.amount for claim in total.claims), FVal(0)) == total.awaiting_claim
+    assert (total - b).claims == (first,)
+    assert [claim.amount for claim in (total * 2).claims] == [FVal(2), FVal(4)]
+    assert [claim.amount for claim in (-total).claims] == [FVal(-1), FVal(-2)]
+    assert [claim.amount for claim in abs(-total).claims] == [ONE, FVal(2)]
+    assert total.serialize()['claims'] == [
+        {'amount': '1', 'finalized': True, 'id': '1', 'requested_at': 100},
+        {'amount': '2', 'finalized': False, 'available_at': 200},
+    ]
+    assert 'claims' not in Balance(amount=ONE).serialize()
+    assert ClaimEntry.deserialize(first.serialize()) == first
 
 
 def test_balance_raddition():

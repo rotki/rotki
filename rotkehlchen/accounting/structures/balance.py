@@ -1,6 +1,6 @@
 import operator
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Any, Self
 
 from rotkehlchen.constants import ZERO
@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.types import Timestamp
 
 
 class BalanceType(DBCharEnumMixIn):
@@ -20,16 +21,65 @@ class BalanceType(DBCharEnumMixIn):
     LIABILITY = 2
 
 
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class ClaimEntry:
+    """A withdrawal request waiting for its owner to claim it.
+
+    Only facts that do not change by themselves are stored, because balances are cached and shown
+    before a refresh. Whether the claim is ready is decided when it is displayed: it is if the
+    protocol already finalized it, or if `available_at` has passed.
+    """
+    amount: FVal
+    request_id: str | None = None
+    finalized: bool = False
+    requested_at: Timestamp | None = None
+    available_at: Timestamp | None = None
+
+    def serialize(self) -> dict[str, Any]:
+        result: dict[str, Any] = {'amount': str(self.amount), 'finalized': self.finalized}
+        if self.request_id is not None:
+            result['id'] = self.request_id
+        if self.requested_at is not None:
+            result['requested_at'] = self.requested_at
+        if self.available_at is not None:
+            result['available_at'] = self.available_at
+        return result
+
+    @classmethod
+    def deserialize(cls, data: dict[str, Any]) -> Self:
+        return cls(
+            amount=FVal(data['amount']),
+            request_id=data.get('id'),
+            finalized=data['finalized'],
+            requested_at=data.get('requested_at'),
+            available_at=data.get('available_at'),
+        )
+
+
+def _remove_claims(
+        claims: tuple[ClaimEntry, ...],
+        to_remove: tuple[ClaimEntry, ...],
+) -> tuple[ClaimEntry, ...]:
+    remaining = list(claims)
+    for claim in to_remove:
+        if claim in remaining:
+            remaining.remove(claim)
+    return tuple(remaining)
+
+
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class Balance:
     amount: FVal = ZERO
     value: FVal = ZERO
     awaiting_claim: FVal = ZERO
+    claims: tuple[ClaimEntry, ...] = ()
 
-    def serialize(self) -> dict[str, str]:
-        result = {'amount': str(self.amount), 'value': str(self.value)}
+    def serialize(self) -> dict[str, Any]:
+        result: dict[str, Any] = {'amount': str(self.amount), 'value': str(self.value)}
         if self.awaiting_claim != ZERO:
             result['awaiting_claim'] = str(self.awaiting_claim)
+        if len(self.claims) != 0:
+            result['claims'] = [claim.serialize() for claim in self.claims]
         return result
 
     def to_dict(self) -> dict[str, FVal]:
@@ -44,6 +94,7 @@ class Balance:
             amount=self.amount + other.amount,
             value=self.value + other.value,
             awaiting_claim=self.awaiting_claim + other.awaiting_claim,
+            claims=self.claims + other.claims,
         )
 
     def __radd__(self, other: Any) -> Balance:
@@ -55,6 +106,7 @@ class Balance:
             amount=self.amount + other.amount,
             value=self.value + other.value,
             awaiting_claim=self.awaiting_claim + other.awaiting_claim,
+            claims=self.claims + other.claims,
         )
 
     def __sub__(self, other: Any) -> Balance:
@@ -63,6 +115,7 @@ class Balance:
             amount=self.amount - other.amount,
             value=self.value - other.value,
             awaiting_claim=self.awaiting_claim - other.awaiting_claim,
+            claims=_remove_claims(self.claims, other.claims),
         )
 
     def __mul__(self, other: Any) -> Balance:
@@ -73,16 +126,23 @@ class Balance:
             amount=self.amount * other,
             value=self.value * other,
             awaiting_claim=self.awaiting_claim * other,
+            claims=tuple(replace(claim, amount=claim.amount * other) for claim in self.claims),
         )
 
     def __neg__(self) -> Balance:
-        return Balance(amount=-self.amount, value=-self.value, awaiting_claim=-self.awaiting_claim)
+        return Balance(
+            amount=-self.amount,
+            value=-self.value,
+            awaiting_claim=-self.awaiting_claim,
+            claims=tuple(replace(claim, amount=-claim.amount) for claim in self.claims),
+        )
 
     def __abs__(self) -> Balance:
         return Balance(
             amount=abs(self.amount),
             value=abs(self.value),
             awaiting_claim=abs(self.awaiting_claim),
+            claims=tuple(replace(claim, amount=abs(claim.amount)) for claim in self.claims),
         )
 
 
@@ -120,7 +180,7 @@ class AssetBalance:
     def value(self) -> FVal:
         return self.balance.value
 
-    def serialize(self) -> dict[str, str]:
+    def serialize(self) -> dict[str, Any]:
         result = self.balance.serialize()
         result['asset'] = self.asset.identifier
         return result

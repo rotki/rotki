@@ -5079,6 +5079,7 @@ def test_upgrade_db_53_to_54(
     )
     with db.conn.write_ctx() as cursor:
         assert column_exists(cursor, 'blockchain_balances_cache', 'awaiting_claim')
+        assert column_exists(cursor, 'blockchain_balances_cache', 'claims')
         # make sure the locations this upgrade adds exist
         for new_location in new_locations:
             assert cursor.execute(

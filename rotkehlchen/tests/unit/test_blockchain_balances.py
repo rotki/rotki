@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, ClaimEntry
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS, ChainsAggregator
 from rotkehlchen.chain.balances import BlockchainBalances
@@ -350,7 +350,12 @@ def test_blockchain_balances_cache_preserves_awaiting_claim(blockchain: ChainsAg
     address = make_evm_address()
     blockchain.balances.eth[address].assets[A_ETH]['lido'] = Balance(
         amount=FVal('2'),
-        awaiting_claim=FVal('1'),
+        awaiting_claim=ONE,
+        claims=(ClaimEntry(
+            amount=ONE,
+            request_id='7',
+            requested_at=Timestamp(1700000000),
+        ),),
     )
     blockchain._update_blockchain_balances_cache(
         blockchain=SupportedBlockchain.ETHEREUM,
@@ -365,6 +370,12 @@ def test_blockchain_balances_cache_preserves_awaiting_claim(blockchain: ChainsAg
         'amount': '2',
         'value': '0',
         'awaiting_claim': '1',
+        'claims': [{
+            'amount': '1',
+            'finalized': False,
+            'id': '7',
+            'requested_at': 1700000000,
+        }],
     }
 
 

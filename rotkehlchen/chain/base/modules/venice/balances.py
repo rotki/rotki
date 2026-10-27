@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, ClaimEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.base.modules.venice.constants import (
@@ -17,6 +17,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from eth_typing.abi import ABI
@@ -79,7 +80,7 @@ class VeniceBalances(ProtocolWithBalance):
         price = None
         for address, result in zip(addresses, results, strict=True):
             try:
-                _, _, raw_amount = contract.decode(
+                _, cooldown_end, raw_amount = contract.decode(
                     result=result,
                     method_name='stakes',
                     arguments=[address],
@@ -100,6 +101,10 @@ class VeniceBalances(ProtocolWithBalance):
                 amount=amount,
                 value=amount * price,
                 awaiting_claim=amount,
+                claims=(ClaimEntry(
+                    amount=amount,
+                    available_at=Timestamp(cooldown_end) if cooldown_end != 0 else None,
+                ),),
             )
 
         return balances
