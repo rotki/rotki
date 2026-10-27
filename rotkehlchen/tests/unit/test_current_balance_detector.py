@@ -76,6 +76,13 @@ def _add_balance(
                 asset.identifier, ts, ts,
             ),
         )
+        write_cursor.execute(  # the metric above stands for a completed processing pass
+            'DELETE FROM key_value_cache WHERE name IN (?, ?)',
+            (
+                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
+                DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value,
+            ),
+        )
     assert event_id is not None
     return event_id
 

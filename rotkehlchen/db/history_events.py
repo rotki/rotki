@@ -58,6 +58,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.data_issues.bucket_state import delete_balance_checks_of_cleared_accounts
 from rotkehlchen.history.events.constants import CHAIN_ENTRY_TYPES, STAKING_ENTRY_TYPES
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.bank_transaction import BankTransactionEvent
@@ -306,15 +307,17 @@ class DBHistoryEvents:
 
         Returns the number of rows deleted.
         """
-        deleted_ids, timestamps, group_ids = [], [], set()
+        deleted_ids, timestamps, group_ids, accounts = [], [], set(), set()
         if len(rows := write_cursor.execute(
-            f'DELETE FROM history_events {where_clause} RETURNING timestamp, identifier, group_identifier',  # noqa: E501
+            f'DELETE FROM history_events {where_clause} RETURNING timestamp, identifier, group_identifier, location, location_label',  # noqa: E501
             where_bindings,
         ).fetchall()) > 0:
             for row in rows:
                 timestamps.append((row[0],))
                 deleted_ids.append(row[1])
                 group_ids.add(row[2])
+                accounts.add((row[3], row[4]))
+            delete_balance_checks_of_cleared_accounts(write_cursor=write_cursor, accounts=accounts)
             write_cursor.execute(
                 "DELETE FROM key_value_cache WHERE name LIKE 'customized_event_original_%' "
                 f"AND value IN ({','.join('?' * len(deleted_ids))})",

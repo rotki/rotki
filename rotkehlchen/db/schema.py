@@ -1077,6 +1077,46 @@ CREATE TABLE IF NOT EXISTS data_issues (
 );
 """
 
+# A bucket whose historical balance processing stopped because its derived balance went negative.
+# The processor skips every later event of such a bucket and writes no more metrics for it, so
+# it can be missing from event_metrics entirely. Inbox issue rows can't stand in for this: they
+# are never resolved when the history gets repaired, and a dismissal freezes them. A row is
+# written when a processing pass completes and is removed only by a later completed pass that
+# reprocesses the stopping event and no longer stops there.
+# The label and protocol are '' (not NULL) so that they can be part of the primary key.
+# event_identifier has no foreign key on purpose: deleting the stopping event must not clear the
+# blockage, only reprocessing does.
+DB_CREATE_BUCKET_PROCESSING_STOPS = """
+CREATE TABLE IF NOT EXISTS bucket_processing_stops (
+    location CHAR(1) NOT NULL,
+    location_label TEXT NOT NULL DEFAULT '',
+    protocol TEXT NOT NULL DEFAULT '',
+    asset TEXT NOT NULL,
+    event_identifier INTEGER NOT NULL,
+    event_timestamp INTEGER NOT NULL,
+    derived_balance_before_event TEXT NOT NULL,
+    negative_amount TEXT NOT NULL,
+    PRIMARY KEY (location, location_label, protocol, asset)
+) WITHOUT ROWID;
+"""
+
+# The last comparison of a wallet bucket's derived balance with its observed balance. See
+# BucketBalanceCheck in rotkehlchen/history/data_issues/bucket_checks.py for what the
+# observed_at and compared_at timestamps mean and how they differ.
+DB_CREATE_BUCKET_BALANCE_CHECKS = """
+CREATE TABLE IF NOT EXISTS bucket_balance_checks (
+    location CHAR(1) NOT NULL,
+    location_label TEXT NOT NULL,
+    asset TEXT NOT NULL,
+    derived_balance TEXT NOT NULL,
+    observed_balance TEXT NOT NULL,
+    latest_event_identifier INTEGER,
+    observed_at INTEGER NOT NULL,
+    compared_at INTEGER NOT NULL,
+    PRIMARY KEY (location, location_label, asset)
+) WITHOUT ROWID;
+"""
+
 DB_CREATE_EVENT_METRICS = """
 CREATE TABLE IF NOT EXISTS event_metrics (
     id INTEGER NOT NULL PRIMARY KEY,
@@ -1228,6 +1268,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_BLOCKCHAIN_BALANCES_CACHE}
 {DB_CREATE_DATA_ISSUES}
 {DB_CREATE_EVENT_METRICS}
+{DB_CREATE_BUCKET_PROCESSING_STOPS}
+{DB_CREATE_BUCKET_BALANCE_CHECKS}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

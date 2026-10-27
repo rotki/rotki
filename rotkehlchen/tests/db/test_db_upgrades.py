@@ -3371,7 +3371,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == {'evm_internal_tx_conflicts'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == set()
+    assert new_tables == {'bucket_processing_stops', 'bucket_balance_checks'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -5070,6 +5070,13 @@ def test_upgrade_db_53_to_54(
                     (identifier, event_state),
                 )
 
+        assert not table_exists(cursor=write_cursor, name='bucket_processing_stops')
+        assert not table_exists(cursor=write_cursor, name='bucket_balance_checks')
+        write_cursor.execute(  # a negative balance issue asks for the stops to be rebuilt
+            'INSERT INTO data_issues(kind, location, asset, ts_start, ts_end, severity, state, payload_json, created_at) '  # noqa: E501
+            "VALUES ('negative_balance', 'f', 'ETH', 1, 1, 'warning', 'open', '{}', 1)",
+        )
+
     db_v53.logout()
     db = _init_db_with_target_version(
         target_version=54,
@@ -5095,6 +5102,12 @@ def test_upgrade_db_53_to_54(
             assert cursor.execute(
                 'SELECT notes FROM history_events WHERE identifier=?', (identifier,),
             ).fetchone()[0] == expected_notes, f'event {identifier} notes should be {expected_notes}'  # noqa: E501
+        assert table_exists(cursor=cursor, name='bucket_processing_stops')
+        assert table_exists(cursor=cursor, name='bucket_balance_checks')
+        assert cursor.execute(  # processing is asked to run again to find the stopped buckets
+            'SELECT value FROM key_value_cache WHERE name=?',
+            (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),
+        ).fetchone()[0] == '0'
         assert column_exists(cursor, 'rpc_nodes', 'is_archive')
         assert column_exists(cursor, 'rpc_nodes', 'is_pruned')
         assert cursor.execute(

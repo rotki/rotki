@@ -1,9 +1,11 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import Location
+from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -161,6 +163,50 @@ def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler
             '))',
         )
         write_cursor.execute('DROP TABLE asset_symbols')
+
+    @progress_step(description='Add bucket processing stops and balance checks.')
+    def _add_bucket_reconciliation_tables(write_cursor: DBCursor) -> None:
+        """Buckets whose processing stopped on a negative balance are only known to the
+        processor from now on. Those of an existing DB are found by processing the history
+        again, which is only asked for when there is a negative balance issue to explain.
+        """
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS bucket_processing_stops (
+    location CHAR(1) NOT NULL,
+    location_label TEXT NOT NULL DEFAULT '',
+    protocol TEXT NOT NULL DEFAULT '',
+    asset TEXT NOT NULL,
+    event_identifier INTEGER NOT NULL,
+    event_timestamp INTEGER NOT NULL,
+    derived_balance_before_event TEXT NOT NULL,
+    negative_amount TEXT NOT NULL,
+    PRIMARY KEY (location, location_label, protocol, asset)
+) WITHOUT ROWID;
+        """)
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS bucket_balance_checks (
+    location CHAR(1) NOT NULL,
+    location_label TEXT NOT NULL,
+    asset TEXT NOT NULL,
+    derived_balance TEXT NOT NULL,
+    observed_balance TEXT NOT NULL,
+    latest_event_identifier INTEGER,
+    observed_at INTEGER NOT NULL,
+    compared_at INTEGER NOT NULL,
+    PRIMARY KEY (location, location_label, asset)
+) WITHOUT ROWID;
+        """)
+        if write_cursor.execute(
+            'SELECT 1 FROM data_issues WHERE kind=? LIMIT 1',
+            ('negative_balance',),
+        ).fetchone() is not None:
+            write_cursor.executemany(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                [
+                    (DBCacheStatic.STALE_BALANCES_FROM_TS.value, '0'),
+                    (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value, str(ts_now_in_ms())),
+                ],
+            )
 
     @progress_step(description='Mark Bitcoin and Bitcoin Cash mining rewards to be decoded again.')
     def _reset_bitcoin_coinbase_transactions(write_cursor: DBCursor) -> None:

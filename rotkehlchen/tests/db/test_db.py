@@ -210,6 +210,8 @@ TABLES_AT_INIT = [
     'calendar_reminders',
     'cowswap_orders',
     'data_issues',
+    'bucket_processing_stops',
+    'bucket_balance_checks',
     'gnosispay_data',
     'historical_balance_cache',
     'solana_transactions',
