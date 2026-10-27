@@ -5,6 +5,7 @@ import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import ServiceKeyCard, { type FeatureGate, type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import { useBackendMessages } from '@/modules/shell/app/use-backend-messages';
@@ -32,6 +33,11 @@ const showTokenInput = ref<boolean>(false);
 const awaitingApproval = ref<boolean>(false);
 const manualAccessToken = ref<string>('');
 const manualRefreshToken = ref<string>('');
+/**
+ * What the last connect, token submit or disconnect failed with: named on the access token field
+ * while the token form is open, otherwise at the top of the dialog. Cleared when the next one starts.
+ */
+const failure = shallowRef<string>();
 
 const { isPackaged, openUrl } = useInterop();
 const { notify, removeMatching } = useNotifications();
@@ -99,13 +105,9 @@ function clearAuthNotifications(): void {
   removeMatching(({ group }) => group === NotificationGroup.MONERIUM_AUTH);
 }
 
-function notifyOAuthError(error: unknown): void {
+function failAuthorization(error: unknown): void {
   logger.error('Monerium OAuth failed:', error);
-  notifyAuthStep({
-    message: getErrorMessage(error) || t('external_services.monerium.auth_failed'),
-    severity: Severity.ERROR,
-    title: t('external_services.monerium.error'),
-  });
+  set(failure, getErrorMessage(error) || t('external_services.monerium.auth_failed'));
 }
 
 async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
@@ -114,15 +116,16 @@ async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
 
   // whatever came back, the wait for the browser is over
   set(awaitingApproval, false);
+  set(failure, undefined);
   try {
     if (!oAuthResult.success) {
-      notifyOAuthError(oAuthResult.error);
+      failAuthorization(oAuthResult.error);
       return;
     }
 
     const { accessToken, expiresIn, refreshToken } = oAuthResult;
     if (!accessToken || !refreshToken) {
-      notifyOAuthError(new Error(t('external_services.monerium.token_required')));
+      failAuthorization(new Error(t('external_services.monerium.token_required')));
       return;
     }
 
@@ -139,7 +142,7 @@ async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
     set(manualRefreshToken, '');
   }
   catch (error: unknown) {
-    notifyOAuthError(error);
+    failAuthorization(error);
   }
   finally {
     set(isAuthorizing, false);
@@ -148,11 +151,12 @@ async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
 
 async function connect(): Promise<void> {
   if (!websiteUrl) {
-    notifyOAuthError(new Error(t('external_services.monerium.website_url_missing')));
+    failAuthorization(new Error(t('external_services.monerium.website_url_missing')));
     return;
   }
 
   set(isAuthorizing, true);
+  set(failure, undefined);
   try {
     const mode = isPackaged ? 'app' : 'docker';
     const oauthUrl = `${websiteUrl}/oauth/monerium?mode=${mode}`;
@@ -173,7 +177,7 @@ async function connect(): Promise<void> {
     });
   }
   catch (error: unknown) {
-    notifyOAuthError(error);
+    failAuthorization(error);
   }
   finally {
     set(isAuthorizing, false);
@@ -182,6 +186,7 @@ async function connect(): Promise<void> {
 
 async function disconnect(): Promise<void> {
   set(isAuthorizing, true);
+  set(failure, undefined);
   try {
     await disconnectOAuth();
     notifyAuthStep({
@@ -191,7 +196,7 @@ async function disconnect(): Promise<void> {
     });
   }
   catch (error: unknown) {
-    notifyOAuthError(error);
+    failAuthorization(error);
   }
   finally {
     set(isAuthorizing, false);
@@ -200,11 +205,7 @@ async function disconnect(): Promise<void> {
 
 async function submitManualToken(): Promise<void> {
   if (!get(manualAccessToken) || !get(manualRefreshToken)) {
-    notifyAuthStep({
-      message: t('external_services.monerium.token_required'),
-      severity: Severity.ERROR,
-      title: t('external_services.monerium.error'),
-    });
+    set(failure, t('external_services.monerium.token_required'));
     return;
   }
 
@@ -221,6 +222,7 @@ function cancelTokenInput(): void {
   set(awaitingApproval, false);
   set(manualAccessToken, '');
   set(manualRefreshToken, '');
+  set(failure, undefined);
 }
 
 onMounted(async () => {
@@ -275,6 +277,16 @@ onUnmounted(() => {
       </RuiButton>
     </template>
 
+    <TableFailureStrip
+      v-if="failure && !showTokenInput"
+      standalone
+      :retryable="false"
+      class="mb-4"
+      :title="t('external_services.monerium.error')"
+      :message="failure"
+      data-testid="monerium-error"
+    />
+
     <div
       v-if="authenticated"
       class="flex items-center gap-3 rounded-rui-control border border-rui-divider px-4 py-3"
@@ -322,6 +334,8 @@ onUnmounted(() => {
         :label="t('external_services.monerium.access_token')"
         color="primary"
         :disabled="isAuthorizing"
+        :error-messages="failure ? [failure] : []"
+        data-testid="monerium-access-token"
       />
       <RuiTextField
         v-model.trim="manualRefreshToken"
