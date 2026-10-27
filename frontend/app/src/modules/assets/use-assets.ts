@@ -21,7 +21,7 @@ import {
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
-import { isActionable, onActionableError, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { Cancelled, isActionable, onActionableError, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { activityLabelFor, activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
@@ -160,7 +160,7 @@ export function useAssets(): UseAssetsReturn {
     if (appSession) {
       const selectedDirectory = await openDirectory(t('common.select_directory').toString());
       if (!selectedDirectory)
-        return err(TaskFailed({ message: t('assets.backup.missing_directory') }));
+        return err(Cancelled({ message: t('assets.backup.missing_directory') }));
 
       directory = selectedDirectory;
     }
@@ -185,8 +185,11 @@ export function useAssets(): UseAssetsReturn {
     }
 
     const filePath = outcome.value;
-    if (!appSession)
-      await downloadCustomAssets(filePath);
+    if (!appSession) {
+      const download = await downloadCustomAssets(filePath);
+      if (!download.success)
+        return err(TaskFailed({ message: download.message }));
+    }
 
     return ok({ directory, filePath });
   };

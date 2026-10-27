@@ -8,7 +8,7 @@ import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { Cancelled, isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 const runTaskResult = vi.fn();
@@ -30,6 +30,7 @@ vi.mock('@/modules/assets/api/use-assets-api', () => ({
     performUpdate: vi.fn().mockResolvedValue({ taskId: 1 }),
     mergeAssets: vi.fn().mockResolvedValue(true),
     importCustom: vi.fn().mockResolvedValue({ taskId: 1 }),
+    downloadCustomAssets: vi.fn().mockResolvedValue({ success: true }),
     exportCustom: vi.fn().mockResolvedValue({ taskId: 1 }),
   }),
 }));
@@ -278,6 +279,34 @@ describe('useAssets', () => {
       expect(api.exportCustom).toHaveBeenCalledWith(directory);
       assert(!result.ok);
       expect(result.error.message).toBe('failed');
+    });
+
+    it('should treat a closed directory picker as a cancellation, exporting nothing', async () => {
+      vi.mocked(useInterop().openDirectory).mockResolvedValue(undefined);
+
+      const result = await store.exportCustomAssets();
+
+      assert(!result.ok);
+      expect(isActionable(result.error)).toBe(false);
+      expect(api.exportCustom).not.toHaveBeenCalled();
+    });
+
+    it('should report a web download that failed, rather than pass it as written', async () => {
+      vi.mocked(useInterop).mockReturnValueOnce(createMock<ReturnType<typeof useInterop>>({
+        appSession: false,
+        getPath: vi.fn().mockReturnValue(undefined),
+        openDirectory: vi.fn(),
+      }));
+      const webStore = useAssets();
+      vi.mocked(api.exportCustom).mockResolvedValue({ taskId: 1 });
+      vi.mocked(api.downloadCustomAssets).mockResolvedValue({ message: 'download blocked', success: false });
+      whenTask(ok({ filePath: 'export.zip' }));
+
+      const result = await webStore.exportCustomAssets();
+
+      assert(!result.ok);
+      expect(isActionable(result.error)).toBe(true);
+      expect(result.error.message).toBe('download blocked');
     });
   });
 });
