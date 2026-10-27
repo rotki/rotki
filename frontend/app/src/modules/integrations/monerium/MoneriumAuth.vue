@@ -5,11 +5,11 @@ import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import ServiceKeyCard, { type FeatureGate, type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import { useBackendMessages } from '@/modules/shell/app/use-backend-messages';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import { useMoneriumOAuth } from './use-monerium-auth';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -277,9 +277,8 @@ onUnmounted(() => {
       </RuiButton>
     </template>
 
-    <TableFailureStrip
+    <FailureStrip
       v-if="failure && !showTokenInput"
-      standalone
       :retryable="false"
       class="mb-4"
       :title="t('external_services.monerium.error')"

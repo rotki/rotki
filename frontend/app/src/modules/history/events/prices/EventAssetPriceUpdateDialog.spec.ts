@@ -79,7 +79,7 @@ describe('eventAssetPriceUpdateDialog', () => {
     const strip = wrapper.find('[data-testid=event-price-load-error]');
     expect(strip.text()).toContain('offline');
     expect(saveButton(wrapper).attributes('disabled')).toBeDefined();
-    await strip.find('[data-testid=table-failure-strip-retry]').trigger('click');
+    await strip.find('[data-testid=failure-strip-retry]').trigger('click');
 
     expect(retryLoad).toHaveBeenCalledOnce();
   });
@@ -90,14 +90,14 @@ describe('eventAssetPriceUpdateDialog', () => {
 
     const strip = wrapper.find('[data-testid=event-price-save-error]');
     expect(strip.text()).toContain('rejected');
-    expect(strip.find('[data-testid=table-failure-strip-retry]').exists()).toBe(false);
+    expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
     expect(saveButton(wrapper).attributes('disabled')).toBeUndefined();
   });
 
   it('should show no failure while nothing failed', () => {
     const wrapper = mountDialog();
 
-    expect(wrapper.find('[data-testid=table-failure-strip]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=failure-strip]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=event-price-load-error]').exists()).toBe(false);
   });
 });

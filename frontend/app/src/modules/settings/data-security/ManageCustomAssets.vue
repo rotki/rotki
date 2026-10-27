@@ -5,9 +5,9 @@ import { assetExportActivity } from '@/modules/assets/assets.activity';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { isActionable } from '@/modules/core/tasks/task-result';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const uploader = useTemplateRef<InstanceType<typeof RuiFileUpload>>('uploader');
@@ -114,9 +114,8 @@ async function exportZip(): Promise<void> {
       </template>
       {{ t('manage_user_assets.export.button') }}
     </RuiButton>
-    <TableFailureStrip
+    <FailureStrip
       v-if="exportError"
-      standalone
       :retryable="false"
       class="mt-3"
       :title="t('manage_user_assets.export.failed')"

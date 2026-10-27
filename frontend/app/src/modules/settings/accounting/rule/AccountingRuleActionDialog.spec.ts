@@ -38,7 +38,7 @@ describe('accountingRuleActionDialog', () => {
   it('should ask to read the rules again from the failure', async () => {
     const wrapper = mountDialog({ loadError: new Error('backend down') });
 
-    await wrapper.find('[data-testid=table-failure-strip-retry]').trigger('click');
+    await wrapper.find('[data-testid=failure-strip-retry]').trigger('click');
 
     expect(wrapper.emitted('retry')).toHaveLength(1);
   });

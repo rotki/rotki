@@ -78,7 +78,7 @@ describe('krakenPage', () => {
     expect(alert.text()).toContain('backend down');
     expect(wrapper.find('[data-testid=kraken-staking]').exists()).toBe(true);
 
-    await alert.find('[data-testid=table-failure-strip-retry]').trigger('click');
+    await alert.find('[data-testid=failure-strip-retry]').trigger('click');
     await flushPromises();
     expect(fetchEvents).toHaveBeenCalledOnce();
   });

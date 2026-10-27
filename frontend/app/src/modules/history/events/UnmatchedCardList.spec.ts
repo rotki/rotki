@@ -91,7 +91,7 @@ describe('modules/history/events/UnmatchedCardList', () => {
     it('should name the failure above the cards an earlier load left', () => {
       const wrapper = mountList(createItems(2), undefined, { failure });
 
-      expect(wrapper.find('[data-testid=table-failure-strip]').text()).toContain('backend down');
+      expect(wrapper.find('[data-testid=failure-strip]').text()).toContain('backend down');
       expect(wrapper.find('[data-testid=unmatched-card-error]').exists()).toBe(false);
       expect(wrapper.findAll('[data-testid=unmatched-card]')).toHaveLength(2);
     });

@@ -128,7 +128,7 @@ describe('historyEventsVirtualTable', () => {
     it('should load the events again from the retry', async () => {
       const wrapper = mountUnder(ref<unknown>());
 
-      await wrapper.find('[data-testid=history-events-events-error] [data-testid=table-failure-strip-retry]').trigger('click');
+      await wrapper.find('[data-testid=history-events-events-error] [data-testid=failure-strip-retry]').trigger('click');
 
       expect(retryEvents).toHaveBeenCalledOnce();
     });

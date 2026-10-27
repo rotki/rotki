@@ -140,7 +140,7 @@ describe('potentialMatchesList', () => {
       const strip = wrapper.find('[data-testid=potential-matches-failure]');
       expect(strip.text()).toContain('asset_movement_matching.dialog.search_failed');
       expect(strip.text()).toContain('the backend said no');
-      await strip.find('[data-testid=table-failure-strip-retry]').trigger('click');
+      await strip.find('[data-testid=failure-strip-retry]').trigger('click');
 
       expect(wrapper.emitted('search')).toHaveLength(1);
     });
@@ -150,7 +150,7 @@ describe('potentialMatchesList', () => {
 
       const strip = wrapper.find('[data-testid=potential-matches-failure]');
       expect(strip.text()).toContain('asset_movement_matching.dialog.match_failed');
-      expect(strip.find('[data-testid=table-failure-strip-retry]').exists()).toBe(false);
+      expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
     });
 
     it('should say nothing about a search that did not fail', () => {

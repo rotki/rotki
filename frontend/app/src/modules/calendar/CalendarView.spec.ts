@@ -89,7 +89,7 @@ describe('calendarView', () => {
 
     const alert = wrapper.find('[data-testid=calendar-fetch-error]');
     expect(alert.text()).toContain('backend down');
-    await alert.find('[data-testid=table-failure-strip-retry]').trigger('click');
+    await alert.find('[data-testid=failure-strip-retry]').trigger('click');
 
     expect(fetchData).toHaveBeenCalledOnce();
   });

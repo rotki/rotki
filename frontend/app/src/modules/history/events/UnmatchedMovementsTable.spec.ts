@@ -46,14 +46,14 @@ describe('unmatchedMovementsTable', () => {
     const wrapper = mountTable();
 
     expect(wrapper.findComponent(RuiDataTable).props('empty')).toEqual({ description: 'empty' });
-    expect(wrapper.find('[data-testid=table-failure-strip]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=failure-strip]').exists()).toBe(false);
   });
 
   it('should name a failure in a strip above the rows an earlier load left, with a retry', async () => {
     const wrapper = mountTable({ failure, rows: [createMock<UnmatchedMovementRow>()] });
 
-    expect(wrapper.find('[data-testid=table-failure-strip]').text()).toContain('backend down');
-    await wrapper.find('[data-testid=table-failure-strip-retry]').trigger('click');
+    expect(wrapper.find('[data-testid=failure-strip]').text()).toContain('backend down');
+    await wrapper.find('[data-testid=failure-strip-retry]').trigger('click');
 
     expect(wrapper.emitted('retry')).toHaveLength(1);
   });
@@ -62,6 +62,6 @@ describe('unmatchedMovementsTable', () => {
     const wrapper = mountTable({ failure, withAlert: true });
 
     expect(wrapper.find('[data-testid=alert-slot]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid=table-failure-strip]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=failure-strip]').exists()).toBe(false);
   });
 });

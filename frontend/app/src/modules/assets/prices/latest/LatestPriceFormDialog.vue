@@ -5,8 +5,8 @@ import { useTemplateRef } from 'vue';
 import LatestPriceForm from '@/modules/assets/prices/latest/LatestPriceForm.vue';
 import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -111,9 +111,8 @@ watchImmediate([open, () => editableItem, () => prefill], ([open, editableItemVa
     @confirm="save()"
     @cancel="open = false"
   >
-    <TableFailureStrip
+    <FailureStrip
       v-if="saveError"
-      standalone
       :retryable="false"
       class="mb-4"
       :title="saveErrorTitle"

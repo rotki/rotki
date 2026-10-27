@@ -9,9 +9,9 @@ import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-mana
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { requiredField } from '@/modules/core/form/fields';
 import { useForm } from '@/modules/core/form/use-form';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 interface PriceState {
@@ -126,9 +126,8 @@ async function updatePrice(): Promise<void> {
           </template>
 
           <div class="flex flex-col gap-4">
-            <TableFailureStrip
+            <FailureStrip
               v-if="saveError !== undefined"
-              standalone
               :retryable="false"
               :title="t('price_management.add.error.title')"
               :message="saveError"

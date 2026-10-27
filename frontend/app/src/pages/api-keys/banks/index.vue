@@ -12,12 +12,12 @@ import { useBanks } from '@/modules/banks/use-banks';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
@@ -192,9 +192,8 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
       </RuiButton>
     </template>
 
-    <TableFailureStrip
+    <FailureStrip
       v-if="manifestsError && manifests.length === 0"
-      standalone
       class="mb-4"
       :title="t('bank_settings.supported_failed')"
       :message="failureMessage(manifestsError)"
@@ -232,7 +231,8 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
         >
           <tr>
             <td :colspan="cols.length">
-              <TableFailureStrip
+              <FailureStrip
+                in-table
                 :title="t('bank_settings.connections_failed')"
                 :message="failureMessage(connectionsError)"
                 data-testid="bank-connections-error"

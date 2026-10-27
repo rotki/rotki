@@ -5,9 +5,9 @@ import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { provideHistoryEventsSection } from '@/modules/history/events/use-history-events-section';
 import { usePremium } from '@/modules/premium/use-premium';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import StakingLocationTitle from '@/modules/staking/components/StakingLocationTitle.vue';
@@ -139,9 +139,8 @@ onUnmounted(() => {
       </template>
     </ProgressScreen>
     <template v-else>
-      <TableFailureStrip
+      <FailureStrip
         v-if="fetchError"
-        standalone
         class="mb-4"
         :title="t('kraken_page.fetch_failed')"
         :message="failureMessage(fetchError)"

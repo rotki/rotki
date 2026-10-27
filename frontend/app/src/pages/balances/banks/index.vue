@@ -10,9 +10,9 @@ import { useBanks } from '@/modules/banks/use-banks';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import TableSearchField from '@/modules/core/table/TableSearchField.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -100,9 +100,8 @@ onBeforeMount(() => {
         />
       </TableEmptyNotice>
     </div>
-    <TableFailureStrip
+    <FailureStrip
       v-else-if="connectionsError"
-      standalone
       class="mb-4"
       :title="t('bank_balances.connections_failed')"
       :message="failureMessage(connectionsError)"

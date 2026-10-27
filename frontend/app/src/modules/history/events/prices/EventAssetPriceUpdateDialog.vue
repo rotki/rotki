@@ -3,11 +3,11 @@ import type { EventPriceUpdatePayload } from '@/modules/history/events/prices/us
 import { toSentenceCase } from '@rotki/common';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { useEventPriceUpdateDialog } from '@/modules/history/events/prices/use-event-price-update-dialog';
 import { useSetting } from '@/modules/settings/use-setting';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const modelValue = defineModel<EventPriceUpdatePayload | undefined>({ required: true });
@@ -64,17 +64,15 @@ const {
           {{ t('event_asset_price_update.description') }}
         </div>
 
-        <TableFailureStrip
+        <FailureStrip
           v-if="loadError"
-          standalone
           :title="t('event_asset_price_update.fetch_error')"
           :message="failureMessage(loadError)"
           data-testid="event-price-load-error"
           @retry="retryLoad()"
         />
-        <TableFailureStrip
+        <FailureStrip
           v-else-if="saveError"
-          standalone
           :retryable="false"
           :title="t('event_asset_price_update.save_error')"
           :message="failureMessage(saveError)"

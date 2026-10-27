@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
 import { UNMATCHED_ACTIONS, type UnmatchedActionPayload, type UnmatchedMatchAccess } from '@/modules/history/events/unmatched-actions';
+import UnmatchedActionFailure from '@/modules/history/events/UnmatchedActionFailure.vue';
 import UnmatchedMovementsList from '@/modules/history/events/UnmatchedMovementsList.vue';
 import UnmatchedResolutionStrip from '@/modules/history/events/UnmatchedResolutionStrip.vue';
 import { useAssetMovementActions } from '@/modules/history/events/use-asset-movement-actions';
@@ -23,7 +22,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const failureMessage = useFailureMessage();
 
 const activeTab = ref<number>(0);
 
@@ -129,14 +127,12 @@ onBeforeMount(async () => {
     @dismiss="dismissResolution()"
   />
 
-  <TableFailureStrip
+  <UnmatchedActionFailure
     v-if="actionFailure"
-    standalone
-    :retryable="false"
+    :title="t('asset_movement_matching.action_failed')"
+    :failure="actionFailure"
     class="shrink-0"
     :class="isPinned ? 'mx-3 mt-3' : 'mt-4'"
-    :title="t('asset_movement_matching.action_failed')"
-    :message="failureMessage(actionFailure)"
     data-testid="unmatched-movement-action-error"
   />
 
