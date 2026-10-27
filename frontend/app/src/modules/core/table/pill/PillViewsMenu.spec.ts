@@ -1,8 +1,9 @@
+import type { ActionStatus } from '@/modules/core/common/action';
 import type { SavedViewState } from '@/modules/core/table/pill/composables/use-saved-views';
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import { type SavedFilterLocation, SavedFilterLocations } from '@/modules/core/table/filtering';
@@ -11,7 +12,7 @@ import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 interface FrontendPatch { savedViews?: Partial<Record<SavedFilterLocation, SavedView[]>> }
 
-const updateFrontendSetting = vi.fn(async (_settings: FrontendPatch) => ({ success: true }));
+const updateFrontendSetting = vi.fn(async (_settings: FrontendPatch): Promise<ActionStatus> => ({ success: true }));
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): { updateFrontendSetting: typeof updateFrontendSetting } => ({ updateFrontendSetting }),
@@ -173,6 +174,19 @@ describe('pillViewsMenu', () => {
     expect(updateFrontendSetting).toHaveBeenCalledWith({
       savedViews: { [SavedFilterLocations.HISTORY_EVENTS]: [view('b')] },
     });
+  });
+
+  it('should name a failed removal on the error line, even with no filter active', async () => {
+    updateFrontendSetting.mockResolvedValueOnce({ message: 'settings locked', success: false });
+    const wrapper = createWrapper();
+    storeViews([view('a'), view('b')]);
+    await nextTick();
+
+    await wrapper.get('[data-testid=pill-views-delete][data-index="0"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid=pill-views-error]').text()).toBe('table_filter.saved_views.remove_failed::settings locked');
+    expect(wrapper.find('[data-testid=pill-views-hint]').exists()).toBe(false);
   });
 
   it('should bring the highlighted view into view as the arrows move it', async () => {
