@@ -2,7 +2,6 @@
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { AssetBreakdownOptions } from '@/modules/balances/types/balances';
-import { some } from 'es-toolkit/compat';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { isEvmNativeToken } from '@/modules/assets/types';
@@ -16,6 +15,7 @@ import { hasAwaitingClaim, sortAssetBalances } from '@/modules/core/common/displ
 import { TableColumn } from '@/modules/core/table/table-column';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useTableRowWindow, useWindowedSelectAll } from '@/modules/core/table/use-table-row-window';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
@@ -30,8 +30,8 @@ const selected = defineModel<string[] | undefined>('selected', { required: false
 const {
   balances,
   breakdown,
+  layout,
   loading = false,
-  nested = false,
   selectionMode = false,
   showPerProtocol = false,
   stickyHeader = false,
@@ -45,16 +45,25 @@ const {
   showPerProtocol?: boolean;
   selectionMode?: boolean;
   /**
-   * Shown inside another table's expanded row: it follows that table's column style and leaves the
-   * total out, since the row it expands already shows it.
+   * Where the table sits, when not on a page of its own.
+   *
+   * @remarks
+   * `nested`: inside another table's expanded row. It follows that table's column style and leaves the
+   * total out, since the row it expands already shows it. `panel`: the same, filling a panel that
+   * scrolls on its own, so it lists every row without an outline or a footer. Under a panel that
+   * provides its scroller, only the rows in view render.
    */
-  nested?: boolean;
+  layout?: 'nested' | 'panel';
 }>();
 
 defineSlots<{
   /** What the table says when it has no rows and no search is narrowing it. */
   empty?: () => any;
 }>();
+
+const nested = computed<boolean>(() => layout !== undefined);
+
+const fillsPanel = computed<boolean>(() => layout === 'panel');
 
 const { t } = useI18n({ useScope: 'global' });
 const expanded = ref<AssetBalanceWithPrice[]>([]);
@@ -71,8 +80,9 @@ const { matches, prioritizeExactMatches } = useAssetBalanceSearch(() => balances
 const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
 const { isTotalPending, isValuePending } = useValuePending();
+const { isMdAndDown } = useBreakpoint();
 
-const isExpanded = (asset: string) => some(get(expanded), { asset });
+const isExpanded = (asset: string): boolean => get(expanded).some(row => row.asset === asset);
 
 function shouldShowRowExpander(row: AssetBalanceWithPrice): boolean {
   const hasBreakdown = Boolean(row.breakdown);
@@ -95,6 +105,39 @@ function percentageOfTotalNetValue(val: BigNumber): string {
 
 function percentageOfCurrentGroup(val: BigNumber): string {
   return calculatePercentage(val, get(total));
+}
+
+/**
+ * Fixed widths, so panel tables stacked one under another keep their columns in line.
+ *
+ * @remarks
+ * They only hold while the asset column is the one auto-width column: a `w-full` there claims the
+ * spare width and the browser shrinks the fixed columns back to their content.
+ */
+const PANEL_COLUMN_WIDTHS: Record<string, string> = {
+  amount: 'w-28',
+  asset: '',
+  perProtocol: 'w-20',
+  price: 'w-28',
+  value: 'w-32',
+};
+
+/** Columns a panel drops when the screen is too narrow for them, so Amount and Value stay in view. */
+const NARROW_PANEL_DROPPED = new Set<string>(['perProtocol', 'price']);
+
+/** The panel variant of the columns: fixed widths, and fewer of them on a narrow screen. */
+function panelColumns(headers: DataTableColumn<AssetBalanceWithPrice>[]): DataTableColumn<AssetBalanceWithPrice>[] {
+  return headers
+    .filter(header => !get(isMdAndDown) || !NARROW_PANEL_DROPPED.has(String(header.key)))
+    .map((header) => {
+      const width = PANEL_COLUMN_WIDTHS[String(header.key)];
+      if (width === undefined)
+        return header;
+
+      const rest = (header.class ?? '').split(' ').filter(name => name !== 'w-full');
+      const shrinks = header.key === 'asset' ? { cellClass: [header.cellClass, 'max-w-0 overflow-hidden'].filter(Boolean).join(' ') } : {};
+      return { ...header, ...shrinks, class: [...rest, width].filter(Boolean).join(' ') };
+    });
 }
 
 const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
@@ -159,7 +202,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     });
   }
 
-  return headers;
+  return get(fillsPanel) ? panelColumns(headers) : headers;
 });
 
 const rowAppendLabelColspan = computed(() => {
@@ -177,24 +220,79 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ASSET_BALANCES, sort, tab
 
 const sorted = computed<AssetBalanceWithPrice[]>(() =>
   prioritizeExactMatches(sortAssetBalances([...get(matches)], get(sort), getAssetInfo)));
+
+const expandedIndex = computed<number>(() => {
+  const [row] = get(expanded);
+  return row ? get(sorted).findIndex(({ asset }) => asset === row.asset) : -1;
+});
+
+const { paddingBottom, paddingTop, visibleRows, windowed } = useTableRowWindow(sorted, {
+  enabled: get(fillsPanel),
+  expandedIndex,
+  table: useTemplateRef('table'),
+});
+
+const { modelSelected, onClickCapture } = useWindowedSelectAll(selected, {
+  all: () => get(sorted).map(({ asset }) => asset),
+  enabled: windowed,
+  rendered: () => get(visibleRows).map(({ asset }) => asset),
+});
+
+/**
+ * A panel lists every row on one page with no bar.
+ *
+ * @remarks
+ * Its page size follows the row count, so it must stay out of the app-wide rows-per-page: a table
+ * syncing its limit there would rewrite every other table's page size, and the saved setting, to
+ * however many assets the panel shows. Off a panel the prop is left unset, so the default applies.
+ *
+ * A windowed panel hands the table only the rows in view. It selects across pages, so a selected
+ * row that scrolls out of view stays selected.
+ */
+const panelTableProps = computed<Record<string, unknown>>(() => get(fillsPanel)
+  ? {
+      globalItemsPerPage: false,
+      hidePagination: true,
+      multiPageSelect: windowed,
+      pagination: { limit: Math.max(get(visibleRows).length, 1), page: 1, total: get(visibleRows).length },
+    }
+  : {});
 </script>
 
 <template>
   <RuiDataTable
-    v-model="selected"
+    ref="table"
+    v-model="modelSelected"
     v-model:sort.external="sort"
     :cols="tableHeaders"
-    :rows="sorted"
+    :rows="visibleRows"
     :loading="loading"
     :expanded="expanded"
     :loading-text="t('asset_balances.loading')"
     :empty="{ description: t('data_table.no_data') }"
     :sticky-header="stickyHeader"
+    v-bind="panelTableProps"
     row-attr="asset"
     single-expand
-    outlined
+    :outlined="!fillsPanel"
     dense
+    @click.capture="onClickCapture($event)"
   >
+    <template
+      v-if="paddingTop > 0"
+      #body.prepend="{ colspan }"
+    >
+      <tr
+        aria-hidden="true"
+        data-testid="asset-balances-spacer-top"
+      >
+        <td
+          :colspan="colspan"
+          class="p-0 border-0"
+          :style="{ height: `${paddingTop}px` }"
+        />
+      </tr>
+    </template>
     <template #item.asset="{ row }">
       <AssetDetails
         :asset="row.asset"
@@ -282,6 +380,21 @@ const sorted = computed<AssetBalanceWithPrice[]>(() =>
           class="font-bold"
         />
       </RowAppend>
+    </template>
+    <template
+      v-else-if="paddingBottom > 0"
+      #body.append="{ colspan }"
+    >
+      <tr
+        aria-hidden="true"
+        data-testid="asset-balances-spacer-bottom"
+      >
+        <td
+          :colspan="colspan"
+          class="p-0 border-0"
+          :style="{ height: `${paddingBottom}px` }"
+        />
+      </tr>
     </template>
     <template #expanded-item="{ row }">
       <AssetRowDetails

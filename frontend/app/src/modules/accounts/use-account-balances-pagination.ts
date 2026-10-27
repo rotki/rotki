@@ -7,9 +7,9 @@ import type {
 import type { Collection } from '@/modules/core/common/collection';
 import type { LocationQuery, RawLocationQuery } from '@/modules/core/table/route';
 import { AccountExternalFilterSchema } from '@/modules/accounts/account-route-schema';
+import { ACCOUNT_DETAILS_QUERY_KEYS } from '@/modules/accounts/details/use-account-details-route';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
-import { fromUriEncoded, toUriEncoded } from '@/modules/core/common/helpers/route-uri';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 
 interface UseAccountBalancesPaginationOptions {
@@ -38,21 +38,6 @@ interface UseAccountBalancesPaginationOptions {
    * Read only, this composable never writes it.
    */
   chainExclusionFilter: Ref<Record<string, string[]>>;
-  /**
-   * Active tab of the expanded row content. Mirrored into the URL only while at least one row is
-   * expanded, and restored from the route on navigation.
-   */
-  tab: Ref<number>;
-  /**
-   * Group ids of the currently expanded rows. Drives whether any expansion state is put in the URL at
-   * all: an empty array keeps the query clean.
-   */
-  expanded: Ref<string[]>;
-  /**
-   * Filter query of the nested table inside the expanded row. Persisted in the URL as a URI-encoded `q`
-   * param for tab 1 only, and reset to `{}` when the route has no `q`.
-   */
-  query: Ref<LocationQuery>;
 }
 
 interface UseAccountBalancesPaginationReturn {
@@ -64,8 +49,6 @@ interface UseAccountBalancesPaginationReturn {
   sort: WritableComputedRef<DataTableSortData<BlockchainAccountGroupWithBalance>>;
 }
 
-type QueryParams = Record<string, string | string[] | number>;
-
 export function useAccountBalancesPagination(
   options: UseAccountBalancesPaginationOptions,
 ): UseAccountBalancesPaginationReturn {
@@ -74,9 +57,6 @@ export function useAccountBalancesPagination(
     category,
     chains,
     chainExclusionFilter,
-    expanded,
-    query,
-    tab,
     visibleTags,
   } = options;
 
@@ -90,25 +70,12 @@ export function useAccountBalancesPagination(
     tags: get(visibleTags),
   }));
 
-  const queryParamsOnly = computed<QueryParams>(() => {
-    const expandedIds = get(expanded);
-    if (expandedIds.length === 0)
-      return {};
-
-    const currentTab = get(tab);
-    return {
-      expanded: expandedIds,
-      tab: currentTab,
-      ...(currentTab === 1 ? { q: toUriEncoded(get(query)) } : {}),
-    };
-  });
-
   const requestParams = computed<Record<string, unknown>>(() => ({
     excluded: get(chainExclusionFilter),
   }));
 
   function onUpdateFilters(filterQuery: LocationQuery): void {
-    const { addresses: queryAddresses, chain, expanded: expandedIds, q, tab: qTab, tags } = AccountExternalFilterSchema.parse(filterQuery);
+    const { addresses: queryAddresses, chain, tags } = AccountExternalFilterSchema.parse(filterQuery);
 
     if (tags)
       set(visibleTags, tags);
@@ -118,14 +85,6 @@ export function useAccountBalancesPagination(
 
     const chainsInThisCategory = chain.filter(id => get(chainIds).includes(id));
     set(chains, chainsInThisCategory);
-
-    if (qTab !== undefined)
-      set(tab, qTab);
-
-    if (expandedIds)
-      set(expanded, expandedIds);
-
-    set(query, q ? fromUriEncoded(q) : {});
   }
 
   const {
@@ -140,9 +99,8 @@ export function useAccountBalancesPagination(
   >({
     fetch: fetchAccountsPage,
     params: [
-      { to: 'both', values: extraParams },
+      { fromQuery: onUpdateFilters, to: 'both', values: extraParams },
       { skipEmpty: true, to: 'request', values: requestParams },
-      { fromQuery: onUpdateFilters, skipEmpty: true, to: 'url', values: queryParamsOnly },
     ],
     sort: {
       default: {
@@ -150,7 +108,7 @@ export function useAccountBalancesPagination(
         direction: 'desc',
       },
     },
-    urlState: { mode: 'route' },
+    urlState: { keep: ACCOUNT_DETAILS_QUERY_KEYS, mode: 'route' },
   });
 
   return {

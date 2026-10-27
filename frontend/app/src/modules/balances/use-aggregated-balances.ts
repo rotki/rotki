@@ -4,6 +4,8 @@ import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
 import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type BigNumber, type ExclusionSource, Zero } from '@rotki/common';
 import { storeToRefs } from 'pinia';
 import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
+import { groupAddresses } from '@/modules/accounts/core/account-groups';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { heldAssets } from '@/modules/balances/aggregation/core/held-assets';
 import { type BalanceInputs, locationSources } from '@/modules/balances/aggregation/core/location-sources';
 import { blockchainValue, totalsByChainLocation, totalsByLocation } from '@/modules/balances/aggregation/core/location-totals';
@@ -38,6 +40,7 @@ const EXCLUDABLE_SOURCES = ['blockchain', 'exchange', 'manual'] as const satisfi
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { exchanges } = useExchangeData();
   const { balances: blockchainBalances, exchangeBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
+  const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { manualBalanceByLocation } = useManualBalanceData();
   const { tradeLocations } = useLocations();
   const { banks: bankLocations } = storeToRefs(useLocationStore());
@@ -101,8 +104,9 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     address?: MaybeRefOrGetter<string>,
     key: keyof EthBalance = 'assets',
   ): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => {
+    const group = address ? toValue(address) : undefined;
     const source = fromBlockchain(get(blockchainBalances), {
-      address: address ? toValue(address) : undefined,
+      addresses: group ? groupAddresses(get(accounts), group) : undefined,
       chains: toValue(chains),
       key,
     });

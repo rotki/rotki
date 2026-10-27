@@ -4,6 +4,7 @@ import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { groupAddresses } from '@/modules/accounts/core/account-groups';
 import { zeroBalance } from '@/modules/core/common/data/bignumbers';
 import { perProtocolBalanceSum } from '@/modules/core/common/data/calculation';
 import { groupAssetBreakdown } from '@/modules/core/common/display/balances';
@@ -26,7 +27,7 @@ export interface BreakdownPorts {
 export interface BreakdownFilters {
   /** Only these chains; empty or absent means every chain with accounts. */
   readonly chains?: readonly string[];
-  /** Only this account address. */
+  /** Only this account group: an address, or an xpub's derived addresses. */
   readonly groupId?: string;
   /** Leave exchanges and manual balances out. */
   readonly blockchainOnly?: boolean;
@@ -64,11 +65,12 @@ function blockchainRows(
 ): AssetBreakdown[] {
   const { chains = [], groupId } = filters;
   const key: keyof EthBalance = isLiability ? 'liabilities' : 'assets';
+  const members = groupId === undefined ? undefined : groupAddresses(inputs.accounts, groupId);
 
   return (chains.length > 0 ? chains : Object.keys(inputs.accounts)).flatMap((chain) => {
     const tags = tagsByAddress(chain, inputs.accounts[chain] ?? []);
     return Object.entries(inputs.balances[chain] ?? {})
-      .filter(([address]) => !groupId || address === groupId)
+      .filter(([address]) => !members || members.has(address))
       .flatMap(([address, accountBalances]) => Object.entries(accountBalances[key])
         .filter(([identifier]) => countsAs(identifier, asset, ports))
         .map(([, protocols]) => ({

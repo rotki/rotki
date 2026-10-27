@@ -21,7 +21,8 @@
     "liabilities": "Liabilities"
   },
   "account_balances": {
-    "aggregated_assets": "Aggregated assets",
+    "accounts": "Accounts",
+    "addresses": "Addresses",
     "asset_count": "{count} asset | {count} assets",
     "chain_filter": {
       "add": "Add \"{chain}\" to filter",
@@ -45,6 +46,7 @@
       "group": "{type} accounts",
       "loading": "Please wait while rotki queries the blockchain..."
     },
+    "details_of": "Details of {account}",
     "detect_tokens": {
       "confirmation": {
         "message": "Scans every EVM address on every chain, which can take a while.",
@@ -82,12 +84,15 @@
       "filtered_title": "No accounts match the filters",
       "title": "No accounts yet"
     },
-    "enter_selection_mode": "Select assets in an expanded account to ignore them or mark them as spam",
+    "enter_selection_mode": "Select assets in an account's details to ignore them or mark them as spam",
     "filter_field_labels": {
       "account": "Account",
       "chain": "Chain"
     },
+    "open_details": "Open details of {account}",
     "per_chain": "Per chain",
+    "per_chain_show_all": "Show all {count} assets",
+    "per_chain_show_top": "Show only the top {count}",
     "refresh_menu": {
       "label": "Refresh options",
       "one_chain": "Refresh one chain"

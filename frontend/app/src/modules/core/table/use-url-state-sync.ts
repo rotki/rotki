@@ -4,7 +4,7 @@ import type { Schema } from 'zod';
 import type { SingleColumnSorting, Sorting } from '@/modules/core/table/pagination-filter-types';
 import type { LocationQuery } from '@/modules/core/table/route';
 import type { ChangeSource } from '@/modules/core/table/use-change-intent';
-import { isEqual } from 'es-toolkit';
+import { isEqual, omit, pick } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import { isNavigationFailure } from 'vue-router';
 import {
@@ -17,14 +17,16 @@ import { applySourceReads, mergeParams, type ParamSource } from '@/modules/core/
 /**
  * Where a table's URL-shaped state lives.
  *
- * - `route`: the browser URL, pushed via vue-router.
+ * - `route`: the browser URL, pushed via vue-router. `keep` names query keys another component on
+ *   the page owns (a details drawer, say): a table write carries them over instead of dropping them,
+ *   since the table rewrites the whole query.
  * - `ref`: a caller-owned ref, for embedded tables that must not touch the URL.
  *   The ref is required by the type: the old `history: 'external'` let you pass the
  *   mode without one, which silently synced to a throwaway internal ref instead.
  * - `none`: no URL state at all. No route watcher, no serialization.
  */
 export type UrlState =
-  | { mode: 'route' }
+  | { mode: 'route'; keep?: readonly string[] }
   | { mode: 'ref'; query: Ref<LocationQuery> }
   | { mode: 'none' };
 
@@ -115,10 +117,16 @@ export function useUrlStateSync<TItem extends NonNullable<unknown>, TFilter>(
 
   const syncsUrl = urlState.mode !== 'none';
 
-  /** Reads the query this table syncs against, whichever channel it lives in. */
+  /**
+   * Reads the query this table syncs against, whichever channel it lives in.
+   *
+   * @remarks
+   * The `keep` keys belong to another component, so the table never sees them: a URL holding only
+   * those counts as empty, and the persisted filters are restored as on a bare URL.
+   */
   function readUrlQuery(): LocationQuery {
     if (urlState.mode === 'route')
-      return get(route).query;
+      return urlState.keep ? omit(get(route).query, urlState.keep) : get(route).query;
     if (urlState.mode === 'ref')
       return get(urlState.query);
     return {};
@@ -168,6 +176,14 @@ export function useUrlStateSync<TItem extends NonNullable<unknown>, TFilter>(
     };
   };
 
+  /** The current values of the `keep` keys, which another component on the page owns. */
+  function keptQuery(): LocationQuery {
+    if (urlState.mode !== 'route' || !urlState.keep)
+      return {};
+
+    return pick(get(route)?.query ?? {}, urlState.keep);
+  }
+
   /**
    * Writes the table's state into the url, when the user is what changed it.
    *
@@ -184,7 +200,7 @@ export function useUrlStateSync<TItem extends NonNullable<unknown>, TFilter>(
     if (!syncsUrl || get(pendingIntent) !== 'user')
       return;
 
-    const routeQuery = getQuery();
+    const routeQuery = { ...keptQuery(), ...getQuery() };
     if (isEqual(get(route)?.query, routeQuery))
       return;
 

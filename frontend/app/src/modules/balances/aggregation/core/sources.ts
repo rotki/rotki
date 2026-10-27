@@ -13,8 +13,8 @@ interface BlockchainSourceFilter {
   readonly key?: keyof EthBalance;
   /** Only these chains; absent or empty means every chain. */
   readonly chains?: readonly string[];
-  /** Only this account. */
-  readonly address?: string;
+  /** Only these account addresses; absent means every account. */
+  readonly addresses?: ReadonlySet<string>;
 }
 
 /** One account's balance under `protocol`, with each withdrawal request tagged with the account that owns it. */
@@ -50,7 +50,7 @@ function addAccountBalances(
  * The `address` protocol keeps a per-chain split in `chains`, which the protocol breakdown shows.
  */
 export function fromBlockchain(balances: Balances, filter: BlockchainSourceFilter = {}): AssetBalanceEntries {
-  const { address, chains = [], key = 'assets' } = filter;
+  const { addresses, chains = [], key = 'assets' } = filter;
   const entries: AssetBalanceEntries = {};
 
   for (const [chain, accounts] of Object.entries(balances)) {
@@ -58,7 +58,7 @@ export function fromBlockchain(balances: Balances, filter: BlockchainSourceFilte
       continue;
 
     for (const [accountAddress, accountBalances] of Object.entries(accounts)) {
-      if (!address || accountAddress === address)
+      if (!addresses || addresses.has(accountAddress))
         addAccountBalances(entries, chain, accountAddress, accountBalances[key]);
     }
   }

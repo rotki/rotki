@@ -18,7 +18,6 @@
     "liabilities": "Обязательства"
   },
   "account_balances": {
-    "aggregated_assets": "Сводные активы",
     "chain_filter": {
       "add": "Добавить \"{chain}\" в фильтр",
       "clear": "Включить все сети",

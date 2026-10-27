@@ -4,7 +4,7 @@ import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/modules/core/common/collection';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { getAccountAddress, getAccountLabel } from '@/modules/accounts/account-utils';
 import AccountChains from '@/modules/accounts/AccountChains.vue';
 import AccountTopTokens from '@/modules/accounts/AccountTopTokens.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
@@ -30,9 +30,9 @@ const pagination = defineModel<TablePaginationData>('pagination', { required: tr
 
 const sort = defineModel<DataTableSortData<T>>('sort', { required: true });
 
-const expandedIds = defineModel<string[]>('expandedIds', { required: true });
+const expandedIds = defineModel<string[]>('expandedIds', { default: () => [], required: false });
 
-const { accounts, category, fetching = false, framed = false, group } = defineProps<{
+const { accounts, category, detailsInDrawer = false, fetching = false, framed = false, group } = defineProps<{
   accounts: Collection<T>;
   category: string;
   group?: 'evm' | 'xpub';
@@ -40,15 +40,19 @@ const { accounts, category, fetching = false, framed = false, group } = definePr
   framed?: boolean;
   /** The page is still being fetched: with no rows yet, the table shows loading rather than its empty state. */
   fetching?: boolean;
+  /** Every row opens its details elsewhere (`open-details`) instead of expanding in place. */
+  detailsInDrawer?: boolean;
 }>();
 
 const emit = defineEmits<{
-  edit: [account: AccountManageState];
-  refresh: [];
+  'edit': [account: AccountManageState];
+  'refresh': [];
+  'open-details': [row: T];
 }>();
 
 const slots = defineSlots<{
-  details: (props: { row: T }) => any;
+  /** Inline expansion content; unused when `detailsInDrawer` is set. */
+  details?: (props: { row: T }) => any;
   /** Replaces the generic empty text, unless the fetch failed: that shows its own message. */
   empty?: () => any;
 }>();
@@ -80,7 +84,12 @@ const { confirmDelete, deleteAccount, edit } = useAccountOperations<T>({
   onRefresh: () => emit('refresh'),
 });
 
-const cols = computed(() => createColumns(group, get(anyExpansion)));
+const expandsInline = computed<boolean>(() => !detailsInDrawer && get(anyExpansion));
+
+/** The first column holds the expander inline, or the open-details button for every row. */
+const hasLeadColumn = computed<boolean>(() => detailsInDrawer || get(anyExpansion));
+
+const cols = computed(() => createColumns(group, get(hasLeadColumn)));
 
 initializeTableSorting(sort, cols);
 
@@ -100,7 +109,7 @@ defineExpose({
     v-model:sort.external="sort"
     v-model:pagination.external="pagination"
     v-model:collapsed="collapsed"
-    :expanded="anyExpansion ? expanded : undefined"
+    :expanded="expandsInline ? expanded : undefined"
     :cols="cols"
     :rows="rows"
     :loading="(group && isInitialLoading) || (fetching && accounts.data.length === 0)"
@@ -163,7 +172,7 @@ defineExpose({
     >
       <RowAppend
         :label="t('common.total')"
-        :left-patch-colspan="anyExpansion ? 1 : 0"
+        :left-patch-colspan="hasLeadColumn ? 1 : 0"
         :label-colspan="group && group === 'evm' ? 4 : 2"
         :is-mobile="false"
         variant="fixed"
@@ -179,7 +188,7 @@ defineExpose({
       </RowAppend>
     </template>
     <template
-      v-if="anyExpansion"
+      v-if="expandsInline"
       #expanded-item="{ row }"
     >
       <slot
@@ -188,8 +197,24 @@ defineExpose({
       />
     </template>
     <template #item.expand="{ row }">
+      <RuiButton
+        v-if="detailsInDrawer"
+        variant="text"
+        icon
+        size="sm"
+        data-id="expand-button"
+        data-testid="account-open-details"
+        data-account-details-opener
+        :aria-label="t('account_balances.open_details', { account: getAccountLabel(row) })"
+        @click="emit('open-details', row)"
+      >
+        <RuiIcon
+          name="lu-chevron-right"
+          size="18"
+        />
+      </RuiButton>
       <RuiTableRowExpander
-        v-if="row.expansion"
+        v-else-if="row.expansion"
         :expanded="isExpanded(row)"
         @click="expand(row)"
       />

@@ -3,7 +3,7 @@ import { createTestBalance } from '@test/utils/create-data';
 import { assert, describe, expect, it } from 'vitest';
 import { getAccountAddress, isXpubAccount } from '@/modules/accounts/account-utils';
 import { createAccount, createValidatorAccount, createXpubAccount } from '@/modules/accounts/create-account';
-import { type AccountGroupPorts, accountGroups } from './account-groups';
+import { type AccountGroupPorts, accountGroups, groupAddresses } from './account-groups';
 
 const ports: AccountGroupPorts = {
   accountType: chain => (chain === 'btc' ? 'bitcoin' : 'evm'),
@@ -145,5 +145,27 @@ describe('accountGroups', () => {
 
     const onlyBitcoin: AccountGroupPorts = { ...ports, accountType: chain => (chain === 'btc' ? 'bitcoin' : undefined) };
     expect(accountGroups(accounts, balances, onlyBitcoin).map(keyOf)).toEqual(['xpub1']);
+  });
+});
+
+describe('groupAddresses', () => {
+  const xpub = { derivationPath: 'm/0', xpub: 'xpub1' };
+  const accounts: Accounts = {
+    btc: [
+      createXpubAccount({ ...xpub, addresses: null, label: null, tags: null }, 'btc'),
+      createAccount({ address: 'bc1a', label: null, tags: null }, 'btc', xpub),
+      createAccount({ address: 'bc1b', label: null, tags: null }, 'btc', xpub),
+      createAccount({ address: 'bc1solo', label: null, tags: null }, 'btc'),
+    ],
+    eth: [createAccount({ address: '0x1', label: null, tags: null }, 'eth')],
+  };
+
+  it('should resolve an xpub group to the addresses derived from it', () => {
+    expect([...groupAddresses(accounts, 'xpub1#m/0#btc')].sort()).toEqual(['bc1a', 'bc1b', 'xpub1#m/0#btc']);
+  });
+
+  it('should resolve an address group to the address itself', () => {
+    expect([...groupAddresses(accounts, '0x1')]).toEqual(['0x1']);
+    expect([...groupAddresses(accounts, '0xuntracked')]).toEqual(['0xuntracked']);
   });
 });

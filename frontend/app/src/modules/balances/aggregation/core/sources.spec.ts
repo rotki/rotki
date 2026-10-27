@@ -58,8 +58,9 @@ describe('fromBlockchain', () => {
     expect(fromBlockchain(balances, { chains: [] }).ETH.address.amount.toFixed()).toBe('7');
   });
 
-  it('should read only the requested account', () => {
-    expect(fromBlockchain(balances, { address: '0x5678' }).ETH.address.amount.toFixed()).toBe('4');
+  it('should read only the requested accounts', () => {
+    expect(fromBlockchain(balances, { addresses: new Set(['0x5678']) }).ETH.address.amount.toFixed()).toBe('4');
+    expect(fromBlockchain(balances, { addresses: new Set(['0x1234', '0x5678']) }).ETH.address.amount.toFixed()).toBe('7');
   });
 
   it('should tag each withdrawal request with the account that owns it', () => {
