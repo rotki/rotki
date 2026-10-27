@@ -157,7 +157,7 @@ class LidoBalances(ProtocolWithBalance):
             try:
                 claims = self._withdrawal_claims(address)
             except RemoteError as e:
-                log.error(f'Failed to query Lido withdrawal queue for {address}: {e}')
+                log.error('Failed to query Lido withdrawal queue for %s: %s', address, e)
                 continue
             if len(claims) != 0:
                 address_claims[address] = claims
