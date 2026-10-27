@@ -1,3 +1,4 @@
+import type { DefineComponent } from 'vue';
 import { createClipboardEvent } from '@test/utils/events';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
@@ -234,6 +235,30 @@ describe('binance-pairs-selector', () => {
       await flushPromises();
 
       expect(queryBinanceUserMarketsMock).toHaveBeenCalledWith('test-exchange', 'binance');
+    });
+
+    it('should name a failed load of the markets on the field, in place of the form\'s own error', async () => {
+      vi.mocked(queryBinanceMarketsMock).mockRejectedValue(new Error('binance unreachable'));
+      wrapper = createWrapper({ props: { edit: false, errorMessages: ['required'], location: 'binance', name: 'test-exchange' } });
+      await flushPromises();
+
+      const field = wrapper.findComponent<DefineComponent<{ errorMessages?: string[] }>>('[data-testid=binance-pairs-select]');
+      expect(field.props('errorMessages')).toEqual(['binance_market_selector.query_all.error::binance unreachable']);
+    });
+
+    it('should name a failed load of the selected markets on the field', async () => {
+      vi.mocked(queryBinanceUserMarketsMock).mockRejectedValue(new Error('no such exchange'));
+      wrapper = createWrapper({ props: { edit: true, location: 'binance', name: 'test-exchange' } });
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid=binance-pairs-select]').text()).toContain('binance_market_selector.query_user.error::no such exchange');
+    });
+
+    it('should hand the form\'s own errors through while the markets loaded', async () => {
+      wrapper = createWrapper({ props: { edit: false, errorMessages: ['required'], location: 'binance', name: 'test-exchange' } });
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid=binance-pairs-select]').text()).toContain('required');
     });
 
     it('should not fetch user markets when not in edit mode', async () => {

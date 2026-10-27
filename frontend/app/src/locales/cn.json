@@ -1804,12 +1804,10 @@
       "valid": "已成功选择 {count} 个交易对 | 已成功选择 {count} 个交易对"
     },
     "query_all": {
-      "error": "无法获取 Binance 的市场列表。",
-      "title": "查询 Binance 市场"
+      "error": "无法获取 Binance 的市场列表。{message}"
     },
     "query_user": {
-      "error": "无法获取 Binance 已选择查询的市场列表。",
-      "title": "查询已选 Binance 市场"
+      "error": "无法获取 Binance 已选择查询的市场列表。{message}"
     },
     "refresh_tooltip": "刷新 Binance 市场交易对"
   },

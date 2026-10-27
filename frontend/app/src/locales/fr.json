@@ -814,11 +814,10 @@
   "binance_market_selector": {
     "default_label": "Filtrer la paire de marché",
     "query_all": {
-      "error": "Impossible d'obtenir la liste des marchés pour Binance."
+      "error": "Impossible d'obtenir la liste des marchés pour Binance. {message}"
     },
     "query_user": {
-      "error": "Impossible d'obtenir la liste des marchés sélectionnés à être interrogés pour Binance.",
-      "title": "Requêter les marchés Binance sélectionnés"
+      "error": "Impossible d'obtenir la liste des marchés sélectionnés à être interrogés pour Binance. {message}"
     }
   },
   "blockchain_account_selector": {
