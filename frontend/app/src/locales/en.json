@@ -697,14 +697,6 @@
       }
     },
     "customized_event_duplicates": {
-      "fetch_error": {
-        "description": "Failed to fetch customized event duplicates: {error}",
-        "title": "Fetching Customized Event Duplicates"
-      },
-      "fetch_events_error": {
-        "description": "Failed to load duplicate event details: {error}",
-        "title": "Loading Duplicate Events"
-      },
       "fix_error": {
         "description": "Failed to fix customized event duplicates: {error}",
         "title": "Fixing Customized Event Duplicates"
@@ -2596,6 +2588,7 @@
       "non_duplicated_description": "These events have been marked as non-duplicated and are excluded from checks.",
       "title": "Duplicate Events"
     },
+    "load_failed": "Could not load the duplicates",
     "no_items": "No duplicate events found.",
     "tabs": {
       "auto_fix": "Can Be Auto-Fixed",
