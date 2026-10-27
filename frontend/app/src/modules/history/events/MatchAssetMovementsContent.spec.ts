@@ -304,7 +304,7 @@ describe('modules/history/events/MatchAssetMovementsContent', () => {
 
       const strip = wrapper.find('[data-testid=unmatched-movement-action-error]');
       expect(strip.text()).toContain('backend down');
-      expect(strip.find('[data-testid=table-failure-strip-retry]').exists()).toBe(false);
+      expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
     });
 
     it('should show nothing while no action failed', async () => {

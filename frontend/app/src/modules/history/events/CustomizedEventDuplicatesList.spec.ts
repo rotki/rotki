@@ -35,7 +35,7 @@ describe('customizedEventDuplicatesList', () => {
     const wrapper = mountList({ error: new Error('backend down'), rows: [createMock<DuplicateRow>()] });
 
     expect(wrapper.find('[data-testid=duplicates-load-error]').text()).toContain('backend down');
-    await wrapper.find('[data-testid=table-failure-strip-retry]').trigger('click');
+    await wrapper.find('[data-testid=failure-strip-retry]').trigger('click');
 
     expect(wrapper.emitted('retry')).toHaveLength(1);
   });

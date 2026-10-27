@@ -3,11 +3,11 @@ import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { NoteLocation } from '@/modules/core/common/notes';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { useUserNotesList } from '@/modules/notes/use-user-notes-list';
 import UserNotesFormDialog from '@/modules/notes/UserNotesFormDialog.vue';
 import PlanLimitMessage from '@/modules/premium/PlanLimitMessage.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -100,9 +100,8 @@ onMounted(async () => {
     ref="wrapper"
     class="px-4 pb-4 max-h-[calc(100%-120px)] overflow-auto flex-1"
   >
-    <TableFailureStrip
+    <FailureStrip
       v-if="error && data.length > 0"
-      standalone
       class="mb-4"
       :title="t('data_table.fetch_failed')"
       :message="failureMessage(error)"

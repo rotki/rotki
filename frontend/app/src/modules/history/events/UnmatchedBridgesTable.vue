@@ -4,7 +4,6 @@ import type { UnmatchedBridgeRow } from '@/modules/history/events/use-unmatched-
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import { UNMATCHED_LAYOUTS, type UnmatchedActionPayload, type UnmatchedFailure, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
@@ -12,6 +11,7 @@ import UnmatchedActions from '@/modules/history/events/UnmatchedActions.vue';
 import UnmatchedUntrackedBadge from '@/modules/history/events/UnmatchedUntrackedBadge.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const selected = defineModel<string[]>('selected', { required: true });
 
@@ -100,8 +100,9 @@ function getRowClass(row: UnmatchedBridgeRow): string {
       >
         <tr>
           <td :colspan="columns.length + 1">
-            <TableFailureStrip
+            <FailureStrip
               v-if="failure && rows.length > 0"
+              in-table
               :title="failure.title"
               :message="failure.message"
               @retry="emit('retry')"

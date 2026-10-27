@@ -3,14 +3,14 @@
  * One line saying a load or a save failed, above the content it concerns.
  *
  * @remarks
- * The content stays usable, so this stays quiet: a tinted line rather than an alert box. Pass
- * `standalone` where it sits outside a table and needs its own border, and `retryable: false` for a
- * failed save, whose own button is the retry.
+ * The content stays usable, so this stays quiet: a tinted, bordered line rather than an alert box.
+ * Pass `in-table` for a row above a table's own rows, where the table supplies the frame, and
+ * `retryable: false` for a failed save, whose own button is the retry.
  */
-const { retryable = true, standalone = false } = defineProps<{
+const { inTable = false, retryable = true } = defineProps<{
   title: string;
   message: string;
-  standalone?: boolean;
+  inTable?: boolean;
   retryable?: boolean;
 }>();
 
@@ -24,9 +24,9 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <div
     class="flex items-start gap-2 px-4 py-2 text-body-2 bg-rui-error/10 text-rui-error"
-    :class="standalone ? 'rounded-md border border-rui-error/30' : 'border-b border-rui-error/30'"
+    :class="inTable ? 'border-b border-rui-error/30' : 'rounded-md border border-rui-error/30'"
     role="alert"
-    data-testid="table-failure-strip"
+    data-testid="failure-strip"
   >
     <RuiIcon
       name="lu-circle-alert"
@@ -41,7 +41,7 @@ const { t } = useI18n({ useScope: 'global' });
       v-if="retryable"
       type="button"
       class="shrink-0 underline underline-offset-2 hover:no-underline"
-      data-testid="table-failure-strip-retry"
+      data-testid="failure-strip-retry"
       @click="emit('retry')"
     >
       {{ t('common.actions.retry') }}

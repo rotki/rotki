@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
 import { useGoogleCalendarIntegration } from '@/modules/calendar/use-google-calendar-integration';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { useBackendMessages } from '@/modules/shell/app/use-backend-messages';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -45,9 +45,8 @@ onUnmounted(() => {
       {{ t('external_services.google_calendar.title') }}
     </div>
 
-    <TableFailureStrip
+    <FailureStrip
       v-if="failure && !(showTokenInput && !isPackaged)"
-      standalone
       :retryable="false"
       class="my-2"
       :title="t('external_services.google_calendar.error')"

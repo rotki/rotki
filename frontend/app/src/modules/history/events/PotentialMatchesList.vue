@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { canWidenSearch, type SearchCriteria, widenedSearch } from '@/modules/history/events/matching/search-widening';
 import { type MatchingFailure, MatchingFailureKind, type PotentialMatchRow, type UnmatchedEventGroup } from '@/modules/history/events/matching/types';
@@ -11,6 +10,7 @@ import PotentialMatchesTable from '@/modules/history/events/PotentialMatchesTabl
 import PotentialMatchSubjectCard from '@/modules/history/events/PotentialMatchSubjectCard.vue';
 import PotentialMatchSubjectTable from '@/modules/history/events/PotentialMatchSubjectTable.vue';
 import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const selectedMatchIds = defineModel<number[]>('selectedMatchIds', { required: true });
@@ -165,9 +165,8 @@ watchDebounced(onlyExpectedAssets, () => {
     </div>
 
     <div class="flex-1 min-h-0 flex flex-col">
-      <TableFailureStrip
+      <FailureStrip
         v-if="failure"
-        standalone
         :retryable="failure.kind === MatchingFailureKind.SEARCH"
         class="mb-4 shrink-0"
         :title="failure.kind === MatchingFailureKind.SEARCH ? t('asset_movement_matching.dialog.search_failed') : t('asset_movement_matching.dialog.match_failed')"

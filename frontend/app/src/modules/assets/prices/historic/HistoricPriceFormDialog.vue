@@ -5,8 +5,8 @@ import { useTemplateRef } from 'vue';
 import HistoricPriceForm from '@/modules/assets/prices/historic/HistoricPriceForm.vue';
 import { useHistoricPrices } from '@/modules/assets/prices/use-historic-price-manager';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const modelValue = defineModel<HistoricalPriceFormPayload | undefined>({ required: true });
 
@@ -77,9 +77,8 @@ watch(modelValue, (value, previous) => {
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
-    <TableFailureStrip
+    <FailureStrip
       v-if="saveError"
-      standalone
       :retryable="false"
       class="mb-4"
       :title="editMode ? t('price_management.edit.error.title') : t('price_management.add.error.title')"

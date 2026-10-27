@@ -180,6 +180,6 @@ describe('googleCalendarIntegration', () => {
 
     const strip = wrapper.find('[data-testid=google-calendar-error]');
     expect(strip.text()).toContain('sync broke');
-    expect(strip.find('[data-testid=table-failure-strip-retry]').exists()).toBe(false);
+    expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
   });
 });

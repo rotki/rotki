@@ -5,11 +5,11 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmits, HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { useTableEmptyState, useTableFetchError } from '@/modules/core/table/use-table-empty-state';
 import { provideHistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
 import { useHistoryEventsTable } from '@/modules/history/events/use-history-events-table';
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import HistoryEventsVirtualHeader from './HistoryEventsVirtualHeader.vue';
 import HistoryEventsVirtualRow from './HistoryEventsVirtualRow.vue';
 
@@ -117,9 +117,8 @@ provideHistoryEventsRowContext(rowContext);
       :colspan="5"
     />
 
-    <TableFailureStrip
+    <FailureStrip
       v-if="eventsError && groups.length > 0"
-      standalone
       class="m-2"
       :title="t('data_table.fetch_failed')"
       :message="failureMessage(eventsError)"

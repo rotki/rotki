@@ -130,7 +130,7 @@ describe('modules/notes/UserNotesList.vue', () => {
 
       expect(wrapper.findAll('[data-testid=notes-fetch-error]')).toHaveLength(1);
       expect(wrapper.find('[data-testid=notes-fetch-error]').text()).toContain('backend is down');
-      expect(wrapper.find('[data-testid=table-failure-strip]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=failure-strip]').exists()).toBe(false);
       expect(wrapper.find('[data-testid=notes-empty]').exists()).toBe(false);
     });
 

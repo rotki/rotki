@@ -103,7 +103,7 @@ describe('banks page', () => {
       const alert = wrapper.find('[data-testid=bank-manifests-error]');
       expect(alert.text()).toContain('bank_settings.supported_failed');
       expect(alert.text()).toContain('backend down');
-      await alert.find('[data-testid=table-failure-strip-retry]').trigger('click');
+      await alert.find('[data-testid=failure-strip-retry]').trigger('click');
       expect(refreshSupportedBanks).toHaveBeenCalledOnce();
     });
 
@@ -125,7 +125,7 @@ describe('banks page', () => {
       const alert = wrapper.find('[data-testid=bank-connections-error]');
       expect(alert.text()).toContain('backend down');
       expect(wrapper.findAll('[data-testid=row]')).toHaveLength(1);
-      await alert.find('[data-testid=table-failure-strip-retry]').trigger('click');
+      await alert.find('[data-testid=failure-strip-retry]').trigger('click');
       expect(refreshBankConnections).toHaveBeenCalledOnce();
     });
 

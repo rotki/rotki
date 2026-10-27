@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { AccountingRuleAction } from '@/modules/settings/types/accounting';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import AccountingRuleActionButton from '@/modules/settings/accounting/rule/AccountingRuleActionButton.vue';
 import AccountingRuleEventsDialog from '@/modules/settings/accounting/rule/AccountingRuleEventsDialog.vue';
 import AccountingRuleViewEventsButton from '@/modules/settings/accounting/rule/AccountingRuleViewEventsButton.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 interface Props {
   hasEventSpecificRule: boolean;
@@ -52,9 +52,8 @@ watch(display, (value) => {
       </template>
 
       <div class="space-y-4">
-        <TableFailureStrip
+        <FailureStrip
           v-if="loadError"
-          standalone
           :title="t('accounting_settings.rule.action_dialog.load_failed')"
           :message="failureMessage(loadError)"
           data-testid="accounting-rule-action-load-error"

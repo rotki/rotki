@@ -42,7 +42,7 @@ describe('assetIconForm', () => {
 
     const strip = wrapper.find('[data-testid=asset-icon-refresh-error]');
     expect(strip.text()).toContain('icon source down');
-    await strip.find('[data-testid=table-failure-strip-retry]').trigger('click');
+    await strip.find('[data-testid=failure-strip-retry]').trigger('click');
     await flushPromises();
 
     expect(refreshIcon).toHaveBeenCalledTimes(2);

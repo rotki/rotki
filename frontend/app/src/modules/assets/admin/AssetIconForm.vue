@@ -4,10 +4,10 @@ import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const { identifier, refreshable = false } = defineProps<{
   identifier: string;
@@ -151,9 +151,8 @@ defineExpose({
         data-testid="asset-icon-upload"
       />
     </div>
-    <TableFailureStrip
+    <FailureStrip
       v-if="refreshError"
-      standalone
       :title="t('asset_form.fetch_latest_icon.failed')"
       :message="failureMessage(refreshError)"
       data-testid="asset-icon-refresh-error"

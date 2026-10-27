@@ -4,12 +4,12 @@ import type { DuplicateRow } from '@/modules/history/events/use-customized-event
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { HISTORY_DIALOG_MAX_HEIGHT } from '@/modules/history/events/dialog-layout';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventsIdentifier from '@/modules/history/events/HistoryEventsIdentifier.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const selected = defineModel<string[]>('selected', { default: () => [] });
 
@@ -108,7 +108,8 @@ const columns = computed<DataTableColumn<DuplicateRow>[]>(() => [
         >
           <tr>
             <td :colspan="columns.length + 1">
-              <TableFailureStrip
+              <FailureStrip
+                in-table
                 :title="t('customized_event_duplicates.load_failed')"
                 :message="failureMessage(error)"
                 data-testid="duplicates-load-error"

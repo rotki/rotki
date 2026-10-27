@@ -3,7 +3,7 @@ import type { TablePaginationData } from '@rotki/ui-library';
 import type { UnmatchedFailure } from '@/modules/history/events/unmatched-actions';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const selected = defineModel<string[]>('selected', { required: true });
 
@@ -111,9 +111,8 @@ watch(() => items.length, (length) => {
     data-testid="unmatched-card-list"
   >
     <div class="shrink-0">
-      <TableFailureStrip
+      <FailureStrip
         v-if="failure && items.length > 0"
-        standalone
         class="mb-2"
         :title="failure.title"
         :message="failure.message"

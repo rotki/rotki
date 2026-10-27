@@ -13,8 +13,8 @@ import { useCalendarData } from '@/modules/calendar/use-calendar-data';
 import { useCalendarDateManagement } from '@/modules/calendar/use-calendar-date-management';
 import { useCalendarOperations } from '@/modules/calendar/use-calendar-operations';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
-import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -98,9 +98,8 @@ onMounted(async () => {
             :field="{ dense: true, label: t('calendar.all_addresses') }"
           />
         </template>
-        <TableFailureStrip
+        <FailureStrip
           v-if="error"
-          standalone
           class="m-3"
           :title="t('data_table.fetch_failed')"
           :message="failureMessage(error)"
