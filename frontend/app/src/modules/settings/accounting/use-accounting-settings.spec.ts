@@ -90,20 +90,21 @@ describe('useAccountingSettings', () => {
     it('should return the fetched rule', async () => {
       fetchAccountingRule.mockResolvedValue({ identifier: 1 });
       const result = await useAccountingSettings().getAccountingRule(rulePayload, 'uniswap');
-      expect(result).toEqual({ identifier: 1 });
+      expect(result).toEqual(ok({ identifier: 1 }));
     });
 
-    it('should map a null result to undefined', async () => {
+    it('should map a null result to an ok undefined, meaning no rule exists', async () => {
       fetchAccountingRule.mockResolvedValue(null);
       const result = await useAccountingSettings().getAccountingRule(rulePayload, null);
-      expect(result).toBeUndefined();
+      expect(result).toEqual(ok(undefined));
     });
 
-    it('should notify and return undefined on error', async () => {
-      fetchAccountingRule.mockRejectedValue(new Error('nope'));
+    it('should carry a failure as a value, distinct from no rule, without notifying', async () => {
+      const failure = new Error('nope');
+      fetchAccountingRule.mockRejectedValue(failure);
       const result = await useAccountingSettings().getAccountingRule(rulePayload, null);
-      expect(result).toBeUndefined();
-      expect(notifyFailure).toHaveBeenCalledOnce();
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'nope', path: undefined, status: undefined })));
+      expect(notifyFailure).not.toHaveBeenCalled();
     });
   });
 

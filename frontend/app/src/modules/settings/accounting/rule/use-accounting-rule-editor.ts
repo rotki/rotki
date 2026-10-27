@@ -1,6 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { AccountingRuleAction, AccountingRuleEntry } from '@/modules/settings/types/accounting';
-import { isRequestFailure } from '@/modules/core/api/request-result';
+import { isRequestFailure, type RequestError } from '@/modules/core/api/request-result';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import {
   type AccountingRuleQuery,
@@ -20,6 +21,13 @@ interface ActionDialogContext {
   eventId: number;
   generalRule?: AccountingRuleEntry;
   eventSpecificRule?: AccountingRuleEntry;
+  /** Why the rules could not be read; the dialog then offers no action, since it cannot tell which exist. */
+  loadError?: RequestError;
+  /**
+   * The rule the link named, kept for a retry of a failed read: the route query it came from is
+   * consumed once the dialog is dealt with, so it cannot be read back from there.
+   */
+  ruleQuery?: AccountingRuleQuery;
 }
 
 /** Everything the action dialog renders from, in one object rather than four parallel refs. */
@@ -29,6 +37,7 @@ interface ActionDialogState {
   hasGeneralRule: boolean;
   hasEventSpecificRule: boolean;
   eventIds?: number[];
+  loadError?: RequestError;
 }
 
 interface UseAccountingRuleEditorReturn {
@@ -43,6 +52,8 @@ interface UseAccountingRuleEditorReturn {
   /** Honours an `add-rule`/`edit-rule` deep link, if the route carries one. */
   applyRouteIntent: () => Promise<void>;
   handleRuleAction: (action: AccountingRuleAction) => Promise<void>;
+  /** Reads the event's rules again after the action dialog could not read them. */
+  retryActionDialog: () => Promise<void>;
 }
 
 /**
@@ -60,6 +71,7 @@ export function useAccountingRuleEditor(): UseAccountingRuleEditorReturn {
   const { getAccountingRule, getAccountingRules } = useAccountingSettings();
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
+  const failureMessage = useFailureMessage();
 
   const modelRule = ref<AccountingRuleEntry>();
   const modelEditMode = shallowRef<boolean>(false);
@@ -75,6 +87,7 @@ export function useAccountingRuleEditor(): UseAccountingRuleEditorReturn {
       eventIds: current?.eventSpecificRule?.eventIds ?? undefined,
       hasEventSpecificRule: Boolean(current?.eventSpecificRule),
       hasGeneralRule: Boolean(current?.generalRule),
+      loadError: current?.loadError,
       open: get(open),
     };
   });
@@ -104,6 +117,21 @@ export function useAccountingRuleEditor(): UseAccountingRuleEditorReturn {
     await router.replace({ query: {} });
   }
 
+  /**
+   * Opens the action dialog on a failed read of the event's rules, offering no action, since which
+   * rules exist is unknown. A cancelled read, as on a logout, closes the dialog and drops the link,
+   * so a retry that was cancelled does not leave the earlier failure on screen.
+   */
+  async function showReadFailure(eventId: number, ruleQuery: AccountingRuleQuery, error: RequestError): Promise<void> {
+    if (!isRequestFailure(error)) {
+      set(open, false);
+      await consumeQuery();
+      return;
+    }
+    set(context, { eventId, loadError: error, ruleQuery });
+    set(open, true);
+  }
+
   /** Looks up both rules an event may have, then asks which of them the user meant. */
   async function askWhichRule(eventId: number, ruleQuery: AccountingRuleQuery): Promise<void> {
     const [generalRule, eventSpecificRules] = await Promise.all([
@@ -120,22 +148,19 @@ export function useAccountingRuleEditor(): UseAccountingRuleEditorReturn {
       }),
     ]);
 
-    // Without the event's own rules the chooser would offer to create one that may already exist.
+    if (!generalRule.ok) {
+      await showReadFailure(eventId, ruleQuery, generalRule.error);
+      return;
+    }
     if (!eventSpecificRules.ok) {
-      if (isRequestFailure(eventSpecificRules.error)) {
-        notifyError(
-          t('accounting_settings.rule.fetch_error.title'),
-          t('accounting_settings.rule.fetch_error.message', { message: eventSpecificRules.error.message }),
-        );
-      }
-      await consumeQuery();
+      await showReadFailure(eventId, ruleQuery, eventSpecificRules.error);
       return;
     }
 
     set(context, {
       eventId,
       eventSpecificRule: eventSpecificRules.value.data.at(0),
-      generalRule,
+      generalRule: generalRule.value,
     });
     set(open, true);
   }
@@ -173,10 +198,26 @@ export function useAccountingRuleEditor(): UseAccountingRuleEditorReturn {
       offset: 0,
     }, ruleQuery.counterparty);
 
-    if (rule)
-      edit(rule);
+    if (rule.ok && rule.value)
+      edit(rule.value);
+    else if (!rule.ok && isRequestFailure(rule.error))
+      notifyRuleReadFailure(rule.error);
 
     await consumeQuery();
+  }
+
+  /** A link that only edits has no dialog open to show a failed read, so it is the one place that toasts. */
+  function notifyRuleReadFailure(error: RequestError): void {
+    notifyError(
+      t('accounting_settings.rule.fetch_error.title'),
+      t('accounting_settings.rule.fetch_error.message', { message: failureMessage(error) }),
+    );
+  }
+
+  async function retryActionDialog(): Promise<void> {
+    const current = get(context);
+    if (current?.ruleQuery)
+      await askWhichRule(current.eventId, current.ruleQuery);
   }
 
   async function handleRuleAction(action: AccountingRuleAction): Promise<void> {
@@ -218,5 +259,6 @@ export function useAccountingRuleEditor(): UseAccountingRuleEditorReturn {
     modelEditMode,
     modelEventIds,
     modelRule,
+    retryActionDialog,
   };
 }
