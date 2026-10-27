@@ -5,6 +5,8 @@ import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
+import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import MoneriumAuth from './MoneriumAuth.vue';
 
 const { mockCompleteOAuth, mockNotify, mockOpenUrl, mockRemoveMatching } = vi.hoisted(() => ({
@@ -121,7 +123,7 @@ describe('moneriumAuth', () => {
     expect(predicate({})).toBe(false);
   });
 
-  it('should group the notification for a failed authorization', async () => {
+  it('should name a failed authorization in the dialog instead of a notification', async () => {
     mockCompleteOAuth.mockRejectedValue(new Error('nope'));
 
     await oAuthHandler?.({
@@ -130,11 +132,37 @@ describe('moneriumAuth', () => {
       service: 'monerium',
       success: true,
     });
+    await nextTick();
 
-    expect(mockNotify).toHaveBeenCalledWith(expect.objectContaining({
-      group: NotificationGroup.MONERIUM_AUTH,
-      message: 'nope',
-      severity: Severity.ERROR,
-    }));
+    const strip = wrapper.find('[data-testid=monerium-error]');
+    expect(strip.text()).toContain('nope');
+    expect(mockNotify).not.toHaveBeenCalledWith(expect.objectContaining({ severity: Severity.ERROR }));
+  });
+
+  it('should clear a failed authorization when the next one starts', async () => {
+    mockCompleteOAuth.mockRejectedValueOnce(new Error('nope'));
+    const result: OAuthResult = { accessToken: 'access', refreshToken: 'refresh', service: 'monerium', success: true };
+    await oAuthHandler?.(result);
+
+    await oAuthHandler?.(result);
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=monerium-error]').exists()).toBe(false);
+  });
+
+  it('should name missing pasted tokens on the token field, keeping the form open', async () => {
+    wrapper.unmount();
+    vi.mocked(useInterop).mockReturnValueOnce(createMock<ReturnType<typeof useInterop>>({ isPackaged: false, openUrl: mockOpenUrl }));
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    wrapper = createWrapper();
+
+    await wrapper.find('[data-testid=connect]').trigger('click');
+    await nextTick();
+    await wrapper.find('[data-testid=connect]').trigger('click');
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=monerium-access-token]').text()).toContain('external_services.monerium.token_required');
+    expect(wrapper.find('[data-testid=monerium-error]').exists()).toBe(false);
+    open.mockRestore();
   });
 });
