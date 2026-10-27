@@ -627,14 +627,6 @@
       }
     },
     "customized_event_duplicates": {
-      "fetch_error": {
-        "description": "Yinelenen özelleştirilmiş olaylar alınamadı: {error}",
-        "title": "Yinelenen özelleştirilmiş olayları alma"
-      },
-      "fetch_events_error": {
-        "description": "Yinelenen olay ayrıntıları yüklenemedi: {error}",
-        "title": "Yinelenen olayları yükleme"
-      },
       "fix_error": {
         "description": "Yinelenen özelleştirilmiş olaylar düzeltilemedi: {error}",
         "title": "Yinelenen özelleştirilmiş olayları düzeltme"

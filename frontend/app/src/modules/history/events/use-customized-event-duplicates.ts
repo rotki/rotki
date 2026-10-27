@@ -33,6 +33,14 @@ interface UseCustomizedEventDuplicatesReturn {
   confirmAndMarkNonDuplicated: (groupIdentifiers: string[], onSuccess?: () => void) => void;
   confirmAndRestore: (groupIdentifiers: string[], onSuccess?: () => void) => void;
   fetchCustomizedEventDuplicates: () => Promise<void>;
+  /**
+   * Why the last read of the duplicate group ids failed, kept until a read succeeds.
+   *
+   * @remarks
+   * The action center refreshes these ids in the background, so a failure is kept for the dialog to
+   * show rather than interrupting the user.
+   */
+  fetchError: Readonly<Ref<unknown>>;
   fetchDuplicateEvents: (payload: FetchDuplicateEventsPayload) => Promise<Collection<DuplicateRow>>;
   fixDuplicates: (groupIdentifiers?: string[]) => Promise<ActionStatus>;
   fixLoading: Ref<boolean>;
@@ -76,6 +84,7 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
   const rawManualReviewGroupIds = ref<string[]>([]);
   const rawIgnoredGroupIds = ref<string[]>([]);
   const loading = ref<boolean>(false);
+  const fetchError = shallowRef<unknown>();
   const fixLoading = ref<boolean>(false);
   const ignoreLoading = ref<boolean>(false);
 
@@ -96,12 +105,13 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
       set(rawAutoFixGroupIds, result.autoFixGroupIds);
       set(rawManualReviewGroupIds, result.manualReviewGroupIds);
       set(rawIgnoredGroupIds, result.ignoredGroupIds);
+      set(fetchError, undefined);
     }
     catch (error: unknown) {
       if (isRequestCancellation(error))
         return;
       logger.error('Failed to fetch customized event duplicates:', error);
-      showErrorMessage(t('actions.customized_event_duplicates.fetch_error.title'), t('actions.customized_event_duplicates.fetch_error.description', { error: getErrorMessage(error) }));
+      set(fetchError, error);
     }
     finally {
       set(loading, false);
@@ -282,6 +292,7 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     confirmAndRestore,
     fetchCustomizedEventDuplicates,
     fetchDuplicateEvents,
+    fetchError: shallowReadonly(fetchError),
     fixDuplicates,
     fixLoading,
     ignoreDuplicates,

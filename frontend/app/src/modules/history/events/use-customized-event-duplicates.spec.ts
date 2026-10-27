@@ -159,13 +159,23 @@ describe('use-customized-event-duplicates', () => {
       expect(get(composable.loading)).toBe(false);
     });
 
-    it('should show error message on failure', async () => {
-      spies.getCustomizedEventDuplicates.mockRejectedValue(new Error('Network error'));
+    it('should keep a failed read for the dialog instead of a message, as the action center reads in the background', async () => {
+      const failure = new Error('Network error');
+      spies.getCustomizedEventDuplicates.mockRejectedValue(failure);
 
       await composable.fetchCustomizedEventDuplicates();
 
-      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
-      expect(spies.showErrorMessage).toHaveBeenCalledWith(expect.any(String), expect.any(String));
+      expect(get(composable.fetchError)).toBe(failure);
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
+    });
+
+    it('should clear the kept failure once a read succeeds', async () => {
+      spies.getCustomizedEventDuplicates.mockRejectedValueOnce(new Error('Network error'));
+      await composable.fetchCustomizedEventDuplicates();
+
+      await composable.fetchCustomizedEventDuplicates();
+
+      expect(get(composable.fetchError)).toBeUndefined();
     });
 
     it('should stay quiet when the fetch is cancelled, as on a logout', async () => {

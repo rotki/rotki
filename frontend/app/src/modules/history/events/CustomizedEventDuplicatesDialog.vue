@@ -26,15 +26,18 @@ function closeDialog(): void {
 }
 
 const {
+  autoFixError,
   autoFixLoading,
   autoFixRows,
   fixSelected,
   fixSingle,
   ignoreSelected,
   ignoreSingle,
+  ignoredError,
   ignoredLoading,
   ignoredRows,
   initialize,
+  manualReviewError,
   manualReviewLoading,
   manualReviewRows,
   modelActiveTab,
@@ -125,6 +128,8 @@ onBeforeMount(async () => {
             :description="t('customized_event_duplicates.dialog.auto_fix_description')"
             :rows="autoFixRows"
             :loading="autoFixLoading"
+            :error="autoFixError"
+            @retry="initialize()"
             @show-in-history="showInHistoryEvents(autoFixGroupIds, DuplicateHandlingStatus.AUTO_FIX)"
           >
             <template #actions="{ row }">
@@ -145,6 +150,8 @@ onBeforeMount(async () => {
             :description="t('customized_event_duplicates.dialog.manual_review_description')"
             :rows="manualReviewRows"
             :loading="manualReviewLoading"
+            :error="manualReviewError"
+            @retry="initialize()"
             @show-in-history="showInHistoryEvents(manualReviewGroupIds, DuplicateHandlingStatus.MANUAL_REVIEW)"
           >
             <template #actions="{ row }">
@@ -163,6 +170,8 @@ onBeforeMount(async () => {
             :description="t('customized_event_duplicates.dialog.non_duplicated_description')"
             :rows="ignoredRows"
             :loading="ignoredLoading"
+            :error="ignoredError"
+            @retry="initialize()"
             @show-in-history="showInHistoryEvents(ignoredGroupIds, DuplicateHandlingStatus.IGNORED)"
           >
             <template #actions="{ row }">

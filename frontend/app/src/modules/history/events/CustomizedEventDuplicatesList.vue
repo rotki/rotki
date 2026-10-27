@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { DuplicateRow } from '@/modules/history/events/use-customized-event-duplicates';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
+import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
+import TableFailureStrip from '@/modules/core/table/TableFailureStrip.vue';
 import { HISTORY_DIALOG_MAX_HEIGHT } from '@/modules/history/events/dialog-layout';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventsIdentifier from '@/modules/history/events/HistoryEventsIdentifier.vue';
@@ -12,15 +15,19 @@ const selected = defineModel<string[]>('selected', { default: () => [] });
 
 const {
   description,
+  error,
   rows,
   loading = false,
 } = defineProps<{
   description: string;
   loading?: boolean;
   rows: DuplicateRow[];
+  /** why the tab could not be read, shown in place of the rows or above the rows an earlier read left */
+  error?: unknown;
 }>();
 
 const emit = defineEmits<{
+  'retry': [];
   'show-in-history': [];
 }>();
 
@@ -29,6 +36,7 @@ defineSlots<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const failureMessage = useFailureMessage();
 
 const columns = computed<DataTableColumn<DuplicateRow>[]>(() => [
   {
@@ -83,8 +91,32 @@ const columns = computed<DataTableColumn<DuplicateRow>[]>(() => [
         dense
         multi-page-select
         :loading="loading"
-        :empty="{ description: t('customized_event_duplicates.no_items') }"
+        :empty="error ? { label: t('customized_event_duplicates.load_failed') } : { description: t('customized_event_duplicates.no_items') }"
       >
+        <template
+          v-if="error"
+          #empty-description
+        >
+          <TableFailureDescription
+            :message="failureMessage(error)"
+            @retry="emit('retry')"
+          />
+        </template>
+        <template
+          v-if="error && rows.length > 0"
+          #body.prepend
+        >
+          <tr>
+            <td :colspan="columns.length + 1">
+              <TableFailureStrip
+                :title="t('customized_event_duplicates.load_failed')"
+                :message="failureMessage(error)"
+                data-testid="duplicates-load-error"
+                @retry="emit('retry')"
+              />
+            </td>
+          </tr>
+        </template>
         <template #item.timestamp="{ row }">
           <DateDisplay
             :timestamp="row.timestamp"

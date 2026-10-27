@@ -1,10 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
-import { NotificationKind, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { type DuplicateRow, useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 
 /** The tabs, in the order the dialog renders them. */
@@ -18,6 +15,8 @@ interface DuplicateGroup {
   /** The group ids the domain composable found for this tab. */
   groupIds: ComputedRef<string[]>;
   loading: Ref<boolean>;
+  /** Why the last read of this tab's rows failed; the rows of an earlier read stay. */
+  error: Ref<unknown>;
   rows: Ref<DuplicateRow[]>;
   /** Bound with `v-model:selected` by the list, so it stays writable. */
   selected: Ref<string[]>;
@@ -44,6 +43,16 @@ interface UseCustomizedEventDuplicatesDialogReturn {
   autoFixLoading: Readonly<Ref<boolean>>;
   manualReviewLoading: Readonly<Ref<boolean>>;
   ignoredLoading: Readonly<Ref<boolean>>;
+  /**
+   * Why a tab could not be read: its own rows, or the group ids every tab is read from.
+   *
+   * @remarks
+   * Kept for the tab to show in place of its rows, or above the rows an earlier read left, instead
+   * of a toast per tab. Retry with {@link UseCustomizedEventDuplicatesDialogReturn.initialize}.
+   */
+  autoFixError: ComputedRef<unknown>;
+  manualReviewError: ComputedRef<unknown>;
+  ignoredError: ComputedRef<unknown>;
   /** Reads the duplicate group ids, then the events behind them. */
   initialize: () => Promise<void>;
   fixSingle: (groupId: string) => void;
@@ -69,9 +78,7 @@ export function useCustomizedEventDuplicatesDialog(
 ): UseCustomizedEventDuplicatesDialogReturn {
   const { close } = options;
 
-  const { t } = useI18n({ useScope: 'global' });
   const router = useRouter();
-  const { notify } = useNotificationDispatcher();
 
   const {
     autoFixGroupIds,
@@ -80,6 +87,7 @@ export function useCustomizedEventDuplicatesDialog(
     confirmAndRestore,
     fetchCustomizedEventDuplicates,
     fetchDuplicateEvents,
+    fetchError,
     ignoredGroupIds,
     manualReviewGroupIds,
   } = useCustomizedEventDuplicates();
@@ -88,6 +96,7 @@ export function useCustomizedEventDuplicatesDialog(
 
   const autoFix: DuplicateGroup = {
     groupIds: autoFixGroupIds,
+    error: shallowRef<unknown>(),
     loading: shallowRef<boolean>(false),
     rows: ref<DuplicateRow[]>([]),
     selected: ref<string[]>([]),
@@ -95,6 +104,7 @@ export function useCustomizedEventDuplicatesDialog(
 
   const manualReview: DuplicateGroup = {
     groupIds: manualReviewGroupIds,
+    error: shallowRef<unknown>(),
     loading: shallowRef<boolean>(false),
     rows: ref<DuplicateRow[]>([]),
     selected: ref<string[]>([]),
@@ -102,6 +112,7 @@ export function useCustomizedEventDuplicatesDialog(
 
   const ignored: DuplicateGroup = {
     groupIds: ignoredGroupIds,
+    error: shallowRef<unknown>(),
     loading: shallowRef<boolean>(false),
     rows: ref<DuplicateRow[]>([]),
     selected: ref<string[]>([]),
@@ -109,6 +120,7 @@ export function useCustomizedEventDuplicatesDialog(
 
   async function loadGroup(group: DuplicateGroup): Promise<void> {
     set(group.loading, true);
+    set(group.error, undefined);
     try {
       const ids = get(group.groupIds);
       const result = await fetchDuplicateEvents({
@@ -120,11 +132,15 @@ export function useCustomizedEventDuplicatesDialog(
     }
     catch (error: unknown) {
       logger.error('Failed to load duplicate event rows:', error);
-      notify({ message: t('actions.customized_event_duplicates.fetch_events_error.description', { error: getErrorMessage(error) }), kind: NotificationKind.RESULT, severity: Severity.ERROR, title: t('actions.customized_event_duplicates.fetch_events_error.title') });
+      set(group.error, error);
     }
     finally {
       set(group.loading, false);
     }
+  }
+
+  function failureOf(group: DuplicateGroup): ComputedRef<unknown> {
+    return computed<unknown>(() => get(group.error) ?? get(fetchError));
   }
 
   async function loadAllGroups(): Promise<void> {
@@ -211,15 +227,18 @@ export function useCustomizedEventDuplicatesDialog(
   }
 
   return {
+    autoFixError: failureOf(autoFix),
     autoFixLoading: readonly(autoFix.loading),
     autoFixRows: shallowReadonly(autoFix.rows),
     fixSelected,
     fixSingle,
     ignoreSelected,
     ignoreSingle,
+    ignoredError: failureOf(ignored),
     ignoredLoading: readonly(ignored.loading),
     ignoredRows: shallowReadonly(ignored.rows),
     initialize,
+    manualReviewError: failureOf(manualReview),
     manualReviewLoading: readonly(manualReview.loading),
     manualReviewRows: shallowReadonly(manualReview.rows),
     modelActiveTab,

@@ -624,14 +624,6 @@
       }
     },
     "customized_event_duplicates": {
-      "fetch_error": {
-        "description": "获取重复的自定义事件失败：{error}",
-        "title": "获取重复的自定义事件"
-      },
-      "fetch_events_error": {
-        "description": "加载重复事件详情失败：{error}",
-        "title": "加载重复事件"
-      },
       "fix_error": {
         "description": "修复重复的自定义事件失败：{error}",
         "title": "修复重复的自定义事件"

@@ -9,15 +9,18 @@ import DuplicateRowActions from '@/modules/history/events/DuplicateRowActions.vu
 import { DuplicatesTab } from '@/modules/history/events/use-customized-event-duplicates-dialog';
 
 const dialogApi = {
+  autoFixError: shallowRef<unknown>(),
   autoFixLoading: ref<boolean>(false),
   autoFixRows: ref<DuplicateRow[]>([]),
   fixSelected: vi.fn(),
   fixSingle: vi.fn(),
+  ignoredError: shallowRef<unknown>(),
   ignoredLoading: ref<boolean>(false),
   ignoredRows: ref<DuplicateRow[]>([]),
   ignoreSelected: vi.fn(),
   ignoreSingle: vi.fn(),
   initialize: vi.fn(async () => Promise.resolve()),
+  manualReviewError: shallowRef<unknown>(),
   manualReviewLoading: ref<boolean>(false),
   manualReviewRows: ref<DuplicateRow[]>([]),
   modelActiveTab: ref<number>(DuplicatesTab.AUTO_FIX),
@@ -68,11 +71,12 @@ const listStub = defineComponent({
   name: 'CustomizedEventDuplicatesList',
   props: {
     description: { default: '', type: String },
+    error: { default: undefined, type: null },
     loading: { default: false, type: Boolean },
     rows: { default: () => [], type: Array },
     selected: { default: () => [], type: Array },
   },
-  emits: ['update:selected', 'show-in-history'],
+  emits: ['update:selected', 'retry', 'show-in-history'],
   setup(props, { slots }): () => VNode {
     return () => h('div', slots.actions?.({ row: props.rows[0] }));
   },
@@ -134,6 +138,9 @@ describe('customizedEventDuplicatesDialog', () => {
     set(dialogApi.modelSelectedManualReview, []);
     set(dialogApi.modelSelectedIgnored, []);
     set(dialogApi.autoFixLoading, false);
+    set(dialogApi.autoFixError, undefined);
+    set(dialogApi.manualReviewError, undefined);
+    set(dialogApi.ignoredError, undefined);
     wrapper = await createWrapper();
   });
 
@@ -158,6 +165,20 @@ describe('customizedEventDuplicatesDialog', () => {
 
     await showTab(DuplicatesTab.IGNORED);
     expect(list('non_duplicated').props('rows')).toBe(get(dialogApi.ignoredRows));
+  });
+
+  it('should give each tab its own failure, and read everything again on a retry from any tab', async () => {
+    const failure = new Error('rows unavailable');
+    set(dialogApi.manualReviewError, failure);
+    await nextTick();
+    expect(list('auto_fix').props('error')).toBeUndefined();
+
+    await showTab(DuplicatesTab.MANUAL_REVIEW);
+
+    expect(list('manual_review').props('error')).toBe(failure);
+    list('manual_review').vm.$emit('retry');
+
+    expect(dialogApi.initialize).toHaveBeenCalledTimes(2);
   });
 
   it('should ask to show a tab in history events with that tab groups', async () => {

@@ -1,6 +1,5 @@
 import type { Collection } from '@/modules/core/common/collection';
 import type { DuplicateRow, FetchDuplicateEventsPayload } from '@/modules/history/events/use-customized-event-duplicates';
-import { Severity } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -25,6 +24,7 @@ const confirmAndRestore: ConfirmMock = vi.fn();
 const fetchCustomizedEventDuplicates = vi.fn<() => Promise<void>>();
 const fetchDuplicateEvents = vi.fn<(payload: FetchDuplicateEventsPayload) => Promise<Collection<DuplicateRow>>>();
 
+const fetchError = shallowRef<unknown>();
 const autoFixGroupIds = ref<string[]>([]);
 const manualReviewGroupIds = ref<string[]>([]);
 const ignoredGroupIds = ref<string[]>([]);
@@ -36,6 +36,7 @@ const duplicatesApi = {
   confirmAndRestore,
   fetchCustomizedEventDuplicates,
   fetchDuplicateEvents,
+  fetchError,
   ignoredGroupIds,
   manualReviewGroupIds,
 };
@@ -81,6 +82,7 @@ describe('useCustomizedEventDuplicatesDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    set(fetchError, undefined);
     set(autoFixGroupIds, ['auto-1', 'auto-2']);
     set(manualReviewGroupIds, ['manual-1']);
     set(ignoredGroupIds, ['ignored-1']);
@@ -112,20 +114,40 @@ describe('useCustomizedEventDuplicatesDialog', () => {
       expect(fetchDuplicateEvents).toHaveBeenCalledWith({ groupIds: [], limit: 1, offset: 0 });
     });
 
-    it('should notify and stop loading when the events cannot be read', async () => {
-      fetchDuplicateEvents.mockRejectedValue(new Error('boom'));
+    it('should keep a failed read for each tab instead of a toast per tab, and stop loading', async () => {
+      const failure = new Error('boom');
+      fetchDuplicateEvents.mockRejectedValue(failure);
 
       await dialog.initialize();
 
-      expect(notify).toHaveBeenCalledTimes(3);
-      expect(notify).toHaveBeenCalledWith(expect.objectContaining({
-        severity: Severity.ERROR,
-        title: 'actions.customized_event_duplicates.fetch_events_error.title',
-      }));
+      expect(notify).not.toHaveBeenCalled();
+      expect(get(dialog.autoFixError)).toBe(failure);
+      expect(get(dialog.manualReviewError)).toBe(failure);
+      expect(get(dialog.ignoredError)).toBe(failure);
       expect(get(dialog.autoFixRows)).toEqual([]);
       expect(get(dialog.autoFixLoading)).toBe(false);
       expect(get(dialog.manualReviewLoading)).toBe(false);
       expect(get(dialog.ignoredLoading)).toBe(false);
+    });
+
+    it('should clear a tab\'s failure once a later read succeeds', async () => {
+      fetchDuplicateEvents.mockRejectedValueOnce(new Error('boom'));
+      await dialog.initialize();
+
+      await dialog.initialize();
+
+      expect(get(dialog.autoFixError)).toBeUndefined();
+    });
+
+    it('should show a failed read of the group ids on every tab', async () => {
+      const failure = new Error('ids unavailable');
+      set(fetchError, failure);
+
+      await dialog.initialize();
+
+      expect(get(dialog.autoFixError)).toBe(failure);
+      expect(get(dialog.manualReviewError)).toBe(failure);
+      expect(get(dialog.ignoredError)).toBe(failure);
     });
   });
 
