@@ -1,6 +1,7 @@
 import type { Ref } from 'vue';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err, ok, type Result } from 'plainfp/result';
+import { InternalRpcError } from 'viem';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { RaisedConditionKind, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
@@ -56,7 +57,8 @@ vi.mock('@/modules/wallet/use-wallet-store', () => ({
   useWalletStore: vi.fn().mockImplementation(() => ({ walletMode })),
 }));
 
-vi.mock('@/modules/wallet/constants', () => ({
+vi.mock('@/modules/wallet/constants', async importOriginal => ({
+  ...await importOriginal<typeof import('@/modules/wallet/constants')>(),
   WALLET_MODES: { LOCAL_BRIDGE: 'local-bridge', WALLET_CONNECT: 'walletconnect' },
   isUserRejectedError: (error: unknown): boolean => String(error).includes('User rejected'),
 }));
@@ -270,7 +272,7 @@ describe('useGnosisPaySigning', () => {
     expect(showErrorMessage).not.toHaveBeenCalled();
   });
 
-  it('should show a generic error when signing throws an unknown error', async () => {
+  it('should name an unknown signing error in the auth card instead of a dialog', async () => {
     const harness = makeHarness();
     runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
     signMessage.mockRejectedValueOnce(new Error('boom'));
@@ -278,8 +280,36 @@ describe('useGnosisPaySigning', () => {
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
 
-    expect(harness.setError).not.toHaveBeenCalledWith(GnosisPayError.SIGNATURE_REJECTED);
-    expect(showErrorMessage).toHaveBeenCalled();
+    expect(harness.setError).toHaveBeenCalledWith(GnosisPayError.OTHER, { message: 'boom' });
+    expect(showErrorMessage).not.toHaveBeenCalled();
+  });
+
+  it('should name a wallet RPC error by its details, without viem\'s version footer', async () => {
+    const harness = makeHarness();
+    runTaskResult.mockImplementationOnce(async () => makeSuccess('nonce'));
+    signMessage.mockRejectedValueOnce(new InternalRpcError(new Error('Ledger device is locked')));
+
+    const { signInWithEthereum } = useGnosisPaySigning(harness);
+    await signInWithEthereum();
+
+    expect(harness.setError).toHaveBeenCalledWith(GnosisPayError.OTHER, { message: 'Ledger device is locked' });
+  });
+
+  it('should not raise a sign-in error when the setup after a confirmed sign-in fails', async () => {
+    const harness = makeHarness();
+    const onSignInComplete = vi.fn(async () => Promise.reject(new Error('reload failed')));
+    runTaskResult
+      .mockImplementationOnce(async () => makeSuccess('nonce'))
+      .mockImplementationOnce(async () => makeSuccess(true));
+    signMessage.mockResolvedValueOnce('0xsignature');
+
+    const { signInWithEthereum } = useGnosisPaySigning({ ...harness, onSignInComplete });
+    await signInWithEthereum();
+
+    expect(onSignInComplete).toHaveBeenCalledOnce();
+    expect(get(harness.signInSuccess)).toBe(true);
+    expect(harness.setError).not.toHaveBeenCalled();
+    expect(get(harness.signingInProgress)).toBe(false);
   });
 
   it('should use the wallet-connect provider when in walletconnect mode', async () => {
