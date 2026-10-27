@@ -2,13 +2,12 @@ import type { MaybePromise } from '@rotki/common';
 import type { Ref } from 'vue';
 import { err, flatMap, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 import { activityLabelOf } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useInjectedWallet } from '@/modules/wallet/bridge/use-injected-wallet';
-import { isUserRejectedError, WALLET_MODES } from '@/modules/wallet/constants';
+import { getWalletErrorMessage, isUserRejectedError, WALLET_MODES } from '@/modules/wallet/constants';
 import { useWalletConnect } from '@/modules/wallet/use-wallet-connect';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 import { getAddress, type ViemWalletClient } from '@/modules/wallet/viem-client';
@@ -34,7 +33,7 @@ interface UseGnosisPaySigningOptions {
   errorType: Ref<GnosisPayError | null>;
   /** Awaited once the backend confirms the signature. The auth card uses it to reload the API key and re-check the safe migration. */
   onSignInComplete?: () => MaybePromise<void>;
-  /** Used only for the two locally recoverable cases (no wallet connected, user rejected the signature). Task failures go to notifications instead. */
+  /** Used for the failures the wallet raises (no wallet connected, a rejected or failed signature). The nonce and verify tasks report theirs in their dock rows. */
   setError: (type: GnosisPayError, context?: GnosisPayErrorContext) => void;
   /** Held true across the whole nonce, sign, verify sequence and cleared in `finally`. The component also clears it to cancel. */
   signingInProgress: Ref<boolean>;
@@ -61,7 +60,6 @@ export function useGnosisPaySigning(options: UseGnosisPaySigningOptions): UseGno
   } = options;
 
   const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage } = useNotifications();
   const { submitTask } = useNativeTask();
   const { fetchNonce, verifySiweSignature } = useGnosisPaySiweApi();
   const { clear } = useRaisedConditionsStore();
@@ -175,20 +173,33 @@ Issued At: ${issuedAt}`;
 
       set(signInSuccess, true);
       clearSessionExpiredCondition();
-      if (onSignInComplete)
-        await onSignInComplete();
+      await completeSignIn();
     }
     catch (error: unknown) {
-      if (isUserRejectedError(error)) {
+      if (isUserRejectedError(error))
         setError(GnosisPayError.SIGNATURE_REJECTED);
-      }
-      else {
-        showErrorMessage(t('external_services.gnosispay.siwe.failed'), String(error));
-      }
+      else
+        setError(GnosisPayError.OTHER, { message: getWalletErrorMessage(error) });
       logger.error('Sign-in with Ethereum failed:', error);
     }
     finally {
       set(signingInProgress, false);
+    }
+  }
+
+  /**
+   * Runs what follows a confirmed sign-in, such as reloading the API key.
+   *
+   * @remarks
+   * Kept apart from the signing errors: the sign-in has succeeded by then, so a failure here must not
+   * show a sign-in error beside the completed step.
+   */
+  async function completeSignIn(): Promise<void> {
+    try {
+      await onSignInComplete?.();
+    }
+    catch (error: unknown) {
+      logger.error('Gnosis Pay setup after sign-in failed:', error);
     }
   }
 
