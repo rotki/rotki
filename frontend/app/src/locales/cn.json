@@ -538,10 +538,6 @@
       }
     },
     "asset_movement_matching": {
-      "error": {
-        "description": "匹配资产转移失败：{message}",
-        "title": "资产转移匹配"
-      },
       "success": {
         "description": "资产转移已成功匹配到链上事件。",
         "title": "资产转移已匹配"
@@ -613,10 +609,6 @@
       "create_counterpart_success": {
         "description": "已在另一条链上创建一个合成对应事件，并关联到该跨链桥交易。",
         "title": "已创建跨链桥对应事件"
-      },
-      "error": {
-        "description": "匹配跨链桥交易失败：{error}",
-        "title": "跨链桥交易匹配"
       },
       "success": {
         "description": "跨链桥交易已成功匹配到其对应事件。",
@@ -1228,7 +1220,6 @@
       "restore": "恢复",
       "restore_tooltip": "将此资产转移恢复到未匹配列表。",
       "search_description": "在以下条件范围内搜索事件：",
-      "search_error": "无法搜索匹配：{error}",
       "select": "选择",
       "select_match_title": "选择匹配事件",
       "selected": "已选择",

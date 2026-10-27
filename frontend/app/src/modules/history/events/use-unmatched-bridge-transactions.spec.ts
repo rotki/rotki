@@ -366,15 +366,15 @@ describe('use-unmatched-bridge-transactions', () => {
       expect(spies.signalEventsModified).toHaveBeenCalledOnce();
     });
 
-    it('should report failure and show an error message when the call throws', async () => {
+    it('should hand the thrown error back instead of a dialog when the call throws', async () => {
       spies.matchBridgeTransactions.mockRejectedValueOnce(new Error('boom'));
       const { useUnmatchedBridgeTransactions } = await importFresh();
       const { matchBridgeTransaction } = useUnmatchedBridgeTransactions();
 
       const result = await matchBridgeTransaction(1, [2]);
 
-      expect(result.success).toBe(false);
-      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
+      expect(result).toMatchObject({ message: { message: 'boom' }, success: false });
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
   });
@@ -394,15 +394,26 @@ describe('use-unmatched-bridge-transactions', () => {
       expect(spies.showSuccessMessage).not.toHaveBeenCalled();
     });
 
-    it('should report failure when resolving as external throws', async () => {
+    it('should hand the thrown error back when resolving as external throws', async () => {
       spies.matchBridgeTransactions.mockRejectedValueOnce(new Error('boom'));
       const { useUnmatchedBridgeTransactions } = await importFresh();
       const { resolveExternal } = useUnmatchedBridgeTransactions();
 
       const result = await resolveExternal(9);
 
-      expect(result.success).toBe(false);
-      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
+      expect(result).toMatchObject({ message: { message: 'boom' }, success: false });
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
+    });
+
+    it('should hand a refusal back with a reason, so the panel has something to name', async () => {
+      spies.matchBridgeTransactions.mockResolvedValueOnce(false);
+      const { useUnmatchedBridgeTransactions } = await importFresh();
+      const { resolveExternal } = useUnmatchedBridgeTransactions();
+
+      const result = await resolveExternal(9);
+
+      expect(result).toEqual({ message: new Error('common.change_not_applied'), success: false });
+      expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
   });
 
@@ -420,15 +431,15 @@ describe('use-unmatched-bridge-transactions', () => {
       expect(spies.signalEventsModified).toHaveBeenCalledOnce();
     });
 
-    it('should report failure when creating the counterpart throws', async () => {
+    it('should hand the thrown error back when creating the counterpart throws', async () => {
       spies.matchBridgeTransactions.mockRejectedValueOnce(new Error('boom'));
       const { useUnmatchedBridgeTransactions } = await importFresh();
       const { resolveCreateCounterpart } = useUnmatchedBridgeTransactions();
 
       const result = await resolveCreateCounterpart(9);
 
-      expect(result.success).toBe(false);
-      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
+      expect(result).toMatchObject({ message: { message: 'boom' }, success: false });
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
     });
   });
 

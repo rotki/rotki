@@ -12,6 +12,20 @@ interface ActionSuccess {
 
 export type ActionStatus<T = string> = ActionFailure<T> | ActionSuccess;
 
+/**
+ * The status of a write the backend answered without throwing.
+ *
+ * @remarks
+ * A refusal still carries an error, so a caller that names failures has something to show: an
+ * empty message would read as no failure at all and leave the action silently undone.
+ *
+ * @param success - what the backend answered
+ * @param notApplied - the user-facing reason used when it answered `false`
+ */
+export function actionStatusOf(success: boolean, notApplied: string): ActionStatus<unknown> {
+  return success ? { success } : { message: new Error(notApplied), success };
+}
+
 export interface Version {
   readonly version: string;
   readonly latestVersion: string;

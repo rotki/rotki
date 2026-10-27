@@ -1,14 +1,14 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { ActionStatus } from '@/modules/core/common/action';
 import type { LinkedMovementMatch } from '@/modules/history/events/event-payloads';
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
+import { type ActionStatus, actionStatusOf } from '@/modules/core/common/action';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
@@ -41,8 +41,8 @@ interface UseUnmatchedAssetMovementsReturn {
   isAutoMatchAllowed: Readonly<Ref<boolean>>;
   autoMatchMovement: (linkedMovement: LinkedMovementMatch) => Promise<boolean>;
   fetchUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<void>;
-  matchAssetMovement: (assetMovementId: number, matchedEventIds: number[]) => Promise<ActionStatus>;
-  resolveExternal: (assetMovementId: number) => Promise<ActionStatus>;
+  matchAssetMovement: (assetMovementId: number, matchedEventIds: number[]) => Promise<ActionStatus<unknown>>;
+  resolveExternal: (assetMovementId: number) => Promise<ActionStatus<unknown>>;
   refreshUnmatchedAssetMovements: (skipIgnored?: boolean) => Promise<void>;
   triggerAssetMovementAutoMatching: () => Promise<void>;
 }
@@ -71,7 +71,7 @@ function groupMovements(groupIdentifiers: string[], rows: HistoryEventCollection
 
 export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatchedAssetMovementsReturn => {
   const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage, showSuccessMessage } = useNotifications();
+  const { showSuccessMessage } = useNotifications();
   const { getAssetInfo } = useAssetInfoRetrieval();
   const { statusOf, submitTask } = useNativeTask();
   const { useIsActive } = useTaskCenter();
@@ -151,7 +151,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   const matchAssetMovement = async (
     assetMovementId: number,
     matchedEventIds: number[],
-  ): Promise<ActionStatus> => {
+  ): Promise<ActionStatus<unknown>> => {
     try {
       const success = await matchAssetMovementsApi(assetMovementId, matchedEventIds);
 
@@ -160,13 +160,11 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
         signalEventsModified();
       }
 
-      return { message: '', success };
+      return actionStatusOf(success, t('common.change_not_applied'));
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
       logger.error('Failed to match asset movement:', error);
-      showErrorMessage(t('actions.asset_movement_matching.error.title'), t('actions.asset_movement_matching.error.description', { error: message }));
-      return { message, success: false };
+      return { message: error, success: false };
     }
   };
 
@@ -174,25 +172,23 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
    * Resolves a movement as moving to or from an untracked address.
    *
    * @remarks
-   * Reports failure through the shared error dialog, but stays silent on success: the caller
-   * surfaces the outcome with an undo affordance instead.
+   * Reports nothing itself: a failure carries the thrown error back for the panel to name, and the
+   * caller surfaces a success with an undo affordance.
    *
    * @param assetMovementId - identifier of the movement's own event
    */
-  const resolveExternal = async (assetMovementId: number): Promise<ActionStatus> => {
+  const resolveExternal = async (assetMovementId: number): Promise<ActionStatus<unknown>> => {
     try {
       const success = await matchAssetMovementsApi(assetMovementId, undefined, true);
 
       if (success)
         signalEventsModified();
 
-      return { message: '', success };
+      return actionStatusOf(success, t('common.change_not_applied'));
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
       logger.error('Failed to resolve asset movement as external:', error);
-      showErrorMessage(t('actions.asset_movement_matching.error.title'), t('actions.asset_movement_matching.error.description', { error: message }));
-      return { message, success: false };
+      return { message: error, success: false };
     }
   };
 

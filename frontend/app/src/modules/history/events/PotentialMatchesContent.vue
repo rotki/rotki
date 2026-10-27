@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MatchingFlow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import { type MatchingFailure, MatchingFailureKind, type MatchingFlow, type UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import { usePotentialMatches } from '@/modules/history/events/matching/use-potential-matches';
 import PotentialMatchesList from '@/modules/history/events/PotentialMatchesList.vue';
 
@@ -29,6 +29,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const {
   confirmMatch,
+  matchError,
   matchingLoading,
   modelOnlyExpectedAssets: onlyExpectedAssets,
   modelSearchTimeRange: searchTimeRange,
@@ -39,6 +40,14 @@ const {
   searchLoading,
   searchPotentialMatches,
 } = usePotentialMatches(() => movement, () => flow);
+
+const failure = computed<MatchingFailure | undefined>(() => {
+  const searchFailure = get(searchError);
+  if (searchFailure)
+    return { error: searchFailure, kind: MatchingFailureKind.SEARCH };
+  const matchFailure = get(matchError);
+  return matchFailure ? { error: matchFailure, kind: MatchingFailureKind.MATCH } : undefined;
+});
 
 const buttonSize = computed<'sm' | undefined>(() => isPinned ? 'sm' : undefined);
 
@@ -69,7 +78,7 @@ async function onConfirm(): Promise<void> {
         :is-pinned="isPinned"
         :highlighted-identifier="highlightedIdentifier"
         :entry-labels="entryLabels"
-        :search-error="searchError"
+        :failure="failure"
         :empty-explanation="emptyExplanation"
         @search="searchPotentialMatches()"
         @show-in-events="emit('show-in-events', $event)"

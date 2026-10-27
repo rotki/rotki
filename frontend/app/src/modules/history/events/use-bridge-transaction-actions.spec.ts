@@ -6,9 +6,9 @@ const { spies } = vi.hoisted(() => ({
   spies: {
     matchBridgeTransactions: vi.fn<(id: number) => Promise<boolean>>().mockResolvedValue(true),
     unlinkBridgeTransaction: vi.fn<(id: number) => Promise<boolean>>().mockResolvedValue(true),
-    resolveExternal: vi.fn<(id: number) => Promise<{ message: string; success: boolean }>>()
+    resolveExternal: vi.fn<(id: number) => Promise<{ message: unknown; success: boolean }>>()
       .mockResolvedValue({ message: '', success: true }),
-    resolveCreateCounterpart: vi.fn<(id: number) => Promise<{ message: string; success: boolean }>>()
+    resolveCreateCounterpart: vi.fn<(id: number) => Promise<{ message: unknown; success: boolean }>>()
       .mockResolvedValue({ message: '', success: true }),
     refreshUnmatchedBridgeTransactions: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     showConfirm: vi.fn(),
@@ -121,14 +121,26 @@ describe('use-bridge-transaction-actions', () => {
       expect(onActionComplete).toHaveBeenCalledOnce();
     });
 
-    it('should surface the error and reset ignoreLoading when the request fails', async () => {
-      spies.matchBridgeTransactions.mockRejectedValueOnce(new Error('API error'));
+    it('should keep the failure for the panel instead of a dialog, and reset ignoreLoading', async () => {
+      const failure = new Error('API error');
+      spies.matchBridgeTransactions.mockRejectedValueOnce(failure);
       const composable = useBridgeTransactionActions();
 
       await expect(composable.ignoreTransaction(createMockTransaction())).resolves.toBeUndefined();
 
-      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
+      expect(get(composable.actionFailure)).toBe(failure);
+      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(get(composable.ignoreLoading)).toBe(false);
+    });
+
+    it('should clear the kept failure when the next action starts', async () => {
+      spies.matchBridgeTransactions.mockRejectedValueOnce(new Error('API error'));
+      const composable = useBridgeTransactionActions();
+      await composable.ignoreTransaction(createMockTransaction());
+
+      await composable.ignoreTransaction(createMockTransaction());
+
+      expect(get(composable.actionFailure)).toBeUndefined();
     });
 
     it('should report the ignore in place, with an undo that restores it', async () => {
@@ -212,14 +224,27 @@ describe('use-bridge-transaction-actions', () => {
       });
     });
 
-    it('should not refresh or report when resolving as external fails', async () => {
-      spies.resolveExternal.mockResolvedValueOnce({ message: 'nope', success: false });
+    it('should keep a refused resolution for the panel, without refreshing or leaving a notice', async () => {
+      const failure = new Error('nope');
+      spies.resolveExternal.mockResolvedValueOnce({ message: failure, success: false });
       const composable = useBridgeTransactionActions();
 
       await composable.markExternal(createMockTransaction());
 
+      expect(get(composable.actionFailure)).toBe(failure);
       expect(spies.refreshUnmatchedBridgeTransactions).not.toHaveBeenCalled();
       expect(get(composable.resolutionNotice)).toBeUndefined();
+    });
+
+    it('should name a refresh that fails after the leg was resolved, instead of rejecting unhandled', async () => {
+      const failure = new Error('refresh failed');
+      spies.refreshUnmatchedBridgeTransactions.mockRejectedValueOnce(failure);
+      const composable = useBridgeTransactionActions();
+
+      await composable.markExternal(createMockTransaction());
+
+      expect(get(composable.actionFailure)).toBe(failure);
+      expect(get(composable.ignoreLoading)).toBe(false);
     });
 
     it('should drop the notice once the leg it describes is restored from its row', async () => {
@@ -305,14 +330,27 @@ describe('use-bridge-transaction-actions', () => {
       expect(spies.refreshUnmatchedBridgeTransactions).toHaveBeenCalledOnce();
     });
 
-    it('should not refresh when creating the counterpart fails', async () => {
-      spies.resolveCreateCounterpart.mockResolvedValueOnce({ message: 'nope', success: false });
-      const { confirmCreateCounterpart } = useBridgeTransactionActions();
+    it('should keep a refused counterpart for the panel, without refreshing', async () => {
+      const failure = new Error('nope');
+      spies.resolveCreateCounterpart.mockResolvedValueOnce({ message: failure, success: false });
+      const { actionFailure, confirmCreateCounterpart } = useBridgeTransactionActions();
 
       confirmCreateCounterpart(createMockTransaction());
       await extractAndCallConfirmCallback();
 
+      expect(get(actionFailure)).toBe(failure);
       expect(spies.refreshUnmatchedBridgeTransactions).not.toHaveBeenCalled();
+    });
+
+    it('should name a refresh that fails after the counterpart was created', async () => {
+      const failure = new Error('refresh failed');
+      spies.refreshUnmatchedBridgeTransactions.mockRejectedValueOnce(failure);
+      const { actionFailure, confirmCreateCounterpart } = useBridgeTransactionActions();
+
+      confirmCreateCounterpart(createMockTransaction());
+      await extractAndCallConfirmCallback();
+
+      expect(get(actionFailure)).toBe(failure);
     });
   });
 

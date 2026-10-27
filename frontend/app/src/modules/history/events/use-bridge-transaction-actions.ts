@@ -2,7 +2,6 @@ import type { ComputedRef, Ref } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { type UnmatchedBridgeTransaction, useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 
@@ -23,6 +22,11 @@ interface BridgeResolutionNotice {
 
 interface UseBridgeTransactionActionsReturn {
   ignoreLoading: Readonly<Ref<boolean>>;
+  /**
+   * Why the last action on a leg failed, for the panel to name beside the list it changed.
+   * Cleared when the next action starts.
+   */
+  actionFailure: Readonly<Ref<unknown>>;
   modelSelectedIgnored: Ref<string[]>;
   modelSelectedUnmatched: Ref<string[]>;
   /**
@@ -57,10 +61,10 @@ export function useBridgeTransactionActions(
 
   const { matchBridgeTransactions, unlinkBridgeTransaction } = useBridgeMatchingApi();
   const { show } = useConfirmStore();
-  const { showErrorMessage } = useNotifications();
   const { getChainName } = useSupportedChains();
 
   const ignoreLoading = shallowRef<boolean>(false);
+  const actionFailure = shallowRef<unknown>();
   const modelSelectedUnmatched = ref<string[]>([]);
   const modelSelectedIgnored = ref<string[]>([]);
   const notice = shallowRef<BridgeResolutionNotice>();
@@ -80,10 +84,7 @@ export function useBridgeTransactionActions(
 
   function notifyActionFailure(logMessage: string, error: unknown): void {
     logger.error(logMessage, error);
-    showErrorMessage(
-      t('actions.bridge_matching.error.title'),
-      t('actions.bridge_matching.error.description', { error: getErrorMessage(error) }),
-    );
+    set(actionFailure, error);
   }
 
   /**
@@ -118,6 +119,7 @@ export function useBridgeTransactionActions(
 
   async function ignoreTransaction(transaction: UnmatchedBridgeTransaction): Promise<void> {
     set(ignoreLoading, true);
+    set(actionFailure, undefined);
     try {
       await matchBridgeTransactions(transaction.identifier);
       deselect(transaction);
@@ -135,6 +137,7 @@ export function useBridgeTransactionActions(
 
   async function restoreTransaction(transaction: UnmatchedBridgeTransaction): Promise<void> {
     set(ignoreLoading, true);
+    set(actionFailure, undefined);
     try {
       await unlinkBridgeTransaction(transaction.identifier);
       deselect(transaction);
@@ -154,6 +157,7 @@ export function useBridgeTransactionActions(
 
   async function markExternal(transaction: UnmatchedBridgeTransaction): Promise<void> {
     set(ignoreLoading, true);
+    set(actionFailure, undefined);
     try {
       const result = await resolveExternal(transaction.identifier);
       if (result.success) {
@@ -167,6 +171,12 @@ export function useBridgeTransactionActions(
           transaction,
         );
       }
+      else {
+        set(actionFailure, result.message);
+      }
+    }
+    catch (error: unknown) {
+      notifyActionFailure('Failed to refresh after resolving a bridge transaction as external:', error);
     }
     finally {
       set(ignoreLoading, false);
@@ -175,6 +185,7 @@ export function useBridgeTransactionActions(
 
   async function createCounterpart(transaction: UnmatchedBridgeTransaction): Promise<void> {
     set(ignoreLoading, true);
+    set(actionFailure, undefined);
     try {
       const result = await resolveCreateCounterpart(transaction.identifier);
       if (result.success) {
@@ -182,6 +193,12 @@ export function useBridgeTransactionActions(
         await refreshUnmatchedBridgeTransactions();
         await onActionComplete?.();
       }
+      else {
+        set(actionFailure, result.message);
+      }
+    }
+    catch (error: unknown) {
+      notifyActionFailure('Failed to refresh after creating a bridge counterpart:', error);
     }
     finally {
       set(ignoreLoading, false);
@@ -212,6 +229,7 @@ export function useBridgeTransactionActions(
 
   async function ignoreSelectedTransactions(rowIds: string[]): Promise<void> {
     set(ignoreLoading, true);
+    set(actionFailure, undefined);
     try {
       const transactions = get(unmatchedTransactions).filter(tx => rowIds.includes(tx.identifier.toString()));
       for (const transaction of transactions)
@@ -230,6 +248,7 @@ export function useBridgeTransactionActions(
 
   async function unignoreSelectedTransactions(rowIds: string[]): Promise<void> {
     set(ignoreLoading, true);
+    set(actionFailure, undefined);
     try {
       const transactions = get(ignoredTransactions).filter(tx => rowIds.includes(tx.identifier.toString()));
       for (const transaction of transactions)
@@ -265,6 +284,7 @@ export function useBridgeTransactionActions(
   }
 
   return {
+    actionFailure: shallowReadonly(actionFailure),
     confirmCreateCounterpart,
     confirmIgnoreSelected,
     confirmRestoreSelected,

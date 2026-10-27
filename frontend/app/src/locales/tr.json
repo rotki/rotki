@@ -538,10 +538,6 @@
       }
     },
     "asset_movement_matching": {
-      "error": {
-        "description": "Varlık hareketi eşleştirilemedi: {message}",
-        "title": "Varlık hareketi eşleştirme"
-      },
       "success": {
         "description": "Varlık hareketi blokzincir olayıyla başarıyla eşleştirildi.",
         "title": "Varlık hareketi eşleştirildi"
@@ -616,10 +612,6 @@
       "create_counterpart_success": {
         "description": "Diğer zincirde sentetik bir karşılık olayı oluşturuldu ve köprü işlemine bağlandı.",
         "title": "Köprü karşılığı oluşturuldu"
-      },
-      "error": {
-        "description": "Köprü işlemi eşleştirilemedi: {error}",
-        "title": "Köprü işlemi eşleştirme"
       },
       "success": {
         "description": "Köprü işlemi karşılık olayıyla başarıyla eşleştirildi.",
@@ -1227,7 +1219,6 @@
       "restore": "Geri yükle",
       "restore_tooltip": "Bu varlık hareketini eşleşmeyenler listesine geri yükle.",
       "search_description": "Belirtilen ölçütlere uyan olayları arayın:",
-      "search_error": "Eşleşmeler aranamadı: {error}",
       "select": "Seç",
       "select_match_title": "Eşleşen olayı seç",
       "selected": "Seçili",

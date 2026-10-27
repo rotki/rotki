@@ -224,12 +224,13 @@ describe('modules/history/events/matching/usePotentialMatches', () => {
       expect(get(potentialMatches).map(row => row.identifier)).toEqual([7, 3, 99, 98]);
     });
 
-    it('should report the failure instead of leaving the pane spinning', async () => {
-      getAssetMovementMatches.mockRejectedValue(new Error('backend down'));
+    it('should keep the failure for the pane instead of leaving it spinning', async () => {
+      const failure = new Error('backend down');
+      getAssetMovementMatches.mockRejectedValue(failure);
 
       const { potentialMatches, searchError, searchLoading } = await matches();
 
-      expect(get(searchError)).toContain('asset_movement_matching.dialog.search_error');
+      expect(get(searchError)).toBe(failure);
       expect(get(potentialMatches)).toEqual([]);
       expect(get(searchLoading)).toBe(false);
     });
@@ -305,6 +306,41 @@ describe('modules/history/events/matching/usePotentialMatches', () => {
       expect(flow.match).toHaveBeenCalledExactlyOnceWith(42, [2]);
       expect(flow.refresh).toHaveBeenCalledExactlyOnceWith(true);
       expect(matchAssetMovement).not.toHaveBeenCalled();
+    });
+
+    it('should keep a failed match for the pane, without refreshing', async () => {
+      const failure = new Error('refused');
+      matchAssetMovement.mockResolvedValueOnce({ message: failure, success: false });
+      const { confirmMatch, matchError, modelSelectedMatchIds } = await matches();
+      set(modelSelectedMatchIds, [2]);
+
+      const matched = await confirmMatch();
+
+      expect(matched).toBe(false);
+      expect(get(matchError)).toBe(failure);
+      expect(refreshUnmatchedAssetMovements).not.toHaveBeenCalled();
+    });
+
+    it('should clear a failed match when the next match starts', async () => {
+      matchAssetMovement.mockResolvedValueOnce({ message: new Error('refused'), success: false });
+      const { confirmMatch, matchError, modelSelectedMatchIds } = await matches();
+      set(modelSelectedMatchIds, [2]);
+      await confirmMatch();
+
+      await confirmMatch();
+
+      expect(get(matchError)).toBeUndefined();
+    });
+
+    it('should clear a failed match when the user searches again, so it never sits above fresh results', async () => {
+      matchAssetMovement.mockResolvedValueOnce({ message: new Error('refused'), success: false });
+      const { confirmMatch, matchError, modelSelectedMatchIds, searchPotentialMatches } = await matches();
+      set(modelSelectedMatchIds, [2]);
+      await confirmMatch();
+
+      await searchPotentialMatches();
+
+      expect(get(matchError)).toBeUndefined();
     });
 
     it('should fall back to the first event when the group names no identifier', async () => {

@@ -1,14 +1,14 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import type { ActionStatus } from '@/modules/core/common/action';
 import type { LinkedMovementMatch } from '@/modules/history/events/event-payloads';
 import type { MatchingFlow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import { isErr, map as mapResult } from 'plainfp/result';
 import { z } from 'zod';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
+import { type ActionStatus, actionStatusOf } from '@/modules/core/common/action';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
@@ -103,9 +103,9 @@ interface UseUnmatchedBridgeTransactionsReturn {
   isAutoMatchAllowed: Readonly<Ref<boolean>>;
   autoMatchBridgeTransaction: (linkedTransaction: LinkedMovementMatch) => Promise<boolean>;
   fetchUnmatchedBridgeTransactions: (onlyIgnored?: boolean) => Promise<void>;
-  matchBridgeTransaction: (bridgeEventId: number, matchedEventIds: number[]) => Promise<ActionStatus>;
-  resolveExternal: (bridgeEventId: number) => Promise<ActionStatus>;
-  resolveCreateCounterpart: (bridgeEventId: number) => Promise<ActionStatus>;
+  matchBridgeTransaction: (bridgeEventId: number, matchedEventIds: number[]) => Promise<ActionStatus<unknown>>;
+  resolveExternal: (bridgeEventId: number) => Promise<ActionStatus<unknown>>;
+  resolveCreateCounterpart: (bridgeEventId: number) => Promise<ActionStatus<unknown>>;
   refreshUnmatchedBridgeTransactions: (skipIgnored?: boolean) => Promise<void>;
   triggerBridgeAutoMatching: () => Promise<void>;
 }
@@ -120,7 +120,7 @@ const triggerAutoMatchLoading = ref<boolean>(false);
 
 export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnmatchedBridgeTransactionsReturn => {
   const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage, showSuccessMessage } = useNotifications();
+  const { showSuccessMessage } = useNotifications();
   const { statusOf, submitTask, useIsActive } = useNativeTask();
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
@@ -214,7 +214,7 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
   const matchBridgeTransaction = async (
     bridgeEventId: number,
     matchedEventIds: number[],
-  ): Promise<ActionStatus> => {
+  ): Promise<ActionStatus<unknown>> => {
     try {
       const success = await matchBridgeTransactionsApi(bridgeEventId, matchedEventIds);
 
@@ -223,17 +223,15 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
         signalEventsModified();
       }
 
-      return { message: '', success };
+      return actionStatusOf(success, t('common.change_not_applied'));
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
       logger.error('Failed to match bridge transaction:', error);
-      showErrorMessage(t('actions.bridge_matching.error.title'), t('actions.bridge_matching.error.description', { error: message }));
-      return { message, success: false };
+      return { message: error, success: false };
     }
   };
 
-  const resolveExternal = async (bridgeEventId: number): Promise<ActionStatus> => {
+  const resolveExternal = async (bridgeEventId: number): Promise<ActionStatus<unknown>> => {
     try {
       const success = await matchBridgeTransactionsApi(bridgeEventId, undefined, 'external');
 
@@ -242,17 +240,15 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
         signalEventsModified();
       }
 
-      return { message: '', success };
+      return actionStatusOf(success, t('common.change_not_applied'));
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
       logger.error('Failed to resolve bridge transaction as external:', error);
-      showErrorMessage(t('actions.bridge_matching.error.title'), t('actions.bridge_matching.error.description', { error: message }));
-      return { message, success: false };
+      return { message: error, success: false };
     }
   };
 
-  const resolveCreateCounterpart = async (bridgeEventId: number): Promise<ActionStatus> => {
+  const resolveCreateCounterpart = async (bridgeEventId: number): Promise<ActionStatus<unknown>> => {
     try {
       const success = await matchBridgeTransactionsApi(bridgeEventId, undefined, 'createCounterpart');
 
@@ -261,13 +257,11 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
         signalEventsModified();
       }
 
-      return { message: '', success };
+      return actionStatusOf(success, t('common.change_not_applied'));
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
       logger.error('Failed to create the counterpart of a bridge transaction:', error);
-      showErrorMessage(t('actions.bridge_matching.error.title'), t('actions.bridge_matching.error.description', { error: message }));
-      return { message, success: false };
+      return { message: error, success: false };
     }
   };
 

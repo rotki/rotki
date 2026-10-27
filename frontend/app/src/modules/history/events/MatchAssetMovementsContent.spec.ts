@@ -21,6 +21,7 @@ const movementsApi = {
 };
 
 const actionsApi = {
+  actionFailure: shallowRef<unknown>(),
   confirmIgnoreAllFiat: vi.fn(),
   confirmIgnoreSelected: vi.fn(),
   confirmRestoreSelected: vi.fn(),
@@ -95,6 +96,7 @@ describe('modules/history/events/MatchAssetMovementsContent', () => {
     set(movementsApi.ignoredError, undefined);
     set(movementsApi.ignoredMovements, []);
     set(actionsApi.resolutionNotice, undefined);
+    set(actionsApi.actionFailure, undefined);
     set(actionsApi.modelSelectedUnmatched, []);
     set(actionsApi.modelSelectedIgnored, []);
   });
@@ -291,6 +293,24 @@ describe('modules/history/events/MatchAssetMovementsContent', () => {
       const wrapper = await mountContent();
 
       expect(wrapper.findComponent({ name: 'UnmatchedResolutionStrip' }).exists()).toBe(true);
+    });
+  });
+
+  describe('a failed action', () => {
+    it('should name the failure in the panel, without a retry of its own', async () => {
+      set(actionsApi.actionFailure, new Error('backend down'));
+
+      const wrapper = await mountContent();
+
+      const strip = wrapper.find('[data-testid=unmatched-movement-action-error]');
+      expect(strip.text()).toContain('backend down');
+      expect(strip.find('[data-testid=table-failure-strip-retry]').exists()).toBe(false);
+    });
+
+    it('should show nothing while no action failed', async () => {
+      const wrapper = await mountContent();
+
+      expect(wrapper.find('[data-testid=unmatched-movement-action-error]').exists()).toBe(false);
     });
   });
 });
