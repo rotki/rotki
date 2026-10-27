@@ -1,3 +1,4 @@
+import { bigNumberify } from '@rotki/common';
 import { createTestBalance } from '@test/utils/create-data';
 import { describe, expect, it } from 'vitest';
 import { addBalanceEntry, type BalanceEntry, combineBalanceEntries } from './balance-entry';
@@ -12,6 +13,18 @@ const onEthAndBase: BalanceEntry = {
   chains: { base: createTestBalance(3, 30), eth: createTestBalance(2, 20) },
 };
 const manual: BalanceEntry = { ...createTestBalance(4, 40), containsManual: true };
+
+function claimOn(id: string, requestedAt: number, address: string, chain = 'eth'): BalanceEntry {
+  return {
+    ...createTestBalance(1, 10),
+    awaitingClaim: bigNumberify(1),
+    claims: [{ account: { address, chain }, amount: bigNumberify(1), finalized: false, id, requestedAt }],
+  };
+}
+
+const claimOnB = claimOn('2', 20, '0xB');
+const claimOnA = claimOn('1', 10, '0xA');
+const claimOnCBase = claimOn('3', 30, '0xC', 'base');
 
 describe('combineBalanceEntries', () => {
   it('should sum amount and value', () => {
@@ -37,15 +50,27 @@ describe('combineBalanceEntries', () => {
     expect(combineBalanceEntries(onEth, onEthAndBase)).not.toHaveProperty('containsManual');
   });
 
+  it('should sum the amount awaiting claim and keep every request, oldest first', () => {
+    const combined = combineBalanceEntries(claimOnB, claimOnA);
+
+    expect(combined.awaitingClaim?.toFixed()).toBe('2');
+    expect(combined.claims?.map(claim => claim.id)).toEqual(['1', '2']);
+  });
+
   it('should not depend on the order of its arguments', () => {
     expect(plain(combineBalanceEntries(onEth, manual))).toEqual(plain(combineBalanceEntries(manual, onEth)));
     expect(plain(combineBalanceEntries(onEth, onEthAndBase))).toEqual(plain(combineBalanceEntries(onEthAndBase, onEth)));
+    expect(plain(combineBalanceEntries(claimOnB, claimOnA))).toEqual(plain(combineBalanceEntries(claimOnA, claimOnB)));
   });
 
   it('should not depend on how a longer merge is grouped', () => {
     const left = combineBalanceEntries(combineBalanceEntries(onEth, manual), onEthAndBase);
     const right = combineBalanceEntries(onEth, combineBalanceEntries(manual, onEthAndBase));
     expect(plain(left)).toEqual(plain(right));
+
+    const claimsLeft = combineBalanceEntries(combineBalanceEntries(claimOnB, claimOnCBase), claimOnA);
+    const claimsRight = combineBalanceEntries(claimOnB, combineBalanceEntries(claimOnCBase, claimOnA));
+    expect(plain(claimsLeft)).toEqual(plain(claimsRight));
   });
 
   it('should leave both inputs untouched', () => {

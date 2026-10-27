@@ -37,6 +37,19 @@ describe('utils/prices', () => {
       expect(result.BTC.protocol1.value).toEqual(bigNumberify(80000));
     });
 
+    it('should keep the amount awaiting claim when repricing', () => {
+      const balances = {
+        ETH: {
+          lido: { ...createTestBalance(0.5, 0), awaitingClaim: bigNumberify(0.5) },
+        },
+      };
+
+      const result = updateBalancesPrices(balances, mockPrices);
+
+      expect(result.ETH.lido.value).toEqual(bigNumberify(0.5 * ETH_PRICE));
+      expect(result.ETH.lido.awaitingClaim).toEqual(bigNumberify(0.5));
+    });
+
     it('should handle empty balances', () => {
       const result = updateBalancesPrices({}, mockPrices);
       expect(result).toEqual({});

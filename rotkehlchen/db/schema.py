@@ -1042,6 +1042,8 @@ CREATE TABLE IF NOT EXISTS blockchain_balances_cache (
     label TEXT NOT NULL DEFAULT '',
     category CHAR(1) NOT NULL DEFAULT('A'),
     amount TEXT NOT NULL,
+    awaiting_claim TEXT NOT NULL DEFAULT '0',
+    claims TEXT NOT NULL DEFAULT '[]',
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (blockchain, address, asset, label, category)
 ) WITHOUT ROWID;

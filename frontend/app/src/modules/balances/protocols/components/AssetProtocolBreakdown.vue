@@ -3,7 +3,9 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import { type ProtocolBalanceWithChains, transformCase } from '@rotki/common';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import ChainBalances from '@/modules/balances/protocols/components/ChainBalances.vue';
+import ClaimAwaitingBadge from '@/modules/balances/protocols/components/ClaimAwaitingBadge.vue';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
+import { hasAwaitingClaim } from '@/modules/core/common/display/balances';
 
 defineProps<{
   data: ProtocolBalanceWithChains[];
@@ -68,6 +70,11 @@ const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
             </div>
           </template>
         </ProtocolIcon>
+        <ClaimAwaitingBadge
+          v-if="hasAwaitingClaim(row)"
+          :protocol-balance="row"
+          :asset="asset"
+        />
         <ChainBalances
           v-if="row.protocol.toLowerCase() === 'address' && row.chains && Object.keys(row.chains).length > 0"
           :chains="row.chains"

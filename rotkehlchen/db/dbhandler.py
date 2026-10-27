@@ -12,7 +12,12 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, Unpack, cast,
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
+from rotkehlchen.accounting.structures.balance import (
+    Balance,
+    BalanceSheet,
+    BalanceType,
+    ClaimEntry,
+)
 from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
@@ -1416,7 +1421,7 @@ class DBHandler:
             blockchain: SupportedBlockchain,
             balances: dict[str, BalanceSheet | Balance],
     ) -> None:
-        rows: list[tuple[str, str, str, str, str, str]] = []
+        rows: list[tuple[str, str, str, str, str, str, str, str]] = []
         for address, entry in balances.items():
             if isinstance(entry, Balance):
                 rows.append((
@@ -1426,6 +1431,8 @@ class DBHandler:
                     '',
                     BalanceType.ASSET.serialize_for_db(),
                     str(entry.amount),
+                    str(entry.awaiting_claim),
+                    json.dumps([claim.serialize() for claim in entry.claims]),
                 ))
                 continue
 
@@ -1442,6 +1449,8 @@ class DBHandler:
                             label,
                             category.serialize_for_db(),
                             str(balance.amount),
+                            str(balance.awaiting_claim),
+                            json.dumps([claim.serialize() for claim in balance.claims]),
                         ))
 
         if len(rows) == 0:
@@ -1453,8 +1462,8 @@ class DBHandler:
         )
         write_cursor.executemany(
             'INSERT OR REPLACE INTO blockchain_balances_cache('
-            'blockchain, address, asset, label, category, amount'
-            ') VALUES (?, ?, ?, ?, ?, ?)',
+            'blockchain, address, asset, label, category, amount, awaiting_claim, claims'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             rows,
         )
 
@@ -1533,7 +1542,7 @@ class DBHandler:
             addresses: ListOfBlockchainAddresses | None = None,
     ) -> BlockchainBalances:
         query = (
-            'SELECT blockchain, address, asset, label, category, amount '
+            'SELECT blockchain, address, asset, label, category, amount, awaiting_claim, claims '
             'FROM blockchain_balances_cache'
         )
         bindings: list[str] = []
@@ -1550,12 +1559,14 @@ class DBHandler:
         query += ' ORDER BY blockchain, address, asset, label'
 
         result = BlockchainBalances(db=self)
-        for chain_str, address, asset_identifier, label, category, amount in cursor.execute(
-                query,
-                bindings,
-        ):
+        for row in cursor.execute(query, bindings):
+            chain_str, address, asset_identifier, label, category, amount, awaiting_claim, claims = row  # noqa: E501
             chain = SupportedBlockchain.deserialize(chain_str)
-            balance = Balance(amount=FVal(amount))
+            balance = Balance(
+                amount=FVal(amount),
+                awaiting_claim=FVal(awaiting_claim),
+                claims=tuple(ClaimEntry.deserialize(claim) for claim in json.loads(claims)),
+            )
             if chain.is_bitcoin():
                 cast('dict[BTCAddress, Balance]', result.get(chain))[address] += balance
                 continue

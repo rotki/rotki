@@ -19,6 +19,17 @@ log = RotkehlchenLogsAdapter(logger)
 def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v53 to v54. This happened in 1.45."""
 
+    @progress_step(description='Store claimable withdrawal balances.')
+    def _add_awaiting_claim_balance(write_cursor: DBCursor) -> None:
+        write_cursor.execute(
+            'ALTER TABLE blockchain_balances_cache '
+            "ADD COLUMN awaiting_claim TEXT NOT NULL DEFAULT '0'",
+        )
+        write_cursor.execute(
+            'ALTER TABLE blockchain_balances_cache '
+            "ADD COLUMN claims TEXT NOT NULL DEFAULT '[]'",
+        )
+
     @progress_step(description='Add capability statuses to RPC nodes.')
     def _add_rpc_node_capabilities(write_cursor: DBCursor) -> None:
         write_cursor.execute(

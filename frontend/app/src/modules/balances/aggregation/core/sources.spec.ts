@@ -1,5 +1,6 @@
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
+import { bigNumberify } from '@rotki/common';
 import { createTestBalance, createTestManualBalance } from '@test/utils/create-data';
 import { describe, expect, it } from 'vitest';
 import { BalanceType } from '@/modules/balances/types/balances';
@@ -59,6 +60,18 @@ describe('fromBlockchain', () => {
 
   it('should read only the requested account', () => {
     expect(fromBlockchain(balances, { address: '0x5678' }).ETH.address.amount.toFixed()).toBe('4');
+  });
+
+  it('should tag each withdrawal request with the account that owns it', () => {
+    const claims = [{ amount: bigNumberify(1), finalized: true, id: '7' }];
+    const result = fromBlockchain({
+      eth: {
+        '0x1234': { assets: { ETH: { lido: { ...createTestBalance(1, 100), awaitingClaim: bigNumberify(1), claims } } }, liabilities: {} },
+        '0x5678': { assets: { ETH: { lido: createTestBalance(2, 200) } }, liabilities: {} },
+      },
+    });
+
+    expect(result.ETH.lido.claims).toEqual([{ ...claims[0], account: { address: '0x1234', chain: 'eth' } }]);
   });
 
   it('should read liabilities when asked', () => {

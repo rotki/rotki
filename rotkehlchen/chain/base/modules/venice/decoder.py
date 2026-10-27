@@ -12,6 +12,7 @@ from rotkehlchen.chain.base.modules.venice.constants import (
     VENICE_CLAIMED,
     VENICE_STAKING_CONTRACT,
     VENICE_STAKING_REWARD_CLAIMED,
+    VENICE_UNSTAKE_INITIATED,
     VVV_TOKEN_ID,
 )
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -63,7 +64,7 @@ class VeniceDecoder(MerkleClaimDecoderInterface):
             return self._decode_diem_burn(context)
 
         if (
-            context.tx_log.topics[0] not in (STAKED, VENICE_STAKING_REWARD_CLAIMED) or
+            context.tx_log.topics[0] not in (STAKED, VENICE_STAKING_REWARD_CLAIMED, VENICE_UNSTAKE_INITIATED) or  # noqa: E501
             not self.base.is_tracked(
                 user_address := bytes_to_address(context.tx_log.topics[1]),
             )
@@ -74,6 +75,22 @@ class VeniceDecoder(MerkleClaimDecoderInterface):
             token_amount=int.from_bytes(context.tx_log.data),
             token_decimals=18,
         )
+        if context.tx_log.topics[0] == VENICE_UNSTAKE_INITIATED:
+            for event in context.decoded_events:
+                if (
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.location_label == user_address and
+                    event.address == ZERO_ADDRESS and
+                    event.asset.identifier == SVVV_TOKEN_ID and
+                    event.amount == amount
+                ):
+                    event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                    event.counterparty = CPT_VENICE
+                    event.notes = f'Request unstaking of {amount} sVVV from Venice'
+                    break
+
+            return DEFAULT_EVM_DECODING_OUTPUT
         if context.tx_log.topics[0] == VENICE_STAKING_REWARD_CLAIMED:
             for event in context.decoded_events:
                 if (
