@@ -237,8 +237,9 @@ def test_historical_balances_at_events(rotkehlchen_api_server: APIServer) -> Non
     with db.user_write() as cursor:
         for location, label, offset, sequence, event_type, subtype, amount, counterparty in (
             (Location.BASE, account, 0, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '2', None),  # noqa: E501
-            (Location.ETHEREUM, account, 0, 1, HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, '3', 'aave'),  # noqa: E501
-            (Location.ETHEREUM, other_account, 0, 2, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '99', None),  # noqa: E501
+            (Location.ETHEREUM, account, 0, 1, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '3', None),  # noqa: E501
+            (Location.ETHEREUM, account, 0, 2, HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, '3', 'aave'),  # noqa: E501
+            (Location.ETHEREUM, other_account, 0, 3, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '99', None),  # noqa: E501
             (Location.ETHEREUM, account, 10, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '5', None),  # noqa: E501
             (Location.ETHEREUM, account, 10, 1, HistoryEventType.SPEND, HistoryEventSubType.NONE, '5', None),  # noqa: E501
             (Location.ETHEREUM, account, 20, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '7', None),  # noqa: E501
@@ -263,7 +264,7 @@ def test_historical_balances_at_events(rotkehlchen_api_server: APIServer) -> Non
             identifiers.append(identifier)
 
     url = api_url_for(rotkehlchen_api_server, 'historicalbalancesateventsresource')
-    requested = [identifiers[3], identifiers[4], identifiers[3]]
+    requested = [identifiers[4], identifiers[5], identifiers[4]]
     result = assert_proper_sync_response_with_result(requests.post(
         url, json={'event_identifiers': requested},
     ))
@@ -286,7 +287,7 @@ def test_historical_balances_at_events(rotkehlchen_api_server: APIServer) -> Non
         url, json={'event_identifiers': requested},
     ))
     assert set(result['entries']) == {str(identifier) for identifier in requested}
-    for identifier, wallet_balance in ((identifiers[3], '5'), (identifiers[4], '0')):
+    for identifier, wallet_balance in ((identifiers[4], '5'), (identifiers[5], '0')):
         entry = result['entries'][str(identifier)]
         assert entry['processing_required'] is False
         assert sorted(entry['buckets'], key=lambda bucket: (bucket['location'], bucket['protocol'] or '')) == [  # noqa: E501
@@ -341,7 +342,7 @@ def test_get_historical_balance_with_filters(
                 amount=FVal('3'),
                 location_label=addr1,
                 address=addr1,
-            ), EvmEvent(  # Day 1: Generate debt in Aave (address 1)
+            ), EvmEvent(  # Day 1: Generate debt in Aave (address 1), received in the wallet
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(START_TS),
@@ -350,6 +351,18 @@ def test_get_historical_balance_with_filters(
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 asset=A_ETH,
                 amount=FVal('10'),
+                location_label=addr1,
+                address=addr1,
+                counterparty='aave',
+            ), EvmEvent(  # Day 1: Deposit ETH into Aave (address 1)
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=1,
+                timestamp=ts_sec_to_ms(START_TS),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                asset=A_ETH,
+                amount=FVal('1'),
                 location_label=addr1,
                 address=addr1,
                 counterparty='aave',
@@ -364,7 +377,7 @@ def test_get_historical_balance_with_filters(
                 amount=FVal('2'),
                 location_label=addr1,
                 address=addr1,
-            ), EvmEvent(  # Day 2: Generate debt in Compound (address 1)
+            ), EvmEvent(  # Day 2: Generate debt in Compound (address 1), received in the wallet
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(day2_ts),
@@ -373,6 +386,18 @@ def test_get_historical_balance_with_filters(
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 asset=A_ETH,
                 amount=FVal('6'),
+                location_label=addr1,
+                address=addr1,
+                counterparty='compound',
+            ), EvmEvent(  # Day 2: Deposit ETH into Compound (address 1)
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=1,
+                timestamp=ts_sec_to_ms(day2_ts),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                asset=A_ETH,
+                amount=FVal('1'),
                 location_label=addr1,
                 address=addr1,
                 counterparty='compound',
@@ -394,23 +419,23 @@ def test_get_historical_balance_with_filters(
 
     for filters, expected_eth in (
         # Location filters
-        ({'timestamp': START_TS, 'location': 'ethereum'}, '19'),  # 5 + 4 + 10 (aave)
+        ({'timestamp': START_TS, 'location': 'ethereum'}, '19'),  # 5 + 4 + 10 (debt)
         ({'timestamp': START_TS, 'location': 'base'}, '3'),
         # Location label filters
-        ({'timestamp': START_TS, 'location_label': addr1}, '18'),  # 5 + 3 + 10 (aave)
+        ({'timestamp': START_TS, 'location_label': addr1}, '18'),  # 5 + 3 + 10 (debt)
         ({'timestamp': START_TS, 'location_label': addr2}, '4'),
         ({'timestamp': START_TS, 'location': 'ethereum', 'location_label': addr1}, '15'),  # 5 + 10
         # Protocol filters
-        ({'timestamp': START_TS, 'protocol': 'aave'}, '10'),
-        ({'timestamp': day2_ts, 'protocol': 'aave'}, '10'),
-        ({'timestamp': day2_ts, 'protocol': 'compound'}, '6'),
-        ({'timestamp': day2_ts, 'protocol': 'aave', 'location_label': addr1}, '10'),
+        ({'timestamp': START_TS, 'protocol': 'aave'}, '1'),
+        ({'timestamp': day2_ts, 'protocol': 'aave'}, '1'),
+        ({'timestamp': day2_ts, 'protocol': 'compound'}, '1'),
+        ({'timestamp': day2_ts, 'protocol': 'aave', 'location_label': addr1}, '1'),
         # Combined filters
-        ({'timestamp': START_TS}, '22'),  # 5 + 4 + 3 + 10 (aave)
-        ({'timestamp': day2_ts, 'location_label': addr1}, '26'),  # 5 + 2 + 3 + 10 + 6
+        ({'timestamp': START_TS}, '22'),  # 5 + 4 + 3 + 10 (debt)
+        ({'timestamp': day2_ts, 'location_label': addr1}, '26'),  # 5 + 2 + 3 + 10 + 6 (debts)
         ({'timestamp': day3_ts, 'location': 'base', 'location_label': addr1}, '2'),  # 3 - 1
-        ({'timestamp': day3_ts}, '29'),  # 7 + 4 + 2 + 10 + 6
-        ({'timestamp': day3_ts, 'asset': 'ETH', 'location': 'ethereum', 'location_label': addr1}, '23'),  # 7 + 10 + 6  # noqa: E501
+        ({'timestamp': day3_ts}, '29'),  # 7 + 4 + 2 + 10 + 6 (debts)
+        ({'timestamp': day3_ts, 'asset': 'ETH', 'location': 'ethereum', 'location_label': addr1}, '23'),  # 7 + 10 + 6 (debts)  # noqa: E501
     ):
         result = assert_proper_sync_response_with_result(requests.post(
             api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),
@@ -440,19 +465,19 @@ def test_get_historical_balance_with_filters(
         'location_label': addr1,
         'protocol': None,
         'asset': 'ETH',
-        'amount': '7',
+        'amount': '21',  # 5 + 10 - 1 (aave) + 2 + 6 - 1 (compound)
     }, {
         'location': 'ethereum',
         'location_label': addr1,
         'protocol': 'aave',
         'asset': 'ETH',
-        'amount': '10',
+        'amount': '1',
     }, {
         'location': 'ethereum',
         'location_label': addr1,
         'protocol': 'compound',
         'asset': 'ETH',
-        'amount': '6',
+        'amount': '1',
     }]
     assert result['processing_required'] is False
     assert len(result['entries']) == len(expected_entries)
@@ -503,22 +528,22 @@ def test_get_historical_balance_with_filters(
             'location_label': addr1,
             'protocol': None,
             'asset': 'ETH',
-            'times': [START_TS, day2_ts],
-            'values': ['5', '7'],
+            'times': [START_TS, START_TS, START_TS, day2_ts, day2_ts, day2_ts],
+            'values': ['5', '15', '14', '16', '22', '21'],
         }, {
             'location': 'ethereum',
             'location_label': addr1,
             'protocol': 'aave',
             'asset': 'ETH',
             'times': [START_TS],
-            'values': ['10'],
+            'values': ['1'],
         }, {
             'location': 'ethereum',
             'location_label': addr1,
             'protocol': 'compound',
             'asset': 'ETH',
             'times': [day2_ts],
-            'values': ['6'],
+            'values': ['1'],
         }],
     }
 
