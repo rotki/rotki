@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { AccountingRuleAction } from '@/modules/settings/types/accounting';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import AccountingRuleActionButton from '@/modules/settings/accounting/rule/AccountingRuleActionButton.vue';
 import AccountingRuleEventsDialog from '@/modules/settings/accounting/rule/AccountingRuleEventsDialog.vue';
 import AccountingRuleViewEventsButton from '@/modules/settings/accounting/rule/AccountingRuleViewEventsButton.vue';
@@ -23,7 +22,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const failureMessage = useFailureMessage();
 
 const display = ref<boolean>(true);
 const showEventsList = ref<boolean>(false);
@@ -55,7 +53,7 @@ watch(display, (value) => {
         <FailureStrip
           v-if="loadError"
           :title="t('accounting_settings.rule.action_dialog.load_failed')"
-          :message="failureMessage(loadError)"
+          :failure="loadError"
           data-testid="accounting-rule-action-load-error"
           @retry="emit('retry')"
         />

@@ -1,15 +1,18 @@
 <script setup lang="ts">
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
+
 /**
  * One line saying a load or a save failed, above the content it concerns.
  *
  * @remarks
  * The content stays usable, so this stays quiet: a tinted, bordered line rather than an alert box.
  * Pass `in-table` for a row above a table's own rows, where the table supplies the frame, and
- * `retryable: false` for a failed save, whose own button is the retry.
+ * `retryable: false` for a failed save, whose own button is the retry. `failure` is worded by
+ * `useFailureMessage`, so a caller passes the error itself, or a string already worded.
  */
 const { inTable = false, retryable = true } = defineProps<{
   title: string;
-  message: string;
+  failure: unknown;
   inTable?: boolean;
   retryable?: boolean;
 }>();
@@ -19,6 +22,8 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const failureMessage = useFailureMessage();
 </script>
 
 <template>
@@ -35,7 +40,7 @@ const { t } = useI18n({ useScope: 'global' });
     />
     <span class="flex-1 min-w-0 whitespace-normal">
       <span class="font-medium">{{ title }}:</span>
-      {{ message }}
+      {{ failureMessage(failure) }}
     </span>
     <button
       v-if="retryable"

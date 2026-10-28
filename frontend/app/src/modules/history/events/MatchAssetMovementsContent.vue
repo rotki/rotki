@@ -2,11 +2,11 @@
 import { startPromise } from '@shared/utils';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
 import { UNMATCHED_ACTIONS, type UnmatchedActionPayload, type UnmatchedMatchAccess } from '@/modules/history/events/unmatched-actions';
-import UnmatchedActionFailure from '@/modules/history/events/UnmatchedActionFailure.vue';
 import UnmatchedMovementsList from '@/modules/history/events/UnmatchedMovementsList.vue';
 import UnmatchedResolutionStrip from '@/modules/history/events/UnmatchedResolutionStrip.vue';
 import { useAssetMovementActions } from '@/modules/history/events/use-asset-movement-actions';
 import { type UnmatchedAssetMovement, useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const { isPinned, onActionComplete } = defineProps<{
   highlightedGroupIdentifier?: string;
@@ -127,8 +127,9 @@ onBeforeMount(async () => {
     @dismiss="dismissResolution()"
   />
 
-  <UnmatchedActionFailure
+  <FailureStrip
     v-if="actionFailure"
+    :retryable="false"
     :title="t('asset_movement_matching.action_failed')"
     :failure="actionFailure"
     class="shrink-0"

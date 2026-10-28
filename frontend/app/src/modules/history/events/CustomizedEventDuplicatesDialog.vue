@@ -46,6 +46,7 @@ const {
   modelSelectedManualReview,
   restoreSelected,
   restoreSingle,
+  retry,
   showInHistoryEvents,
 } = useCustomizedEventDuplicatesDialog({ close: closeDialog });
 
@@ -129,7 +130,7 @@ onBeforeMount(async () => {
             :rows="autoFixRows"
             :loading="autoFixLoading"
             :error="autoFixError"
-            @retry="initialize()"
+            @retry="retry(DuplicatesTab.AUTO_FIX)"
             @show-in-history="showInHistoryEvents(autoFixGroupIds, DuplicateHandlingStatus.AUTO_FIX)"
           >
             <template #actions="{ row }">
@@ -151,7 +152,7 @@ onBeforeMount(async () => {
             :rows="manualReviewRows"
             :loading="manualReviewLoading"
             :error="manualReviewError"
-            @retry="initialize()"
+            @retry="retry(DuplicatesTab.MANUAL_REVIEW)"
             @show-in-history="showInHistoryEvents(manualReviewGroupIds, DuplicateHandlingStatus.MANUAL_REVIEW)"
           >
             <template #actions="{ row }">
@@ -171,7 +172,7 @@ onBeforeMount(async () => {
             :rows="ignoredRows"
             :loading="ignoredLoading"
             :error="ignoredError"
-            @retry="initialize()"
+            @retry="retry(DuplicatesTab.IGNORED)"
             @show-in-history="showInHistoryEvents(ignoredGroupIds, DuplicateHandlingStatus.IGNORED)"
           >
             <template #actions="{ row }">

@@ -82,9 +82,20 @@ export function useBridgeTransactionActions(
     set(modelSelectedIgnored, get(modelSelectedIgnored).filter(id => id !== rowId));
   }
 
-  function notifyActionFailure(logMessage: string, error: unknown): void {
-    logger.error(logMessage, error);
-    set(actionFailure, error);
+  /** Runs an action behind the loading flag, keeping its failure for the panel to name until the next one starts. */
+  async function runAction(action: () => Promise<void>, logMessage: string): Promise<void> {
+    set(ignoreLoading, true);
+    set(actionFailure, undefined);
+    try {
+      await action();
+    }
+    catch (error: unknown) {
+      logger.error(logMessage, error);
+      set(actionFailure, error);
+    }
+    finally {
+      set(ignoreLoading, false);
+    }
   }
 
   /**
@@ -118,27 +129,17 @@ export function useBridgeTransactionActions(
   }
 
   async function ignoreTransaction(transaction: UnmatchedBridgeTransaction): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       await matchBridgeTransactions(transaction.identifier);
       deselect(transaction);
       await refreshUnmatchedBridgeTransactions();
       await onActionComplete?.();
       reportResolution(t('bridge_matching.resolved.ignored'), transaction);
-    }
-    catch (error: unknown) {
-      notifyActionFailure('Failed to ignore bridge transaction:', error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    }, 'Failed to ignore bridge transaction:');
   }
 
   async function restoreTransaction(transaction: UnmatchedBridgeTransaction): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       await unlinkBridgeTransaction(transaction.identifier);
       deselect(transaction);
       if (get(notice)?.transaction.identifier === transaction.identifier)
@@ -146,19 +147,11 @@ export function useBridgeTransactionActions(
 
       await refreshUnmatchedBridgeTransactions();
       await onActionComplete?.();
-    }
-    catch (error: unknown) {
-      notifyActionFailure('Failed to restore bridge transaction:', error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    }, 'Failed to restore bridge transaction:');
   }
 
   async function markExternal(transaction: UnmatchedBridgeTransaction): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       const result = await resolveExternal(transaction.identifier);
       if (result.success) {
         deselect(transaction);
@@ -174,19 +167,11 @@ export function useBridgeTransactionActions(
       else {
         set(actionFailure, result.message);
       }
-    }
-    catch (error: unknown) {
-      notifyActionFailure('Failed to refresh after resolving a bridge transaction as external:', error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    }, 'Failed to refresh after resolving a bridge transaction as external:');
   }
 
   async function createCounterpart(transaction: UnmatchedBridgeTransaction): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       const result = await resolveCreateCounterpart(transaction.identifier);
       if (result.success) {
         deselect(transaction);
@@ -196,13 +181,7 @@ export function useBridgeTransactionActions(
       else {
         set(actionFailure, result.message);
       }
-    }
-    catch (error: unknown) {
-      notifyActionFailure('Failed to refresh after creating a bridge counterpart:', error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    }, 'Failed to refresh after creating a bridge counterpart:');
   }
 
   function buildCreateCounterpartMessage(isDeposit: boolean, chain?: string): string {
@@ -228,41 +207,25 @@ export function useBridgeTransactionActions(
   }
 
   async function ignoreSelectedTransactions(rowIds: string[]): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       const transactions = get(unmatchedTransactions).filter(tx => rowIds.includes(tx.identifier.toString()));
       for (const transaction of transactions)
         await matchBridgeTransactions(transaction.identifier);
 
       await refreshUnmatchedBridgeTransactions();
       set(modelSelectedUnmatched, []);
-    }
-    catch (error: unknown) {
-      notifyActionFailure('Failed to ignore the selected bridge transactions:', error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    }, 'Failed to ignore the selected bridge transactions:');
   }
 
   async function unignoreSelectedTransactions(rowIds: string[]): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       const transactions = get(ignoredTransactions).filter(tx => rowIds.includes(tx.identifier.toString()));
       for (const transaction of transactions)
         await unlinkBridgeTransaction(transaction.identifier);
 
       await refreshUnmatchedBridgeTransactions();
       set(modelSelectedIgnored, []);
-    }
-    catch (error: unknown) {
-      notifyActionFailure('Failed to restore the selected bridge transactions:', error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    }, 'Failed to restore the selected bridge transactions:');
   }
 
   function confirmIgnoreSelected(): void {

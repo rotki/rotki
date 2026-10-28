@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { OAuthResult } from '@shared/ipc';
 import { type Notification, NotificationGroup, NotificationKind, Severity } from '@rotki/common';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
@@ -40,6 +40,7 @@ const manualRefreshToken = ref<string>('');
 const failure = shallowRef<string>();
 
 const { isPackaged, openUrl } = useInterop();
+const failureMessage = useFailureMessage();
 const { notify, removeMatching } = useNotifications();
 const { registerOAuthCallbackHandler, unregisterOAuthCallbackHandler } = useBackendMessages();
 const { authenticated, completeOAuth, disconnect: disconnectOAuth, status } = useMoneriumOAuth();
@@ -107,7 +108,7 @@ function clearAuthNotifications(): void {
 
 function failAuthorization(error: unknown): void {
   logger.error('Monerium OAuth failed:', error);
-  set(failure, getErrorMessage(error) || t('external_services.monerium.auth_failed'));
+  set(failure, failureMessage(error) || t('external_services.monerium.auth_failed'));
 }
 
 async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
@@ -282,7 +283,7 @@ onUnmounted(() => {
       :retryable="false"
       class="mb-4"
       :title="t('external_services.monerium.error')"
-      :message="failure"
+      :failure="failure"
       data-testid="monerium-error"
     />
 

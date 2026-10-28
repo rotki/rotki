@@ -151,6 +151,29 @@ describe('useCustomizedEventDuplicatesDialog', () => {
     });
   });
 
+  describe('retry', () => {
+    it('should read only the failed tab again once the group ids are known', async () => {
+      await dialog.initialize();
+      vi.clearAllMocks();
+
+      await dialog.retry(DuplicatesTab.MANUAL_REVIEW);
+
+      expect(fetchCustomizedEventDuplicates).not.toHaveBeenCalled();
+      expect(fetchDuplicateEvents).toHaveBeenCalledExactlyOnceWith({ groupIds: ['manual-1'], limit: 1, offset: 0 });
+    });
+
+    it('should read everything again when the group ids failed', async () => {
+      set(fetchError, new Error('ids unavailable'));
+      await dialog.initialize();
+      vi.clearAllMocks();
+
+      await dialog.retry(DuplicatesTab.MANUAL_REVIEW);
+
+      expect(fetchCustomizedEventDuplicates).toHaveBeenCalledOnce();
+      expect(fetchDuplicateEvents).toHaveBeenCalledTimes(3);
+    });
+  });
+
   describe('fixing', () => {
     it('should do nothing when nothing is selected', () => {
       dialog.fixSelected();

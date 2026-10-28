@@ -106,7 +106,7 @@ function getRowClass(row: UnmatchedMovementRow): string {
               v-if="failure && rows.length > 0"
               in-table
               :title="failure.title"
-              :message="failure.message"
+              :failure="failure.message"
               @retry="emit('retry')"
             />
             <slot name="alert" />

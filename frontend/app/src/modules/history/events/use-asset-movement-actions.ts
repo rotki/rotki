@@ -70,10 +70,20 @@ export function useAssetMovementActions(
     get(unmatchedMovements).filter(movement => movement.isFiat),
   );
 
-  /** Keeps a failed action for the panel to name, and logs it. */
-  function reportFailure(error: unknown): void {
-    logger.error('Failed to update an unmatched asset movement:', error);
-    set(actionFailure, error);
+  /** Runs an action behind the loading flag, keeping its failure for the panel to name until the next one starts. */
+  async function runAction(action: () => Promise<void>): Promise<void> {
+    set(ignoreLoading, true);
+    set(actionFailure, undefined);
+    try {
+      await action();
+    }
+    catch (error: unknown) {
+      logger.error('Failed to update an unmatched asset movement:', error);
+      set(actionFailure, error);
+    }
+    finally {
+      set(ignoreLoading, false);
+    }
   }
 
   function getMovementIdentifier(movement: UnmatchedAssetMovement): number {
@@ -81,38 +91,22 @@ export function useAssetMovementActions(
   }
 
   async function ignoreMovement(movement: UnmatchedAssetMovement): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       await matchAssetMovements(getMovementIdentifier(movement));
       await refreshUnmatchedAssetMovements();
       await onActionComplete?.();
-    }
-    catch (error: unknown) {
-      reportFailure(error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    });
   }
 
   async function restoreMovement(movement: UnmatchedAssetMovement): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       await unlinkAssetMovement(getMovementIdentifier(movement));
       if (get(notice)?.movement.groupIdentifier === movement.groupIdentifier)
         dismissResolution();
 
       await refreshUnmatchedAssetMovements();
       await onActionComplete?.();
-    }
-    catch (error: unknown) {
-      reportFailure(error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    });
   }
 
   /**
@@ -128,9 +122,7 @@ export function useAssetMovementActions(
    * @param movement - the movement to resolve; a rejected resolution leaves no notice behind
    */
   async function markExternal(movement: UnmatchedAssetMovement): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       const result = await resolveExternal(getMovementIdentifier(movement));
       if (result.success) {
         await refreshUnmatchedAssetMovements();
@@ -145,13 +137,7 @@ export function useAssetMovementActions(
       else {
         set(actionFailure, result.message);
       }
-    }
-    catch (error: unknown) {
-      reportFailure(error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    });
   }
 
   function dismissResolution(): void {
@@ -165,41 +151,25 @@ export function useAssetMovementActions(
   }
 
   async function ignoreSelectedMovements(groupIdentifiers: string[]): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       const movements = get(unmatchedMovements).filter(m => groupIdentifiers.includes(m.groupIdentifier));
       for (const movement of movements)
         await matchAssetMovements(getMovementIdentifier(movement));
 
       await refreshUnmatchedAssetMovements();
       set(modelSelectedUnmatched, []);
-    }
-    catch (error: unknown) {
-      reportFailure(error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    });
   }
 
   async function unignoreSelectedMovements(groupIdentifiers: string[]): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       const movements = get(ignoredMovements).filter(m => groupIdentifiers.includes(m.groupIdentifier));
       for (const movement of movements)
         await unlinkAssetMovement(getMovementIdentifier(movement));
 
       await refreshUnmatchedAssetMovements();
       set(modelSelectedIgnored, []);
-    }
-    catch (error: unknown) {
-      reportFailure(error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    });
   }
 
   function confirmIgnoreSelected(): void {
@@ -221,21 +191,13 @@ export function useAssetMovementActions(
   }
 
   async function ignoreAllFiatMovements(): Promise<void> {
-    set(ignoreLoading, true);
-    set(actionFailure, undefined);
-    try {
+    await runAction(async () => {
       for (const movement of get(fiatMovements))
         await matchAssetMovements(getMovementIdentifier(movement));
 
       await refreshUnmatchedAssetMovements();
       set(modelSelectedUnmatched, []);
-    }
-    catch (error: unknown) {
-      reportFailure(error);
-    }
-    finally {
-      set(ignoreLoading, false);
-    }
+    });
   }
 
   function confirmIgnoreAllFiat(): void {

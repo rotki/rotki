@@ -4,7 +4,6 @@ import { isErr } from 'plainfp/result';
 import { useTemplateRef } from 'vue';
 import HistoricPriceForm from '@/modules/assets/prices/historic/HistoricPriceForm.vue';
 import { useHistoricPrices } from '@/modules/assets/prices/use-historic-price-manager';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
@@ -19,7 +18,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const failureMessage = useFailureMessage();
 
 const loading = ref<boolean>(false);
 /** Why the last save failed; the form keeps what was typed, and Save is the retry. */
@@ -82,7 +80,7 @@ watch(modelValue, (value, previous) => {
       :retryable="false"
       class="mb-4"
       :title="editMode ? t('price_management.edit.error.title') : t('price_management.add.error.title')"
-      :message="failureMessage(saveError)"
+      :failure="saveError"
       data-testid="historic-price-save-error"
     />
     <HistoricPriceForm

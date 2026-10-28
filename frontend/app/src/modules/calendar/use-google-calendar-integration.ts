@@ -1,7 +1,7 @@
 import type { OAuthResult } from '@shared/ipc';
 import type { Ref } from 'vue';
 import { NotificationKind, Severity } from '@rotki/common';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useGoogleCalendarApi } from '@/modules/settings/api/use-google-calendar-api';
@@ -58,11 +58,12 @@ export function useGoogleCalendarIntegration(): UseGoogleCalendarIntegrationRetu
   const modelManualToken = shallowRef<string>('');
   const modelManualRefreshToken = shallowRef<string>('');
   const failure = shallowRef<string>();
+  const failureMessage = useFailureMessage();
 
   /** Keeps why an action failed, for the card to name, and logs it. */
   function fail(error: unknown, fallback: string): void {
     logger.error('Google Calendar action failed:', error);
-    set(failure, getErrorMessage(error) || fallback);
+    set(failure, failureMessage(error) || fallback);
   }
 
   async function checkStatus(): Promise<void> {

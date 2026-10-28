@@ -104,7 +104,7 @@ onMounted(async () => {
       v-if="error && data.length > 0"
       class="mb-4"
       :title="t('data_table.fetch_failed')"
-      :message="failureMessage(error)"
+      :failure="error"
       data-testid="notes-fetch-error"
       @retry="refreshNotes()"
     />

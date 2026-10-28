@@ -12,13 +12,11 @@ import CalendarUpcomingEventsPanel from '@/modules/calendar/CalendarUpcomingEven
 import { useCalendarData } from '@/modules/calendar/use-calendar-data';
 import { useCalendarDateManagement } from '@/modules/calendar/use-calendar-date-management';
 import { useCalendarOperations } from '@/modules/calendar/use-calendar-operations';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
-const failureMessage = useFailureMessage();
 
 const accounts = ref<AddressAccount[]>([]);
 
@@ -102,7 +100,7 @@ onMounted(async () => {
           v-if="error"
           class="m-3"
           :title="t('data_table.fetch_failed')"
-          :message="failureMessage(error)"
+          :failure="error"
           data-testid="calendar-fetch-error"
           @retry="fetchData()"
         />

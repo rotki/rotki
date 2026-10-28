@@ -29,6 +29,7 @@ const dialogApi = {
   modelSelectedManualReview: ref<string[]>([]),
   restoreSelected: vi.fn(),
   restoreSingle: vi.fn(),
+  retry: vi.fn(async () => Promise.resolve()),
   showInHistoryEvents: vi.fn(),
 };
 
@@ -167,7 +168,7 @@ describe('customizedEventDuplicatesDialog', () => {
     expect(list('non_duplicated').props('rows')).toBe(get(dialogApi.ignoredRows));
   });
 
-  it('should give each tab its own failure, and read everything again on a retry from any tab', async () => {
+  it('should give each tab its own failure, and retry that tab from it', async () => {
     const failure = new Error('rows unavailable');
     set(dialogApi.manualReviewError, failure);
     await nextTick();
@@ -178,7 +179,7 @@ describe('customizedEventDuplicatesDialog', () => {
     expect(list('manual_review').props('error')).toBe(failure);
     list('manual_review').vm.$emit('retry');
 
-    expect(dialogApi.initialize).toHaveBeenCalledTimes(2);
+    expect(dialogApi.retry).toHaveBeenCalledExactlyOnceWith(DuplicatesTab.MANUAL_REVIEW);
   });
 
   it('should ask to show a tab in history events with that tab groups', async () => {
