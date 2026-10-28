@@ -66,6 +66,15 @@ if TYPE_CHECKING:
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
+def _upload_messages(ws_mock: MagicMock) -> list:
+    """The mocked websocket calls without the start/end messages of task manager tasks,
+    which these tests do not check and which can land after the last upload message"""
+    return [
+        x for x in ws_mock.call_args_list
+        if x.kwargs['message_type'] != WSMessageType.BACKGROUND_TASK_STATUS
+    ]
+
+
 @pytest.fixture(name='premium_remote_data')
 def fixture_load_remote_premium_data() -> bytes:
     return (Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin').read_bytes()  # noqa: E501
@@ -174,7 +183,7 @@ def test_upload_data_to_server(
         assert mocked_post.call_count == 3  # uploads in three chunks
         # Check WS messages via mocking since the websocket_connection fixture doesn't work
         # with the rotkehlchen_instance fixture
-        assert ws_mock.call_args_list == [
+        assert _upload_messages(ws_mock) == [
             call(message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS, data={'type': str(DBUploadStatusStep.COMPRESSING)}),  # noqa: E501
             call(message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS, data={'type': str(DBUploadStatusStep.ENCRYPTING)}),  # noqa: E501
             call(message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS, data={'type': str(DBUploadStatusStep.UPLOADING), 'current_chunk': 1, 'total_chunks': 3}),  # noqa: E501
@@ -242,7 +251,7 @@ def test_upload_data_to_server_too_big_for_tier(rotkehlchen_instance):
     assert '1 MB your plan allows' in message
     assert not encrypt_mock.called
     assert not post_mock.called
-    assert ws_mock.call_args_list[-1] == call(
+    assert _upload_messages(ws_mock)[-1] == call(
         message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
         data={'uploaded': False, 'actionable': False, 'message': message},
     )
@@ -379,7 +388,7 @@ def test_upload_aborts_on_local_db_integrity_failure(rotkehlchen_instance: Rotke
     assert success is False
     assert error is not None and integrity_message in error
     assert not post_mock.called
-    assert ws_mock.call_args_list == [
+    assert _upload_messages(ws_mock) == [
         call(
             message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
             data={
@@ -1130,7 +1139,7 @@ def test_upload_data_error(rotkehlchen_instance: Rotkehlchen) -> None:
         assert status is False
         assert error == error_msg
         assert mock_post.call_count == expected_call_count
-        assert ws_mock.call_args_list[-1] == call(  # the automatic upload tells the user why
+        assert _upload_messages(ws_mock)[-1] == call(  # the automatic upload tells the user why
             message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
             data={'uploaded': False, 'actionable': False, 'message': error_msg},
         )
