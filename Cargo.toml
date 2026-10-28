@@ -16,7 +16,7 @@ exclude = ["tools/find-duplicate-constants"]
 version = "1.44.2"
 edition = "2021"
 license = "AGPL-3.0-only"
-rust-version = "1.86.0"
+rust-version = "1.88.0"
 repository = "https://github.com/rotki/rotki"
 
 # Exact-pinned, matching colibri's convention: reproducible builds, and a
@@ -24,7 +24,7 @@ repository = "https://github.com/rotki/rotki"
 # that drifts in on the next lockfile refresh. An exact pin in any workspace
 # member also constrains the transitive resolution of every other member.
 [workspace.dependencies]
-tokio = { version = "=1.52.3", features = [
+tokio = { version = "=1.54.1", features = [
     "rt-multi-thread",
     "macros",
     "process",
@@ -35,13 +35,13 @@ tokio = { version = "=1.52.3", features = [
     "io-util",
     "io-std",
 ] }
-async-trait = "=0.1.89"
-thiserror = "=2.0.18"
+async-trait = "=0.1.92"
+thiserror = "=2.0.21"
 tracing = "=0.1.44"
 tracing-subscriber = { version = "=0.3.23", default-features = false }
-serde = { version = "=1.0.228", features = ["derive"] }
-serde_json = "=1.0.150"
-clap = "=4.6.1"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+clap = "=4.6.7"
 axum = "=0.8.9"
 dirs = "=6.0.0"
 tower = "=0.5.3"
