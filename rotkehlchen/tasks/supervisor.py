@@ -3,7 +3,7 @@ import threading
 import traceback
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.api.websockets.typedefs import UserMessageOperation
+from rotkehlchen.api.websockets.typedefs import UserMessageOperation, WSMessageType
 from rotkehlchen.concurrency import (
     DEFAULT_CANCEL_GRACE_SECONDS,
     CancellationToken,
@@ -107,6 +107,7 @@ class TaskSupervisor:
             token=CancellationToken(),
         )
         self.add(task_name, task, exception_is_error)
+        self._notify_task_status(task, 'started')  # before start so it cannot follow 'finished'
         return task.start()
 
     def has_task(self, name: str) -> bool:
@@ -118,12 +119,42 @@ class TaskSupervisor:
         with self.lock:
             return [task for task in self.tasks if task.dead is False and task.task_name.startswith(name)]  # noqa: E501
 
-    def running_task_names(self) -> list[str]:
-        """The names of all currently running task manager tasks, sorted"""
+    def running_tasks_info(self) -> list[dict[str, str | int]]:
+        """The name and start time of all currently running task manager tasks"""
         with self.lock:
-            return sorted(task.task_name for task in self.tasks if task.dead is False)
+            return [
+                {'name': task.task_name, 'started_at': task.started_at}
+                for task in self.tasks if task.dead is False
+            ]
+
+    def _notify_task_status(self, task: Task, status: str) -> None:
+        """Tell connected clients about a task manager task starting or ending. Not sent
+        while logging out. The message type is LIVE so it is dropped if no client
+        receives it: a client that connects afterwards gets the running tasks from the
+        periodic data instead."""
+        if self.stop_reason is not None:
+            return
+
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.BACKGROUND_TASK_STATUS,
+            data={'name': task.task_name, 'started_at': task.started_at, 'status': status},
+        )
 
     def _handle_finished_task(self, task: Task) -> None:
+        self._notify_task_status(task, self._finished_status(task))
+        self._log_finished_task(task)
+
+    @staticmethod
+    def _finished_status(task: Task) -> str:
+        if task.exception is None:
+            return 'finished'
+        if isinstance(task.exception, TaskCancelledError) or (
+            task.cancellation_token is not None and task.cancellation_token.cancelled
+        ):
+            return 'cancelled'
+        return 'failed'
+
+    def _log_finished_task(self, task: Task) -> None:
         if task.exception is None:
             log.debug('Finished task %s from task manager.', task.task_name)
             return

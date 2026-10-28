@@ -45,7 +45,7 @@ def test_query_periodic(rotkehlchen_api_server_with_exchanges: APIServer) -> Non
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result) == 4
-    assert result['running_tasks'] == rotki.task_supervisor.running_task_names()
+    assert result['running_tasks'] == rotki.task_supervisor.running_tasks_info()
     assert result[DBCacheStatic.LAST_BALANCE_SAVE.value] >= start_ts
     assert 'failed_to_connect' not in result
     connected_nodes = result['connected_nodes']

@@ -27,6 +27,7 @@ from rotkehlchen.concurrency.cancellation import (
     current_token,
     run_cancellable,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -64,6 +65,7 @@ class Task:
         # bookkeeping set by the orchestration layers after construction
         self.task_id: int | None = None  # the REST async-query task id
         self.api_command: Callable[..., Any] | None = None  # the REST command, inspected by cancellation paths  # noqa: E501
+        self.started_at = ts_now()  # unix seconds at which the task was spawned
         self.exception_is_error: bool = True  # whether the task supervisor logs a death as error
         self._target = target
         self._args = args
