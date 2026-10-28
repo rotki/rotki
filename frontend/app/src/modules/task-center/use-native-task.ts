@@ -325,7 +325,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
     async function run(report: ReportProgress): Promise<Result<T, TaskError>> {
       backendTaskId = undefined;
       const outcome = spec.run({ cancelled: () => cancelRequested, report, runTask });
-      outcome.then(finish, (error: unknown) => finish(err(TaskFailed({ message: getErrorMessage(error) }))));
+      outcome.then(finish, (error: unknown) => finish(err(TaskFailed({ cause: error, message: getErrorMessage(error) }))));
       return outcome;
     }
 
