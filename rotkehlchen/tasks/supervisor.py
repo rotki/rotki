@@ -118,6 +118,11 @@ class TaskSupervisor:
         with self.lock:
             return [task for task in self.tasks if task.dead is False and task.task_name.startswith(name)]  # noqa: E501
 
+    def running_task_names(self) -> list[str]:
+        """The names of all currently running task manager tasks, sorted"""
+        with self.lock:
+            return sorted(task.task_name for task in self.tasks if task.dead is False)
+
     def _handle_finished_task(self, task: Task) -> None:
         if task.exception is None:
             log.debug('Finished task %s from task manager.', task.task_name)

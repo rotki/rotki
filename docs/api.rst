@@ -8581,6 +8581,7 @@ Querying periodic data
               "failed_to_connect": {
                   "eth": ["nodeZ"]
               },
+              "running_tasks": ["Query EVM transactions for 0x..."],
               "last_data_upload_ts": 0
           }
           "message": ""
@@ -8590,6 +8591,7 @@ Querying periodic data
    :resjson int last_data_upload_ts: The last time (unix timestamp) at which a new DB was pushed to the remote as backup.
    :resjson object connected_nodes: A dictionary containing the chain and a list of connected nodes.
    :resjson object failed_to_connect [Optional]: A dictionary containing the chain and the nodes that rotki couldn't connect with. If nothing failed for a chain we don't include it in the mapping.
+   :resjson list running_tasks: The names of the tasks currently running in the background task manager. Tasks started by an API request are not included.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.

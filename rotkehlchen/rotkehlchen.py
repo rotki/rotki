@@ -1651,9 +1651,11 @@ class Rotkehlchen:
             gate_location=gate_location,
         )
 
-    def query_periodic_data(self) -> dict[str, bool | (dict[str, list[str]] | Timestamp)]:
+    def query_periodic_data(
+            self,
+    ) -> dict[str, bool | (dict[str, list[str]] | Timestamp) | list[str]]:
         """Query for frequently changing data"""
-        result: dict[str, bool | (dict[str, list[str]] | Timestamp)] = {}
+        result: dict[str, bool | (dict[str, list[str]] | Timestamp) | list[str]] = {}
 
         if self.user_is_logged_in:
             with self.data.db.conn.read_ctx() as cursor:
@@ -1680,6 +1682,7 @@ class Rotkehlchen:
                         cooling_down_nodes[serialized_chain] = cooling
 
                 result['connected_nodes'] = connected_nodes
+                result['running_tasks'] = self.task_supervisor.running_task_names()
                 if len(failed_to_connect) != 0:
                     result['failed_to_connect'] = failed_to_connect
                 if len(cooling_down_nodes) != 0:
