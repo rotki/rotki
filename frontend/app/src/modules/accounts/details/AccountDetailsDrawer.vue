@@ -2,9 +2,8 @@
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
-import type { LocationQuery } from '@/modules/core/table/route';
 import { startPromise } from '@shared/utils';
-import { type AccountGroupId, getAccountLabel, getGroupId } from '@/modules/accounts/account-utils';
+import { type AccountGroupId, getAccountLabel, getGroupId, isXpubAccount } from '@/modules/accounts/account-utils';
 import AccountGroupDetailsTable from '@/modules/accounts/AccountGroupDetailsTable.vue';
 import { AccountDetailsView, accountDetailsViews } from '@/modules/accounts/details/account-details-views';
 import AccountDetailsAssets from '@/modules/accounts/details/AccountDetailsAssets.vue';
@@ -48,7 +47,6 @@ defineSlots<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const detailsTableQuery = ref<LocationQuery>({});
 const detailsTable = useTemplateRef<ComponentExposed<typeof AccountGroupDetailsTable>>('detailsTable');
 const header = useTemplateRef<ComponentExposed<typeof AccountDetailsHeader>>('header');
 const scroller = useTemplateRef<HTMLDivElement>('scroller');
@@ -91,10 +89,11 @@ const groupId = computed<AccountGroupId | undefined>(() => {
 
 const chains = computed<string[]>(() => {
   const current = get(shownGroup);
-  if (!current)
+  const id = get(groupId);
+  if (!current || !id)
     return [];
 
-  const excluded = get(chainExclusionFilter)[getGroupId(current)] ?? [];
+  const excluded = get(chainExclusionFilter)[id] ?? [];
   return current.chains.filter(chain => !excluded.includes(chain));
 });
 
@@ -105,7 +104,8 @@ const views = computed<AccountDetailsView[]>(() => {
 
 const currentView = computed<AccountDetailsView>(() => {
   const requested = get(shown)?.view;
-  return requested && get(views).includes(requested) ? requested : AccountDetailsView.ASSETS;
+  const offered = get(views);
+  return requested && offered.includes(requested) ? requested : offered[0] ?? AccountDetailsView.ASSETS;
 });
 
 const tabIndex = computed<number>({
@@ -130,15 +130,12 @@ const { onKeydown } = useDrawerDismiss({
   open: isOpen,
 });
 
-function viewLabel(item: AccountDetailsView): string {
-  if (item === AccountDetailsView.CHAINS)
-    return t('account_balances.per_chain');
-  if (item === AccountDetailsView.ADDRESSES)
-    return t('account_balances.addresses');
-  if (item === AccountDetailsView.ACCOUNTS)
-    return t('account_balances.accounts');
-  return t('common.assets');
-}
+const viewLabels = computed<Record<AccountDetailsView, string>>(() => ({
+  [AccountDetailsView.ACCOUNTS]: t('account_balances.accounts'),
+  [AccountDetailsView.ADDRESSES]: t('account_balances.addresses'),
+  [AccountDetailsView.ASSETS]: t('common.assets'),
+  [AccountDetailsView.CHAINS]: t('account_balances.per_chain'),
+}));
 
 /** A push while nothing shows, so Back closes it; a replace when it only switches the account. */
 async function openAccount(id: string): Promise<void> {
@@ -166,7 +163,6 @@ useDrawerOutsideClose({
 
 /** Another account starts fresh: its lists are keyed on it, and the scroll goes back to the top. */
 watch(groupId, () => {
-  set(detailsTableQuery, {});
   const element = get(scroller);
   if (element)
     element.scrollTop = 0;
@@ -219,7 +215,7 @@ defineExpose({
           :key="item"
           :data-testid="`account-details-tab-${item}`"
         >
-          {{ viewLabel(item) }}
+          {{ viewLabels[item] }}
         </RuiTab>
       </RuiTabs>
 
@@ -261,13 +257,14 @@ defineExpose({
           <AccountGroupDetailsTable
             v-else
             ref="detailsTable"
-            v-model:query="detailsTableQuery"
+            :key="groupId"
             v-model:selected="selectedAssets"
             :group-id="groupId"
             :chains="chains"
             :tags="visibleTags"
             :category="category"
             :selection-mode="selectionMode"
+            :group="isXpubAccount(shownGroup) ? 'xpub' : undefined"
             @edit="emit('edit', $event)"
           />
         </template>

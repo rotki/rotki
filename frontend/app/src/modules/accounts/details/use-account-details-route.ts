@@ -2,6 +2,7 @@ import type { ComputedRef } from 'vue';
 import type { Router } from 'vue-router';
 import { omit } from 'es-toolkit';
 import { type AccountDetailsView, isAccountDetailsView } from '@/modules/accounts/details/account-details-views';
+import { firstQueryValue } from '@/modules/core/table/route';
 
 const ACCOUNT_KEY = 'account';
 const VIEW_KEY = 'view';
@@ -22,11 +23,6 @@ interface UseAccountDetailsRouteReturn {
   /** Drops the drawer's keys from the current entry, for a key that names no account. */
   discard: () => Promise<void>;
   setView: (view: AccountDetailsView) => Promise<void>;
-}
-
-function firstValue(value: unknown): string | undefined {
-  const first = Array.isArray(value) ? value[0] : value;
-  return typeof first === 'string' && first.length > 0 ? first : undefined;
 }
 
 /** The vue-router position of the current history entry, `undefined` when it carries none. */
@@ -54,10 +50,10 @@ export function useAccountDetailsRoute(): UseAccountDetailsRouteReturn {
   /** History position of the entry this page pushed, while it is the drawer's own entry. */
   const pushedAt = shallowRef<number>();
 
-  const accountId = computed<string | undefined>(() => firstValue(get(route).query[ACCOUNT_KEY]));
+  const accountId = computed<string | undefined>(() => firstQueryValue(get(route).query[ACCOUNT_KEY]) || undefined);
 
   const view = computed<AccountDetailsView | undefined>(() => {
-    const value = firstValue(get(route).query[VIEW_KEY]);
+    const value = firstQueryValue(get(route).query[VIEW_KEY]);
     return isAccountDetailsView(value) ? value : undefined;
   });
 

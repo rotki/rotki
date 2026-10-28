@@ -18,8 +18,8 @@ describe('accountDetailsViews', () => {
     expect(accountDetailsViews(group(AccountKind.ADDRESS, ['eth', 'optimism'], 'accounts'))).toStrictEqual(['assets', 'chains', 'accounts']);
   });
 
-  it('should add the addresses tab for an xpub with derived addresses', () => {
-    expect(accountDetailsViews(group(AccountKind.XPUB, ['btc'], 'accounts'))).toStrictEqual(['assets', 'addresses']);
+  it('should offer only the addresses for an xpub with derived addresses', () => {
+    expect(accountDetailsViews(group(AccountKind.XPUB, ['btc'], 'accounts'))).toStrictEqual(['addresses']);
   });
 
   it('should offer only assets for an xpub without derived addresses yet', () => {

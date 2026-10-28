@@ -37,6 +37,7 @@ function createWrapper(props: { searchable?: boolean; limit?: number } = {}): Vu
   return mount(AccountDetailsAssets, {
     global: { stubs },
     props: { chains: ['eth'], groupId: '0x1', selected: undefined, ...props },
+    slots: { header: '<template #header="{ value }"><span data-testid="header-value">{{ value.toString() }}</span></template>' },
   });
 }
 
@@ -47,6 +48,10 @@ function listed(wrapper: VueWrapper): string[] {
 describe('modules/accounts/details/AccountDetailsAssets', () => {
   beforeEach(() => {
     set(assets, [asset('A', 1), asset('B', 30), asset('C', 5), asset('D', 20)]);
+  });
+
+  it('should hand its header the value of every asset in scope, the ones past the limit too', () => {
+    expect(createWrapper({ limit: 2 }).find('[data-testid=header-value]').text()).toBe('56');
   });
 
   it('should narrow the assets to what is typed in its search', async () => {
@@ -69,12 +74,12 @@ describe('modules/accounts/details/AccountDetailsAssets', () => {
     const wrapper = createWrapper({ limit: 2 });
     const button = wrapper.find('[data-testid=account-details-assets-show-all]');
 
-    expect(button.text()).toBe('account_balances.per_chain_show_all::4');
+    expect(button.text()).toBe('account_balances.show_all_assets::4');
 
     await button.trigger('click');
 
     expect(listed(wrapper)).toEqual(['A', 'B', 'C', 'D']);
-    expect(button.text()).toBe('account_balances.per_chain_show_top::2');
+    expect(button.text()).toBe('account_balances.show_top_assets::2');
 
     await button.trigger('click');
 

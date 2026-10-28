@@ -53,7 +53,10 @@ const stubs = {
     methods: { focusClose(): void {} },
     template: '<button data-testid="account-details-close" @click="$emit(\'close\')" />',
   },
-  AccountGroupDetailsTable: { props: ['groupId', 'chains'], template: '<div data-testid="table-stub" :data-group="groupId" :data-chains="chains.join(\',\')" />' },
+  AccountGroupDetailsTable: {
+    props: { chains: Array, group: String, groupId: String },
+    template: '<div data-testid="table-stub" :data-group="groupId" :data-chains="chains.join(\',\')" :data-kind="group" />',
+  },
   RuiNavigationDrawer: {
     emits: ['closed', 'update:modelValue'],
     props: ['modelValue'],
@@ -224,16 +227,19 @@ describe('modules/accounts/details/AccountDetailsDrawer', () => {
     const table = wrapper.find('[data-testid=table-stub]');
     expect(table.attributes('data-group')).toBe('0xmulti');
     expect(table.attributes('data-chains')).toBe('eth,optimism');
+    expect(table.attributes('data-kind')).toBeUndefined();
     expect(wrapper.findAll('[data-testid^=account-details-tab-]').map(tab => tab.text())).toStrictEqual(['common.assets', 'account_balances.per_chain', 'account_balances.accounts']);
   });
 
-  it('should list the derived addresses of an xpub in the addresses tab', async () => {
+  it('should open an xpub straight on its derived addresses, with no tabs and no assets list', async () => {
     set(groups, [createMock<BlockchainAccountGroupWithBalance>({ chains: ['btc'], derivationPath: undefined, expansion: 'accounts', kind: AccountKind.XPUB, xpub: 'xpub1' })]);
     set(accountId, 'xpub1#btc');
-    set(view, 'addresses');
     const wrapper = await createSlidIn();
 
     expect(wrapper.find('[data-testid=table-stub]').attributes('data-group')).toBe('xpub1#btc');
+    expect(wrapper.find('[data-testid=table-stub]').attributes('data-kind')).toBe('xpub');
+    expect(wrapper.find('[data-testid=assets-stub]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=tabs]').exists()).toBe(false);
   });
 
   it('should fall back to assets and show no tabs when the account has nothing else to list', async () => {

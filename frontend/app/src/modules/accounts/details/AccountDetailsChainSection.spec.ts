@@ -1,20 +1,11 @@
-import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
-import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountDetailsChainSection from '@/modules/accounts/details/AccountDetailsChainSection.vue';
 
-const { assets, lastRefreshTimestamp } = await vi.hoisted(async () => {
+const { lastRefreshTimestamp } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
-  return {
-    assets: ref<AssetBalanceWithPrice[]>([]),
-    lastRefreshTimestamp: ref<number | undefined>(),
-  };
+  return { lastRefreshTimestamp: ref<number | undefined>() };
 });
-
-vi.mock('@/modules/balances/use-aggregated-balances', () => ({
-  useAggregatedBalances: (): object => ({ useBlockchainBalances: (): unknown => assets }),
-}));
 
 vi.mock('@/modules/balances/use-blockchain-balance-staleness', async () => {
   const { ref } = await import('vue');
@@ -28,14 +19,13 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 }));
 
 const stubs = {
-  AccountDetailsAssets: { props: ['chains', 'groupId', 'limit'], template: '<div data-testid="assets-stub" :data-chains="chains.join(\',\')" :data-group="groupId" :data-limit="limit" />' },
+  AccountDetailsAssets: {
+    props: ['chains', 'groupId', 'limit'],
+    template: '<div data-testid="assets-stub" :data-chains="chains.join(\',\')" :data-group="groupId" :data-limit="limit"><slot name="header" :value="15" /></div>',
+  },
   ChainIcon: true,
   FiatDisplay: { props: ['value'], template: '<span data-testid="value">{{ value.toString() }}</span>' },
 };
-
-function asset(value: number): AssetBalanceWithPrice {
-  return createMock<AssetBalanceWithPrice>({ value: bigNumberify(value) });
-}
 
 function createWrapper(): VueWrapper {
   return mount(AccountDetailsChainSection, {
@@ -46,11 +36,10 @@ function createWrapper(): VueWrapper {
 
 describe('modules/accounts/details/AccountDetailsChainSection', () => {
   beforeEach(() => {
-    set(assets, [asset(10), asset(5)]);
     set(lastRefreshTimestamp, 1000);
   });
 
-  it('should head the section with the chain, its refresh age and the sum of its assets', () => {
+  it('should head the section with the chain, its refresh age and the value its list hands up', () => {
     const wrapper = createWrapper();
 
     expect(wrapper.text()).toContain('name:optimism');
