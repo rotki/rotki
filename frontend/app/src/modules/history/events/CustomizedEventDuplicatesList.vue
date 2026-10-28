@@ -111,7 +111,7 @@ const columns = computed<DataTableColumn<DuplicateRow>[]>(() => [
               <FailureStrip
                 in-table
                 :title="t('customized_event_duplicates.load_failed')"
-                :message="failureMessage(error)"
+                :failure="error"
                 data-testid="duplicates-load-error"
                 @retry="emit('retry')"
               />

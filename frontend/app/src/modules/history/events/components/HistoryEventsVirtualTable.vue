@@ -3,7 +3,6 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmits, HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
 import { useTableEmptyState, useTableFetchError } from '@/modules/core/table/use-table-empty-state';
 import { provideHistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
@@ -43,7 +42,6 @@ defineSlots<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const failureMessage = useFailureMessage();
 
 const DEFAULT_TABLE_HEIGHT_OFFSET = 390;
 
@@ -121,7 +119,7 @@ provideHistoryEventsRowContext(rowContext);
       v-if="eventsError && groups.length > 0"
       class="m-2"
       :title="t('data_table.fetch_failed')"
-      :message="failureMessage(eventsError)"
+      :failure="eventsError"
       data-testid="history-events-events-error"
       @retry="retryEvents()"
     />

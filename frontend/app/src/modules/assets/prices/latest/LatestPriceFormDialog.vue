@@ -4,7 +4,6 @@ import { isErr } from 'plainfp/result';
 import { useTemplateRef } from 'vue';
 import LatestPriceForm from '@/modules/assets/prices/latest/LatestPriceForm.vue';
 import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
@@ -27,7 +26,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const failureMessage = useFailureMessage();
 
 const modelValue = ref<ManualPriceFormPayload>();
 const loading = ref(false);
@@ -116,7 +114,7 @@ watchImmediate([open, () => editableItem, () => prefill], ([open, editableItemVa
       :retryable="false"
       class="mb-4"
       :title="saveErrorTitle"
-      :message="failureMessage(saveError)"
+      :failure="saveError"
       data-testid="latest-price-save-error"
     />
     <LatestPriceForm

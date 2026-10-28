@@ -3,7 +3,6 @@ import type { RouteLocationRaw } from 'vue-router';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import { provideHistoryEventsSection } from '@/modules/history/events/use-history-events-section';
 import { usePremium } from '@/modules/premium/use-premium';
@@ -23,7 +22,6 @@ const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 
 const { refreshPrices } = usePriceRefresh();
-const failureMessage = useFailureMessage();
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
@@ -143,7 +141,7 @@ onUnmounted(() => {
         v-if="fetchError"
         class="mb-4"
         :title="t('kraken_page.fetch_failed')"
-        :message="failureMessage(fetchError)"
+        :failure="fetchError"
         data-testid="kraken-staking-fetch-error"
         @retry="refresh()"
       />

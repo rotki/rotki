@@ -3,9 +3,8 @@ import { assert, NotificationKind, Severity } from '@rotki/common';
 import { RuiFileUpload } from '@rotki/ui-library';
 import { assetExportActivity } from '@/modules/assets/assets.activity';
 import { useAssets } from '@/modules/assets/use-assets';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
-import { isActionable } from '@/modules/core/tasks/task-result';
+import { onActionableError } from '@/modules/core/tasks/task-result';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -20,7 +19,6 @@ const exportError = shallowRef<unknown>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { notify } = useNotificationDispatcher();
-const failureMessage = useFailureMessage();
 const { useIsActive } = useTaskCenter();
 const { exportCustomAssets, importCustomAssets } = useAssets();
 
@@ -73,11 +71,9 @@ async function exportZip(): Promise<void> {
 
   set(exportError, undefined);
   const outcome = await exportCustomAssets();
-  if (!outcome.ok) {
-    if (isActionable(outcome.error))
-      set(exportError, outcome.error);
+  onActionableError(outcome, error => set(exportError, error));
+  if (!outcome.ok)
     return;
-  }
 
   const { directory, filePath } = outcome.value;
   if (directory) {
@@ -119,7 +115,7 @@ async function exportZip(): Promise<void> {
       :retryable="false"
       class="mt-3"
       :title="t('manage_user_assets.export.failed')"
-      :message="failureMessage(exportError)"
+      :failure="exportError"
       data-testid="user-assets-export-error"
     />
   </SettingsItem>

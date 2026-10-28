@@ -104,7 +104,7 @@ onBeforeMount(() => {
       v-else-if="connectionsError"
       class="mb-4"
       :title="t('bank_balances.connections_failed')"
-      :message="failureMessage(connectionsError)"
+      :failure="connectionsError"
       data-testid="bank-connections-error"
       @retry="refresh()"
     />

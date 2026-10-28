@@ -115,7 +115,7 @@ watch(() => items.length, (length) => {
         v-if="failure && items.length > 0"
         class="mb-2"
         :title="failure.title"
-        :message="failure.message"
+        :failure="failure.message"
         @retry="emit('retry')"
       />
       <slot name="alert" />

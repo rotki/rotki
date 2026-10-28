@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { canWidenSearch, type SearchCriteria, widenedSearch } from '@/modules/history/events/matching/search-widening';
 import { type MatchingFailure, MatchingFailureKind, type PotentialMatchRow, type UnmatchedEventGroup } from '@/modules/history/events/matching/types';
@@ -46,7 +45,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const failureMessage = useFailureMessage();
 
 const movementEntry = computed<HistoryEventEntry>(() => {
   const { entry, ...meta } = getEventEntryFromCollection(movement.events);
@@ -170,7 +168,7 @@ watchDebounced(onlyExpectedAssets, () => {
         :retryable="failure.kind === MatchingFailureKind.SEARCH"
         class="mb-4 shrink-0"
         :title="failure.kind === MatchingFailureKind.SEARCH ? t('asset_movement_matching.dialog.search_failed') : t('asset_movement_matching.dialog.match_failed')"
-        :message="failureMessage(failure.error)"
+        :failure="failure.error"
         data-testid="potential-matches-failure"
         @retry="emit('search')"
       />

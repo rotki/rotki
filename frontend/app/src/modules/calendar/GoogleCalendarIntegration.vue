@@ -50,7 +50,7 @@ onUnmounted(() => {
       :retryable="false"
       class="my-2"
       :title="t('external_services.google_calendar.error')"
-      :message="failure"
+      :failure="failure"
       data-testid="google-calendar-error"
     />
 

@@ -48,13 +48,15 @@ interface UseCustomizedEventDuplicatesDialogReturn {
    *
    * @remarks
    * Kept for the tab to show in place of its rows, or above the rows an earlier read left, instead
-   * of a toast per tab. Retry with {@link UseCustomizedEventDuplicatesDialogReturn.initialize}.
+   * of a toast per tab. Retry with {@link UseCustomizedEventDuplicatesDialogReturn.retry}.
    */
   autoFixError: ComputedRef<unknown>;
   manualReviewError: ComputedRef<unknown>;
   ignoredError: ComputedRef<unknown>;
   /** Reads the duplicate group ids, then the events behind them. */
   initialize: () => Promise<void>;
+  /** Reads one tab again; a failed read of the group ids reads everything again, since every tab needs them. */
+  retry: (tab: number) => Promise<void>;
   fixSingle: (groupId: string) => void;
   fixSelected: () => void;
   ignoreSingle: (groupId: string) => void;
@@ -156,6 +158,20 @@ export function useCustomizedEventDuplicatesDialog(
     await loadAllGroups();
   }
 
+  const groupsByTab = new Map<number, DuplicateGroup>([
+    [DuplicatesTab.AUTO_FIX, autoFix],
+    [DuplicatesTab.MANUAL_REVIEW, manualReview],
+    [DuplicatesTab.IGNORED, ignored],
+  ]);
+
+  async function retry(tab: number): Promise<void> {
+    const group = groupsByTab.get(tab);
+    if (get(fetchError) !== undefined || !group)
+      await initialize();
+    else
+      await loadGroup(group);
+  }
+
   function fixSingle(groupId: string): void {
     confirmAndFixDuplicate([groupId], () => {
       deselect(autoFix, groupId);
@@ -247,6 +263,7 @@ export function useCustomizedEventDuplicatesDialog(
     modelSelectedManualReview: manualReview.selected,
     restoreSelected,
     restoreSingle,
+    retry,
     showInHistoryEvents,
   };
 }

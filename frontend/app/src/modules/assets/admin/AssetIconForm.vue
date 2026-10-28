@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
@@ -22,7 +21,6 @@ const refreshKey = ref<number>(0);
 /** Why the last icon refresh failed, named under the icon with a retry. */
 const refreshError = shallowRef<unknown>();
 const { showErrorMessage } = useNotifications();
-const failureMessage = useFailureMessage();
 const { getPath } = useInterop();
 const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
 
@@ -154,7 +152,7 @@ defineExpose({
     <FailureStrip
       v-if="refreshError"
       :title="t('asset_form.fetch_latest_icon.failed')"
-      :message="failureMessage(refreshError)"
+      :failure="refreshError"
       data-testid="asset-icon-refresh-error"
       @retry="refreshIcon()"
     />

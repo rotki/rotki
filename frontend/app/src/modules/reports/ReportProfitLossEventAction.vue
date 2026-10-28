@@ -6,7 +6,7 @@ import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { requiredField } from '@/modules/core/form/fields';
 import { useForm } from '@/modules/core/form/use-form';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
@@ -41,6 +41,8 @@ const schema = computed<ZodType>(() => z.object({
   price: requiredField(t('price_form.price_non_empty')),
 }));
 
+const failureMessage = useFailureMessage();
+
 const form = useForm<PriceState, HistoricalPriceFormPayload>({
   initial: (): PriceState => ({ price: '' }),
   schema,
@@ -51,7 +53,7 @@ const form = useForm<PriceState, HistoricalPriceFormPayload>({
       return { success: true };
     }
     catch (error: unknown) {
-      return { message: getErrorMessage(error), success: false };
+      return { message: failureMessage(error), success: false };
     }
   },
   transform: (state): HistoricalPriceFormPayload => ({
@@ -130,7 +132,7 @@ async function updatePrice(): Promise<void> {
               v-if="saveError !== undefined"
               :retryable="false"
               :title="t('price_management.add.error.title')"
-              :message="saveError"
+              :failure="saveError"
               data-testid="edit-historic-price-save-error"
             />
             <dl

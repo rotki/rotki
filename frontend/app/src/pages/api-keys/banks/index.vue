@@ -196,7 +196,7 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
       v-if="manifestsError && manifests.length === 0"
       class="mb-4"
       :title="t('bank_settings.supported_failed')"
-      :message="failureMessage(manifestsError)"
+      :failure="manifestsError"
       data-testid="bank-manifests-error"
       @retry="refreshSupportedBanks()"
     />
@@ -234,7 +234,7 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
               <FailureStrip
                 in-table
                 :title="t('bank_settings.connections_failed')"
-                :message="failureMessage(connectionsError)"
+                :failure="connectionsError"
                 data-testid="bank-connections-error"
                 @retry="refreshBankConnections()"
               />
