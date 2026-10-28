@@ -84,13 +84,6 @@ type MetricRow = tuple[
     int,
 ]
 
-# Event subtypes that route to a protocol bucket (single bucket).
-# These represent positions within a protocol (e.g., generating debt).
-PROTOCOL_BUCKET_SUBTYPES: Final = {
-    HistoryEventSubType.GENERATE_DEBT,
-    HistoryEventSubType.PAYBACK_DEBT,
-}
-
 # Protocol withdrawals that can trigger synthetic interest events when withdrawal exceeds deposit.
 PROTOCOL_WITHDRAWAL_EVENTS: Final[EventTypeSubtypePairs] = {
     (HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL),
@@ -196,7 +189,8 @@ class Bucket(NamedTuple):
         - Protocol deposits/withdrawals: affects both wallet and protocol buckets
         - Transfers: affects sender (OUT) and receiver (IN) wallet buckets.
         - Wrapped token deposits/redemptions: tracked as wallet-held asset conversions
-        - Debt positions: tracked in protocol bucket
+        - Borrowing/repaying debt: the borrowed assets are held by the wallet, so these are
+          tracked in the wallet bucket like any other receive/spend
         - Everything else: tracked in wallet bucket, which for HyperCore activity is its own
           hyperliquid bucket (see _get_wallet_protocol)
         """
@@ -287,14 +281,6 @@ class Bucket(NamedTuple):
             direction == EventDirection.NEUTRAL
         ):
             return []
-
-        if event.event_subtype in PROTOCOL_BUCKET_SUBTYPES and counterparty not in (None, ''):
-            return [(cls(
-                location=location,
-                location_label=event.location_label,
-                protocol=counterparty,
-                asset=asset,
-            ), direction)]
 
         # Everything else: wallet bucket. Token protocol metadata describes asset identity,
         # not custody.

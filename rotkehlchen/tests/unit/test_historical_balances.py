@@ -13,10 +13,12 @@ from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAYER
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
+from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V5
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
@@ -979,6 +981,59 @@ def test_deposit_to_protocol_updates_wallet_and_protocol_buckets(
             (3000, TEST_ADDR1, None, '7'),  # wallet: 5 + 2 = 7
             (3000, TEST_ADDR1, CPT_AAVE_V3, '3'),  # protocol: 5 - 2 = 3
         ]
+
+
+def test_borrowed_assets_can_be_spent_from_wallet(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """Borrowed assets land in the wallet bucket, and repaying takes them back from it."""
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.GENERATE_DEBT,
+                asset=A_USDC,
+                amount=FVal('1500'),
+                location_label=TEST_ADDR1,
+                counterparty=CPT_CURVE,
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_USDC,
+                amount=FVal('1000'),
+                location_label=TEST_ADDR1,
+                counterparty=CPT_ONEINCH_V5,
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(3000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+                asset=A_USDC,
+                amount=FVal('500'),
+                location_label=TEST_ADDR1,
+                counterparty=CPT_CURVE,
+            )],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, protocol, metric_value FROM event_metrics ORDER BY timestamp',
+        ).fetchall() == [(1000, None, '1500'), (2000, None, '500'), (3000, None, '0')]
+    assert DataIssuesManager(database).list_issues() == []
 
 
 def test_empty_counterparty_does_not_create_protocol_bucket(
