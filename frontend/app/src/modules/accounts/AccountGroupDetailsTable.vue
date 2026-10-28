@@ -14,21 +14,23 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { type LocationQuery, RouterExpandedIdsSchema } from '@/modules/core/table/route';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 
-const query = defineModel<LocationQuery>('query', { default: () => ({}), required: false });
 const selected = defineModel<string[] | undefined>('selected', { required: true });
 
-const { groupId, chains, tags, category, selectionMode } = defineProps<{
+const { groupId, chains, tags, category, selectionMode, group } = defineProps<{
   groupId: AccountGroupId;
   chains: string[];
   tags?: string[];
   category: string;
   selectionMode?: boolean;
+  /** An xpub's derived addresses all sit on one chain, so each row is told apart by its address rather than its chain. */
+  group?: 'xpub';
 }>();
 
 const emit = defineEmits<{
   edit: [account: AccountManageState];
 }>();
 
+const query = ref<LocationQuery>({});
 const expanded = ref<string[]>([]);
 
 const { fetchGroupAccounts } = useBlockchainAccountData();
@@ -87,6 +89,7 @@ defineExpose({
     v-model:expanded-ids="expanded"
     :accounts="accounts"
     :category="category"
+    :group="group"
     @edit="emit('edit', $event)"
     @refresh="fetchData()"
   >

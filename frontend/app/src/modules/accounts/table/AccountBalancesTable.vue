@@ -40,7 +40,7 @@ const { accounts, category, detailsInDrawer = false, fetching = false, framed = 
   framed?: boolean;
   /** The page is still being fetched: with no rows yet, the table shows loading rather than its empty state. */
   fetching?: boolean;
-  /** Every row opens its details elsewhere (`open-details`) instead of expanding in place. */
+  /** A row with details opens them elsewhere (`open-details`) instead of expanding in place. */
   detailsInDrawer?: boolean;
 }>();
 
@@ -86,10 +86,7 @@ const { confirmDelete, deleteAccount, edit } = useAccountOperations<T>({
 
 const expandsInline = computed<boolean>(() => !detailsInDrawer && get(anyExpansion));
 
-/** The first column holds the expander inline, or the open-details button for every row. */
-const hasLeadColumn = computed<boolean>(() => detailsInDrawer || get(anyExpansion));
-
-const cols = computed(() => createColumns(group, get(hasLeadColumn)));
+const cols = computed(() => createColumns(group, get(anyExpansion)));
 
 initializeTableSorting(sort, cols);
 
@@ -172,7 +169,7 @@ defineExpose({
     >
       <RowAppend
         :label="t('common.total')"
-        :left-patch-colspan="hasLeadColumn ? 1 : 0"
+        :left-patch-colspan="anyExpansion ? 1 : 0"
         :label-colspan="group && group === 'evm' ? 4 : 2"
         :is-mobile="false"
         variant="fixed"
@@ -198,7 +195,7 @@ defineExpose({
     </template>
     <template #item.expand="{ row }">
       <RuiButton
-        v-if="detailsInDrawer"
+        v-if="detailsInDrawer && row.expansion"
         variant="text"
         icon
         size="sm"

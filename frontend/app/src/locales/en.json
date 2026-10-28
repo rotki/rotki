@@ -91,13 +91,13 @@
     },
     "open_details": "Open details of {account}",
     "per_chain": "Per chain",
-    "per_chain_show_all": "Show all {count} assets",
-    "per_chain_show_top": "Show only the top {count}",
     "refresh_menu": {
       "label": "Refresh options",
       "one_chain": "Refresh one chain"
     },
     "row_menu": "More actions for this account",
+    "show_all_assets": "Show all {count} assets",
+    "show_top_assets": "Show only the top {count}",
     "skip_queries": {
       "chain_marker": "rotki does not query this account on {chain}",
       "chain_skipped": "skipped",

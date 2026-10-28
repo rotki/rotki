@@ -27,7 +27,7 @@ interface UseAggregatedBalancesReturn {
   useAssetPriceInfo: (identifier: MaybeRefOrGetter<string>, groupCollection?: MaybeRefOrGetter<boolean>) => ComputedRef<AssetPriceInfo>;
   getAssetPriceInfo: (identifier: string, groupMultiChain?: boolean) => AssetPriceInfo;
   assets: ComputedRef<string[]>;
-  useBlockchainBalances: (chains: MaybeRefOrGetter<string[]>, address?: MaybeRefOrGetter<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
+  useBlockchainBalances: (chains: MaybeRefOrGetter<string[]>, groupId?: MaybeRefOrGetter<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   getExchangeBalances: (exchange?: string) => AssetBalanceWithPriceAndChains[];
   useExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   useLocationBreakdown: (location: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
@@ -101,10 +101,10 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
 
   const useBlockchainBalances = (
     chains: MaybeRefOrGetter<string[]> = [],
-    address?: MaybeRefOrGetter<string>,
+    groupId?: MaybeRefOrGetter<string>,
     key: keyof EthBalance = 'assets',
   ): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => {
-    const group = address ? toValue(address) : undefined;
+    const group = groupId ? toValue(groupId) : undefined;
     const source = fromBlockchain(get(blockchainBalances), {
       addresses: group ? groupAddresses(get(accounts), group) : undefined,
       chains: toValue(chains),
