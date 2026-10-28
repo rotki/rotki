@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 from websocket import WebSocketConnectionClosedException, create_connection
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.concurrency import spawn, wait
 
 if TYPE_CHECKING:
@@ -31,6 +32,9 @@ class WebsocketReader:
                 break
             if msg not in {'', '{}'}:
                 data = json.loads(msg)
+                if data.get('type') == WSMessageType.BACKGROUND_TASK_STATUS:
+                    continue  # whenever the scheduler runs, so it would break every message count
+
                 self.messages.appendleft(data)
 
     def pop_message(self) -> dict[str, Any]:

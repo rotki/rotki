@@ -43,6 +43,8 @@ class WSMessageType(StrEnum):
     INTERNAL_TX_FIXED = auto()
     # Sent when a price oracle is set aside for the penalty duration
     ORACLE_PENALIZED = auto()
+    # Sent when a task manager task starts or finishes
+    BACKGROUND_TASK_STATUS = auto()
 
 
 class UserMessageKey(StrEnum):
@@ -250,7 +252,8 @@ def delivery_of(message_type: WSMessageType, data: dict[str, Any] | list[Any]) -
             WSMessageType.DB_UPGRADE_STATUS |
             WSMessageType.DATA_MIGRATION_STATUS |
             WSMessageType.HISTORY_EVENTS_STATUS |
-            WSMessageType.DATABASE_UPLOAD_PROGRESS
+            WSMessageType.DATABASE_UPLOAD_PROGRESS |
+            WSMessageType.BACKGROUND_TASK_STATUS
         ):
             return LIVE
         case WSMessageType.PROGRESS_UPDATES:  # a CSV import reports its outcome as its last frame

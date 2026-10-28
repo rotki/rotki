@@ -864,3 +864,25 @@ Sent when a price oracle is set aside for the oracle penalty duration. Price que
 - ``oracle``: Name of the penalized oracle, e.g. ``coingecko``, ``defillama``, ``cryptocompare``, ``alchemy``, ``moralis``
 - ``reason``: ``timeout`` when the oracle stopped answering requests, ``errors`` when it failed as many times in a row as the oracle penalty threshold setting allows
 - ``penalty_duration``: Seconds the oracle is skipped for, as set by the oracle penalty duration setting
+
+
+Background task status
+======================
+
+Sent when a task of the background task manager starts or ends. Tasks started by an API request are not reported. The message is only sent to clients that are connected at that moment and is not kept for later, so a client that reconnects should read the ``running_tasks`` of the periodic data endpoint to learn what is currently running.
+
+::
+
+    {
+        "type": "background_task_status",
+        "data": {
+            "name": "Query EVM transactions for 0x...",
+            "started_at": 1572345800,
+            "status": "started"
+        }
+    }
+
+
+- ``name``: The name of the task
+- ``started_at``: Unix timestamp at which the task was spawned
+- ``status``: One of ``started``, ``finished``, ``failed`` or ``cancelled``
