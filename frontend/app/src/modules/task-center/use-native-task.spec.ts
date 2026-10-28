@@ -64,6 +64,21 @@ describe('useNativeTask', () => {
     expect(hasTag(outcome.error, 'TaskFailed')).toBe(true);
   });
 
+  it('should keep what a throwing spec threw as the failure\'s cause', async () => {
+    const { submitTask } = useNativeTask();
+    const thrown = new Error('no response');
+
+    const outcome = await submitTask({
+      id: makeActivityId(ActivityKind.PRICES, 'throws'),
+      kind: ActivityKind.PRICES,
+      run: async () => Promise.reject(thrown),
+      title: 'prices',
+    });
+
+    assert(isErr(outcome));
+    expect(outcome.error).toStrictEqual(TaskFailed({ cause: thrown, message: 'no response' }));
+  });
+
   it('should share the in-flight promise for concurrent same-id submits', async () => {
     const { submitTask } = useNativeTask();
     let release: () => void = () => {};

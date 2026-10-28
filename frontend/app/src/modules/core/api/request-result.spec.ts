@@ -3,6 +3,7 @@ import { assert, describe, expect, it } from 'vitest';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { fromRequest, isRequestFailure, isUnreachable, RequestCancelled, RequestFailed, toRequestError } from '@/modules/core/api/request-result';
 import { createStatusError } from '@/modules/core/api/response-handlers';
+import { TaskFailed } from '@/modules/core/tasks/task-result';
 
 describe('fromRequest', () => {
   it('should carry the value of a request that resolves', async () => {
@@ -101,6 +102,13 @@ describe('isUnreachable', () => {
 
     expect(isUnreachable(answered)).toBe(false);
     expect(isUnreachable(toRequestError(answered))).toBe(false);
+  });
+
+  it('should hold for a task that failed because its request got no response', () => {
+    const noResponse = new FetchError('[PUT] "http://127.0.0.1:4141/api/1/assets/user": <no response> Failed to fetch');
+
+    expect(isUnreachable(TaskFailed({ cause: noResponse, message: noResponse.message }))).toBe(true);
+    expect(isUnreachable(TaskFailed({ message: 'Timed out' }))).toBe(false);
   });
 
   it('should not hold for an error that is not a fetch failure', () => {
