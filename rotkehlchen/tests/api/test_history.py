@@ -29,6 +29,12 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_EXTERNAL,
+    LOCATION_KRAKEN,
+    LOCATION_POLONIEX,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -49,7 +55,6 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import (
     AssetAmount,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -64,7 +69,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.KRAKEN)],
+    [(LOCATION_BINANCE, LOCATION_POLONIEX, LOCATION_KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -181,7 +186,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: APIServer, start_t
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.KRAKEN)],
+    [(LOCATION_BINANCE, LOCATION_POLONIEX, LOCATION_KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('optimism_accounts', [[ETH_ADDRESS1]])
@@ -325,7 +330,7 @@ def test_query_history_external_exchanges(rotkehlchen_api_server: APIServer) -> 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.KRAKEN)],
+    [(LOCATION_BINANCE, LOCATION_POLONIEX, LOCATION_KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -487,14 +492,14 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server: APIServer) -> None
                 group_identifier='whatever',
                 sequence_index=0,
                 timestamp=TimestampMS(1665336822000),
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 amount=FVal(0.5),
                 asset=A_BTC,
             ), *create_swap_events(
                 timestamp=TimestampMS(1665336822000),
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 spend=AssetAmount(amount=FVal('1'), asset=A_EUR),
                 receive=AssetAmount(amount=FVal('320'), asset=A_DAI),
                 group_identifier='tradeid1',

@@ -26,13 +26,13 @@ from rotkehlchen.api.websockets.typedefs import (
     delivery_of,
 )
 from rotkehlchen.concurrency import spawn, wait
+from rotkehlchen.locations.constants import LOCATION_BINANCE, LOCATION_KRAKEN, LOCATION_KUCOIN
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.messages import (
     consume_error_payloads,
     consume_errors,
     consume_warnings,
 )
-from rotkehlchen.types import Location
 from rotkehlchen.user_messages import (
     MAX_HELD_EVENTS,
     MAX_HELD_REPORTS,
@@ -52,6 +52,8 @@ from rotkehlchen.user_messages import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from rotkehlchen.locations.types import LocationIdentifier
 
 # A classification for tests about delivery, where which family a message has is irrelevant
 _TAG_PROBLEM = LocalDbProblem(entry=UserMessageEntry.TAG)
@@ -140,7 +142,7 @@ def test_polling_fallback_keeps_the_envelope() -> None:
     msg_aggregator.add_error(
         msg := 'Failed to deserialize a kucoin balance. Ignoring it.',
         classification=BadData(record=UserMessageRecord.BALANCE, error='Missing key: amount'),
-        subject=Location.KUCOIN,
+        subject=LOCATION_KUCOIN,
     )
     msg_aggregator.add_warning('a warning', classification=_TAG_PROBLEM)
 
@@ -174,12 +176,12 @@ def test_repeats_of_one_problem_are_held_once_with_a_count() -> None:
         msg_aggregator.add_error(
             f'Binance rejected the API key of main ({index})',
             classification=AuthFailure(service='binance', account='main'),
-            subject=Location.BINANCE,
+            subject=LOCATION_BINANCE,
         )
     msg_aggregator.add_error(
         'Binance rejected the API key of other',
         classification=AuthFailure(service='binance', account='other'),
-        subject=Location.BINANCE,
+        subject=LOCATION_BINANCE,
     )
 
     messages, dropped = msg_aggregator.consume_held()
@@ -202,7 +204,7 @@ def test_missing_prices_are_held_once_per_asset() -> None:
         msg_aggregator.add_error(
             f'Could not find a price for {asset} at {timestamp}',
             classification=MissingPrice(asset=asset, timestamp=timestamp),
-            subject=Location.KRAKEN,
+            subject=LOCATION_KRAKEN,
         )
 
     messages, _ = msg_aggregator.consume_held()
@@ -447,21 +449,21 @@ def test_failed_broadcast_falls_back_by_message_class() -> None:
 
 @pytest.mark.parametrize(('classification', 'subject', 'group'), [
     # unreadable data and unreachable remotes fold per location and record
-    (BadData(record=UserMessageRecord.TRADE, error='x'), Location.KUCOIN, ['error', 'bad_data', 'kucoin', 'trade']),  # noqa: E501
-    (NetworkFailure(record=UserMessageRecord.BALANCE, error='x'), Location.KRAKEN, ['error', 'network', 'kraken', 'balance']),  # noqa: E501
+    (BadData(record=UserMessageRecord.TRADE, error='x'), LOCATION_KUCOIN, ['error', 'bad_data', 'kucoin', 'trade']),  # noqa: E501
+    (NetworkFailure(record=UserMessageRecord.BALANCE, error='x'), LOCATION_KRAKEN, ['error', 'network', 'kraken', 'balance']),  # noqa: E501
     # rejected credentials stay per account, so the key that needs replacing stays visible
-    (AuthFailure(service='binance', account='main'), Location.BINANCE, ['error', 'auth', 'binance', 'binance', 'main']),  # noqa: E501
+    (AuthFailure(service='binance', account='main'), LOCATION_BINANCE, ['error', 'auth', 'binance', 'binance', 'main']),  # noqa: E501
     # unknown assets stay per asset, so each one that needs adding stays visible
     (UnknownAssetSeen(identifier='FOO'), None, ['error', 'unknown_asset', None, 'FOO']),
     (LocalDbProblem(entry=UserMessageEntry.TAG), None, ['error', 'local_db', None, 'tag']),
     # missing prices stay per asset, so each one that needs a price stays visible
-    (MissingPrice(asset='ETH', timestamp=1), Location.KRAKEN, ['error', 'price', 'kraken', 'ETH']),
-    (Unsupported(feature=UserMessageFeature.ASSET), Location.KRAKEN, ['error', 'unsupported', 'kraken', 'asset']),  # noqa: E501
+    (MissingPrice(asset='ETH', timestamp=1), LOCATION_KRAKEN, ['error', 'price', 'kraken', 'ETH']),
+    (Unsupported(feature=UserMessageFeature.ASSET), LOCATION_KRAKEN, ['error', 'unsupported', 'kraken', 'asset']),  # noqa: E501
     (Internal(operation=UserMessageOperation.BACKGROUND_TASK), None, ['error', 'internal', None, 'background_task']),  # noqa: E501
 ])
 def test_each_family_declares_its_identity(
         classification: MessageClassification,
-        subject: Location | None,
+        subject: LocationIdentifier | None,
         group: list[str | None],
 ) -> None:
     """`group` is the one definition of which messages are one problem: the free-text
@@ -486,7 +488,7 @@ def test_user_message_carries_its_classification():
     msg_aggregator.add_error(
         msg := 'Failed to deserialize a kucoin balance. Ignoring it.',
         classification=BadData(record=UserMessageRecord.BALANCE, error='Missing key: amount'),
-        subject=Location.KUCOIN,
+        subject=LOCATION_KUCOIN,
     )
     assert json.loads(json.dumps(process_result(
         notifier.broadcast.call_args.kwargs['to_send_data'],

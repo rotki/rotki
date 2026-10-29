@@ -41,6 +41,13 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_ETHEREUM,
+    LOCATION_OPTIMISM,
+    LOCATION_POLONIEX,
+    LOCATION_TOTAL,
+)
 from rotkehlchen.premium.premium import (
     Premium,
     PremiumCredentials,
@@ -88,7 +95,6 @@ from rotkehlchen.types import (
     Eth2PubKey,
     EvmTransaction,
     EVMTxHash,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -463,7 +469,7 @@ def test_maybe_detect_new_tokens_skips_disabled_address(
                 group_identifier='disabled-token-detection',
                 sequence_index=0,
                 timestamp=TimestampMS(2_000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_DAI,
@@ -536,7 +542,7 @@ def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex)
         assert start_ts == 0
         assert end_ts >= now
 
-    exchange_manager.connected_exchanges[Location.POLONIEX] = [poloniex]
+    exchange_manager.connected_exchanges[LOCATION_POLONIEX] = [poloniex]
     poloniex_patch = patch.object(poloniex, 'query_online_history_events', wraps=mock_query_history)  # noqa: E501
 
     timeout = 5
@@ -558,11 +564,11 @@ def test_maybe_schedule_exchange_query_ignore_exchanges(
         poloniex: ExchangeInterface,
 ) -> None:
     """Verify that task manager respects the ignored exchanges when querying trades"""
-    exchange_manager.connected_exchanges[Location.POLONIEX] = [poloniex]
+    exchange_manager.connected_exchanges[LOCATION_POLONIEX] = [poloniex]
     task_manager.exchange_manager = exchange_manager
     with task_manager.database.user_write() as cursor:
         task_manager.database.set_settings(cursor, ModifiableDBSettings(
-            non_syncing_exchanges=[poloniex.location_id()],
+            non_syncing_exchanges=[poloniex.connection_identifier],
         ))
     assert task_manager._maybe_schedule_exchange_history_query() is None
 
@@ -801,7 +807,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: Rotkehlchen):
             write_cursor=write_cursor,
             location_data=[LocationData(
                 time=Timestamp(2),
-                location=Location.ETHEREUM.serialize_for_db(),
+                location=LOCATION_ETHEREUM,
                 usd_value='',
             )],
         )
@@ -813,7 +819,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: Rotkehlchen):
                     group_identifier='0x15ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
                     sequence_index=1,
                     timestamp=TimestampMS(1000),
-                    location=Location.OPTIMISM,
+                    location=LOCATION_OPTIMISM,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_USDT,
@@ -824,7 +830,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: Rotkehlchen):
                     group_identifier='0x25ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
                     sequence_index=1,
                     timestamp=TimestampMS(2000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.WITHDRAWAL,
                     event_subtype=HistoryEventSubType.REMOVE_ASSET,
                     asset=A_USDT,
@@ -835,7 +841,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: Rotkehlchen):
                     group_identifier='0x75ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
                     sequence_index=1,
                     timestamp=TimestampMS(3000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.RECEIVE,
                     asset=A_DAI,
@@ -846,7 +852,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: Rotkehlchen):
                     group_identifier='0x35ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
                     sequence_index=1,
                     timestamp=TimestampMS(4000),
-                    location=Location.OPTIMISM,
+                    location=LOCATION_OPTIMISM,
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.RECEIVE,
                     asset=A_USDC,
@@ -1288,14 +1294,14 @@ def test_maybe_detect_new_tokens_filters_events(
             asset_identifiers=[token.identifier for token in tokens],
         )
         database.add_multiple_location_data(write_cursor=write_cursor, location_data=[
-            LocationData(time=last_save_ts, location=Location.TOTAL.serialize_for_db(), usd_value='100'),  # noqa: E501
+            LocationData(time=last_save_ts, location=LOCATION_TOTAL, usd_value='100'),
         ])
         database.add_to_ignored_assets(write_cursor=write_cursor, asset=ignored_token)
         DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[EvmEvent(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(timestamp * 1000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=token,
@@ -1346,7 +1352,7 @@ def test_detect_tokens_from_decoded_events(
     ) for name in ('PROTO', 'SENT', 'SPAM'))
     with database.user_write() as write_cursor:  # snapshot newer than all the events
         database.add_multiple_location_data(write_cursor=write_cursor, location_data=[
-            LocationData(time=ts_now(), location=Location.TOTAL.serialize_for_db(), usd_value='1'),
+            LocationData(time=ts_now(), location=LOCATION_TOTAL, usd_value='1'),
         ])
         DBEvmTx(database).add_transactions(
             write_cursor=write_cursor,
@@ -1371,7 +1377,7 @@ def test_detect_tokens_from_decoded_events(
         tx_ref=tx_ref,
         sequence_index=idx,
         timestamp=TimestampMS(1700000000000),
-        location=Location.ARBITRUM_ONE,
+        location=LOCATION_ARBITRUM_ONE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=asset,
@@ -2175,7 +2181,7 @@ def test_graph_query_query_delegations(
                     tx_ref=(tx_hash := make_evm_tx_hash()),
                     sequence_index=1,
                     timestamp=TimestampMS(timestamp),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.INFORMATIONAL,
                     event_subtype=HistoryEventSubType.APPROVE,
                     asset=A_GRT,

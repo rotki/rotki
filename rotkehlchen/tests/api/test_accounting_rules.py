@@ -22,6 +22,9 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -31,7 +34,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history_base_entry import add_entries, store_and_retrieve_events
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -462,7 +465,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         asset=A_CUSDC,
         amount=ONE,
         event_type=HistoryEventType.DEPOSIT,
@@ -474,7 +477,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         asset=A_USDC,
         amount=ONE,
         event_type=HistoryEventType.RECEIVE,

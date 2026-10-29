@@ -8,9 +8,12 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -25,7 +28,7 @@ def test_vote_cast(optimism_inquirer, optimism_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1683666539000),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('ETH'),
@@ -36,7 +39,7 @@ def test_vote_cast(optimism_inquirer, optimism_accounts):
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1683666539000),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=Asset('ETH'),
@@ -64,7 +67,7 @@ def test_vote_cast_with_params(optimism_inquirer, optimism_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1688979323000),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('ETH'),
@@ -75,7 +78,7 @@ def test_vote_cast_with_params(optimism_inquirer, optimism_accounts):
             tx_ref=tx_hash,
             sequence_index=20,
             timestamp=TimestampMS(1688979323000),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=Asset('ETH'),
@@ -100,7 +103,7 @@ def test_vote_cast_with_reason(optimism_inquirer, optimism_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1706051703000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('ETH'),
@@ -111,7 +114,7 @@ def test_vote_cast_with_reason(optimism_inquirer, optimism_accounts):
             tx_ref=tx_hash,
             sequence_index=122,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=Asset('ETH'),

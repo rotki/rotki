@@ -11,7 +11,7 @@ describe('useExchangeKeyConditions', () => {
     const { raise } = useRaisedConditionsStore();
     raise({ kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, ...main });
     raise({ kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, ...other });
-    raise({ kind: RaisedConditionKind.BINANCE_PAIRS_MISSING, ...main });
+    raise({ identifier: 'binance-main', kind: RaisedConditionKind.BINANCE_PAIRS_MISSING, ...main });
   });
 
   it('should list the accounts whose key was refused, and no other condition', () => {
@@ -26,7 +26,7 @@ describe('useExchangeKeyConditions', () => {
     settleSaved(main);
 
     expect(get(accounts)).toEqual([other]);
-    expect(useRaisedConditionsStore().conditions).toContainEqual({ kind: RaisedConditionKind.BINANCE_PAIRS_MISSING, ...main });
+    expect(useRaisedConditionsStore().conditions).toContainEqual({ identifier: 'binance-main', kind: RaisedConditionKind.BINANCE_PAIRS_MISSING, ...main });
   });
 
   it('should settle the accounts that are no longer connected', () => {
@@ -35,6 +35,6 @@ describe('useExchangeKeyConditions', () => {
     settleDisconnected([other]);
 
     expect(get(accounts)).toEqual([other]);
-    expect(useRaisedConditionsStore().conditions).toContainEqual({ kind: RaisedConditionKind.BINANCE_PAIRS_MISSING, ...main });
+    expect(useRaisedConditionsStore().conditions).toContainEqual({ identifier: 'binance-main', kind: RaisedConditionKind.BINANCE_PAIRS_MISSING, ...main });
   });
 });

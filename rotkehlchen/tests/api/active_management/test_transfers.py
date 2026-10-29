@@ -18,6 +18,9 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -29,7 +32,6 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     ChainID,
     ChecksumEvmAddress,
-    Location,
     TimestampMS,
 )
 
@@ -64,7 +66,7 @@ def test_transfers(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=1,
                 timestamp=TimestampMS(0),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.TRANSFER,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,

@@ -1,4 +1,3 @@
-import json
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
@@ -10,14 +9,17 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2ChainIdsWithL1FeesType,
     L2WithL1FeesTransaction,
 )
+from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, TX_DECODED, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.icons import NOT_FOUND_ICON_MARKER_SUFFIX
+from rotkehlchen.locations.chains import location_from_chain_id
+from rotkehlchen.locations.constants import LOCATION_BITMEX
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import ChainID, EVMTxHash, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, EVMTxHash, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import from_wei
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
 
@@ -100,7 +102,7 @@ def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                 dbevents.delete_events_by_tx_ref(
                     write_cursor=write_cursor,
                     tx_refs=chain_tx_hashes,
-                    location=Location.from_chain_id(chain_id),
+                    location=location_from_chain_id(chain_id),
                     customized_handling='preserve_transactions',
                 )
             write_cursor.executemany(
@@ -143,7 +145,7 @@ def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
 
             bindings = (
                 tx_hash,
-                Location.from_chain_id(chain_id).serialize_for_db(),
+                location_from_chain_id(chain_id),
                 CPT_GAS,
                 HistoryEventType.SPEND.serialize(),
                 HistoryEventType.FAIL.serialize(),  # gas of failed transactions
@@ -176,33 +178,16 @@ def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
 
     @progress_step(description='Removing BitMEX API data')
     def _remove_bitmex_data(rotki: Rotkehlchen) -> None:
-        """BitMEX shut down and its API integration was removed. Its API keys can no longer
-        be used, or removed through the API, so delete them along with their query ranges
-        and non syncing setting. The BitMEX history events are kept."""
+        """BitMEX shut down and its API integration was removed. Its connections can no longer
+        be used, or removed through the API, so delete them along with their settings, query
+        ranges and non syncing setting entry. The BitMEX history events are kept."""
+        connections = DBConnections(rotki.data.db)
         with rotki.data.db.user_write() as write_cursor:
-            write_cursor.execute(  # cascades to user_credentials_mappings
-                'DELETE FROM user_credentials WHERE location=?',
-                (Location.BITMEX.serialize_for_db(),),
-            )
-            write_cursor.execute(
-                'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
-                (f'{Location.BITMEX!s}\\_%', '\\'),
-            )
-            if (non_syncing_exchanges := write_cursor.execute(
-                "SELECT value FROM settings WHERE name='non_syncing_exchanges'",
-            ).fetchone()) is None:
-                return
-
-            try:
-                exchanges = json.loads(non_syncing_exchanges[0])
-            except json.JSONDecodeError as e:
-                log.error('Failed to read setting non_syncing_exchanges due to %s', e)
-                return
-
-            write_cursor.execute(
-                "UPDATE settings SET value=? WHERE name='non_syncing_exchanges'",
-                (json.dumps([x for x in exchanges if x['location'] != Location.BITMEX.serialize()]),),  # noqa: E501
-            )
+            for (identifier,) in write_cursor.execute(
+                'SELECT identifier FROM integration_connections WHERE connector_identifier=?',
+                (LOCATION_BITMEX,),
+            ).fetchall():
+                connections.delete(write_cursor, identifier)
 
     @progress_step(description='Removing empty asset icon files')
     def _remove_empty_icons(rotki: Rotkehlchen) -> None:

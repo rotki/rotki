@@ -16,12 +16,18 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_COINBASE,
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tests.data_migrations.test_migrations import MockRotkiForMigrations
-from rotkehlchen.types import AssetAmount, Location, TimestampMS
+from rotkehlchen.types import AssetAmount, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 def _insert_swap_events(db: DBHandler, events: list[SwapEvent]) -> None:
@@ -35,7 +41,7 @@ def _insert_swap_events(db: DBHandler, events: list[SwapEvent]) -> None:
                 event.group_identifier,
                 event.sequence_index,
                 event.timestamp,
-                event.location.serialize_for_db(),
+                event.location,
                 event.location_label,
                 event.asset.identifier,
                 str(event.amount),
@@ -52,7 +58,7 @@ def _insert_swap_events(db: DBHandler, events: list[SwapEvent]) -> None:
 def create_broken_swap_events(
         db: DBHandler,
         timestamp: TimestampMS,
-        location: Location,
+        location: LocationIdentifier,
         location_label: str | None = None,
 ) -> tuple[str, str, str]:
     """Create SwapEvents with different identifiers like they were created before the fix"""
@@ -143,19 +149,19 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
     spend_id1, receive_id1, fee_id1 = create_broken_swap_events(
         db=database,
         timestamp=ts1,
-        location=Location.BINANCE,
+        location=LOCATION_BINANCE,
         location_label='binance1',
     )
 
     # Swap 2: ETH -> BTC without fee
     spend_event2 = SwapEvent(
         timestamp=ts2,
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=ONE * 5,
         group_identifier=create_group_identifier(
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             timestamp=ts2,
             asset=A_ETH,
             amount=ONE * 5,
@@ -165,12 +171,12 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
 
     receive_event2 = SwapEvent(
         timestamp=ts2,
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=ONE * 10,
         group_identifier=create_group_identifier(
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             timestamp=ts2,
             asset=A_BTC,
             amount=ONE * 10,
@@ -186,7 +192,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
     # Also create a correctly linked swap (should not be touched by migration)
     correct_events = create_swap_events(
         timestamp=TimestampMS(3000000),
-        location=Location.COINBASE,
+        location=LOCATION_COINBASE,
         spend=AssetAmount(asset=A_ETH, amount=ONE * 3),
         receive=AssetAmount(asset=A_BTC, amount=ONE * 6),
         group_identifier='correct_swap_id',
@@ -203,7 +209,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
             """SELECT group_identifier, subtype FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?
                ORDER BY sequence_index""",
-            (ts1, Location.BINANCE.serialize_for_db(),
+            (ts1, LOCATION_BINANCE,
              HistoryBaseEntryType.SWAP_EVENT.serialize_for_db()),
         ).fetchall()
         assert len(events1) == 3
@@ -217,7 +223,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
             """SELECT group_identifier, subtype FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?
                ORDER BY sequence_index""",
-            (ts2, Location.KRAKEN.serialize_for_db(),
+            (ts2, LOCATION_KRAKEN,
              HistoryBaseEntryType.SWAP_EVENT.serialize_for_db()),
         ).fetchall()
         assert len(events2) == 2
@@ -229,7 +235,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
         correct_events_check = cursor.execute(
             """SELECT group_identifier FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?""",
-            (3000000, Location.COINBASE.serialize_for_db(),
+            (3000000, LOCATION_COINBASE,
              HistoryBaseEntryType.SWAP_EVENT.serialize_for_db()),
         ).fetchall()
         assert all(event[0] == correct_id for event in correct_events_check)
@@ -249,7 +255,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
             """SELECT group_identifier, subtype FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?
                ORDER BY sequence_index""",
-            (ts1, Location.BINANCE.serialize_for_db(),
+            (ts1, LOCATION_BINANCE,
              HistoryBaseEntryType.SWAP_EVENT.serialize_for_db()),
         ).fetchall()
         assert len(events1_fixed) == 3
@@ -262,7 +268,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
             """SELECT group_identifier, subtype FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?
                ORDER BY sequence_index""",
-            (ts2, Location.KRAKEN.serialize_for_db(),
+            (ts2, LOCATION_KRAKEN,
              HistoryBaseEntryType.SWAP_EVENT.serialize_for_db()),
         ).fetchall()
         assert len(events2_fixed) == 2
@@ -273,7 +279,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
         correct_events_check = cursor.execute(
             """SELECT group_identifier FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?""",
-            (3000000, Location.COINBASE.serialize_for_db(),
+            (3000000, LOCATION_COINBASE,
              HistoryBaseEntryType.SWAP_EVENT.serialize_for_db()),
         ).fetchall()
         assert all(event[0] == correct_id for event in correct_events_check)
@@ -287,7 +293,7 @@ def test_migration_20_edge_case_multiple_swaps(database: DBHandler) -> None:
     rotki = MockRotkiForMigrations(database)
 
     ts = TimestampMS(1000000)
-    location = Location.BINANCE
+    location = LOCATION_BINANCE
 
     # Create two broken swaps at same timestamp/location
     # Swap 1: ETH -> BTC
@@ -364,7 +370,7 @@ def test_migration_20_edge_case_multiple_swaps(database: DBHandler) -> None:
             """SELECT group_identifier, subtype, asset, amount FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?
                ORDER BY identifier""",
-            (ts, location.serialize_for_db(),
+            (ts, location,
              HistoryBaseEntryType.SWAP_EVENT.serialize_for_db()),
         ).fetchall()
 
@@ -434,7 +440,7 @@ def test_migration_20_recover_lost_trades(database: DBHandler) -> None:
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(  # the trigger events should be removed
             'SELECT COUNT(*) FROM history_events WHERE group_identifier = ?',
-            (hash_id(str(Location.KRAKEN)),),
+            (hash_id(str(LOCATION_KRAKEN)),),
         ).fetchone()[0] == 0
 
         cursor.execute(  # fetch all recovered swap events
@@ -447,21 +453,21 @@ def test_migration_20_recover_lost_trades(database: DBHandler) -> None:
         )
         expected_events = [
             # First trade(same timestamp and location)
-            (1749566127000, 'A', 'USD', '27323.6750009618', 'trade', 'spend', None, (event_id_1 := '770f7468bc82e01badc0fa3a1f14e942596b4e5005136043fa365d5147d50e9f')),  # noqa: E501
-            (1749566127000, 'A', 'ETH', '10', 'trade', 'receive', None, event_id_1),
-            (1749566127000, 'A', 'USD', '12', 'trade', 'fee', None, event_id_1),
+            (1749566127000, 'external', 'USD', '27323.6750009618', 'trade', 'spend', None, (event_id_1 := '770f7468bc82e01badc0fa3a1f14e942596b4e5005136043fa365d5147d50e9f')),  # noqa: E501
+            (1749566127000, 'external', 'ETH', '10', 'trade', 'receive', None, event_id_1),
+            (1749566127000, 'external', 'USD', '12', 'trade', 'fee', None, event_id_1),
 
             # Third trade(different timestamp but same location)
-            (1749566160000, 'A', 'USD', '217318.633043406', 'trade', 'spend', '', (event_id_3 := '858c767c41df3e1a8d4a29bb9e9a8303f0e06efde643bb677f493ea4f1aa4f95')),  # noqa: E501
-            (1749566160000, 'A', 'BTC', '2', 'trade', 'receive', None, event_id_3),
+            (1749566160000, 'external', 'USD', '217318.633043406', 'trade', 'spend', '', (event_id_3 := '858c767c41df3e1a8d4a29bb9e9a8303f0e06efde643bb677f493ea4f1aa4f95')),  # noqa: E501
+            (1749566160000, 'external', 'BTC', '2', 'trade', 'receive', None, event_id_3),
 
             # Second trade(same timestamp and location)
-            (1749566127000, 'A', 'USD', '13661.8375004809', 'trade', 'spend', '', (event_id_2 := 'a7ea7e46207b89e3d6b0067fa764de13a94203ec73cac18882bbf2de426cfecd')),  # noqa: E501
-            (1749566127000, 'A', 'ETH', '5', 'trade', 'receive', None, event_id_2),
+            (1749566127000, 'external', 'USD', '13661.8375004809', 'trade', 'spend', '', (event_id_2 := 'a7ea7e46207b89e3d6b0067fa764de13a94203ec73cac18882bbf2de426cfecd')),  # noqa: E501
+            (1749566127000, 'external', 'ETH', '5', 'trade', 'receive', None, event_id_2),
 
             # Fourth trade(different timestamp but same location)
-            (1749566154000, 'A', 'USD', '108659.316521703', 'trade', 'spend', '', (event_id_4 := 'effef56a55330e3f4bf893757ea7c71d06078303ae09bcb93950a33a09f4aaac')),  # noqa: E501
-            (1749566154000, 'A', 'BTC', '1', 'trade', 'receive', None, event_id_4),
+            (1749566154000, 'external', 'USD', '108659.316521703', 'trade', 'spend', '', (event_id_4 := 'effef56a55330e3f4bf893757ea7c71d06078303ae09bcb93950a33a09f4aaac')),  # noqa: E501
+            (1749566154000, 'external', 'BTC', '1', 'trade', 'receive', None, event_id_4),
         ]
         assert all(expected_events[i] == row for i, row in enumerate(cursor))
 

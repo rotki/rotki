@@ -44,6 +44,9 @@ from rotkehlchen.history.events.structures.evm_event import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import (
+    LOCATION_ZKSYNC_LITE,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int_from_str
 from rotkehlchen.types import (
@@ -51,7 +54,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmlikeChain,
     EVMTxHash,
-    Location,
     SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -1027,7 +1029,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 tx_ref=transaction.tx_hash,
                 sequence_index=sequence_index,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
-                location=Location.ZKSYNC_LITE,
+                location=LOCATION_ZKSYNC_LITE,
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=asset,
@@ -1056,7 +1058,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 tx_ref=transaction.tx_hash,
                 sequence_index=events[-1].sequence_index + 1,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
-                location=Location.ZKSYNC_LITE,
+                location=LOCATION_ZKSYNC_LITE,
                 event_type=events[0].event_type,
                 # Combinations that can come up are:
                 # DEPOSIT/FEE, WITHDRAWAl/FEE, SPEND/FEE, TRANSFER/FEE

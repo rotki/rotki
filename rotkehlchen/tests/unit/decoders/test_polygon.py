@@ -8,8 +8,11 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH_MATIC, A_ETH_POL
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr
@@ -22,7 +25,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1698285215000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -33,7 +36,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         sequence_index=372,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=A_ETH_MATIC,
@@ -44,7 +47,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         sequence_index=373,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.MIGRATE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH_MATIC,
@@ -57,7 +60,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         sequence_index=374,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.MIGRATE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH_POL,

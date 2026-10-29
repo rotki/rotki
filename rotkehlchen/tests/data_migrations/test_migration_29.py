@@ -11,8 +11,14 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_BONDS,
+    LOCATION_COLLECTIBLES,
+    LOCATION_ETF,
+    LOCATION_HYPERLIQUID,
+)
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -46,7 +52,7 @@ def test_migration_29_removes_the_zero_hash_funding_event(database: DBHandler) -
     """The funding event saved under the zero hash group is removed unless customized.
     Other Hyperliquid events are kept."""
     zero_hash_group = create_group_identifier_from_unique_id(
-        location=Location.HYPERLIQUID,
+        location=LOCATION_HYPERLIQUID,
         unique_id=ZERO_32_BYTES_HEX,
     )
     history_db = DBHistoryEvents(database)
@@ -56,7 +62,7 @@ def test_migration_29_removes_the_zero_hash_funding_event(database: DBHandler) -
                 group_identifier=group_identifier,
                 sequence_index=sequence_index,
                 timestamp=TimestampMS(1762300800000),
-                location=Location.HYPERLIQUID,
+                location=LOCATION_HYPERLIQUID,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.INTEREST,
                 asset=A_USDC,
@@ -72,26 +78,14 @@ def test_migration_29_removes_the_zero_hash_funding_event(database: DBHandler) -
         ).fetchall() == [('other', 0), (zero_hash_group, 1)]
 
 
-@pytest.mark.parametrize('data_migration_version', [28])
-def test_migration_29_adds_traditional_finance_locations(database: DBHandler) -> None:
-    """Fresh DBs have the Bonds, ETF and Collectibles locations, and the migration adds
-    them to existing DBs so that events can use them."""
-    new_locations = (Location.BONDS, Location.ETF, Location.COLLECTIBLES)
-    location_query = 'SELECT location, seq FROM location WHERE seq BETWEEN 62 AND 64 ORDER BY seq'
-    expected_rows = [(location.serialize_for_db(), location.value) for location in new_locations]
+def test_traditional_finance_locations_in_tree(database: DBHandler) -> None:
+    """The Bonds, ETF and Collectibles locations that migration 29 added before the location
+    tree are built-in nodes of the tree, so events can use them."""
+    new_locations = (LOCATION_BONDS, LOCATION_ETF, LOCATION_COLLECTIBLES)
     with database.conn.read_ctx() as cursor:
-        assert cursor.execute(location_query).fetchall() == expected_rows
-
-    with database.user_write() as write_cursor:
-        write_cursor.executemany(
-            'DELETE FROM location WHERE location=?',
-            [(location.serialize_for_db(),) for location in new_locations],
-        )
-
-    run_single_migration(database=database, migration=29)
-
-    with database.conn.read_ctx() as cursor:
-        assert cursor.execute(location_query).fetchall() == expected_rows
+        assert cursor.execute(
+            "SELECT identifier, parent_identifier FROM locations WHERE identifier IN ('bonds', 'etf', 'collectibles') ORDER BY identifier",  # noqa: E501
+        ).fetchall() == [('bonds', 'other'), ('collectibles', 'other'), ('etf', 'other')]
 
     history_db = DBHistoryEvents(database)
     with database.user_write() as write_cursor:
@@ -108,6 +102,6 @@ def test_migration_29_adds_traditional_finance_locations(database: DBHandler) ->
             ))
 
     with database.conn.read_ctx() as cursor:
-        assert {Location.deserialize_from_db(row[0]) for row in cursor.execute(
+        assert {row[0] for row in cursor.execute(
             'SELECT location FROM history_events',
         )} == set(new_locations)

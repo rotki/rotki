@@ -39,6 +39,9 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import (
+    LOCATION_GEMINI,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_event_type,
@@ -52,7 +55,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
 )
 from rotkehlchen.user_messages import AuthFailure, BadData, NetworkFailure
@@ -124,7 +126,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
     ):
         super().__init__(
             name=name,
-            location=Location.GEMINI,
+            location=LOCATION_GEMINI,
             api_key=api_key,
             secret=secret,
             database=database,
@@ -433,7 +435,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
         except GeminiPermissionError as e:
             self.add_classified_error(
                 f'Got permission error while querying Gemini for trades: {e!s}',
-                AuthFailure(service=self.location.serialize(), account=self.name),
+                AuthFailure(service=self.location, account=self.name),
             )
             raise
         except RemoteError as e:
@@ -549,7 +551,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                 asset = asset_from_gemini(entry['currency'])
                 # Gemini does not include withdrawal fees neither in the API nor in their UI
                 movement = AssetMovement(
-                    location=Location.GEMINI,
+                    location=LOCATION_GEMINI,
                     location_label=self.name,
                     event_subtype=deserialize_asset_movement_event_type(entry['type']),
                     timestamp=ts_sec_to_ms(timestamp),

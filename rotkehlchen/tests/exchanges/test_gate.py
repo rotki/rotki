@@ -9,6 +9,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.assets.converters import asset_from_gate
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.constants import GATE_LOCATION_KEY
@@ -29,8 +30,9 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import LOCATION_GATE
 from rotkehlchen.tests.utils.messages import consume_errors
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -125,7 +127,7 @@ def test_gate_history_query_commits_30_day_chunks(gate_exchange: Gate) -> None:
     with gate_exchange.db.conn.read_ctx() as cursor:
         ranges_to_query = DBQueryRanges(gate_exchange.db).get_location_query_ranges(
             cursor=cursor,
-            location_string=f'{gate_exchange.location!s}_history_events_{gate_exchange.name}',
+            location_string=connection_range_name(gate_exchange.connection_identifier, 'history_events'),  # noqa: E501
             start_ts=GATE_MOVEMENTS_QUERY_START_TS,
             end_ts=query_end,
         )
@@ -369,7 +371,7 @@ def test_deposit_withdrawals(gate_exchange: Gate) -> None:
 
     assert movements == [
         AssetMovement(
-            location=Location.GATE,
+            location=LOCATION_GATE,
             location_label=gate_exchange.name,
             event_subtype=HistoryEventSubType.RECEIVE,
             timestamp=TimestampMS(1626345819000),
@@ -381,7 +383,7 @@ def test_deposit_withdrawals(gate_exchange: Gate) -> None:
                 'transaction_id': '0xabc',
             },
         ), AssetMovement(
-            location=Location.GATE,
+            location=LOCATION_GATE,
             location_label=gate_exchange.name,
             event_subtype=HistoryEventSubType.RECEIVE,
             timestamp=TimestampMS(1626345900000),
@@ -393,7 +395,7 @@ def test_deposit_withdrawals(gate_exchange: Gate) -> None:
                 'transaction_id': '0xdef',
             },
         ), AssetMovement(
-            location=Location.GATE,
+            location=LOCATION_GATE,
             location_label=gate_exchange.name,
             event_subtype=HistoryEventSubType.SPEND,
             timestamp=TimestampMS(1626346000000),
@@ -405,7 +407,7 @@ def test_deposit_withdrawals(gate_exchange: Gate) -> None:
                 'transaction_id': 'tx123',
             },
         ), AssetMovement(
-            location=Location.GATE,
+            location=LOCATION_GATE,
             location_label=gate_exchange.name,
             event_subtype=HistoryEventSubType.FEE,
             timestamp=TimestampMS(1626346000000),
@@ -433,16 +435,16 @@ def test_trades(gate_exchange: Gate) -> None:
         )
 
     group_id_1 = create_group_identifier_from_unique_id(
-        location=Location.GATE,
+        location=LOCATION_GATE,
         unique_id='2876130500',
     )
     group_id_2 = create_group_identifier_from_unique_id(
-        location=Location.GATE,
+        location=LOCATION_GATE,
         unique_id='2876130501',
     )
     assert events == [SwapEvent(
         timestamp=TimestampMS(1645464610777),
-        location=Location.GATE,
+        location=LOCATION_GATE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('4000'),
@@ -450,7 +452,7 @@ def test_trades(gate_exchange: Gate) -> None:
         group_identifier=group_id_1,
     ), SwapEvent(
         timestamp=TimestampMS(1645464610777),
-        location=Location.GATE,
+        location=LOCATION_GATE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.1'),
@@ -458,7 +460,7 @@ def test_trades(gate_exchange: Gate) -> None:
         group_identifier=group_id_1,
     ), SwapEvent(
         timestamp=TimestampMS(1645464610777),
-        location=Location.GATE,
+        location=LOCATION_GATE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal('0.5'),
@@ -467,7 +469,7 @@ def test_trades(gate_exchange: Gate) -> None:
         sequence_index=2,
     ), SwapEvent(
         timestamp=TimestampMS(1645464620777),
-        location=Location.GATE,
+        location=LOCATION_GATE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('2.0'),
@@ -475,7 +477,7 @@ def test_trades(gate_exchange: Gate) -> None:
         group_identifier=group_id_2,
     ), SwapEvent(
         timestamp=TimestampMS(1645464620777),
-        location=Location.GATE,
+        location=LOCATION_GATE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
         amount=FVal('6000'),
@@ -483,7 +485,7 @@ def test_trades(gate_exchange: Gate) -> None:
         group_identifier=group_id_2,
     ), SwapEvent(
         timestamp=TimestampMS(1645464620777),
-        location=Location.GATE,
+        location=LOCATION_GATE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal('0.01'),

@@ -18,8 +18,11 @@ from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SPAM_PROTOCOL, CacheType, Location
+from rotkehlchen.types import SPAM_PROTOCOL, CacheType
 from rotkehlchen.utils.misc import address_to_bytes32
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
 
@@ -50,7 +53,7 @@ def data_migration_18(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
 
         db_filter = EvmEventFilterQuery.make(
             counterparties=[CPT_THEGRAPH],
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_types=[HistoryEventType.INFORMATIONAL],
             event_subtypes=[HistoryEventSubType.APPROVE],
             location_labels=tracked_addresses,  # type: ignore  # sequence[address] == list[str]

@@ -26,6 +26,7 @@ from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import LOCATION_EXTERNAL
 from rotkehlchen.tasks.assets import (
     TOKEN_DETAILS_RETRY_MAX_FAILED_QUERIES,
     retry_missing_token_details,
@@ -37,7 +38,6 @@ from rotkehlchen.types import (
     SPAM_PROTOCOL,
     CacheType,
     ChainID,
-    Location,
     SupportedBlockchain,
     TimestampMS,
     TokenKind,
@@ -231,7 +231,7 @@ def test_warns_when_found_decimals_change(
                 group_identifier='1',
                 sequence_index=0,
                 timestamp=TimestampMS(1),
-                location=Location.EXTERNAL,
+                location=LOCATION_EXTERNAL,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=token,
@@ -271,7 +271,7 @@ def test_waits_for_the_decoding_before_changing_decimals(database: DBHandler) ->
             group_identifier='1',
             sequence_index=0,
             timestamp=TimestampMS(1),
-            location=Location.EXTERNAL,
+            location=LOCATION_EXTERNAL,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=token,

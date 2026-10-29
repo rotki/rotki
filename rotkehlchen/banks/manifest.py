@@ -12,7 +12,8 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
-    from rotkehlchen.types import Location
+    from rotkehlchen.connections.types import ConnectorIdentifier
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 class BankAccessTier(SerializableEnumNameMixin):
@@ -79,7 +80,10 @@ class SecretField:
 
 @dataclass(frozen=True)
 class BankManifest:
-    location: Location
+    connector_identifier: ConnectorIdentifier
+    # The location every connection of the connector uses. None lets each connection point
+    # at its institution, a location in the Banks subtree.
+    fixed_location: LocationIdentifier | None
     display_name: str
     access_tier: BankAccessTier
     capabilities: frozenset[BankCapability]
@@ -114,7 +118,8 @@ class BankManifest:
 
     def serialize(self) -> dict[str, Any]:
         return {
-            'location': self.location.serialize(),
+            'connector_identifier': self.connector_identifier,
+            'fixed_location': self.fixed_location,
             'display_name': self.display_name,
             'access_tier': self.access_tier.serialize(),
             'capabilities': sorted(c.serialize() for c in self.capabilities),

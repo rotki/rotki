@@ -14,7 +14,7 @@ import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/a
 export function createBinancePairsMissingHandler(): StateHandler<BinancePairsMissingData> {
   const { raise } = useRaisedConditionsStore();
 
-  return createStateHandler<BinancePairsMissingData>(({ location, name }) => {
-    raise({ kind: RaisedConditionKind.BINANCE_PAIRS_MISSING, location, name });
+  return createStateHandler<BinancePairsMissingData>(({ identifier, location, name }) => {
+    raise({ identifier, kind: RaisedConditionKind.BINANCE_PAIRS_MISSING, location, name });
   });
 }

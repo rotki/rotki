@@ -1,4 +1,5 @@
 import type { AssetPrice } from '@/modules/assets/prices/price-types';
+import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
 import { type Balance, bigNumberify, type ProtocolBalance } from '@rotki/common';
 import { BalanceType } from '@/modules/balances/types/balances';
@@ -45,4 +46,12 @@ export function createTestManualBalance(
     tags: [],
     value: bigNumberify(value),
   };
+}
+
+/**
+ * A connected exchange as the backend lists it. The identifier is derived from the location and
+ * name, so a spec can predict it without holding the object.
+ */
+export function createTestExchange(location: string, name: string, extras: Partial<Exchange> = {}): Exchange {
+  return { connector: location, identifier: `${location}-${name}`, location, name, ...extras };
 }

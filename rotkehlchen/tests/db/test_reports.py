@@ -13,12 +13,15 @@ from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.constants import (
     A_GBP,
     TEST_PREMIUM_PNL_EVENTS_LIMIT,
     TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
 )
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import create_order_by_rules_list, timestamp_to_date
 
 if TYPE_CHECKING:
@@ -105,7 +108,7 @@ def test_report_events_sort_by_columns(database):
         ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Received 1 ETH',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=timestamp_1_secs,
             asset=A_ETH,
             free_amount=ONE,
@@ -118,7 +121,7 @@ def test_report_events_sort_by_columns(database):
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Send 0.5 ETH to 0xABC',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=timestamp_2_secs,
             asset=A_ETH,
             free_amount=ZERO,
@@ -131,7 +134,7 @@ def test_report_events_sort_by_columns(database):
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Received 100 DAI',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=timestamp_2_secs,
             asset=A_DAI,
             free_amount=hundred,
@@ -144,7 +147,7 @@ def test_report_events_sort_by_columns(database):
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Send 40 DAI to 0xABC',
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             timestamp=timestamp_2_secs,
             asset=A_DAI,
             free_amount=ZERO,
@@ -238,7 +241,7 @@ def test_get_report_data_pagination_total_count(database: DBHandler) -> None:
             event = ProcessedAccountingEvent(
                 event_type=AccountingEventType.TRANSACTION_EVENT,
                 notes=f'Report {report_idx + 1} - Event {event_idx + 1}',
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 timestamp=timestamps[event_counter],
                 asset=A_ETH if event_idx % 2 == 0 else A_DAI,
                 free_amount=FVal(event_idx + 1),
@@ -319,7 +322,7 @@ def test_deserialize_event_with_null_notes_can_be_csv_exported(database: DBHandl
     event = ProcessedAccountingEvent(
         event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='placeholder',  # will be overwritten with null in the stored payload
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         timestamp=Timestamp(1741634066),
         asset=A_ETH,
         free_amount=ONE,

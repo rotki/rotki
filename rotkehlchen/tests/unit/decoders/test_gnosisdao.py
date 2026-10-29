@@ -12,8 +12,11 @@ from rotkehlchen.constants.assets import A_XDAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_GNOSIS,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 A_GNO = Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb')
 
@@ -30,7 +33,7 @@ def test_gnosisdao_redemption_deposit(gnosis_inquirer, gnosis_accounts, allow_gn
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1784289030000)),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
@@ -41,7 +44,7 @@ def test_gnosisdao_redemption_deposit(gnosis_inquirer, gnosis_accounts, allow_gn
             tx_ref=tx_hash,
             sequence_index=13,
             timestamp=timestamp,
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_GNO,
@@ -54,7 +57,7 @@ def test_gnosisdao_redemption_deposit(gnosis_inquirer, gnosis_accounts, allow_gn
             tx_ref=tx_hash,
             sequence_index=14,
             timestamp=timestamp,
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_GNO,
@@ -76,7 +79,7 @@ def test_gnosisdao_redemption_claim(gnosis_inquirer, gnosis_accounts, allow_gnos
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1784300750000)),
-        location=Location.GNOSIS,
+        location=LOCATION_GNOSIS,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_XDAI,
@@ -88,7 +91,7 @@ def test_gnosisdao_redemption_claim(gnosis_inquirer, gnosis_accounts, allow_gnos
         tx_ref=tx_hash,
         sequence_index=sequence_index,
         timestamp=timestamp,
-        location=Location.GNOSIS,
+        location=LOCATION_GNOSIS,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REMOVE_ASSET,
         asset=Asset(asset_id),

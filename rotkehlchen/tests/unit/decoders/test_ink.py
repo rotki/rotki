@@ -9,9 +9,12 @@ from rotkehlchen.constants.assets import A_ETH, A_WETH_INK
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_INK,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.ink import INK_MAINNET_NODE
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 WETH_INK_ADDRESS = '0x4200000000000000000000000000000000000006'
 
@@ -29,7 +32,7 @@ def test_eth_transfer(ink_inquirer, ink_accounts):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1743498436000)),
-        location=Location.INK,
+        location=LOCATION_INK,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -40,7 +43,7 @@ def test_eth_transfer(ink_inquirer, ink_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.INK,
+        location=LOCATION_INK,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -63,7 +66,7 @@ def test_weth_wrap(ink_inquirer, ink_accounts):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1743498412000)),
-        location=Location.INK,
+        location=LOCATION_INK,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -74,7 +77,7 @@ def test_weth_wrap(ink_inquirer, ink_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.INK,
+        location=LOCATION_INK,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
         asset=A_ETH,
@@ -87,7 +90,7 @@ def test_weth_wrap(ink_inquirer, ink_accounts):
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.INK,
+        location=LOCATION_INK,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         asset=A_WETH_INK,

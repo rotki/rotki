@@ -67,11 +67,11 @@ describe('composables/api/history/index', () => {
   });
 
   describe('fetchAssociatedLocations', () => {
-    it('should fetch associated locations', async () => {
+    it('should return the directly used locations, then their ancestors below the total', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/associated`, () =>
           HttpResponse.json({
-            result: ['binance', 'kraken', 'blockchain'],
+            result: { locations: ['binance', 'ethereum', 'kraken'], ancestors: ['blockchain', 'evm chains', 'exchanges', 'total'] },
             message: '',
           })),
       );
@@ -79,14 +79,14 @@ describe('composables/api/history/index', () => {
       const { fetchAssociatedLocations } = useHistoryApi();
       const result = await fetchAssociatedLocations();
 
-      expect(result).toEqual(['binance', 'kraken', 'blockchain']);
+      expect(result).toEqual(['binance', 'ethereum', 'kraken', 'blockchain', 'evm chains', 'exchanges']);
     });
 
     it('should return empty array when no locations', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/associated`, () =>
           HttpResponse.json({
-            result: [],
+            result: { locations: [], ancestors: [] },
             message: '',
           })),
       );
@@ -115,7 +115,7 @@ describe('composables/api/history/index', () => {
   });
 
   describe('fetchAllLocations', () => {
-    it('should fetch all locations with exchange details', async () => {
+    it('should fetch all locations with their display details', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/all`, () =>
           HttpResponse.json({
@@ -125,11 +125,6 @@ describe('composables/api/history/index', () => {
                   label: 'Binance',
                   icon: 'binance.svg',
                   isExchange: true,
-                  exchangeDetails: {
-                    isExchangeWithKey: true,
-                    isExchangeWithPassphrase: false,
-                    isExchangeWithoutApiSecret: false,
-                  },
                 },
                 blockchain: {
                   label: 'Blockchain',
@@ -147,7 +142,6 @@ describe('composables/api/history/index', () => {
 
       expect(result.locations.binance.label).toBe('Binance');
       expect(result.locations.binance.isExchange).toBe(true);
-      expect(result.locations.binance.exchangeDetails?.isExchangeWithKey).toBe(true);
       expect(result.locations.blockchain.isExchange).toBe(false);
     });
 

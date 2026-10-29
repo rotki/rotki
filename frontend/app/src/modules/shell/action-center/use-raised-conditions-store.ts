@@ -73,7 +73,7 @@ export type RaisedCondition =
   | { kind: typeof RaisedConditionKind.GNOSIS_PAY_SESSION; cause: SessionCause }
   | { kind: typeof RaisedConditionKind.MONERIUM_SESSION; cause: SessionCause }
   | { kind: typeof RaisedConditionKind.PREMIUM_INACTIVE; cause: PremiumInactiveCause; reason?: string }
-  | { kind: typeof RaisedConditionKind.BINANCE_PAIRS_MISSING; location: string; name: string };
+  | { kind: typeof RaisedConditionKind.BINANCE_PAIRS_MISSING; identifier: string; location: string; name: string };
 
 /** The raised condition of one kind, narrowed to that kind's fields. */
 export type RaisedConditionOf<K extends RaisedConditionKind> = Extract<RaisedCondition, { kind: K }>;
@@ -93,6 +93,7 @@ function conditionKey(condition: RaisedCondition): string {
     case RaisedConditionKind.ORACLE_PENALIZED:
       return `${condition.kind}:${condition.oracle}`;
     case RaisedConditionKind.BINANCE_PAIRS_MISSING:
+      return `${condition.kind}:${condition.identifier}`;
     case RaisedConditionKind.EXCHANGE_KEY_REJECTED:
       return `${condition.kind}:${condition.location}:${condition.name}`;
     case RaisedConditionKind.GNOSIS_PAY_SESSION:

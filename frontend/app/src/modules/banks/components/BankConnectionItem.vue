@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
-import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
+import type { BankConnection } from '@/modules/banks/types';
 import { type MessageKey, msg } from '@/message-key';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
@@ -9,7 +9,7 @@ const { connection } = defineProps<{ connection: BankConnection }>();
 
 const emit = defineEmits<{
   /** syncing again is the way out of an expired TAN; the page that lists the connections runs it */
-  sync: [connection: BankConnectionIdentity];
+  sync: [connection: { identifier: string }];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -75,12 +75,12 @@ const statusText = computed<string>(() => {
 
 /** A pending TAN opens its answer, an expired one syncs again for a fresh TAN, a failure leads to the connection. */
 async function act(): Promise<void> {
-  const { location, name } = connection;
+  const { identifier } = connection;
   if (get(state) === 'expired') {
-    emit('sync', { location, name });
+    emit('sync', { identifier });
     return;
   }
-  const query: Record<string, string> = get(state) === 'authentication' ? { authenticate: name, location } : {};
+  const query: Record<string, string> = get(state) === 'authentication' ? { authenticate: identifier } : {};
   await router.push({ name: '/api-keys/banks/', query });
 }
 </script>

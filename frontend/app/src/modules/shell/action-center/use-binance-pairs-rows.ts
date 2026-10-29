@@ -15,9 +15,9 @@ interface UseBinancePairsRowsReturn {
   refresh: () => Promise<void>;
 }
 
-/** How a suppressed account is stored in `suppressBinancePairsMissing`. */
-function suppressionKey({ location, name }: BinanceAccount): string {
-  return `${location}:${name}`;
+/** How a suppressed account is stored in `suppressBinancePairsMissing`: its connection identifier. */
+function suppressionKey({ identifier }: BinanceAccount): string {
+  return identifier;
 }
 
 /**
@@ -26,7 +26,7 @@ function suppressionKey({ location, name }: BinanceAccount): string {
  * @remarks
  * A row waits for the backend's report, which comes only when a trade history query needs the pairs,
  * so an account used for balances alone is never flagged up front. It leaves once pairs are saved,
- * the account is removed or renamed, or the user asks not to be told again about that account.
+ * the account is removed, or the user asks not to be told again about that account.
  */
 export function useBinancePairsRows(): UseBinancePairsRowsReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -59,7 +59,7 @@ export function useBinancePairsRows(): UseBinancePairsRowsReturn {
         suppress: async () => suppress(account),
       })],
       urgency: ActionUrgency.DECISION,
-      target: { kind: 'route', to: { name: '/api-keys/exchanges/', query: { location: account.location, name: account.name } } },
+      target: { kind: 'route', to: { name: '/api-keys/exchanges/', query: { identifier: account.identifier } } },
       title: t('action_center.rows.integrations.binance_pairs_missing.title', params),
     });
   }

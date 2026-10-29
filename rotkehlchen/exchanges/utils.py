@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.types import ApiSecret
 
 import requests
@@ -21,8 +22,12 @@ from rotkehlchen.exchanges.data_structures import BinancePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.binance import GlobalDBBinance
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BINANCEUS,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -154,7 +159,7 @@ def deserialize_asset_movement_address(
 
 def create_binance_symbols_to_pair(
         exchange_data: dict[str, Any],
-        location: Location,
+        location: LocationIdentifier,
 ) -> dict[str, BinancePair]:
     """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping
 
@@ -179,7 +184,7 @@ def create_binance_symbols_to_pair(
     return result
 
 
-def query_binance_exchange_pairs(location: Location) -> dict[str, BinancePair]:
+def query_binance_exchange_pairs(location: LocationIdentifier) -> dict[str, BinancePair]:
     """Query all the binance pairs for a valid binance location (binance or binanceus).
     This function first tries to update the list of known pairs and store them in the database.
     If it fails tries to return available information in the database.
@@ -193,10 +198,10 @@ def query_binance_exchange_pairs(location: Location) -> dict[str, BinancePair]:
     )
     gdb_binance = GlobalDBBinance(db)
 
-    assert location in (Location.BINANCE, Location.BINANCEUS), f'Invalid location used as argument for binance pair query. {location}'  # noqa: E501
-    if location == Location.BINANCE:
+    assert location in (LOCATION_BINANCE, LOCATION_BINANCEUS), f'Invalid location used as argument for binance pair query. {location}'  # noqa: E501
+    if location == LOCATION_BINANCE:
         url = 'https://api.binance.com/api/v3/exchangeInfo'
-    elif location == Location.BINANCEUS:
+    else:  # binance us, as asserted above
         url = 'https://api.binance.us/api/v3/exchangeInfo'
 
     if ts_now() - last_pair_check_ts > DAY_IN_SECONDS:
@@ -212,13 +217,13 @@ def query_binance_exchange_pairs(location: Location) -> dict[str, BinancePair]:
                 msg = f'Missing key: {msg} in Binance response: {response.text}'  # pyright: ignore # KeyError can be raised only by create_binance_symbols_to_pair so by then response exists
             log.error(f'Failed to obtain market pairs from {location}. {msg}')
             # If request fails try to get them from the database
-            database_pairs = gdb_binance.get_all_binance_pairs(location)
+            database_pairs = gdb_binance.get_all_binance_pairs(connector=location)
             return {pair.symbol: pair for pair in database_pairs}
 
-        gdb_binance.save_all_binance_pairs(new_pairs=pairs.values(), location=location)
+        gdb_binance.save_all_binance_pairs(new_pairs=pairs.values(), connector=location)
 
     else:
-        database_pairs = gdb_binance.get_all_binance_pairs(location)
+        database_pairs = gdb_binance.get_all_binance_pairs(connector=location)
         pairs = {pair.symbol: pair for pair in database_pairs}
 
     return pairs

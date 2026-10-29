@@ -57,6 +57,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_substrate_address,
 )
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_ETH2
+from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.constants.misc import ONE, VALID_LOGLEVELS, ZERO
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.data_import.manager import DataImportSource
@@ -73,6 +74,7 @@ from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetsFilterQuery,
+    ConnectorAssetMappingsFilterQuery,
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DataIssuesFilterQuery,
@@ -84,7 +86,6 @@ from rotkehlchen.db.filtering import (
     HistoryEventWithTxRefFilterQuery,
     InternalTxConflictsFilterQuery,
     LevenshteinFilterQuery,
-    LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     PaginatedFilterQuery,
     ReportDataFilterQuery,
@@ -135,6 +136,21 @@ from rotkehlchen.history.events.utils import (
 )
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
+from rotkehlchen.locations.chains import (
+    BITCOIN_LOCATIONS,
+    EVM_EVMLIKE_LOCATIONS,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BINANCEUS,
+    LOCATION_BITCOIN,
+    LOCATION_BITCOIN_CASH,
+    LOCATION_COINBASE,
+    LOCATION_COINBASEPRIME,
+    LOCATION_COINBASEPRO,
+    LOCATION_KRAKEN,
+)
+from rotkehlchen.locations.types import LocationScope
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import SETTABLE_CURRENT_PRICE_ORACLES
 from rotkehlchen.serialization.deserialize import (
@@ -144,7 +160,6 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
-    BITCOIN_LOCATIONS,
     CHAINS_WITH_PENDING_TX_DECODING,
     CHAINS_WITH_TRANSACTION_DECODERS,
     CHAINS_WITH_TRANSACTIONS,
@@ -152,7 +167,6 @@ from rotkehlchen.types import (
     DEFAULT_ADDRESS_NAME_PRIORITY,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS,
-    EVM_EVMLIKE_LOCATIONS,
     EVMLIKE_CHAIN_NAMES,
     NON_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS_TYPE,
@@ -165,17 +179,15 @@ from rotkehlchen.types import (
     ChainID,
     ChainType,
     ChecksumEvmAddress,
+    ConnectorAssetMappingDeleteEntry,
+    ConnectorAssetMappingUpdateEntry,
     CostBasisMethod,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
-    ExchangeLocationID,
     ExchangePurgeType,
     ExternalService,
     ExternalServiceApiCredentials,
     HistoryEventQueryType,
-    Location,
-    LocationAssetMappingDeleteEntry,
-    LocationAssetMappingUpdateEntry,
     ModuleName,
     OnlyPurgeableModuleName,
     OptionalBlockchainAddress,
@@ -214,6 +226,8 @@ from .fields import (
     HistoricalPriceOracleField,
     IncludeExcludeListField,
     LocationField,
+    LocationIconField,
+    LocationMappingsField,
     MaybeAssetField,
     NonEmptyList,
     NonEmptyStringField,
@@ -240,6 +254,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.inquirer import CurrentPriceOracle
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -523,7 +538,7 @@ class BaseStakingQuerySchema(
 
     def _make_query(
             self,
-            location: Location,
+            location: LocationIdentifier,
             data: dict[str, Any],
             event_types: list[HistoryEventType],
             value_event_subtypes: list[HistoryEventSubType],
@@ -612,7 +627,7 @@ class StakingQuerySchema(BaseStakingQuerySchema):
     ) -> dict[str, Any]:
         return self._make_query(
             data=data,
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             event_types=[HistoryEventType.STAKING],
             query_event_subtypes=data['event_subtypes'],
             value_event_subtypes=[HistoryEventSubType.REWARD],
@@ -648,7 +663,8 @@ class HistoryEventFilterSchema(
     EXCLUDE_UNTRACKED_WITHDRAWALS: ClassVar[bool] = True
     exclude_ignored_assets = fields.Boolean(load_default=True)
     group_identifiers = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
-    location = SerializableEnumField(Location, load_default=None)
+    location = LocationField(load_default=None)
+    location_scope = StrEnumField(enum_class=LocationScope, load_default=LocationScope.EXACT)
     location_labels = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     asset = AssetField(expected_type=Asset, load_default=None)
     entry_types = IncludeExcludeListField(
@@ -749,6 +765,7 @@ class HistoryEventFilterSchema(
             'event_types': data['event_types'],
             'event_subtypes': data['event_subtypes'],
             'location': data['location'],
+            'location_scope': data['location_scope'],
             'state_markers': data['state_markers'],
             'identifiers': data['identifiers'],
             'notes_substring': data['notes_substring'],
@@ -1045,12 +1062,12 @@ class CreateHistoryEventSchema(Schema):
                 **_kwargs: Any,
         ) -> dict[str, Any]:
             if (
-                ((location := data['location']) == Location.BITCOIN and data['asset'] != A_BTC) or
-                (location == Location.BITCOIN_CASH and data['asset'] != A_BCH)
+                ((location := data['location']) == LOCATION_BITCOIN and data['asset'] != A_BTC) or
+                (location == LOCATION_BITCOIN_CASH and data['asset'] != A_BCH)
             ):
-                expected_asset = 'BTC' if location == Location.BITCOIN else 'BCH'
+                expected_asset = 'BTC' if location == LOCATION_BITCOIN else 'BCH'
                 raise ValidationError(
-                    message=f'{location.name.lower()} events must use {expected_asset} as the asset',  # noqa: E501
+                    message=f'{location} events must use {expected_asset} as the asset',
                     field_name='asset',
                 )
 
@@ -1112,7 +1129,7 @@ class CreateHistoryEventSchema(Schema):
             (see CreateBaseHistoryEventSchema).
             """
             if data['asset'] != (
-                    expected_asset := A_BTC if data['location'] == Location.BITCOIN else A_BCH
+                    expected_asset := A_BTC if data['location'] == LOCATION_BITCOIN else A_BCH
             ):
                 raise ValidationError(
                     message=f'{data["location"]!s} events must use {expected_asset.identifier} as the asset',  # noqa: E501
@@ -1702,19 +1719,6 @@ class DisabledChainQueriesField(fields.Field):
         return deserialized
 
 
-class ExchangeLocationIDSchema(Schema):
-    name = NonEmptyStringField(required=True)
-    location = LocationField(required=True)
-
-    @post_load()
-    def make_exchange_location_id(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> ExchangeLocationID:
-        return ExchangeLocationID(name=data['name'], location=data['location'])
-
-
 class ModifiableSettingsSchema(Schema):
     """This is the Schema for the settings that can be modified via the API"""
     premium_should_sync = fields.Bool(load_default=None)
@@ -1790,7 +1794,7 @@ class ModifiableSettingsSchema(Schema):
         load_default=None,
     )
     non_syncing_exchanges = fields.List(
-        fields.Nested(ExchangeLocationIDSchema),
+        NonEmptyStringField(),
         load_default=None,
         # Check that all values are unique
         validate=validate_predicate(lambda data: len(data) == len(set(data))),
@@ -2112,7 +2116,6 @@ class GnosisPaySiweChallengeSchema(AsyncQueryArgumentSchema):
 
 class BinanceMarketsSchemaMixin(Schema):
     """Additional logic for adding/editing Binance exchanges credentials"""
-    location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
     binance_markets = fields.List(NonEmptyStringField, load_default=None)
 
     @validates_schema
@@ -2121,10 +2124,12 @@ class BinanceMarketsSchemaMixin(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
+        """Setting up a Binance connection needs markets. An edit that gives them may not
+        remove them all."""
         if (
-            data['location'] in (Location.BINANCE, Location.BINANCEUS) and
-            (data['binance_markets'] is None or len(data['binance_markets']) == 0)
-        ):
+            data.get('connector') in (LOCATION_BINANCE, LOCATION_BINANCEUS) and
+            data['binance_markets'] is None
+        ) or (data['binance_markets'] is not None and len(data['binance_markets']) == 0):
             raise ValidationError(
                 message='Binance API key requires at least one market pair to be selected. '
                 'Please choose the trading pairs you want to monitor before adding the API key.',
@@ -2154,7 +2159,7 @@ class KrakenFutureKeysSchemaMixin(Schema):
 
 
 class ExchangesResourceEditSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSchemaMixin):
-    name = NonEmptyStringField(required=True)
+    identifier = NonEmptyStringField(required=True)
     new_name = EmptyAsNoneStringField(load_default=None)
     api_key = ApiKeyField(load_default=None)
     api_secret = ApiSecretField(load_default=None)
@@ -2166,6 +2171,10 @@ class ExchangesResourceEditSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSch
 
 class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSchemaMixin):
     name = NonEmptyStringField(required=True)
+    connector = NonEmptyStringField(
+        required=True,
+        validate=webargs.validate.OneOf(SUPPORTED_EXCHANGES, error='{input} is not a supported exchange'),  # noqa: E501
+    )
     api_key = ApiKeyField(required=True)
     api_secret = ApiSecretField(load_default=None)
     passphrase = EmptyAsNoneStringField(load_default=None)
@@ -2181,11 +2190,11 @@ class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSche
             **_kwargs: Any,
     ) -> None:
         super().validate_schema(data)
-        location = data['location']
+        location = data['connector']
         if (
             (binance_history_start_ts := data['binance_history_start_ts']) is not None and
             (
-                location not in (Location.BINANCE, Location.BINANCEUS) or
+                location not in (LOCATION_BINANCE, LOCATION_BINANCEUS) or
                 binance_history_start_ts > ts_now()
             )
         ):
@@ -2197,13 +2206,13 @@ class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSche
 
         if data['api_secret'] is None and location not in EXCHANGES_WITHOUT_API_SECRET:
             raise ValidationError(
-                f'{location.name.title()} requires an API secret',
+                f'{get_formatted_location_name(location)} requires an API secret',
                 field_name='api_secret',
             )
 
         if location in EXCHANGES_WITH_PASSPHRASE and not data.get('passphrase'):
             raise ValidationError(
-                f'{location.name.title()} requires a passphrase',
+                f'{get_formatted_location_name(location)} requires a passphrase',
                 field_name='passphrase',
             )
 
@@ -2217,18 +2226,18 @@ class ExchangesDataResourceSchema(Schema):
 
 
 class ExchangeEventsQuerySchema(AsyncQueryArgumentSchema):
-    name = EmptyAsNoneStringField(required=False)
-    location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
+    """One exchange connection, or every connection of an exchange"""
+    identifier = EmptyAsNoneStringField(load_default=None)
+    location = LocationField(limit_to=SUPPORTED_EXCHANGES, load_default=None)
+
+    @validates_schema
+    def validate_schema(self, data: dict[str, Any], **_kwargs: Any) -> None:
+        if (data['identifier'] is None) == (data['location'] is None):
+            raise ValidationError('Either a connection identifier or an exchange location is needed')  # noqa: E501
 
 
-class ExchangeLocationWithNameSchema(Schema):
-    name = NonEmptyStringField(required=True)
-    location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
-
-
-class BankLocationWithNameSchema(Schema):
-    name = NonEmptyStringField(required=True)
-    location = LocationField(limit_to=SUPPORTED_BANKS, required=True)
+class ConnectionIdentifierSchema(Schema):
+    identifier = NonEmptyStringField(required=True)
 
 
 class BankCredentialsField(fields.Dict):
@@ -2239,38 +2248,44 @@ class BankCredentialsField(fields.Dict):
         super().__init__(keys=fields.String(), values=fields.String(), **kwargs)
 
 
-class BanksResourceAddSchema(BankLocationWithNameSchema):
+class BanksResourceAddSchema(Schema):
+    name = NonEmptyStringField(required=True)
+    connector = NonEmptyStringField(
+        required=True,
+        validate=webargs.validate.OneOf(SUPPORTED_BANKS, error='{input} is not a supported bank'),
+    )
+    # the bank the data belongs to, for connectors without a fixed location
+    location = LocationField(load_default=None)
     credentials = BankCredentialsField(required=True)
 
 
-class BanksResourceEditSchema(BankLocationWithNameSchema):
+class BanksResourceEditSchema(ConnectionIdentifierSchema):
     new_name = EmptyAsNoneStringField(load_default=None)
     credentials = BankCredentialsField(load_default=dict)
 
 
-class BankAuthenticationSchema(BankLocationWithNameSchema):
+class BankAuthenticationSchema(ConnectionIdentifierSchema):
     response = EmptyAsNoneStringField(load_default=None)
 
 
 class BankSyncSchema(AsyncQueryArgumentSchema):
-    location = LocationField(limit_to=SUPPORTED_BANKS, load_default=None)
-    name = EmptyAsNoneStringField(load_default=None)
-
-    @validates_schema
-    def validate_schema(self, data: dict[str, Any], **_kwargs: Any) -> None:
-        if data['name'] is not None and data['location'] is None:
-            raise ValidationError('A bank connection name needs its location')
+    """One connection, every connection of a connector, or everything"""
+    connector = NonEmptyStringField(
+        load_default=None,
+        validate=webargs.validate.OneOf(SUPPORTED_BANKS, error='{input} is not a supported bank'),
+    )
+    identifier = EmptyAsNoneStringField(load_default=None)
 
 
 class BankBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchema):
-    location = LocationField(limit_to=SUPPORTED_BANKS, load_default=None)
+    location = LocationField(load_default=None)
     ignore_cache = fields.Boolean(load_default=False)
 
 
 class ExchangeEventsRangeQuerySchema(
     AsyncQueryArgumentSchema,
     TimestampRangeSchema,
-    ExchangeLocationWithNameSchema,
+    ConnectionIdentifierSchema,
 ):
     ...
 
@@ -3145,11 +3160,18 @@ class LidoCsmNodeOperatorSchema(Schema):
     node_operator_id = fields.Integer(required=True, validate=validate.Range(min=0))
 
 
+class DataImportPreflightSchema(Schema):
+    source = SerializableEnumField(enum_class=DataImportSource, required=True)
+    file = FileField(required=True, allowed_extensions=('.csv',))
+    location_mappings = LocationMappingsField(load_default=None)
+
+
 class DataImportSchema(AsyncQueryArgumentSchema):
     source = SerializableEnumField(enum_class=DataImportSource, required=True)
     file = FileField(required=True, allowed_extensions=('.csv',))
     timestamp_format = EmptyAsNoneStringField(load_default=None)
     timezone = TimezoneField(load_default=None)
+    location_mappings = LocationMappingsField(load_default=None)
 
     @post_load
     def transform_data(
@@ -3162,6 +3184,8 @@ class DataImportSchema(AsyncQueryArgumentSchema):
             data.pop('timestamp_format')
         if data['timezone'] is None:
             data.pop('timezone')
+        if data['location_mappings'] is None:
+            data.pop('location_mappings')
         return data
 
 
@@ -3170,78 +3194,79 @@ class AssetIconUploadSchema(Schema):
     file = FileField(required=True, allowed_extensions=ALLOWED_ICON_EXTENSIONS)
 
 
-class LocationAssetMappingsBaseSchema(Schema):
-    location = LocationField(limit_to=ALL_SUPPORTED_EXCHANGES, allow_none=True)
+class ConnectorAssetMappingsBaseSchema(Schema):
+    # exchange connectors are named like the location of their data
+    connector = LocationField(limit_to=ALL_SUPPORTED_EXCHANGES, allow_none=True)
 
 
-class LocationAssetMappingsPostSchema(DBPaginationSchema, LocationAssetMappingsBaseSchema):
-    location_symbol = EmptyAsNoneStringField(load_default=None)
+class ConnectorAssetMappingsPostSchema(DBPaginationSchema, ConnectorAssetMappingsBaseSchema):
+    connector_symbol = EmptyAsNoneStringField(load_default=None)
 
     @post_load
-    def make_location_asset_mappings_post_query(
+    def make_connector_asset_mappings_post_query(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        """Make and return LocationAssetMappingsFilterQuery instance. `limit` and `offset` are used
-        for pagination, and optional `location` to filter by location. If `location` is explicitly
-        passed with `null` value (parsed as None here) then that is used to filter the common
-        mappings."""
-        filter_query = LocationAssetMappingsFilterQuery.make(
-            location='common' if 'location' in data and data['location'] is None else data.get('location'),  # noqa: E501
+        """Make and return ConnectorAssetMappingsFilterQuery instance. `limit` and `offset` are
+        used for pagination, and optional `connector` to filter by connector. If `connector` is
+        explicitly passed with `null` value (parsed as None here) then that is used to filter the
+        common mappings."""
+        filter_query = ConnectorAssetMappingsFilterQuery.make(
+            connector='common' if 'connector' in data and data['connector'] is None else data.get('connector'),  # noqa: E501
             limit=data['limit'],
-            location_symbol=data['location_symbol'],
+            connector_symbol=data['connector_symbol'],
             offset=data['offset'],
         )
         return {'filter_query': filter_query}
 
 
-class LocationAssetMappingUpdateEntrySchema(LocationAssetMappingsBaseSchema):
+class ConnectorAssetMappingUpdateEntrySchema(ConnectorAssetMappingsBaseSchema):
     asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
-    location_symbol = NonEmptyStringField(required=True)
+    connector_symbol = NonEmptyStringField(required=True)
 
     @post_load()
     def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
-    ) -> LocationAssetMappingUpdateEntry:
+    ) -> ConnectorAssetMappingUpdateEntry:
         try:
-            entry = LocationAssetMappingUpdateEntry.deserialize(data)
+            entry = ConnectorAssetMappingUpdateEntry.deserialize(data)
         except DeserializationError as e:
             raise ValidationError(f'Could not deserialize data: {e!s}') from e
 
-        if entry.location in (Location.COINBASEPRIME, Location.BINANCEUS, Location.COINBASEPRO):
-            replacement_location = Location.BINANCE if entry.location == Location.BINANCEUS else Location.COINBASE  # noqa: E501
+        if entry.connector in (LOCATION_COINBASEPRIME, LOCATION_BINANCEUS, LOCATION_COINBASEPRO):
+            replacement = LOCATION_BINANCE if entry.connector == LOCATION_BINANCEUS else LOCATION_COINBASE  # noqa: E501
             raise ValidationError(
-                message=f'Mappings for {entry.location.name} should use a location of {replacement_location.name}.',  # noqa: E501
-                field_name='location',
+                message=f'Mappings for {entry.connector} should use the {replacement} connector.',
+                field_name='connector',
             )
 
         return entry
 
 
-class LocationAssetMappingDeleteEntrySchema(LocationAssetMappingsBaseSchema):
-    location_symbol = NonEmptyStringField(required=True)
+class ConnectorAssetMappingDeleteEntrySchema(ConnectorAssetMappingsBaseSchema):
+    connector_symbol = NonEmptyStringField(required=True)
 
     @post_load()
     def transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
-    ) -> LocationAssetMappingDeleteEntry:
+    ) -> ConnectorAssetMappingDeleteEntry:
         try:
-            return LocationAssetMappingDeleteEntry.deserialize(data)
+            return ConnectorAssetMappingDeleteEntry.deserialize(data)
         except DeserializationError as e:
             raise ValidationError(f'Could not deserialize data: {e!s}') from e
 
 
-class LocationAssetMappingsUpdateSchema(Schema):
-    entries = NonEmptyList(fields.Nested(LocationAssetMappingUpdateEntrySchema), required=True)
+class ConnectorAssetMappingsUpdateSchema(Schema):
+    entries = NonEmptyList(fields.Nested(ConnectorAssetMappingUpdateEntrySchema), required=True)
 
 
-class LocationAssetMappingsDeleteSchema(Schema):
-    entries = NonEmptyList(fields.Nested(LocationAssetMappingDeleteEntrySchema), required=True)
+class ConnectorAssetMappingsDeleteSchema(Schema):
+    entries = NonEmptyList(fields.Nested(ConnectorAssetMappingDeleteEntrySchema), required=True)
 
 
 class CounterpartyAssetMappingsBaseSchema(Schema):
@@ -3509,11 +3534,6 @@ class ERC20InfoSchema(AsyncQueryArgumentSchema):
     evm_chain = EvmChainNameField(required=True, limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS))
 
 
-class BinanceMarketsUserSchema(Schema):
-    name = NonEmptyStringField(required=True)
-    location = LocationField(limit_to=(Location.BINANCEUS, Location.BINANCE), required=True)
-
-
 class ManualPriceSchema(Schema):
     from_asset = AssetField(expected_type=Asset, required=True)
     to_asset = AssetField(expected_type=Asset, required=True)
@@ -3697,8 +3717,8 @@ class StatisticsNetValueSchema(Schema):
 
 class BinanceMarketsSchema(Schema):
     location = LocationField(
-        limit_to=(Location.BINANCEUS, Location.BINANCE),
-        load_default=Location.BINANCE,
+        limit_to=(LOCATION_BINANCEUS, LOCATION_BINANCE),
+        load_default=LOCATION_BINANCE,
     )
 
 
@@ -3721,6 +3741,7 @@ class HistoryEventsDeletionSchema(HistoryEventFilterSchema):
     _NON_FILTER_FIELDS: Final = frozenset((
         'force_delete',  # deletion flag, not a filter
         'exclude_ignored_assets',  # display preference, not a filter
+        'location_scope',  # only widens the location filter, not a filter by itself
     ))
 
     def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -3980,6 +4001,37 @@ class BalanceSnapshotSchema(Schema):
         )
 
 
+class LocationCreateSchema(Schema):
+    name = NonEmptyStringField(required=True)
+    parent_identifier = LocationField(required=True)
+    icon = LocationIconField(load_default=None)
+
+
+class LocationIdentifierSchema(Schema):
+    identifier = LocationField(required=True)
+
+
+class LocationEditSchema(LocationIdentifierSchema):
+    name = NonEmptyStringField(load_default=None)
+    parent_identifier = LocationField(load_default=None)
+    # absent keeps the icon, null removes it
+    icon = LocationIconField(load_default=..., allow_none=True)
+    is_active = fields.Boolean(load_default=None)
+    dry_run = fields.Boolean(load_default=False)
+
+
+class LocationAliasDeleteSchema(Schema):
+    alias = NonEmptyStringField(required=True)
+
+
+class LocationAliasSchema(LocationAliasDeleteSchema):
+    location_identifier = LocationField(required=True)
+
+
+class LocationImageUploadSchema(LocationIdentifierSchema):
+    file = FileField(required=True, allowed_extensions=ALLOWED_ICON_EXTENSIONS)
+
+
 class LocationDataSnapshotSchema(Schema):
     timestamp = TimestampField(required=True)
     location = LocationField(required=True)
@@ -3993,7 +4045,7 @@ class LocationDataSnapshotSchema(Schema):
     ) -> LocationData:
         return LocationData(
             time=data['timestamp'],
-            location=data['location'].serialize_for_db(),
+            location=data['location'],
             usd_value=str(data['usd_value']),
         )
 
@@ -4296,7 +4348,7 @@ class TransactionReferenceAdditionSchema(AsyncQueryArgumentSchema):
 class BinanceSavingsSchema(BaseStakingQuerySchema):
     location = LocationField(
         required=True,
-        limit_to=(Location.BINANCE, Location.BINANCEUS),
+        limit_to=(LOCATION_BINANCE, LOCATION_BINANCEUS),
     )
 
     @post_load
@@ -4878,6 +4930,7 @@ class DataIssuesFilterSchema(DBPaginationSchema):
     )
     kind = DelimitedOrNormalList(StrEnumField(enum_class=IssueKind), load_default=None)
     location = LocationField(load_default=None)
+    location_scope = StrEnumField(enum_class=LocationScope, load_default=LocationScope.EXACT)
     location_label = EmptyAsNoneStringField(load_default=None)
     asset = AssetField(expected_type=Asset, load_default=None)
 
@@ -4911,6 +4964,7 @@ class DataIssuesFilterSchema(DBPaginationSchema):
             states=data['state'],
             kinds=data['kind'],
             location=data['location'],
+            location_scope=data['location_scope'],
             location_label=data['location_label'],
             asset=data['asset'],
         )}
@@ -4960,6 +5014,7 @@ class HistoricalPerAssetBalanceSchema(
 ):
     asset = AssetField(expected_type=Asset, load_default=None)
     location = LocationField(load_default=None)
+    location_scope = StrEnumField(enum_class=LocationScope, load_default=LocationScope.EXACT)
     location_label = EmptyAsNoneStringField(load_default=None)
     protocol = EmptyAsNoneStringField(load_default=None)
     group_by_account = fields.Boolean(load_default=False)
@@ -4974,6 +5029,7 @@ class HistoricalPerAssetBalanceSchema(
             timestamp=data['timestamp'],
             asset=data['asset'],
             location=data['location'],
+            location_scope=data['location_scope'],
             location_label=data['location_label'],
             protocol=data['protocol'],
         )
@@ -4990,6 +5046,7 @@ class CurrentHistoricalBalanceSchema(
 ):
     asset = AssetField(expected_type=Asset, load_default=None)
     location = LocationField(load_default=None)
+    location_scope = StrEnumField(enum_class=LocationScope, load_default=LocationScope.EXACT)
     location_label = EmptyAsNoneStringField(load_default=None)
     protocol = EmptyAsNoneStringField(load_default=None)
 
@@ -5003,6 +5060,7 @@ class CurrentHistoricalBalanceSchema(
             timestamp=ts_now(),
             asset=data['asset'],
             location=data['location'],
+            location_scope=data['location_scope'],
             location_label=data['location_label'],
             protocol=data['protocol'],
         )
@@ -5025,6 +5083,7 @@ class HistoricalBalanceSeriesSchema(TimestampRangeSchema, AsyncQueryArgumentSche
     asset = AssetField(expected_type=Asset, required=True)
     location_label = EmptyAsNoneStringField(required=True)
     location = LocationField(load_default=None)
+    location_scope = StrEnumField(enum_class=LocationScope, load_default=LocationScope.EXACT)
     protocol = EmptyAsNoneStringField(load_default=None)
 
     def __init__(self, db: DBHandler, known_counterparties: set[str]) -> None:
@@ -5071,6 +5130,7 @@ class HistoricalBalanceSeriesSchema(TimestampRangeSchema, AsyncQueryArgumentSche
                 from_timestamp=data['from_timestamp'],
                 asset=data['asset'],
                 location=data['location'],
+                location_scope=data['location_scope'],
                 location_label=data['location_label'],
                 protocol=data['protocol'],
             ),

@@ -50,6 +50,21 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_BASE,
+    LOCATION_BITSTAMP,
+    LOCATION_BYBIT,
+    LOCATION_COINBASE,
+    LOCATION_COINBASEPRO,
+    LOCATION_ETHEREUM,
+    LOCATION_GEMINI,
+    LOCATION_HYPERLIQUID,
+    LOCATION_KRAKEN,
+    LOCATION_OPTIMISM,
+    LOCATION_POLONIEX,
+    LOCATION_SOLANA,
+)
 from rotkehlchen.tasks import events as task_events
 from rotkehlchen.tasks.events import match_asset_movements
 from rotkehlchen.tests.fixtures import MockedWsMessage
@@ -60,7 +75,7 @@ from rotkehlchen.tests.utils.factories import (
     make_solana_address,
     make_solana_signature,
 )
-from rotkehlchen.types import ChecksumEvmAddress, Location, Timestamp, TimestampMS
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -105,7 +120,7 @@ def test_match_hyperliquid_core_movement_with_evm_bridge_event(
             write_cursor=write_cursor,
             history=[(movement := AssetMovement(
                 identifier=1,
-                location=Location.HYPERLIQUID,
+                location=LOCATION_HYPERLIQUID,
                 event_subtype=movement_subtype,
                 timestamp=TimestampMS(1740826458000),
                 asset=(arb_usdc := Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')),  # noqa: E501
@@ -117,7 +132,7 @@ def test_match_hyperliquid_core_movement_with_evm_bridge_event(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=movement.timestamp,
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=event_type,
                 event_subtype=HistoryEventSubType.BRIDGE,
                 asset=arb_usdc,
@@ -144,7 +159,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
         events_db.add_history_events(
             write_cursor=write_cursor,
             history=[AssetMovement(  # deposit1, Fiat, should be auto ignored
-                location=Location.GEMINI,
+                location=LOCATION_GEMINI,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1500000000000),
                 asset=A_USD,
@@ -152,7 +167,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 unique_id='1',
                 location_label='Gemini 1',
             ), (deposit2 := AssetMovement(  # deposit2, two matches, one with tx ref
-                location=Location.GEMINI,
+                location=LOCATION_GEMINI,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1510000000000),
                 asset=A_ETH,
@@ -167,7 +182,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 tx_ref=tx_ref,
                 sequence_index=0,
                 timestamp=TimestampMS(deposit2.timestamp - 60000),  # timestamp differs some but is < 1 hour different.  # noqa: E501
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -179,13 +194,13 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=deposit2.timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
                 amount=FVal('0.1'),
             )), (withdrawal1 := AssetMovement(  # withdrawal1, with matched event
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=A_USDC,
@@ -196,7 +211,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=withdrawal1.timestamp,
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=HistoryEventType.EXCHANGE_TRANSFER,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_USDC,
@@ -206,7 +221,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=withdrawal1.timestamp,
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=HistoryEventType.EXCHANGE_TRANSFER,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_USDC,
@@ -215,13 +230,13 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(withdrawal1.timestamp + ts_sec_to_ms(Timestamp(DEFAULT_ASSET_MOVEMENT_TIME_RANGE + 1))),  # noqa: E501
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=HistoryEventType.EXCHANGE_TRANSFER,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_USDC,
                 amount=FVal('0.2'),
             )), (withdrawal2 := AssetMovement(  # withdrawal2, with two similar events
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1530000000000),
                 asset=A_USDC,
@@ -232,7 +247,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=withdrawal2.timestamp,
-                location=Location.BASE,
+                location=LOCATION_BASE,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -241,13 +256,13 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=withdrawal2.timestamp,
-                location=Location.BASE,
+                location=LOCATION_BASE,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
                 amount=FVal('0.3'),
             ), (withdrawal3 := AssetMovement(  # withdrawal3, no matched events
-                location=Location.BYBIT,
+                location=LOCATION_BYBIT,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1540000000000),
                 asset=A_BTC,
@@ -255,14 +270,14 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 unique_id='5',
                 location_label='Bybit 1',
             )), (deposit3 := AssetMovement(  # deposit3, with fee
-                location=Location.BYBIT,
+                location=LOCATION_BYBIT,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1550000000000),
                 asset=A_USDC,
                 amount=FVal('99'),
                 unique_id='6',
             )), AssetMovement(  # deposit3 fee
-                location=Location.BYBIT,
+                location=LOCATION_BYBIT,
                 event_subtype=HistoryEventSubType.FEE,
                 timestamp=TimestampMS(1550000000000),
                 asset=A_USDC,
@@ -272,14 +287,14 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 tx_ref=make_solana_signature(),
                 sequence_index=0,
                 timestamp=TimestampMS(1550000000000),
-                location=Location.SOLANA,
+                location=LOCATION_SOLANA,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
                 amount=FVal('100'),
                 location_label=(deposit3_user_address := make_solana_address()),
             ), AssetMovement(  # deposit5, for blockchain that will have no transactions
-                location=Location.GEMINI,
+                location=LOCATION_GEMINI,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1555000000000),
                 asset=A_ETH,
@@ -288,7 +303,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 location_label='Gemini 1',
                 extra_data=AssetMovementExtraData(blockchain='monero'),
             ), (withdrawal4 := AssetMovement(  # withdrawal4, with another asset movement for the matched event  # noqa: E501
-                location=Location.BITSTAMP,
+                location=LOCATION_BITSTAMP,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1560000000000),
                 asset=A_USDC,
@@ -296,7 +311,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
                 unique_id='7',
                 location_label='Bitstamp 1',
             )), (withdrawal4_matched_event := AssetMovement(  # withdrawal4's matched event
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1560000000001),
                 asset=A_USDC,
@@ -329,7 +344,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
     assert (deposit2_matched_event := events[0]).event_type == HistoryEventType.EXCHANGE_TRANSFER
     assert deposit2_matched_event.event_subtype == HistoryEventSubType.SPEND
     assert deposit2_matched_event.notes == 'Important info'  # Notes shouldn't be updated on monerium events.  # noqa: E501
-    assert deposit2_matched_event.counterparty == Location.GEMINI.name.lower()
+    assert deposit2_matched_event.counterparty == LOCATION_GEMINI
     # Second event matching deposit2 but with the wrong ref. Unmodified.
     # (except for identifier since its from the db here)
     deposit_2_wrong_ref_event.identifier = events[1].identifier
@@ -338,7 +353,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
     assert (withdrawal1_matched_event := events[2]).event_type == HistoryEventType.EXCHANGE_TRANSFER  # noqa: E501
     assert withdrawal1_matched_event.event_subtype == HistoryEventSubType.RECEIVE
     assert withdrawal1_matched_event.notes == f'Receive 0.2 USDC in {withdrawal1_user_address} from Coinbase'  # noqa: E501
-    assert withdrawal1_matched_event.counterparty == Location.COINBASE.name.lower()
+    assert withdrawal1_matched_event.counterparty == LOCATION_COINBASE
     # Second event matching withdrawal1 but with the wrong amount. Unmodified.
     withdrawal1_wrong_amount_event.identifier = events[3].identifier
     assert events[3] == withdrawal1_wrong_amount_event
@@ -354,7 +369,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
     # Check that the note has been updated but doesn't include the 'to {exchange}' part since
     # deposit3 doesn't have a location_label set.
     assert deposit3_matched_event.notes == f'Send 100 USDC from {deposit3_user_address} to Bybit'
-    assert deposit3_matched_event.counterparty == Location.BYBIT.name.lower()
+    assert deposit3_matched_event.counterparty == LOCATION_BYBIT
 
     # Last two events should be withdrawal4's matched event and a new adjustment event to cover the
     # difference between withdrawal4 and its matched event. Note that since the matched event is
@@ -442,7 +457,7 @@ def test_match_asset_movements(database: DBHandler) -> None:
     # Check that the modified matched events are not removed when resetting for redecode
     assert deposit2_matched_event.identifier is not None
     with database.conn.write_ctx() as write_cursor:
-        events_db.reset_events_for_redecode(write_cursor, Location.ETHEREUM)
+        events_db.reset_events_for_redecode(write_cursor, LOCATION_ETHEREUM)
         assert len(events_db.get_history_events_internal(
             cursor=write_cursor,
             filter_query=HistoryEventFilterQuery.make(
@@ -465,7 +480,7 @@ def test_withdrawal_fee(
         (events_db := DBHistoryEvents(database)).add_history_events(
             write_cursor=write_cursor,
             history=[(withdrawal_movement := AssetMovement(
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700001000000),
                 asset=A_AAVE,
@@ -473,7 +488,7 @@ def test_withdrawal_fee(
                 unique_id='polo_withdrawal_1',
                 location_label='Poloniex 1',
             )), AssetMovement(
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 event_subtype=HistoryEventSubType.FEE,
                 timestamp=TimestampMS(1700001000000),
                 asset=A_AAVE,
@@ -484,7 +499,7 @@ def test_withdrawal_fee(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700001010000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=A_AAVE,
@@ -544,7 +559,7 @@ def test_multiple_close_matches_clustered(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700000000000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=A_ETH,
@@ -555,7 +570,7 @@ def test_multiple_close_matches_clustered(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700000000000 + 6 * 60 * 1000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=A_ETH,
@@ -563,7 +578,7 @@ def test_multiple_close_matches_clustered(database: DBHandler) -> None:
                 location_label=make_evm_address(),
             ), AssetMovement(
                 identifier=(movement_1_id := 3),
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700000000000 + 2 * 60 * 1000),
                 asset=A_ETH,
@@ -572,7 +587,7 @@ def test_multiple_close_matches_clustered(database: DBHandler) -> None:
                 location_label='Poloniex 1',
             ), AssetMovement(
                 identifier=(movement_2_id := 4),
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700000000000 + 4 * 60 * 1000),
                 asset=A_ETH,
@@ -605,7 +620,7 @@ def test_customized_deposit(database: DBHandler) -> None:
                 tx_ref=(tx_hash := make_evm_tx_hash()),
                 sequence_index=0,
                 timestamp=TimestampMS(1700002000000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_ETH,
@@ -617,7 +632,7 @@ def test_customized_deposit(database: DBHandler) -> None:
                 tx_ref=tx_hash,
                 sequence_index=1,
                 timestamp=gas_event.timestamp,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=A_ETH,
@@ -625,7 +640,7 @@ def test_customized_deposit(database: DBHandler) -> None:
                 location_label=location_label,
             ), AssetMovement(
                 identifier=(movement_id := 3),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700002060000),
                 asset=A_ETH,
@@ -636,7 +651,7 @@ def test_customized_deposit(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700002000000 + 900000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_ETH,
@@ -647,7 +662,7 @@ def test_customized_deposit(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700002000000 + 1800000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_ETH,
@@ -658,7 +673,7 @@ def test_customized_deposit(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700002000000 + 2700000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_ETH,
@@ -669,7 +684,7 @@ def test_customized_deposit(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700002000000 + 3600000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_ETH,
@@ -703,7 +718,7 @@ def test_gno_kraken_flow(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700004000000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=A_GNO,
@@ -715,7 +730,7 @@ def test_gno_kraken_flow(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=1,
                 timestamp=TimestampMS(1700004000000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_ETH,
@@ -724,7 +739,7 @@ def test_gno_kraken_flow(database: DBHandler) -> None:
                 location_label=make_evm_address(),
             ), AssetMovement(
                 identifier=(deposit_id := 3),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700004060000),
                 asset=A_GNO,
@@ -733,7 +748,7 @@ def test_gno_kraken_flow(database: DBHandler) -> None:
                 location_label='Kraken 1',
             ), AssetMovement(
                 identifier=(withdrawal_id := 4),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700005000000),
                 asset=A_GNO,
@@ -742,7 +757,7 @@ def test_gno_kraken_flow(database: DBHandler) -> None:
                 location_label='Kraken 1',
             ), AssetMovement(  # withdrawal fee
                 identifier=5,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.FEE,
                 timestamp=TimestampMS(1700005000000),
                 asset=A_GNO,
@@ -754,7 +769,7 @@ def test_gno_kraken_flow(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700005060000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.WITHDRAWAL,
                 event_subtype=HistoryEventSubType.REMOVE_ASSET,
                 asset=A_GNO,
@@ -765,7 +780,7 @@ def test_gno_kraken_flow(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700006000000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.BRIDGE,
                 asset=A_GNO,
@@ -791,7 +806,7 @@ def test_match_asset_movements_settings(database: DBHandler) -> None:
             write_cursor=write_cursor,
             history=[(movement_event := AssetMovement(
                 identifier=(movement_id := 1),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=A_USDC,
@@ -803,7 +818,7 @@ def test_match_asset_movements_settings(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(movement_event.timestamp + HOUR_IN_MILLISECONDS * 2),
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -869,7 +884,7 @@ def test_auto_ignore_by_asset(database: DBHandler) -> None:
             write_cursor=write_cursor,
             history=[AssetMovement(
                 identifier=idx + 1,
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=asset,
@@ -910,7 +925,7 @@ def test_ignore_transfers_between_tracked_accounts(
             write_cursor=write_cursor,
             history=[(movement_event := AssetMovement(
                 identifier=(movement_id := 1),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=A_USDC,
@@ -922,7 +937,7 @@ def test_ignore_transfers_between_tracked_accounts(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(movement_event.timestamp + 1),
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=movement_event.asset,
@@ -933,7 +948,7 @@ def test_ignore_transfers_between_tracked_accounts(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(movement_event.timestamp + 2),
-                location=Location.ARBITRUM_ONE,
+                location=LOCATION_ARBITRUM_ONE,
                 event_type=HistoryEventType.TRANSFER,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=movement_event.asset,
@@ -958,7 +973,7 @@ def test_timestamp_tolerance(database: DBHandler) -> None:
             write_cursor=write_cursor,
             history=[(movement_event := AssetMovement(
                 identifier=(movement_id := 1),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=A_USDC,
@@ -970,7 +985,7 @@ def test_timestamp_tolerance(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(movement_event.timestamp - 10),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=movement_event.asset,
@@ -980,7 +995,7 @@ def test_timestamp_tolerance(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(movement_event.timestamp - HOUR_IN_MILLISECONDS * 2),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=movement_event.asset,
@@ -1003,7 +1018,7 @@ def test_exchange_deposit_delayed_credit(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1488715200000),  # 2017-03-05 12:00:00 UTC
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1011,7 +1026,7 @@ def test_exchange_deposit_delayed_credit(database: DBHandler) -> None:
                 location_label=(user_address := make_evm_address()),
             )), (asset_movement := AssetMovement(
                 identifier=(movement_id := 2),
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1488974400000),  # 2017-03-08 12:00:00 UTC
                 asset=A_ETH,
@@ -1049,7 +1064,7 @@ def test_exchange_deposit_sai_to_dai_credit(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(ts_sec_to_ms(Timestamp(SAI_DAI_MIGRATION_TS + 1))),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_SAI,
@@ -1057,7 +1072,7 @@ def test_exchange_deposit_sai_to_dai_credit(database: DBHandler) -> None:
                 location_label=make_evm_address(),
             )), AssetMovement(
                 identifier=(movement_id := 2),
-                location=Location.POLONIEX,
+                location=LOCATION_POLONIEX,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(ts_sec_to_ms(Timestamp(SAI_DAI_MIGRATION_TS + 2))),
                 asset=A_DAI,
@@ -1086,7 +1101,7 @@ def test_manual_matchable_asset_pairs(
 ) -> None:
     """Manually matchable pairs are included even when not in the same collection."""
     movement = AssetMovement(
-        location=Location.KRAKEN,
+        location=LOCATION_KRAKEN,
         event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1700000000000),
         asset=movement_asset,
@@ -1125,7 +1140,7 @@ def test_adjustments(database: DBHandler) -> None:
     ]
     for idx, (asset, movement_subtype, movement_amount, match_amount) in enumerate(movement_data):
         events_to_add.extend([(movement_event := AssetMovement(
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             event_subtype=movement_subtype,
             timestamp=TimestampMS(1600000000000 + idx),
             asset=asset,
@@ -1144,7 +1159,7 @@ def test_adjustments(database: DBHandler) -> None:
             tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=movement_event.timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=(
                 HistoryEventType.SPEND if movement_subtype == HistoryEventSubType.RECEIVE
                 else HistoryEventType.RECEIVE
@@ -1193,7 +1208,7 @@ def test_deposit_withdrawal_direction(database: DBHandler) -> None:
                 write_cursor=write_cursor,
                 history=[(movement_event := AssetMovement(
                     identifier=(movement_id := 1),
-                    location=Location.KRAKEN,
+                    location=LOCATION_KRAKEN,
                     event_subtype=movement_type,  # type: ignore[arg-type]  # will only be spend or receive
                     timestamp=TimestampMS(1520000000000),
                     asset=A_USDC,
@@ -1205,7 +1220,7 @@ def test_deposit_withdrawal_direction(database: DBHandler) -> None:
                     tx_ref=make_evm_tx_hash(),
                     sequence_index=0,
                     timestamp=movement_event.timestamp,
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.WITHDRAWAL,
                     event_subtype=HistoryEventSubType.REMOVE_ASSET,
                     asset=movement_event.asset,
@@ -1215,7 +1230,7 @@ def test_deposit_withdrawal_direction(database: DBHandler) -> None:
                     tx_ref=make_evm_tx_hash(),
                     sequence_index=0,
                     timestamp=movement_event.timestamp,
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.DEPOSIT,
                     event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                     asset=movement_event.asset,
@@ -1239,7 +1254,7 @@ def test_match_by_transaction_id_without_0x_prefix(database: DBHandler) -> None:
             write_cursor=write_cursor,
             history=[AssetMovement(
                 identifier=(movement_id := 1),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=ts,
                 asset=A_USDC,
@@ -1255,7 +1270,7 @@ def test_match_by_transaction_id_without_0x_prefix(database: DBHandler) -> None:
                 tx_ref=tx_hash,
                 sequence_index=0,
                 timestamp=TimestampMS(ts + 12000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -1266,7 +1281,7 @@ def test_match_by_transaction_id_without_0x_prefix(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(ts + 18000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -1287,7 +1302,7 @@ def test_reprocess_ambiguous_movement_after_candidate_gets_matched(database: DBH
             write_cursor=write_cursor,
             history=[AssetMovement(  # Processed first (newer timestamp): two close matches.
                 identifier=(ambiguous_movement_id := 1),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700004000000),
                 asset=A_USDC,
@@ -1296,7 +1311,7 @@ def test_reprocess_ambiguous_movement_after_candidate_gets_matched(database: DBH
                 location_label='Kraken 1',
             ), AssetMovement(  # Processed later, but uniquely matched by tx hash.
                 identifier=(tx_ref_movement_id := 2),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700003000000),
                 asset=A_USDC,
@@ -1312,7 +1327,7 @@ def test_reprocess_ambiguous_movement_after_candidate_gets_matched(database: DBH
                 tx_ref=tx_ref,
                 sequence_index=0,
                 timestamp=TimestampMS(1700003005000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -1323,7 +1338,7 @@ def test_reprocess_ambiguous_movement_after_candidate_gets_matched(database: DBH
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700003006000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -1348,7 +1363,7 @@ def test_retry_ambiguous_movement_stays_ambiguous(database: DBHandler) -> None:
             write_cursor=write_cursor,
             history=[AssetMovement(  # Processed first: 3 matching candidates.
                 identifier=(ambiguous_movement_id := 1),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700005000000),
                 asset=A_USDC,
@@ -1357,7 +1372,7 @@ def test_retry_ambiguous_movement_stays_ambiguous(database: DBHandler) -> None:
                 location_label='Kraken 1',
             ), AssetMovement(  # Processed second: uniquely matches candidate 1 by tx hash.
                 identifier=(tx_ref_movement_id := 2),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700004000000),
                 asset=A_USDC,
@@ -1373,7 +1388,7 @@ def test_retry_ambiguous_movement_stays_ambiguous(database: DBHandler) -> None:
                 tx_ref=tx_ref,
                 sequence_index=0,
                 timestamp=TimestampMS(1700004005000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -1384,7 +1399,7 @@ def test_retry_ambiguous_movement_stays_ambiguous(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700004006000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -1395,7 +1410,7 @@ def test_retry_ambiguous_movement_stays_ambiguous(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700004007000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -1428,7 +1443,7 @@ def test_retry_ambiguous_movement_loses_all_candidates(database: DBHandler) -> N
             write_cursor=write_cursor,
             history=[AssetMovement(  # Processed first: 2 matching candidates.
                 identifier=(ambiguous_movement_id := 1),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700005000000),
                 asset=A_USDC,
@@ -1437,7 +1452,7 @@ def test_retry_ambiguous_movement_loses_all_candidates(database: DBHandler) -> N
                 location_label='Kraken 1',
             ), AssetMovement(  # Uniquely matches candidate 1 by tx hash.
                 identifier=(tx_ref_movement_id_1 := 2),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700004000000),
                 asset=A_USDC,
@@ -1450,7 +1465,7 @@ def test_retry_ambiguous_movement_loses_all_candidates(database: DBHandler) -> N
                 location_label='Kraken 2',
             ), AssetMovement(  # Uniquely matches candidate 2 by tx hash.
                 identifier=(tx_ref_movement_id_2 := 3),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700003990000),
                 asset=A_USDC,
@@ -1466,7 +1481,7 @@ def test_retry_ambiguous_movement_loses_all_candidates(database: DBHandler) -> N
                 tx_ref=tx_ref_1,
                 sequence_index=0,
                 timestamp=TimestampMS(1700004005000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -1477,7 +1492,7 @@ def test_retry_ambiguous_movement_loses_all_candidates(database: DBHandler) -> N
                 tx_ref=tx_ref_2,
                 sequence_index=0,
                 timestamp=TimestampMS(1700003995000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -1511,7 +1526,7 @@ def test_match_coinbasepro_coinbase_transfer(database: DBHandler) -> None:
             write_cursor=write_cursor,
             history=[AssetMovement(
                 identifier=1,
-                location=Location.COINBASEPRO,
+                location=LOCATION_COINBASEPRO,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1670000330000),
                 asset=A_USDC,
@@ -1519,7 +1534,7 @@ def test_match_coinbasepro_coinbase_transfer(database: DBHandler) -> None:
                 unique_id='xyz1',
             ), AssetMovement(
                 identifier=2,
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1670000329000),
                 asset=A_USDC,
@@ -1528,7 +1543,7 @@ def test_match_coinbasepro_coinbase_transfer(database: DBHandler) -> None:
                 notes='Transfer funds from CoinbasePro',
             ), AssetMovement(
                 identifier=3,
-                location=Location.COINBASEPRO,
+                location=LOCATION_COINBASEPRO,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1670000315000),
                 asset=Asset('ICP'),
@@ -1536,7 +1551,7 @@ def test_match_coinbasepro_coinbase_transfer(database: DBHandler) -> None:
                 unique_id='xyz3',
             ), AssetMovement(
                 identifier=4,
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1670000313000),
                 asset=Asset('ICP'),
@@ -1568,7 +1583,7 @@ def test_coinbasepro_transfer_with_onchain_event(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700012000000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -1576,7 +1591,7 @@ def test_coinbasepro_transfer_with_onchain_event(database: DBHandler) -> None:
                 location_label=make_evm_address(),
             ), AssetMovement(
                 identifier=(movement_id := 2),
-                location=Location.COINBASEPRO,
+                location=LOCATION_COINBASEPRO,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700012005000),
                 asset=A_ETH,
@@ -1585,7 +1600,7 @@ def test_coinbasepro_transfer_with_onchain_event(database: DBHandler) -> None:
                 location_label='CoinbasePro 1',
             ), AssetMovement(
                 identifier=(movement_id_2 := 3),
-                location=Location.COINBASEPRO,
+                location=LOCATION_COINBASEPRO,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700013000000),
                 asset=A_ETH,
@@ -1595,7 +1610,7 @@ def test_coinbasepro_transfer_with_onchain_event(database: DBHandler) -> None:
                 notes='Transfer funds to CoinbasePro',
             ), AssetMovement(
                 identifier=(match_id_2 := 4),
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700013001000),
                 asset=A_ETH,
@@ -1626,7 +1641,7 @@ def test_auto_ignored_movements_excluded_as_candidates(database: DBHandler) -> N
             write_cursor=write_cursor,
             history=[AssetMovement(
                 identifier=(movement_id := 1),
-                location=Location.KRAKEN,
+                location=LOCATION_KRAKEN,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700013000000),
                 asset=A_ETH,
@@ -1635,7 +1650,7 @@ def test_auto_ignored_movements_excluded_as_candidates(database: DBHandler) -> N
                 location_label='Kraken 1',
             ), AssetMovement(  # Would be a matching candidate without ignore filtering.
                 identifier=2,
-                location=Location.COINBASEPRO,
+                location=LOCATION_COINBASEPRO,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700013001000),
                 asset=A_ETH,
@@ -1644,7 +1659,7 @@ def test_auto_ignored_movements_excluded_as_candidates(database: DBHandler) -> N
                 location_label='Coinbase Pro 1',
             ), AssetMovement(
                 identifier=(match_id := 3),
-                location=Location.BITSTAMP,
+                location=LOCATION_BITSTAMP,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700013002000),
                 asset=A_ETH,
@@ -1671,7 +1686,7 @@ def test_coinbase_unprefixed_hash(database: DBHandler) -> None:
             write_cursor=write_cursor,
             history=[AssetMovement(  # Oldest: Coinbase deposit from CoinbasePro transfer
                 identifier=1,
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700000000000),
                 asset=A_BAT,
@@ -1681,7 +1696,7 @@ def test_coinbase_unprefixed_hash(database: DBHandler) -> None:
                 notes='Transfer funds from CoinbasePro',
             ), AssetMovement(  # CoinbasePro withdrawal should match the transfer deposit above.
                 identifier=2,
-                location=Location.COINBASEPRO,
+                location=LOCATION_COINBASEPRO,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700000010000),
                 asset=A_BAT,
@@ -1695,7 +1710,7 @@ def test_coinbase_unprefixed_hash(database: DBHandler) -> None:
                 ),
             ), AssetMovement(  # Coinbase withdrawal should match the EVM receive below.
                 identifier=(coinbase_withdrawal_id := 3),
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700000010000 + window_offset),
                 asset=A_BAT,
@@ -1712,7 +1727,7 @@ def test_coinbase_unprefixed_hash(database: DBHandler) -> None:
                 tx_ref=tx_hash,
                 sequence_index=0,
                 timestamp=TimestampMS(1700000011000 + window_offset),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_BAT,
@@ -1752,7 +1767,7 @@ def test_no_double_link_coinbase_withdrawal(database: DBHandler) -> None:
             write_cursor=write_cursor,
             history=[AssetMovement(  # outside time window for the CoinbasePro withdrawal below
                 identifier=(coinbase_deposit_id := 1),
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=base_ts,
                 asset=A_BAT,
@@ -1762,7 +1777,7 @@ def test_no_double_link_coinbase_withdrawal(database: DBHandler) -> None:
                 notes='Transfer funds from CoinbasePro',
             ), AssetMovement(
                 identifier=(coinbasepro_withdrawal_id := 2),
-                location=Location.COINBASEPRO,
+                location=LOCATION_COINBASEPRO,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=cbpro_ts,
                 asset=A_BAT,
@@ -1776,7 +1791,7 @@ def test_no_double_link_coinbase_withdrawal(database: DBHandler) -> None:
                 ),
             ), AssetMovement(
                 identifier=(coinbase_withdrawal_id := 3),
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(cbpro_ts + 1000),
                 asset=A_BAT,
@@ -1793,7 +1808,7 @@ def test_no_double_link_coinbase_withdrawal(database: DBHandler) -> None:
                 tx_ref=tx_hash,
                 sequence_index=0,
                 timestamp=TimestampMS(cbpro_ts + 2000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_BAT,
@@ -1845,7 +1860,7 @@ def test_deposit_to_anon(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700000000000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
@@ -1853,7 +1868,7 @@ def test_deposit_to_anon(database: DBHandler) -> None:
                 location_label=make_evm_address(),
                 address=make_evm_address(),
             )), (deposit_movement := AssetMovement(
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700000050000),
                 asset=A_USDC,
@@ -1861,7 +1876,7 @@ def test_deposit_to_anon(database: DBHandler) -> None:
                 unique_id='cb_deposit_1',
                 location_label='Coinbase 1',
             )), (withdrawal_movement := AssetMovement(
-                location=Location.COINBASE,
+                location=LOCATION_COINBASE,
                 event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700000300000),
                 asset=A_USDC,
@@ -1872,7 +1887,7 @@ def test_deposit_to_anon(database: DBHandler) -> None:
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(1700000350000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.user_messages import MissingPrice
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.fval import FVal
-    from rotkehlchen.types import Location
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -20,7 +21,7 @@ class _BaseManualBalance:
     identifier: int
     asset: Asset
     label: str
-    location: Location
+    location: LocationIdentifier
     tags: list[str] | None
     balance_type: BalanceType
     asset_is_missing: bool = field(default=False)  # set to true when the asset points to an asset that is unknown to the db  # noqa: E501
@@ -93,12 +94,19 @@ def add_manually_tracked_balances(
     """Adds manually tracked balances
 
     May raise:
-    - InputError if any of the given balance entry labels already exist in the DB
+    - InputError if any of the given balance entry labels already exist in the DB or a
+    location can not hold data
     - TagConstraintError if any of the given manually tracked balances contain unknown tags.
     """
     if len(data) == 0:
         raise InputError('Empty list of manually tracked balances to add was given')
     with db.user_write() as cursor:
+        for location in dict.fromkeys(entry.location for entry in data):  # dedupe, in entry order
+            DBLocations().validate_assignable(
+                cursor=cursor,
+                identifier=location,
+                allow_category=True,
+            )
         db.ensure_tags_exist(
             cursor=cursor,
             given_data=data,
@@ -112,13 +120,21 @@ def edit_manually_tracked_balances(db: DBHandler, data: list[ManuallyTrackedBala
     """Edits manually tracked balances
 
     May raise:
-    - InputError if the given balances list is empty or if
-    any of the balance entry labels to edit do not exist in the DB.
+    - InputError if the given balances list is empty, if any of the balance entry labels to
+    edit do not exist in the DB or a location can not hold data. Archived locations are
+    accepted so that balances on them stay editable.
     - TagConstraintError if any of the given balance data contain unknown tags.
     """
     if len(data) == 0:
         raise InputError('Empty list of manually tracked balances to edit was given')
     with db.user_write() as cursor:
+        for location in dict.fromkeys(entry.location for entry in data):  # dedupe, in entry order
+            DBLocations().validate_assignable(
+                cursor=cursor,
+                identifier=location,
+                allow_archived=True,
+                allow_category=True,
+            )
         db.ensure_tags_exist(
             cursor=cursor,
             given_data=data,

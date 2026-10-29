@@ -2,6 +2,7 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
 import { addAccountLink } from '@/modules/accounts/add-account-link';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { ChainType } from '@/modules/core/api/types/chains';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -21,7 +22,8 @@ interface EmptyAction {
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { allExchanges, banks } = storeToRefs(useLocationStore());
+const { allExchanges } = storeToRefs(useLocationStore());
+const { bankBalanceLocations: banks } = storeToRefs(useBankConnectionsStore());
 const { getChainAccountType, matchChain } = useSupportedChains();
 
 /** Where balances for this kind of location come from, and the page that adds one. */

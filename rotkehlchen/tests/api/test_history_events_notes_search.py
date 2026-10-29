@@ -8,11 +8,17 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_COINBASE,
+    LOCATION_EXTERNAL,
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response_with_result,
 )
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -30,7 +36,7 @@ def test_history_events_search_by_notes(
             group_identifier='event1',
             sequence_index=0,
             timestamp=TimestampMS(1000),
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             asset=A_ETH,
             amount=FVal('1.5'),
             notes='Bought ETH on Binance exchange',
@@ -40,7 +46,7 @@ def test_history_events_search_by_notes(
             group_identifier='event2',
             sequence_index=0,
             timestamp=TimestampMS(2000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             asset=A_USD,
             amount=FVal('100'),
             notes='Deposited USD to Kraken',
@@ -50,7 +56,7 @@ def test_history_events_search_by_notes(
             group_identifier='event3',
             sequence_index=0,
             timestamp=TimestampMS(3000),
-            location=Location.COINBASE,
+            location=LOCATION_COINBASE,
             asset=A_ETH,
             amount=FVal('0.5'),
             notes='Transferred ETH from Coinbase to cold wallet',
@@ -60,7 +66,7 @@ def test_history_events_search_by_notes(
             group_identifier='event4',
             sequence_index=0,
             timestamp=TimestampMS(4000),
-            location=Location.EXTERNAL,
+            location=LOCATION_EXTERNAL,
             asset=A_ETH,
             amount=FVal('2.0'),
             notes='Custom event for ETH staking rewards',
@@ -144,7 +150,7 @@ def test_history_events_combined_filters(
             group_identifier='eth_event_1',
             sequence_index=0,
             timestamp=TimestampMS(1000),
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             asset=A_ETH,
             amount=FVal('1.0'),
             notes='Bought ETH on Binance',
@@ -154,7 +160,7 @@ def test_history_events_combined_filters(
             group_identifier='eth_event_2',
             sequence_index=0,
             timestamp=TimestampMS(2000),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             asset=A_ETH,
             amount=FVal('2.0'),
             notes='Bought ETH on Kraken',
@@ -164,7 +170,7 @@ def test_history_events_combined_filters(
             group_identifier='usd_event',
             sequence_index=0,
             timestamp=TimestampMS(3000),
-            location=Location.BINANCE,
+            location=LOCATION_BINANCE,
             asset=A_USD,
             amount=FVal('100'),
             notes='Deposited USD on Binance',

@@ -1,3 +1,4 @@
+import { createTestExchange } from '@test/utils/create-data';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
@@ -10,9 +11,14 @@ import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/Exchang
 import Exchanges from '@/pages/api-keys/exchanges/index.vue';
 import '@test/i18n';
 
+const { route } = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
+  return { route: ref<{ query: Record<string, unknown> }>({ query: {} }) };
+});
+
 vi.mock('vue-router', () => ({
   useRouter: (): Record<string, unknown> => ({ push: vi.fn(), replace: vi.fn() }),
-  useRoute: (): Ref<{ query: Record<string, unknown> }> => ref({ query: {} }),
+  useRoute: (): Ref<{ query: Record<string, unknown> }> => route,
 }));
 
 vi.mock('@/modules/balances/exchanges/use-exchanges', () => ({
@@ -74,7 +80,8 @@ describe('exchanges page', () => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
     // the table, and the toolbar the hint lives in, only show once an exchange is connected
-    useConnectedExchangesStore().connectedExchanges = [{ location: 'kraken', name: 'main' }];
+    useConnectedExchangesStore().connectedExchanges = [createTestExchange('kraken', 'main')];
+    route.value = { query: {} };
     vi.useFakeTimers();
   });
 
@@ -90,6 +97,18 @@ describe('exchanges page', () => {
 
     expect(wrapper.findComponent(ExchangeBalancesEmpty).exists()).toBe(true);
     expect(wrapper.find('[data-testid=exchange-table]').exists()).toBe(false);
+  });
+
+  it('should open the connection a link names by identifier for editing', async () => {
+    useConnectedExchangesStore().connectedExchanges = [
+      createTestExchange('kraken', 'other'),
+      createTestExchange('kraken', 'renamed', { identifier: 'kraken-main' }),
+    ];
+    route.value = { query: { identifier: 'kraken-main' } };
+    wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.findComponent(ExchangeKeysFormDialog).props('modelValue')).toMatchObject({ identifier: 'kraken-main', mode: 'edit', name: 'renamed' });
   });
 
   it('should not show the setup hint before an exchange is added', async () => {

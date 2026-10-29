@@ -1,5 +1,6 @@
 import type { EffectScope } from 'vue';
 import { externalLinks } from '@shared/external-links';
+import { createTestExchange } from '@test/utils/create-data';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
@@ -233,7 +234,7 @@ describe('modules/shell/action-center/use-integration-rows', () => {
     }
 
     it('should raise one row per refused account, opening the keys of that account', () => {
-      useConnectedExchangesStore().setConnectedExchanges([main]);
+      useConnectedExchangesStore().setConnectedExchanges([createTestExchange('binance', 'main')]);
       raiseRefusedKey(main);
 
       const row = onlyRow();
@@ -248,11 +249,11 @@ describe('modules/shell/action-center/use-integration-rows', () => {
 
     it('should take a row down once its account is no longer connected', async () => {
       const connected = useConnectedExchangesStore();
-      connected.setConnectedExchanges([main, { location: 'binance', name: 'other' }]);
+      connected.setConnectedExchanges([createTestExchange('binance', 'main'), createTestExchange('binance', 'other')]);
       raiseRefusedKey(main);
       const result = rows();
 
-      connected.setConnectedExchanges([{ location: 'binance', name: 'other' }]);
+      connected.setConnectedExchanges([createTestExchange('binance', 'other')]);
       await nextTick();
 
       expect(get(result)).toEqual([]);

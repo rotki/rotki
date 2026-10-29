@@ -121,6 +121,8 @@ def _init_database(
                 autospec=True,
             )
             stack.enter_context(upgrades_patch)
+            # without upgrades the DB may predate the connections the check reads
+            stack.enter_context(patch.object(DBHandler, '_check_settings'))
         if skip_sync_globaldb_assets:
             stack.enter_context(mock_dbhandler_sync_globaldb_assets())
         db = DBHandler(

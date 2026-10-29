@@ -25,8 +25,9 @@ from rotkehlchen.externalapis.hyperliquid import (
 )
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import LOCATION_HYPERLIQUID
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location, SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.user_messages import NetworkFailure
 from rotkehlchen.utils.network import create_session
 
@@ -251,10 +252,10 @@ class HyperliquidManager(EvmManager):
                     HISTORY_MAPPING_KEY_STATE,
                     HistoryMappingState.CUSTOMIZED.serialize_for_db(),
                     create_group_identifier_from_unique_id(
-                        location=Location.HYPERLIQUID,
+                        location=LOCATION_HYPERLIQUID,
                         unique_id=ZERO_32_BYTES_HEX,
                     ),
-                    Location.HYPERLIQUID.serialize_for_db(),
+                    LOCATION_HYPERLIQUID,
                 ),
             ))
 
@@ -402,7 +403,7 @@ class HyperliquidManager(EvmManager):
                                 record=UserMessageRecord.TRANSACTION,
                                 error=str(e),
                             ),
-                            subject=Location.HYPERLIQUID,
+                            subject=LOCATION_HYPERLIQUID,
                         )
                         continue
 

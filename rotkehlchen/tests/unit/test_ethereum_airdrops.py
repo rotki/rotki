@@ -37,8 +37,12 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import CacheType, Location, TimestampMS
+from rotkehlchen.types import CacheType, TimestampMS
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -290,7 +294,7 @@ def test_check_airdrops(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(1594500575000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_UNI,
@@ -301,7 +305,7 @@ def test_check_airdrops(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(1594500575000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_1INCH,
@@ -312,7 +316,7 @@ def test_check_airdrops(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
             timestamp=TimestampMS(1594500575000),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=Asset('eip155:8453/erc20:0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed'),

@@ -14,8 +14,11 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_SOLANA,
+)
 from rotkehlchen.tests.utils.factories import make_solana_address, make_solana_signature
-from rotkehlchen.types import Location, SolanaAddress, Timestamp, TimestampMS
+from rotkehlchen.types import SolanaAddress, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -161,7 +164,7 @@ def test_first_solana_mapping_keeps_events_already_referencing_address(
                 tx_ref=transaction.signature,
                 sequence_index=0,
                 timestamp=TimestampMS(transaction.block_time * 1000),
-                location=Location.SOLANA,
+                location=LOCATION_SOLANA,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_SOL,

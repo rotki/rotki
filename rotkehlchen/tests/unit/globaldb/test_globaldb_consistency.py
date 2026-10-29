@@ -35,7 +35,6 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
     ChainID,
-    Location,
     Timestamp,
 )
 from rotkehlchen.utils.network import query_file
@@ -554,7 +553,7 @@ def test_remote_updates_consistency_with_packaged_db(
     """
     temp_data_dir = Path(tmpdir_factory.mktemp(GLOBALDIR_NAME))
     (old_db_dir := temp_data_dir / GLOBALDIR_NAME).mkdir(parents=True, exist_ok=True)
-    request.urlretrieve(  # location_asset_mappings and location_unsupported_assets were added since v1.33.0  # noqa: E501
+    request.urlretrieve(  # connector_asset_mappings and location_unsupported_assets were added since v1.33.0  # noqa: E501
         url='https://github.com/rotki/rotki/raw/v1.33.0/rotkehlchen/data/global.db',
         filename=old_db_dir / 'global.db',
     )
@@ -575,14 +574,14 @@ def test_remote_updates_consistency_with_packaged_db(
         globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor,
     ):
         (
-            (updated_location_asset_mappings, updated_counterparty_asset_mappings),
-            (packaged_location_asset_mappings, packaged_counterparty_asset_mappings),
+            (updated_connector_asset_mappings, updated_counterparty_asset_mappings),
+            (packaged_connector_asset_mappings, packaged_counterparty_asset_mappings),
         ) = (
             (
                 {
-                    (location, symbol): identifier
-                    for location, symbol, identifier in cursor.execute(
-                        'SELECT location, exchange_symbol, local_id FROM location_asset_mappings',
+                    (connector, symbol): identifier
+                    for connector, symbol, identifier in cursor.execute(
+                        'SELECT connector, exchange_symbol, local_id FROM connector_asset_mappings',  # noqa: E501
                     )
                 },
                 {
@@ -597,15 +596,16 @@ def test_remote_updates_consistency_with_packaged_db(
 
     missing_in_packaged_db: list[Any] = []
     missing_in_remote_updates: list[Any] = []
-    for mapping_type, table_details in [
+    for _, table_details in [
         (
-            'location',
+            'connector',
             {
-                'updated_mappings': updated_location_asset_mappings,
-                'packaged_mappings': packaged_location_asset_mappings,
-                'table_name': 'location_asset_mappings',
+                'updated_mappings': updated_connector_asset_mappings,
+                'packaged_mappings': packaged_connector_asset_mappings,
+                'table_name': 'connector_asset_mappings',
                 'id_field': 'local_id',
-                'field1_name': 'location',
+                'field1_name': 'connector',
+                'remote_field1_name': 'location',  # the data repo's name for the connector
                 'field2_name': 'exchange_symbol',
             },
         ),
@@ -617,6 +617,7 @@ def test_remote_updates_consistency_with_packaged_db(
                 'table_name': 'counterparty_asset_mappings',
                 'id_field': 'local_id',
                 'field1_name': 'counterparty',
+                'remote_field1_name': 'counterparty',
                 'field2_name': 'symbol',
             },
         ),
@@ -626,6 +627,7 @@ def test_remote_updates_consistency_with_packaged_db(
         table_name = table_details['table_name']
         id_field = table_details['id_field']
         field1_name = table_details['field1_name']
+        remote_field1_name = table_details['remote_field1_name']
         field2_name = table_details['field2_name']
 
         # find entries in remote updates but not in packaged db
@@ -639,9 +641,8 @@ def test_remote_updates_consistency_with_packaged_db(
         missing_in_remote_updates.extend([
             {
                 'asset': identifier,
-                field1_name: None if field1 is None else Location.deserialize_from_db(
-                    field1).serialize() if mapping_type == 'location' else field1,
-                f'{field1_name}_symbol': field2,
+                remote_field1_name: field1,
+                f'{remote_field1_name}_symbol': field2,
             }
             for (field1, field2), identifier in packaged_mappings.items()
             if (field1, field2) not in updated_mappings
@@ -662,7 +663,7 @@ def test_remote_updates_consistency_with_packaged_db(
     if len(non_checksummed := find_non_checksummed_addresses(
         (f'{mapping_type} mapping {key}', identifier)
         for mapping_type, mappings in (
-            ('location', updated_location_asset_mappings),
+            ('connector', updated_connector_asset_mappings),
             ('counterparty', updated_counterparty_asset_mappings),
         )
         for key, identifier in mappings.items()

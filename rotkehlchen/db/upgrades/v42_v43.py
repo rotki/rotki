@@ -7,7 +7,6 @@ from rotkehlchen.db.constants import (
     HistoryMappingState,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -47,14 +46,14 @@ def upgrade_v42_to_v43(db: DBHandler, progress_handler: DBUpgradeProgressHandler
     def _add_new_supported_locations(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
-            ('p', Location.HTX.value),
+            ('p', 48),
         )
 
     @progress_step(description='Removing Coinbase Pro credentials.')
     def _remove_coinbasepro_credentials(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'DELETE FROM user_credentials WHERE location=?;',
-            (Location.COINBASEPRO.serialize_for_db(),),
+            ('K',),
         )
 
     @progress_step(description='Removing old csv files.')

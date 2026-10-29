@@ -15,9 +15,10 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_optional
-from rotkehlchen.types import FVal, Location, TimestampMS
+from rotkehlchen.types import FVal, TimestampMS
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -61,7 +62,7 @@ class OnchainEvent[T_TxRef, T_Address](HistoryBaseEntry):
             tx_ref: T_TxRef,
             sequence_index: int,
             timestamp: TimestampMS,
-            location: Location,
+            location: LocationIdentifier,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             asset: Asset,
@@ -109,7 +110,7 @@ class OnchainEvent[T_TxRef, T_Address](HistoryBaseEntry):
 
     @staticmethod
     @abstractmethod
-    def _calculate_group_identifier(tx_ref: T_TxRef, location: Location) -> str:
+    def _calculate_group_identifier(tx_ref: T_TxRef, location: LocationIdentifier) -> str:
         """Calculate the group identifier from transaction reference and location.
 
         This method must be implemented by subclasses to handle chain-specific
@@ -220,7 +221,7 @@ class OnchainEvent[T_TxRef, T_Address](HistoryBaseEntry):
             group_identifier=entry[1],
             sequence_index=entry[2],
             timestamp=TimestampMS(entry[3]),
-            location=Location.deserialize_from_db(entry[4]),
+            location=LocationIdentifier(entry[4]),
             location_label=entry[5],
             asset=Asset(entry[6]).check_existence(),
             amount=amount,

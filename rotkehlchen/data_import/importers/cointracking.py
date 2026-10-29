@@ -24,13 +24,27 @@ from rotkehlchen.history.events.structures.asset_movement import (
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BITFINEX,
+    LOCATION_BITMEX,
+    LOCATION_BITSTAMP,
+    LOCATION_BITTREX,
+    LOCATION_COINBASE,
+    LOCATION_COINBASEPRO,
+    LOCATION_EXTERNAL,
+    LOCATION_GEMINI,
+    LOCATION_KRAKEN,
+    LOCATION_KUCOIN,
+    LOCATION_POLONIEX,
+)
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_force_positive,
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -38,6 +52,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 def remap_header(fieldnames: list[str]) -> list[str]:
@@ -46,32 +61,32 @@ def remap_header(fieldnames: list[str]) -> list[str]:
     return [f'Cur.{mapping[next(cur_count)]}' if f.startswith('Cur.') else f for f in fieldnames]
 
 
-def exchange_row_to_location(entry: str) -> Location:
+def exchange_row_to_location(entry: str) -> LocationIdentifier:
     """Takes the exchange row entry of Cointracking exported trades list and returns a location"""
     if entry == 'no exchange':
-        return Location.EXTERNAL
+        return LOCATION_EXTERNAL
     if entry == 'Kraken':
-        return Location.KRAKEN
+        return LOCATION_KRAKEN
     if entry == 'Poloniex':
-        return Location.POLONIEX
+        return LOCATION_POLONIEX
     if entry == 'Bittrex':
-        return Location.BITTREX
+        return LOCATION_BITTREX
     if entry == 'Binance':
-        return Location.BINANCE
+        return LOCATION_BINANCE
     if entry == 'Bitmex':
-        return Location.BITMEX
+        return LOCATION_BITMEX
     if entry == 'Coinbase':
-        return Location.COINBASE
+        return LOCATION_COINBASE
     if entry in {'CoinbasePro', 'GDAX'}:
-        return Location.COINBASEPRO
+        return LOCATION_COINBASEPRO
     if entry == 'Gemini':
-        return Location.GEMINI
+        return LOCATION_GEMINI
     if entry == 'Bitstamp':
-        return Location.BITSTAMP
+        return LOCATION_BITSTAMP
     if entry == 'Bitfinex':
-        return Location.BITFINEX
+        return LOCATION_BITFINEX
     if entry == 'KuCoin':
-        return Location.KUCOIN
+        return LOCATION_KUCOIN
     if entry == 'ETH Transaction':
         raise UnsupportedCSVEntry(
             'Not importing ETH Transactions from Cointracking. Cointracking does not '
@@ -84,7 +99,7 @@ def exchange_row_to_location(entry: str) -> Location:
             'export enough data for them. Simply enter your BTC accounts and all '
             'your transactions will be auto imported directly from the chain',
         )
-    return Location.EXTERNAL
+    return LOCATION_EXTERNAL
 
 
 class CointrackingImporter(BaseExchangeImporter):
@@ -119,7 +134,7 @@ class CointrackingImporter(BaseExchangeImporter):
         location = exchange_row_to_location(csv_row['Exchange'])
         asset_resolver = LOCATION_TO_ASSET_MAPPING.get(location, symbol_to_asset_or_token)
         notes = csv_row['Comment']
-        if location == Location.EXTERNAL:
+        if location == LOCATION_EXTERNAL:
             notes += f'. Data from -{csv_row["Exchange"]}- not known by rotki.'
 
         fee = AssetAmount(

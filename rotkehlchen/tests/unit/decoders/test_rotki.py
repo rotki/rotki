@@ -15,8 +15,11 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -36,7 +39,7 @@ def test_gold_sponsorship(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1756566359000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -48,7 +51,7 @@ def test_gold_sponsorship(
         tx_ref=tx_hash,
         sequence_index=262,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_subtype=HistoryEventSubType.SPEND,
         asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
         amount=(spend_amount := FVal('1200')),
@@ -60,7 +63,7 @@ def test_gold_sponsorship(
         tx_ref=tx_hash,
         sequence_index=263,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc721:0x3337286E850cf01B8A8B6094574f0dd6a2108B16/1'),
         amount=ONE,
@@ -85,7 +88,7 @@ def test_silver_sponsorship(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1756562735000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -97,7 +100,7 @@ def test_silver_sponsorship(
         tx_ref=tx_hash,
         sequence_index=69,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_subtype=HistoryEventSubType.SPEND,
         asset=Asset('eip155:1/erc20:0x39b8B6385416f4cA36a20319F70D28621895279D'),
         amount=(spend_amount := FVal('600')),
@@ -109,7 +112,7 @@ def test_silver_sponsorship(
         tx_ref=tx_hash,
         sequence_index=70,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc721:0x3337286E850cf01B8A8B6094574f0dd6a2108B16/0'),
         amount=ONE,
@@ -134,7 +137,7 @@ def test_bronze_sponsorship(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1758889799000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -146,7 +149,7 @@ def test_bronze_sponsorship(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=(spend_amount := FVal('0.05')),
@@ -158,7 +161,7 @@ def test_bronze_sponsorship(
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc721:0x3337286E850cf01B8A8B6094574f0dd6a2108B16/11'),
         amount=ONE,

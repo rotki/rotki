@@ -1,8 +1,10 @@
+import { createLocationNode } from '@test/utils/location-tree';
 import { mount, RouterLinkStub, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import LocationAssetsEmpty from '@/modules/balances/LocationAssetsEmpty.vue';
 import { ChainType } from '@/modules/core/api/types/chains';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 
 const chainTypes: Record<string, string | undefined> = {
   btc: ChainType.BITCOIN,
@@ -40,9 +42,9 @@ describe('modules/balances/LocationAssetsEmpty', () => {
     const { allLocations } = storeToRefs(useLocationStore());
     set(allLocations, {
       cash: { label: 'Cash' },
-      fints: { isBank: true, label: 'FinTS' },
       kraken: { isExchange: true, label: 'Kraken' },
     });
+    useLocationTreeStore().setNodes([createLocationNode('custom:ing', 'banks', 'ING', { isBuiltin: false })]);
   });
 
   it('should name the location in the title', () => {
@@ -77,12 +79,12 @@ describe('modules/balances/LocationAssetsEmpty', () => {
   });
 
   it('should send a bank to the bank setup with the bank picked', () => {
-    const wrapper = createWrapper('fints', 'FinTS');
+    const wrapper = createWrapper('custom:ing', 'ING');
 
-    expect(wrapper.find('[data-testid=notice]').attributes('data-description')).toBe('locations.empty.bank::FinTS');
+    expect(wrapper.find('[data-testid=notice]').attributes('data-description')).toBe('locations.empty.bank::ING');
     expect(wrapper.find('[data-testid=notice]').attributes('data-icon')).toBe('lu-landmark');
-    expect(wrapper.text()).toContain('locations.empty.connect::FinTS');
-    expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ path: '/api-keys/banks', query: { add: 'true', location: 'fints' } });
+    expect(wrapper.text()).toContain('locations.empty.connect::ING');
+    expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ path: '/api-keys/banks', query: { add: 'true', location: 'custom:ing' } });
   });
 
   it('should send an exchange to the exchange setup with the exchange picked', () => {

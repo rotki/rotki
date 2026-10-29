@@ -65,7 +65,7 @@ export class BanksPage {
 
   /** The action center row asking for a connection's TAN. */
   authenticationRow(name: string): Locator {
-    return this.page.locator('[data-testid=actions-center-row][data-key^=bank-authentication-qonto-]').filter({ hasText: name });
+    return this.page.locator('[data-testid=actions-center-row][data-key^=bank-authentication-]').filter({ hasText: name });
   }
 
   async authenticateFromActionCenter(name: string): Promise<void> {

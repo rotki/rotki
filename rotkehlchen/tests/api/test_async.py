@@ -8,6 +8,11 @@ import pytest
 import requests
 
 from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.exchanges.binance import Binance
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_POLONIEX,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -17,13 +22,12 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.exchanges import try_get_first_exchange
-from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
 def test_query_async_tasks(
         rotkehlchen_api_server_with_exchanges: APIServer,
         request: pytest.FixtureRequest,
@@ -106,13 +110,13 @@ def test_query_async_tasks(
     assert json_data['result'] == {'status': 'not-found', 'outcome': None}
 
 
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE,)])
 def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """If an async task dies with an exception check that it's properly handled"""
 
     # async query balances of one specific exchange
     server = rotkehlchen_api_server_with_exchanges
-    binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, Location.BINANCE)  # noqa: E501
+    binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, LOCATION_BINANCE, Binance)  # noqa: E501
     assert binance is not None
 
     def mock_binance_asset_return(*args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
@@ -166,7 +170,7 @@ def test_cancel_async_task(rotkehlchen_api_server_with_exchanges: APIServer) -> 
     """Test that canceling an ongoing async task works fine"""
     # async query balances of one specific exchange
     server = rotkehlchen_api_server_with_exchanges
-    binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, Location.BINANCE)  # noqa: E501
+    binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, LOCATION_BINANCE, Binance)  # noqa: E501
     assert binance is not None
 
     def mock_binance_asset_return(*args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument

@@ -3,6 +3,7 @@ import type { ActivityId } from '@/modules/task-center/core/types';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
+import { useBankName } from '@/modules/banks/use-bank-name';
 import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
@@ -19,7 +20,7 @@ interface UseBankEventsRefreshReturn {
  * Pulls new transactions of bank connections into the history.
  *
  * @remarks
- * Each `{ location, name }` connection runs as its own native BANK_EVENTS activity, the way exchange
+ * Each connection runs as its own native BANK_EVENTS activity, the way exchange
  * accounts do, so the orchestrator owns liveness, cancellation and re-run, and the same status
  * frames the backend streams for exchanges drive its detail.
  */
@@ -27,6 +28,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { getBanks, syncBanks } = useBanksApi();
   const { submitTask } = useNativeTask();
+  const { bankNameOf } = useBankName();
   const store = useBankConnectionsStore();
 
   /**
@@ -48,7 +50,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
 
   const queryBank = async (bank: BankConnectionIdentity, parent?: ActivityId): Promise<Result<void, TaskError>> => {
     const { location, name } = bank;
-    const bankName = store.bankNameFor(location);
+    const bankName = bankNameOf({ connector: store.connectorOf(bank.identifier), location });
     logger.debug(`querying bank events for ${location} (${name})`);
     const outcome = await submitTask({
       id: bankEventsActivity.id(bank),
@@ -57,7 +59,7 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
       parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<boolean>(async () => syncBanks({ location, name })),
+        await runTask<boolean>(async () => syncBanks({ identifier: bank.identifier })),
         () => {},
       ),
       subtitle: activityLabelFor(msg.$t('task_center.activity.history_events.bank'), { account: name, bank: bankName }),

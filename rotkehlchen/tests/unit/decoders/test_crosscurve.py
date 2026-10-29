@@ -14,11 +14,15 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_GNOSIS,
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
-    Location,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -53,7 +57,7 @@ def test_crosscurve_bridge_send(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1757661563000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -64,7 +68,7 @@ def test_crosscurve_bridge_send(
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -77,7 +81,7 @@ def test_crosscurve_bridge_send(
             tx_ref=tx_hash,
             sequence_index=354,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
@@ -101,7 +105,7 @@ def test_crosscurve_bridge_send_arbitrum(arbitrum_one_inquirer: ArbitrumOneInqui
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1741867858000)),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -112,7 +116,7 @@ def test_crosscurve_bridge_send_arbitrum(arbitrum_one_inquirer: ArbitrumOneInqui
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -125,7 +129,7 @@ def test_crosscurve_bridge_send_arbitrum(arbitrum_one_inquirer: ArbitrumOneInqui
             tx_ref=tx_hash,
             sequence_index=10,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
@@ -152,7 +156,7 @@ def test_crosscurve_bridge_receive_via_curve(arbitrum_one_inquirer: ArbitrumOneI
             tx_ref=tx_hash,
             sequence_index=49,
             timestamp=TimestampMS(1729787659000),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
@@ -176,7 +180,7 @@ def test_crosscurve_bridge_receive(gnosis_inquirer: GnosisInquirer, gnosis_accou
             tx_ref=tx_hash,
             sequence_index=50,
             timestamp=TimestampMS(1757661890000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),

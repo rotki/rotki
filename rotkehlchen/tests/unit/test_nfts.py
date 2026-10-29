@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, Nft
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.balances import BlockchainBalancesUpdate
@@ -471,16 +471,16 @@ def test_nft_balance_updates_only_its_own_token(
             usd_price='2',
         )
 
-    totals = BalanceSheet()
-    totals.assets[other_token][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(5))
-    totals.assets[nft_token][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ZERO)
+    # the balance query buckets chain balances per chain, from the per-account balances
+    (account := rotki.chains_aggregator.balances.eth[ethereum_accounts[0]]).assets[other_token][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(5))  # noqa: E501
+    account.assets[nft_token][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ZERO)
     with patch.object(
         rotki.chains_aggregator,
         'query_balances',
         return_value=BlockchainBalancesUpdate(
             given_chain=None,
             per_account=rotki.chains_aggregator.balances,
-            totals=totals,
+            totals=account,
         ),
     ):
         assets = rotki.query_balances()['assets']

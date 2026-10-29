@@ -1,4 +1,6 @@
+import json
 import logging
+import re
 import urllib
 from abc import ABC, abstractmethod
 from contextlib import suppress
@@ -41,6 +43,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
+from rotkehlchen.locations.types import LocationIdentifier, deserialize_location_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_btc_tx_id,
@@ -59,7 +62,6 @@ from rotkehlchen.types import (
     EVMTxHash,
     HexColorCode,
     HyperliquidTokenAddress,
-    Location,
     Price,
     SolanaAddress,
     SupportedBlockchain,
@@ -931,13 +933,13 @@ class AssetTypeField(fields.Field):
 
 class LocationField(fields.Field):
 
-    def __init__(self, *, limit_to: tuple[Location, ...] | None = None, **kwargs: Any) -> None:
+    def __init__(self, *, limit_to: tuple[LocationIdentifier, ...] | None = None, **kwargs: Any) -> None:  # noqa: E501
         self.limit_to = limit_to
         super().__init__(**kwargs)
 
     @staticmethod
     def _serialize(
-            value: Location | None,
+            value: LocationIdentifier | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
@@ -951,9 +953,9 @@ class LocationField(fields.Field):
             attr: str | None,  # pylint: disable=unused-argument
             data: Mapping[str, Any] | None,
             **_kwargs: Any,
-    ) -> Location:
+    ) -> LocationIdentifier:
         try:
-            location = Location.deserialize(value)
+            location = deserialize_location_identifier(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
@@ -964,6 +966,55 @@ class LocationField(fields.Field):
             )
 
         return location
+
+
+class LocationMappingsField(fields.Field):
+    """Location values of an imported file mapped to the locations they stand for. A
+    multipart form upload carries the mapping as a JSON string."""
+
+    def _deserialize(
+            self,
+            value: Any,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> dict[str, LocationIdentifier]:
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError as e:
+                raise ValidationError(f'Location mappings are not valid JSON: {e!s}') from e
+        if not isinstance(value, dict):
+            raise ValidationError('Location mappings must map values to location identifiers')
+
+        mappings = {}
+        for raw_value, raw_location in value.items():
+            if not isinstance(raw_value, str) or (import_value := raw_value.strip()) == '':
+                raise ValidationError(f'Invalid mapped location value {raw_value!r}')
+            try:
+                mappings[import_value] = deserialize_location_identifier(raw_location)
+            except DeserializationError as e:
+                raise ValidationError(str(e)) from e
+        return mappings
+
+
+LOCATION_ICON_RE: Final = re.compile(r'lu-[a-z0-9-]+')
+
+
+class LocationIconField(fields.String):
+    """The name of an icon of the frontend icon library"""
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,
+            data: Mapping[str, Any] | None,
+            **kwargs: Any,
+    ) -> str:
+        icon = super()._deserialize(value, attr, data, **kwargs)
+        if LOCATION_ICON_RE.fullmatch(icon) is None:
+            raise ValidationError(f'{icon} is not an icon name such as lu-landmark')
+        return icon
 
 
 class ApiKeyField(fields.Field):

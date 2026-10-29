@@ -41,6 +41,14 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    location_to_chain_id,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_BASE,
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_evm_address,
@@ -48,7 +56,6 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     ChainID,
-    Location,
     OptionalBlockchainAddress,
     SupportedBlockchain,
     Timestamp,
@@ -69,9 +76,9 @@ SAFENET_CALENDAR_COLOR: Final = deserialize_hex_color_code('12ff80')
 SAFENET_MULTICALL_BATCH_SIZE: Final = 25
 VESTING_SCHEDULE_METHODS: Final = ('recipient', 'start_time', 'end_time', 'cliff_length', 'disabled_at')  # noqa: E501
 L2_BRIDGE_REMINDER_LOCATIONS: Final = {
-    Location.BASE: CPT_BASE,
-    Location.OPTIMISM: CPT_OPTIMISM,
-    Location.ARBITRUM_ONE: CPT_ARBITRUM_ONE,
+    LOCATION_BASE: CPT_BASE,
+    LOCATION_OPTIMISM: CPT_OPTIMISM,
+    LOCATION_ARBITRUM_ONE: CPT_ARBITRUM_ONE,
 }
 
 if TYPE_CHECKING:
@@ -169,7 +176,7 @@ def acknowledge_matched_l2_bridge_calendar_entry(
         )
         return
 
-    blockchain = ChainID.deserialize(bridge_event.location.to_chain_id()).to_blockchain()
+    blockchain = ChainID.deserialize(location_to_chain_id(bridge_event.location)).to_blockchain()
     calendar_db = DBCalendar(database=database)
     entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make(
         and_op=True,
@@ -311,7 +318,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
         assert event.location_label is not None
         if (
             (user_address := string_to_evm_address(event.location_label)) not in self.blockchain_accounts.get(  # noqa: E501
-                blockchain := ChainID.deserialize(event.location.to_chain_id()).to_blockchain(),
+                blockchain := ChainID.deserialize(location_to_chain_id(event.location)).to_blockchain(),  # noqa: E501
             ) or timestamp <= self.current_ts
         ):
             return None  # Skip events in the past or from a different address
@@ -816,7 +823,10 @@ class CalendarReminderCreator(CustomizableDateMixin):
                 )) is not None:
                     bridge_calendar_entries.append(entry_id)
             except UnknownAsset:
-                log.exception(f'Unable to add reminder for bridge event with hash {bridge_event.tx_ref!s} on {bridge_event.location.name}')  # noqa: E501
+                log.exception(
+                    'Unable to add reminder for bridge event with hash %s on %s',
+                    bridge_event.tx_ref, bridge_event.location,
+                )
                 continue
 
         self.maybe_create_reminders(

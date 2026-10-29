@@ -11,7 +11,7 @@ export interface HighlightSegment {
  * stripped) that doesn't map back onto the visible label, so this performs a
  * best-effort literal match instead: when the trimmed query appears contiguously
  * in the label it is highlighted, otherwise the label is returned unsegmented
- * (the row is still shown — the library filter already decided it matches).
+ * (the row is still shown, since the library filter already decided it matches).
  */
 export function splitHighlight(label: string, query: string): HighlightSegment[] {
   const trimmed = query.trim();

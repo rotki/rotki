@@ -1,6 +1,7 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
+import { createTestExchange } from '@test/utils/create-data';
 import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, ref } from 'vue';
@@ -62,7 +63,7 @@ vi.mock('@/modules/core/common/logging/logging', () => ({
 
 let scope: ReturnType<typeof effectScope>;
 
-const exchange: Exchange = { location: 'kraken', name: 'Kraken 1' };
+const exchange: Exchange = createTestExchange('kraken', 'Kraken 1');
 
 function defaultFormData(): RepullingTransactionPayload {
   return { address: '', chain: 'all', fromTimestamp: 100, toTimestamp: 200 };

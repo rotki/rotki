@@ -15,7 +15,7 @@ import { useAggregationContext } from '@/modules/balances/aggregation/use-aggreg
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
@@ -43,7 +43,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { manualBalanceByLocation } = useManualBalanceData();
   const { tradeLocations } = useLocations();
-  const { banks: bankLocations } = storeToRefs(useLocationStore());
+  const { bankBalanceLocations: bankLocations } = storeToRefs(useBankConnectionsStore());
   const { matchChain } = useSupportedChains();
 
   const context = useAggregationContext();

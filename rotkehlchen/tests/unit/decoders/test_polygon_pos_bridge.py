@@ -20,8 +20,12 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH_POL, A_POL, A_USDT, Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_POLYGON_POS,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -43,7 +47,7 @@ def test_polygon_pos_bridge_l2_deposit(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1729861499000)),
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
@@ -54,7 +58,7 @@ def test_polygon_pos_bridge_l2_deposit(
             tx_ref=tx_hash,
             sequence_index=163,
             timestamp=timestamp,
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:137/erc20:0x61299774020dA444Af134c82fa83E3810b309991'),
@@ -87,7 +91,7 @@ def test_polygon_pos_bridge_l2_plasma_deposit(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1729875073000)),
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
@@ -98,7 +102,7 @@ def test_polygon_pos_bridge_l2_plasma_deposit(
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_POL,
@@ -131,7 +135,7 @@ def test_polygon_pos_bridge_l2_withdraw(
             tx_ref=tx_hash,
             sequence_index=293,
             timestamp=TimestampMS(1729879355000),
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'),
@@ -165,7 +169,7 @@ def test_polygon_pos_bridge_l2_plasma_withdraw(
             tx_ref=tx_hash,
             sequence_index=611,
             timestamp=timestamp,
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_POL,
@@ -198,7 +202,7 @@ def test_polygon_pos_bridge_deposit_token(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -209,7 +213,7 @@ def test_polygon_pos_bridge_deposit_token(
         ), EvmEvent(
             sequence_index=590,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:1/erc20:0x0F5D2fB29fb7d3CFeE444a200298f468908cC942'),
@@ -243,7 +247,7 @@ def test_polygon_pos_bridge_deposit_eth(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -254,7 +258,7 @@ def test_polygon_pos_bridge_deposit_eth(
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
@@ -288,7 +292,7 @@ def test_polygon_pos_bridge_deposit_plasma(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -299,7 +303,7 @@ def test_polygon_pos_bridge_deposit_plasma(
         ), EvmEvent(
             sequence_index=484,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_ETH_POL,
@@ -310,7 +314,7 @@ def test_polygon_pos_bridge_deposit_plasma(
         ), EvmEvent(
             sequence_index=485,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH_POL,
@@ -344,7 +348,7 @@ def test_polygon_pos_bridge_withdraw_token(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -355,7 +359,7 @@ def test_polygon_pos_bridge_withdraw_token(
         ), EvmEvent(
             sequence_index=309,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_USDT,
@@ -388,7 +392,7 @@ def test_polygon_pos_bridge_withdraw_eth(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -399,7 +403,7 @@ def test_polygon_pos_bridge_withdraw_eth(
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
@@ -432,7 +436,7 @@ def test_polygon_pos_bridge_plasma_start_exit(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -443,7 +447,7 @@ def test_polygon_pos_bridge_plasma_start_exit(
         ), EvmEvent(
             sequence_index=205,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset('eip155:1/erc721:0xDF74156420Bd57ab387B195ed81EcA36F9fABAca/588708823241823398655445372856552995073191575662'),
@@ -470,7 +474,7 @@ def test_polygon_pos_bridge_plasma_process_exit(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -481,7 +485,7 @@ def test_polygon_pos_bridge_plasma_process_exit(
         ), EvmEvent(
             sequence_index=335,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset('eip155:1/erc721:0xDF74156420Bd57ab387B195ed81EcA36F9fABAca/588708823241823398655445372856552995073191575662'),
@@ -494,7 +498,7 @@ def test_polygon_pos_bridge_plasma_process_exit(
         ), EvmEvent(
             sequence_index=336,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH_POL,

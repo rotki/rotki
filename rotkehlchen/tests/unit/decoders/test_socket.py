@@ -7,9 +7,16 @@ from rotkehlchen.constants.assets import A_ETH, A_POL
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_BASE,
+    LOCATION_OPTIMISM,
+    LOCATION_POLYGON_POS,
+    LOCATION_SCROLL,
+)
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -25,7 +32,7 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1705844449000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -36,7 +43,7 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
             tx_ref=tx_hash,
             sequence_index=5,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
@@ -69,7 +76,7 @@ def test_scroll_to_arbitrum_across_bridge(scroll_inquirer, scroll_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1739477339000)),
-            location=Location.SCROLL,
+            location=LOCATION_SCROLL,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -80,7 +87,7 @@ def test_scroll_to_arbitrum_across_bridge(scroll_inquirer, scroll_accounts):
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.SCROLL,
+            location=LOCATION_SCROLL,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:534352/erc20:0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4'),
@@ -114,7 +121,7 @@ def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1696328657000)),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -125,7 +132,7 @@ def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
@@ -161,7 +168,7 @@ def test_polygon_to_gnosis_bridge(polygon_pos_inquirer, polygon_pos_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1708712296000)),
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
@@ -172,7 +179,7 @@ def test_polygon_to_gnosis_bridge(polygon_pos_inquirer, polygon_pos_accounts):
             tx_ref=tx_hash,
             sequence_index=75,
             timestamp=timestamp,
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=source_asset,
@@ -192,7 +199,7 @@ def test_polygon_to_gnosis_bridge(polygon_pos_inquirer, polygon_pos_accounts):
             tx_ref=tx_hash,
             sequence_index=76,
             timestamp=timestamp,
-            location=Location.POLYGON_POS,
+            location=LOCATION_POLYGON_POS,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=source_asset,
@@ -217,7 +224,7 @@ def test_base_to_gnosis_hop_bridge(base_inquirer, base_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1703766791000)),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -228,7 +235,7 @@ def test_base_to_gnosis_hop_bridge(base_inquirer, base_accounts):
             tx_ref=tx_hash,
             sequence_index=47,
             timestamp=timestamp,
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=source_asset,

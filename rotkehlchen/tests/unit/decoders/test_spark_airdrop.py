@@ -10,8 +10,11 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 A_SPK: Final = Asset('eip155:1/erc20:0xc20059e0317DE91738d13af027DfC4a50781b066')
 
@@ -33,7 +36,7 @@ def test_spark_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -44,7 +47,7 @@ def test_spark_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=398,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_SPK,
@@ -75,7 +78,7 @@ def test_spark_staking(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -86,7 +89,7 @@ def test_spark_staking(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=255,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_SPK,
@@ -99,7 +102,7 @@ def test_spark_staking(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=257,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:1/erc20:0xc6132FAF04627c8d05d6E759FAbB331Ef2D8F8fD'),

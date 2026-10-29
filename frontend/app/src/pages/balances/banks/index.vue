@@ -40,8 +40,8 @@ async function refresh(ignoreCache = false): Promise<void> {
   await fetchBankBalances(ignoreCache);
 }
 
-async function connect(location?: string): Promise<void> {
-  await router.push({ path: '/api-keys/banks', query: { add: 'true', ...(location ? { location } : {}) } });
+async function connect(connector?: string): Promise<void> {
+  await router.push({ path: '/api-keys/banks', query: { add: 'true', ...(connector ? { connector } : {}) } });
 }
 
 onBeforeMount(() => {

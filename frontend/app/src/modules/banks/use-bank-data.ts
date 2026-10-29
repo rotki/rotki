@@ -6,9 +6,9 @@ import { fromExchanges } from '@/modules/balances/aggregation/core/sources';
 import { summarizeBalances } from '@/modules/balances/aggregation/core/summarize';
 import { useAggregationContext } from '@/modules/balances/aggregation/use-aggregation-context';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { exchangeAssetSum } from '@/modules/core/common/data/calculation';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
 
 interface UseBankDataReturn {
   /** The connected banks with balances, richest first. */
@@ -27,7 +27,7 @@ interface UseBankDataReturn {
  */
 export function useBankData(): UseBankDataReturn {
   const { exchangeBalances } = storeToRefs(useBalancesStore());
-  const { banks: bankLocations } = storeToRefs(useLocationStore());
+  const { bankLocations } = storeToRefs(useBankConnectionsStore());
   const { isAssetIgnored } = useAssetsStore();
   const context = useAggregationContext();
 

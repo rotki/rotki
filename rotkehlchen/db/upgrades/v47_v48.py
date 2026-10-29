@@ -12,8 +12,12 @@ from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
+from rotkehlchen.locations.legacy_chars import location_from_v53_char, location_to_v53_char
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import AssetAmount, Location, Price
+from rotkehlchen.types import AssetAmount, Price
 from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
@@ -56,7 +60,7 @@ def upgrade_trade_to_swap_events(
     # Special Kraken logic
     link, location_label = row[9], None
     if (
-        (location := Location.deserialize_from_db(row[1])) == Location.KRAKEN and
+        (location := location_from_v53_char(row[1])) == LOCATION_KRAKEN and
         link is not None and
         len(link) > 10  # Coincidentally both normal and adjustment trade links must be at least 10 chars to be processed here.  # noqa: E501
     ):
@@ -219,7 +223,7 @@ def upgrade_v47_to_v48(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         write_cursor.execute(
             'SELECT DISTINCT event_identifier, location_label '
             'FROM history_events WHERE location=? AND type=?',
-            (Location.KRAKEN.serialize_for_db(), HistoryEventType.TRADE.serialize()),
+            ('B', HistoryEventType.TRADE.serialize()),
         )
         kraken_ids_to_labels = dict(write_cursor)  # Map event_identifiers (trade IDs) to location_labels.  # noqa: E501
         kraken_ids_to_delete = set(kraken_ids_to_labels)
@@ -227,7 +231,7 @@ def upgrade_v47_to_v48(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         write_cursor.execute(
             'SELECT DISTINCT event_identifier, location_label, amount, subtype '
             'FROM history_events WHERE location=? AND type=?',
-            (Location.KRAKEN.serialize_for_db(), HistoryEventType.ADJUSTMENT.serialize()),
+            ('B', HistoryEventType.ADJUSTMENT.serialize()),
         )
         kraken_adjustments_data = {row[0]: (row[1], row[2], row[3]) for row in write_cursor}
 
@@ -250,7 +254,7 @@ def upgrade_v47_to_v48(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         placeholders = ','.join(['?'] * len(kraken_ids_to_delete))
         write_cursor.execute(
             f'DELETE FROM history_events WHERE location=? AND event_identifier IN ({placeholders})',  # noqa: E501
-            (Location.KRAKEN.serialize_for_db(),) + tuple(kraken_ids_to_delete),
+            ('B',) + tuple(kraken_ids_to_delete),
         )
 
         # Write the new swap events to the db and drop the old trade tables.
@@ -267,7 +271,7 @@ def upgrade_v47_to_v48(db: DBHandler, progress_handler: DBUpgradeProgressHandler
                 event.group_identifier,
                 event.sequence_index,
                 event.timestamp,
-                event.location.serialize_for_db(),
+                location_to_v53_char(event.location),
                 event.location_label,
                 event.asset.identifier,
                 str(event.amount),

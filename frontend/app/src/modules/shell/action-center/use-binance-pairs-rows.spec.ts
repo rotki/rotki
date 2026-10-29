@@ -1,4 +1,5 @@
 import type { EffectScope } from 'vue';
+import { createTestExchange } from '@test/utils/create-data';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBinancePairsRows } from '@/modules/shell/action-center/use-binance-pairs-rows';
@@ -45,8 +46,8 @@ describe('modules/shell/action-center/use-binance-pairs-rows', () => {
     vi.clearAllMocks();
     set(suppressed, []);
     updateFrontendSetting.mockResolvedValue({ success: true });
-    useConnectedExchangesStore().setConnectedExchanges([{ location: 'binance', name: 'main' }]);
-    useRaisedConditionsStore().raise({ kind: RaisedConditionKind.BINANCE_PAIRS_MISSING, location: 'binance', name: 'main' });
+    useConnectedExchangesStore().setConnectedExchanges([createTestExchange('binance', 'main')]);
+    useRaisedConditionsStore().raise({ identifier: 'binance-main', kind: RaisedConditionKind.BINANCE_PAIRS_MISSING, location: 'binance', name: 'main' });
   });
 
   afterEach(() => {
@@ -58,16 +59,25 @@ describe('modules/shell/action-center/use-binance-pairs-rows', () => {
 
     expect(row.id).toBe('binance-pairs-missing-binance-main');
     expect(row.title).toBe('action_center.rows.integrations.binance_pairs_missing.title::Binance, main');
-    expect(row.target).toEqual({ kind: 'route', to: { name: '/api-keys/exchanges/', query: { location: 'binance', name: 'main' } } });
+    expect(row.target).toEqual({ kind: 'route', to: { name: '/api-keys/exchanges/', query: { identifier: 'binance-main' } } });
   });
 
-  it('should take the row down once the account is removed or renamed', async () => {
+  it('should take the row down once the account is removed', async () => {
     const { rows } = binanceRows();
 
-    useConnectedExchangesStore().setConnectedExchanges([{ location: 'binance', name: 'renamed' }]);
+    useConnectedExchangesStore().setConnectedExchanges([createTestExchange('binance', 'other')]);
     await nextTick();
 
     expect(get(rows)).toEqual([]);
+  });
+
+  it('should keep the row of a renamed account, which is still the same connection', async () => {
+    const { rows } = binanceRows();
+
+    useConnectedExchangesStore().setConnectedExchanges([createTestExchange('binance', 'renamed', { identifier: 'binance-main' })]);
+    await nextTick();
+
+    expect(get(rows)).toHaveLength(1);
   });
 
   it('should take the row down on a re-check that finds pairs', async () => {
@@ -80,13 +90,13 @@ describe('modules/shell/action-center/use-binance-pairs-rows', () => {
   });
 
   it('should hide an account the user asked not to be told about again', () => {
-    set(suppressed, ['binance:main']);
+    set(suppressed, ['binance-main']);
 
     expect(get(binanceRows().rows)).toEqual([]);
   });
 
   it('should ask before suppressing an account, then add it to the suppressed accounts', async () => {
-    set(suppressed, ['binanceus:other']);
+    set(suppressed, ['binanceus-other']);
     const option = get(binanceRows().rows)[0].options.find(({ id }) => id === 'do-not-show-again');
     assert(option?.target.kind === 'run');
     option.target.run();
@@ -96,6 +106,6 @@ describe('modules/shell/action-center/use-binance-pairs-rows', () => {
     expect(message.title).toBe('action_center.rows.integrations.binance_pairs_missing.suppress_confirm.title::Binance, main');
     await onConfirm();
 
-    expect(updateFrontendSetting).toHaveBeenCalledWith({ suppressBinancePairsMissing: ['binanceus:other', 'binance:main'] });
+    expect(updateFrontendSetting).toHaveBeenCalledWith({ suppressBinancePairsMissing: ['binanceus-other', 'binance-main'] });
   });
 });

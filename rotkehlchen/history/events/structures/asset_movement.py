@@ -21,9 +21,10 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.history.events.utils import create_group_identifier
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import AssetAmount, Location, TimestampMS
+from rotkehlchen.types import AssetAmount, TimestampMS
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -71,7 +72,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
     def __init__(
             self,
             timestamp: TimestampMS,
-            location: Location,
+            location: LocationIdentifier,
             event_subtype: Literal[
                 HistoryEventSubType.RECEIVE,
                 HistoryEventSubType.SPEND,
@@ -160,7 +161,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             identifier=entry[0],
             group_identifier=entry[1],
             timestamp=TimestampMS(entry[3]),
-            location=Location.deserialize_from_db(entry[4]),
+            location=LocationIdentifier(entry[4]),
             location_label=entry[5],
             event_subtype=event_subtype,
             asset=Asset(entry[6]).check_existence(),
@@ -257,7 +258,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
 
 def create_asset_movement_with_fee(
         timestamp: TimestampMS,
-        location: Location,
+        location: LocationIdentifier,
         event_subtype: AssetMovementTransferSubtype,
         asset: Asset,
         amount: FVal,

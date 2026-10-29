@@ -5,6 +5,7 @@ from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.data_import.utils import (
     BaseExchangeImporter,
     process_rotki_generic_import_csv_fields,
+    resolved_csv_locations,
 )
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 class RotkiGenericTradesImporter(BaseExchangeImporter):
@@ -31,6 +33,7 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
             self,
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
+            locations: dict[str, LocationIdentifier],
     ) -> None:
         """Consume rotki generic trades import CSV file.
         May raise:
@@ -40,7 +43,7 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
         """
         spend_amount = deserialize_fval(csv_row['Spend Amount'])
         receive_amount = deserialize_fval(csv_row['Receive Amount'])
-        spend_asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Spend Currency')  # noqa: E501
+        spend_asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Spend Currency', locations)  # noqa: E501
         receive_asset = symbol_to_asset_or_token(csv_row['Receive Currency'])
         self.add_history_events(
             write_cursor=write_cursor,
@@ -61,14 +64,18 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
         )
 
     def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
-        """May raise:
+        """`location_mappings` maps location values of the file to locations.
+
+        May raise:
         - InputError if one of the rows is malformed
+        - UnresolvedLocationsError if a location value is neither known nor mapped
         """
+        locations = resolved_csv_locations(self.db, filepath, kwargs.get('location_mappings'))
         with open(filepath, encoding='utf-8-sig') as csvfile:
             for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
                     self.total_entries += 1
-                    self._consume_rotki_trades(write_cursor, row)
+                    self._consume_rotki_trades(write_cursor, row, locations)
                     self.imported_entries += 1
                 except UnknownAsset as e:
                     self.send_message(

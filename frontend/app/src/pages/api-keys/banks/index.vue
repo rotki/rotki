@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
-import type { BankAuthenticationRequest, BankConnection, BankConnectionIdentity, BankFormData } from '@/modules/banks/types';
+import type { BankAuthenticationRequest, BankConnection, BankFormData } from '@/modules/banks/types';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
-import { emptyCredentials } from '@/modules/banks/bank-connection-form';
+import { createNewBank, emptyCredentials, type NewBankRequest } from '@/modules/banks/bank-connection-form';
 import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticationDialog.vue';
 import BankConnectionActions from '@/modules/banks/components/BankConnectionActions.vue';
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
@@ -28,7 +28,8 @@ definePage({
 
 const bank = ref<BankFormData>();
 const authentication = ref<BankAuthenticationRequest>();
-const requestedAuthentication = ref<BankConnectionIdentity>();
+/** The identifier of the connection a link asked to authenticate. */
+const requestedAuthentication = ref<string>();
 const syncing = ref<string[]>([]);
 const sort = ref<DataTableSortColumn<BankConnection>>({
   column: 'name',
@@ -56,6 +57,10 @@ const cols = computed<DataTableColumn<BankConnection>[]>(() => [{
   label: t('common.name'),
   sortable: true,
 }, {
+  key: 'displayName',
+  label: t('bank_settings.header.connector'),
+  sortable: true,
+}, {
   key: 'syncStatus',
   label: t('bank_settings.header.last_sync'),
 }, {
@@ -67,36 +72,25 @@ const cols = computed<DataTableColumn<BankConnection>[]>(() => [{
 
 useRememberTableSorting<BankConnection>(TableId.BANKS, sort, cols);
 
-const { highlight, rowClass } = useRowHighlight<{ location: string; name: string }>(
-  ({ location, name }) => `${location}#${name}`,
-);
+const { highlight, rowClass } = useRowHighlight<{ identifier: string }>(({ identifier }) => identifier);
 
 function rowKey(row: BankConnection): string {
-  return `${row.location}#${row.name}`;
+  return row.identifier;
 }
 
 function isSyncing(row: BankConnection): boolean {
   return get(syncing).includes(rowKey(row)) || row.syncStatus.running;
 }
 
-function createNewBank(requested?: string): BankFormData {
-  const location = (requested && manifestFor(requested)) ? requested : get(manifests)[0]?.location ?? '';
-  return {
-    credentials: emptyCredentials(manifestFor(location)),
-    location,
-    mode: 'add',
-    name: '',
-    newName: '',
-  };
-}
-
-function addBank(location?: string): void {
-  set(bank, createNewBank(location));
+function addBank(request?: NewBankRequest): void {
+  set(bank, createNewBank(get(manifests), request));
 }
 
 function editBank(row: BankConnection): void {
   set(bank, {
-    credentials: emptyCredentials(manifestFor(row.location)),
+    connector: row.connector,
+    credentials: emptyCredentials(manifestFor(row.connector)),
+    identifier: row.identifier,
     location: row.location,
     mode: 'edit',
     name: row.name,
@@ -108,6 +102,7 @@ function authenticate(row: BankConnection): void {
   if (row.syncStatus.authChallenge) {
     set(authentication, {
       challenge: row.syncStatus.authChallenge,
+      identifier: row.identifier,
       location: row.location,
       name: row.name,
     });
@@ -121,10 +116,10 @@ function authenticate(row: BankConnection): void {
  * The link can arrive before the connection list has loaded, so the request is held until the row
  * exists. A connection whose challenge was already answered opens nothing.
  */
-function openRequestedAuthentication([requested, connections]: [BankConnectionIdentity | undefined, BankConnection[]]): void {
+function openRequestedAuthentication([requested, connections]: [string | undefined, BankConnection[]]): void {
   if (!requested)
     return;
-  const row = connections.find(connection => connection.location === requested.location && connection.name === requested.name);
+  const row = connections.find(connection => connection.identifier === requested);
   if (!row)
     return;
   authenticate(row);
@@ -134,7 +129,7 @@ function openRequestedAuthentication([requested, connections]: [BankConnectionId
 async function sync(row: BankConnection): Promise<void> {
   set(syncing, [...get(syncing), rowKey(row)]);
   try {
-    await syncBanks({ location: row.location, name: row.name });
+    await syncBanks({ identifier: row.identifier });
   }
   finally {
     set(syncing, get(syncing).filter(key => key !== rowKey(row)));
@@ -158,11 +153,14 @@ watch(route, async (route) => {
     // a link can land before the supported banks have loaded; the form needs them to preselect a bank
     if (get(manifests).length === 0)
       await refreshSupportedBanks();
-    addBank(typeof query.location === 'string' ? query.location : undefined);
+    addBank({
+      connector: typeof query.connector === 'string' ? query.connector : undefined,
+      location: typeof query.location === 'string' ? query.location : undefined,
+    });
     await router.replace({ query: {} });
   }
-  else if (typeof query.authenticate === 'string' && typeof query.location === 'string') {
-    set(requestedAuthentication, { location: query.location, name: query.authenticate });
+  else if (typeof query.authenticate === 'string') {
+    set(requestedAuthentication, query.authenticate);
     await router.replace({ query: {} });
   }
 }, { immediate: true });
@@ -209,7 +207,7 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
       </template>
       <RuiDataTable
         v-model:sort="sort"
-        row-attr="name"
+        row-attr="identifier"
         data-testid="bank-table"
         :rows="rows"
         :cols="cols"

@@ -61,8 +61,10 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Location
 from rotkehlchen.utils.misc import (
     bytes_to_address,
     from_gwei,
@@ -79,6 +81,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -336,7 +339,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         """
         db_filter = EvmEventFilterQuery.make(
             counterparties=[CPT_EIGENLAYER],
-            location=Location.from_chain_id(self.node_inquirer.chain_id),
+            location=location_from_chain_id(self.node_inquirer.chain_id),
             to_ts=context.transaction.timestamp,
             event_types=[HistoryEventType.INFORMATIONAL],
             event_subtypes=[HistoryEventSubType.REMOVE_ASSET],

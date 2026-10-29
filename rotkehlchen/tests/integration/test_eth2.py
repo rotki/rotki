@@ -21,11 +21,13 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
-    Location,
     Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -682,7 +684,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         tx_ref=tx_hash,
         sequence_index=2 + counter,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.MEV_REWARD,
         asset=A_ETH,

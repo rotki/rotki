@@ -27,6 +27,10 @@ from rotkehlchen.history.events.structures.eth2 import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history import prices
@@ -34,7 +38,6 @@ from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -71,7 +74,7 @@ def test_kraken_staking_events(accountant, google_service, event_start_timestamp
             group_identifier=b'XXX',
             sequence_index=0,
             timestamp=event_start_timestamp + ts_addition,
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
             amount=FVal(0.0000541090),
@@ -82,7 +85,7 @@ def test_kraken_staking_events(accountant, google_service, event_start_timestamp
             group_identifier=b'YYY',
             sequence_index=0,
             timestamp=event_start_timestamp,
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
             amount=FVal(0.0000541090),
@@ -129,7 +132,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             group_identifier='XXX',
             sequence_index=0,
             timestamp=TimestampMS(1687117319001),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
             amount=FVal(0.0000541090),
@@ -181,7 +184,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             group_identifier=f'BP1_{block_number}',
             sequence_index=2,
             timestamp=TimestampMS(1687117319001),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             location_label=fee_recipient,
             address=mevbot_address,
             asset=A_ETH2,
@@ -193,7 +196,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             group_identifier='XXX',
             sequence_index=0,
             timestamp=TimestampMS(1687117319001),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
             amount=FVal(0.0000541090),
@@ -282,7 +285,7 @@ def test_eth_withdrawal_processing(accountant: Accountant, ethereum_accounts: li
         tx_ref=make_evm_tx_hash(),
         sequence_index=1,
         timestamp=TimestampMS(1689000001000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.REMOVE_ASSET,
         asset=A_ETH,

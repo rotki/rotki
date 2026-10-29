@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { ResultAsync } from 'plainfp/result-async';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import BankAuthChallengeFields from '@/modules/banks/components/BankAuthChallengeFields.vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
-import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
+import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, type BankSetupResult, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
 import BigDialog, { type BigDialogAction } from '@/modules/shell/components/dialogs/BigDialog.vue';
@@ -66,11 +67,19 @@ function showSetupError(error: BankSetupError, payload: BankFormData): void {
     set(errorMessages, toFieldErrors(error.errors, payload));
     return;
   }
-  set(setupError, t('bank_settings.errors.setup_message', { bank: bankNameFor(payload.location), error: error.message }));
+  set(setupError, t('bank_settings.errors.setup_message', { bank: bankNameFor(payload.connector), error: error.message }));
   if (error.type === 'expired') {
     set(authChallenge, undefined);
     set(authResponse, '');
   }
+}
+
+/** Answers the pending challenge of the connection being set up, or starts the setup. */
+async function submit(payload: BankFormData): ResultAsync<BankSetupResult, BankSetupError> {
+  const identifier = get(authChallenge)?.identifier;
+  return identifier
+    ? answerBankAuthentication({ identifier }, get(authResponse).trim() || undefined)
+    : setupBank(payload);
 }
 
 async function save(): Promise<void> {
@@ -82,12 +91,7 @@ async function save(): Promise<void> {
   set(errorMessages, {});
   set(setupError, undefined);
   const payload = get(modelValue);
-  const outcome = isDefined(get(authChallenge))
-    ? await answerBankAuthentication(
-        { location: payload.location, name: payload.name },
-        get(authResponse).trim() || undefined,
-      )
-    : await setupBank(payload);
+  const outcome = await submit(payload);
   set(submitting, false);
 
   if (!outcome.ok) {
@@ -100,8 +104,8 @@ async function save(): Promise<void> {
     set(authResponse, '');
     return;
   }
-  if (payload.mode !== 'edit')
-    emit('added', { location: payload.location, name: payload.name });
+  if (outcome.value !== true)
+    emit('added', { identifier: outcome.value.identifier, location: payload.location, name: payload.name });
   set(modelValue, undefined);
   set(authChallenge, undefined);
   set(authResponse, '');
@@ -110,8 +114,9 @@ async function save(): Promise<void> {
 /** Closing an add at its TAN step drops the setup, so the next add of that name starts clean. */
 function cancel(): void {
   const payload = get(modelValue);
-  if (payload && payload.mode !== 'edit' && isDefined(authChallenge))
-    startPromise(cancelBankSetup({ location: payload.location, name: payload.name }));
+  const identifier = get(authChallenge)?.identifier;
+  if (payload && payload.mode !== 'edit' && identifier)
+    startPromise(cancelBankSetup({ identifier, name: payload.name }));
   set(modelValue, undefined);
 }
 

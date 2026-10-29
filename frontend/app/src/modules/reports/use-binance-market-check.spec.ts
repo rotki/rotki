@@ -1,8 +1,9 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import { createTestExchange } from '@test/utils/create-data';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBinanceMarketCheck } from '@/modules/reports/use-binance-market-check';
 
-const queryBinanceUserMarkets = vi.fn<(name: string, location: string) => Promise<string[]>>();
+const queryBinanceUserMarkets = vi.fn<(identifier: string) => Promise<string[]>>();
 
 vi.mock('@/modules/balances/api/use-exchange-api', () => ({
   useExchangeApi: (): { queryBinanceUserMarkets: typeof queryBinanceUserMarkets } => ({
@@ -11,7 +12,7 @@ vi.mock('@/modules/balances/api/use-exchange-api', () => ({
 }));
 
 function exchange(name: string, location: string): Exchange {
-  return { location, name };
+  return createTestExchange(location, name);
 }
 
 describe('useBinanceMarketCheck', () => {
@@ -29,8 +30,8 @@ describe('useBinanceMarketCheck', () => {
 
       await checkMarketPairs();
 
-      expect(queryBinanceUserMarkets).toHaveBeenCalledWith('Binance 1', 'binance');
-      expect(queryBinanceUserMarkets).toHaveBeenCalledWith('Binance US 1', 'binanceus');
+      expect(queryBinanceUserMarkets).toHaveBeenCalledWith('binance-Binance 1');
+      expect(queryBinanceUserMarkets).toHaveBeenCalledWith('binanceus-Binance US 1');
     });
 
     it('should leave every other exchange alone', async () => {
@@ -92,8 +93,8 @@ describe('useBinanceMarketCheck', () => {
     });
 
     it('should flag only the exchange that is missing them', async () => {
-      queryBinanceUserMarkets.mockImplementation(async name =>
-        name === 'Binance 1' ? [] : ['ETHEUR'],
+      queryBinanceUserMarkets.mockImplementation(async identifier =>
+        identifier === 'binance-Binance 1' ? [] : ['ETHEUR'],
       );
       const { checkMarketPairs, exchangesWithoutMarkets } = useBinanceMarketCheck([
         exchange('Binance 1', 'binance'),

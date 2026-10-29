@@ -10,9 +10,8 @@ import { chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
-import { useHistoryApi } from '@/modules/history/api/use-history-api';
+import { useLocationDataLoader } from '@/modules/locations/use-location-data-loader';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useTagOperations } from '@/modules/tags/use-tag-operations';
@@ -28,8 +27,7 @@ export function useDataLoader(): UseDataLoaderReturn {
   const { fetchIgnoredAssets } = useIgnoredAssetOperations();
   const { fetchWhitelistedAssets } = useWhitelistedAssetOperations();
   const { fetchNetValue } = useStatisticsDataFetching();
-  const { allLocations } = storeToRefs(useLocationStore());
-  const { fetchAllLocations } = useHistoryApi();
+  const { loadLocations } = useLocationDataLoader();
   const { fetchCached, refreshFromChain } = useBalanceFetching();
   const { refreshPrices } = usePriceRefresh();
   const { seedFromHistoric } = usePriceSeed();
@@ -80,9 +78,7 @@ export function useDataLoader(): UseDataLoaderReturn {
 
   const load = (): void => {
     startPromise(fetchTags());
-    startPromise(fetchAllLocations().then(({ locations }) => {
-      set(allLocations, locations);
-    }));
+    loadLocations();
 
     if (isAutoFetchDisabled) {
       logger.warn('Auto-fetch disabled by VITE_NO_AUTO_FETCH');

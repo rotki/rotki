@@ -521,6 +521,20 @@ describe('composables/api/history/events/index', () => {
       expect(result.entriesFound).toBe(0);
     });
 
+    it('should filter a location together with the locations below it', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.post(`${backendUrl}/api/1/history/events`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ message: '', result: { entries: [], entries_found: 0, entries_limit: 50, entries_total: 0 } });
+        }),
+      );
+
+      await useHistoryEventsApi().fetchHistoryEvents({ ...createFetchPayload(), location: 'banks' });
+
+      expect(capturedBody).toMatchObject({ location: 'banks', location_scope: 'subtree' });
+    });
+
     it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/history/events`, () =>
@@ -581,16 +595,9 @@ describe('composables/api/history/events/index', () => {
       );
 
       const { queryExchangeEvents } = useHistoryEventsApi();
-      const result = await queryExchangeEvents({
-        location: 'binance',
-        name: 'my-account',
-      });
+      const result = await queryExchangeEvents({ identifier: 'c1' });
 
-      expect(capturedBody).toMatchObject({
-        location: 'binance',
-        name: 'my-account',
-        async_query: true,
-      });
+      expect(capturedBody).toEqual({ async_query: true, identifier: 'c1' });
       expect(result.taskId).toBe(888);
     });
   });

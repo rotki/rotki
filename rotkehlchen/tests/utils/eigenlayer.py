@@ -6,8 +6,11 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
+from rotkehlchen.types import ChecksumEvmAddress, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -25,7 +28,7 @@ def add_create_eigenpod_event(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=1,
                 timestamp=TimestampMS(1),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.CREATE,
                 asset=A_ETH,

@@ -7,11 +7,41 @@ from rotkehlchen.constants.assets import A_DAI, A_SAI
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BIT2ME,
+    LOCATION_BITCOINDE,
+    LOCATION_BITFINEX,
+    LOCATION_BITPANDA,
+    LOCATION_BITSTAMP,
+    LOCATION_BITTREX,
+    LOCATION_BLOCKFI,
+    LOCATION_BYBIT,
+    LOCATION_COINBASE,
+    LOCATION_COINBASEPRO,
+    LOCATION_COINEX,
+    LOCATION_CRYPTOCOM,
+    LOCATION_EXTERNAL,
+    LOCATION_FTX,
+    LOCATION_GATE,
+    LOCATION_GEMINI,
+    LOCATION_HTX,
+    LOCATION_ICONOMI,
+    LOCATION_KRAKEN,
+    LOCATION_KUCOIN,
+    LOCATION_NEXO,
+    LOCATION_OKX,
+    LOCATION_POLONIEX,
+    LOCATION_UPHOLD,
+    LOCATION_WOO,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.types import Timestamp
 
 COINBASE_DAI_UPGRADE_END_TS = 1575244800  # December 2
 
@@ -80,7 +110,7 @@ def asset_from_kraken(kraken_name: str) -> AssetWithOracles:
         name = kraken_name
     else:
         name = GlobalDBHandler.get_assetid_from_exchange_name(
-            exchange=Location.KRAKEN,
+            exchange=LOCATION_KRAKEN,
             symbol=kraken_name,
             default=kraken_name,
         )
@@ -96,7 +126,7 @@ def asset_from_poloniex(poloniex_name: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(poloniex_name)} for poloniex asset')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.POLONIEX,
+        exchange=LOCATION_POLONIEX,
         symbol=poloniex_name,
         default=poloniex_name,
     ))
@@ -108,13 +138,13 @@ def asset_from_bitfinex(bitfinex_name: str) -> AssetWithOracles:
     - UnknownAsset
 
     Currency map fetched in `<Bitfinex>._query_currency_map()` is already
-    inserted into location_asset_mappings (prevent updating it on each call)
+    inserted into connector_asset_mappings (prevent updating it on each call)
     """
     if not isinstance(bitfinex_name, str):
         raise DeserializationError(f'Got non-string type {type(bitfinex_name)} for bitfinex asset')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.BITFINEX,
+        exchange=LOCATION_BITFINEX,
         symbol=bitfinex_name,
         default=bitfinex_name,
     ))
@@ -130,7 +160,7 @@ def asset_from_bitstamp(bitstamp_name: str) -> AssetWithOracles:
 
     # bitstamp assets are read as lowercase from the exchange
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.BITSTAMP,
+        exchange=LOCATION_BITSTAMP,
         symbol=bitstamp_name.upper(),
         default=bitstamp_name,
     ))
@@ -145,7 +175,7 @@ def asset_from_bittrex(bittrex_name: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(bittrex_name)} for bittrex asset')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.BITTREX,
+        exchange=LOCATION_BITTREX,
         symbol=bittrex_name,
         default=bittrex_name,
     ))
@@ -162,7 +192,7 @@ def asset_from_coinbasepro(coinbase_pro_name: str) -> AssetWithOracles:
             f'coinbasepro asset',
         )
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.COINBASEPRO,
+        exchange=LOCATION_COINBASEPRO,
         symbol=coinbase_pro_name,
         default=coinbase_pro_name,
     ))
@@ -180,7 +210,7 @@ def asset_from_binance(binance_name: str) -> AssetWithOracles:
         return Asset(RENAMED_BINANCE_ASSETS[binance_name]).resolve_to_asset_with_oracles()
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.BINANCE,
+        exchange=LOCATION_BINANCE,
         symbol=binance_name,
         default=binance_name,
     ))
@@ -209,7 +239,7 @@ def asset_from_coinbase(cb_name: str, time: Timestamp | None = None) -> AssetWit
         raise DeserializationError(f'Got non-string type {type(cb_name)} for coinbase asset')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.COINBASE,
+        exchange=LOCATION_COINBASE,
         symbol=(upper_name := cb_name.upper()),  # the upper is needed since Coinbase Prime uses lower case symbols in some places  # noqa: E501
         default=upper_name,
     ))
@@ -219,7 +249,7 @@ def asset_to_coinbase(asset: Asset) -> str:
     """Return Coinbase's symbol for an asset, respecting location mappings."""
     resolved_asset = asset.resolve_to_asset_with_oracles()
     return GlobalDBHandler.get_exchange_name_from_assetid(
-        exchange=Location.COINBASE,
+        exchange=LOCATION_COINBASE,
         identifier=resolved_asset.identifier,
         default=resolved_asset.symbol,
     ).upper()
@@ -234,7 +264,7 @@ def asset_from_kucoin(kucoin_name: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(kucoin_name)} for kucoin asset')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.KUCOIN,
+        exchange=LOCATION_KUCOIN,
         symbol=kucoin_name,
         default=kucoin_name,
     ))
@@ -249,7 +279,7 @@ def asset_from_gemini(symbol: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(symbol)} for gemini asset')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.GEMINI,
+        exchange=LOCATION_GEMINI,
         symbol=symbol,
         default=symbol,
     ))
@@ -265,7 +295,7 @@ def asset_from_blockfi(symbol: str) -> AssetWithOracles:
 
     symbol = symbol.upper()
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.BLOCKFI,
+        exchange=LOCATION_BLOCKFI,
         symbol=symbol,
         default=symbol,
     ))
@@ -281,7 +311,7 @@ def asset_from_iconomi(symbol: str) -> AssetWithOracles:
     symbol = symbol.upper()
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.ICONOMI,
+        exchange=LOCATION_ICONOMI,
         symbol=symbol,
         default=symbol,
     ))
@@ -296,7 +326,7 @@ def asset_from_uphold(symbol: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(symbol)} for uphold asset')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.UPHOLD,
+        exchange=LOCATION_UPHOLD,
         symbol=symbol,
         default=symbol,
     ))
@@ -314,7 +344,7 @@ def asset_from_nexo(nexo_name: str) -> AssetWithOracles:
         nexo_name = strethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.NEXO,
+        exchange=LOCATION_NEXO,
         symbol=nexo_name,
         default=nexo_name,
     ))
@@ -329,7 +359,7 @@ def asset_from_bitpanda(bitpanda_name: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(bitpanda_name)} for bitpanda asset')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.BITPANDA,
+        exchange=LOCATION_BITPANDA,
         symbol=bitpanda_name,
         default=bitpanda_name,
     ))
@@ -346,7 +376,7 @@ def asset_from_cryptocom(cryptocom_name: str) -> AssetWithOracles:
         )
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.CRYPTOCOM,
+        exchange=LOCATION_CRYPTOCOM,
         symbol=cryptocom_name,
         default=cryptocom_name,
     ))
@@ -361,7 +391,7 @@ def asset_from_okx(okx_name: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(okx_name)} for okx asset')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.OKX,
+        exchange=LOCATION_OKX,
         symbol=okx_name,
         default=okx_name,
     ))
@@ -379,7 +409,7 @@ def asset_from_ftx(ftx_name: str) -> AssetWithOracles:
         name = strethaddress_to_identifier('0x476c5E26a75bd202a9683ffD34359C0CC15be0fF')  # SRM
     else:
         name = GlobalDBHandler.get_assetid_from_exchange_name(
-            exchange=Location.FTX,
+            exchange=LOCATION_FTX,
             symbol=ftx_name,
             default=ftx_name,
         )
@@ -395,7 +425,7 @@ def asset_from_bybit(name: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(name)} for bybit asset')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.BYBIT,
+        exchange=LOCATION_BYBIT,
         symbol=name,
         default=name,
     ))
@@ -410,12 +440,12 @@ def asset_from_woo(woo_name: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(woo_name)} for woo asset')
 
     woo_name = GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.WOO,
+        exchange=LOCATION_WOO,
         symbol=woo_name,
         default=woo_name.split('_', maxsplit=1)[-1],  # some woo assets are prefixed with the network for deposits/withdrawals  # noqa: E501
     )
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.WOO,
+        exchange=LOCATION_WOO,
         symbol=woo_name,
         default=woo_name,
     ))
@@ -448,7 +478,7 @@ def asset_from_htx(htx_name: str) -> AssetWithOracles:
 
     htx_name = htx_name.upper()
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.HTX,
+        exchange=LOCATION_HTX,
         symbol=htx_name,
         default=htx_name,
     ))
@@ -465,7 +495,7 @@ def asset_from_coinex(coinex_name: str) -> AssetWithOracles:
         )
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.COINEX,
+        exchange=LOCATION_COINEX,
         symbol=coinex_name,
         default=coinex_name,
     ))
@@ -478,7 +508,7 @@ def asset_from_bitcoinde(bitcoinde: str) -> AssetWithOracles:
     """
     bitcoinde = bitcoinde.upper()
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.BITCOINDE,
+        exchange=LOCATION_BITCOINDE,
         symbol=bitcoinde,
         default=bitcoinde,
     ))
@@ -496,13 +526,13 @@ def asset_from_gate(gate_name: str) -> AssetWithOracles:
     # Some gate assets have network suffixes like USDT_TRX. Try the full name first,
     # then try without the suffix.
     name = GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.GATE,
+        exchange=LOCATION_GATE,
         symbol=gate_name,
         default=gate_name,
     )
     if name == gate_name and '_' in gate_name:
         name = GlobalDBHandler.get_assetid_from_exchange_name(
-            exchange=Location.GATE,
+            exchange=LOCATION_GATE,
             symbol=(split_name := gate_name.split('_', maxsplit=1)[0]),
             default=split_name,
         )
@@ -519,31 +549,31 @@ def asset_from_bit2me(bit2me_name: str) -> AssetWithOracles:
         raise DeserializationError(f'Got non-string type {type(bit2me_name)} for Bit2me asset')
 
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.BIT2ME,
+        exchange=LOCATION_BIT2ME,
         symbol=bit2me_name.upper(),
         default=bit2me_name,
     ))
 
 
-LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
-    Location.BINANCE: asset_from_binance,
-    Location.BIT2ME: asset_from_bit2me,
-    Location.CRYPTOCOM: asset_from_cryptocom,
-    Location.BITPANDA: asset_from_bitpanda,
-    Location.BITTREX: asset_from_bittrex,
-    Location.COINBASEPRO: asset_from_coinbasepro,
-    Location.FTX: asset_from_ftx,
-    Location.KRAKEN: asset_from_kraken,
-    Location.BITSTAMP: asset_from_bitstamp,
-    Location.GEMINI: asset_from_gemini,
-    Location.POLONIEX: asset_from_poloniex,
-    Location.NEXO: asset_from_nexo,
-    Location.KUCOIN: asset_from_kucoin,
-    Location.OKX: asset_from_okx,
-    Location.WOO: asset_from_woo,
-    Location.HTX: asset_from_htx,
-    Location.COINEX: asset_from_coinex,
-    Location.BITCOINDE: asset_from_bitcoinde,
-    Location.GATE: asset_from_gate,
-    Location.EXTERNAL: asset_from_common_identifier,
+LOCATION_TO_ASSET_MAPPING: dict[LocationIdentifier, Callable[[str], AssetWithOracles]] = {
+    LOCATION_BINANCE: asset_from_binance,
+    LOCATION_BIT2ME: asset_from_bit2me,
+    LOCATION_CRYPTOCOM: asset_from_cryptocom,
+    LOCATION_BITPANDA: asset_from_bitpanda,
+    LOCATION_BITTREX: asset_from_bittrex,
+    LOCATION_COINBASEPRO: asset_from_coinbasepro,
+    LOCATION_FTX: asset_from_ftx,
+    LOCATION_KRAKEN: asset_from_kraken,
+    LOCATION_BITSTAMP: asset_from_bitstamp,
+    LOCATION_GEMINI: asset_from_gemini,
+    LOCATION_POLONIEX: asset_from_poloniex,
+    LOCATION_NEXO: asset_from_nexo,
+    LOCATION_KUCOIN: asset_from_kucoin,
+    LOCATION_OKX: asset_from_okx,
+    LOCATION_WOO: asset_from_woo,
+    LOCATION_HTX: asset_from_htx,
+    LOCATION_COINEX: asset_from_coinex,
+    LOCATION_BITCOINDE: asset_from_bitcoinde,
+    LOCATION_GATE: asset_from_gate,
+    LOCATION_EXTERNAL: asset_from_common_identifier,
 }

@@ -150,9 +150,9 @@ watch(route, async (route) => {
     addExchange(typeof query.location === 'string' ? query.location : undefined);
     await router.replace({ query: {} });
   }
-  else if (query.location && query.name) {
+  else if (query.identifier || (query.location && query.name)) {
     const exchangeToEdit = get(rows).find(
-      ex => ex.location === query.location && ex.name === query.name,
+      ex => (query.identifier ? ex.identifier === query.identifier : ex.location === query.location && ex.name === query.name),
     );
     if (exchangeToEdit) {
       editExchange(exchangeToEdit);
@@ -232,7 +232,7 @@ watch(route, async (route) => {
 
       <RuiDataTable
         v-model:sort="sort"
-        row-attr="name"
+        row-attr="identifier"
         data-testid="exchange-table"
         :rows="rows"
         :cols="cols"

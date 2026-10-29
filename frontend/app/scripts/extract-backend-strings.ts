@@ -44,8 +44,10 @@ const ENUM_SOURCES: EnumSource[] = [
   { enumName: 'EventCategoryGroup', file: 'rotkehlchen/history/events/structures/types.py', prefix: 'backend_mappings.events.group' },
   { enumName: 'EventDirection', file: 'rotkehlchen/history/events/structures/types.py', prefix: 'backend_mappings.events.type_direction.directions' },
   { enumName: 'AccountingEventType', file: 'rotkehlchen/accounting/mixins/event.py', prefix: 'backend_mappings.profit_loss_event_type' },
-  { enumName: 'Location', file: 'rotkehlchen/types.py', prefix: 'backend_mappings.trade_location' },
 ];
+
+/** Built-in locations come from the location catalog rather than an enum. */
+const LOCATION_CATALOG_SOURCE = { file: 'rotkehlchen/data/locations.json', prefix: 'backend_mappings.trade_location' };
 
 /** Labels come from `EventCategoryDetails(label=...)` rather than the `EventCategory` member name
  *  (BRIDGE_DEPOSIT is labelled "Bridge In"), so they are scraped separately. */
@@ -77,6 +79,22 @@ function extractEnumMembers(content: string, enumName: string): string[] {
   return Array.from(body.matchAll(/^ {4}([A-Z][\dA-Z_]*) *=/gm), match => match[1]);
 }
 
+/** Identifiers keep the key the enum member gave them: `arbitrum one` was `ARBITRUM_ONE`. */
+function locationIdentifierToKey(identifier: string): string {
+  return identifier.toLowerCase().replaceAll(' ', '_');
+}
+
+function extractCatalogIdentifiers(content: string): string[] {
+  const entries: unknown = JSON.parse(content);
+  if (!Array.isArray(entries))
+    return [];
+
+  return entries.flatMap((entry: unknown) => {
+    const identifier: unknown = entry !== null && typeof entry === 'object' ? Reflect.get(entry, 'identifier') : undefined;
+    return typeof identifier === 'string' ? [identifier] : [];
+  });
+}
+
 function extractCategoryLabels(content: string): string[] {
   return Array.from(content.matchAll(/label='([^']+)'/g), match => match[1]);
 }
@@ -99,6 +117,14 @@ export function scanBackendKeys(projectRoot: string): { keys: string[]; missingS
     for (const member of members)
       keys.add(`${prefix}.${memberToKey(member)}`);
   }
+
+  const catalogContent = readSource(projectRoot, LOCATION_CATALOG_SOURCE.file);
+  const identifiers = catalogContent === undefined ? [] : extractCatalogIdentifiers(catalogContent);
+  if (identifiers.length === 0)
+    missingSources.push(LOCATION_CATALOG_SOURCE.file);
+
+  for (const identifier of identifiers)
+    keys.add(`${LOCATION_CATALOG_SOURCE.prefix}.${locationIdentifierToKey(identifier)}`);
 
   const labelContent = readSource(projectRoot, LABEL_SOURCE.file);
   if (labelContent === undefined) {

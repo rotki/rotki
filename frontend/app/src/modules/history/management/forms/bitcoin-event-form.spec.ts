@@ -26,7 +26,7 @@ function issuePaths(state: BitcoinEventFormState): string[] {
 describe('bitcoinAssetFor', () => {
   it('should follow the chain rather than let the asset be picked', () => {
     expect(bitcoinAssetFor('bitcoin')).toBe('BTC');
-    expect(bitcoinAssetFor('bitcoin_cash')).toBe('BCH');
+    expect(bitcoinAssetFor('bitcoin cash')).toBe('BCH');
   });
 });
 
@@ -47,7 +47,7 @@ describe('bitcoinEventSchema', () => {
 describe('toBitcoinEventPayload', () => {
   it('should derive the asset from the location', () => {
     expect(toBitcoinEventPayload(validState()).asset).toBe('BTC');
-    expect(toBitcoinEventPayload({ ...validState(), location: 'bitcoin_cash' }).asset).toBe('BCH');
+    expect(toBitcoinEventPayload({ ...validState(), location: 'bitcoin cash' }).asset).toBe('BCH');
   });
 
   it('should send a blank counterparty rather than null, which is what this endpoint wants', () => {

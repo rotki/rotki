@@ -1,3 +1,4 @@
+import { createTestExchange } from '@test/utils/create-data';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
@@ -33,7 +34,7 @@ describe('useHistoryRefreshSelection', () => {
     expect(get(totalSelected)).toBe(2);
 
     await switchTo('exchanges');
-    set(modelSelectedExchanges, [{ location: 'kraken', name: 'Kraken 1' }]);
+    set(modelSelectedExchanges, [createTestExchange('kraken', 'Kraken 1')]);
     expect(get(totalSelected)).toBe(1);
   });
 
@@ -62,7 +63,7 @@ describe('useHistoryRefreshSelection', () => {
     const { modelSelectedExchanges, selected, setAllSelected } = selection;
 
     await switchTo('exchanges');
-    set(modelSelectedExchanges, [{ location: 'kraken', name: 'Kraken 1' }]);
+    set(modelSelectedExchanges, [createTestExchange('kraken', 'Kraken 1')]);
     setAllSelected('exchanges', true);
     expect(get(selected)).toBe(true);
 
@@ -99,7 +100,7 @@ describe('useHistoryRefreshSelection', () => {
     } = selection;
 
     await switchTo('protocols');
-    set(modelSelectedExchanges, [{ location: 'kraken', name: 'Kraken 1' }]);
+    set(modelSelectedExchanges, [createTestExchange('kraken', 'Kraken 1')]);
     set(modelSelectedQueries, [OnlineHistoryEventsQueryType.ETH_WITHDRAWALS]);
     set(modelSelectedProtocolQueries, [OnlineHistoryEventsQueryType.GNOSIS_PAY]);
     setAllSelected('protocols', true);

@@ -6,12 +6,15 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-    from rotkehlchen.types import Location, TimestampMS
+    from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.types import TimestampMS
 
 
 class BankTransactionExtraData(TypedDict):
     """What a bank transaction carries beyond the common event columns"""
     bank_account_id: str
+    source_id: str  # the bank's id of the transaction, see BankTransaction.source_id
+    connection_identifier: str  # the connection that imported it
     kind: str  # the serialized BankTransactionKind
     counterparty_account: NotRequired[str]  # IBAN or whatever the bank shows
     reference: NotRequired[str]  # the payment reference
@@ -30,7 +33,7 @@ class BankTransactionEvent(HistoryEvent):
             group_identifier: str,
             sequence_index: int,
             timestamp: TimestampMS,
-            location: Location,
+            location: LocationIdentifier,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             asset: Asset,

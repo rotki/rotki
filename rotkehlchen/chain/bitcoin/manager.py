@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from functools import partial
-from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 import requests
 
@@ -31,12 +31,13 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.chains import (
+    location_from_chain,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    BITCOIN_LOCATIONS_TYPE,
     BTCAddress,
     BTCTxId,
-    Location,
     SupportedBlockchain,
     Timestamp,
 )
@@ -79,7 +80,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
         self.tracked_accounts_set: frozenset[BTCAddress] = frozenset()
         self.api_addresses: dict[BTCAddress, BTCAddress] = {}
         self.blockchain = blockchain
-        self.location = cast('BITCOIN_LOCATIONS_TYPE', Location.from_chain(self.blockchain))
+        self.location = location_from_chain(self.blockchain)
         self.asset = asset
         self.group_identifier_prefix = group_identifier_prefix
         self.cache_key = cache_key

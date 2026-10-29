@@ -12,12 +12,15 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_UPHOLD,
+)
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -87,7 +90,7 @@ Activity from uphold with uphold transaction id:
                     group_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
                     sequence_index=0,
                     timestamp=ts_sec_to_ms(timestamp),
-                    location=Location.UPHOLD,
+                    location=LOCATION_UPHOLD,
                     event_type=event_type,
                     event_subtype=HistoryEventSubType.NONE,
                     amount=destination_amount,
@@ -104,7 +107,7 @@ Activity from uphold with uphold transaction id:
                         write_cursor=write_cursor,
                         history_events=create_swap_events(
                             timestamp=ts_sec_to_ms(timestamp),
-                            location=Location.UPHOLD,
+                            location=LOCATION_UPHOLD,
                             spend=AssetAmount(asset=origin_asset, amount=origin_amount),
                             receive=AssetAmount(asset=destination_asset, amount=destination_amount),  # noqa: E501
                             fee=AssetAmount(asset=fee_asset, amount=fee),
@@ -117,7 +120,7 @@ Activity from uphold with uphold transaction id:
         elif origin == 'uphold' and transaction_type == 'out':
             if origin_asset == destination_asset:  # Withdrawals
                 events = [AssetMovement(
-                    location=Location.UPHOLD,
+                    location=LOCATION_UPHOLD,
                     event_subtype=HistoryEventSubType.SPEND,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=origin_asset,
@@ -126,7 +129,7 @@ Activity from uphold with uphold transaction id:
                 if fee != ZERO:
                     events.append(AssetMovement(
                         group_identifier=events[0].group_identifier,
-                        location=Location.UPHOLD,
+                        location=LOCATION_UPHOLD,
                         timestamp=ts_sec_to_ms(timestamp),
                         asset=fee_asset,
                         amount=fee,
@@ -138,7 +141,7 @@ Activity from uphold with uphold transaction id:
                     write_cursor=write_cursor,
                     history_events=create_swap_events(
                         timestamp=ts_sec_to_ms(timestamp),
-                        location=Location.UPHOLD,
+                        location=LOCATION_UPHOLD,
                         spend=AssetAmount(asset=origin_asset, amount=origin_amount),
                         receive=AssetAmount(asset=destination_asset, amount=destination_amount),
                         fee=AssetAmount(asset=fee_asset, amount=fee),
@@ -152,7 +155,7 @@ Activity from uphold with uphold transaction id:
         elif destination == 'uphold' and transaction_type == 'in':
             if origin_asset == destination_asset:  # Deposits
                 events = [AssetMovement(
-                    location=Location.UPHOLD,
+                    location=LOCATION_UPHOLD,
                     event_subtype=HistoryEventSubType.RECEIVE,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=origin_asset,
@@ -161,7 +164,7 @@ Activity from uphold with uphold transaction id:
                 if fee != ZERO:
                     events.append(AssetMovement(
                         group_identifier=events[0].group_identifier,
-                        location=Location.UPHOLD,
+                        location=LOCATION_UPHOLD,
                         timestamp=ts_sec_to_ms(timestamp),
                         asset=fee_asset,
                         amount=fee,
@@ -173,7 +176,7 @@ Activity from uphold with uphold transaction id:
                     write_cursor=write_cursor,
                     history_events=create_swap_events(
                         timestamp=ts_sec_to_ms(timestamp),
-                        location=Location.UPHOLD,
+                        location=LOCATION_UPHOLD,
                         spend=AssetAmount(asset=origin_asset, amount=origin_amount),
                         receive=AssetAmount(asset=destination_asset, amount=destination_amount),
                         fee=AssetAmount(asset=fee_asset, amount=fee),
