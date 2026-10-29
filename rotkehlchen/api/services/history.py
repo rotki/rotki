@@ -34,6 +34,7 @@ from rotkehlchen.db.filtering import (
     IncludeExcludeFilterData,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import AccountingError, APIKeyNotAvailable, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -563,6 +564,7 @@ class HistoryService:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             settings = self.rotkehlchen.get_settings(cursor)
             currency = settings.main_currency.resolve_to_asset_with_oracles()
+            location_paths = DBLocations().display_paths(cursor)
 
         serialized_history_events = []
         headers: dict[str, None] = {}
@@ -595,6 +597,7 @@ class HistoryService:
             serialized_event = event.serialize_for_csv(
                 fiat_value=event.amount * cached_db_prices[event.asset][ts_ms_to_sec(event.timestamp)],  # noqa: E501
                 settings=settings,
+                location_path=location_paths.get(event.location, event.location),
             )
             serialized_history_events.append(serialized_event)
             headers.update(dict.fromkeys(serialized_event))

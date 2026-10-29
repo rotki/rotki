@@ -128,6 +128,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.lido_csm import DBLidoCsm
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.errors.api import (
     AuthenticationError,
@@ -3183,8 +3184,13 @@ class RestAPI:
 
     def get_associated_locations(self) -> Response:
         locations = self.rotkehlchen.data.db.get_associated_locations()
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            ancestors = DBLocations.ancestor_identifiers(cursor, locations)
         return api_response(
-            result=_wrap_in_ok_result([str(location) for location in locations]),
+            result=_wrap_in_ok_result({
+                'locations': sorted(locations),
+                'ancestors': sorted(ancestors - locations),
+            }),
             status_code=HTTPStatus.OK,
         )
 

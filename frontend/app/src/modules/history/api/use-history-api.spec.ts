@@ -67,11 +67,11 @@ describe('composables/api/history/index', () => {
   });
 
   describe('fetchAssociatedLocations', () => {
-    it('should fetch associated locations', async () => {
+    it('should return the directly used locations without their ancestors', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/associated`, () =>
           HttpResponse.json({
-            result: ['binance', 'kraken', 'blockchain'],
+            result: { locations: ['binance', 'ethereum', 'kraken'], ancestors: ['blockchain', 'evm chains', 'exchanges', 'total'] },
             message: '',
           })),
       );
@@ -79,14 +79,14 @@ describe('composables/api/history/index', () => {
       const { fetchAssociatedLocations } = useHistoryApi();
       const result = await fetchAssociatedLocations();
 
-      expect(result).toEqual(['binance', 'kraken', 'blockchain']);
+      expect(result).toEqual(['binance', 'ethereum', 'kraken']);
     });
 
     it('should return empty array when no locations', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/associated`, () =>
           HttpResponse.json({
-            result: [],
+            result: { locations: [], ancestors: [] },
             message: '',
           })),
       );

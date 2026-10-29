@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any, Final, NewType
 
 from rotkehlchen.errors.serialization import DeserializationError
@@ -22,6 +23,12 @@ def deserialize_location_identifier(value: Any) -> LocationIdentifier:
     if ':' in value:
         return LocationIdentifier(value)
     return LocationIdentifier(value.lower().replace('_', ' '))
+
+
+class LocationScope(StrEnum):
+    """Which locations a location filter selects"""
+    EXACT = 'exact'  # only the given location
+    SUBTREE = 'subtree'  # the given location and every descendant
 
 
 class LocationTreeError(Exception):

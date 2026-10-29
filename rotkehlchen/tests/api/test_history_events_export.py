@@ -84,6 +84,7 @@ def assert_csv_export_response(
         'event_type',
         'event_subtype',
         'location',
+        'location_path',
         'location_label',
         'asset',
         'asset_symbol',
@@ -394,7 +395,8 @@ def test_history_export_csv_includes_matched_asset_movement_events(
         rotkehlchen_api_server_with_exchanges: APIServer,
         tmpdir_factory: pytest.TempdirFactory,
 ) -> None:
-    """Export should include both sides of a matched asset movement pair."""
+    """Export should include both sides of a matched asset movement pair, each with the
+    display path of its location next to the location identifier."""
     database = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.data.db
     history_events_db = DBHistoryEvents(database=database)
     csv_dir = Path(tmpdir_factory.mktemp('test_csv_dir'))
@@ -453,7 +455,10 @@ def test_history_export_csv_includes_matched_asset_movement_events(
             newline='',
             encoding='utf-8',
     ) as csvfile:
-        assert {row['identifier'] for row in csv.DictReader(csvfile)} == {
-            str(movement_id),
-            str(onchain_id),
+        assert {
+            (row['identifier'], row['location'], row['location_path'])
+            for row in csv.DictReader(csvfile)
+        } == {
+            (str(movement_id), 'kraken', 'Exchanges > Kraken'),
+            (str(onchain_id), 'ethereum', 'Blockchains > EVM Chains > Ethereum Mainnet'),
         }

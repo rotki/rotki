@@ -150,6 +150,7 @@ from rotkehlchen.locations.constants import (
     LOCATION_COINBASEPRO,
     LOCATION_KRAKEN,
 )
+from rotkehlchen.locations.types import LocationScope
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import SETTABLE_CURRENT_PRICE_ORACLES
 from rotkehlchen.serialization.deserialize import (
@@ -662,6 +663,7 @@ class HistoryEventFilterSchema(
     exclude_ignored_assets = fields.Boolean(load_default=True)
     group_identifiers = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     location = LocationField(load_default=None)
+    location_scope = StrEnumField(enum_class=LocationScope, load_default=LocationScope.EXACT)
     location_labels = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     asset = AssetField(expected_type=Asset, load_default=None)
     entry_types = IncludeExcludeListField(
@@ -762,6 +764,7 @@ class HistoryEventFilterSchema(
             'event_types': data['event_types'],
             'event_subtypes': data['event_subtypes'],
             'location': data['location'],
+            'location_scope': data['location_scope'],
             'state_markers': data['state_markers'],
             'identifiers': data['identifiers'],
             'notes_substring': data['notes_substring'],
@@ -3734,6 +3737,7 @@ class HistoryEventsDeletionSchema(HistoryEventFilterSchema):
     _NON_FILTER_FIELDS: Final = frozenset((
         'force_delete',  # deletion flag, not a filter
         'exclude_ignored_assets',  # display preference, not a filter
+        'location_scope',  # only widens the location filter, not a filter by itself
     ))
 
     def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -4891,6 +4895,7 @@ class DataIssuesFilterSchema(DBPaginationSchema):
     )
     kind = DelimitedOrNormalList(StrEnumField(enum_class=IssueKind), load_default=None)
     location = LocationField(load_default=None)
+    location_scope = StrEnumField(enum_class=LocationScope, load_default=LocationScope.EXACT)
     location_label = EmptyAsNoneStringField(load_default=None)
     asset = AssetField(expected_type=Asset, load_default=None)
 
@@ -4924,6 +4929,7 @@ class DataIssuesFilterSchema(DBPaginationSchema):
             states=data['state'],
             kinds=data['kind'],
             location=data['location'],
+            location_scope=data['location_scope'],
             location_label=data['location_label'],
             asset=data['asset'],
         )}
@@ -4973,6 +4979,7 @@ class HistoricalPerAssetBalanceSchema(
 ):
     asset = AssetField(expected_type=Asset, load_default=None)
     location = LocationField(load_default=None)
+    location_scope = StrEnumField(enum_class=LocationScope, load_default=LocationScope.EXACT)
     location_label = EmptyAsNoneStringField(load_default=None)
     protocol = EmptyAsNoneStringField(load_default=None)
     group_by_account = fields.Boolean(load_default=False)
@@ -4987,6 +4994,7 @@ class HistoricalPerAssetBalanceSchema(
             timestamp=data['timestamp'],
             asset=data['asset'],
             location=data['location'],
+            location_scope=data['location_scope'],
             location_label=data['location_label'],
             protocol=data['protocol'],
         )
@@ -5003,6 +5011,7 @@ class CurrentHistoricalBalanceSchema(
 ):
     asset = AssetField(expected_type=Asset, load_default=None)
     location = LocationField(load_default=None)
+    location_scope = StrEnumField(enum_class=LocationScope, load_default=LocationScope.EXACT)
     location_label = EmptyAsNoneStringField(load_default=None)
     protocol = EmptyAsNoneStringField(load_default=None)
 
@@ -5016,6 +5025,7 @@ class CurrentHistoricalBalanceSchema(
             timestamp=ts_now(),
             asset=data['asset'],
             location=data['location'],
+            location_scope=data['location_scope'],
             location_label=data['location_label'],
             protocol=data['protocol'],
         )
@@ -5038,6 +5048,7 @@ class HistoricalBalanceSeriesSchema(TimestampRangeSchema, AsyncQueryArgumentSche
     asset = AssetField(expected_type=Asset, required=True)
     location_label = EmptyAsNoneStringField(required=True)
     location = LocationField(load_default=None)
+    location_scope = StrEnumField(enum_class=LocationScope, load_default=LocationScope.EXACT)
     protocol = EmptyAsNoneStringField(load_default=None)
 
     def __init__(self, db: DBHandler, known_counterparties: set[str]) -> None:
@@ -5084,6 +5095,7 @@ class HistoricalBalanceSeriesSchema(TimestampRangeSchema, AsyncQueryArgumentSche
                 from_timestamp=data['from_timestamp'],
                 asset=data['asset'],
                 location=data['location'],
+                location_scope=data['location_scope'],
                 location_label=data['location_label'],
                 protocol=data['protocol'],
             ),
