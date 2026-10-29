@@ -184,6 +184,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+    from rotkehlchen.externalapis.nuthatch import Nuthatch
     from rotkehlchen.premium.premium import Premium
     from rotkehlchen.tasks.supervisor import TaskSupervisor
     from rotkehlchen.user_messages import MessagesAggregator
@@ -398,6 +399,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.totals: BalanceSheet = BalanceSheet()
         self.premium = premium
         self.task_supervisor = task_supervisor
+        self.schedule_nuthatch_watch_sync: Callable[[], None] | None = None
         self.eth_modules: dict[ModuleName, EthereumModule] = {}
         for given_module in eth_modules:
             self.activate_module(given_module)
@@ -1463,6 +1465,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             if EvmIndexer.ETHERSCAN not in chain_manager.node_inquirer.available_indexers:
                 chain_manager.node_inquirer.available_indexers[EvmIndexer.ETHERSCAN] = chain_manager.node_inquirer.etherscan  # noqa: E501
 
+    def enable_nuthatch_indexer(
+            self,
+            nuthatch: Nuthatch,
+            schedule_watch_sync: Callable[[], None],
+    ) -> None:
+        """Make a nuthatch nest available as an indexer on every chain. It is queried only on the
+        chains whose indexer order names it. schedule_watch_sync tells it about accounts that
+        detection adds.
+        """
+        self.schedule_nuthatch_watch_sync = schedule_watch_sync
+        for chain in EVM_CHAINS_WITH_TRANSACTIONS:
+            self.get_chain_manager(chain).node_inquirer.available_indexers[EvmIndexer.NUTHATCH] = nuthatch  # noqa: E501
+
     def _check_single_chain_activity(
             self,
             address: ChecksumEvmAddress,
@@ -1933,6 +1948,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 write_cursor=write_cursor,
                 account_data=account_data,
             )
+        if len(added_accounts) != 0 and self.schedule_nuthatch_watch_sync is not None:
+            self.schedule_nuthatch_watch_sync()
 
         self.msg_aggregator.add_message(
             message_type=WSMessageType.EVMLIKE_ACCOUNTS_DETECTION,
