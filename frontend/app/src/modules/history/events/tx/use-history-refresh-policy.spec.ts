@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => {
 
 vi.mock('@/modules/balances/exchanges/use-exchange-data', () => ({
   useExchangeData: (): Record<string, unknown> => ({
-    isSameExchange: (a: Exchange, b: Exchange): boolean => a.location === b.location && a.name === b.name,
+    isSameExchange: (a: Exchange, b: Exchange): boolean => a.identifier === b.identifier,
     syncingExchanges: ref<Exchange[]>([]),
   }),
 }));
@@ -40,8 +40,8 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
   useNativeTask: (): Record<string, unknown> => ({ statusOf: mocks.statusOf }),
 }));
 
-const main: BankConnectionIdentity = { connector: 'qonto', name: 'rotki Solutions GmbH' };
-const side: BankConnectionIdentity = { connector: 'qonto', name: 'Side organization' };
+const main: BankConnectionIdentity = { connector: 'qonto', identifier: 'c1', name: 'rotki Solutions GmbH' };
+const side: BankConnectionIdentity = { connector: 'qonto', identifier: 'c2', name: 'Side organization' };
 
 function connection(identity: BankConnectionIdentity): BankConnection {
   return { ...identity, bankCode: null, displayName: 'Qonto', syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false } };
@@ -72,8 +72,13 @@ describe('useHistoryRefreshPolicy', () => {
     });
 
     it('should drop picked banks that are not connected', () => {
-      const unknown = { connector: 'qonto', name: 'Removed organization' };
+      const unknown = { connector: 'qonto', identifier: 'c3', name: 'Removed organization' };
       expect(useHistoryRefreshPolicy().filterSyncingBanks([side, unknown])).toEqual([side]);
+    });
+
+    it('should not match a removed connection by a reused connector and name', () => {
+      const removed = { ...main, identifier: 'removed' };
+      expect(useHistoryRefreshPolicy().filterSyncingBanks([removed])).toEqual([]);
     });
   });
 

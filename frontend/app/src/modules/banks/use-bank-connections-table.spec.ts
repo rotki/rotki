@@ -12,8 +12,8 @@ describe('useBankConnectionsTable', () => {
     setActivePinia(createCustomPinia());
     useBankConnectionsStore().setConnections([connection('qonto', 'Business'), connection('fints', 'Checking')]);
     useBalancesStore().bankBalances = [
-      { accounts: [], balances: { EUR: createTestBalance(200, 200), SPAM: createTestBalance(5000, 5000) }, connector: 'qonto', name: 'Business' },
-      { accounts: [], balances: { EUR: createTestBalance(300, 300) }, connector: 'fints', name: 'Checking' },
+      { accounts: [], balances: { EUR: createTestBalance(200, 200), SPAM: createTestBalance(5000, 5000) }, connector: 'qonto', identifier: 'qonto-Business', name: 'Business' },
+      { accounts: [], balances: { EUR: createTestBalance(300, 300) }, connector: 'fints', identifier: 'fints-Checking', name: 'Checking' },
     ];
   });
 
@@ -21,21 +21,21 @@ describe('useBankConnectionsTable', () => {
     useAssetsStore().ignoredAssets = ['SPAM'];
     const { balanceOf } = useBankConnectionsTable();
 
-    expect(balanceOf({ connector: 'qonto', name: 'Business' }).toFixed()).toBe('200');
-    expect(balanceOf({ connector: 'fints', name: 'Checking' }).toFixed()).toBe('300');
+    expect(balanceOf(connection('qonto', 'Business')).toFixed()).toBe('200');
+    expect(balanceOf(connection('fints', 'Checking')).toFixed()).toBe('300');
   });
 
-  it('should match a connection by bank as well as by name', () => {
+  it('should match a connection by its identifier, not by a name another bank shares', () => {
     const { balanceOf } = useBankConnectionsTable();
 
-    expect(balanceOf({ connector: 'fints', name: 'Business' }).toFixed()).toBe('0');
+    expect(balanceOf(connection('fints', 'Business')).toFixed()).toBe('0');
   });
 
   it('should give zero to a connection that has not reported a balance yet', () => {
     useBankConnectionsStore().setConnections([connection('qonto', 'Business'), connection('fints', 'Savings')]);
     const { balanceOf } = useBankConnectionsTable();
 
-    expect(balanceOf({ connector: 'fints', name: 'Savings' }).toFixed()).toBe('0');
+    expect(balanceOf(connection('fints', 'Savings')).toFixed()).toBe('0');
   });
 
   it('should mark a connection as syncing until its sync settles, failed or not, and follow the backend otherwise', async () => {

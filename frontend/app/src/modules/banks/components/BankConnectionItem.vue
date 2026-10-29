@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
+import type { BankConnection } from '@/modules/banks/types';
 import {
   BankConnectionState,
   bankConnectionState,
@@ -13,7 +13,7 @@ const { connection } = defineProps<{ connection: BankConnection }>();
 
 const emit = defineEmits<{
   /** syncing again is the way out of an expired TAN; the page that lists the connections runs it */
-  sync: [connection: BankConnectionIdentity];
+  sync: [connection: { identifier: string }];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -33,12 +33,12 @@ const statusText = computed<string>(() => {
 
 /** A pending TAN opens its answer, an expired one syncs again for a fresh TAN, a failure leads to the connection. */
 async function act(): Promise<void> {
-  const { connector, name } = connection;
+  const { identifier } = connection;
   if (get(state) === BankConnectionState.EXPIRED) {
-    emit('sync', { connector, name });
+    emit('sync', { identifier });
     return;
   }
-  const query: Record<string, string> = get(state) === BankConnectionState.AUTHENTICATION ? { authenticate: name, connector } : {};
+  const query: Record<string, string> = get(state) === BankConnectionState.AUTHENTICATION ? { authenticate: identifier } : {};
   await router.push({ name: '/accounts/banks/', query });
 }
 </script>

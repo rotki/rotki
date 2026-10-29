@@ -8,7 +8,7 @@ import '@test/i18n';
 
 const { answerBankAuthentication, syncBanks } = vi.hoisted(() => ({
   answerBankAuthentication: vi.fn(),
-  syncBanks: vi.fn<(payload?: { connector?: string; name?: string }) => Promise<boolean>>(),
+  syncBanks: vi.fn<(payload?: { connector?: string; identifier?: string }) => Promise<boolean>>(),
 }));
 
 vi.mock('@/modules/banks/use-banks', () => ({
@@ -23,6 +23,7 @@ const BigDialogStub = defineComponent({
 
 const otp: BankAuthChallenge = {
   challenge: 'Enter TAN',
+  identifier: 'c1',
   challengeData: null,
   challengeHtml: null,
   challengeMimeType: null,
@@ -30,7 +31,7 @@ const otp: BankAuthChallenge = {
   prompt: 'Enter TAN',
 };
 
-const request: BankAuthenticationRequest = { challenge: otp, connector: 'fints', name: 'Checking' };
+const request: BankAuthenticationRequest = { challenge: otp, connector: 'fints', identifier: 'c1', name: 'Checking' };
 
 describe('bankAuthenticationDialog', () => {
   let wrapper: VueWrapper<InstanceType<typeof BankAuthenticationDialog>>;
@@ -60,14 +61,14 @@ describe('bankAuthenticationDialog', () => {
     vi.useRealTimers();
   });
 
-  it('should answer with the connection identity only and close after success', async () => {
+  it('should answer with the connection identifier only and close after success', async () => {
     answerBankAuthentication.mockResolvedValue(ok(true));
     wrapper = createWrapper(request);
 
     await wrapper.find('[data-testid=bank-auth-response] input').setValue(' 123456 ');
     await confirm();
 
-    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ connector: 'fints', name: 'Checking' }, '123456');
+    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ identifier: 'c1' }, '123456');
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
 
@@ -94,7 +95,7 @@ describe('bankAuthenticationDialog', () => {
     await vi.advanceTimersByTimeAsync(1);
     await flushPromises();
 
-    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ connector: 'fints', name: 'Checking' }, undefined);
+    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ identifier: 'c1' }, undefined);
     expect(wrapper.emitted('update:modelValue')).toEqual([[{ ...request, challenge: poll }]]);
   });
 
@@ -143,7 +144,7 @@ describe('bankAuthenticationDialog', () => {
 
       await confirm();
 
-      expect(syncBanks).toHaveBeenCalledExactlyOnceWith({ connector: 'fints', name: 'Checking' });
+      expect(syncBanks).toHaveBeenCalledExactlyOnceWith({ identifier: 'c1' });
       expect(answerBankAuthentication).toHaveBeenCalledOnce();
       expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
     });

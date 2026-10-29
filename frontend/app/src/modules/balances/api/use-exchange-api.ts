@@ -1,6 +1,8 @@
-import { transformCase } from '@rotki/common';
+import { assert, transformCase } from '@rotki/common';
 import {
   type Exchange,
+  type ExchangeConnector,
+  ExchangeConnectors,
   type ExchangeFormData,
   Exchanges,
   ExchangeSavingsCollectionResponse,
@@ -14,13 +16,14 @@ import {
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
 export interface UseExchangeApiReturn {
-  queryRemoveExchange: ({ location, name }: Exchange) => Promise<boolean>;
+  queryRemoveExchange: ({ identifier }: Exchange) => Promise<boolean>;
   queryExchangeBalances: (location: string, ignoreCache?: boolean, valueThreshold?: string) => Promise<PendingTask>;
-  callSetupExchange: (payload: ExchangeFormData) => Promise<boolean>;
+  callSetupExchange: (payload: ExchangeFormData) => Promise<string>;
   getExchanges: () => Promise<Exchanges>;
+  getSupportedExchanges: () => Promise<ExchangeConnector[]>;
   queryBinanceHistoryStartTimestamp: () => Promise<number>;
   queryBinanceMarkets: (location: string) => Promise<string[]>;
-  queryBinanceUserMarkets: (name: string, location: string) => Promise<string[]>;
+  queryBinanceUserMarkets: (identifier: string) => Promise<string[]>;
   deleteExchangeData: (
     name?: string,
     dataType?: 'all' | 'trades' | 'asset_movements' | 'other',
@@ -32,11 +35,8 @@ export interface UseExchangeApiReturn {
 export function useExchangeApi(): UseExchangeApiReturn {
   type ExchangePurgeType = 'all' | 'trades' | 'asset_movements' | 'other';
 
-  const queryRemoveExchange = async ({ location, name }: Exchange): Promise<boolean> => api.delete<boolean>('/exchanges', {
-    body: {
-      location,
-      name,
-    },
+  const queryRemoveExchange = async ({ identifier }: Exchange): Promise<boolean> => api.delete<boolean>('/exchanges', {
+    body: { identifier },
   });
 
   const queryExchangeBalances = async (location: string, ignoreCache = false, valueThreshold?: string): Promise<PendingTask> => {
@@ -50,11 +50,20 @@ export function useExchangeApi(): UseExchangeApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
-  const callSetupExchange = async ({ mode, ...payload }: ExchangeFormData): Promise<boolean> => {
+  /**
+   * Adds a connection for the connector in `location`, or edits the connection `identifier`.
+   * Name and connector identify nothing once a connection exists, so an edit only sends its
+   * identifier.
+   *
+   * @returns the identifier of the connection: the one the backend gave a new connection, or the
+   * edited one
+   */
+  const callSetupExchange = async ({ identifier, location, mode, name, ...payload }: ExchangeFormData): Promise<string> => {
     if (mode === 'edit') {
-      return api.patch<boolean>(
+      assert(identifier !== undefined, 'editing an exchange needs its connection identifier');
+      await api.patch<boolean>(
         '/exchanges',
-        payload,
+        { ...payload, identifier },
         {
           filterEmptyProperties: {
             alwaysPickKeys: ['binanceMarkets'],
@@ -62,18 +71,23 @@ export function useExchangeApi(): UseExchangeApiReturn {
           },
         },
       );
+      return identifier;
     }
 
-    return api.put<boolean>(
+    const added = await api.put<{ identifier: string }>(
       '/exchanges',
-      payload,
+      { ...payload, connector: location, name },
       {
         filterEmptyProperties: {
           removeEmptyString: true,
         },
       },
     );
+    return added.identifier;
   };
+
+  const getSupportedExchanges = async (): Promise<ExchangeConnector[]> =>
+    ExchangeConnectors.parse(await api.get<ExchangeConnector[]>('/exchanges/supported'));
 
   const getExchanges = async (): Promise<Exchanges> => {
     const data = await api.get<Exchanges>('/exchanges', {
@@ -90,9 +104,8 @@ export function useExchangeApi(): UseExchangeApiReturn {
   const queryBinanceHistoryStartTimestamp = async (): Promise<number> =>
     api.get<number>('/exchanges/binance/history-start');
 
-  const queryBinanceUserMarkets = async (name: string, location: string): Promise<string[]> => api.get<string[]>(`/exchanges/binance/pairs/${name}`, {
-    query: { location },
-  });
+  const queryBinanceUserMarkets = async (identifier: string): Promise<string[]> =>
+    api.get<string[]>(`/exchanges/binance/pairs/${encodeURIComponent(identifier)}`);
 
   const deleteExchangeData = async (name?: string, dataType: ExchangePurgeType = 'all'): Promise<boolean> => {
     let url = `/exchanges/data`;
@@ -142,6 +155,7 @@ export function useExchangeApi(): UseExchangeApiReturn {
     deleteExchangeData,
     getExchanges,
     getExchangeSavings,
+    getSupportedExchanges,
     getExchangeSavingsTask,
     queryBinanceHistoryStartTimestamp,
     queryBinanceMarkets,

@@ -21,8 +21,8 @@ const stubs = {
   RuiTooltip: { template: '<div><slot name="activator" /><span data-testid="tooltip"><slot /></span></div>' },
 };
 
-const dkb: BankConnectionIdentity = { connector: 'fints', name: 'DKB' };
-const ing: BankConnectionIdentity = { connector: 'fints', name: 'ING' };
+const dkb: BankConnectionIdentity = { connector: 'fints', identifier: 'c1', name: 'DKB' };
+const ing: BankConnectionIdentity = { connector: 'fints', identifier: 'c2', name: 'ING' };
 
 interface WrapperProps {
   banks?: BankConnectionIdentity[];
@@ -53,11 +53,11 @@ describe('modules/banks/components/BankBalancesRefreshButton', () => {
 
   it('should say every bank is refreshed when none is selected, and name the selected one otherwise', () => {
     expect(createWrapper().find('[data-testid=tooltip]').text()).toBe('bank_balances.refresh_menu.all');
-    expect(createWrapper({ selected: 'DKB' }).find('[data-testid=tooltip]').text()).toBe('bank_balances.refresh_menu.bank::DKB');
+    expect(createWrapper({ selected: 'c1' }).find('[data-testid=tooltip]').text()).toBe('bank_balances.refresh_menu.bank::DKB');
   });
 
   it('should refresh every bank from the menu and close it', async () => {
-    const wrapper = createWrapper({ selected: 'DKB' });
+    const wrapper = createWrapper({ selected: 'c1' });
     await openMenu(wrapper);
     await wrapper.find('[data-testid=refresh-bank-menu-all]').trigger('click');
 
@@ -88,7 +88,7 @@ describe('modules/banks/components/BankBalancesRefreshButton', () => {
   });
 
   it('should keep the other banks and every bank refreshable while one bank refreshes on its own', async () => {
-    const wrapper = createWrapper({ isBankLoading: name => name === 'DKB' });
+    const wrapper = createWrapper({ isBankLoading: identifier => identifier === 'c1' });
     await openMenu(wrapper);
     const items = wrapper.findAll('[data-testid=refresh-bank-menu-item]');
 
@@ -98,7 +98,7 @@ describe('modules/banks/components/BankBalancesRefreshButton', () => {
   });
 
   it('should show the main button busy while the selected bank refreshes', () => {
-    const wrapper = createWrapper({ isBankLoading: name => name === 'DKB', selected: 'DKB' });
+    const wrapper = createWrapper({ isBankLoading: identifier => identifier === 'c1', selected: 'c1' });
     expect(wrapper.find('[data-testid=refresh-bank-balances]').attributes('data-loading')).toBe('true');
   });
 });

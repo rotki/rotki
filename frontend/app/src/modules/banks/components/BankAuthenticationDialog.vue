@@ -41,8 +41,8 @@ function close(): void {
   set(expired, false);
 }
 
-function syncAgain({ connector, name }: BankAuthenticationRequest): void {
-  startPromise(syncBanks({ connector, name }));
+function syncAgain({ identifier }: BankAuthenticationRequest): void {
+  startPromise(syncBanks({ identifier }));
   close();
 }
 
@@ -60,7 +60,7 @@ async function confirm(): Promise<void> {
   set(error, undefined);
   set(submitting, true);
   const result = await answerBankAuthentication(
-    { connector: request.connector, name: request.name },
+    { identifier: request.identifier },
     get(response).trim() || undefined,
   );
   set(submitting, false);

@@ -1,6 +1,6 @@
 import type { FormatOptions } from '@/modules/assets/amount-display/types';
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
-import type { BankConnectionBalances, BankConnectionIdentity } from '@/modules/banks/types';
+import type { BankConnectionBalances } from '@/modules/banks/types';
 import { zeroBalance } from '@/modules/core/common/data/bignumbers';
 import { balanceSum } from '@/modules/core/common/data/calculation';
 import { TRADE_LOCATION_BANKS } from '@/modules/core/common/defaults';
@@ -43,13 +43,13 @@ export function bankLocationBalances(connections: readonly BankConnectionBalance
   return { [TRADE_LOCATION_BANKS]: banks };
 }
 
-export function isSameConnection(a: BankConnectionIdentity, b: BankConnectionIdentity): boolean {
-  return a.connector === b.connector && a.name === b.name;
+export function isSameConnection(a: { identifier: string }, b: { identifier: string }): boolean {
+  return a.identifier === b.identifier;
 }
 
 /** One string per connection, for a row key or a lookup: two connections share it only when {@link isSameConnection}. */
-export function connectionKey({ connector, name }: BankConnectionIdentity): string {
-  return `${connector}#${name}`;
+export function connectionKey({ identifier }: { identifier: string }): string {
+  return identifier;
 }
 
 /**

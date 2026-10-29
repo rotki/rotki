@@ -8,6 +8,7 @@ import { isSameConnection, mergeConnectionBalances } from '@/modules/banks/bank-
 import { bankBalancesActivity, bankConnectionBalancesActivity } from '@/modules/banks/banks.activity';
 import {
   BankBalancesResponse,
+  type BankConnection,
   type BankConnectionIdentity,
   type BankFormData,
   type BankSetupError,
@@ -45,8 +46,8 @@ interface UseBanksReturn {
    * Every outcome re-reads the connections: the backend records a further challenge, and drops a
    * TAN the bank rejected or let expire, which the connection then reports as expired.
    */
-  answerBankAuthentication: (connection: BankConnectionIdentity, response?: string) => ResultAsync<BankSetupResult, BankSetupError>;
-  removeBank: (connection: BankConnectionIdentity) => Promise<boolean>;
+  answerBankAuthentication: (connection: { identifier: string }, response?: string) => ResultAsync<BankSetupResult, BankSetupError>;
+  removeBank: (connection: { identifier: string }) => Promise<boolean>;
   /**
    * Drops the challenge a connection waits on and syncs it again, so the bank sends a fresh one.
    *
@@ -62,7 +63,7 @@ interface UseBanksReturn {
    * @remarks
    * A failure is only logged: the backend also discards it when the same name is added again.
    */
-  cancelBankSetup: (connection: BankConnectionIdentity) => Promise<void>;
+  cancelBankSetup: (setup: { identifier: string }) => Promise<void>;
   /** Pulls new transactions of one connection, of one bank, or of every connection. */
   syncBanks: (payload?: BankSyncPayload) => Promise<boolean>;
   /**
@@ -72,7 +73,7 @@ interface UseBanksReturn {
    * Each connection in the result replaces its own entry. The others keep their last known
    * balances, so a bank waiting on a TAN still counts what it last reported.
    */
-  fetchBankBalances: (ignoreCache?: boolean, connection?: BankConnectionIdentity) => Promise<void>;
+  fetchBankBalances: (ignoreCache?: boolean, connection?: Pick<BankConnectionIdentity, 'identifier'>) => Promise<void>;
 }
 
 /**
@@ -108,7 +109,7 @@ export function useBanks(): UseBanksReturn {
     }
   };
 
-  const fetchBankBalances = async (ignoreCache = false, connection?: BankConnectionIdentity): Promise<void> => {
+  const fetchBankBalances = async (ignoreCache = false, connection?: Pick<BankConnectionIdentity, 'identifier'>): Promise<void> => {
     if (get(store.connections).length === 0) {
       set(bankBalances, []);
       return;
@@ -134,11 +135,10 @@ export function useBanks(): UseBanksReturn {
     await refreshBankConnections();
   };
 
-  const resolveSyncTargets = ({ connector, name }: BankSyncPayload): BankConnectionIdentity[] =>
+  const resolveSyncTargets = ({ connector, identifier }: BankSyncPayload): BankConnection[] =>
     get(store.connections)
       .filter(connection => connector === undefined || connection.connector === connector)
-      .filter(connection => name === undefined || connection.name === name)
-      .map(connection => ({ connector: connection.connector, name: connection.name }));
+      .filter(connection => identifier === undefined || connection.identifier === identifier);
 
   /**
    * The bank events activity re-reads the connections after it ran. With nothing to sync it never
@@ -159,40 +159,39 @@ export function useBanks(): UseBanksReturn {
     Object.fromEntries(Object.entries(credentials).filter(([, value]) => value.trim() !== ''));
 
   const setupBank = async (form: BankFormData): ResultAsync<BankSetupResult, BankSetupError> => {
-    const { connector, credentials, mode, name, newName } = form;
-    const outcome = mode === 'edit'
+    const { connector, credentials, identifier, mode, name, newName } = form;
+    const outcome = mode === 'edit' && identifier !== undefined
       ? mapResult(
-          await api.editBank({ connector, credentials: filledCredentials(credentials), name, newName: newName === name ? undefined : newName }),
+          await api.editBank({ credentials: filledCredentials(credentials), identifier, newName: newName === name ? undefined : newName }),
           (): true => true,
         )
       : await api.addBank({ connector, credentials, name });
     if (outcome.ok && isBankSetupComplete(outcome.value)) {
       await refreshBankConnections();
       startPromise(fetchBankBalances());
-      if (mode === 'add') {
-        startPromise(syncBanks({ connector, name }));
+      if (outcome.value !== true) {
+        startPromise(syncBanks({ identifier: outcome.value.identifier }));
       }
     }
     return outcome;
   };
 
   const answerBankAuthentication = async (
-    { connector, name }: BankConnectionIdentity,
+    { identifier }: { identifier: string },
     response?: string,
   ): ResultAsync<BankSetupResult, BankSetupError> => {
-    const connection = { connector, name };
-    const outcome = await api.answerAuthentication({ ...connection, response });
+    const outcome = await api.answerAuthentication({ identifier, response });
     await refreshBankConnections();
     if (outcome.ok && isBankSetupComplete(outcome.value)) {
       startPromise(fetchBankBalances());
       if (outcome.value !== true) {
-        startPromise(syncBanks(connection));
+        startPromise(syncBanks({ identifier }));
       }
     }
     return outcome;
   };
 
-  const removeBank = async (connection: BankConnectionIdentity): Promise<boolean> => {
+  const removeBank = async (connection: { identifier: string }): Promise<boolean> => {
     try {
       const success = await api.removeBank(connection);
       if (success) {
@@ -205,7 +204,7 @@ export function useBanks(): UseBanksReturn {
     catch (error: unknown) {
       notifyError(
         t('bank_settings.errors.remove_title'),
-        t('bank_settings.errors.remove_message', { error: getErrorMessage(error), name: connection.name }),
+        t('bank_settings.errors.remove_message', { error: getErrorMessage(error), name: store.connectionName(connection.identifier) }),
       );
       return false;
     }
@@ -213,7 +212,7 @@ export function useBanks(): UseBanksReturn {
 
   const startOverAuthentication = async (connection: BankConnectionIdentity): Promise<void> => {
     try {
-      await api.cancelAuthentication(connection);
+      await api.cancelAuthentication({ identifier: connection.identifier });
     }
     catch (error: unknown) {
       notifyError(
@@ -224,15 +223,15 @@ export function useBanks(): UseBanksReturn {
       return;
     }
     await refreshBankConnections();
-    await syncBanks(connection);
+    await syncBanks({ identifier: connection.identifier });
   };
 
-  const cancelBankSetup = async (connection: BankConnectionIdentity): Promise<void> => {
+  const cancelBankSetup = async (setup: { identifier: string }): Promise<void> => {
     try {
-      await api.cancelAuthentication(connection);
+      await api.cancelAuthentication({ identifier: setup.identifier });
     }
     catch (error: unknown) {
-      logger.warn(`Could not drop the ${connection.name} bank setup: ${getErrorMessage(error)}`);
+      logger.warn(`Could not drop the ${setup.identifier} bank setup: ${getErrorMessage(error)}`);
     }
   };
 

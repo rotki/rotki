@@ -19,6 +19,11 @@ export const useBankConnectionsStore = defineStore('banks/connections', () => {
   const bankNameFor = (connector: string): string =>
     manifestFor(connector)?.displayName ?? toSentenceCase(connector);
 
+  const connectorOf = (identifier: string): string =>
+    get(connections).find(connection => connection.identifier === identifier)?.connector ?? '';
+
+  const connectionName = (identifier: string): string =>
+    get(connections).find(connection => connection.identifier === identifier)?.name ?? identifier;
   const setManifests = (value: BankManifest[]): void => {
     set(manifests, value);
     set(manifestsError, undefined);
@@ -40,8 +45,10 @@ export const useBankConnectionsStore = defineStore('banks/connections', () => {
   return {
     bankNameFor,
     canAddBank,
+    connectionName,
     connections,
     connectionsError,
+    connectorOf,
     manifestFor,
     manifests,
     manifestsError,

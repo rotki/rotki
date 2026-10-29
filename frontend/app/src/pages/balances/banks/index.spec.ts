@@ -44,6 +44,7 @@ const connection: BankConnection = {
   bankCode: null,
   displayName: 'Qonto',
   connector: 'qonto',
+  identifier: 'c1',
   name: 'Qonto main',
   syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: 1757595000, running: false },
 };
@@ -135,8 +136,8 @@ describe('bank balances page', () => {
 
   it('should list every bank together, amounts to the cent, and only the connections that need the user', async () => {
     const store = useBankConnectionsStore();
-    store.setConnections([connection, { ...connection, name: 'Broken', syncStatus: { ...connection.syncStatus, lastError: 'boom' } }]);
-    useBalancesStore().bankBalances = [{ accounts: [], balances: { EUR: { amount: bigNumberify(1), value: bigNumberify(1) } }, connector: 'qonto', name: 'Qonto main' }];
+    store.setConnections([connection, { ...connection, identifier: 'c2', name: 'Broken', syncStatus: { ...connection.syncStatus, lastError: 'boom' } }]);
+    useBalancesStore().bankBalances = [{ accounts: [], balances: { EUR: { amount: bigNumberify(1), value: bigNumberify(1) } }, connector: 'qonto', identifier: 'c1', name: 'Qonto main' }];
     wrapper = createWrapper();
     await flushPromises();
 
@@ -148,22 +149,23 @@ describe('bank balances page', () => {
   });
 
   it('should show the bank the route names', async () => {
-    route.query = { bank: 'Qonto main' };
+    route.query = { bank: 'c1' };
     useBankConnectionsStore().setConnections([connection]);
     wrapper = createWrapper();
     await flushPromises();
 
-    expect(wrapper.find('[data-testid=bank-balance-cards]').attributes('data-selected')).toBe('Qonto main');
+    expect(wrapper.find('[data-testid=bank-balance-cards]').attributes('data-selected')).toBe('c1');
   });
 
   it('should list the accounts of the bank the route names instead of its assets', async () => {
-    route.query = { bank: 'Qonto main' };
+    route.query = { bank: 'c1' };
     const store = useBankConnectionsStore();
     store.setConnections([connection]);
     useBalancesStore().bankBalances = [{
       accounts: [{ amount: bigNumberify(1), asset: 'EUR', iban: null, identifier: 'acc', name: 'Main', value: bigNumberify(1) }],
       balances: { EUR: { amount: bigNumberify(1), value: bigNumberify(1) } },
       connector: 'qonto',
+      identifier: 'c1',
       name: 'Qonto main',
     }];
     wrapper = createWrapper();

@@ -42,8 +42,9 @@ const fintsManifest: BankManifest = {
 
 function createForm(mode: BankFormData['mode']): BankFormData {
   return {
-    credentials: { api_key: '', api_secret: '' },
     connector: 'qonto',
+    credentials: { api_key: '', api_secret: '' },
+    identifier: mode === 'edit' ? 'c1' : undefined,
     mode,
     name: mode === 'edit' ? 'Qonto main' : '',
     newName: mode === 'edit' ? 'Qonto main' : '',
@@ -60,6 +61,7 @@ describe('bankConnectionForm', () => {
         plugins: [pinia],
         stubs: {
           ExternalLink: true,
+          LocationDisplay: true,
           LocationIcon: true,
           RuiAutoComplete: true,
           RuiMenuSelect: true,
@@ -164,6 +166,7 @@ describe('bankConnectionForm', () => {
     const model = ref<BankFormData>({
       credentials: { bank_code: '', endpoint: '', pin: '', username: '' },
       connector: 'fints',
+      identifier: 'c1',
       mode: 'edit',
       name: 'Existing bank',
       newName: 'Existing bank',

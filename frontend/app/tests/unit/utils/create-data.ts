@@ -1,4 +1,5 @@
 import type { AssetPrice } from '@/modules/assets/prices/price-types';
+import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
 import type { BankConnection } from '@/modules/banks/types';
 import { type Balance, bigNumberify, type ProtocolBalance } from '@rotki/common';
@@ -11,7 +12,10 @@ export function createTestBalance(amount: number, value: number): Balance {
   };
 }
 
-/** A connection that synced cleanly and was never synced, unless `syncStatus` says otherwise. */
+/**
+ * A connection that synced cleanly and was never synced, unless `syncStatus` says otherwise. Its
+ * identifier is its connector and name joined, so two connections share one only when both match.
+ */
 export function createTestBankConnection(
   connector: string,
   name: string,
@@ -21,6 +25,7 @@ export function createTestBankConnection(
     bankCode: null,
     connector,
     displayName: connector,
+    identifier: `${connector}-${name}`,
     name,
     syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false, ...syncStatus },
   };
@@ -61,4 +66,12 @@ export function createTestManualBalance(
     tags: [],
     value: bigNumberify(value),
   };
+}
+
+/**
+ * A connected exchange as the backend lists it. The identifier is derived from the location and
+ * name, so a spec can predict it without holding the object.
+ */
+export function createTestExchange(location: string, name: string, extras: Partial<Exchange> = {}): Exchange {
+  return { connector: location, identifier: `${location}-${name}`, location, name, ...extras };
 }

@@ -10,7 +10,7 @@ import { useSetting } from '@/modules/settings/use-setting';
 interface UseExchangeDataReturn {
   exchanges: ComputedRef<ExchangeInfo[]>;
   syncingExchanges: ComputedRef<Exchange[]>;
-  isSameExchange: (a: Exchange, b: Exchange) => boolean;
+  isSameExchange: (a: { identifier: string }, b: { identifier: string }) => boolean;
 }
 
 export function useExchangeData(): UseExchangeDataReturn {
@@ -22,6 +22,7 @@ export function useExchangeData(): UseExchangeDataReturn {
   const exchanges = computed<ExchangeInfo[]>(() => {
     const balances = get(exchangeBalances);
     return Object.keys(balances)
+
       .map(value => ({
         balances: balances[value],
         location: value,
@@ -30,14 +31,13 @@ export function useExchangeData(): UseExchangeDataReturn {
       .sort((a, b) => sortDesc(a.total, b.total));
   });
 
-  function isSameExchange(a: Exchange, b: Exchange): boolean {
-    return a.location === b.location && a.name === b.name;
+  /** Connections are the same when their identifiers are, whatever they are named now. */
+  function isSameExchange(a: { identifier: string }, b: { identifier: string }): boolean {
+    return a.identifier === b.identifier;
   }
 
   const syncingExchanges = computed<Exchange[]>(() => get(connectedExchanges).filter(
-    exchange => !get(nonSyncingExchanges).some(
-      excluded => isSameExchange(excluded, exchange),
-    ),
+    exchange => !get(nonSyncingExchanges).includes(exchange.identifier),
   ));
 
   return {

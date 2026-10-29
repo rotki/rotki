@@ -42,8 +42,8 @@ describe('useLocationBalanceStatus', () => {
     set(allLocations, {
       kraken: { isExchange: true, label: 'Kraken' },
       binance: { isExchange: true, label: 'Binance' },
-      fints: { isBank: true, label: 'FinTS' },
       cash: { label: 'Cash' },
+      banks: { isBank: true, label: 'Banks' },
     });
   });
 
@@ -79,9 +79,9 @@ describe('useLocationBalanceStatus', () => {
   });
 
   it('should answer a bank from the bank refresh, not the exchange one', () => {
-    const { isInitialLoading } = useLocationBalanceStatus('fints');
+    const { isInitialLoading } = useLocationBalanceStatus('banks');
 
-    start(ActivityKind.EXCHANGE_BALANCES, 'fints');
+    start(ActivityKind.EXCHANGE_BALANCES, 'banks');
     expect(get(isInitialLoading)).toBe(false);
 
     start(ActivityKind.BANK_BALANCES);

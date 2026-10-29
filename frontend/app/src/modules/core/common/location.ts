@@ -15,21 +15,8 @@ export type AllLocation = Record<
   Omit<ActionDataEntry, 'identifier'> & {
     isExchange?: boolean;
     isBank?: boolean;
-    exchangeDetails?: {
-      isExchangeWithPassphrase?: boolean;
-      isExchangeWithKey?: boolean;
-      isExchangeWithoutApiSecret?: boolean;
-      experimental?: boolean;
-    };
   }
 >;
-
-const ExchangeDetailsSchema = z.object({
-  isExchangeWithPassphrase: z.boolean().optional(),
-  isExchangeWithKey: z.boolean().optional(),
-  isExchangeWithoutApiSecret: z.boolean().optional(),
-  experimental: z.boolean().optional(),
-});
 
 const AllLocationEntrySchema = z.object({
   label: z.string().optional(),
@@ -40,7 +27,6 @@ const AllLocationEntrySchema = z.object({
   detailPath: z.string().optional(),
   isExchange: z.boolean().optional(),
   isBank: z.boolean().optional(),
-  exchangeDetails: ExchangeDetailsSchema.optional(),
 });
 
 const AllLocationSchema = z.record(z.string(), AllLocationEntrySchema);

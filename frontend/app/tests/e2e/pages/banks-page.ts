@@ -26,6 +26,19 @@ export class BanksPage {
     await this.page.locator('[data-testid=bank-connection-form]').waitFor({ state: 'visible' });
   }
 
+  async openEditDialog(name: string): Promise<void> {
+    await this.connectionRow(name).locator('[data-testid=row-edit]').click();
+    await this.dialog().waitFor({ state: 'visible', timeout: TIMEOUT_DIALOG });
+    await this.page.locator('[data-testid=bank-connection-form]').waitFor({ state: 'visible' });
+  }
+
+  async deleteConnection(name: string): Promise<void> {
+    await this.connectionRow(name).locator('[data-testid=row-delete]').click();
+    const confirmation = this.page.locator('[data-testid=confirm-dialog]');
+    await confirmation.locator('[data-testid=button-confirm]').click();
+    await confirmation.waitFor({ state: 'detached', timeout: TIMEOUT_DIALOG });
+  }
+
   async fillConnection(name: string, login: string, secret: string): Promise<void> {
     await this.page.locator('[data-testid=bank-connection-name] input').fill(name);
     await this.page.locator('[data-testid=bank-connection-secret-api_key] input').fill(login);
@@ -65,7 +78,7 @@ export class BanksPage {
 
   /** The action center row asking for a connection's TAN. */
   authenticationRow(name: string): Locator {
-    return this.page.locator('[data-testid=actions-center-row][data-key^=bank-authentication-qonto-]').filter({ hasText: name });
+    return this.page.locator('[data-testid=actions-center-row][data-key^=bank-authentication-]').filter({ hasText: name });
   }
 
   async authenticateFromActionCenter(name: string): Promise<void> {
@@ -81,6 +94,10 @@ export class BanksPage {
   /** The one table every bank's balances share, with the connections named in its toolbar. */
   balancesTable(): Locator {
     return this.page.locator('[data-testid=bank-balances]');
+  }
+
+  accountsTable(): Locator {
+    return this.page.locator('[data-testid=bank-accounts]');
   }
 
   /** A connection's line in the balances toolbar, only shown when it needs something; `data-state` is `authentication`, `expired` or `failed`. */

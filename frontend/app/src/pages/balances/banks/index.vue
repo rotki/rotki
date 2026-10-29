@@ -35,7 +35,7 @@ const { canAddBank, connections, connectionsError } = storeToRefs(useBankConnect
 const { refreshBankConnections, refreshSupportedBanks, syncBanks, fetchBankBalances } = useBanks();
 const failureMessage = useFailureMessage();
 
-/** The connection named in the route; names are unique across banks. */
+/** The stable identifier of the connection selected in the route. */
 const selected = computed<string | undefined>(() => {
   const bank = route.query.bank;
   return typeof bank === 'string' && bank !== '' ? bank : undefined;
@@ -75,7 +75,7 @@ onBeforeMount(() => {
       <BankBalancesRefreshButton
         v-if="connections.length > 0"
         :banks="banks"
-        :selected="selectedBank?.name"
+        :selected="selectedBank?.identifier"
         :loading="loading"
         :is-bank-loading="isBankLoading"
         @refresh="startPromise(refreshInView())"
@@ -127,7 +127,7 @@ onBeforeMount(() => {
     <template v-else-if="connections.length > 0">
       <BankBalanceCards
         :banks="banks"
-        :selected="selectedBank?.name"
+        :selected="selectedBank?.identifier"
         :total="total"
         :loading="loading"
         :is-bank-loading="isBankLoading"
@@ -143,7 +143,7 @@ onBeforeMount(() => {
           >
             <BankConnectionItem
               v-for="connection in issues"
-              :key="`${connection.connector}#${connection.name}`"
+              :key="connection.identifier"
               :connection="connection"
               @sync="startPromise(syncBanks($event))"
             />
@@ -156,10 +156,10 @@ onBeforeMount(() => {
         </template>
 
         <BankAccountsTable
-          v-if="selectedBank && (selectedBank.accounts.length > 0 || isBankLoading(selectedBank.name))"
+          v-if="selectedBank && (selectedBank.accounts.length > 0 || isBankLoading(selectedBank.identifier))"
           :accounts="selectedBank.accounts"
           :search="search"
-          :loading="isBankLoading(selectedBank.name) && selectedBank.accounts.length === 0"
+          :loading="isBankLoading(selectedBank.identifier) && selectedBank.accounts.length === 0"
         />
         <AssetBalances
           v-else-if="!selectedBank && (balances.length > 0 || loading)"

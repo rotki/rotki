@@ -5,6 +5,9 @@ import { backendUrl } from '../../../playwright.config';
 const FAKE_TASK_ID_START = 900_000;
 
 export interface FakeBankConnection {
+  identifier?: string;
+  connector?: string;
+  bankCode?: string;
   name: string;
   lastSyncTs?: number;
   lastError?: string;
@@ -13,6 +16,8 @@ export interface FakeBankConnection {
   /** The bank rejected or expired the last TAN. */
   authExpired?: boolean;
 }
+
+type StoredBankConnection = FakeBankConnection & { identifier: string };
 
 export interface FakeBankSetup {
   connections: FakeBankConnection[];
@@ -74,11 +79,23 @@ async function fulfillJson(route: Route, result: unknown, status = 200): Promise
   });
 }
 
-function toWireConnection(connection: FakeBankConnection): Record<string, unknown> {
+/** Whether a request body addresses the connection, as the backend does: by connection identifier. */
+function isAddressed(connection: StoredBankConnection, body: Record<string, unknown>): boolean {
+  return body.identifier === connection.identifier;
+}
+
+/** The initial identifier of a fake connection; it stays unchanged when the connection is renamed. */
+export function fakeBankIdentifier(name: string): string {
+  return `fake-${name.toLowerCase().replaceAll(' ', '-')}`;
+}
+
+function toWireConnection(connection: StoredBankConnection): Record<string, unknown> {
+  const connector = connection.connector ?? 'qonto';
   return {
-    bank_code: null,
-    connector: 'qonto',
-    display_name: 'Qonto',
+    bank_code: connection.bankCode ?? null,
+    connector,
+    display_name: connector === 'fints' ? 'FinTS/HBCI' : 'Qonto',
+    identifier: connection.identifier,
     name: connection.name,
     sync_status: {
       auth_challenge: connection.pendingTan
@@ -144,7 +161,10 @@ export async function apiAddBankEvent(request: APIRequestContext, event: BankEve
  */
 export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promise<BankRequests> {
   const requests: BankRequests = { added: [], authenticated: [], edited: [], removed: [], synced: [] };
-  let connections = [...setup.connections];
+  let connections: StoredBankConnection[] = setup.connections.map(connection => ({
+    ...connection,
+    identifier: connection.identifier ?? fakeBankIdentifier(connection.name),
+  }));
   let nextTaskId = FAKE_TASK_ID_START;
   const outcomes = new Map<number, { result: unknown; message: string }>();
 
@@ -173,16 +193,25 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
         });
         return;
       }
-      connections = [...connections, { name: String(body.name) }];
+      const name = String(body.name);
+      const identifier = fakeBankIdentifier(name);
+      connections = [...connections, {
+        bankCode: body.credentials?.bank_code,
+        connector: body.connector,
+        identifier,
+        name,
+      }];
+      await fulfillJson(route, { history_start_ts: null, identifier, success: true });
+      return;
     }
     else if (method === 'PATCH') {
       requests.edited.push(body);
       if (body.new_name)
-        connections = connections.map(connection => connection.name === body.name ? { ...connection, name: String(body.new_name) } : connection);
+        connections = connections.map(connection => isAddressed(connection, body) ? { ...connection, name: String(body.new_name) } : connection);
     }
     else if (method === 'DELETE') {
       requests.removed.push(body);
-      connections = connections.filter(connection => connection.name !== body.name);
+      connections = connections.filter(connection => !isAddressed(connection, body));
     }
     await fulfillJson(route, true);
   });
@@ -190,7 +219,7 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
   await page.route('**/api/1/banks/sync', async (route) => {
     const body = route.request().postDataJSON() ?? {};
     requests.synced.push(body);
-    const name = String(body.name);
+    const name = connections.find(connection => isAddressed(connection, body))?.name ?? '';
     const pausedTan = setup.pausedSyncs?.[name];
     if (pausedTan) {
       connections = connections.map(connection => connection.name === name ? { ...connection, pendingTan: pausedTan } : connection);
@@ -204,7 +233,7 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
   await page.route('**/api/1/banks/auth', async (route) => {
     const body = route.request().postDataJSON() ?? {};
     requests.authenticated.push(body);
-    if (Object.keys(body).some(key => !['connector', 'name', 'response'].includes(key))) {
+    if (Object.keys(body).some(key => !['identifier', 'response'].includes(key))) {
       await route.fulfill({
         body: JSON.stringify({ message: JSON.stringify({ unknown: ['Unknown field.'] }), result: null }),
         contentType: 'application/json',
@@ -212,20 +241,37 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
       });
       return;
     }
-    connections = connections.map(connection => connection.name === body.name ? { ...connection, pendingTan: undefined } : connection);
+    connections = connections.map(connection => isAddressed(connection, body) ? { ...connection, pendingTan: undefined } : connection);
     await fulfillJson(route, true);
   });
 
   await page.route('**/api/1/banks/balances**', async (route) => {
-    const name = new URL(route.request().url()).searchParams.get('name');
-    const holder = connections[0]?.name;
+    const params = new URL(route.request().url()).searchParams;
+    const identifier = params.get('identifier');
+    const connector = params.get('connector');
+    const holder = connections[0]?.identifier;
     const balance = { USD: { amount: setup.usdBalance, value: setup.usdBalance } };
     const queried = connections
-      .filter(connection => !name || connection.name === name)
-      .map(connection => ({ accounts: [], balances: connection.name === holder ? balance : {}, connector: 'qonto', name: connection.name }));
+      .filter(connection => (!identifier || connection.identifier === identifier) && (!connector || (connection.connector ?? 'qonto') === connector))
+      .map(connection => ({
+        accounts: connection.identifier === holder
+          ? [{
+              amount: setup.usdBalance,
+              asset: 'USD',
+              iban: 'DE02120300000000202051',
+              identifier: `${connection.identifier}-checking`,
+              name: 'Business checking',
+              value: setup.usdBalance,
+            }]
+          : [],
+        balances: connection.identifier === holder ? balance : {},
+        connector: connection.connector ?? 'qonto',
+        identifier: connection.identifier,
+        name: connection.name,
+      }));
     await fulfillJson(route, {
       task_id: startTask({
-        aggregate: queried.some(connection => connection.name === holder) ? balance : {},
+        aggregate: queried.some(connection => connection.identifier === holder) ? balance : {},
         connections: queried,
       }),
     });

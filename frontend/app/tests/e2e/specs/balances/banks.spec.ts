@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
-import { type BankRequests, fakeBankEndpoints, type FakeBankSetup } from '../../helpers/banks-api';
+import { type BankRequests, fakeBankEndpoints, fakeBankIdentifier, type FakeBankSetup } from '../../helpers/banks-api';
 import { TIMEOUT_MEDIUM } from '../../helpers/constants';
 import { BanksPage } from '../../pages/banks-page';
 import { DashboardPage } from '../../pages/dashboard-page';
@@ -8,6 +8,7 @@ import { DashboardPage } from '../../pages/dashboard-page';
 const HEALTHY = 'rotki Solutions GmbH';
 const REVOKED = 'Revoked key organization';
 const ADDED = 'Newly added organization';
+const RENAMED = 'Renamed organization';
 const NEEDS_TAN = 'Organization behind a TAN';
 
 test.describe.serial('bank connections', () => {
@@ -66,12 +67,12 @@ test.describe.serial('bank connections', () => {
     await banksPage.saveAndClose();
 
     expect(requests.added.slice(addedBefore)).toEqual([{
-      credentials: { api_key: 'organization-login', api_secret: 'organization-secret' },
       connector: 'qonto',
+      credentials: { api_key: 'organization-login', api_secret: 'organization-secret' },
       name: ADDED,
     }]);
     await expect(banksPage.connectionRow(ADDED)).toBeVisible({ timeout: TIMEOUT_MEDIUM });
-    await expect.poll(() => requests.synced.some(sync => sync.name === ADDED), { timeout: TIMEOUT_MEDIUM }).toBe(true);
+    await expect.poll(() => requests.synced.some(sync => sync.identifier === fakeBankIdentifier(ADDED)), { timeout: TIMEOUT_MEDIUM }).toBe(true);
   });
 
   test('should sync only the connection picked from its row', async () => {
@@ -79,13 +80,22 @@ test.describe.serial('bank connections', () => {
     await banksPage.syncConnection(REVOKED);
 
     await expect.poll(() => requests.synced.slice(syncedBefore), { timeout: TIMEOUT_MEDIUM })
-      .toEqual([expect.objectContaining({ connector: 'qonto', name: REVOKED })]);
+      .toEqual([expect.objectContaining({ identifier: fakeBankIdentifier(REVOKED) })]);
   });
 
   test('should show the bank balance on Balances > Banks', async () => {
     await banksPage.visitBalances();
     await expect(banksPage.balancesTable()).toContainText('Qonto', { timeout: TIMEOUT_MEDIUM });
     await expect(banksPage.balancesTable()).toContainText('250');
+  });
+
+  test('should show the selected connection accounts with their balances and IBAN', async () => {
+    await banksPage.balanceCard(HEALTHY).click();
+    await expect(ctx.sharedPage).toHaveURL(new RegExp(`bank=${fakeBankIdentifier(HEALTHY)}`));
+    await expect(banksPage.accountsTable()).toContainText('Business checking', { timeout: TIMEOUT_MEDIUM });
+    await expect(banksPage.accountsTable()).toContainText('DE02 1203 0000 0000 2020 51');
+    await expect(banksPage.accountsTable()).toContainText('250');
+    await banksPage.balanceCard('all').click();
   });
 
   test('should name only the connections that need something in the balances toolbar', async () => {
@@ -118,7 +128,7 @@ test.describe.serial('bank connections', () => {
     await banksPage.refreshPickedBank(HEALTHY);
     await banksPage.waitForRefreshSettled();
 
-    expect(requests.synced.slice(syncedBefore)).toEqual([expect.objectContaining({ connector: 'qonto', name: HEALTHY })]);
+    expect(requests.synced.slice(syncedBefore)).toEqual([expect.objectContaining({ identifier: fakeBankIdentifier(HEALTHY) })]);
   });
 
   test('should lead from a sync paused for a TAN to answering it with only the connection identity', async () => {
@@ -132,9 +142,37 @@ test.describe.serial('bank connections', () => {
     await banksPage.answerTan('123456');
 
     await banksPage.dialog().waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
-    expect(requests.authenticated).toEqual([{ connector: 'qonto', name: NEEDS_TAN, response: '123456' }]);
+    expect(requests.authenticated).toEqual([{ identifier: fakeBankIdentifier(NEEDS_TAN), response: '123456' }]);
     await expect(banksPage.connectionRow(NEEDS_TAN).locator('[data-testid=bank-auth-required]')).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
     await expect(banksPage.actionCenterButton()).not.toHaveAttribute('aria-label', /needs you now/);
+  });
+
+  test('should keep the connection identifier when renaming and replacing credentials', async () => {
+    const editedBefore = requests.edited.length;
+    await banksPage.openEditDialog(ADDED);
+    await banksPage.fillConnection(RENAMED, 'replacement-login', 'replacement-secret');
+    await banksPage.saveAndClose();
+
+    expect(requests.edited.slice(editedBefore)).toEqual([{
+      credentials: { api_key: 'replacement-login', api_secret: 'replacement-secret' },
+      identifier: fakeBankIdentifier(ADDED),
+      new_name: RENAMED,
+    }]);
+    await expect(banksPage.connectionRow(ADDED)).toHaveCount(0);
+    await expect(banksPage.connectionRow(RENAMED)).toBeVisible({ timeout: TIMEOUT_MEDIUM });
+
+    const syncedBefore = requests.synced.length;
+    await banksPage.syncConnection(RENAMED);
+    await expect.poll(() => requests.synced.slice(syncedBefore), { timeout: TIMEOUT_MEDIUM })
+      .toEqual([expect.objectContaining({ identifier: fakeBankIdentifier(ADDED) })]);
+  });
+
+  test('should delete a renamed connection by its unchanged identifier', async () => {
+    const removedBefore = requests.removed.length;
+    await banksPage.deleteConnection(RENAMED);
+
+    expect(requests.removed.slice(removedBefore)).toEqual([{ identifier: fakeBankIdentifier(ADDED) }]);
+    await expect(banksPage.connectionRow(RENAMED)).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
   });
 });
 

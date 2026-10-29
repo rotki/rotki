@@ -1,6 +1,6 @@
 import type { BankConnection } from '@/modules/banks/types';
 import { bigNumberify } from '@rotki/common';
-import { createTestBalance, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
+import { createTestBalance, createTestExchange, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
@@ -70,7 +70,7 @@ function seedStores(): void {
       '0xV': { assets: { ETH: { address: createTestBalance(32, 96000) } }, liabilities: {} },
     },
   });
-  set(connectedExchanges, [{ location: 'kraken', name: 'Kraken' }]);
+  set(connectedExchanges, [createTestExchange('kraken', 'Kraken')]);
   set(exchangeBalances, { kraken: { BTC: createTestBalance(0.5, 20000) } });
   set(manualBalances, [
     createTestManualBalance('DAI', 300, 300, 'external', BalanceType.ASSET, 1),
@@ -128,13 +128,14 @@ describe('useHoldingsContributions', () => {
       bankCode: null,
       connector,
       displayName: connector,
+      identifier: name,
       name,
       syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false },
     });
     useBankConnectionsStore().setConnections([connection('qonto', 'Business'), connection('fints', 'DKB')]);
     set(storeToRefs(useBalancesStore()).bankBalances, [
-      { accounts: [], balances: { DAI: createTestBalance(200, 200) }, connector: 'qonto', name: 'Business' },
-      { accounts: [], balances: { DAI: createTestBalance(300, 300), SPAM: createTestBalance(1, 10) }, connector: 'fints', name: 'DKB' },
+      { accounts: [], balances: { DAI: createTestBalance(200, 200) }, connector: 'qonto', identifier: 'Business', name: 'Business' },
+      { accounts: [], balances: { DAI: createTestBalance(300, 300), SPAM: createTestBalance(1, 10) }, connector: 'fints', identifier: 'DKB', name: 'DKB' },
     ]);
     const { contributions, liabilities, nfts } = useHoldingsContributions();
 

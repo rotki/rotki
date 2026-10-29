@@ -40,6 +40,8 @@ export const BankManifests = z.array(BankManifest);
 export type BankManifests = z.infer<typeof BankManifests>;
 
 export const BankAuthChallenge = z.object({
+  /** The connection the challenge is answered for, also before a new connection is saved. */
+  identifier: z.string().nullish(),
   primitive: z.enum(['otp input', 'app approval poll', 'challenge display']),
   prompt: z.string(),
   challenge: z.string().nullable(),
@@ -58,6 +60,7 @@ export function challengeNeedsResponse(challenge: BankAuthChallenge): boolean {
 
 export const BankSetupSuccess = z.object({
   success: z.literal(true),
+  identifier: z.string(),
   historyStartTs: z.number().nullable(),
 });
 
@@ -79,6 +82,7 @@ const BankSyncStatus = z.object({
 });
 
 export const BankConnection = z.object({
+  identifier: z.string(),
   name: z.string(),
   connector: z.string(),
   displayName: z.string(),
@@ -104,6 +108,7 @@ export const BankAccountBalance = Balance.extend({
 export type BankAccountBalance = z.infer<typeof BankAccountBalance>;
 
 export const BankConnectionBalances = z.object({
+  identifier: z.string(),
   connector: z.string(),
   name: z.string(),
   balances: AssetBalances,
@@ -119,7 +124,16 @@ export const BankBalancesResponse = z.object({
 
 export type BankBalancesResponse = z.infer<typeof BankBalancesResponse>;
 
+/**
+ * A bank connection as the sync machinery tracks it.
+ *
+ * @remarks
+ * Requests address the connection by its `identifier`, which never changes. The history status
+ * frames name its connector as `location`, together with its name, so those travel along to
+ * match them.
+ */
 export interface BankConnectionIdentity {
+  readonly identifier: string;
   readonly connector: string;
   readonly name: string;
 }
@@ -128,12 +142,16 @@ export interface BankAuthenticationRequest extends BankConnectionIdentity {
   readonly challenge: BankAuthChallenge;
 }
 
-export interface BankConnectionPayload extends BankConnectionIdentity {
+export interface BankConnectionPayload {
+  readonly name: string;
+  readonly connector: string;
   /** Credentials keyed by the manifest secret slot they belong to. */
   readonly credentials: Record<string, string>;
 }
 
-export interface BankConnectionEditPayload extends BankConnectionPayload {
+export interface BankConnectionEditPayload {
+  readonly identifier: string;
+  readonly credentials: Record<string, string>;
   readonly newName?: string;
 }
 
@@ -152,10 +170,15 @@ export type BankSetupError =
 
 export interface BankSyncPayload {
   readonly connector?: string;
-  readonly name?: string;
+  readonly identifier?: string;
 }
 
-export interface BankFormData extends BankConnectionPayload {
+export interface BankFormData {
   mode: 'add' | 'edit';
+  /** Set when editing an existing connection. */
+  identifier?: string;
+  name: string;
+  connector: string;
+  credentials: Record<string, string>;
   newName: string;
 }

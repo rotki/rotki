@@ -1,7 +1,7 @@
 import type { AssetBreakdown } from '@/modules/accounts/blockchain-accounts';
 import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import { bigNumberify, type Blockchain } from '@rotki/common';
-import { createTestManualBalance } from '@test/utils/create-data';
+import { createTestExchange, createTestManualBalance } from '@test/utils/create-data';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { testAccounts, testEthereumBalances, testExchangeBalances, testManualBalances } from '@test/utils/test-data';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -42,10 +42,7 @@ describe('useAssetBalancesBreakdown', () => {
     const { updateAccounts } = useBlockchainAccountsStore();
     const { updateBalances } = useBalancesStore();
     const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
-    set(connectedExchanges, [{
-      location: 'kraken',
-      name: 'Kraken 1',
-    }]);
+    set(connectedExchanges, [createTestExchange('kraken', 'Kraken 1')]);
     set(manualBalances, testManualBalances);
     set(exchangeBalances, testExchangeBalances);
     updateBalances('eth', testEthereumBalances);

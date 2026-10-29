@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   getBanks: vi.fn(),
   notify: vi.fn(),
   submitTask: vi.fn(),
+  syncBanks: vi.fn(),
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
@@ -27,7 +28,7 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
 }));
 
 vi.mock('@/modules/banks/use-banks-api', () => ({
-  useBanksApi: vi.fn(() => ({ getBanks: mocks.getBanks, syncBanks: vi.fn() })),
+  useBanksApi: vi.fn(() => ({ getBanks: mocks.getBanks, syncBanks: mocks.syncBanks })),
 }));
 
 function listed(identity: BankConnectionIdentity, authChallenge: BankConnection['syncStatus']['authChallenge']): BankConnection {
@@ -38,8 +39,8 @@ const tanChallenge = { challenge: 'Enter the TAN', challengeData: null, challeng
 
 describe('useBankEventsRefresh', () => {
   const banks: BankConnectionIdentity[] = [
-    { connector: 'qonto', name: 'Qonto main' },
-    { connector: 'qonto', name: 'Qonto side' },
+    { connector: 'qonto', identifier: 'c1', name: 'Qonto main' },
+    { connector: 'qonto', identifier: 'c2', name: 'Qonto side' },
   ];
 
   beforeEach(() => {
@@ -63,6 +64,20 @@ describe('useBankEventsRefresh', () => {
       lane: 'bank-events:qonto',
       rerunnable: true,
     });
+  });
+
+  it('should sync the stable identifier while keeping the streamed connector and name as its activity identity', async () => {
+    await useBankEventsRefresh().queryAllBankEvents([banks[0]]);
+    const spec = mocks.submitTask.mock.calls[0][0];
+    const runTask = vi.fn(async (start: () => Promise<unknown>) => {
+      await start();
+      return ok(true);
+    });
+
+    await spec.run({ runTask });
+
+    expect(mocks.syncBanks).toHaveBeenCalledExactlyOnceWith({ identifier: 'c1' });
+    expect(spec.id).toBe(makeActivityId(ActivityKind.BANK_EVENTS, 'qonto', 'Qonto main'));
   });
 
   it.each([
