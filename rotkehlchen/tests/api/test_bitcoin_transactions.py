@@ -1,10 +1,11 @@
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 import requests
 
+from rotkehlchen.chain.bitcoin.btc.constants import BLOCKCYPHER_BASE_URL
 from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcTxIO, BtcTxIODirection
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.constants.misc import ZERO
@@ -16,6 +17,7 @@ from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.types import BTCTxId, Location, SupportedBlockchain, Timestamp, TimestampMS
+from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -97,6 +99,7 @@ def test_query_btc_transactions(
         btc_accounts: list[BTCAddress],
         use_blockcypher: bool,
         websocket_connection: WebsocketReader,
+        monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that bitcoin transactions are properly queried via the api.
     Since there are quite a number of transactions, only check decoding of a couple txs.
@@ -108,6 +111,16 @@ def test_query_btc_transactions(
         bitcoin_manager.api_callbacks[0] = bitcoin_manager.api_callbacks[0]._replace(
             transactions_fn=None,
         )
+
+    def query_with_chain_height(url: str, **kwargs: Any) -> dict[str, Any]:
+        if url == BLOCKCYPHER_BASE_URL:
+            return {'height': 973_682}
+        return request_get_dict(url=url, **kwargs)
+
+    monkeypatch.setattr(
+        'rotkehlchen.chain.bitcoin.btc.manager.request_get_dict',
+        query_with_chain_height,
+    )
 
     async_query = random.choice([False, True])
     for json, expected_len in (

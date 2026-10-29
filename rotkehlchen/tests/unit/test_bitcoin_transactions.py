@@ -35,7 +35,7 @@ from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import BlockchainAccountData
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
@@ -54,6 +54,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from contextlib import AbstractContextManager
 
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
@@ -1014,6 +1015,10 @@ def test_blockcypher_sends_query_progress_per_page(bitcoin_manager: BitcoinManag
     }
     with (
         patch(
+            'rotkehlchen.chain.bitcoin.btc.manager.request_get_dict',
+            return_value={'height': 900_000},
+        ),
+        patch(
             'rotkehlchen.chain.bitcoin.btc.manager.request_get',
             side_effect=[page_1, page_2],
         ) as request_get_mock,
@@ -1269,6 +1274,8 @@ def test_unplaceable_txios_fall_back_to_the_next_explorer(
             return MockResponse(200, _blockchain_info_response())
 
         assert BLOCKCYPHER_BASE_URL in url
+        if url == BLOCKCYPHER_BASE_URL:
+            return MockResponse(200, json.dumps({'height': NEWER_TX_BLOCK_HEIGHT}))
         return MockResponse(200, _blockcypher_response())
 
     with patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get):
@@ -1338,13 +1345,13 @@ def test_unplaceable_txios_do_not_advance_the_query_range(
         ) is None
 
 
-def _blockcypher_batch_response(entries: list[tuple[BTCAddress, str, int]]) -> str:
-    """A blockcypher response for the given (address, txid, block height) entries."""
-    def entry(address: BTCAddress, txid: str, block_height: int) -> dict[str, Any]:
+def _blockcypher_batch_response(entries: list[tuple[BTCAddress, str, int | None]]) -> str:
+    """A blockcypher response for (address, txid, height) entries; None means no history."""
+    def entry(address: BTCAddress, txid: str, block_height: int | None) -> dict[str, Any]:
         return {
             'address': address,
             'hasMore': False,
-            'txs': [{
+            'txs': [] if block_height is None else [{
                 'hash': txid,
                 'confirmed': '2023-11-14T22:15:00Z',
                 'block_height': block_height,
@@ -1359,99 +1366,221 @@ def _blockcypher_batch_response(entries: list[tuple[BTCAddress, str, int]]) -> s
     return json.dumps(list(starmap(entry, entries)))
 
 
-@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_INPUT2]])
-def test_blockcypher_fallback_keeps_one_checkpoint_per_batch(
+def _mock_blockcypher_responses(
+        heights: list[int],
+        batches: list[str],
+) -> AbstractContextManager[MagicMock]:
+    height_responses, batch_responses = iter(heights), iter(batches)
+
+    def router(url: str, **_kwargs: Any) -> MockResponse:
+        assert url.startswith(BLOCKCYPHER_BASE_URL), f'unexpected blockcypher request {url}'
+        return MockResponse(200, (
+            json.dumps({'height': next(height_responses)})
+            if url == BLOCKCYPHER_BASE_URL else next(batch_responses)
+        ))
+
+    return patch('requests.get', side_effect=router)
+
+
+@pytest.mark.parametrize('inactive_height', [None, 900_000])
+def test_blockcypher_checkpoint_advances_past_inactive_batches(
+        bitcoin_manager: BitcoinManager,
+        inactive_height: int | None,
+) -> None:
+    """Inactive batches must not cause already-saved transactions to be returned again."""
+    accounts = [CHANGE_TX_INPUT1, CHANGE_TX_INPUT2, CHANGE_TX_EXTERNAL_OUTPUT]
+    active_response = _blockcypher_batch_response([
+        (accounts[0], 'a' * 64, 900_001),
+        (accounts[1], '', None),
+    ])
+    inactive_response = _blockcypher_batch_response([(accounts[2], 'c' * 64, inactive_height)])
+    with _mock_blockcypher_responses(
+        heights=[900_001, 900_001],
+        batches=[active_response, inactive_response] * 2,
+    ):
+        heights, transactions = bitcoin_manager._query_blockcypher_transactions(
+            accounts=accounts,
+            options={'last_queried_block': 0, 'to_timestamp': ts_now()},
+        )
+        assert {tx.tx_id for tx in transactions} == (
+            {'a' * 64} if inactive_height is None else {'a' * 64, 'c' * 64}
+        )
+        assert heights == dict.fromkeys(accounts, 900_001)
+        retry_heights, retry_transactions = bitcoin_manager._query_blockcypher_transactions(
+            accounts=accounts,
+            options={'last_queried_block': heights[accounts[0]], 'to_timestamp': ts_now()},
+        )
+    assert retry_heights == heights
+    assert retry_transactions == []
+
+
+def test_blockcypher_checkpoint_does_not_skip_blocks_arriving_mid_query(
+        bitcoin_manager: BitcoinManager,
+) -> None:
+    """A later batch observing a new block must not skip its unfetched earlier-batch txs."""
+    accounts = [CHANGE_TX_INPUT1, CHANGE_TX_INPUT2, CHANGE_TX_EXTERNAL_OUTPUT]
+    with _mock_blockcypher_responses(
+        heights=[900_000, 900_001],
+        batches=[
+            _blockcypher_batch_response([
+                (accounts[0], 'a' * 64, 900_000), (accounts[1], '', None),
+            ]),
+            _blockcypher_batch_response([(accounts[2], 'b' * 64, 900_001)]),
+            _blockcypher_batch_response([
+                (accounts[0], 'c' * 64, 900_001), (accounts[1], '', None),
+            ]),
+            _blockcypher_batch_response([(accounts[2], 'b' * 64, 900_001)]),
+        ],
+    ):
+        heights, transactions = bitcoin_manager._query_blockcypher_transactions(
+            accounts=accounts,
+            options={'last_queried_block': 0, 'to_timestamp': ts_now()},
+        )
+        assert {tx.tx_id for tx in transactions} == {'a' * 64, 'b' * 64}
+        assert heights == dict.fromkeys(accounts, 900_000)
+        retry_heights, retry_transactions = bitcoin_manager._query_blockcypher_transactions(
+            accounts=accounts,
+            options={'last_queried_block': heights[accounts[0]], 'to_timestamp': ts_now()},
+        )
+    assert retry_heights == dict.fromkeys(accounts, 900_001)
+    assert {tx.tx_id for tx in retry_transactions} == {'b' * 64, 'c' * 64}
+
+
+def test_blockcypher_checkpoint_preserves_transactions_after_end_timestamp(
+        bitcoin_manager: BitcoinManager,
+) -> None:
+    """A historical query must leave excluded blocks queryable on a later refresh."""
+    accounts = [CHANGE_TX_INPUT1]
+    with _mock_blockcypher_responses(
+        heights=[900_001, 900_001],
+        batches=[_blockcypher_batch_response([(accounts[0], 'a' * 64, 900_000)])] * 2,
+    ):
+        heights, transactions = bitcoin_manager._query_blockcypher_transactions(
+            accounts=accounts,
+            options={'last_queried_block': 0, 'to_timestamp': Timestamp(1700000099)},
+        )
+        assert transactions == []
+        assert heights == dict.fromkeys(accounts, 899_999)
+        retry_heights, retry_transactions = bitcoin_manager._query_blockcypher_transactions(
+            accounts=accounts,
+            options={
+                'last_queried_block': heights[accounts[0]],
+                'to_timestamp': Timestamp(1700000100),
+            },
+        )
+    assert retry_heights == dict.fromkeys(accounts, 900_001)
+    assert [tx.tx_id for tx in retry_transactions] == ['a' * 64]
+
+
+@pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1]])
+@pytest.mark.parametrize(('processing_error', 'raw_height', 'expected_checkpoint'), [
+    pytest.param(RemoteError('TxIO timeout'), 900_001, 900_000, id='remote-error'),
+    pytest.param(
+        DeserializationError('Invalid TxIO'), 900_001, 900_000, id='deserialization-error',
+    ),
+    pytest.param(KeyError('inputs'), 900_001, 900_000, id='missing-key'),
+    pytest.param(ValueError('Invalid script'), 900_001, 900_000, id='invalid-value'),
+    pytest.param(
+        UnableToDecryptRemoteData('Invalid response'), 900_001, 900_000, id='invalid-response',
+    ),
+    pytest.param(RemoteError('TxIO timeout'), 'invalid', 900_000, id='invalid-height'),
+    pytest.param(RemoteError('TxIO timeout'), 900_003, 900_002, id='advance-to-safe-block'),
+])
+def test_blockcypher_failed_transaction_is_retried(
         bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
+        processing_error: Exception,
+        raw_height: int | str,
+        expected_checkpoint: int,
 ) -> None:
-    """A blockcypher fallback query must not split addresses into single-address groups.
-
-    Blockcypher answers one request per batch of addresses, and every address of a batch
-    is observed at the same snapshot. Caching each address's own newest block would give
-    the two addresses different checkpoints, so the next refresh would query them
-    separately, one blockchain.info request each, forever. Sharing one conservative
-    watermark for the whole query keeps them grouped in a single request.
-    """
-    address_a, address_b = btc_accounts
-    info_requests: list[str] = []
-
-    def mock_get(url: str, **_kwargs: Any) -> MockResponse:
-        if BLOCKCHAIN_INFO_BASE_URL in url:
-            info_requests.append(url)
-            if len(info_requests) == 1:
-                raise requests.exceptions.RequestException('blockchain.info is down')
-            return MockResponse(200, json.dumps({'addresses': [], 'txs': []}))
-
-        assert BLOCKCYPHER_BASE_URL in url
-        return MockResponse(200, _blockcypher_batch_response([
-            (address_a, 'a' * 64, 900_001),
-            (address_b, 'b' * 64, 900_000),
-        ]))
-
-    with (
-        patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
-        patch.object(CachedSettings(), 'get_query_retry_limit', return_value=1),
-    ):
-        bitcoin_manager.query_transactions(
-            from_timestamp=Timestamp(0),
-            to_timestamp=ts_now(),
-            addresses=btc_accounts,
+    address = btc_accounts[0]
+    database = bitcoin_manager.database
+    with database.conn.write_ctx() as write_cursor:
+        database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            value=900_000,
+            address=address,
         )
 
-    with bitcoin_manager.database.conn.read_ctx() as cursor:
-        for address in btc_accounts:
-            assert bitcoin_manager.database.get_dynamic_cache(
+    bitcoin_manager.api_callbacks = [
+        callback for callback in bitcoin_manager.api_callbacks
+        if callback.name == 'blockcypher.com'
+    ]
+    response = _blockcypher_batch_response([
+        (address, tx_id := 'a' * 64, raw_height if isinstance(raw_height, int) else 900_001),
+    ])
+    failed_response = json.loads(response)
+    failed_response[0]['txs'][0]['block_height'] = raw_height
+
+    with _mock_blockcypher_responses(
+        heights=[900_005, 900_005],
+        batches=[json.dumps(failed_response), response],
+    ):
+        with patch.object(
+            bitcoin_manager,
+            '_process_raw_tx_from_blockcypher',
+            side_effect=processing_error,
+        ):
+            bitcoin_manager.query_transactions(
+                addresses=btc_accounts,
+                from_timestamp=Timestamp(0),
+                to_timestamp=ts_now(),
+            )
+        with database.conn.read_ctx() as cursor:
+            assert database.get_dynamic_cache(
                 cursor=cursor,
                 name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
                 address=address,
-            ) == 900_001  # the shared watermark, not each address's own newest block
+            ) == expected_checkpoint
+            assert bitcoin_manager.dbtx.get_transactions(
+                cursor=cursor,
+                location=Location.BITCOIN,
+            ) == []
 
-    # The next refresh goes to blockchain.info again. Both addresses share one checkpoint,
-    # so they are queried together in a single multiaddr request instead of one each.
-    first_query_info_requests = len(info_requests)
-    with (
-        patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
-        patch.object(CachedSettings(), 'get_query_retry_limit', return_value=1),
-    ):
         bitcoin_manager.query_transactions(
+            addresses=btc_accounts,
             from_timestamp=Timestamp(0),
             to_timestamp=ts_now(),
-            addresses=btc_accounts,
         )
-    assert len(info_requests) - first_query_info_requests == 1
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+            address=address,
+        ) == 900_005
+        assert [tx.tx_id for tx in bitcoin_manager.dbtx.get_transactions(
+            cursor=cursor,
+            location=Location.BITCOIN,
+        )] == [tx_id]
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    assert any(
+        event.group_identifier == f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx_id}' for event in events
+    )
 
 
-@pytest.mark.parametrize('btc_accounts', [[
-    CHANGE_TX_INPUT1,
-    CHANGE_TX_INPUT2,
-    CHANGE_TX_EXTERNAL_OUTPUT,
-    CHANGE_TX_CHANGE_OUTPUT,
-]])
-def test_blockcypher_fallback_shares_watermark_across_batches(
+@pytest.mark.parametrize('btc_accounts', [
+    pytest.param([CHANGE_TX_INPUT1, CHANGE_TX_INPUT2], id='one-batch'),
+    pytest.param([
+        CHANGE_TX_INPUT1, CHANGE_TX_INPUT2, CHANGE_TX_EXTERNAL_OUTPUT, CHANGE_TX_CHANGE_OUTPUT,
+    ], id='multiple-batches'),
+])
+def test_blockcypher_fallback_preserves_batching_on_next_refresh(
         bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
 ) -> None:
-    """A blockcypher fallback over several batches must keep one shared checkpoint.
-
-    Blockcypher answers two addresses per request, so four addresses take two batches.
-    Caching each batch's own maximum would leave the two batches on different
-    checkpoints, and the next blockchain.info refresh would make two requests instead
-    of one, with the groups never coalescing again. The shared conservative watermark
-    (the lowest batch maximum) keeps all four addresses on one checkpoint, so the next
-    refresh queries them together in a single request.
-    """
-    address_a, address_b, address_c, address_d = btc_accounts
-    info_requests: list[str] = []
     batch_responses = {
-        f'{address_a};{address_b}': _blockcypher_batch_response([
-            (address_a, 'a' * 64, 900_001),
-            (address_b, 'b' * 64, 900_001),
-        ]),
-        f'{address_c};{address_d}': _blockcypher_batch_response([
-            (address_c, 'c' * 64, 900_000),
-            (address_d, 'd' * 64, 900_000),
-        ]),
+        ';'.join(btc_accounts[offset:offset + 2]): _blockcypher_batch_response([
+            (address, f'{index + 1:064x}', 900_001 - index)
+            for index, address in enumerate(btc_accounts[offset:offset + 2], start=offset)
+        ])
+        for offset in range(0, len(btc_accounts), 2)
     }
+    info_requests: list[str] = []
 
     def mock_get(url: str, **_kwargs: Any) -> MockResponse:
         if BLOCKCHAIN_INFO_BASE_URL in url:
@@ -1461,13 +1590,15 @@ def test_blockcypher_fallback_shares_watermark_across_batches(
             return MockResponse(200, json.dumps({'addresses': [], 'txs': []}))
 
         assert BLOCKCYPHER_BASE_URL in url
+        if url == BLOCKCYPHER_BASE_URL:
+            return MockResponse(200, json.dumps({'height': 900_001}))
         for batch_key, response in batch_responses.items():
             if batch_key in url:
                 return MockResponse(200, response)
         raise AssertionError(f'unexpected blockcypher request {url}')
 
     with (
-        patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
+        patch('requests.get', side_effect=mock_get),
         patch.object(CachedSettings(), 'get_query_retry_limit', return_value=1),
     ):
         bitcoin_manager.query_transactions(
@@ -1475,28 +1606,24 @@ def test_blockcypher_fallback_shares_watermark_across_batches(
             to_timestamp=ts_now(),
             addresses=btc_accounts,
         )
+        with bitcoin_manager.database.conn.read_ctx() as cursor:
+            assert {
+                address: bitcoin_manager.database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
+                    address=address,
+                )
+                for address in btc_accounts
+            } == dict.fromkeys(btc_accounts, 900_001)
 
-    with bitcoin_manager.database.conn.read_ctx() as cursor:
-        for address in btc_accounts:
-            assert bitcoin_manager.database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
-                address=address,
-            ) == 900_000  # the lowest batch maximum, shared by every address
-
-    # The next refresh goes to blockchain.info again. All four addresses share one
-    # checkpoint, so they are queried together in a single multiaddr request.
-    first_query_info_requests = len(info_requests)
-    with (
-        patch('rotkehlchen.chain.bitcoin.manager.requests.get', side_effect=mock_get),
-        patch.object(CachedSettings(), 'get_query_retry_limit', return_value=1),
-    ):
+        assert len(info_requests) == 1
         bitcoin_manager.query_transactions(
             from_timestamp=Timestamp(0),
             to_timestamp=ts_now(),
             addresses=btc_accounts,
         )
-    assert len(info_requests) - first_query_info_requests == 1
+    assert len(info_requests) == 2
+    assert '|'.join(btc_accounts) in info_requests[-1]
 
 
 @pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1, CHANGE_TX_INPUT2]])
@@ -2976,15 +3103,15 @@ def test_migrated_address_failed_decode_keeps_checkpoint(
 
 
 @pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
+@pytest.mark.parametrize('include_new_transactions', [
+    pytest.param(False, id='empty-refresh'),
+    pytest.param(True, id='mixed-refresh'),
+])
 def test_failed_initial_redecode_is_retried(
         bitcoin_manager: BitcoinManager,
         btc_accounts: list[BTCAddress],
+        include_new_transactions: bool,
 ) -> None:
-    """A newly tracked address whose query returns nothing still needs its saved
-    transactions decoded with it tracked. If that initial redecode fails, its
-    checkpoint must stay missing, so the next refresh treats it as newly tracked
-    again and retries the decode instead of assuming it is fully synced.
-    """
     tracked = btc_accounts[0]
     new_address = string_to_btc_address('1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp')
     tx = _esplora_tx(
@@ -2994,10 +3121,7 @@ def test_failed_initial_redecode_is_retried(
         fee=1_000,
     )
     with (
-        patch(
-            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
-        ),
+        patch.object(BitcoinManager, '_connect_node', return_value=(True, '')),
         _mock_esplora_pages({
             f'/address/{tracked}/txs': [tx],
             f'/address/{tracked}/txs?after_txid={tx["txid"]}': [],
@@ -3020,139 +3144,30 @@ def test_failed_initial_redecode_is_retried(
             )],
         )
 
-    # The new address has no history of its own; its initial redecode fails.
-    with (
-        patch(
-            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
-        ),
-        _mock_esplora_pages({f'/address/{new_address}/txs': []}),
-        patch.object(bitcoin_manager, 'decode_transactions', side_effect=RuntimeError('boom')),
-    ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
-        with pytest.raises(RuntimeError, match='boom'):
-            bitcoin_manager.query_transactions(
-                from_timestamp=Timestamp(0),
-                to_timestamp=ts_now(),
-                addresses=[new_address],
-            )
-
-    with database.conn.read_ctx() as cursor:
-        # The checkpoint was not persisted, so the address is still never queried.
-        assert database.get_dynamic_cache(
-            cursor=cursor,
-            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
-            address=new_address,
-        ) is None
-        events = DBHistoryEvents(database).get_history_events_internal(
-            cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(),
-        )
-    # The failed redecode changed nothing: the transaction is still decoded as a
-    # spend, as it was before the new address was tracked.
-    assert not any(event.event_type == HistoryEventType.TRANSFER for event in events)
-
-    # The next refresh retries the decode and then persists the checkpoint.
-    with (
-        patch(
-            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
-        ),
-        _mock_esplora_pages({f'/address/{new_address}/txs': []}),
-    ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
-        bitcoin_manager.query_transactions(
-            from_timestamp=Timestamp(0),
-            to_timestamp=ts_now(),
-            addresses=[new_address],
-        )
-
-    with database.conn.read_ctx() as cursor:
-        assert database.get_dynamic_cache(
-            cursor=cursor,
-            name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
-            address=new_address,
-        ) == 0
-        events = DBHistoryEvents(database).get_history_events_internal(
-            cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(),
-        )
-    # The retried decode ran with the new address tracked: the spend is now a transfer.
-    assert any(
-        event.event_type == HistoryEventType.TRANSFER and event.location_label == tracked
-        for event in events
-    )
-
-
-@pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
-def test_failed_decode_is_retried_for_new_address_in_mixed_refresh(
-        bitcoin_manager: BitcoinManager,
-        btc_accounts: list[BTCAddress],
-) -> None:
-    """A mixed refresh where an existing address returns a transaction while a newly
-    tracked address returns none must also defer the new address's checkpoint. If the
-    decode fails, the new address's checkpoint stays missing, so the next refresh
-    treats it as newly tracked again and retries the decode instead of assuming it
-    is fully synced.
-    """
-    tracked = btc_accounts[0]
-    new_address = string_to_btc_address('1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp')
-    tx = _esplora_tx(
+    new_tx = _esplora_tx(
         block_height=900_001,
-        vin=[{'is_coinbase': False, 'prevout': _esplora_p2wpkh_txio(value=100_000, address=tracked)}],  # noqa: E501
-        vout=[_esplora_p2wpkh_txio(value=99_000, address=tracked)],
+        vin=tx['vin'],
+        vout=tx['vout'],
         fee=1_000,
     )
     pages = {
-        f'/address/{tracked}/txs': [tx],
-        f'/address/{tracked}/txs?after_txid={tx["txid"]}': [],
         f'/address/{new_address}/txs': [],
+        f'/address/{tracked}/txs': [new_tx] if include_new_transactions else [],
+        f'/address/{tracked}/txs?after_txid={new_tx["txid"]}': [],
     }
+    addresses = [tracked, new_address] if include_new_transactions else [new_address]
     with (
-        patch(
-            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
-        ),
         _mock_esplora_pages(pages),
+        patch.object(bitcoin_manager, 'decode_transactions', side_effect=RuntimeError('boom')),
+        pytest.raises(RuntimeError, match='boom'),
     ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
         bitcoin_manager.query_transactions(
             from_timestamp=Timestamp(0),
             to_timestamp=ts_now(),
-            addresses=btc_accounts,
+            addresses=addresses,
         )
-
-    database = bitcoin_manager.database
-    with database.user_write() as write_cursor:
-        database.add_blockchain_accounts(
-            write_cursor=write_cursor,
-            account_data=[BlockchainAccountData(
-                chain=SupportedBlockchain.BITCOIN,
-                address=new_address,
-            )],
-        )
-
-    # Mixed refresh: the existing address returns a transaction, the new address
-    # returns nothing, and the decode fails.
-    with (
-        patch(
-            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
-        ),
-        _mock_esplora_pages(pages),
-        patch.object(bitcoin_manager, 'decode_transactions', side_effect=RuntimeError('boom')),
-    ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
-        with pytest.raises(RuntimeError, match='boom'):
-            bitcoin_manager.query_transactions(
-                from_timestamp=Timestamp(0),
-                to_timestamp=ts_now(),
-                addresses=[tracked, new_address],
-            )
 
     with database.conn.read_ctx() as cursor:
-        # The new address's checkpoint was not persisted, so it is still never queried,
-        # while the existing address's checkpoint advanced as usual.
         assert database.get_dynamic_cache(
             cursor=cursor,
             name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
@@ -3162,21 +3177,29 @@ def test_failed_decode_is_retried_for_new_address_in_mixed_refresh(
             cursor=cursor,
             name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
             address=tracked,
-        ) == 900_001
+        ) == (900_001 if include_new_transactions else 900_000)
+        assert {
+            saved_tx.tx_id for saved_tx in bitcoin_manager.dbtx.get_transactions(
+                cursor=cursor,
+                location=Location.BITCOIN,
+            )
+        } == ({tx['txid'], new_tx['txid']} if include_new_transactions else {tx['txid']})
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    assert any(
+        event.group_identifier == f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx["txid"]}' and
+        event.event_type == HistoryEventType.SPEND and
+        event.event_subtype == HistoryEventSubType.NONE
+        for event in events
+    )
 
-    # The next refresh retries the decode and then persists the checkpoint.
-    with (
-        patch(
-            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
-        ),
-        _mock_esplora_pages(pages),
-    ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+    with _mock_esplora_pages(pages):
         bitcoin_manager.query_transactions(
             from_timestamp=Timestamp(0),
             to_timestamp=ts_now(),
-            addresses=[tracked, new_address],
+            addresses=addresses,
         )
 
     with database.conn.read_ctx() as cursor:
@@ -3185,6 +3208,15 @@ def test_failed_decode_is_retried_for_new_address_in_mixed_refresh(
             name=DBCacheDynamic.LAST_BTC_TX_BLOCK,
             address=new_address,
         ) == 0
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    assert any(
+        event.group_identifier == f'{BTC_GROUP_IDENTIFIER_PREFIX}{tx["txid"]}' and
+        event.event_type == HistoryEventType.TRANSFER and event.location_label == tracked
+        for event in events
+    )
 
 
 @pytest.mark.parametrize('btc_accounts', [[P2WPKH_ADDRESS]])
