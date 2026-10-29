@@ -106,7 +106,7 @@ class EtherscanLikeApi(ABC):
             self,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
-            name: Literal['Etherscan', 'Blockscout', 'Routescan'],
+            name: Literal['Etherscan', 'Blockscout', 'Routescan', 'Nuthatch'],
             pagination_limit: int,
             default_api_key: ApiKey,
             rate_limiter: TokenBucket,
