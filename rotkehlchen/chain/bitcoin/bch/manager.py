@@ -209,9 +209,11 @@ class BitcoinCashManager(BitcoinCommonManager):
             base_url: str,
             accounts: Sequence[BTCAddress],
             options: dict[str, Any],
-    ) -> tuple[int, list[BitcoinTx]]:
+    ) -> tuple[dict[BTCAddress, int], list[BitcoinTx]]:
         """Query haskoin for transactions.
-        Returns a tuple containing the latest queried block height and the list of txs.
+        Returns a tuple containing the queried block height per address and the list of txs.
+        The api is queried in batches of addresses, so all the addresses of a batch share
+        the newest block their batch reached.
         May raise RemoteError, UnableToDecryptRemoteData.
         """
         self._check_haskoin_health(base_url=base_url)
@@ -236,11 +238,22 @@ class BitcoinCashManager(BitcoinCommonManager):
                 except (DeserializationError, KeyError, ValueError) as e:
                     log.debug('Unable to report haskoin query progress due to %s', e)
 
-        return self._process_raw_tx_lists(
+        new_block_heights, txs = self._process_raw_tx_lists(
             raw_tx_lists=raw_txs,
             options=options,
             processing_fn=self.deserialize_tx_from_haskoin,
         )
+        # raw_txs holds one list per queried batch of addresses, in order.
+        address_heights = zip(
+            get_chunks(list(accounts), HASKOIN_BATCH_SIZE),
+            new_block_heights,
+            strict=True,
+        )
+        return {
+            address: block_height
+            for chunk, block_height in address_heights
+            for address in chunk
+        }, txs
 
     def deserialize_tx_from_haskoin(self, data: dict[str, Any]) -> BitcoinTx:
         """Deserialize a transaction from a haskoin API.
