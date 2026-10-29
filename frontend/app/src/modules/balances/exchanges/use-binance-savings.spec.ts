@@ -5,6 +5,7 @@ import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRe
 import type { RequestError } from '@/modules/core/api/request-result';
 import type { Collection } from '@/modules/core/common/collection';
 import { startPromise } from '@shared/utils';
+import { createTestExchange } from '@test/utils/create-data';
 import flushPromises from 'flush-promises';
 import { pipe } from 'plainfp';
 import { err, ok } from 'plainfp/result';
@@ -218,9 +219,9 @@ describe('useBinanceSavings', () => {
       mocks.workStatus.active = false;
       mocks.workStatus.everCompleted = false;
       useConnectedExchangesStore().setConnectedExchanges([
-        { location: 'binance', name: 'binance' },
-        { location: 'binanceus', name: 'binanceus' },
-        { location: 'kraken', name: 'kraken' },
+        createTestExchange('binance', 'binance'),
+        createTestExchange('binanceus', 'binanceus'),
+        createTestExchange('kraken', 'kraken'),
       ]);
     });
 

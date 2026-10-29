@@ -1,5 +1,6 @@
 import type { RefreshTransactionsParams } from './types';
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import { createTestExchange } from '@test/utils/create-data';
 import { logoutThenLogin, sessionRequest } from '@test/utils/realistic-logout';
 import flushPromises from 'flush-promises';
 import { err, ok, type Result } from 'plainfp/result';
@@ -35,8 +36,8 @@ const mockBitcoinAccounts: ChainAddress[] = [
 ];
 
 const mockExchanges: Exchange[] = [
-  { location: 'kraken', name: 'Kraken1' },
-  { location: 'binance', name: 'Binance1' },
+  createTestExchange('kraken', 'Kraken1'),
+  createTestExchange('binance', 'Binance1'),
 ];
 
 const mockDisabledChains = {
@@ -363,11 +364,11 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('bank refresh', () => {
-    const bank = { location: 'qonto', name: 'rotki Solutions GmbH' };
+    const bank = { identifier: 'c1', location: 'qonto', name: 'rotki Solutions GmbH' };
 
     function connectBank(): void {
       useBankConnectionsStore().setConnections([
-        { ...bank, displayName: 'Qonto', syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false } },
+        { ...bank, connector: 'qonto', displayName: 'Qonto', syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false } },
       ]);
     }
 
@@ -859,7 +860,7 @@ describe('useRefreshTransactions', () => {
 
   describe('exchange filtering', () => {
     it('should filter out exchanges not in syncingExchanges', async () => {
-      const unknownExchange: Exchange = { location: 'unknown_exchange', name: 'Unknown' };
+      const unknownExchange: Exchange = createTestExchange('unknown_exchange', 'Unknown');
       const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({

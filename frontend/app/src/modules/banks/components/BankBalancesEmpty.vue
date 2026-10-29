@@ -3,7 +3,7 @@ import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-st
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 
-const emit = defineEmits<{ connect: [location?: string] }>();
+const emit = defineEmits<{ connect: [connector?: string] }>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { manifests } = storeToRefs(useBankConnectionsStore());
@@ -41,15 +41,15 @@ const { manifests } = storeToRefs(useBankConnectionsStore());
       <div class="flex flex-wrap justify-center gap-2">
         <RuiButton
           v-for="manifest in manifests"
-          :key="manifest.location"
+          :key="manifest.connectorIdentifier"
           variant="outlined"
           data-testid="bank-balances-empty-shortcut"
-          :data-bank="manifest.location"
-          @click="emit('connect', manifest.location)"
+          :data-bank="manifest.connectorIdentifier"
+          @click="emit('connect', manifest.connectorIdentifier)"
         >
           <template #prepend>
             <LocationIcon
-              :item="manifest.location"
+              :item="manifest.fixedLocation ?? 'banks'"
               icon
               size="18px"
             />

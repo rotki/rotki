@@ -8,6 +8,7 @@ export const BalanceSnapshotError = z.object({
 export type BalanceSnapshotError = z.infer<typeof BalanceSnapshotError>;
 
 export const BinancePairsMissingData = z.object({
+  identifier: z.string(),
   location: z.string(),
   name: z.string(),
 });

@@ -30,7 +30,7 @@ const otp: BankAuthChallenge = {
   prompt: 'Enter TAN',
 };
 
-const request: BankAuthenticationRequest = { challenge: otp, location: 'fints', name: 'Checking' };
+const request: BankAuthenticationRequest = { challenge: otp, identifier: 'c1', location: 'custom:ing', name: 'Checking' };
 
 describe('bankAuthenticationDialog', () => {
   let wrapper: VueWrapper<InstanceType<typeof BankAuthenticationDialog>>;
@@ -56,14 +56,14 @@ describe('bankAuthenticationDialog', () => {
     syncBanks.mockResolvedValue(true);
   });
 
-  it('should answer with the connection identity only and close after success', async () => {
+  it('should answer with the connection identifier only and close after success', async () => {
     answerBankAuthentication.mockResolvedValue(ok(true));
     wrapper = createWrapper(request);
 
     await wrapper.find('[data-testid=bank-auth-response] input').setValue(' 123456 ');
     await confirm();
 
-    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ location: 'fints', name: 'Checking' }, '123456');
+    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ identifier: 'c1' }, '123456');
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
 
@@ -86,7 +86,7 @@ describe('bankAuthenticationDialog', () => {
     expect(action()?.disabled).toBe(false);
     await confirm();
 
-    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ location: 'fints', name: 'Checking' }, undefined);
+    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ identifier: 'c1' }, undefined);
     expect(wrapper.emitted('update:modelValue')).toEqual([[{ ...request, challenge: poll }]]);
   });
 
@@ -135,7 +135,7 @@ describe('bankAuthenticationDialog', () => {
 
       await confirm();
 
-      expect(syncBanks).toHaveBeenCalledExactlyOnceWith({ location: 'fints', name: 'Checking' });
+      expect(syncBanks).toHaveBeenCalledExactlyOnceWith({ identifier: 'c1' });
       expect(answerBankAuthentication).toHaveBeenCalledOnce();
       expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
     });

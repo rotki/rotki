@@ -24,6 +24,7 @@ vi.mock('@/modules/banks/use-banks', () => ({
 
 const otp: BankAuthChallenge = {
   challenge: 'Enter TAN',
+  identifier: 'c1',
   challengeData: null,
   challengeHtml: null,
   challengeMimeType: null,
@@ -49,6 +50,7 @@ const BigDialogStub = defineComponent({
 
 function createForm(): BankFormData {
   return {
+    connector: 'qonto',
     credentials: { api_key: 'login', api_secret: 'secret' },
     location: 'qonto',
     mode: 'add',
@@ -84,12 +86,12 @@ describe('bankConnectionFormDialog', () => {
     cancelBankSetup.mockResolvedValue(undefined);
   });
 
-  it('should save the entry and emit added with the connection identity', async () => {
-    setupBank.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+  it('should save the entry and emit added with the new connection identifier', async () => {
+    setupBank.mockResolvedValue(ok({ historyStartTs: null, identifier: 'c1', success: true }));
     wrapper = createWrapper(createForm());
     await confirm();
     expect(setupBank).toHaveBeenCalledWith(createForm());
-    expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
+    expect(wrapper.emitted('added')).toEqual([[{ identifier: 'c1', location: 'qonto', name: 'Qonto main' }]]);
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
 
@@ -106,7 +108,7 @@ describe('bankConnectionFormDialog', () => {
 
       await cancel();
 
-      expect(cancelBankSetup).toHaveBeenCalledExactlyOnceWith({ location: 'qonto', name: 'Qonto main' });
+      expect(cancelBankSetup).toHaveBeenCalledExactlyOnceWith({ identifier: 'c1', name: 'Qonto main' });
       expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
     });
 
@@ -144,7 +146,7 @@ describe('bankConnectionFormDialog', () => {
     expect(wrapper.find('[data-testid=bank-setup-error]').text()).toBe('bank_settings.errors.setup_message::Qonto, Qonto rejected the credentials');
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
 
-    setupBank.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+    setupBank.mockResolvedValue(ok({ historyStartTs: null, identifier: 'c1', success: true }));
     await confirm();
     expect(wrapper.find('[data-testid=bank-setup-error]').exists()).toBe(false);
   });
@@ -193,7 +195,7 @@ describe('bankConnectionFormDialog', () => {
   });
 
   it('should name the bank by its display name once its manifest is loaded', async () => {
-    useBankConnectionsStore().setManifests([createMock<BankManifest>({ displayName: 'Qonto Business', location: 'qonto' })]);
+    useBankConnectionsStore().setManifests([createMock<BankManifest>({ connectorIdentifier: 'qonto', displayName: 'Qonto Business' })]);
     setupBank.mockResolvedValue(err<BankSetupError>({ message: 'Qonto rejected the credentials', type: 'rejected' }));
     wrapper = createWrapper(createForm());
     await confirm();
@@ -203,13 +205,14 @@ describe('bankConnectionFormDialog', () => {
   it('should display and answer a TAN challenge without restarting setup', async () => {
     setupBank.mockResolvedValue(ok({
       challenge: 'Enter TAN',
+      identifier: 'c1',
       challengeData: null,
       challengeHtml: null,
       challengeMimeType: null,
       primitive: 'otp input',
       prompt: 'Enter TAN',
     }));
-    answerBankAuthentication.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+    answerBankAuthentication.mockResolvedValue(ok({ historyStartTs: null, identifier: 'c1', success: true }));
     wrapper = createWrapper(createForm());
 
     await confirm();
@@ -218,16 +221,14 @@ describe('bankConnectionFormDialog', () => {
     await confirm();
 
     expect(setupBank).toHaveBeenCalledOnce();
-    expect(answerBankAuthentication).toHaveBeenCalledWith(
-      { location: 'qonto', name: 'Qonto main' },
-      '123456',
-    );
-    expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
+    expect(answerBankAuthentication).toHaveBeenCalledWith({ identifier: 'c1' }, '123456');
+    expect(wrapper.emitted('added')).toEqual([[{ identifier: 'c1', location: 'qonto', name: 'Qonto main' }]]);
   });
 
   it('should switch Save to Continue for a TAN and not answer until one is typed', async () => {
     setupBank.mockResolvedValue(ok({
       challenge: 'Enter TAN',
+      identifier: 'c1',
       challengeData: null,
       challengeHtml: null,
       challengeMimeType: null,

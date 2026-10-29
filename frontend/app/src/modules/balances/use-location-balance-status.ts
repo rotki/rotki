@@ -3,6 +3,7 @@ import type { WorkStatus } from '@/modules/task-center/core/types';
 import { exchangeBalancesActivity, manualBalancesFetchActivity } from '@/modules/balances/balances.activity';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { bankBalancesActivity } from '@/modules/banks/banks.activity';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
@@ -33,7 +34,8 @@ export function useLocationBalanceStatus(identifier: string): UseLocationBalance
     return { isInitialLoading, isRefreshing };
   }
 
-  const { allExchanges, banks } = storeToRefs(useLocationStore());
+  const { allExchanges } = storeToRefs(useLocationStore());
+  const { bankBalanceLocations: banks } = storeToRefs(useBankConnectionsStore());
   const { useWorkStatus } = useTaskOrchestrator();
 
   const bankStatus = useWorkStatus(bankBalancesActivity.kind);

@@ -1990,6 +1990,8 @@
     },
     "form": {
       "bank": "Bank",
+      "bank_hint": "The bank the balances and history of this connection belong to",
+      "connector": "Connector",
       "credential_keep_hint": "Leave empty to keep the stored value",
       "docs": "Bank API documentation",
       "name": "Connection name",
@@ -1999,6 +2001,7 @@
       }
     },
     "header": {
+      "connector": "Connector",
       "last_sync": "Last sync"
     },
     "history_limit": {

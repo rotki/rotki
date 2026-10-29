@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed } from 'vue';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useLocationBalanceStatus } from '@/modules/balances/use-location-balance-status';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
@@ -42,9 +43,16 @@ describe('useLocationBalanceStatus', () => {
     set(allLocations, {
       kraken: { isExchange: true, label: 'Kraken' },
       binance: { isExchange: true, label: 'Binance' },
-      fints: { isBank: true, label: 'FinTS' },
       cash: { label: 'Cash' },
     });
+    useBankConnectionsStore().setConnections([{
+      connector: 'fints',
+      displayName: 'FinTS',
+      identifier: 'c1',
+      location: 'custom:ing',
+      name: 'main',
+      syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false },
+    }]);
   });
 
   it('should answer a chain from its own balance status', () => {
@@ -79,9 +87,9 @@ describe('useLocationBalanceStatus', () => {
   });
 
   it('should answer a bank from the bank refresh, not the exchange one', () => {
-    const { isInitialLoading } = useLocationBalanceStatus('fints');
+    const { isInitialLoading } = useLocationBalanceStatus('custom:ing');
 
-    start(ActivityKind.EXCHANGE_BALANCES, 'fints');
+    start(ActivityKind.EXCHANGE_BALANCES, 'custom:ing');
     expect(get(isInitialLoading)).toBe(false);
 
     start(ActivityKind.BANK_BALANCES);

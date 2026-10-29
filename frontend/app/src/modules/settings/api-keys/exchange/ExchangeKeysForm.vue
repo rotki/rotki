@@ -484,8 +484,7 @@ defineExpose({
         {{ t('exchange_keys_form.binance_markets_required') }}
       </RuiAlert>
       <BinancePairsSelector
-        :name="modelValue.name"
-        :edit="editMode"
+        :identifier="editMode ? modelValue.identifier : undefined"
         :location="modelValue.location"
         :error-messages="form.errors('binanceMarkets')"
         @update:selection="onBinanceMarkets($event)"

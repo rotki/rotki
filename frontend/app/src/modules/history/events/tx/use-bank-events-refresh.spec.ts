@@ -31,15 +31,15 @@ vi.mock('@/modules/banks/use-banks-api', () => ({
 }));
 
 function listed(identity: BankConnectionIdentity, authChallenge: BankConnection['syncStatus']['authChallenge']): BankConnection {
-  return { ...identity, displayName: 'FinTS', syncStatus: { authChallenge, authExpired: false, lastError: null, lastSyncTs: null, running: false } };
+  return { ...identity, connector: 'qonto', displayName: 'FinTS', syncStatus: { authChallenge, authExpired: false, lastError: null, lastSyncTs: null, running: false } };
 }
 
 const tanChallenge = { challenge: 'Enter the TAN', challengeData: null, challengeHtml: null, challengeMimeType: null, primitive: 'otp input' as const, prompt: 'Enter the TAN' };
 
 describe('useBankEventsRefresh', () => {
   const banks: BankConnectionIdentity[] = [
-    { location: 'qonto', name: 'Qonto main' },
-    { location: 'qonto', name: 'Qonto side' },
+    { identifier: 'c1', location: 'qonto', name: 'Qonto main' },
+    { identifier: 'c2', location: 'qonto', name: 'Qonto side' },
   ];
 
   beforeEach(() => {

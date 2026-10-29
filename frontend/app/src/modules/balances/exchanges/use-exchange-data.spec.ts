@@ -1,5 +1,7 @@
+import type { BankConnection } from '@/modules/banks/types';
 import { bigNumberify } from '@rotki/common';
 import { createTestBalance } from '@test/utils/create-data';
+import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { createMockExchangeBalances } from '@test/utils/test-data';
@@ -7,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 
 describe('useExchangeData', () => {
   const mockBalances = createMockExchangeBalances();
@@ -37,7 +39,7 @@ describe('useExchangeData', () => {
   });
 
   it('should leave bank locations out of the exchange list', () => {
-    useLocationStore().$patch({ allLocations: { qonto: { image: 'qonto.svg', isBank: true } } });
+    useBankConnectionsStore().setConnections([createMock<BankConnection>({ identifier: 'c1', location: 'qonto' })]);
     set(storeToRefs(store).exchangeBalances, {
       ...mockBalances,
       qonto: { EUR: createTestBalance(500, 500) },

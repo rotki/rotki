@@ -581,16 +581,9 @@ describe('composables/api/history/events/index', () => {
       );
 
       const { queryExchangeEvents } = useHistoryEventsApi();
-      const result = await queryExchangeEvents({
-        location: 'binance',
-        name: 'my-account',
-      });
+      const result = await queryExchangeEvents({ identifier: 'c1' });
 
-      expect(capturedBody).toMatchObject({
-        location: 'binance',
-        name: 'my-account',
-        async_query: true,
-      });
+      expect(capturedBody).toEqual({ async_query: true, identifier: 'c1' });
       expect(result.taskId).toBe(888);
     });
   });

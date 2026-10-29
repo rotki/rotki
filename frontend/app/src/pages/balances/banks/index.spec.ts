@@ -32,7 +32,9 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
 }));
 
 const connection: BankConnection = {
+  connector: 'qonto',
   displayName: 'Qonto',
+  identifier: 'c1',
   location: 'qonto',
   name: 'Qonto main',
   syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: 1757595000, running: false },
