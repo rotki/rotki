@@ -34,7 +34,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -44,7 +44,7 @@ from rotkehlchen.serialization.deserialize import (
     ensure_type,
 )
 from rotkehlchen.types import BTCAddress, SupportedBlockchain, Timestamp
-from rotkehlchen.utils.misc import get_chunks, satoshis_to_btc
+from rotkehlchen.utils.misc import get_chunks, satoshis_to_btc, ts_now
 from rotkehlchen.utils.network import request_get, request_get_dict
 
 if TYPE_CHECKING:
@@ -261,21 +261,45 @@ class BitcoinManager(BitcoinCommonManager):
         """Query blockcypher for transactions.
         Txs from the api are ordered newest to oldest, with pagination via block_height.
         Returns a tuple containing the queried block height per address and the list of txs.
-        Every address of the whole query shares one conservative checkpoint, the lowest
-        batch maximum reached. Keeping one checkpoint per batch would permanently
-        fragment the address grouping of the next query: batches that reached different
-        heights would be queried separately, one request each, and the groups would
-        never coalesce again. A lower checkpoint only re-fetches already-seen blocks,
-        so sharing the minimum stays correct.
+        The chain height observed before querying any address is shared by all addresses,
+        keeping subsequent queries batched without letting inactive addresses stall progress.
+        Transactions beyond to_timestamp or failing to process cap the checkpoint below
+        their blocks so a later query can still retrieve them.
         """
+        if len(accounts) == 0:
+            return {}, []
+
+        watermark = deserialize_int(
+            value=request_get_dict(
+                url=BLOCKCYPHER_BASE_URL,
+                handle_429=True,
+                backoff_in_seconds=1,
+            )['height'],
+            location='blockcypher chain height',
+        )
+        to_timestamp = options.get('to_timestamp', ts_now())
+
+        def process_transaction(data: dict[str, Any]) -> BitcoinTx:
+            nonlocal watermark
+            try:
+                tx = self._process_raw_tx_from_blockcypher(data)
+            except (
+                DeserializationError, KeyError, ValueError, RemoteError, UnableToDecryptRemoteData,
+            ):
+                watermark = min(
+                    watermark,
+                    block_height - 1 if isinstance(block_height := data.get('block_height'), int)
+                    else options.get('last_queried_block', 0),
+                )
+                raise
+            if tx.timestamp > to_timestamp:
+                watermark = min(watermark, tx.block_height - 1)
+            return tx
+
         accounts_tx_lists: dict[BTCAddress, list[dict[str, Any]]] = defaultdict(list)
         limits = f'limit={BLOCKCYPHER_TX_LIMIT}&txlimit={BLOCKCYPHER_TX_IO_LIMIT}'
-        request_chunks: list[list[BTCAddress]] = []
         for accounts_chunk in get_chunks(list(accounts), BLOCKCYPHER_BATCH_SIZE):
-            # Remember the batch before pagination below shrinks the chunk, and make sure
-            # every queried address has a tx list even if the api omits it from a response.
-            request_chunks.append(chunk_addresses := list(accounts_chunk))
-            for address in chunk_addresses:
+            for address in accounts_chunk:
                 accounts_tx_lists.setdefault(address, [])
             before_height = None
             while len(accounts_chunk) > 0:
@@ -302,27 +326,12 @@ class BitcoinManager(BitcoinCommonManager):
                     if not entry.get('hasMore', False):
                         accounts_chunk.remove(address)
 
-        new_block_heights, txs = self._process_raw_tx_lists(
+        _, txs = self._process_raw_tx_lists(
             raw_tx_lists=list(accounts_tx_lists.values()),
             options=options,
-            processing_fn=self._process_raw_tx_from_blockcypher,
+            processing_fn=process_transaction,
         )
-        # accounts_tx_lists is keyed by address in insertion order, so its keys line up
-        # with the raw tx lists handed to the processing above.
-        address_heights = dict(zip(accounts_tx_lists, new_block_heights, strict=True))
-        if len(request_chunks) == 0:
-            return {}, txs
-        # One shared conservative watermark for every queried address: the lowest batch
-        # maximum. See the docstring for why the batches must not keep their own.
-        watermark = min(
-            max(address_heights[chunk_address] for chunk_address in chunk)
-            for chunk in request_chunks
-        )
-        return {
-            address: watermark
-            for chunk in request_chunks
-            for address in chunk
-        }, txs
+        return dict.fromkeys(accounts, max(watermark, options.get('last_queried_block', 0))), txs
 
     def deserialize_tx_from_blockcypher(self, data: dict[str, Any]) -> BitcoinTx:
         """Deserialize a transaction from a blockcypher.
