@@ -9,6 +9,15 @@ import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 
 type AnyPropsWrapper = VueWrapper<StubInstance>;
 
+const { navigateToDetails, setConfirm } = vi.hoisted(() => ({
+  navigateToDetails: vi.fn<() => Promise<void>>(),
+  setConfirm: vi.fn<(value: boolean) => void>(),
+}));
+
+vi.mock('@/modules/assets/use-asset-page-navigation', () => ({
+  useAssetPageNavigation: (): { navigateToDetails: () => Promise<void> } => ({ navigateToDetails }),
+}));
+
 const ASSET: NftAsset = {
   identifier: 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
   isCustomAsset: false,
@@ -33,6 +42,7 @@ const AssetDetailsMenuContent = {
   name: 'AssetDetailsMenuContent',
   props: ['asset', 'iconOnly', 'hideActions', 'isCollectionParent'],
   template: '<div data-testid="menu-content" />',
+  methods: { setConfirm },
 };
 
 /** Pass-through stand-in for the real menu, which needs a popper. */
@@ -174,6 +184,45 @@ describe('assetDetailsBase', () => {
 
       expect(wrapper.find('[data-testid="rui-menu"]').exists()).toBe(false);
       expect(wrapper.find('button[aria-label="common.actions.more"]').element).toBe(button.element);
+    });
+
+    it('should close a built menu on a second click of its button', async () => {
+      const wrapper = await hovered(createWrapper());
+      const button = (): ReturnType<VueWrapper['find']> => wrapper.find('button[aria-label="common.actions.more"]');
+
+      await button().trigger('click');
+      expect(wrapper.findComponent({ name: 'RuiMenu' }).props('modelValue')).toBe(true);
+
+      await button().trigger('click');
+      expect(wrapper.findComponent({ name: 'RuiMenu' }).props('modelValue')).toBe(false);
+    });
+
+    it('should drop a pending delete confirmation when the menu closes', async () => {
+      const wrapper = await hovered(createWrapper());
+      const button = (): ReturnType<VueWrapper['find']> => wrapper.find('button[aria-label="common.actions.more"]');
+
+      await button().trigger('click');
+      expect(setConfirm).not.toHaveBeenCalled();
+
+      await button().trigger('click');
+      expect(setConfirm).toHaveBeenCalledWith(false);
+    });
+
+    it('should open the asset page from a click on the row', async () => {
+      navigateToDetails.mockResolvedValue(undefined);
+      const wrapper = createWrapper();
+
+      await listItem(wrapper).trigger('click');
+
+      expect(navigateToDetails).toHaveBeenCalledOnce();
+    });
+
+    it('should not open the asset page from the row when the menu is hidden', async () => {
+      const wrapper = createWrapper({ actions: { hideMenu: true } });
+
+      await listItem(wrapper).trigger('click');
+
+      expect(navigateToDetails).not.toHaveBeenCalled();
     });
 
     it('should build and open the menu from a tap on the unbuilt button', async () => {

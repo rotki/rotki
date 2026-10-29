@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/modules/assets/nfts';
 import type { AssetActions, AssetDisplay, AssetResolution } from '@/modules/assets/types';
+import { startPromise } from '@shared/utils';
 import { omit } from 'es-toolkit';
 import { useTemplateRef } from 'vue';
 import AssetDetailsMenuContent from '@/modules/assets/AssetDetailsMenuContent.vue';
@@ -141,11 +142,7 @@ async function openMenuHandler(event: MouseEvent): Promise<void> {
 function useContextMenu(attrs: Record<string, unknown>) {
   return {
     ...omit(attrs, ['onClick']),
-    onClick: () => {
-      if (!get(hideMenu)) {
-        navigateToDetails();
-      }
-    },
+    onClick: (): void => startPromise(navigateToDetails()),
     oncontextmenu: openMenuHandler,
   };
 }
