@@ -9,6 +9,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.constants import ZERO
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.locations.chains import (
     EVM_EVMLIKE_LOCATIONS,
     location_to_chain,
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.fval import FVal
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -309,9 +311,15 @@ class CSVExporter(CustomizableDateMixin):
 
         return success, filename
 
-    def to_csv_entry(self, event: ProcessedAccountingEvent) -> dict[str, Any]:
+    def to_csv_entry(
+            self,
+            event: ProcessedAccountingEvent,
+            location_paths: dict[LocationIdentifier, str],
+    ) -> dict[str, Any]:
         """Prepare the provided event to have a common format for the accounting
         CSV exported file.
+
+        The location path goes last so that it does not move the columns the formulas use.
         """
         evm_explorer = None
         if event.location in EVM_EVMLIKE_LOCATIONS:
@@ -326,12 +334,11 @@ class CSVExporter(CustomizableDateMixin):
         )
         # For CSV also convert timestamp to date
         dict_event['timestamp'] = self.timestamp_to_date(event.timestamp)
-        if self.settings.pnl_csv_with_formulas is False:
-            return dict_event
+        if self.settings.pnl_csv_with_formulas is True:
+            self._add_pnl_type(event=event, dict_event=dict_event, amount_column='F', name='free')
+            self._add_pnl_type(event=event, dict_event=dict_event, amount_column='G', name='taxable')  # noqa: E501
 
-        # else add formulas
-        self._add_pnl_type(event=event, dict_event=dict_event, amount_column='F', name='free')
-        self._add_pnl_type(event=event, dict_event=dict_event, amount_column='G', name='taxable')
+        dict_event['location_path'] = location_paths.get(event.location, event.location)
         return dict_event
 
     def export(
@@ -340,7 +347,9 @@ class CSVExporter(CustomizableDateMixin):
             pnls: PnlTotals,
             directory: Path,
     ) -> tuple[bool, str]:
-        serialized_events = [self.to_csv_entry(x) for idx, x in enumerate(events)]
+        with self.database.conn.read_ctx() as cursor:
+            location_paths = DBLocations().display_paths(cursor)
+        serialized_events = [self.to_csv_entry(x, location_paths) for x in events]
         self._maybe_add_summary(events=serialized_events, pnls=pnls)
         try:
             directory.mkdir(parents=True, exist_ok=True)

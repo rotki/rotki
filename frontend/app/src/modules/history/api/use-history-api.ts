@@ -1,6 +1,13 @@
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
-import { type AllLocationResponse, AllLocationResponseSchema, type LocationLabel, LocationLabelsSchema } from '@/modules/core/common/location';
+import {
+  type AllLocationResponse,
+  AllLocationResponseSchema,
+  type AssociatedLocations,
+  AssociatedLocationsSchema,
+  type LocationLabel,
+  LocationLabelsSchema,
+} from '@/modules/core/common/location';
 import { ReportProgress } from '@/modules/reports/report-types';
 
 interface UseHistoryApiReturn {
@@ -18,7 +25,10 @@ export function useHistoryApi(): UseHistoryApiReturn {
     return ReportProgress.parse(response);
   };
 
-  const fetchAssociatedLocations = async (): Promise<string[]> => api.get<string[]>('/locations/associated');
+  const fetchAssociatedLocations = async (): Promise<string[]> => {
+    const response = await api.get<AssociatedLocations>('/locations/associated');
+    return AssociatedLocationsSchema.parse(response).locations;
+  };
 
   const fetchAllLocations = async (): Promise<AllLocationResponse> => {
     const response = await api.get<AllLocationResponse>('/locations/all');
