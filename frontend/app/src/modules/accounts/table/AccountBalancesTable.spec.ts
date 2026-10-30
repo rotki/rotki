@@ -35,11 +35,11 @@ vi.mock('@/modules/core/table/use-table-empty-state', async () => {
 });
 
 const stubs = {
-  AccountActions: true,
+  AccountActions: { emits: ['refresh'], name: 'AccountActions', props: ['refreshable'], template: '<div />' },
   AccountBalanceValue: true,
   AccountChains: true,
   AccountTableGroupHeader: true,
-  AccountTopTokens: true,
+  AccountTopTokens: { emits: ['open-details'], name: 'AccountTopTokens', props: ['opensDetails'], template: '<div />' },
   FiatDisplay: true,
   LabeledAddressDisplay: true,
   RowAppend: true,
@@ -49,6 +49,8 @@ const stubs = {
       <span v-for="col in cols" :key="col.key" :data-testid="'col-' + col.key" />
       <div v-for="row in rows" :key="row.id" :data-testid="'row-' + row.address">
         <slot name="item.expand" :row="row" />
+        <slot name="item.assets" :row="row" />
+        <slot name="item.actions" :row="row" />
       </div>
     </div>`,
   },
@@ -67,7 +69,7 @@ function address(id: string, expansion?: 'accounts' | 'assets'): BlockchainAccou
   };
 }
 
-function createWrapper(rows: BlockchainAccountGroupWithBalance[]): VueWrapper {
+function createWrapper(rows: BlockchainAccountGroupWithBalance[], rowRefresh = false): VueWrapper {
   const accounts: Collection<BlockchainAccountGroupWithBalance> = { data: rows, found: rows.length, limit: -1, total: rows.length };
   return mount(AccountBalancesTable, {
     global: { plugins: [createCustomPinia()], stubs },
@@ -77,6 +79,7 @@ function createWrapper(rows: BlockchainAccountGroupWithBalance[]): VueWrapper {
       detailsInDrawer: true,
       group: 'evm',
       pagination: { limit: 10, page: 1, total: rows.length },
+      rowRefresh,
       sort: [],
     },
   });
@@ -97,6 +100,33 @@ describe('modules/accounts/table/AccountBalancesTable', () => {
     await wrapper.find('[data-testid=row-bc1-tokens] [data-testid=account-open-details]').trigger('click');
 
     expect(wrapper.emitted('open-details')).toStrictEqual([[expect.objectContaining({ address: 'bc1-tokens' })]]);
+  });
+
+  it('should let the assets count open the details only on a row that has them', async () => {
+    const wrapper = createWrapper([address('bc1-tokens', 'assets'), address('bc1-plain')]);
+    const withDetails = wrapper.find('[data-testid=row-bc1-tokens]').findComponent({ name: 'AccountTopTokens' });
+    const without = wrapper.find('[data-testid=row-bc1-plain]').findComponent({ name: 'AccountTopTokens' });
+
+    expect(withDetails.props('opensDetails')).toBe(true);
+    expect(without.props('opensDetails')).toBe(false);
+
+    withDetails.vm.$emit('open-details');
+    await nextTick();
+
+    expect(wrapper.emitted('open-details')).toStrictEqual([[expect.objectContaining({ address: 'bc1-tokens' })]]);
+  });
+
+  it('should offer each row a refresh only when asked, and pass on the chains it names', async () => {
+    expect(createWrapper([address('bc1-plain')]).findComponent({ name: 'AccountActions' }).props('refreshable')).toBe(false);
+
+    const wrapper = createWrapper([address('bc1-plain')], true);
+    const actions = wrapper.findComponent({ name: 'AccountActions' });
+    expect(actions.props('refreshable')).toBe(true);
+
+    actions.vm.$emit('refresh', ['btc']);
+    await nextTick();
+
+    expect(wrapper.emitted('refresh-chains')).toStrictEqual([[['btc']]]);
   });
 
   it('should keep a lead column while any row has details, so the rows stay aligned', () => {
