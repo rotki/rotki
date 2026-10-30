@@ -221,7 +221,7 @@ class DBHistoryEvents:
         The event label identifies an account, not a transfer direction. Join against
         accounts on the event's chain before deduplicating pairs and transactions.
         """
-        interactions = []
+        interactions: list[dict[str, str]] = []
         with self.db.conn.read_ctx() as cursor:
             for chain in CHAINS_WITH_TRANSACTIONS:
                 location = Location.from_chain(chain)

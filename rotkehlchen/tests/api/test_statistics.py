@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import pytest
 import requests
+from eth_typing import HexAddress, HexStr
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import BalanceType
@@ -20,7 +21,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
@@ -52,6 +53,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTransaction,
     Location,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -792,28 +794,25 @@ def test_address_interactions(rotkehlchen_api_server: APIServer) -> None:
     next_hash = deserialize_evm_tx_hash(b'\x02' * 32)
     signature = SolanaEvent._deserialize_tx_ref(b'\x01' * 64)
     btc_hash = BitcoinEvent._deserialize_tx_ref(b'\x03' * 32)
-    common = {
-        'timestamp': TimestampMS(1700000000000),
-        'event_type': HistoryEventType.RECEIVE,
-        'event_subtype': HistoryEventSubType.NONE,
-        'amount': ONE,
-    }
-    history = [
+    history: list[HistoryBaseEntry] = [
         EvmEvent(
-            **common,
+            timestamp=TimestampMS(1700000000000),
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            amount=ONE,
             tx_ref=tx,
             sequence_index=index,
             location=location,
             asset=A_ETH,
             location_label=source,
-            address=target,
+            address=ChecksumEvmAddress(HexAddress(HexStr(target))),
         )
         for index, (source, target, location, tx) in enumerate([
-            (first.lower(), second.lower(), Location.ETHEREUM, tx_hash),
+            (str(first).lower(), str(second).lower(), Location.ETHEREUM, tx_hash),
             (second, first, Location.ETHEREUM, tx_hash),  # reciprocal
             (first, second, Location.ETHEREUM, tx_hash),  # repeated
             (first, second, Location.ETHEREUM, next_hash),  # another transaction
-            (first, first.lower(), Location.ETHEREUM, tx_hash),  # self
+            (first, str(first).lower(), Location.ETHEREUM, tx_hash),  # self
             (first, other_chain, Location.ETHEREUM, tx_hash),  # tracked elsewhere
             (other_chain, first, Location.ETHEREUM, tx_hash),
             (first, untracked, Location.ETHEREUM, tx_hash),
@@ -822,12 +821,15 @@ def test_address_interactions(rotkehlchen_api_server: APIServer) -> None:
         ])
     ]
     history.extend(SolanaEvent(
-        **common,
+        timestamp=TimestampMS(1700000000000),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        amount=ONE,
         tx_ref=signature,
         sequence_index=index,
         asset=A_SOL,
         location_label=source,
-        address=target,
+        address=SolanaAddress(target),
     ) for index, (source, target) in enumerate([
         (sol_first, sol_second),
         (sol_second, sol_first),
@@ -836,7 +838,10 @@ def test_address_interactions(rotkehlchen_api_server: APIServer) -> None:
         (sol_first, sol_first),
     ]))
     history.append(BitcoinEvent(
-        **common,
+        timestamp=TimestampMS(1700000000000),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        amount=ONE,
         tx_ref=btc_hash,
         sequence_index=0,
         asset=A_BTC,
