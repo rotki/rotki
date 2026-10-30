@@ -6463,6 +6463,8 @@
         "address_label": "Tracked address",
         "node_operator_hint": "Use the numeric ID assigned by Lido.",
         "node_operator_label": "Node operator ID",
+        "staking_module_hint": "Lido numbers node operators separately in each module.",
+        "staking_module_label": "Staking module",
         "submit": "Add node operator",
         "title": "Add a node operator",
         "validation": {
@@ -6473,10 +6475,14 @@
       },
       "messages": {
         "add_failed": "Failed to add the node operator: {message}",
-        "confirm_delete_message": "Are you sure you want to remove node operator #{nodeOperatorId} for {address}?",
+        "confirm_delete_message": "Are you sure you want to remove {module} node operator #{nodeOperatorId} for {address}?",
         "confirm_delete_title": "Delete node operator",
         "delete_failed": "Failed to remove the node operator: {message}",
         "fetch_failed": "Failed to query the Lido CSM node operators: {message}"
+      },
+      "modules": {
+        "csm": "CSM",
+        "csm_0x02": "CSM 0x02"
       },
       "table": {
         "address": "Address",

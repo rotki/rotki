@@ -5076,6 +5076,19 @@ def test_upgrade_db_53_to_54(
             'INSERT INTO data_issues(kind, location, asset, ts_start, ts_end, severity, state, payload_json, created_at) '  # noqa: E501
             "VALUES ('negative_balance', 'f', 'ETH', 1, 1, 'warning', 'open', '{}', 1)",
         )
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            ('ETH', (csm_operator_address := '0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4')),
+        )
+        write_cursor.execute(
+            'INSERT INTO lido_csm_node_operators(node_operator_id, address) VALUES (?, ?)',
+            (1, csm_operator_address),
+        )
+        write_cursor.execute(
+            'INSERT INTO lido_csm_node_operator_metrics(node_operator_id, operator_type_id, '
+            'bond_current, bond_required, bond_claimable, total_deposited_validators, '
+            "rewards_pending, updated_ts) VALUES (1, 2, '23.1', '23.0', '0.1', 22, '0.17', 1)",
+        )
 
     db_v53.logout()
     db = _init_db_with_target_version(
@@ -5141,6 +5154,18 @@ def test_upgrade_db_53_to_54(
             f'SELECT COUNT(*) FROM history_events WHERE identifier IN ({",".join("?" * len(bitcoin_event_ids))})',  # noqa: E501
             bitcoin_event_ids,
         ).fetchone()[0] == len(bitcoin_event_ids)
+        # CSM operators tracked so far belong to the original CSM, StakingRouter module 3
+        assert cursor.execute(
+            'SELECT staking_module_id, node_operator_id, address FROM lido_csm_node_operators',
+        ).fetchall() == [(3, 1, csm_operator_address)]
+        assert cursor.execute(
+            'SELECT * FROM lido_csm_node_operator_metrics',
+        ).fetchall() == [(3, 1, 2, '23.1', '23.0', '0.1', 22, '0.17', 1)]
+        cursor.execute(  # operator ids are now only unique within a staking module
+            'INSERT INTO lido_csm_node_operators(staking_module_id, node_operator_id, address) '
+            'VALUES (5, 1, ?)',
+            (csm_operator_address,),
+        )
         assert db.get_setting(cursor, 'version') == 54
 
     db.logout()

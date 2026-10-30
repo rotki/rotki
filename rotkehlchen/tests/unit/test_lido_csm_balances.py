@@ -100,5 +100,5 @@ def test_lido_csm_balances_real_data(
     result = balances.query_balances(addresses=[node_operator_address])
 
     operator_balance = result[node_operator_address].assets[A_STETH][CPT_LIDO_CSM]
-    assert operator_balance.amount.is_close(FVal('26.318054536101981594'))
-    assert operator_balance.value.is_close(FVal('39.477081804152972391'))
+    assert operator_balance.amount.is_close(FVal('29.154399977908747719'))
+    assert operator_balance.value.is_close(FVal('43.7315999668631215785'))

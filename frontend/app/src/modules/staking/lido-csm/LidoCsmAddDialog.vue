@@ -8,6 +8,8 @@ import { requiredField } from '@/modules/core/form/fields';
 import { useForm } from '@/modules/core/form/use-form';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import { useLidoCsmApi } from '@/modules/staking/api/use-lido-csm-api';
+import { LidoCsmStakingModule } from '@/modules/staking/lido-csm/constants';
+import { useLidoCsmStakingModules } from '@/modules/staking/lido-csm/use-lido-csm-staking-modules';
 
 defineOptions({
   name: 'LidoCsmAddDialog',
@@ -22,17 +24,20 @@ const emit = defineEmits<{
 interface NodeOperatorState {
   nodeOperatorId: string;
   selectedAccount: AddressAccount[];
+  stakingModuleId: LidoCsmStakingModule;
 }
 
 interface NodeOperatorPayload {
   address: string;
   nodeOperatorId: number;
+  stakingModuleId: LidoCsmStakingModule;
 }
 
 const { t } = useI18n({ useScope: 'global' });
 
 const api = useLidoCsmApi();
 const { setMessage } = useMessageStore();
+const { stakingModuleOptions } = useLidoCsmStakingModules();
 
 /**
  * Vuelidate validated the derived address string rather than the selection, so the rule is written
@@ -49,10 +54,11 @@ const schema = computed<ZodType>(() => z.object({
     if (!account || account.address.trim() === '')
       ctx.addIssue({ code: 'custom', message: t('staking_page.lido_csm.form.validation.non_empty_address') });
   }),
+  stakingModuleId: z.number().int(),
 }));
 
 const form = useForm<NodeOperatorState, NodeOperatorPayload>({
-  initial: (): NodeOperatorState => ({ nodeOperatorId: '', selectedAccount: [] }),
+  initial: (): NodeOperatorState => ({ nodeOperatorId: '', selectedAccount: [], stakingModuleId: LidoCsmStakingModule.CSM }),
   schema,
   submit: async (payload: NodeOperatorPayload): Promise<{ success: boolean }> => {
     try {
@@ -80,6 +86,7 @@ const form = useForm<NodeOperatorState, NodeOperatorPayload>({
     return {
       address: account?.address ?? '',
       nodeOperatorId: Number(state.nodeOperatorId),
+      stakingModuleId: state.stakingModuleId,
     };
   },
 });
@@ -130,6 +137,15 @@ async function submitForm(): Promise<void> {
           showDetails: true,
         }"
         @update:model-value="form.touch('selectedAccount')"
+      />
+      <RuiMenuSelect
+        v-model="form.state.stakingModuleId"
+        :options="stakingModuleOptions"
+        :label="t('staking_page.lido_csm.form.staking_module_label')"
+        :hint="t('staking_page.lido_csm.form.staking_module_hint')"
+        key-attr="key"
+        text-attr="label"
+        data-testid="lido-csm-staking-module"
       />
       <RuiTextField
         v-model="form.state.nodeOperatorId"

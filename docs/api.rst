@@ -12490,8 +12490,9 @@ Get location labels
               {
                   "address": "0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4",
                   "node_operator_id": 7,
+                  "staking_module_id": 3,
                   "metrics": {
-                      "operatorType": {"id": 1, "label": "Permissionless"},
+                      "operatorType": {"id": 0, "label": "Permissionless"},
                       "bond": {"current": "1.5", "required": "2.0", "claimable": "0.2"},
                       "keys": {"totalDeposited": 64},
                       "rewards": {"pending": "0.15"}
@@ -12504,6 +12505,7 @@ Get location labels
    :resjson list result: Tracked node operator entries.
    :resjson string result[].address: Checksummed Ethereum address.
    :resjson int result[].node_operator_id: Node operator identifier.
+   :resjson int result[].staking_module_id: Lido StakingRouter id of the module the operator belongs to. ``3`` is the original CSM and ``5`` is CSM 0x02.
    :resjson object result[].metrics: Cached metrics for the node operator (may be ``null``).
    :statuscode 200: Query succeeded.
 
@@ -12526,7 +12528,8 @@ Get location labels
       }
 
    :reqjson string address: Checksummed Ethereum address that owns the node operator. It must be registered as an Ethereum EVM account.
-   :reqjson int node_operator_id: Non-negative node operator identifier.
+   :reqjson int node_operator_id: Non-negative node operator identifier. Identifiers are numbered per staking module.
+   :reqjson int staking_module_id: Optional Lido StakingRouter id of the operator's module. ``3`` for the original CSM (default) or ``5`` for CSM 0x02.
    :statuscode 200: Node operator stored and metrics computed when possible.
    :statuscode 400: Malformed payload.
    :statuscode 409: Address is not registered as an Ethereum EVM account or node operator already tracked.
@@ -12552,6 +12555,7 @@ Get location labels
 
    :reqjson string address: Address that owns the node operator.
    :reqjson int node_operator_id: Identifier to remove.
+   :reqjson int staking_module_id: Optional Lido StakingRouter id of the operator's module. ``3`` (default) or ``5``.
    :statuscode 200: Node operator removed.
    :statuscode 400: Malformed payload.
    :statuscode 409: Node operator not found.
@@ -12580,8 +12584,9 @@ Get location labels
               {
                   "address": "0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4",
                   "node_operator_id": 7,
+                  "staking_module_id": 3,
                   "metrics": {
-                      "operatorType": {"id": 1, "label": "Permissionless"},
+                      "operatorType": {"id": 0, "label": "Permissionless"},
                       "bond": {"current": "1.6", "required": "2.0", "claimable": "0.2"},
                       "keys": {"totalDeposited": 64},
                       "rewards": {"pending": "0.05"}

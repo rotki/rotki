@@ -6,12 +6,10 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
-    ACCOUNTING_ABI,
     CPT_LIDO_CSM,
-    LIDO_CSM_ACCOUNTING_CONTRACT,
-    LIDO_CSM_ACCOUNTING_CONTRACT_DEPLOYED_BLOCK,
     LIDO_STETH_DEPLOYED_BLOCK,
     STETH_ABI,
+    LidoCsmStakingModule,
 )
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -48,26 +46,30 @@ class LidoCsmBalances(ProtocolWithBalance):
             deposit_event_types=set(),
         )
         self._node_operator_db = DBLidoCsm(self.event_db.db)
-        self._accounting_contract = EvmContract(
-            address=LIDO_CSM_ACCOUNTING_CONTRACT,
-            abi=ACCOUNTING_ABI,
-            deployed_block=LIDO_CSM_ACCOUNTING_CONTRACT_DEPLOYED_BLOCK,
-        )
         self._steth_contract = EvmContract(
             address=A_STETH.resolve_to_evm_token().evm_address,
             abi=STETH_ABI,
             deployed_block=LIDO_STETH_DEPLOYED_BLOCK,
         )
-        # Reuse the metrics fetcher to compute pending rewards in stETH
-        self._metrics_fetcher = LidoCsmMetricsFetcher(evm_inquirer=evm_inquirer)
+        # Reuse the metrics fetchers to compute pending rewards in stETH
+        self._metrics_fetchers = {
+            staking_module: LidoCsmMetricsFetcher(
+                evm_inquirer=evm_inquirer,
+                staking_module=staking_module,
+            ) for staking_module in LidoCsmStakingModule
+        }
 
-    def _get_bond_shares(self, node_operator_id: int) -> int:
+    def _get_bond_shares(
+            self,
+            node_operator_id: int,
+            staking_module: LidoCsmStakingModule,
+    ) -> int:
         """Fetch the raw bond shares for a node operator.
 
         May raise:
             RemoteError: if the contract call fails.
         """
-        return self._accounting_contract.call(
+        return self._metrics_fetchers[staking_module].accounting_contract.call(
             node_inquirer=self.evm_inquirer,
             method_name='getBondShares',
             arguments=[node_operator_id],
@@ -108,7 +110,10 @@ class LidoCsmBalances(ProtocolWithBalance):
             # Fetch bond shares and convert to stETH
             bond_steth = ZERO
             try:
-                if (shares := self._get_bond_shares(entry.node_operator_id)) != 0:
+                if (shares := self._get_bond_shares(
+                    node_operator_id=entry.node_operator_id,
+                    staking_module=entry.staking_module,
+                )) != 0:
                     bond_steth = self._convert_shares_to_steth(shares=shares)
             except RemoteError as e:
                 log.error(
@@ -120,7 +125,9 @@ class LidoCsmBalances(ProtocolWithBalance):
             # Fetch pending rewards (stETH) using the metrics fetcher
             rewards_steth = ZERO
             try:
-                stats = self._metrics_fetcher.get_operator_stats(entry.node_operator_id)
+                stats = self._metrics_fetchers[entry.staking_module].get_operator_stats(
+                    entry.node_operator_id,
+                )
                 rewards_steth = stats.rewards_steth
             except RemoteError as e:
                 log.error(

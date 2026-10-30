@@ -44,6 +44,7 @@ from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.dogecoin.validation import is_valid_dogecoin_address
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
+from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmStakingModule
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.ens.utils import is_valid_ens_name
@@ -3143,6 +3144,16 @@ class QueriedAddressesSchema(Schema):
 class LidoCsmNodeOperatorSchema(Schema):
     address = EvmAddressField(required=True)
     node_operator_id = fields.Integer(required=True, validate=validate.Range(min=0))
+    staking_module = fields.Integer(
+        data_key='staking_module_id',
+        load_default=LidoCsmStakingModule.CSM.value,
+        validate=validate.OneOf([staking_module.value for staking_module in LidoCsmStakingModule]),
+    )
+
+    @post_load
+    def transform_data(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
+        data['staking_module'] = LidoCsmStakingModule(data['staking_module'])
+        return data
 
 
 class DataImportSchema(AsyncQueryArgumentSchema):

@@ -7,16 +7,12 @@ from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
     ACCOUNTING_ABI,
     CSM_MODULE_ABI,
     FEE_DISTRIBUTOR_ABI,
-    LIDO_CSM_ACCOUNTING_CONTRACT,
-    LIDO_CSM_ACCOUNTING_CONTRACT_DEPLOYED_BLOCK,
-    LIDO_CSM_FEE_DISTRIBUTOR_CONTRACT,
-    LIDO_CSM_FEE_DISTRIBUTOR_CONTRACT_DEPLOYED_BLOCK,
     LIDO_CSM_IPFS_GATEWAY,
-    LIDO_CSM_MODULE_CONTRACT,
-    LIDO_CSM_MODULE_CONTRACT_DEPLOYED_BLOCK,
+    LIDO_CSM_MODULE_CONTRACTS,
     LIDO_STETH_DEPLOYED_BLOCK,
     STETH_ABI,
     LidoCsmOperatorType,
+    LidoCsmStakingModule,
 )
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ZERO
@@ -69,17 +65,20 @@ class LidoCsmMetricsFetcher:
     def __init__(
             self,
             evm_inquirer: EthereumInquirer,
+            staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM,
     ) -> None:
         # TODO: share conversion logic here mirrors balances.py; extract a shared helper.
+        self.staking_module = staking_module
+        contracts = LIDO_CSM_MODULE_CONTRACTS[staking_module]
         self.accounting_contract = EvmContract(
-            address=LIDO_CSM_ACCOUNTING_CONTRACT,
+            address=contracts.accounting,
             abi=ACCOUNTING_ABI,
-            deployed_block=LIDO_CSM_ACCOUNTING_CONTRACT_DEPLOYED_BLOCK,
+            deployed_block=contracts.deployed_block,
         )
         self.module_contract = EvmContract(
-            address=LIDO_CSM_MODULE_CONTRACT,
+            address=contracts.module,
             abi=CSM_MODULE_ABI,
-            deployed_block=LIDO_CSM_MODULE_CONTRACT_DEPLOYED_BLOCK,
+            deployed_block=contracts.deployed_block,
         )
         self.steth_contract = EvmContract(
             address=A_STETH.resolve_to_evm_token().evm_address,
@@ -87,9 +86,9 @@ class LidoCsmMetricsFetcher:
             deployed_block=LIDO_STETH_DEPLOYED_BLOCK,
         )
         self.fee_distributor_contract = EvmContract(
-            address=LIDO_CSM_FEE_DISTRIBUTOR_CONTRACT,
+            address=contracts.fee_distributor,
             abi=FEE_DISTRIBUTOR_ABI,
-            deployed_block=LIDO_CSM_FEE_DISTRIBUTOR_CONTRACT_DEPLOYED_BLOCK,
+            deployed_block=contracts.deployed_block,
         )
         self.evm_inquirer = evm_inquirer
 
@@ -128,10 +127,10 @@ class LidoCsmMetricsFetcher:
             method_name='getBondCurveId',
             arguments=[node_operator_id],
         )
-        try:
-            operator_type = LidoCsmOperatorType(int(curve_id))
-        except (ValueError, TypeError):
-            operator_type = LidoCsmOperatorType.UNKNOWN
+        operator_type = LidoCsmOperatorType.from_curve_id(
+            staking_module=self.staking_module,
+            curve_id=int(curve_id),
+        )
 
         current_shares_raw, required_shares_raw = self.accounting_contract.call(
             node_inquirer=self.evm_inquirer,
@@ -145,9 +144,9 @@ class LidoCsmMetricsFetcher:
             arguments=[node_operator_id],
         )
 
-        total_deposited_validators = self.module_contract.call(
+        *_, total_deposited_validators, _ = self.module_contract.call(
             node_inquirer=self.evm_inquirer,
-            method_name='getNodeOperatorTotalDepositedKeys',
+            method_name='getNodeOperatorSummary',
             arguments=[node_operator_id],
         )
 
@@ -158,7 +157,8 @@ class LidoCsmMetricsFetcher:
                 method_name='treeCid',
                 arguments=[],
             )
-            doc = self._fetch_ipfs_json(tree_cid)
+            # An empty cid means the module has not distributed any rewards yet
+            doc = self._fetch_ipfs_json(tree_cid) if tree_cid else {}
             # IPFS doc contains 'values', each with 'value': [nodeOperatorId, cumulativeShares]
             values = doc.get('values', []) if isinstance(doc, dict) else []
             cumulative_shares = 0

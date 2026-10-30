@@ -27,7 +27,7 @@ vi.mock('@/modules/core/api/rotki-api', async importOriginal => ({
 }));
 
 function operator(): LidoCsmNodeOperator {
-  return { address: '0xabc', metrics: null, nodeOperatorId: 1 };
+  return { address: '0xabc', metrics: null, nodeOperatorId: 1, stakingModuleId: 3 };
 }
 
 function response(message?: string): { message?: string; result: LidoCsmNodeOperator[] } {
@@ -56,9 +56,9 @@ describe('useLidoCsmApi', () => {
 
   it('should add a node operator with a schema-validated payload', async () => {
     const { addNodeOperator } = useLidoCsmApi();
-    const result = await addNodeOperator({ address: '0xabc', nodeOperatorId: 2 });
+    const result = await addNodeOperator({ address: '0xabc', nodeOperatorId: 2, stakingModuleId: 5 });
 
-    expect(mockPut).toHaveBeenCalledWith('/lido-csm/node-operators', { address: '0xabc', nodeOperatorId: 2 }, {
+    expect(mockPut).toHaveBeenCalledWith('/lido-csm/node-operators', { address: '0xabc', nodeOperatorId: 2, stakingModuleId: 5 }, {
       skipResultUnwrap: true,
       validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
     });
@@ -67,18 +67,18 @@ describe('useLidoCsmApi', () => {
 
   it('should strip unknown fields from the payload before sending', async () => {
     const { addNodeOperator } = useLidoCsmApi();
-    const payload = { address: '0xabc', extra: 'nope', nodeOperatorId: 3 };
+    const payload = { address: '0xabc', extra: 'nope', nodeOperatorId: 3, stakingModuleId: 3 };
     await addNodeOperator(payload);
 
-    expect(mockPut).toHaveBeenCalledWith('/lido-csm/node-operators', { address: '0xabc', nodeOperatorId: 3 }, expect.any(Object));
+    expect(mockPut).toHaveBeenCalledWith('/lido-csm/node-operators', { address: '0xabc', nodeOperatorId: 3, stakingModuleId: 3 }, expect.any(Object));
   });
 
   it('should delete a node operator using the payload as the request body', async () => {
     const { deleteNodeOperator } = useLidoCsmApi();
-    await deleteNodeOperator({ address: '0xabc', nodeOperatorId: 4 });
+    await deleteNodeOperator({ address: '0xabc', nodeOperatorId: 4, stakingModuleId: 3 });
 
     expect(mockDelete).toHaveBeenCalledWith('/lido-csm/node-operators', {
-      body: { address: '0xabc', nodeOperatorId: 4 },
+      body: { address: '0xabc', nodeOperatorId: 4, stakingModuleId: 3 },
       skipResultUnwrap: true,
       validStatuses: VALID_STATUS_CODES,
     });

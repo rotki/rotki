@@ -29,12 +29,21 @@ const WITH_METRICS: LidoCsmNodeOperator = {
     rewards: { pending: bigNumberify('0.25') },
   },
   nodeOperatorId: 12,
+  stakingModuleId: 3,
 };
 
 const WITHOUT_METRICS: LidoCsmNodeOperator = {
   address: '0x2222222222222222222222222222222222222222',
   metrics: null,
   nodeOperatorId: 3,
+  stakingModuleId: 3,
+};
+
+const CSM_0X02_OPERATOR: LidoCsmNodeOperator = {
+  address: '0x3333333333333333333333333333333333333333',
+  metrics: null,
+  nodeOperatorId: 4,
+  stakingModuleId: 5,
 };
 
 describe('lidoCsmTable', () => {
@@ -99,7 +108,7 @@ describe('lidoCsmTable', () => {
 
       expect(amounts(12)).toEqual(['2.5', '2', '0.5', '0.25']);
       expect(row(12).find('[data-testid=cell-totalDeposited]').text()).toBe('7');
-      expect(row(12).find('[data-testid=cell-nodeOperatorId] span').text()).toBe('#12');
+      expect(row(12).find('[data-testid=lido-csm-node-operator-id]').text()).toBe('staking_page.lido_csm.modules.csm #12');
       expect(row(12).find('[data-testid=lido-csm-operator-type]').text()).toBe('Permissionless');
     });
 
@@ -149,8 +158,25 @@ describe('lidoCsmTable', () => {
       expect(spies.deleteNodeOperator).toHaveBeenCalledExactlyOnceWith({
         address: WITHOUT_METRICS.address,
         nodeOperatorId: 3,
+        stakingModuleId: 3,
       });
       expect(wrapper.emitted('refresh')).toHaveLength(1);
+    });
+
+    it('should name the staking module of a CSM 0x02 operator and remove it from that module', async () => {
+      wrapper = createWrapper([CSM_0X02_OPERATOR]);
+
+      expect(row(4).find('[data-testid=lido-csm-node-operator-id]').text()).toBe('staking_page.lido_csm.modules.csm_0x02 #4');
+
+      await removeRow(0);
+      await useConfirmStore().confirm();
+      await flushPromises();
+
+      expect(spies.deleteNodeOperator).toHaveBeenCalledExactlyOnceWith({
+        address: CSM_0X02_OPERATOR.address,
+        nodeOperatorId: 4,
+        stakingModuleId: 5,
+      });
     });
 
     it('should keep the operator when the removal is dismissed', async () => {
