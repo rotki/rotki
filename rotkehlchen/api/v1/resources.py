@@ -299,6 +299,7 @@ if TYPE_CHECKING:
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
     from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
+    from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmStakingModule
     from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.solana.rpc import Signature
@@ -2256,18 +2257,30 @@ class LidoCsmNodeOperatorResource(BaseMethodView):
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(get_schema, location='json')
-    def put(self, address: ChecksumEvmAddress, node_operator_id: int) -> Response:
+    def put(
+            self,
+            address: ChecksumEvmAddress,
+            node_operator_id: int,
+            staking_module: LidoCsmStakingModule,
+    ) -> Response:
         return self.rest_api.add_lido_csm_node_operator(
             address=address,
             node_operator_id=node_operator_id,
+            staking_module=staking_module,
         )
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(get_schema, location='json')
-    def delete(self, address: ChecksumEvmAddress, node_operator_id: int) -> Response:
+    def delete(
+            self,
+            address: ChecksumEvmAddress,
+            node_operator_id: int,
+            staking_module: LidoCsmStakingModule,
+    ) -> Response:
         return self.rest_api.remove_lido_csm_node_operator(
             address=address,
             node_operator_id=node_operator_id,
+            staking_module=staking_module,
         )
 
 

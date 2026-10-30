@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Lido CSM 0x02 node operators can now be tracked. Pick the staking module when adding a node operator, and its bond, required bond, claimable bond, validators and pending rewards are shown next to those of the original CSM.
 * :bug:`-` Lido CSM node operator metrics refresh again after the CSM v3 upgrade, and pending rewards are no longer shown as zero. Operators on the new Identified DVT Cluster curve are labelled as such, and permissionless and early adopter operators are no longer labelled as each other.
 * :feature:`-` Statistics now has an address interactions graph showing which of your tracked addresses have transacted with each other.
 * :feature:`-` Venice unstaking requests on Base are now decoded in transaction history.

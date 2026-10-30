@@ -258,4 +258,63 @@ CREATE TABLE IF NOT EXISTS bucket_balance_checks (
             'AND M.value IN (1, 3)))',  # customized, matched
         )
 
+    @progress_step(description='Key Lido CSM node operators by staking module.')
+    def _add_lido_csm_staking_module(write_cursor: DBCursor) -> None:
+        """Operator ids are only unique within one Lido staking module, so they are now
+        keyed together with the StakingRouter id of their module. Every operator tracked
+        so far belongs to the original CSM, whose module id is 3.
+        """
+        write_cursor.switch_foreign_keys('OFF')
+        write_cursor.execute(
+            'ALTER TABLE lido_csm_node_operator_metrics '
+            'RENAME TO lido_csm_node_operator_metrics_old',
+        )
+        write_cursor.execute(
+            'ALTER TABLE lido_csm_node_operators RENAME TO lido_csm_node_operators_old',
+        )
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS lido_csm_node_operators (
+    staking_module_id INTEGER NOT NULL,
+    node_operator_id INTEGER NOT NULL,
+    address TEXT NOT NULL,
+    blockchain TEXT GENERATED ALWAYS AS ('ETH') VIRTUAL,
+    FOREIGN KEY(blockchain, address)
+        REFERENCES blockchain_accounts(blockchain, account)
+        ON DELETE CASCADE,
+    PRIMARY KEY(staking_module_id, node_operator_id)
+);
+        """)
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS lido_csm_node_operator_metrics (
+    staking_module_id INTEGER NOT NULL,
+    node_operator_id INTEGER NOT NULL,
+    operator_type_id INTEGER,
+    bond_current TEXT,
+    bond_required TEXT,
+    bond_claimable TEXT,
+    total_deposited_validators INTEGER,
+    rewards_pending TEXT,
+    updated_ts INTEGER,
+    FOREIGN KEY(staking_module_id, node_operator_id)
+        REFERENCES lido_csm_node_operators(staking_module_id, node_operator_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY(staking_module_id, node_operator_id)
+);
+        """)
+        write_cursor.execute(
+            'INSERT INTO lido_csm_node_operators(staking_module_id, node_operator_id, address) '
+            'SELECT 3, node_operator_id, address FROM lido_csm_node_operators_old',
+        )
+        write_cursor.execute(
+            'INSERT INTO lido_csm_node_operator_metrics(staking_module_id, node_operator_id, '
+            'operator_type_id, bond_current, bond_required, bond_claimable, '
+            'total_deposited_validators, rewards_pending, updated_ts) '
+            'SELECT 3, node_operator_id, operator_type_id, bond_current, bond_required, '
+            'bond_claimable, total_deposited_validators, rewards_pending, updated_ts '
+            'FROM lido_csm_node_operator_metrics_old',
+        )
+        write_cursor.execute('DROP TABLE lido_csm_node_operator_metrics_old')
+        write_cursor.execute('DROP TABLE lido_csm_node_operators_old')
+        write_cursor.switch_foreign_keys('ON')
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

@@ -1,7 +1,10 @@
 import pytest
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmOperatorType
+from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
+    LidoCsmOperatorType,
+    LidoCsmStakingModule,
+)
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmNodeOperatorStats
 from rotkehlchen.db.lido_csm import DBLidoCsm, LidoCsmNodeOperator
 from rotkehlchen.errors.misc import InputError
@@ -80,3 +83,53 @@ def test_lido_csm_db_operations(database) -> None:
     )
     with pytest.raises(InputError):
         db.remove_node_operator(address=wrong_address, node_operator_id=9)
+
+
+def test_lido_csm_node_operator_ids_are_scoped_by_staking_module(database) -> None:
+    db = DBLidoCsm(database)
+    _add_eth_account(database, (csm_address := make_evm_address()))
+    _add_eth_account(database, (csm_0x02_address := make_evm_address()))
+    db.add_node_operator(address=csm_address, node_operator_id=1)
+    db.add_node_operator(
+        address=csm_0x02_address,
+        node_operator_id=1,
+        staking_module=LidoCsmStakingModule.CSM_0X02,
+    )
+    db.set_metrics(
+        node_operator_id=1,
+        metrics=(stats := LidoCsmNodeOperatorStats(
+            operator_type=LidoCsmOperatorType.PERMISSIONLESS,
+            current_bond=FVal('2.5'),
+            required_bond=FVal('2.4'),
+            claimable_bond=FVal('0.1'),
+            total_deposited_validators=1,
+            rewards_steth=FVal('0'),
+        )),
+        staking_module=LidoCsmStakingModule.CSM_0X02,
+    )
+    assert db.get_node_operators() == (
+        LidoCsmNodeOperator(address=csm_address, node_operator_id=1),
+        LidoCsmNodeOperator(
+            address=csm_0x02_address,
+            node_operator_id=1,
+            staking_module=LidoCsmStakingModule.CSM_0X02,
+            metrics=stats,
+        ),
+    )
+
+    with pytest.raises(InputError):  # the id is tracked in CSM 0x02 for another address
+        db.remove_node_operator(
+            address=csm_address,
+            node_operator_id=1,
+            staking_module=LidoCsmStakingModule.CSM_0X02,
+        )
+
+    db.remove_node_operator(address=csm_address, node_operator_id=1)
+    assert db.get_node_operators() == (
+        LidoCsmNodeOperator(
+            address=csm_0x02_address,
+            node_operator_id=1,
+            staking_module=LidoCsmStakingModule.CSM_0X02,
+            metrics=stats,
+        ),
+    )

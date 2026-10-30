@@ -990,21 +990,25 @@ CREATE TABLE IF NOT EXISTS bitcoin_tx_mappings (
 """  # noqa: E501
 
 # Lido CSM tracking tables. All columns are consumed by DBLidoCsm for enforcing the
-# FK to tracked Ethereum accounts and persisting cached metrics snapshots.
+# FK to tracked Ethereum accounts and persisting cached metrics snapshots. Operator ids
+# are numbered per staking module, keyed by its Lido StakingRouter module id.
 DB_CREATE_LIDO_CSM_NODE_OPERATORS = """
 CREATE TABLE IF NOT EXISTS lido_csm_node_operators (
-    node_operator_id INTEGER NOT NULL PRIMARY KEY,
+    staking_module_id INTEGER NOT NULL,
+    node_operator_id INTEGER NOT NULL,
     address TEXT NOT NULL,
     blockchain TEXT GENERATED ALWAYS AS ('ETH') VIRTUAL,
     FOREIGN KEY(blockchain, address)
         REFERENCES blockchain_accounts(blockchain, account)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    PRIMARY KEY(staking_module_id, node_operator_id)
 );
 """
 
 DB_CREATE_LIDO_CSM_NODE_OPERATOR_METRICS = """
 CREATE TABLE IF NOT EXISTS lido_csm_node_operator_metrics (
-    node_operator_id INTEGER NOT NULL PRIMARY KEY,
+    staking_module_id INTEGER NOT NULL,
+    node_operator_id INTEGER NOT NULL,
     operator_type_id INTEGER,
     bond_current TEXT,
     bond_required TEXT,
@@ -1012,9 +1016,10 @@ CREATE TABLE IF NOT EXISTS lido_csm_node_operator_metrics (
     total_deposited_validators INTEGER,
     rewards_pending TEXT,
     updated_ts INTEGER,
-    FOREIGN KEY(node_operator_id)
-        REFERENCES lido_csm_node_operators(node_operator_id)
-        ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY(staking_module_id, node_operator_id)
+        REFERENCES lido_csm_node_operators(staking_module_id, node_operator_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY(staking_module_id, node_operator_id)
 );
 """
 
