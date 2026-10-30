@@ -1,8 +1,12 @@
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
-from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmOperatorType
+from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
+    LidoCsmOperatorType,
+    LidoCsmStakingModule,
+)
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
+from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
 
 if TYPE_CHECKING:
@@ -76,3 +80,43 @@ def test_lido_csm_operator_type_matches_onchain_curve_ids() -> None:
     assert LidoCsmOperatorType(1).label == 'Early Adopter'
     assert LidoCsmOperatorType(2).label == 'ICS'
     assert LidoCsmOperatorType(3).label == 'Identified DVT Cluster'
+
+
+def test_lido_csm_0x02_curves_do_not_borrow_csm_labels() -> None:
+    assert LidoCsmOperatorType.from_curve_id(LidoCsmStakingModule.CSM, 2) == LidoCsmOperatorType.ICS  # noqa: E501
+    assert LidoCsmOperatorType.from_curve_id(LidoCsmStakingModule.CSM, 9) == LidoCsmOperatorType.UNKNOWN  # noqa: E501
+    assert LidoCsmOperatorType.from_curve_id(LidoCsmStakingModule.CSM_0X02, 0) == LidoCsmOperatorType.PERMISSIONLESS  # noqa: E501
+    assert LidoCsmOperatorType.from_curve_id(LidoCsmStakingModule.CSM_0X02, 2) == LidoCsmOperatorType.UNKNOWN  # noqa: E501
+
+
+def test_lido_csm_0x02_without_distributed_rewards_reports_zero_rewards() -> None:
+    fetcher = LidoCsmMetricsFetcher(
+        evm_inquirer=cast('EthereumInquirer', SimpleNamespace()),
+        staking_module=LidoCsmStakingModule.CSM_0X02,
+    )
+    fetcher.accounting_contract = DummyContract({  # type: ignore[assignment]
+        'getBondCurveId': 0,
+        'getBondSummaryShares': (25 * 10**17, 24 * 10**17),
+        'getClaimableBondShares': 10**17,
+    })
+    fetcher.module_contract = DummyContract({  # type: ignore[assignment]
+        'getNodeOperatorSummary': (0, 0, 0, 0, 0, 0, 1, 0),
+    })
+    fetcher.steth_contract = DummyContract({  # type: ignore[assignment]
+        'getPooledEthByShares': lambda shares: shares,
+    })
+    fetcher.fee_distributor_contract = DummyContract({  # type: ignore[assignment]
+        'treeCid': '',
+        'distributedShares': 0,
+    })
+
+    def fail_on_ipfs_fetch(cid: str) -> dict[str, Any]:
+        raise AssertionError(f'IPFS was queried for cid {cid!r}')
+
+    fetcher._fetch_ipfs_json = fail_on_ipfs_fetch  # type: ignore[method-assign]
+
+    stats = fetcher.get_operator_stats(1)
+    assert stats.operator_type == LidoCsmOperatorType.PERMISSIONLESS
+    assert stats.current_bond == FVal('2.5')
+    assert stats.total_deposited_validators == 1
+    assert stats.rewards_steth == ZERO

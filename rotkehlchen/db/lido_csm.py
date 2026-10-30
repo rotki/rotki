@@ -4,7 +4,10 @@ from typing import TYPE_CHECKING, Any
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmOperatorType
+from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
+    LidoCsmOperatorType,
+    LidoCsmStakingModule,
+)
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmNodeOperatorStats
 from rotkehlchen.errors.misc import InputError, NotFoundError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -24,6 +27,7 @@ class LidoCsmNodeOperator:
     """Represents a Lido CSM node operator entry owned by the user."""
     address: ChecksumEvmAddress
     node_operator_id: int
+    staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM
     metrics: LidoCsmNodeOperatorStats | None = None
 
 
@@ -75,11 +79,12 @@ class DBLidoCsm:
         May raise:
             ValueError: if numeric conversions fail (propagated to callers).
         """
-        address, node_operator_id, *metrics_parts = row
+        staking_module_id, address, node_operator_id, *metrics_parts = row
         metrics = DBLidoCsm._deserialize_metrics_row(tuple(metrics_parts))
         return LidoCsmNodeOperator(
             address=ChecksumEvmAddress(address),
             node_operator_id=int(node_operator_id),
+            staking_module=LidoCsmStakingModule(staking_module_id),
             metrics=metrics,
         )
 
@@ -93,6 +98,7 @@ class DBLidoCsm:
 
         query = """
             SELECT
+                o.staking_module_id,
                 o.address,
                 o.node_operator_id,
                 m.operator_type_id,
@@ -103,13 +109,14 @@ class DBLidoCsm:
                 m.rewards_pending
             FROM lido_csm_node_operators AS o
             LEFT JOIN lido_csm_node_operator_metrics AS m
-                ON o.node_operator_id = m.node_operator_id
+                ON o.staking_module_id = m.staking_module_id
+                AND o.node_operator_id = m.node_operator_id
         """
         bindings: tuple[ChecksumEvmAddress, ...] = ()
         if addresses is not None:
             query += f" WHERE o.address IN ({','.join('?' for _ in addresses)})"
             bindings = tuple(addresses)
-        query += ' ORDER BY o.node_operator_id'
+        query += ' ORDER BY o.staking_module_id, o.node_operator_id'
         with self.db.conn.read_ctx() as cursor:
             return tuple(
                 self._deserialize_entry(row)
@@ -120,6 +127,7 @@ class DBLidoCsm:
             self,
             address: ChecksumEvmAddress,
             node_operator_id: int,
+            staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM,
     ) -> None:
         """Insert a node operator; raises InputError for invalid ids or duplicates,
         or NotFoundError if the address is not registered as an Ethereum EVM account."""
@@ -130,10 +138,11 @@ class DBLidoCsm:
             try:
                 write_cursor.execute(
                     """
-                    INSERT INTO lido_csm_node_operators(node_operator_id, address)
-                    VALUES(?, ?)
+                    INSERT INTO lido_csm_node_operators(
+                        staking_module_id, node_operator_id, address
+                    ) VALUES(?, ?, ?)
                     """,
-                    (node_operator_id, address),
+                    (staking_module.value, node_operator_id, address),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 if 'FOREIGN KEY constraint failed' in str(e):
@@ -148,6 +157,7 @@ class DBLidoCsm:
             self,
             node_operator_id: int,
             metrics: LidoCsmNodeOperatorStats,
+            staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM,
     ) -> None:
         """Persist metrics for a tracked operator.
 
@@ -157,13 +167,15 @@ class DBLidoCsm:
         """
         with self.db.conn.read_ctx() as cursor:
             existing = cursor.execute(
-                'SELECT 1 FROM lido_csm_node_operators WHERE node_operator_id=?',
-                (node_operator_id,),
+                'SELECT 1 FROM lido_csm_node_operators '
+                'WHERE staking_module_id=? AND node_operator_id=?',
+                (staking_module.value, node_operator_id),
             ).fetchone()
         if existing is None:
             raise InputError(f'Node operator id {node_operator_id} is not tracked')
 
         payload = (
+            staking_module.value,
             node_operator_id,
             int(metrics.operator_type),
             str(metrics.current_bond),
@@ -177,6 +189,7 @@ class DBLidoCsm:
             write_cursor.execute(
                 """
                 INSERT INTO lido_csm_node_operator_metrics(
+                    staking_module_id,
                     node_operator_id,
                     operator_type_id,
                     bond_current,
@@ -185,8 +198,8 @@ class DBLidoCsm:
                     total_deposited_validators,
                     rewards_pending,
                     updated_ts
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(node_operator_id) DO UPDATE SET
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(staking_module_id, node_operator_id) DO UPDATE SET
                     operator_type_id=excluded.operator_type_id,
                     bond_current=excluded.bond_current,
                     bond_required=excluded.bond_required,
@@ -198,24 +211,31 @@ class DBLidoCsm:
                 payload,
             )
 
-    def delete_metrics(self, node_operator_id: int) -> None:
+    def delete_metrics(
+            self,
+            node_operator_id: int,
+            staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM,
+    ) -> None:
         """Remove cached metrics for a tracked node operator."""
         with self.db.user_write() as write_cursor:
             write_cursor.execute(
-                'DELETE FROM lido_csm_node_operator_metrics WHERE node_operator_id=?',
-                (node_operator_id,),
+                'DELETE FROM lido_csm_node_operator_metrics '
+                'WHERE staking_module_id=? AND node_operator_id=?',
+                (staking_module.value, node_operator_id),
             )
 
     def remove_node_operator(
             self,
             address: ChecksumEvmAddress,
             node_operator_id: int,
+            staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM,
     ) -> None:
         """Delete a node operator; raises InputError when id is unknown or address mismatched."""
         with self.db.conn.read_ctx() as cursor:
             row = cursor.execute(
-                'SELECT address FROM lido_csm_node_operators WHERE node_operator_id=?',
-                (node_operator_id,),
+                'SELECT address FROM lido_csm_node_operators '
+                'WHERE staking_module_id=? AND node_operator_id=?',
+                (staking_module.value, node_operator_id),
             ).fetchone()
         if row is None:
             raise InputError(
@@ -230,6 +250,7 @@ class DBLidoCsm:
 
         with self.db.user_write() as write_cursor:
             write_cursor.execute(
-                'DELETE FROM lido_csm_node_operators WHERE node_operator_id=?',
-                (node_operator_id,),
+                'DELETE FROM lido_csm_node_operators '
+                'WHERE staking_module_id=? AND node_operator_id=?',
+                (staking_module.value, node_operator_id),
             )

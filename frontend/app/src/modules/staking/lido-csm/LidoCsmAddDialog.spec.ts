@@ -8,6 +8,7 @@ import '@test/i18n';
 interface NodeOperatorPayload {
   address: string;
   nodeOperatorId: number;
+  stakingModuleId: number;
 }
 
 const addNodeOperator = vi.fn<(payload: NodeOperatorPayload) => Promise<{ message?: string }>>();
@@ -73,6 +74,7 @@ describe('lidoCsmAddDialog', () => {
             props: ['display', 'action', 'loading', 'title', 'layout'],
             template: '<div v-if="display"><slot /><button data-testid="lido-csm-submit" :disabled="action.disabled" @click="$emit(\'confirm\')" /></div>',
           },
+          RuiMenuSelect: { ...inputStub('RuiMenuSelect'), props: ['modelValue', 'options', 'keyAttr', 'textAttr'] },
           RuiTextField: inputStub('RuiTextField'),
         },
       },
@@ -109,6 +111,11 @@ describe('lidoCsmAddDialog', () => {
     const input = field('lido-csm-node-operator');
     input.vm.$emit('update:modelValue', value);
     input.vm.$emit('blur');
+    await vi.advanceTimersToNextTimerAsync();
+  }
+
+  async function selectStakingModule(stakingModuleId: number): Promise<void> {
+    field('lido-csm-staking-module').vm.$emit('update:modelValue', stakingModuleId);
     await vi.advanceTimersToNextTimerAsync();
   }
 
@@ -217,9 +224,28 @@ describe('lidoCsmAddDialog', () => {
 
     await submit();
 
-    expect(addNodeOperator).toHaveBeenCalledWith({ address: ADDRESS, nodeOperatorId: 7 });
+    expect(addNodeOperator).toHaveBeenCalledWith({ address: ADDRESS, nodeOperatorId: 7, stakingModuleId: 3 });
     expect(wrapper.emitted('refresh')).toBeTruthy();
     expect(wrapper.emitted<[boolean]>('update:modelValue')?.at(-1)).toEqual([false]);
+  });
+
+  it('should offer both community staking modules, by their staking router id', () => {
+    wrapper = createWrapper();
+
+    const options: unknown = field('lido-csm-staking-module').props().options;
+    assert(Array.isArray(options));
+    expect(options.map(option => Reflect.get(option, 'key'))).toEqual([3, 5]);
+  });
+
+  it('should send the staking module the operator was picked from', async () => {
+    wrapper = createWrapper();
+    await selectAccount();
+    await selectStakingModule(5);
+    await typeId('1');
+
+    await submit();
+
+    expect(addNodeOperator).toHaveBeenCalledExactlyOnceWith({ address: ADDRESS, nodeOperatorId: 1, stakingModuleId: 5 });
   });
 
   it('should send nothing while the form is invalid', async () => {

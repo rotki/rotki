@@ -75,6 +75,7 @@ def test_get_lido_csm_node_operators(rotkehlchen_api_server) -> None:
     assert result == [{
         'address': address,
         'node_operator_id': 5,
+        'staking_module_id': 3,
         'metrics': expected_metrics,
     }]
 
@@ -222,3 +223,54 @@ def test_refresh_metrics_endpoint_warns_on_failure(rotkehlchen_api_server) -> No
     payload = response.json()
     assert payload['result'][0]['metrics'] is None
     assert '7' in payload['message']
+
+
+def test_lido_csm_0x02_node_operator_round_trip(
+        rotkehlchen_api_server,
+        metrics_payload,
+) -> None:
+    """CSM 0x02 numbers its operators separately, so its operator 1 does not clash with CSM's"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    _register_eth_account(rotki, (address := make_evm_address()))
+    DBLidoCsm(rotki.data.db).add_node_operator(address=address, node_operator_id=1)
+
+    result = assert_proper_sync_response_with_result(
+        requests.put(
+            api_url_for(rotkehlchen_api_server, 'lidocsmnodeoperatorresource'),
+            json={'address': address, 'node_operator_id': 1, 'staking_module_id': 5},
+        ),
+    )
+    assert result == [
+        {'address': address, 'node_operator_id': 1, 'staking_module_id': 3, 'metrics': None},
+        {
+            'address': address,
+            'node_operator_id': 1,
+            'staking_module_id': 5,
+            'metrics': metrics_payload,
+        },
+    ]
+
+    result = assert_proper_sync_response_with_result(
+        requests.delete(
+            api_url_for(rotkehlchen_api_server, 'lidocsmnodeoperatorresource'),
+            json={'address': address, 'node_operator_id': 1, 'staking_module_id': 5},
+        ),
+    )
+    assert result == [
+        {'address': address, 'node_operator_id': 1, 'staking_module_id': 3, 'metrics': None},
+    ]
+
+
+def test_add_lido_csm_node_operator_rejects_unsupported_staking_module(
+        rotkehlchen_api_server,
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    _register_eth_account(rotki, (address := make_evm_address()))
+    assert_error_response(
+        requests.put(
+            api_url_for(rotkehlchen_api_server, 'lidocsmnodeoperatorresource'),
+            json={'address': address, 'node_operator_id': 1, 'staking_module_id': 4},
+        ),
+        status_code=HTTPStatus.BAD_REQUEST,
+        contained_in_msg='Must be one of: 3, 5',
+    )
