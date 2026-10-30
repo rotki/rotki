@@ -63,6 +63,7 @@ watch(menuOpened, (menuOpened) => {
   <RuiMenu
     v-model="menuOpened"
     class="flex"
+    lazy
     :class-names="{ menu: 'w-64 max-w-[90%]', wrapper: 'w-full' }"
     :disabled="disableOptions"
     :options="{

@@ -29,6 +29,7 @@ watch(open, (isOpen) => {
 <template>
   <RuiMenu
     v-model="open"
+    lazy
     :role="confirming ? 'dialog' : undefined"
     :class-names="{ menu: confirming ? 'w-72' : 'max-w-60' }"
     :options="{ placement: 'bottom-end' }"

@@ -25,7 +25,10 @@ const anyHiddenFiltered = computed<boolean>(() => items.some(item => !item.enabl
 </script>
 
 <template>
-  <RuiMenu :options="{ placement: 'bottom-start' }">
+  <RuiMenu
+    lazy
+    :options="{ placement: 'bottom-start' }"
+  >
     <template #activator="{ attrs }">
       <button
         v-bind="attrs"

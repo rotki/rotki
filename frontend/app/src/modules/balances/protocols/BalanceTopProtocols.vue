@@ -47,6 +47,7 @@ const claimable = computed<ProtocolBalance[]>(() => protocols.filter(hasAwaiting
       <RuiMenu
         v-if="showMore > 0"
         open-on-hover
+        lazy
         :close-delay="200"
         :options="{ placement: 'bottom' }"
       >

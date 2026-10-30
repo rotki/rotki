@@ -64,6 +64,7 @@ const tooltipMessage = computed<string>(() =>
 
     <RuiMenu
       v-if="showMoreOptions"
+      lazy
       :class-names="{ menu: 'w-60' }"
       close-on-content-click
     >
