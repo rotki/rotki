@@ -1,9 +1,19 @@
+import type { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import { bigNumberify, type ClaimRequest, type ProtocolBalance } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import ClaimAwaitingBadge from '@/modules/balances/protocols/components/ClaimAwaitingBadge.vue';
 import '@test/i18n';
+
+vi.mock('@/modules/balances/protocols/use-protocol-data', async () => {
+  const { computed } = await import('vue');
+  return {
+    useProtocolData: (protocol: () => string): ReturnType<typeof useProtocolData> => ({
+      protocolData: computed(() => (protocol() === 'lido' ? { icon: 'lu-x', name: 'Lido eth', type: 'icon' } : undefined)),
+    }),
+  };
+});
 
 vi.mock('@/modules/settings/use-scramble', () => ({
   useScramble: (): Record<string, unknown> => ({
@@ -14,6 +24,12 @@ vi.mock('@/modules/settings/use-scramble', () => ({
 const RuiMenuStub = defineComponent({
   name: 'RuiMenu',
   template: '<div><slot name="activator" :attrs="{}" /><slot /></div>',
+});
+
+const RuiTooltipStub = defineComponent({
+  name: 'RuiTooltip',
+  props: { disabled: { default: false, type: Boolean } },
+  template: '<div><slot name="activator" /><div v-if="!disabled" data-testid="tooltip-content"><slot /></div></div>',
 });
 
 const HashLinkStub = defineComponent({
@@ -31,7 +47,7 @@ const DateDisplayStub = defineComponent({
 const I18nTStub = defineComponent({
   name: 'I18nT',
   props: ['keypath'],
-  template: '<span :data-keypath="keypath"><slot name="date" /></span>',
+  template: '<span :data-keypath="keypath"><slot name="date" /><slot name="amount" /><slot name="protocol" /></span>',
 });
 
 function request(overrides: Partial<ClaimRequest> = {}): ClaimRequest {
@@ -69,6 +85,7 @@ function createWrapper(
         I18nT: I18nTStub,
         RuiIcon: true,
         RuiMenu: RuiMenuStub,
+        RuiTooltip: RuiTooltipStub,
         ValueDisplay: true,
       },
     },
@@ -78,8 +95,32 @@ function createWrapper(
 
 describe('claimAwaitingBadge', () => {
   it('should label the badge unless compact', () => {
-    expect(createWrapper(balance()).get('[data-testid="claim-awaiting-badge"]').text()).toBe('common.awaiting_claim');
+    expect(createWrapper(balance()).find('[data-testid="claim-awaiting-badge"] [data-keypath="claims.status.unlocks"]').exists()).toBe(true);
     expect(createWrapper(balance(), true).get('[data-testid="claim-awaiting-badge"]').text()).toBe('');
+  });
+
+  it('should label a request without an unlock date as pending', () => {
+    const wrapper = createWrapper(balance({ claims: [request({ availableAt: undefined, requestedAt: 1700000000 })] }));
+
+    expect(wrapper.get('[data-testid="claim-awaiting-badge"]').text()).toBe('claims.status.pending');
+  });
+
+  it('should explain the compact badge in a tooltip', () => {
+    const pending = createWrapper(balance(), true);
+    const ready = createWrapper(balance({ claims: [request({ finalized: true })], protocol: 'lido' }), true);
+
+    expect(pending.get('[data-testid="claim-awaiting-tooltip"]').attributes('data-keypath')).toBe('claims.tooltip.pending');
+    expect(ready.get('[data-testid="claim-awaiting-tooltip"]').attributes('data-keypath')).toBe('claims.tooltip.ready');
+    expect(ready.get('[data-testid="claim-awaiting-tooltip"]').text()).toContain('Lido eth');
+  });
+
+  it('should not show a tooltip on the labelled badge', () => {
+    expect(createWrapper(balance()).find('[data-testid="claim-awaiting-tooltip"]').exists()).toBe(false);
+  });
+
+  it('should name the protocol the way the breakdown row does', () => {
+    expect(createWrapper(balance({ protocol: 'lido' })).get('[data-testid="claim-awaiting-heading"]').text()).toBe('claims.requests::1, Lido eth');
+    expect(createWrapper(balance({ protocol: 'venice' })).get('[data-testid="claim-awaiting-heading"]').text()).toBe('claims.requests::1, Venice');
   });
 
   it('should list every account that has to claim once', () => {
@@ -106,10 +147,10 @@ describe('claimAwaitingBadge', () => {
     const rows = wrapper.findAll('[data-testid="claim-awaiting-request"]');
     expect(rows).toHaveLength(3);
     expect(rows[0].text()).toContain('#scrambled-1');
-    expect(rows[0].text()).toContain('common.claim_ready');
-    expect(rows[1].find('[data-keypath="common.claim_pending_requested"]').exists()).toBe(true);
+    expect(rows[0].text()).toContain('claims.request.ready');
+    expect(rows[1].find('[data-keypath="claims.request.requested"]').exists()).toBe(true);
     expect(rows[1].get('[data-testid="date"]').text()).toBe('1700000000');
-    expect(rows[2].find('[data-keypath="common.claim_pending_ready_on"]').exists()).toBe(true);
+    expect(rows[2].find('[data-keypath="claims.request.ready_on"]').exists()).toBe(true);
     expect(rows[2].get('[data-testid="date"]').text()).toBe('4102444800');
   });
 
@@ -124,8 +165,8 @@ describe('claimAwaitingBadge', () => {
     const pending = createWrapper(balance());
     const ready = createWrapper(balance({ claims: [request({ finalized: true })] }));
 
-    expect(pending.get('[data-testid="claim-awaiting-badge"]').attributes('aria-label')).toBe('common.awaiting_claim');
-    expect(ready.get('[data-testid="claim-awaiting-badge"]').attributes('aria-label')).toBe('common.ready_to_claim');
+    expect(pending.get('[data-testid="claim-awaiting-badge"]').attributes('aria-label')).toBe('claims.status.pending');
+    expect(ready.get('[data-testid="claim-awaiting-badge"]').attributes('aria-label')).toBe('claims.status.ready');
   });
 
   it('should link to the protocol claim page only when it has one', () => {
@@ -154,7 +195,7 @@ describe('claimAwaitingBadge as part of a table row', () => {
 
     return mount(ClaimAwaitingBadge, {
       attachTo: row,
-      global: { stubs: { AssetAmountDisplay: true, HashLink: HashLinkStub, RuiIcon: true, RuiMenu: MenuStateStub } },
+      global: { stubs: { AssetAmountDisplay: true, HashLink: HashLinkStub, RuiIcon: true, RuiMenu: MenuStateStub, RuiTooltip: RuiTooltipStub } },
       props: { asset: 'VVV', protocolBalance: balance() },
     });
   }

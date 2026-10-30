@@ -1,5 +1,5 @@
-import type { ClaimAccount, ClaimRequest, ProtocolBalance } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { type BigNumber, type ClaimAccount, type ClaimRequest, type ProtocolBalance, Zero } from '@rotki/common';
 import { useIntervalFn, useNow } from '@vueuse/core';
 import { compareClaims } from '@/modules/balances/aggregation/core/balance-entry';
 
@@ -20,11 +20,37 @@ export function claimAccounts(claims: readonly ClaimRequest[]): ClaimAccount[] {
   return [...accounts.values()];
 }
 
+/**
+ * What the claim chip says: `ready` once any request can be claimed, `unlocks` with the earliest
+ * date when every pending request has one, otherwise `pending`.
+ */
+export type ClaimStatus =
+  | { kind: 'ready' }
+  | { kind: 'unlocks'; availableAt: number }
+  | { kind: 'pending' };
+
+/** The status of a set of requests at `nowInSeconds`. */
+export function claimStatus(claims: readonly ClaimRequest[], nowInSeconds: number): ClaimStatus {
+  const pending = claims.filter(claim => !isClaimReady(claim, nowInSeconds));
+  if (pending.length < claims.length)
+    return { kind: 'ready' };
+
+  const unlockTimes: number[] = [];
+  for (const { availableAt } of pending) {
+    if (availableAt === undefined)
+      return { kind: 'pending' };
+    unlockTimes.push(availableAt);
+  }
+
+  return unlockTimes.length > 0 ? { availableAt: Math.min(...unlockTimes), kind: 'unlocks' } : { kind: 'pending' };
+}
+
 interface UseClaimAwaitingReturn {
   claims: ComputedRef<ClaimRequest[]>;
   accounts: ComputedRef<ClaimAccount[]>;
-  /** At least one request can be claimed right now. */
-  hasReady: ComputedRef<boolean>;
+  status: ComputedRef<ClaimStatus>;
+  /** What can be claimed right now, or everything awaiting a claim while nothing is ready yet. */
+  statusAmount: ComputedRef<BigNumber>;
   isReady: (claim: ClaimRequest) => boolean;
 }
 
@@ -46,7 +72,14 @@ export function useClaimAwaiting(protocolBalance: MaybeRefOrGetter<ProtocolBalan
     return isClaimReady(claim, get(nowInSeconds));
   }
 
-  const hasReady = computed<boolean>(() => get(claims).some(isReady));
+  const status = computed<ClaimStatus>(() => claimStatus(get(claims), get(nowInSeconds)));
 
-  return { accounts, claims, hasReady, isReady };
+  const statusAmount = computed<BigNumber>(() => {
+    if (get(status).kind !== 'ready')
+      return toValue(protocolBalance).awaitingClaim ?? Zero;
+
+    return get(claims).filter(isReady).reduce((total, { amount }) => total.plus(amount), Zero);
+  });
+
+  return { accounts, claims, isReady, status, statusAmount };
 }

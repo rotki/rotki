@@ -2306,6 +2306,26 @@
       "password_mismatch": "The password confirmation does not match the provided password"
     }
   },
+  "claims": {
+    "account_awaiting": "{amount} waiting to be claimed",
+    "claim_with": "Claim with:",
+    "open_page": "Open claim page",
+    "request": {
+      "ready": "Ready",
+      "ready_on": "Pending, ready on {date}",
+      "requested": "Pending, requested {date}"
+    },
+    "requests": "{protocol} withdrawal · {count} request | {protocol} withdrawal · {count} requests",
+    "status": {
+      "pending": "Pending",
+      "ready": "Ready to claim",
+      "unlocks": "Unlocks {date}"
+    },
+    "tooltip": {
+      "pending": "{amount} pending on {protocol}",
+      "ready": "{amount} ready to claim on {protocol}"
+    }
+  },
   "common": {
     "account": "Account",
     "actions": {
@@ -2358,20 +2378,12 @@
     "amount": "Amount",
     "asset": "Asset",
     "assets": "Assets",
-    "awaiting_claim": "Awaiting claim",
     "backend_unreachable": "rotki's backend did not respond. Check that it is still running, then try again.",
     "balance": "Balance",
     "blockchain": "Blockchain",
     "category": "Category",
     "chain": "Chains",
     "change_not_applied": "rotki's backend did not apply the change.",
-    "claim_page": "Open claim page",
-    "claim_pending": "Pending",
-    "claim_pending_ready_on": "Pending, ready on {date}",
-    "claim_pending_requested": "Pending, requested {date}",
-    "claim_ready": "Ready",
-    "claim_requests": "{protocol} withdrawal · {count} request | {protocol} withdrawal · {count} requests",
-    "claim_with": "Claim with:",
     "claimed": "Claimed",
     "counterparty": "Counterparty",
     "datetime": "Date/Time",
@@ -2406,7 +2418,6 @@
     "price_in_symbol": "Price in {symbol}",
     "priority": "Priority",
     "protocol": "Protocol",
-    "ready_to_claim": "Ready to claim",
     "rebasing_token": "Rebasing token",
     "refresh": "Refresh",
     "rewards": "Rewards",

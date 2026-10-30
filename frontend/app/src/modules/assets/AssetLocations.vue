@@ -204,6 +204,18 @@ watch([onlyTags, locationFilter, addresses], () => {
         </template>
         <template #item.amount="{ row }">
           <ValueDisplay :value="row.amount" />
+          <i18n-t
+            v-if="row.awaitingClaim"
+            keypath="claims.account_awaiting"
+            scope="global"
+            tag="div"
+            class="flex items-center justify-end gap-1 text-xs text-rui-text-secondary"
+            data-testid="asset-location-awaiting-claim"
+          >
+            <template #amount>
+              <ValueDisplay :value="row.awaitingClaim" />
+            </template>
+          </i18n-t>
         </template>
         <template #item.value="{ row }">
           <FiatDisplay
