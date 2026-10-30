@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RuiCardClassNames } from '@rotki/ui-library';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useFormErrorFocus } from '@/modules/core/common/use-form-error-focus';
 import BigDialogConfirmButton from '@/modules/shell/components/dialogs/BigDialogConfirmButton.vue';
@@ -36,6 +37,16 @@ export interface BigDialogLayout {
    * (a `ScrollableDialogContent` with `fill`) and can keep a toolbar above the table in view.
    */
   fill?: boolean;
+  /**
+   * Hold the sheet at a fixed height whatever its content holds.
+   *
+   * @remarks
+   * The sheet is anchored to the bottom, so content that grows or shrinks moves the header and
+   * everything in it. A form whose fields change under a control in the header sets this, so the
+   * control stays where the user clicked it. The sheet takes 90% of the window and the content
+   * fills what the header and footer leave, whatever the header holds.
+   */
+  fixedHeight?: boolean;
 }
 
 defineOptions({
@@ -74,6 +85,8 @@ defineSlots<{
   'footer': () => any;
   'header': (props: { title: string }) => any;
   'subtitle': () => any;
+  /** Controls that belong above the content but outside its scroll area, such as a type picker. */
+  'header-append': () => any;
   'left-buttons': () => any;
 }>();
 
@@ -98,6 +111,11 @@ const divide = computed<boolean>(() => layout?.divide ?? false);
 const autoHeight = computed<boolean>(() => layout?.autoHeight ?? false);
 
 const fill = computed<boolean>(() => layout?.fill ?? false);
+const fixedHeight = computed<boolean>(() => layout?.fixedHeight ?? false);
+
+const cardClassNames = computed<RuiCardClassNames>(() => (get(fixedHeight)
+  ? { content: 'flex-1 min-h-0 flex flex-col', root: 'rounded-b-none! h-[90vh] flex flex-col' }
+  : { root: 'rounded-b-none!' }));
 
 const hasErrors = computed<boolean>(() => get(errorCount) > 0);
 
@@ -173,7 +191,7 @@ function promptClose() {
       <RuiCard
         :divide="divide"
         data-testid="bottom-dialog"
-        class="rounded-b-none!"
+        :class-names="cardClassNames"
       >
         <template #custom-header>
           <div class="m-4">
@@ -193,14 +211,22 @@ function promptClose() {
                 {{ subtitle }}
               </slot>
             </div>
+            <div
+              v-if="$slots['header-append']"
+              class="mt-4"
+            >
+              <slot name="header-append" />
+            </div>
           </div>
         </template>
         <div
           v-if="display"
           ref="wrapper"
-          class="-mx-4 px-4 -mt-4 pt-2 pb-4 max-h-[calc(90vh-190px)]"
+          class="-mx-4 px-4 -mt-4 pt-2 pb-4"
           :class="{
-            'min-h-[50vh]': !autoHeight,
+            'max-h-[calc(90vh-190px)]': !fixedHeight,
+            'min-h-[50vh]': !autoHeight && !fixedHeight,
+            'flex-1 min-h-0': fixedHeight,
             'overflow-y-auto': !fill,
             'flex flex-col overflow-hidden': fill,
           }"

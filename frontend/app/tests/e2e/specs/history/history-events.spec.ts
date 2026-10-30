@@ -91,6 +91,28 @@ test.describe.serial('history events', () => {
     await cleanupContext(ctx);
   });
 
+  /**
+   * A form only moves the picker when it is shorter than the dialog's content area, so the window
+   * is made tall enough for the eth block form to fit while the evm swap form does not.
+   */
+  test('keeps the entry type picker in place while the form below it changes', async () => {
+    const viewport = ctx.sharedPage.viewportSize();
+    await ctx.sharedPage.setViewportSize({ height: 1600, width: 1280 });
+    await page.visit();
+    await page.openAddDialog();
+    await page.selectEntryType('eth block event');
+    const start = await page.entryTypeBox();
+
+    for (const type of ['evm swap event', 'swap event', 'eth block event']) {
+      await page.selectEntryType(type);
+      expect(await page.entryTypeBox(), type).toEqual(start);
+    }
+
+    await page.cancelForm();
+    if (viewport)
+      await ctx.sharedPage.setViewportSize(viewport);
+  });
+
   test('add online history event', async () => {
     await page.visit();
     await waitForNoRunningTasks(ctx.sharedPage);
