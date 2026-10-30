@@ -3,8 +3,9 @@ import type { AddEvmSwapEventPayload, AddSolanaSwapEventPayload } from '@/module
 import type { EvmSwapEvent, SolanaSwapEvent } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { emptyEvmSwapForm, type EvmSwapFormState, evmSwapSchema, evmSwapStateFromEvents, toEvmSwapPayload } from '@/modules/history/management/forms/evm-swap-event-form';
-import { emptySolanaSwapForm, type SolanaSwapFormState, solanaSwapSchema, solanaSwapStateFromEvents, toSolanaSwapPayload } from '@/modules/history/management/forms/solana-swap-event-form';
+import { SOLANA_CHAIN } from '@/modules/assets/types';
+import { chainSwapSchema, chainSwapStateFromEvents, toChainSwapPayload } from '@/modules/history/management/forms/chain-swap-event-form';
+import { emptySwapForm, type SwapFormState } from '@/modules/history/management/forms/swap-event-form';
 import { emptySubEvent, type SwapSubEventState } from '@/modules/history/management/forms/swap/swap-sub-event';
 
 /**
@@ -14,7 +15,7 @@ import { emptySubEvent, type SwapSubEventState } from '@/modules/history/managem
  * The EVM and Solana swap modules differ in the transaction reference, the address format and
  * whether the form holds a location. Every other rule is shared, so both run through one suite.
  */
-interface ChainSwapKind<TState extends SolanaSwapFormState, TEvent extends EvmSwapEvent | SolanaSwapEvent> {
+interface ChainSwapKind<TState extends SwapFormState, TEvent extends EvmSwapEvent | SolanaSwapEvent> {
   readonly name: string;
   readonly entryType: typeof HistoryEventEntryType.EVM_SWAP_EVENT | typeof HistoryEventEntryType.SOLANA_SWAP_EVENT;
   readonly txRef: string;
@@ -42,9 +43,9 @@ const evmAddress = '0xA090e606E30bD747d4E6245a1517EbE430F0057e';
 const solanaTxRef = '5wHu1qwD4kLwYqCEuNqTvhpFvGYRVYVEHVsdvR2v3Wg7fFyGxUWJTgL4wZ3Y1sM9RcYnPbLXZhKUqLNvV7kA8dQz';
 const solanaAddress = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8';
 
-const evm: ChainSwapKind<EvmSwapFormState, EvmSwapEvent> = {
+const evm: ChainSwapKind<SwapFormState, EvmSwapEvent> = {
   address: evmAddress,
-  empty: emptyEvmSwapForm,
+  empty: () => emptySwapForm(HistoryEventEntryType.EVM_SWAP_EVENT),
   entryType: HistoryEventEntryType.EVM_SWAP_EVENT,
   event: overrides => ({
     address: evmAddress,
@@ -68,19 +69,19 @@ const evm: ChainSwapKind<EvmSwapFormState, EvmSwapEvent> = {
   }),
   foreignAddress: solanaAddress,
   foreignTxRef: solanaTxRef,
-  fromEvents: evmSwapStateFromEvents,
+  fromEvents: events => chainSwapStateFromEvents(HistoryEventEntryType.EVM_SWAP_EVENT, events),
   name: 'evm',
   missingTxRefMessage: 'transactions.events.form.tx_hash.validation.non_empty',
   ownRequiredPaths: ['location'],
   required: { location: 'ethereum', txRef: evmTxRef },
-  schema: evmSwapSchema,
-  toPayload: toEvmSwapPayload,
+  schema: () => chainSwapSchema(HistoryEventEntryType.EVM_SWAP_EVENT),
+  toPayload: state => toChainSwapPayload(HistoryEventEntryType.EVM_SWAP_EVENT, state),
   txRef: evmTxRef,
 };
 
-const solana: ChainSwapKind<SolanaSwapFormState, SolanaSwapEvent> = {
+const solana: ChainSwapKind<SwapFormState, SolanaSwapEvent> = {
   address: solanaAddress,
-  empty: emptySolanaSwapForm,
+  empty: () => emptySwapForm(HistoryEventEntryType.SOLANA_SWAP_EVENT),
   entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT,
   event: overrides => ({
     address: solanaAddress,
@@ -104,13 +105,13 @@ const solana: ChainSwapKind<SolanaSwapFormState, SolanaSwapEvent> = {
   }),
   foreignAddress: evmAddress,
   foreignTxRef: evmTxRef,
-  fromEvents: solanaSwapStateFromEvents,
+  fromEvents: events => chainSwapStateFromEvents(HistoryEventEntryType.SOLANA_SWAP_EVENT, events),
   name: 'solana',
   missingTxRefMessage: 'transactions.events.form.signature.validation.non_empty',
   ownRequiredPaths: [],
   required: { txRef: solanaTxRef },
-  schema: solanaSwapSchema,
-  toPayload: toSolanaSwapPayload,
+  schema: () => chainSwapSchema(HistoryEventEntryType.SOLANA_SWAP_EVENT),
+  toPayload: state => toChainSwapPayload(HistoryEventEntryType.SOLANA_SWAP_EVENT, state),
   txRef: solanaTxRef,
 };
 
@@ -118,7 +119,7 @@ function row(amount: string, asset: string): SwapSubEventState {
   return { ...emptySubEvent(), amount, asset };
 }
 
-function chainSwapSuite<TState extends SolanaSwapFormState, TEvent extends EvmSwapEvent | SolanaSwapEvent>(
+function chainSwapSuite<TState extends SwapFormState, TEvent extends EvmSwapEvent | SolanaSwapEvent>(
   kind: ChainSwapKind<TState, TEvent>,
 ): void {
   function validState(): TState {
@@ -253,21 +254,21 @@ chainSwapSuite(solana);
 
 describe('solana swap location', () => {
   it('should not send a location, which the solana swap endpoint does not take', () => {
-    expect(toSolanaSwapPayload({ ...emptySolanaSwapForm(), txRef: solanaTxRef })).not.toHaveProperty('location');
+    expect(solana.toPayload({ ...solana.empty(), txRef: solanaTxRef })).not.toHaveProperty('location');
   });
 
-  it('should not read the location of the events it is seeded from', () => {
-    const state = solanaSwapStateFromEvents([solana.event({}), solana.event({ eventSubtype: 'receive', identifier: 3457 })]);
+  it('should hold the fixed solana location whatever the events it is seeded from say', () => {
+    const state = solana.fromEvents([solana.event({ location: 'elsewhere' }), solana.event({ eventSubtype: 'receive', identifier: 3457 })]);
 
-    expect(state).not.toHaveProperty('location');
+    expect(state.location).toBe(SOLANA_CHAIN);
   });
 });
 
 describe('evm swap location', () => {
   it('should send the picked location and seed it from the group', () => {
-    const state = evmSwapStateFromEvents([evm.event({ location: 'optimism' }), evm.event({ eventSubtype: 'receive', identifier: 3457 })]);
+    const state = evm.fromEvents([evm.event({ location: 'optimism' }), evm.event({ eventSubtype: 'receive', identifier: 3457 })]);
 
     expect(state.location).toBe('optimism');
-    expect(toEvmSwapPayload(state).location).toBe('optimism');
+    expect(evm.toPayload(state)).toMatchObject({ location: 'optimism' });
   });
 });
