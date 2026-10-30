@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
@@ -65,6 +65,7 @@ def _add_event(
         amount: str,
         timestamp: int,
         event_type: HistoryEventType = HistoryEventType.RECEIVE,
+        asset: Asset = A_ETH,
 ) -> int:
     with database.user_write() as write_cursor:
         event_id = DBHistoryEvents(database).add_history_event(
@@ -76,7 +77,7 @@ def _add_event(
                 location=Location.ETHEREUM,
                 event_type=event_type,
                 event_subtype=HistoryEventSubType.NONE,
-                asset=A_ETH,
+                asset=asset,
                 amount=FVal(amount),
                 location_label=address,
             ),
@@ -670,6 +671,33 @@ def test_eth2_stop_blocks_the_merged_eth_bucket_after_the_setting_is_turned_on(
         database.set_settings(write_cursor, ModifiableDBSettings(treat_eth2_as_eth=True))
     assert _make_detector(database, '3').run() == 0
     assert _checks(database) == {}
+
+
+@pytest.mark.parametrize('asset', [A_ETH, A_ETH2])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@with_accounts
+def test_retained_stop_freezes_merged_eth_bucket_during_incremental_processing(
+        database: DBHandler,
+        asset: Asset,
+) -> None:
+    with database.user_write() as write_cursor:
+        database.set_settings(write_cursor, ModifiableDBSettings(treat_eth2_as_eth=False))
+    _add_event(database, TEST_ADDR1, '5', 1000, asset=asset)
+    stop_id = _add_event(
+        database, TEST_ADDR1, '8', 2000, HistoryEventType.SPEND, asset=asset,
+    )
+    _process(database)
+    stops = _stops(database)
+    assert next(iter(stops.values())).event_identifier == stop_id
+    with database.user_write() as write_cursor:
+        database.set_settings(write_cursor, ModifiableDBSettings(treat_eth2_as_eth=True))
+    later_id = _add_event(database, TEST_ADDR1, '10', 3000, asset=A_ETH2)
+    _process(database, from_ts=3000)
+    assert _stops(database) == stops
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT metric_value FROM event_metrics WHERE event_identifier=?', (later_id,),
+        ).fetchall() == []
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

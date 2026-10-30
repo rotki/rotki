@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Historical balance buckets now remain blocked after enabling ETH2-as-ETH or when rebasing balance reconciliation fails. Successful reconciliation clears the rebasing blockage.
 * :feature:`-` Venice unstaking requests on Base are now decoded in transaction history.
 * :feature:`-` Lido withdrawal requests and ETH claims are now decoded in transaction history.
 * :feature:`-` Lido withdrawals and Venice staking withdrawals that are waiting for a claim now count towards balances. A chip next to the protocol opens each withdrawal request with its status and date, the accounts that need to claim and a link to the claim page, and turns green once a request can be claimed.

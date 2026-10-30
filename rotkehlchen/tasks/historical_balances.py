@@ -514,6 +514,7 @@ def process_historical_balances(
     """
     log.debug(f'Starting historical balance processing from_ts={from_ts}')
     rebasing_assets = GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)
+    treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
     bucket_balances: dict[Bucket, FVal] = {}
     if from_ts is not None:
         bucket_balances = _load_bucket_balances_before_ts(database, from_ts)
@@ -525,7 +526,7 @@ def process_historical_balances(
                 location=location,
                 location_label=label or None,
                 protocol=protocol or None,
-                asset=asset,
+                asset=A_ETH.identifier if treat_eth2_as_eth and asset == A_ETH2 else asset,
             )] = stop.negative_amount
 
     with database.conn.read_ctx() as cursor:
@@ -560,7 +561,6 @@ def process_historical_balances(
             int(modification_ts_at_start[0])
             if modification_ts_at_start else None
         )
-        treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
 
     rebasing_reconciliation_points = _get_rebasing_reconciliation_points(
         database=database,
@@ -981,8 +981,9 @@ def _apply_to_buckets(
                 bucket_balances[bucket] = new_balance
                 continue
 
-            if new_balance < ZERO:
-                pending_rebasing_events.setdefault(bucket, event)
+            if new_balance < ZERO and bucket not in pending_rebasing_events:
+                pending_rebasing_events[bucket] = event
+                _record_stop(stopped_buckets, bucket, event, current_balance, new_balance)
 
             if (negative_event := pending_rebasing_events.get(bucket)) is not None:
                 reconciliation_key = (event.identifier, bucket)
@@ -1016,6 +1017,12 @@ def _apply_to_buckets(
                 assert onchain_balance is not None
                 assert negative_event.identifier is not None
                 del pending_rebasing_events[bucket]
+                stopped_buckets.pop(make_bucket_key(
+                    location=bucket.location,
+                    location_label=bucket.location_label,
+                    protocol=bucket.protocol,
+                    asset=bucket.asset,
+                ), None)
                 reported_rebasing_buckets.discard(bucket)
                 resolved_rebasing_events.append((
                     bucket.location,
