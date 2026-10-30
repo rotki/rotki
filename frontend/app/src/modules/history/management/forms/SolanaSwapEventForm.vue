@@ -4,6 +4,7 @@ import type { GroupEventData, StandaloneEventData } from '@/modules/history/mana
 import { SOLANA_CHAIN } from '@/modules/assets/types';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
+import TxRefField from '@/modules/history/management/forms/common/TxRefField.vue';
 import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
 import {
   emptySolanaSwapForm,
@@ -77,13 +78,10 @@ defineExpose({
 
     <RuiDivider class="mb-6 mt-2" />
 
-    <RuiTextField
+    <TxRefField
       v-model="state.txRef"
-      color="primary"
       :disabled="data.type !== 'add'"
-      data-testid="tx-ref"
       :label="t('common.signature')"
-      required
       :error-messages="form.errors('txRef')"
       @blur="form.touch('txRef')"
     />

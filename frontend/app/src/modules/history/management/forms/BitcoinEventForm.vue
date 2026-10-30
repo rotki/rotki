@@ -15,6 +15,8 @@ import {
   toBitcoinEventPayload,
 } from '@/modules/history/management/forms/bitcoin-event-form';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
+import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';
+import TxRefField from '@/modules/history/management/forms/common/TxRefField.vue';
 import { EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/eth-block-event-form';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
@@ -104,13 +106,10 @@ defineExpose({
       />
     </div>
 
-    <RuiTextField
+    <TxRefField
       v-model="state.txRef"
-      color="primary"
       :disabled="data.type !== 'add'"
-      data-testid="tx-ref"
       :label="t('transactions.events.form.tx_id.label')"
-      required
       :error-messages="form.errors('txRef')"
       @blur="form.touch('txRef')"
     />
@@ -167,32 +166,25 @@ defineExpose({
 
     <RuiDivider class="mb-2 mt-6" />
 
-    <RuiAccordions>
-      <RuiAccordion
-        data-testid="bitcoin-event-form-advance"
-        :class-names="{ header: 'py-4' }"
-        eager
-      >
-        <template #header>
-          {{ t('transactions.events.form.advanced') }}
-        </template>
-        <div class="py-2">
-          <RuiTextField
-            v-model="state.groupIdentifier"
-            color="primary"
-            data-testid="group-identifier"
-            :disabled="state.hasActualGroupIdentifier"
-            :label="t('transactions.events.form.group_identifier.label')"
-            :error-messages="form.errors('groupIdentifier')"
-            @blur="form.touch('groupIdentifier')"
-          />
+    <EventDetailsSection
+      data-testid="bitcoin-event-form-advance"
+      :errors="form.errors"
+      :paths="['groupIdentifier']"
+    >
+      <RuiTextField
+        v-model="state.groupIdentifier"
+        color="primary"
+        data-testid="group-identifier"
+        :disabled="state.hasActualGroupIdentifier"
+        :label="t('transactions.events.form.group_identifier.label')"
+        :error-messages="form.errors('groupIdentifier')"
+        @blur="form.touch('groupIdentifier')"
+      />
 
-          <JsonInput
-            v-model="state.extraData"
-            :label="t('transactions.events.form.extra_data.label')"
-          />
-        </div>
-      </RuiAccordion>
-    </RuiAccordions>
+      <JsonInput
+        v-model="state.extraData"
+        :label="t('transactions.events.form.extra_data.label')"
+      />
+    </EventDetailsSection>
   </div>
 </template>

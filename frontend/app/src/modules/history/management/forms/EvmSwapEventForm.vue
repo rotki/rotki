@@ -5,6 +5,7 @@ import { toSnakeCase } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
+import TxRefField from '@/modules/history/management/forms/common/TxRefField.vue';
 import {
   emptyEvmSwapForm,
   evmSwapSchema,
@@ -112,48 +113,17 @@ defineExpose({
 
     <RuiDivider class="mb-6 mt-2" />
 
-    <RuiTextField
+    <TxRefField
       v-model="state.txRef"
-      color="primary"
       :disabled="data.type !== 'add'"
-      data-testid="tx-ref"
       :label="t('common.tx_hash')"
-      required
       :hint="txRefHint"
+      :loading="lookupLoading"
+      :can-retry="lookupCanRetry"
       :error-messages="form.errors('txRef')"
       @blur="form.touch('txRef')"
-    >
-      <template
-        v-if="lookupLoading || lookupCanRetry"
-        #append
-      >
-        <RuiProgress
-          v-if="lookupLoading"
-          circular
-          variant="indeterminate"
-          color="primary"
-          size="20"
-          data-testid="tx-ref-loading"
-        />
-        <RuiTooltip
-          v-else
-          :open-delay="400"
-        >
-          <template #activator>
-            <RuiButton
-              icon
-              variant="text"
-              size="sm"
-              data-testid="tx-ref-retry"
-              @click="retryLookup()"
-            >
-              <RuiIcon name="lu-refresh-cw" />
-            </RuiButton>
-          </template>
-          {{ t('actions.evm_tx_lookup.retry') }}
-        </RuiTooltip>
-      </template>
-    </RuiTextField>
+      @retry="retryLookup()"
+    />
 
     <RuiDivider class="mb-6 mt-2" />
 
