@@ -3,6 +3,7 @@ from abc import ABC
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
+from contextvars import ContextVar
 from enum import IntEnum
 from functools import wraps
 from threading import Lock
@@ -11,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
 from rotkehlchen.api.websockets.typedefs import (
     TransactionStatusStep,
     TransactionStatusSubType,
+    UserMessageRecord,
     WSMessageType,
 )
 from rotkehlchen.assets.asset import EvmToken
@@ -56,8 +58,9 @@ from rotkehlchen.types import (
     TokenKind,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.user_messages import NetworkFailure
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import get_chunks, ts_now
+from rotkehlchen.utils.misc import get_chunks, timestamp_to_date, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, QueryEnd
@@ -83,6 +86,12 @@ RECENT_RANGE_MARGIN: Final = 2 * DAY_IN_SECONDS
 # Seconds the end of a transaction sync is kept behind now. The newest blocks may not be
 # indexed yet, and a range reaching into them would get them recorded as queried.
 CHAIN_TOP_LAG: Final = 15
+# The periods no configured indexer covered in the sync the current task runs, told to the user
+# once when it ends. None outside a sync.
+_SYNC_UNCOVERED: ContextVar[list[tuple[ChecksumEvmAddress, Timestamp, Timestamp]] | None] = ContextVar(  # noqa: E501
+    'evm_transactions_sync_uncovered',
+    default=None,
+)
 
 
 class RangeQueryOutcome(IntEnum):
@@ -158,6 +167,46 @@ class EvmTransactions(ABC):  # noqa: B024
         self.missing_receipts_lock = Lock()
         self.msg_aggregator = database.msg_aggregator
         self.dbevmtx = DBEvmTx(database)
+        # (address, end) of the uncovered periods told this session, not repeated by a refresh
+        self._told_uncovered: set[tuple[ChecksumEvmAddress, Timestamp]] = set()
+
+    @staticmethod
+    def _note_uncovered(address: ChecksumEvmAddress, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
+        if (uncovered := _SYNC_UNCOVERED.get()) is not None:
+            uncovered.append((address, start_ts, end_ts))
+
+    @contextmanager
+    def _one_sync(self) -> Iterator[None]:
+        """Collect the uncovered periods of a sync and tell them once at its end. A sync inside
+        another of the same task leaves the telling to the outer one; a sync running on another
+        thread collects its own."""
+        if _SYNC_UNCOVERED.get() is not None:
+            yield
+            return
+        token = _SYNC_UNCOVERED.set([])
+        try:
+            yield
+        finally:
+            self._tell_uncovered(_SYNC_UNCOVERED.get() or [])
+            _SYNC_UNCOVERED.reset(token)
+
+    def _tell_uncovered(self, uncovered: list[tuple[ChecksumEvmAddress, Timestamp, Timestamp]]) -> None:  # noqa: E501
+        """Tell the user, once for the sync, which period of which addresses' history no
+        configured indexer covered, and so was not imported. A period already told this session
+        is not told again."""
+        if len(uncovered := [entry for entry in uncovered if (entry[0], entry[2]) not in self._told_uncovered]) == 0:  # noqa: E501
+            return
+        self._told_uncovered.update((address, end) for address, _, end in uncovered)
+        addresses = sorted({address for address, _, _ in uncovered})
+        start, end = min(entry[1] for entry in uncovered), max(entry[2] for entry in uncovered)
+        # A sync from an account's very beginning starts at 0, which is no date to show.
+        period = f'before {timestamp_to_date(Timestamp(end + 1))}' if start <= 0 else f'from {timestamp_to_date(start)} to {timestamp_to_date(end)}'  # noqa: E501
+        self.msg_aggregator.add_warning(
+            f'No configured {self.evm_inquirer.chain_name} indexer covers the history of '
+            f'{", ".join(addresses)} {period}, so it was not imported. An indexer that covers '
+            'it, such as etherscan with a paid API key, would import it on the next sync.',
+            classification=NetworkFailure(record=UserMessageRecord.TRANSACTION, error='no configured indexer covers the period'),  # noqa: E501
+        )
 
     def _notify_tx_query_status(
             self,
@@ -332,6 +381,16 @@ class EvmTransactions(ABC):  # noqa: B024
 
         Trueblocks ... we need you.
         """
+        with self._one_sync():
+            return self._query_address_transactions(address, start_ts, end_ts, query_end)
+
+    def _query_address_transactions(
+            self,
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            query_end: QueryEnd | None,
+    ) -> bool:
         if query_end is None:
             try:
                 query_end = self._resolve_query_end(end_ts)
@@ -341,7 +400,10 @@ class EvmTransactions(ABC):  # noqa: B024
                     'end block due to %s',
                     self.evm_inquirer.chain_name, address, end_ts, e,
                 )  # an end no configured indexer covers is not a failure, see NOT_COVERED
-                return isinstance(e, IndexerRangeNotCovered)
+                if isinstance(e, IndexerRangeNotCovered):
+                    self._note_uncovered(address, start_ts, end_ts)
+                    return True
+                return False
 
         if query_end.timestamp < start_ts:
             return True  # the whole range is too recent to be indexed yet
@@ -419,6 +481,23 @@ class EvmTransactions(ABC):  # noqa: B024
         - sqlcipher3.dbapi2.OperationalError if the SQL query fails due to
         invalid filtering arguments.
         """
+        with self._one_sync():  # what no indexer covered is told once for all the addresses
+            failed_addresses = self._query_addresses(from_timestamp, to_timestamp, addresses)
+
+        self.get_chain_specific_multiaddress_data(addresses)
+        if len(failed_addresses) != 0:  # the indexer errors were logged, not passed on
+            raise IncompleteTransactionsQuery(
+                f'Could not query all {self.evm_inquirer.chain_name} transactions of '
+                f'{", ".join(failed_addresses)}. They will be retried by the next sync.',
+            )
+
+    def _query_addresses(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            addresses: list[ChecksumEvmAddress],
+    ) -> list[ChecksumEvmAddress]:
+        """Query the addresses up to one end block and return those that failed."""
         try:
             query_end = self._resolve_query_end(to_timestamp)
         except RemoteError as e:
@@ -427,32 +506,28 @@ class EvmTransactions(ABC):  # noqa: B024
                 'due to %s',
                 self.evm_inquirer.chain_name, to_timestamp, e,
             )
-            failed_addresses = [
+            if not_covered := isinstance(e, IndexerRangeNotCovered):
+                for address in addresses:
+                    self._note_uncovered(address, from_timestamp, to_timestamp)
+            return [
                 address for address in addresses
                 if not self._skip_address_query(
                     address=address,
                     start_ts=from_timestamp,
                     end_ts=to_timestamp,
-                    succeeded=isinstance(e, IndexerRangeNotCovered),
+                    succeeded=not_covered,
                 )
             ]
-        else:
-            failed_addresses = [
-                address for address in addresses
-                if self.single_address_query_transactions(
-                    address=address,
-                    start_ts=from_timestamp,
-                    end_ts=query_end.timestamp,
-                    query_end=query_end,
-                ) is False
-            ]
 
-        self.get_chain_specific_multiaddress_data(addresses)
-        if len(failed_addresses) != 0:  # the indexer errors were logged, not passed on
-            raise IncompleteTransactionsQuery(
-                f'Could not query all {self.evm_inquirer.chain_name} transactions of '
-                f'{", ".join(failed_addresses)}. They will be retried by the next sync.',
-            )
+        return [
+            address for address in addresses
+            if self.single_address_query_transactions(
+                address=address,
+                start_ts=from_timestamp,
+                end_ts=query_end.timestamp,
+                query_end=query_end,
+            ) is False
+        ]
 
     @overload
     def _query_and_save_transactions_for_range(
@@ -749,6 +824,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     self.evm_inquirer.chain_name, address, query_start_ts, query_end_ts, e,
                 )
                 not_covered = True  # newer ranges may still be covered
+                self._note_uncovered(address, query_start_ts, query_end_ts)
                 continue
             except NoAvailableIndexers as e:
                 log.warning(
@@ -1238,6 +1314,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     self.evm_inquirer.chain_name, address, query_start_ts, query_end_ts, e,
                 )
                 not_covered = True  # newer ranges may still be covered
+                self._note_uncovered(address, query_start_ts, query_end_ts)
                 continue
             except NoAvailableIndexers as e:
                 log.warning(
@@ -1315,6 +1392,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     self.evm_inquirer.chain_name, address, query_start_ts, query_end_ts, e,
                 )
                 not_covered = True  # newer ranges may still be covered
+                self._note_uncovered(address, query_start_ts, query_end_ts)
                 continue
             except NoAvailableIndexers as e:
                 log.warning(
