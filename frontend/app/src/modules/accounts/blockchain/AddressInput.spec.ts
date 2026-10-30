@@ -17,7 +17,10 @@ function fieldStub(tag: string): Record<string, unknown> {
   };
 }
 
-function createWrapper(props: Record<string, unknown> = {}): VueWrapper<InstanceType<typeof AddressInput>> {
+function createWrapper(
+  props: Record<string, unknown> = {},
+  slots: Record<string, string> = {},
+): VueWrapper<InstanceType<typeof AddressInput>> {
   return mount(AddressInput, {
     global: {
       stubs: {
@@ -38,6 +41,7 @@ function createWrapper(props: Record<string, unknown> = {}): VueWrapper<Instance
       multi: true,
       ...props,
     },
+    slots,
   });
 }
 
@@ -72,6 +76,24 @@ describe('modules/accounts/blockchain/AddressInput', () => {
   function lastAddresses(): string[] | undefined {
     return wrapper.emitted<[string[]]>('update:addresses')?.at(-1)?.[0];
   }
+
+  describe('the bulk actions', () => {
+    const bulkActions = { 'bulk-actions': '<button data-testid="bulk-action" />' };
+
+    it('should sit beside the multiple addresses toggle', () => {
+      wrapper = createWrapper({}, bulkActions);
+
+      expect(wrapper.find('[data-testid=multiple-toggle]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=bulk-action]').exists()).toBe(true);
+    });
+
+    it('should still show when the toggle is hidden because the chain always takes several', () => {
+      wrapper = createWrapper({ forceMultiple: true }, bulkActions);
+
+      expect(wrapper.find('[data-testid=multiple-toggle]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=bulk-action]').exists()).toBe(true);
+    });
+  });
 
   it('should reject an empty address', async () => {
     wrapper = createWrapper();

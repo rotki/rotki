@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { useAccountImportDialog } from '@/modules/accounts/import-export/use-account-import-dialog';
 import { useAccountImportExport } from '@/modules/accounts/import-export/use-account-import-export';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const importFile = ref<File>();
-const importDialogOpen = ref<boolean>(false);
 const loading = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
 const { exportAccounts, importAccounts } = useAccountImportExport();
+const { modelOpen: importDialogOpen, show: showImportDialog } = useAccountImportDialog();
 
 async function doImport() {
   if (!isDefined(importFile)) {
@@ -53,7 +54,7 @@ async function doImport() {
       <RuiButton
         variant="list"
         data-testid="accounts-import"
-        @click="importDialogOpen = true;"
+        @click="showImportDialog()"
       >
         <template #prepend>
           <RuiIcon name="lu-file-up" />

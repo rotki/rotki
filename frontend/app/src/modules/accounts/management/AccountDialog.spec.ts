@@ -4,6 +4,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, type VNode } from 'vue';
 import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
+import { useAccountImportDialog } from '@/modules/accounts/import-export/use-account-import-dialog';
 import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';
 
 const {
@@ -74,9 +75,12 @@ vi.mock('@/modules/accounts/management/AccountForm.vue', async () => {
     __esModule: true,
     default: defineComponent({
       name: 'AccountForm',
-      setup(_props, { expose }): () => VNode {
+      emits: ['import-csv'],
+      setup(_props, { emit, expose }): () => VNode {
         expose({ validate });
-        return () => h('div', { 'data-testid': 'account-form' });
+        return () => h('div', { 'data-testid': 'account-form' }, [
+          h('button', { 'data-testid': 'account-form-import-csv', 'onClick': () => emit('import-csv') }),
+        ]);
       },
     }),
   };
@@ -146,6 +150,7 @@ describe('accountDialog', () => {
     set(validatorsLimitInfo, { limit: 4, showWarning: false, total: 0 });
     save.mockResolvedValue(true);
     validate.mockResolvedValue(true);
+    set(useAccountImportDialog().modelOpen, false);
   });
 
   describe('the heading', () => {
@@ -294,6 +299,15 @@ describe('accountDialog', () => {
 
       expect(dialog(wrapper).props('action').disabled).toBe(false);
     });
+  });
+
+  it('should swap itself for the CSV import when the form asks for it', async () => {
+    const wrapper = createWrapper(edited());
+
+    await wrapper.find('[data-testid=account-form-import-csv]').trigger('click');
+
+    expect(lastModel(wrapper)).toBeUndefined();
+    expect(get(useAccountImportDialog().modelOpen)).toBe(true);
   });
 
   describe('reporting a refused save', () => {

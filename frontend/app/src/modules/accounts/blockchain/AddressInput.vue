@@ -30,9 +30,16 @@ const emit = defineEmits<{
   'detected-xpub': [key: string];
 }>();
 
+const slots = defineSlots<{
+  /** Beside the multiple addresses toggle, for other ways of adding several addresses at once. */
+  'bulk-actions'?: () => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const multiple = ref<boolean>(forceMultiple);
+
+const showMultipleToggle = computed<boolean>(() => multi && !forceMultiple);
 
 const schema = computed<ZodType>(() => addressEntrySchema(
   t('account_form.validation.address_non_empty'),
@@ -184,16 +191,22 @@ defineExpose({
 
 <template>
   <div>
-    <RuiCheckbox
-      v-if="multi && !forceMultiple"
-      v-model="multiple"
-      color="primary"
-      class="-mt-2 mb-4 flex"
-      details="hidden"
-      :disabled="disabled"
+    <div
+      v-if="showMultipleToggle || slots['bulk-actions']"
+      class="-mt-2 mb-4 flex flex-wrap items-center justify-between gap-2"
     >
-      {{ t('account_form.labels.multiple') }}
-    </RuiCheckbox>
+      <RuiCheckbox
+        v-if="showMultipleToggle"
+        v-model="multiple"
+        color="primary"
+        class="flex"
+        details="hidden"
+        :disabled="disabled"
+      >
+        {{ t('account_form.labels.multiple') }}
+      </RuiCheckbox>
+      <slot name="bulk-actions" />
+    </div>
     <div class="flex items-start gap-2">
       <RuiTextField
         v-if="!multiple"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { assert } from '@rotki/common';
 import { type AccountManageState, useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
+import { useAccountImportDialog } from '@/modules/accounts/import-export/use-account-import-dialog';
 import { hasAccountChanged, isAddingValidator } from '@/modules/accounts/management/account-dialog-state';
 import AccountForm from '@/modules/accounts/management/AccountForm.vue';
 import { useAccountLoading } from '@/modules/accounts/use-account-loading';
@@ -41,6 +42,7 @@ const { loading } = useAccountLoading();
 const { validatorsLimitInfo } = useEthStaking();
 const { currentTier, ethStakedLimit } = usePremiumHelper();
 const { upgradeText, upgradeUrl } = usePlanUpgradeLink();
+const { show: showImportDialog } = useAccountImportDialog();
 
 const isValidatorLimitReached = computed<boolean>(() =>
   isAddingValidator(get(model)) && get(validatorsLimitInfo).showWarning,
@@ -49,6 +51,12 @@ const isValidatorLimitReached = computed<boolean>(() =>
 function dismiss(): void {
   resetSaveError();
   set(model, undefined);
+}
+
+/** Swaps this dialog for the CSV import, dropping anything typed here. */
+function importFromCsv(): void {
+  dismiss();
+  showImportDialog();
 }
 
 async function confirm(): Promise<void> {
@@ -100,6 +108,7 @@ watch(model, (model, oldModel) => {
       v-model:error-messages="modelErrorMessages"
       :chain-ids="chainIds"
       :loading="loading"
+      @import-csv="importFromCsv()"
     />
 
     <RuiAlert

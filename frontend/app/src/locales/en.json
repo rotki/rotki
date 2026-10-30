@@ -2114,7 +2114,8 @@
     "form_dialog": {
       "add_title": "Add blockchain account",
       "edit_subtitle": "Modify account details",
-      "edit_title": "Edit blockchain account"
+      "edit_title": "Edit blockchain account",
+      "import_action": "Import from CSV"
     },
     "group_label": "Blockchain balances",
     "import_blockchain_accounts": "Import blockchain accounts",
