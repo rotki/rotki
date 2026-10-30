@@ -14,9 +14,12 @@ const AssetDistribution = z.object({
  * rather than a `Balance`, so it sends `usd_value` and no `value`. This was built on the shared
  * `Balance` schema until 1.44: zod dropped the undeclared `usdValue` and `value` fell back to its
  * default of zero, so every point parsed as zero-valued. See #12822.
+ *
+ * Liability rows carry a negative `amount` and `usdValue`, so debt plots below the zero axis.
  */
 const TimedBalance = z.object({
   amount: NumericString,
+  category: z.enum(['asset', 'liability']).optional(),
   ...AssetDistribution.shape,
 });
 

@@ -93,6 +93,24 @@ describe('composables/api/statistics/statistics-api', () => {
       expect(result[0].amount.toString()).toBe('10.5');
     });
 
+    it('should keep the category and negative values of liability rows', async () => {
+      server.use(
+        http.post(`${backendUrl}/api/1/statistics/balance`, () => HttpResponse.json({
+          result: [
+            { time: 1700000000, amount: '5', usd_value: '5', category: 'asset' },
+            { time: 1700000100, amount: '-100', usd_value: '-100.70', category: 'liability' },
+          ],
+          message: '',
+        })),
+      );
+
+      const result = await useStatisticsApi().queryTimedBalancesData('USDC', 1700000000, 1700100000);
+
+      expect(result.map(row => row.category)).toEqual(['asset', 'liability']);
+      expect(result[1].amount.toString()).toBe('-100');
+      expect(result[1].usdValue.toString()).toBe('-100.7');
+    });
+
     it('should send POST request with collection_id when provided', async () => {
       let capturedBody: DefaultBodyType = null;
 
