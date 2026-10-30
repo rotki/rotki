@@ -1,15 +1,19 @@
 name: SQLDiff
 
+# Diffs the databases a PR changes. It runs unprivileged, because a fork PR's run only gets a
+# read-only token and the database files come from the PR; rotki_pr_comment.yml posts the result
+# through workflow_run. It runs on every PR rather than behind a paths filter: a push that reverts
+# the database change must still upload an empty comment, so the old diff comment is removed.
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - develop
       - bugfixes
       - master
-    types: [ synchronize, opened ]
+    types: [ opened, synchronize, reopened ]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions: { }
@@ -21,23 +25,44 @@ jobs:
     timeout-minutes: 15
 
     permissions:
-      contents: read
-      pull-requests: write
+      contents: read  # list the PR's files and clone both revisions
 
     steps:
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          persist-credentials: false
+      # The action stops before needing sqlcipher when no modified file matches, so most PRs skip the install.
+      - name: Count the modified databases
+        id: databases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          count=$(gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/files" \
+            --jq '[.[] | select(.status == "modified" and (.filename | endswith(".db")))] | length' \
+            | awk '{ total += $1 } END { print total + 0 }')
+          echo "count=$count" >> "$GITHUB_OUTPUT"
 
       - name: Install required
+        if: ${{ steps.databases.outputs.count != '0' }}
         timeout-minutes: 10
         run: sudo apt-get update && sudo apt-get install -y sqlcipher sqlite3-tools
 
       - name: SQLDiff action
         id: sql-diff
-        uses: rotki/action-sqldiff@a4616187138a18b2c6787f30b3f24cd52d5b8193  # v3.0.1
+        uses: rotki/action-sqldiff@6c2a045ab4902607a08d4fe9feb74de1b318bfd2  # v3.1.0
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           files: '*.db'
+          mode: output
+          output_file: ${{ runner.temp }}/pr-comment/comment.md
+
+      - name: Record the PR number
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: echo "$PR_NUMBER" > "$RUNNER_TEMP/pr-comment/pr-number.txt"
+
+      - name: Upload the PR comment
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: pr-comment
+          path: ${{ runner.temp }}/pr-comment/
+          if-no-files-found: error
+          retention-days: 1

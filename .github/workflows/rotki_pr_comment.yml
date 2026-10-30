@@ -1,0 +1,110 @@
+name: PR comment
+
+# Posts the PR comments that unprivileged pull_request runs prepare, since a fork PR's own run
+# cannot comment. The triggering run used the PR's copy of its workflow, so its pr-comment artifact
+# is untrusted: which comment it is comes from the run's workflow path, and the PR number is only
+# used once the API confirms the PR is open at the run's head commit. Each source keeps one comment,
+# found by its marker; an empty comment.md deletes it. A successful producer run always uploads the
+# artifact (an unlabeled Benchmarks run concludes skipped), so a missing one fails the job.
+# workflow_run only triggers from develop.
+on:
+  workflow_run:  # zizmor: ignore[dangerous-triggers] no checkout, PR checked against the API, body posted from a file
+    workflows: [ Benchmarks, SQLDiff ]
+    types: [ completed ]
+
+permissions: { }
+
+# A newer run of the same source and branch replaces the comment anyway.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.path }}-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+jobs:
+  comment:
+    name: 'Post the PR comment'
+    if: ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read  # download the triggering run's pr-comment artifact
+      pull-requests: write  # create, update or delete the comment
+    steps:
+      - name: Download the PR comment
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: pr-comment
+          path: ${{ runner.temp }}/pr-comment
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Post, update or delete the comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          WORKFLOW_PATH: ${{ github.event.workflow_run.path }}
+          RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          COMMENT_DIR: ${{ runner.temp }}/pr-comment
+        run: |
+          case "$WORKFLOW_PATH" in
+            .github/workflows/rotki_benchmarks.yml) source=benchmarks ;;
+            .github/workflows/rotki_sqldiff.yml) source=sqldiff ;;
+            *)
+              echo "::warning::No PR comment is defined for $WORKFLOW_PATH"
+              exit 0
+              ;;
+          esac
+          marker="<!-- rotki-pr-comment:$source -->"
+          # Comments posted by action-sqldiff before it ran unprivileged carry its own tag.
+          legacy_marker=$marker
+          if [ "$source" = 'sqldiff' ]; then
+            legacy_marker='<!-- action/sqldiff -->'
+          fi
+
+          number=$(tr -cd '0-9' < "$COMMENT_DIR/pr-number.txt")
+          if [ -z "$number" ]; then
+            echo "::error::No PR number in the pr-comment artifact"
+            exit 1
+          fi
+          pr=$(gh pr view "$number" --json state,headRefOid --jq '.state + " " + .headRefOid')
+          read -r state head_sha <<< "$pr"
+          if [ "$state" != 'OPEN' ]; then
+            echo "::warning::PR #$number is $state, not commenting"
+            exit 0
+          fi
+          if [ "$head_sha" != "$RUN_HEAD_SHA" ]; then
+            echo "::warning::PR #$number head $head_sha is not the triggering run's $RUN_HEAD_SHA, skipping"
+            exit 0
+          fi
+
+          ids=$(gh api --paginate "repos/$GH_REPO/issues/$number/comments" --jq \
+            ".[] | select(.user.login == \"github-actions[bot]\") | select((.body | startswith(\"$marker\")) or (.body | startswith(\"$legacy_marker\"))) | .id")
+          existing=${ids%%$'\n'*}
+
+          if [ ! -s "$COMMENT_DIR/comment.md" ]; then
+            if [ -n "$existing" ]; then
+              gh api -X DELETE "repos/$GH_REPO/issues/comments/$existing"
+              echo "Deleted the $source comment on PR #$number"
+            else
+              echo "Nothing to post on PR #$number"
+            fi
+            exit 0
+          fi
+
+          # GitHub rejects comments over 65536 characters; cutting the text could split a character or a fence.
+          body="$RUNNER_TEMP/comment-body.md"
+          {
+            printf '%s\n\n' "$marker"
+            if [ "$(wc -c < "$COMMENT_DIR/comment.md")" -le 64000 ]; then
+              cat "$COMMENT_DIR/comment.md"
+            else
+              printf 'The %s output is too large for a comment. See the summary of %s\n' "$source" "$RUN_URL"
+            fi
+          } > "$body"
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$GH_REPO/issues/comments/$existing" -F "body=@$body" --silent
+            echo "Updated the $source comment on PR #$number"
+          else
+            gh api "repos/$GH_REPO/issues/$number/comments" -F "body=@$body" --silent
+            echo "Posted the $source comment on PR #$number"
+          fi

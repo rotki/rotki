@@ -2,6 +2,9 @@ codecov:
   require_ci_to_pass: true
   notify:
     wait_for_ci: true
+    # A PR uploads from a varying number of jobs (frontend unit plus four e2e shards, or none), so
+    # no upload count marks the last one. The `done` job in rotki_ci.yml sends the notifications.
+    manual_trigger: true
 
 coverage:
   status:

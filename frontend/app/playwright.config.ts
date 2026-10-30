@@ -224,7 +224,7 @@ const reuseExistingServer = !process.env.CI && shard === 0;
 
 function getReporter(): PlaywrightTestConfig['reporter'] {
   if (process.env.CI)
-    return [['github'], ['html', { open: 'never' }]];
+    return [['github'], ['html', { open: 'never' }], ['json', { outputFile: path.join('tests', 'e2e', 'results.json') }]];
 
   if (shard > 0)
     return [['blob', { fileName: `shard-${shard}.zip`, outputDir: blobDir }], ['list']];

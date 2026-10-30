@@ -48,11 +48,16 @@ function install_mac_cpython {
     DOWNLOAD_URL=$MACPYTHON_URL/"$py_stripped"/"${py_inst}"
     if [[ ! -f $inst_path ]]; then
       echo downloading "$DOWNLOAD_URL"
-      curl "$DOWNLOAD_URL" > "$inst_path"
+      curl --fail --location --output "$inst_path" "$DOWNLOAD_URL"
     else
       echo "Using cached $inst_path"
     fi
-    sudo installer -pkg "$inst_path" -target /
+    # The pkg may come from the Actions cache, so it is checked on every run, not only after a download.
+    if ! echo "${PYTHON_MACOS_PKG_SHA256:?set PYTHON_MACOS_PKG_SHA256 in .github/.env.ci}  ${inst_path}" | shasum -a 256 -c -; then
+      echo "SHA-256 mismatch for ${py_inst}, update PYTHON_MACOS_PKG_SHA256 in .github/.env.ci together with PYTHON_VERSION" >&2
+      rm -f "$inst_path"
+      return 1
+    fi
     local py_mm=${py_version:0:4}
     export PYTHON_EXE=$MACPYTHON_PY_PREFIX/$py_mm/bin/python$py_mm
     export PYTHON_DIR=$MACPYTHON_PY_PREFIX/$py_mm
