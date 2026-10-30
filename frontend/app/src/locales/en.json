@@ -5743,6 +5743,7 @@
       "fetching_graph_data": "Fetching graph data",
       "history_events_no_data": "No data can be shown from history events processing.",
       "holdings_value": "Value of your holdings in {currency}",
+      "liability_holdings_value": "Value of your liabilities in {currency}",
       "more_history_events": "This history is built from your events. Import or pull older events to extend it further back.",
       "more_history_snapshot": "This history starts with your first balance snapshot. Switch the source to historical events to rebuild it from your events instead.",
       "negative_amount_detected": "Negative amount detected during historical processing.",
@@ -5763,6 +5764,7 @@
       "search_asset_to_see_graph_description": "Only assets you have held are listed.",
       "select_asset": "Your assets",
       "series": {
+        "liability_value": "Liability value",
         "price": "Price",
         "snapshot_amount": "Snapshot amount",
         "snapshot_value": "Snapshot value"
@@ -5779,7 +5781,8 @@
       "value_distribution_by_asset": "Value distribution by asset",
       "value_distribution_by_location": "Value distribution by location",
       "warnings": "{count} warning | {count} warnings",
-      "your_holdings": "Your {symbol} holdings"
+      "your_holdings": "Your {symbol} holdings",
+      "your_liabilities": "Your {symbol} liabilities"
     },
     "theme_manager": {
       "dark_theme": "Dark Theme",

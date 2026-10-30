@@ -20,6 +20,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_EUR, A_SOL, A_U
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.utils import DBAssetBalance
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
@@ -63,6 +64,35 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_statistics_asset_balance_liabilities(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Test that liabilities are returned as negative values next to the asset rows"""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.user_write() as write_cursor:
+        db.add_multiple_balances(write_cursor, [DBAssetBalance(
+            category=category,
+            time=Timestamp(ts),
+            asset=A_USDC,
+            amount=FVal(amount),
+            usd_value=FVal(amount),
+        ) for category, ts, amount in (
+            (BalanceType.ASSET, 1000, '5'),
+            (BalanceType.LIABILITY, 2000, '100'),
+        )])
+
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'statisticsassetbalanceresource'),
+        json={'asset': A_USDC.identifier},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert [(x['category'], x['time'], FVal(x['amount']), FVal(x['usd_value'])) for x in result if x['amount'] != '0'] == [  # noqa: E501
+        ('asset', 1000, FVal(5), FVal(5)),
+        ('liability', 2000, FVal(-100), FVal(-100)),
+    ]
 
 
 @pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)

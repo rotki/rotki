@@ -1807,14 +1807,22 @@ class RestAPI:
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if asset is not None:
-                # TODO: Think about this, but for now this is only balances, not liabilities
-                data = self.rotkehlchen.data.db.query_timed_balances(
-                    cursor=cursor,
-                    from_ts=from_timestamp,
-                    to_ts=to_timestamp,
-                    asset=asset,
-                    balance_type=BalanceType.ASSET,
-                )
+                data = []
+                for balance_type in (BalanceType.ASSET, BalanceType.LIABILITY):
+                    for entry in self.rotkehlchen.data.db.query_timed_balances(
+                        cursor=cursor,
+                        from_ts=from_timestamp,
+                        to_ts=to_timestamp,
+                        asset=asset,
+                        balance_type=balance_type,
+                    ):
+                        # inferred zero entries take their category from the whole timeline, so
+                        # the queried type is the reliable one. Liabilities plot below the axis.
+                        entry.category = balance_type
+                        if balance_type == BalanceType.LIABILITY:
+                            entry.amount, entry.usd_value = -entry.amount, -entry.usd_value
+                        data.append(entry)
+                data.sort(key=lambda x: x.time)
             else:  # marshmallow check guarantees collection_id exists
                 data = self.rotkehlchen.data.db.query_collection_timed_balances(
                     cursor=cursor,
