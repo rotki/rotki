@@ -3,7 +3,10 @@ import type {
   GroupEventData,
   StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
+import { HistoryEventEntryType } from '@rotki/common';
+import HistoryEventEntryTypeSelect from '@/modules/history/events/HistoryEventEntryTypeSelect.vue';
 import HistoryEventForm from '@/modules/history/events/HistoryEventForm.vue';
+import { initialEntryType } from '@/modules/history/management/forms/entry-type-options';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<GroupEventData | StandaloneEventData | undefined>({ required: true });
@@ -22,6 +25,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const stateUpdated = ref<boolean>(false);
 const loading = ref<boolean>(false);
+const entryType = ref<HistoryEventEntryType>(HistoryEventEntryType.HISTORY_EVENT);
 const form = useTemplateRef<InstanceType<typeof HistoryEventForm>>('form');
 const showErrors = ref<boolean>(false);
 
@@ -57,10 +61,12 @@ async function save(): Promise<void> {
   }
 }
 
-watch(modelValue, (value) => {
+watchImmediate(modelValue, (value) => {
   if (!isDefined(value)) {
     set(showErrors, false);
+    return;
   }
+  set(entryType, initialEntryType(value));
 });
 </script>
 
@@ -70,15 +76,25 @@ watch(modelValue, (value) => {
     :title="title"
     :action="{ disabled: loading, primary: t('common.actions.save') }"
     :errors="{ autoFocus: true, count: errorCount }"
+    :layout="{ fixedHeight: true }"
     :loading="loading"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
+    <template #header-append>
+      <HistoryEventEntryTypeSelect
+        v-if="modelValue"
+        v-model="entryType"
+        :data="modelValue"
+      />
+    </template>
+
     <HistoryEventForm
       v-if="modelValue"
       ref="form"
       v-model:state-updated="stateUpdated"
+      :entry-type="entryType"
       :data="modelValue"
     />
   </BigDialog>

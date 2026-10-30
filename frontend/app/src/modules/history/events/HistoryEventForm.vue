@@ -10,7 +10,6 @@ import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEv
 import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
 import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
 import EvmSwapEventForm from '@/modules/history/management/forms/EvmSwapEventForm.vue';
-import { EVM_EVENTS, isEvmTypeEvent, isSolanaTypeEvent, SOLANA_EVENTS } from '@/modules/history/management/forms/form-guards';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 import SolanaEventForm from '@/modules/history/management/forms/SolanaEventForm.vue';
 import SolanaSwapEventForm from '@/modules/history/management/forms/SolanaSwapEventForm.vue';
@@ -28,38 +27,12 @@ interface HistoryEventFormProps {
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
+/** Picked in the dialog header, which keeps the picker in place while the form below it changes. */
+const entryType = defineModel<HistoryEventEntryType>('entryType', { required: true });
+
 const { data } = defineProps<HistoryEventFormProps>();
 
-const { t } = useI18n({ useScope: 'global' });
-
-const entryType = ref<HistoryEventEntryType>(HistoryEventEntryType.HISTORY_EVENT);
 const form = useTemplateRef<ComponentPublicInstance<FormComponent>>('form');
-
-const isEvmGroupAdd = computed<boolean>(() => {
-  if (data.type !== 'group-add') {
-    return false;
-  }
-  return isEvmTypeEvent(data.group.entryType);
-});
-
-const isSolanaGroupAdd = computed<boolean>(() => {
-  if (data.type !== 'group-add') {
-    return false;
-  }
-  return isSolanaTypeEvent(data.group.entryType);
-});
-
-const isGroupAdd = logicOr(isEvmGroupAdd, isSolanaGroupAdd);
-
-const historyEventEntryTypes = computed<HistoryEventEntryType[]>(() => {
-  if (get(isEvmGroupAdd)) {
-    return [...EVM_EVENTS];
-  }
-  else if (get(isSolanaGroupAdd)) {
-    return [...SOLANA_EVENTS];
-  }
-  return Object.values(HistoryEventEntryType);
-});
 
 const formComponents: Record<HistoryEventEntryType, Component> = {
   [HistoryEventEntryType.ASSET_MOVEMENT_EVENT]: AssetMovementEventForm,
@@ -90,18 +63,6 @@ async function save() {
   return await get(form).save();
 }
 
-watchImmediate(() => data, (data) => {
-  if (!data) {
-    return;
-  }
-  if (data.type === 'edit')
-    set(entryType, data.event.entryType);
-  else if (data.type === 'edit-group')
-    set(entryType, data.eventsInGroup[0].entryType);
-  else if (data.type === 'group-add')
-    set(entryType, data.group.entryType);
-});
-
 defineExpose({
   errorCount,
   save,
@@ -109,28 +70,6 @@ defineExpose({
 </script>
 
 <template>
-  <RuiMenuSelect
-    v-model="entryType"
-    data-testid="entry-type"
-    :options="historyEventEntryTypes"
-    :disabled="data.type !== 'add' && !isGroupAdd"
-    :label="t('common.entry_type')"
-    details="hidden"
-  >
-    <template #selection="{ item }">
-      <span class="capitalize">
-        {{ item }}
-      </span>
-    </template>
-    <template #item="{ item }">
-      <span class="capitalize">
-        {{ item }}
-      </span>
-    </template>
-  </RuiMenuSelect>
-
-  <RuiDivider class="my-8" />
-
   <Component
     :is="formComponents[entryType]"
     ref="form"
