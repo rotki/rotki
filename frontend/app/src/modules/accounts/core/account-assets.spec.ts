@@ -62,9 +62,11 @@ describe('topTokens', () => {
 describe('xpubNativeHolding', () => {
   it('should show an xpub as one row of its native asset', () => {
     const holding = xpubNativeHolding({
+      addressCount: 0,
       amount: bigNumberify(2),
       category: 'bitcoin',
       chains: ['btc'],
+      fundedAddressCount: 0,
       kind: 'xpub',
       nativeAsset: 'BTC',
       type: 'group',

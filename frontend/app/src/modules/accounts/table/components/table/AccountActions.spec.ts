@@ -17,6 +17,7 @@ const supportsTransactionsMock = vi.fn();
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: vi.fn(() => ({
+    getChainName: (chain: string): string => `name of ${chain}`,
     supportsTransactions: supportsTransactionsMock,
   })),
 }));
@@ -81,14 +82,15 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
     accountOperation: boolean;
     group?: 'evm' | 'xpub';
     isSectionLoading: boolean;
+    refreshable?: boolean;
     row: AccountDataRow<BlockchainAccountWithBalance> | AccountDataRow<BlockchainAccountGroupWithBalance>;
-  }): VueWrapper {
+  }, renderButtonText = false): VueWrapper {
     return mount(AccountActions, {
       global: {
         plugins: [pinia],
         stubs: {
           AccountSkipQueriesToggle: true,
-          RuiButton: true,
+          RuiButton: renderButtonText ? { name: 'RuiButton', props: ['disabled'], template: '<div><slot /></div>' } : true,
           RuiIcon: true,
           // the row's upkeep sits in a menu; rendered open here so its entries can be inspected
           RuiMenu: { template: '<div><slot name="activator" v-bind="{ attrs: {} }" /><slot /></div>' },
@@ -307,6 +309,45 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
 
       const rowActions = wrapper.findComponent({ name: 'RowActions' });
       expect(rowActions.props('disabled')).toBe(false);
+    });
+  });
+
+  describe('refresh balances', () => {
+    const refreshButton = (): VueWrapper | undefined => wrapper.findAllComponents({ name: 'RuiButton' })
+      .find(candidate => candidate.attributes('data-testid') === 'row-refresh');
+
+    beforeEach(() => {
+      supportsTransactionsMock.mockReturnValue(true);
+    });
+
+    it('should not offer it unless the table asks for it', () => {
+      wrapper = createWrapper({ accountOperation: false, isSectionLoading: false, row: createGroupRow(['eth']) });
+
+      expect(refreshButton()).toBeUndefined();
+    });
+
+    it('should ask to refresh every chain the group is on', async () => {
+      wrapper = createWrapper({ accountOperation: false, isSectionLoading: false, refreshable: true, row: createGroupRow(['eth', 'base']) });
+
+      refreshButton()!.vm.$emit('click');
+      await nextTick();
+
+      expect(wrapper.emitted('refresh')).toEqual([[['eth', 'base']]]);
+    });
+
+    it('should name the one chain it refreshes, and count them when there are several', () => {
+      wrapper = createWrapper({ accountOperation: false, isSectionLoading: false, refreshable: true, row: createAccountRow('optimism') }, true);
+      expect(wrapper.find('[data-testid=row-refresh-scope]').text()).toBe('account_balances.row_refresh.one_chain::name of optimism');
+      wrapper.unmount();
+
+      wrapper = createWrapper({ accountOperation: false, isSectionLoading: false, refreshable: true, row: createGroupRow(['eth', 'base']) }, true);
+      expect(wrapper.find('[data-testid=row-refresh-scope]').text()).toBe('account_balances.row_refresh.chains::2');
+    });
+
+    it('should be disabled while the section is still loading', () => {
+      wrapper = createWrapper({ accountOperation: false, isSectionLoading: true, refreshable: true, row: createGroupRow(['eth']) });
+
+      expect(refreshButton()!.attributes('disabled')).toBe('true');
     });
   });
 

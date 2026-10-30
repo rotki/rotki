@@ -179,12 +179,14 @@ defineExpose({
       :category="category"
       framed
       details-in-drawer
+      row-refresh
       :class="{ '[&_[data-id=expand-button]]:animate-pulse-highlight!': selectionMode && !detailsDrawer?.isOpen }"
       group="evm"
       :accounts="accounts"
       :fetching="awaitingAccounts"
       @edit="emit('edit', $event)"
       @refresh="fetchData()"
+      @refresh-chains="startPromise(refreshClick($event))"
       @open-details="openDetails($event)"
     >
       <template #empty>

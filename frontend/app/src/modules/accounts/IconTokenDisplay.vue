@@ -12,11 +12,17 @@ const { assets, visible = 3 } = defineProps<{
   showChain?: boolean;
 }>();
 
+defineSlots<{
+  /** Replaces the plain "+N" count of the assets past the icons. */
+  more?: (props: { hidden: number; label: string }) => any;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const shouldShowAmount = useSetting('shouldShowAmount');
 /** The assets past the icons, shown as "+N" like the chains column; the total is its label. */
 const hidden = computed<number>(() => Math.max(0, assets.length - visible));
+const countLabel = computed<string>(() => t('account_balances.asset_count', { count: assets.length }, assets.length));
 const router = useRouter();
 
 async function navigateToAsset(asset: AssetBalance): Promise<void> {
@@ -69,14 +75,20 @@ async function navigateToAsset(asset: AssetBalance): Promise<void> {
     </div>
 
     <span class="ml-1.5 min-w-8 text-xs font-medium text-rui-text-secondary tabular-nums whitespace-nowrap">
-      <span
+      <slot
         v-if="hidden > 0"
-        :title="t('account_balances.asset_count', { count: assets.length }, assets.length)"
-        :aria-label="t('account_balances.asset_count', { count: assets.length }, assets.length)"
-        data-testid="top-asset-count"
+        name="more"
+        :hidden="hidden"
+        :label="countLabel"
       >
-        +{{ hidden }}
-      </span>
+        <span
+          :title="countLabel"
+          :aria-label="countLabel"
+          data-testid="top-asset-count"
+        >
+          +{{ hidden }}
+        </span>
+      </slot>
     </span>
   </div>
 </template>

@@ -19,10 +19,12 @@ function addressGroup(chains: string[], allChains?: string[]): AddressGroupWithB
 
 function xpubGroup(derivationPath?: string): XpubGroupWithBalance {
   return {
+    addressCount: 0,
     amount: bigNumberify(0),
     category: 'bitcoin',
     chains: ['btc'],
     derivationPath,
+    fundedAddressCount: 0,
     kind: 'xpub',
     nativeAsset: 'BTC',
     type: 'group',

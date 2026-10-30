@@ -16,7 +16,7 @@ import { useServerTable } from '@/modules/core/table/use-server-table';
 
 const selected = defineModel<string[] | undefined>('selected', { required: true });
 
-const { groupId, chains, tags, category, selectionMode, group } = defineProps<{
+const { groupId, chains, tags, category, selectionMode, group, emptyCount = 0 } = defineProps<{
   groupId: AccountGroupId;
   chains: string[];
   tags?: string[];
@@ -24,14 +24,21 @@ const { groupId, chains, tags, category, selectionMode, group } = defineProps<{
   selectionMode?: boolean;
   /** An xpub's derived addresses all sit on one chain, so each row is told apart by its address rather than its chain. */
   group?: 'xpub';
+  /** Accounts holding nothing, hidden until asked for; 0 lists every account. */
+  emptyCount?: number;
 }>();
 
 const emit = defineEmits<{
   edit: [account: AccountManageState];
 }>();
 
+const { t } = useI18n({ useScope: 'global' });
+
 const query = ref<LocationQuery>({});
 const expanded = ref<string[]>([]);
+const showEmpty = ref<boolean>(false);
+
+const hidesEmpty = computed<boolean>(() => emptyCount > 0 && !get(showEmpty));
 
 const { fetchGroupAccounts } = useBlockchainAccountData();
 
@@ -60,6 +67,7 @@ const {
     values: computed<Record<string, unknown>>(() => ({
       chain: chains,
       groupId,
+      onlyFunded: get(hidesEmpty) || undefined,
       tags,
     })),
   }],
@@ -102,4 +110,22 @@ defineExpose({
       />
     </template>
   </AccountBalancesTable>
+  <div
+    v-if="emptyCount > 0"
+    class="flex flex-wrap items-center gap-2 px-4 py-2 text-body-2 text-rui-text-secondary"
+    data-testid="account-group-empty-toggle"
+  >
+    <span v-if="hidesEmpty">
+      {{ t('account_balances.xpub.empty_hidden', { count: emptyCount }, emptyCount) }}
+    </span>
+    <RuiButton
+      variant="text"
+      color="primary"
+      size="sm"
+      data-testid="account-group-show-empty"
+      @click="showEmpty = !showEmpty"
+    >
+      {{ hidesEmpty ? t('account_balances.xpub.show_empty') : t('account_balances.xpub.hide_empty') }}
+    </RuiButton>
+  </div>
 </template>

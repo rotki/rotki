@@ -141,7 +141,8 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     const accountData = get(accounts);
     const balanceData = get(balances);
     const blockchainAccounts = getAccountList(accountData, balanceData);
-    const groupAccounts = blockchainAccounts.filter(account => account.groupId === params.groupId);
+    const groupAccounts = blockchainAccounts.filter(account =>
+      account.groupId === params.groupId && (!params.onlyFunded || account.amount.gt(0)));
     return ok(sortAndFilterAccounts(groupAccounts, params, {
       getLabel(account, chain) {
         return getAddressName(getAccountAddress(account), chain);

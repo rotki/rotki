@@ -121,6 +121,26 @@ describe('accountGroups', () => {
     expect(xpub.category).toBe('bitcoin');
   });
 
+  it('should count an xpub\'s derived addresses and, of those, the ones holding its native asset', () => {
+    const xpub = groupFor('xpub1');
+    assert(xpub && isXpubAccount(xpub));
+    expect(xpub.addressCount).toBe(3);
+    expect(xpub.fundedAddressCount).toBe(2);
+    expect(xpub.addressType).toBe('legacy');
+  });
+
+  it('should count no addresses and leave the type open for an xpub with nothing derived yet', () => {
+    const [lone] = accountGroups(
+      { btc: [createXpubAccount({ addresses: null, derivationPath: null, label: null, tags: null, xpub: 'xpub2' }, 'btc')] },
+      {},
+      ports,
+    );
+    assert(lone && isXpubAccount(lone));
+    expect(lone.addressCount).toBe(0);
+    expect(lone.fundedAddressCount).toBe(0);
+    expect(lone.addressType).toBeUndefined();
+  });
+
   it('should count only the addresses derived from that xpub, not those of another one on the same chain', () => {
     const withSibling: Accounts = {
       btc: [

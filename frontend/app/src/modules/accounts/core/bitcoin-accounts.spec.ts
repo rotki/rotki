@@ -3,11 +3,28 @@ import type { BlockchainTotals, BtcBalances } from '@/modules/balances/types/blo
 import { type Balance, bigNumberify } from '@rotki/common';
 import { assert, describe, expect, it } from 'vitest';
 import { getAccountGroupId, isAddressAccount, isXpubAccount } from '@/modules/accounts/account-utils';
-import { convertBtcAccounts, convertBtcBalances } from './bitcoin-accounts';
+import { convertBtcAccounts, convertBtcBalances, xpubAddressType } from './bitcoin-accounts';
 
 function bal(amount: number, value: number): Balance {
   return { amount: bigNumberify(amount), value: bigNumberify(value) };
 }
+
+describe('xpubAddressType', () => {
+  it('should read Native SegWit and SegWit off a zpub and a ypub, with or without addresses', () => {
+    expect(xpubAddressType('zpub6r', [])).toBe('native_segwit');
+    expect(xpubAddressType('ypub6W', ['3Abc'])).toBe('segwit');
+  });
+
+  it('should tell a Taproot xpub from a Legacy one by its derived addresses', () => {
+    expect(xpubAddressType('xpub6C', ['bc1pmzfrwwndsqmk5yh69yjr5lfgfg4ev8c0tsc06e'])).toBe('taproot');
+    expect(xpubAddressType('xpub6C', ['1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA'])).toBe('legacy');
+  });
+
+  it('should leave an xpub with nothing derived yet, or an unknown prefix, undecided', () => {
+    expect(xpubAddressType('xpub6C', [])).toBeUndefined();
+    expect(xpubAddressType('tpubD6', ['bc1q'])).toBeUndefined();
+  });
+});
 
 describe('convertBtcAccounts', () => {
   const accounts: BitcoinAccounts = {

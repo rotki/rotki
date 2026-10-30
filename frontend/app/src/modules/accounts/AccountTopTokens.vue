@@ -8,9 +8,15 @@ import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 
-const { chains, row } = defineProps<{
+const { chains, opensDetails = false, row } = defineProps<{
   chains: string[];
   row: BlockchainAccountBalance;
+  /** The "+N" count opens the account's details, where every asset is listed. */
+  opensDetails?: boolean;
+}>();
+
+const emit = defineEmits<{
+  'open-details': [];
 }>();
 
 const { useBlockchainBalances } = useAggregatedBalances();
@@ -38,7 +44,24 @@ async function navigateToAsset(asset: AssetBalance): Promise<void> {
   <IconTokenDisplay
     v-if="assets.length > 1"
     :assets="assets"
-  />
+  >
+    <template
+      v-if="opensDetails"
+      #more="{ hidden, label }"
+    >
+      <button
+        type="button"
+        class="rounded px-1 -mx-1 cursor-pointer hover:bg-rui-hover hover:text-rui-text focus-visible:outline-2 focus-visible:outline-rui-primary"
+        :title="label"
+        :aria-label="label"
+        data-testid="top-asset-count"
+        data-account-details-opener
+        @click.stop="emit('open-details')"
+      >
+        +{{ hidden }}
+      </button>
+    </template>
+  </IconTokenDisplay>
   <div
     v-else-if="assets.length === 1"
     class="flex items-center justify-end text-body-2"

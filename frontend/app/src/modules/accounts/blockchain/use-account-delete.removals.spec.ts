@@ -102,9 +102,11 @@ function groupShowingSomeChains(chains: string[], allChains: string[]): AddressG
 
 function xpubGroup(): XpubGroupWithBalance {
   return {
+    addressCount: 0,
     amount: bigNumberify(0),
     category: 'bitcoin',
     chains: ['btc'],
+    fundedAddressCount: 0,
     kind: 'xpub',
     nativeAsset: 'BTC',
     type: 'group',
