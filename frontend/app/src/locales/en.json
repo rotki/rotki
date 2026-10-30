@@ -5165,6 +5165,9 @@
         "pool_details": {
           "premium_only": "See your complete assets overview with a rotki Premium plan"
         },
+        "pool_icon": {
+          "more": "{count} more assets in this pool"
+        },
         "pool_table": {
           "title": "LP Tokens"
         }
