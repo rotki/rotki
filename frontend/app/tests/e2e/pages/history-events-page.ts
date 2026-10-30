@@ -165,6 +165,19 @@ export class HistoryEventsPage {
     await this.page.locator('[data-testid=notes] textarea:not([aria-hidden])').fill(data.notes);
   }
 
+  /** The picker's place on screen, which a change of entry type must not move. */
+  async entryTypeBox(): Promise<{ x: number; y: number; width: number; height: number }> {
+    const box = await this.page.locator('[data-testid=entry-type]').boundingBox();
+    if (!box)
+      throw new Error('the entry type picker is not on screen');
+    return box;
+  }
+
+  async cancelForm(): Promise<void> {
+    await this.page.locator('[data-testid=bottom-dialog] [data-testid=cancel]').click();
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
+  }
+
   async saveForm(): Promise<void> {
     await this.page.locator('[data-testid=bottom-dialog] [data-testid=confirm]').click();
     await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
