@@ -2,8 +2,8 @@ import type { BitcoinAccounts, BlockchainAccount, BlockchainAccountGroupWithBala
 import type { BlockchainTotals, BtcBalances } from '@/modules/balances/types/blockchain-balances';
 import { type Balance, bigNumberify, Blockchain, Zero } from '@rotki/common';
 import { ok } from 'plainfp/result';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { assert, beforeEach, describe, expect, it } from 'vitest';
+import { getAccountAddress, getXpubGroupId } from '@/modules/accounts/account-utils';
 import { convertBtcAccounts, convertBtcBalances } from '@/modules/accounts/core/bitcoin-accounts';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -122,11 +122,14 @@ describe('useBlockchainAccountData', () => {
         type: 'group',
         value: bigNumberify(10),
       }, {
+        addressCount: 1,
+        addressType: 'legacy',
         amount: bigNumberify(10),
         category: 'bitcoin',
         chains: [chain],
         derivationPath: 'm',
         expansion: 'accounts',
+        fundedAddressCount: 1,
         kind: 'xpub',
         label: undefined,
         nativeAsset: 'BTC',
@@ -135,10 +138,12 @@ describe('useBlockchainAccountData', () => {
         value: bigNumberify(10),
         xpub: 'xpub123',
       }, {
+        addressCount: 0,
         amount: Zero,
         category: 'bitcoin',
         chains: [chain],
         derivationPath: undefined,
+        fundedAddressCount: 0,
         kind: 'xpub',
         label: '123',
         nativeAsset: 'BTC',
@@ -184,6 +189,40 @@ describe('useBlockchainAccountData', () => {
       const firstElement = result[0];
       expect(getAccountAddress(firstElement)).toBe('xpub-derived-addr-1');
       expect(firstElement.groupId).toBe('xpub123456#m/0#btc');
+    });
+
+    it('should leave an xpub\'s empty derived addresses out of its group only when asked for funded ones', async () => {
+      const { updateAccounts } = useBlockchainAccountsStore();
+      const { updateBalances } = useBalancesStore();
+      const { fetchGroupAccounts } = useBlockchainAccountData();
+
+      updateAccounts(Blockchain.BTC, convertBtcAccounts(Blockchain.BTC, {
+        standalone: [],
+        xpubs: [{
+          addresses: [{ address: 'funded', label: null, tags: null }, { address: 'empty', label: null, tags: null }],
+          derivationPath: null,
+          label: null,
+          tags: null,
+          xpub: 'xpub9',
+        }],
+      }));
+      updateBalances(Blockchain.BTC, convertBtcBalances(Blockchain.BTC, { assets: {}, liabilities: {} }, {
+        xpubs: [{
+          addresses: { empty: createTestBalance(0, 0), funded: createTestBalance(1, 100) },
+          derivationPath: null,
+          xpub: 'xpub9',
+        }],
+      }));
+
+      const addressesOf = async (onlyFunded: boolean): Promise<string[]> => {
+        const groupId = getXpubGroupId({ xpub: 'xpub9' }, Blockchain.BTC);
+        const result = await fetchGroupAccounts({ groupId, limit: 10, offset: 0, onlyFunded });
+        assert(result.ok);
+        return result.value.data.map(account => getAccountAddress(account)).sort();
+      };
+
+      expect(await addressesOf(false)).toEqual(['empty', 'funded']);
+      expect(await addressesOf(true)).toEqual(['funded']);
     });
 
     it('should filter out xpub accounts from getBlockchainAccounts', () => {

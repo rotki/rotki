@@ -18,6 +18,8 @@ export interface Props<T extends BlockchainAccountBalance> {
   group?: 'evm' | 'xpub';
   isSectionLoading: boolean;
   row: AccountDataRow<T>;
+  /** Offers to refresh the balances of the chains the row is on, answered through `refresh`. */
+  refreshable?: boolean;
 }
 
 const { row } = defineProps<Props<T>>();
@@ -25,10 +27,11 @@ const { row } = defineProps<Props<T>>();
 const emit = defineEmits<{
   delete: [row: AccountDataRow<T>];
   edit: [group: string | undefined, row: AccountDataRow<T>];
+  refresh: [chains: string[]];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { supportsTransactions } = useSupportedChains();
+const { getChainName, supportsTransactions } = useSupportedChains();
 
 function showTokenDetection(row: AccountDataRow<T>): boolean {
   if (row.type === 'group')
@@ -58,6 +61,20 @@ const skipChains = computed<string[]>(() => row.type === 'group' ? row.chains : 
  */
 const canSkipQueries = computed<boolean>(() => isAddressAccount(row) && get(skipChains).length > 0);
 
+/**
+ * Where a refresh from this row reaches.
+ *
+ * @remarks
+ * A balance refresh runs a whole chain at a time, so this names the chains rather than promising
+ * the account alone.
+ */
+const refreshScope = computed<string>(() => {
+  const chains = get(skipChains);
+  return chains.length === 1
+    ? t('account_balances.row_refresh.one_chain', { chain: getChainName(chains[0]) })
+    : t('account_balances.row_refresh.chains', { count: chains.length });
+});
+
 function getTokenDetectionChains(row: AccountDataRow<T>): string[] {
   if (row.type === 'group')
     return row.chains.filter(chain => supportsTransactions(chain));
@@ -74,6 +91,11 @@ const { describeDeletion } = useAccountDelete();
 
 /** Read only while confirming, so rows that never ask do not plan a deletion. */
 const deletionText = computed<string>(() => describeDeletion({ data: row, type: 'account' }));
+
+function refreshChains(): void {
+  set(menuOpen, false);
+  emit('refresh', get(skipChains));
+}
 
 function confirmDeletion(): void {
   set(menuOpen, false);
@@ -116,6 +138,29 @@ watch(menuOpen, (open) => {
         </RuiButton>
       </template>
       <div class="w-80 py-1">
+        <RuiButton
+          v-if="refreshable"
+          variant="list"
+          :disabled="accountOperation || isSectionLoading"
+          data-testid="row-refresh"
+          @click="refreshChains()"
+        >
+          <template #prepend>
+            <RuiIcon
+              size="18"
+              name="lu-refresh-cw"
+            />
+          </template>
+          <span class="flex flex-col items-start text-left">
+            <span>{{ t('account_balances.row_refresh.title') }}</span>
+            <span
+              class="text-caption font-normal text-rui-text-secondary whitespace-normal"
+              data-testid="row-refresh-scope"
+            >
+              {{ refreshScope }}
+            </span>
+          </span>
+        </RuiButton>
         <TokenDetection
           v-if="showTokenDetection(row)"
           :address="getAccountAddress(row)"
@@ -129,7 +174,7 @@ watch(menuOpen, (open) => {
           :disabled="accountOperation"
         />
         <RuiDivider
-          v-if="showTokenDetection(row) || canSkipQueries"
+          v-if="refreshable || showTokenDetection(row) || canSkipQueries"
           class="my-1"
         />
         <div

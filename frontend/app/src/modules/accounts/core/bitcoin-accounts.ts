@@ -1,4 +1,3 @@
-import type { BitcoinAccounts, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type {
   BlockchainAssetBalances,
   BlockchainBalances,
@@ -6,7 +5,32 @@ import type {
   BtcBalances,
   EthBalance,
 } from '@/modules/balances/types/blockchain-balances';
+import { type BitcoinAccounts, type BlockchainAccount, XpubAddressType } from '@/modules/accounts/blockchain-accounts';
 import { createAccount, createXpubAccount } from '@/modules/accounts/create-account';
+
+/** The bech32m prefix of a mainnet Taproot address. */
+const TAPROOT_PREFIX = 'bc1p';
+
+/**
+ * The kind of address an xpub derives.
+ *
+ * @remarks
+ * A ypub or zpub names its type. An xpub key is stored the same way for Legacy and for Taproot, so
+ * its derived addresses settle which one it is, and with none derived yet it stays `undefined`.
+ * Bitcoin Cash has only Legacy keys.
+ *
+ * @param xpub - the key as stored, prefix included
+ * @param addresses - the addresses derived from it
+ */
+export function xpubAddressType(xpub: string, addresses: string[]): XpubAddressType | undefined {
+  if (xpub.startsWith('zpub'))
+    return XpubAddressType.NATIVE_SEGWIT;
+  if (xpub.startsWith('ypub'))
+    return XpubAddressType.SEGWIT;
+  if (!xpub.startsWith('xpub') || addresses.length === 0)
+    return undefined;
+  return addresses.some(address => address.startsWith(TAPROOT_PREFIX)) ? XpubAddressType.TAPROOT : XpubAddressType.LEGACY;
+}
 
 /** Each xpub followed by the addresses derived from it, then the standalone addresses. */
 export function convertBtcAccounts(chain: string, accounts: BitcoinAccounts): BlockchainAccount[] {

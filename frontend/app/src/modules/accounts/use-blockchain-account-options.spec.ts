@@ -34,7 +34,7 @@ function addressAccount(address: string, extras: Partial<AddressGroupWithBalance
 }
 
 function xpubAccount(xpub: string, extras: Partial<XpubGroupWithBalance> = {}): XpubGroupWithBalance {
-  return { amount: Zero, category: 'bitcoin', chains: ['btc'], kind: 'xpub', nativeAsset: 'BTC', type: 'group', value: Zero, xpub, ...extras };
+  return { addressCount: 0, amount: Zero, category: 'bitcoin', chains: ['btc'], fundedAddressCount: 0, kind: 'xpub', nativeAsset: 'BTC', type: 'group', value: Zero, xpub, ...extras };
 }
 
 describe('useBlockchainAccountOptions', () => {

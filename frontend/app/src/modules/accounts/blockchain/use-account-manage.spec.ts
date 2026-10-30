@@ -631,10 +631,12 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
 
     it('should build an xpub edit state from xpub data', () => {
       const account: BlockchainAccountBalance = {
+        addressCount: 0,
         amount: Zero,
         category: 'bitcoin',
         chains: [Blockchain.BTC],
         derivationPath: 'm/0',
+        fundedAddressCount: 0,
         kind: 'xpub',
         label: 'My xpub',
         nativeAsset: 'BTC',

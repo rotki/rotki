@@ -54,8 +54,8 @@ const stubs = {
     template: '<button data-testid="account-details-close" @click="$emit(\'close\')" />',
   },
   AccountGroupDetailsTable: {
-    props: { chains: Array, group: String, groupId: String },
-    template: '<div data-testid="table-stub" :data-group="groupId" :data-chains="chains.join(\',\')" :data-kind="group" />',
+    props: { chains: Array, emptyCount: Number, group: String, groupId: String },
+    template: '<div data-testid="table-stub" :data-group="groupId" :data-chains="chains.join(\',\')" :data-kind="group" :data-empty="emptyCount" />',
   },
   RuiNavigationDrawer: {
     emits: ['closed', 'update:modelValue'],
@@ -240,6 +240,27 @@ describe('modules/accounts/details/AccountDetailsDrawer', () => {
     expect(wrapper.find('[data-testid=table-stub]').attributes('data-kind')).toBe('xpub');
     expect(wrapper.find('[data-testid=assets-stub]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=tabs]').exists()).toBe(false);
+  });
+
+  it('should hide an xpub\'s empty addresses only when some address holds a balance', async () => {
+    const xpub = (fundedAddressCount: number): BlockchainAccountGroupWithBalance => createMock<BlockchainAccountGroupWithBalance>({
+      addressCount: 43,
+      chains: ['btc'],
+      derivationPath: undefined,
+      expansion: 'accounts',
+      fundedAddressCount,
+      kind: AccountKind.XPUB,
+      xpub: 'xpub1',
+    });
+    set(accountId, 'xpub1#btc');
+
+    set(groups, [xpub(4)]);
+    const wrapper = await createSlidIn();
+    expect(wrapper.find('[data-testid=table-stub]').attributes('data-empty')).toBe('39');
+
+    set(groups, [xpub(0)]);
+    await nextTick();
+    expect(wrapper.find('[data-testid=table-stub]').attributes('data-empty')).toBe('0');
   });
 
   it('should fall back to assets and show no tabs when the account has nothing else to list', async () => {

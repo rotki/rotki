@@ -96,10 +96,26 @@ interface GroupRow extends AccountMeta, RowBalance {
 /** One address across every chain it is tracked on. */
 export interface AddressGroupWithBalance extends AddressIdentity, GroupRow {}
 
+/** The kind of address an xpub derives, named the way wallets name it. */
+export const XpubAddressType = {
+  LEGACY: 'legacy',
+  NATIVE_SEGWIT: 'native_segwit',
+  SEGWIT: 'segwit',
+  TAPROOT: 'taproot',
+} as const;
+
+export type XpubAddressType = (typeof XpubAddressType)[keyof typeof XpubAddressType];
+
 /** One xpub, summing the addresses derived from it. */
 export interface XpubGroupWithBalance extends XpubIdentity, GroupRow {
   readonly amount: BigNumber;
   readonly nativeAsset: string;
+  /** How many addresses rotki derived and tracks for the xpub. */
+  readonly addressCount: number;
+  /** How many of those hold any of the chain's native asset. */
+  readonly fundedAddressCount: number;
+  /** `undefined` while nothing tells it apart: a bare xpub key with no address derived yet. */
+  readonly addressType?: XpubAddressType;
 }
 
 export type BlockchainAccountGroupWithBalance = AddressGroupWithBalance | XpubGroupWithBalance;
@@ -125,6 +141,8 @@ export interface BlockchainAccountRequestPayload extends PaginationRequestPayloa
 
 export interface BlockchainAccountGroupRequestPayload extends PaginationRequestPayload<BlockchainAccountBalance> {
   readonly groupId: AccountGroupId;
+  /** Leaves out the accounts holding none of their chain's native asset. */
+  readonly onlyFunded?: boolean;
 }
 
 export interface GeneralAccountData {

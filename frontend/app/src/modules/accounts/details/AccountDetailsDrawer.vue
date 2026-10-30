@@ -97,6 +97,20 @@ const chains = computed<string[]>(() => {
   return current.chains.filter(chain => !excluded.includes(chain));
 });
 
+/**
+ * The derived addresses of an xpub that hold nothing, which the list hides until asked.
+ *
+ * @remarks
+ * Wallets keep a gap of unused addresses past the last used one, so most of an xpub's addresses are
+ * empty. When none holds anything there is nothing else to show, so nothing is hidden.
+ */
+const emptyAddressCount = computed<number>(() => {
+  const current = get(shownGroup);
+  if (!current || !isXpubAccount(current) || current.fundedAddressCount === 0)
+    return 0;
+  return current.addressCount - current.fundedAddressCount;
+});
+
 const views = computed<AccountDetailsView[]>(() => {
   const current = get(shownGroup);
   return current ? accountDetailsViews(current) : [AccountDetailsView.ASSETS];
@@ -265,6 +279,7 @@ defineExpose({
             :category="category"
             :selection-mode="selectionMode"
             :group="isXpubAccount(shownGroup) ? 'xpub' : undefined"
+            :empty-count="emptyAddressCount"
             @edit="emit('edit', $event)"
           />
         </template>

@@ -9,9 +9,9 @@ import AccountChains from '@/modules/accounts/AccountChains.vue';
 import AccountTopTokens from '@/modules/accounts/AccountTopTokens.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { useTableEmptyState, useTableFetchError } from '@/modules/core/table/use-table-empty-state';
-import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAddressDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
+import AccountLabelCell from './components/AccountLabelCell.vue';
 import AccountTableGroupHeader from './components/AccountTableGroupHeader.vue';
 import AccountActions from './components/table/AccountActions.vue';
 import AccountBalanceValue from './components/table/AccountBalanceValue.vue';
@@ -32,7 +32,7 @@ const sort = defineModel<DataTableSortData<T>>('sort', { required: true });
 
 const expandedIds = defineModel<string[]>('expandedIds', { default: () => [], required: false });
 
-const { accounts, category, detailsInDrawer = false, fetching = false, framed = false, group } = defineProps<{
+const { accounts, category, detailsInDrawer = false, fetching = false, framed = false, group, rowRefresh = false } = defineProps<{
   accounts: Collection<T>;
   category: string;
   group?: 'evm' | 'xpub';
@@ -42,11 +42,14 @@ const { accounts, category, detailsInDrawer = false, fetching = false, framed = 
   fetching?: boolean;
   /** A row with details opens them elsewhere (`open-details`) instead of expanding in place. */
   detailsInDrawer?: boolean;
+  /** Each row's menu offers to refresh its chains, answered through `refresh-chains`. */
+  rowRefresh?: boolean;
 }>();
 
 const emit = defineEmits<{
   'edit': [account: AccountManageState];
   'refresh': [];
+  'refresh-chains': [chains: string[]];
   'open-details': [row: T];
 }>();
 
@@ -121,10 +124,7 @@ defineExpose({
     @update:expanded="expanded = $event ?? []"
   >
     <template #item.label="{ row }">
-      <LabeledAddressDisplay
-        :account="row"
-        class="my-2"
-      />
+      <AccountLabelCell :row="row" />
     </template>
     <template #item.chain="{ row }">
       <AccountChains
@@ -144,6 +144,8 @@ defineExpose({
       <AccountTopTokens
         :chains="getChains(row)"
         :row="row"
+        :opens-details="detailsInDrawer && !!row.expansion"
+        @open-details="emit('open-details', row)"
       />
     </template>
     <template #item.value="{ row }">
@@ -159,8 +161,10 @@ defineExpose({
         :group="group"
         :account-operation="accountOperation"
         :is-section-loading="isSectionLoading"
+        :refreshable="rowRefresh"
         @edit="edit(group, row)"
         @delete="deleteAccount($event)"
+        @refresh="emit('refresh-chains', $event)"
       />
     </template>
     <template

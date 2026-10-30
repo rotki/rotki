@@ -96,6 +96,11 @@
       "one_chain": "Refresh one chain"
     },
     "row_menu": "More actions for this account",
+    "row_refresh": {
+      "chains": "On its {count} chains",
+      "one_chain": "On {chain}",
+      "title": "Refresh balances"
+    },
     "show_all_assets": "Show all {count} assets",
     "show_top_assets": "Show only the top {count}",
     "skip_queries": {
@@ -116,6 +121,12 @@
       "oldest": "Oldest: {chain}, {time}",
       "skipped": "Queries skipped",
       "title": "Last balance refresh per chain"
+    },
+    "xpub": {
+      "empty_hidden": "{count} address with no balance is hidden. | {count} addresses with no balance are hidden.",
+      "funded": "{funded} of {count} address holds a balance | {funded} of {count} addresses hold a balance",
+      "hide_empty": "Hide empty addresses",
+      "show_empty": "Show them"
     }
   },
   "account_form": {

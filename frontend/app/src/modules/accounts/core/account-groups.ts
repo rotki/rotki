@@ -21,6 +21,7 @@ import {
   type XpubGroupWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import { type AccountBalancePorts, getAccountBalance, hasTokens } from '@/modules/accounts/core/account-balance';
+import { xpubAddressType } from '@/modules/accounts/core/bitcoin-accounts';
 import { assetSum } from '@/modules/core/common/data/calculation';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { deduplicateTags } from '@/modules/tags/tag-utils';
@@ -144,15 +145,21 @@ function xpubGroup(
     .filter(account => account.xpubParent && getXpubGroupId(account.xpubParent, account.chain) === groupId);
 
   const total: Balance = { amount: Zero, value: Zero };
+  let fundedAddressCount = 0;
   for (const child of children) {
     const { balance } = getAccountBalance(child, balances[xpub.chain] ?? {}, context);
     total.amount = total.amount.plus(balance.amount);
     total.value = total.value.plus(balance.value);
+    if (balance.amount.gt(0))
+      fundedAddressCount++;
   }
 
   return {
     ...total,
+    addressCount: children.length,
+    addressType: xpubAddressType(xpub.xpub, children.map(child => child.address)),
     category: context.category,
+    fundedAddressCount,
     chains: [xpub.chain],
     derivationPath: xpub.derivationPath,
     expansion: children.length > 0 ? 'accounts' : undefined,
