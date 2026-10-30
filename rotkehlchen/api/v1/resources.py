@@ -1682,6 +1682,13 @@ class UserPremiumSyncResource(BaseMethodView):
         )
 
 
+class StatisticsAddressInteractionsResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.query_address_interactions()
+
+
 class StatisticsNetvalueResource(BaseMethodView):
 
     get_schema = StatisticsNetValueSchema()

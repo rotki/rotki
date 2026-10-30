@@ -3,6 +3,7 @@ import logging
 import re
 from collections import defaultdict
 from dataclasses import dataclass
+from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from sqlcipher3 import dbapi2 as sqlcipher
@@ -213,6 +214,53 @@ class DBHistoryEvents:
 
     def __init__(self, database: DBHandler) -> None:
         self.db = database
+
+    def get_address_interactions(self) -> list[dict[str, str]]:
+        """Return unordered pairs of currently tracked accounts sharing a decoded event.
+
+        The event label identifies an account, not a transfer direction. Join against
+        accounts on the event's chain before deduplicating pairs and transactions.
+        """
+        interactions = []
+        with self.db.conn.read_ctx() as cursor:
+            for chain in CHAINS_WITH_TRANSACTIONS:
+                location = Location.from_chain(chain)
+                collation = 'NOCASE' if location.is_evm_or_evmlike() else 'BINARY'
+                addresses = 'SELECT identifier, address FROM chain_events_info'
+                if location.is_bitcoin():
+                    addresses = (
+                        'SELECT event_identifier AS identifier, address '
+                        'FROM bitcoin_events_addresses'
+                    )
+                rows = cursor.execute(
+                    'SELECT DISTINCT MIN(source.account, target.account) AS source, '
+                    'MAX(source.account, target.account) AS target, c.tx_ref '
+                    'FROM history_events h '
+                    'JOIN chain_events_info c ON c.identifier=h.identifier '
+                    f'JOIN ({addresses}) a ON a.identifier=h.identifier '
+                    'JOIN blockchain_accounts source ON source.blockchain=? '
+                    f'AND source.account=h.location_label COLLATE {collation} '
+                    'JOIN blockchain_accounts target ON target.blockchain=source.blockchain '
+                    f'AND target.account=a.address COLLATE {collation} '
+                    f'WHERE h.location=? AND source.account!=target.account COLLATE {collation} '
+                    'ORDER BY source, target, c.tx_ref',
+                    (chain.value, location.serialize_for_db()),
+                )
+                event_class = (
+                    BitcoinEvent if location.is_bitcoin() else
+                    SolanaEvent if location == Location.SOLANA else EvmEvent
+                )
+                interactions.extend({
+                    'chain': chain.serialize(),
+                    'source': source,
+                    'target': target,
+                    'tx_hash': str(event_class._deserialize_tx_ref(tx_ref)),
+                } for source, target, tx_ref in rows)
+
+        return sorted(
+            interactions,
+            key=itemgetter('chain', 'source', 'target', 'tx_hash'),
+        )
 
     def _mark_events_modified(
             self,
