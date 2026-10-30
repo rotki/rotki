@@ -5877,7 +5877,6 @@
   "swap_event_form": {
     "add_asset": "添加资产",
     "fee_notes": "手续费备注",
-    "fee_notes_indexed": "手续费备注 #{index}",
     "receive_notes": "接收备注",
     "spend_notes": "支出备注",
     "unique_id": "唯一标识符",

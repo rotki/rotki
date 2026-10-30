@@ -4,6 +4,7 @@ import type {
   SwapSubEventField,
   SwapSubEventState,
 } from '@/modules/history/management/forms/swap/swap-sub-event';
+import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';
 import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 
@@ -21,6 +22,7 @@ const { disabled, type } = defineProps<{
   location: string;
   single: boolean;
   errorMessages: SwapSubEventErrors;
+  hideLocationLabel?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -88,6 +90,7 @@ const userNotesLabel = computed<string>(() => {
         />
 
         <EventLocationLabel
+          v-if="!hideLocationLabel"
           v-model="modelValue.locationLabel"
           :location="location"
           :disabled="disabled"
@@ -96,36 +99,27 @@ const userNotesLabel = computed<string>(() => {
         />
       </div>
     </div>
-    <RuiAccordions
+    <EventDetailsSection
+      data-testid="advanced-accordion"
       :class="{
         'mx-14': !single,
       }"
+      :errors="() => errorMessages.userNotes"
+      :paths="['userNotes']"
     >
-      <RuiAccordion
-        data-testid="advanced-accordion"
-        :class-names="{ header: 'py-3' }"
-        eager
-      >
-        <template #header>
-          {{ t('transactions.events.form.advanced') }}
-        </template>
-
-        <div class="py-2">
-          <RuiTextArea
-            v-model="modelValue.userNotes"
-            data-testid="swap-sub-event-notes"
-            :data-key="type"
-            color="primary"
-            :disabled="disabled"
-            max-rows="5"
-            min-rows="3"
-            auto-grow
-            :label="userNotesLabel"
-            :error-messages="errorMessages.userNotes"
-            @blur="emit('blur', 'userNotes')"
-          />
-        </div>
-      </RuiAccordion>
-    </RuiAccordions>
+      <RuiTextArea
+        v-model="modelValue.userNotes"
+        data-testid="swap-sub-event-notes"
+        :data-key="type"
+        color="primary"
+        :disabled="disabled"
+        max-rows="5"
+        min-rows="3"
+        auto-grow
+        :label="userNotesLabel"
+        :error-messages="errorMessages.userNotes"
+        @blur="emit('blur', 'userNotes')"
+      />
+    </EventDetailsSection>
   </div>
 </template>

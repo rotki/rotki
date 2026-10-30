@@ -6552,13 +6552,13 @@
   "swap_event_form": {
     "add_asset": "Add asset",
     "fee_notes": "Fee notes",
-    "fee_notes_indexed": "Fee notes #{index}",
     "receive_notes": "Receive notes",
     "spend_notes": "Spend notes",
     "unique_id": "Unique Identifier",
     "unique_id_hint": "It is combined with the event location to create a unique event identifier",
     "validation": {
-      "at_least_one": "At least one asset is required"
+      "at_least_one": "At least one asset is required",
+      "only_one": "A swap without a transaction holds one asset on each side"
     }
   },
   "sync_buttons": {

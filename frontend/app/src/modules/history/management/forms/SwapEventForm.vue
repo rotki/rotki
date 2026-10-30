@@ -1,58 +1,38 @@
-<script setup lang="ts">
-import type { SwapEvent } from '@/modules/history/events/schemas';
-import type { GroupEventData } from '@/modules/history/management/forms/form-types';
-import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
-import { generateUUID } from '@shared/utils';
-import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
-import SimpleFeeList from '@/modules/history/management/forms/common/SimpleFeeList.vue';
-import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
-import {
-  emptySwapFee,
-  emptySwapForm,
-  swapIdentifiers,
-  swapSchema,
-  swapStateFromEvents,
-  toSwapEditPayload,
-  toSwapPayload,
-} from '@/modules/history/management/forms/swap-event-form';
-import SwapEventNotes from '@/modules/history/management/forms/swap/SwapEventNotes.vue';
-import { useFeeRows } from '@/modules/history/management/forms/swap/use-fee-rows';
-import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
+<script lang="ts" setup>
+import type { SwapKind } from '@/modules/history/management/forms/swap-event-form';
+import LocationSelector from '@/modules/balances/LocationSelector.vue';
+import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
+import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';
+import TxRefField from '@/modules/history/management/forms/common/TxRefField.vue';
+import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
+import { type SwapFormData, useSwapEventForm } from '@/modules/history/management/forms/use-swap-event-form';
+import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
+import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const { data } = defineProps<{ data: GroupEventData<SwapEvent> }>();
+/** One form for the three swap entry types; the entry type picked above it sets the kind. */
+const { data, entryType } = defineProps<{
+  data: SwapFormData;
+  entryType: SwapKind;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { form, save, seed } = useHistoryEventForm({
-  initial: emptySwapForm,
-  priceIntentKeys: ['spendPriceIntent', 'receivePriceIntent'],
-  priceIntents: (state) => {
-    const intents: PriceIntent[] = [];
-    if (state.spendPriceIntent)
-      intents.push(state.spendPriceIntent);
-    if (state.receivePriceIntent)
-      intents.push(state.receivePriceIntent);
-    return intents;
-  },
-  schema: swapSchema(),
-  stateUpdated,
-  toEditPayload: toSwapEditPayload,
-  // A new swap needs an identifier of its own, which a pure transform cannot produce.
-  transform: state => toSwapPayload(state, state.uniqueId || generateUUID()),
-});
+const {
+  form,
+  isEvm,
+  isPlain,
+  isSolana,
+  locations,
+  lookupCanRetry,
+  lookupHint,
+  lookupLoading,
+  retryLookup,
+  save,
+} = useSwapEventForm({ data: () => data, entryType: () => entryType, stateUpdated });
 
 const { state } = form;
-
-watchImmediate(() => data, (data) => {
-  if (data.type !== 'edit-group')
-    return;
-
-  seed(swapStateFromEvents(data.eventsInGroup), swapIdentifiers(data.eventsInGroup));
-});
-
-useFeeRows(() => state.hasFee, () => state.fees, emptySwapFee);
 
 defineExpose({
   errorCount: form.errorCount,
@@ -62,57 +42,77 @@ defineExpose({
 
 <template>
   <div>
-    <EventDateLocation
-      v-model:timestamp="state.timestamp"
-      v-model:location="state.location"
-      :location-disabled="data.type !== 'add'"
-      :error-messages="{
-        location: form.errors('location'),
-        timestamp: form.errors('timestamp'),
-      }"
-      @blur="form.touch($event)"
+    <LocationSelector
+      v-model="state.location"
+      :disabled="data.type !== 'add' || isSolana"
+      data-testid="location"
+      :items="locations"
+      :label="t('common.location')"
+      required
+      :error-messages="form.errors('location')"
+      @blur="form.touch('location')"
     />
 
-    <RuiDivider class="mb-6 mt-2" />
-
-    <HistoryEventAssetPriceForm
-      v-model:amount="state.spendAmount"
-      v-model:asset="state.spendAsset"
-      v-model:price-intent="state.spendPriceIntent"
-      hide-price-fields
-      :timestamp="state.timestamp"
-      :error-messages="{
-        amount: form.errors('spendAmount'),
-        asset: form.errors('spendAsset'),
-      }"
-      :location="state.location"
-      type="spend"
-      @blur="form.touch($event === 'amount' ? 'spendAmount' : 'spendAsset')"
+    <TxRefField
+      v-if="!isPlain"
+      v-model="state.txRef"
+      :disabled="data.type !== 'add'"
+      :label="isEvm ? t('common.tx_hash') : t('common.signature')"
+      :hint="isEvm ? lookupHint : ''"
+      :loading="lookupLoading"
+      :can-retry="lookupCanRetry"
+      :error-messages="form.errors('txRef')"
+      @blur="form.touch('txRef')"
+      @retry="retryLookup()"
     />
-
-    <HistoryEventAssetPriceForm
-      v-model:amount="state.receiveAmount"
-      v-model:asset="state.receiveAsset"
-      v-model:price-intent="state.receivePriceIntent"
-      hide-price-fields
-      :timestamp="state.timestamp"
-      :error-messages="{
-        amount: form.errors('receiveAmount'),
-        asset: form.errors('receiveAsset'),
-      }"
-      :location="state.location"
-      type="receive"
-      @blur="form.touch($event === 'amount' ? 'receiveAmount' : 'receiveAsset')"
-    />
-
     <RuiTextField
-      v-if="data.type !== 'edit-group'"
+      v-else-if="data.type !== 'edit-group'"
       v-model="state.uniqueId"
       color="primary"
       data-testid="unique-id"
       :hint="t('swap_event_form.unique_id_hint')"
       :label="t('swap_event_form.unique_id')"
       :error-messages="form.errors('uniqueId')"
+    />
+
+    <DateTimePicker
+      v-model="state.timestamp"
+      :label="t('common.datetime')"
+      required
+      max-date="now"
+      accuracy="millisecond"
+      data-testid="datetime"
+      :hint="t('transactions.events.form.datetime.hint')"
+      :error-messages="form.errors('timestamp')"
+      @blur="form.touch('timestamp')"
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
+    <SwapSubEventList
+      v-model="state.spend"
+      data-testid="spend"
+      path="spend"
+      :errors="form.errors"
+      :touch="form.touch"
+      :location="state.location"
+      :timestamp="state.timestamp"
+      :plain="isPlain"
+      type="spend"
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
+    <SwapSubEventList
+      v-model="state.receive"
+      data-testid="receive"
+      path="receive"
+      :errors="form.errors"
+      :touch="form.touch"
+      :location="state.location"
+      :timestamp="state.timestamp"
+      :plain="isPlain"
+      type="receive"
     />
 
     <RuiDivider class="mb-6 mt-2" />
@@ -124,21 +124,55 @@ defineExpose({
       color="primary"
     />
 
-    <SimpleFeeList
+    <SwapSubEventList
       v-if="state.hasFee"
-      v-model="state.fees"
-      path="fees"
+      v-model="state.fee"
+      data-testid="fee"
+      path="fee"
       :errors="form.errors"
       :touch="form.touch"
       :location="state.location"
+      :timestamp="state.timestamp"
+      :plain="isPlain"
+      type="fee"
     />
 
-    <SwapEventNotes
-      v-model:spend-notes="state.spendNotes"
-      v-model:receive-notes="state.receiveNotes"
-      v-model:fees="state.fees"
-      :error-messages="form.errors('userNotes')"
-      @blur="form.touch('userNotes')"
-    />
+    <template v-if="!isPlain">
+      <RuiDivider class="mb-6 mt-2" />
+
+      <CounterpartyInput
+        v-model="state.counterparty"
+        :label="t('common.counterparty')"
+        data-testid="counterparty"
+        :error-messages="form.errors('counterparty')"
+        @blur="form.touch('counterparty')"
+      />
+
+      <RuiTextField
+        v-model="state.address"
+        clearable
+        data-testid="address"
+        :label="t('transactions.events.form.contract_address.label')"
+        :error-messages="form.errors('address')"
+        @blur="form.touch('address')"
+      />
+
+      <EventDetailsSection
+        data-testid="swap-event-form-advance"
+        :errors="form.errors"
+        :paths="['sequenceIndex']"
+      >
+        <AmountInput
+          v-model="state.sequenceIndex"
+          integer
+          :disabled="data.type === 'edit-group'"
+          data-testid="sequence-index"
+          :label="t('transactions.events.form.sequence_index.label')"
+          required
+          :error-messages="form.errors('sequenceIndex')"
+          @blur="form.touch('sequenceIndex')"
+        />
+      </EventDetailsSection>
+    </template>
   </div>
 </template>

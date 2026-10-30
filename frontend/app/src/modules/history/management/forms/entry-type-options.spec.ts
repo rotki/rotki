@@ -1,5 +1,5 @@
 import type { EvmSwapEvent, GroupEditableHistoryEvents, SolanaSwapEvent, StandaloneEditableEvents } from '@/modules/history/events/schemas';
-import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
+import type { GroupAddEventData, GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { describe, expect, it } from 'vitest';
@@ -11,13 +11,13 @@ function groupAdd(entryType: StandaloneEditableEvents['entryType']): StandaloneE
   return { group: createMock<StandaloneEditableEvents>({ entryType }), nextSequenceId: '1', type: 'group-add' };
 }
 
-const evmSwapGroupAdd: GroupEventData = {
+const evmSwapGroupAdd: GroupAddEventData<EvmSwapEvent> = {
   group: createMock<EvmSwapEvent>({ entryType: HistoryEventEntryType.EVM_SWAP_EVENT }),
   nextSequenceId: '1',
   type: 'group-add',
 };
 
-const solanaSwapGroupAdd: GroupEventData = {
+const solanaSwapGroupAdd: GroupAddEventData<SolanaSwapEvent> = {
   group: createMock<SolanaSwapEvent>({ entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT }),
   nextSequenceId: '1',
   type: 'group-add',

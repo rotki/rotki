@@ -149,9 +149,7 @@ export class HistoryEventsPage {
 
     if (data.fee) {
       await this.page.locator('[data-testid=has-fee]').click();
-      await this.page.locator('[data-testid=fee-amount] input').clear();
-      await this.page.locator('[data-testid=fee-amount] input').fill(data.fee.amount);
-      await selectAsset(this.page, '[data-testid=fee-asset]', data.fee.asset, data.fee.assetId);
+      await this.fillSubEventList('fee', [data.fee]);
     }
   }
 
