@@ -12,7 +12,7 @@ interface Obstacle {
   bottom: number;
 }
 
-interface EdgeRoute {
+export interface EdgeRoute {
   path: string;
   labelX: number;
   labelY: number;
@@ -50,7 +50,7 @@ function nearestUnvisited(distances: number[], visited: Set<number>): number {
   return nearest;
 }
 
-function shortestRoute(source: Point, target: Point, obstacles: Obstacle[]): Point[] {
+function shortestRoute(source: Point, target: Point, obstacles: Obstacle[]): Point[] | undefined {
   const points = [source, target, ...obstacles.flatMap(({ left, right, top, bottom }) => [
     { x: left, y: top },
     { x: right, y: top },
@@ -67,7 +67,7 @@ function shortestRoute(source: Point, target: Point, obstacles: Obstacle[]): Poi
   while (true) {
     const current = nearestUnvisited(estimates, visited);
     if (current === -1 || !Number.isFinite(distances[current]))
-      throw new Error('Cannot route address interaction edge');
+      return undefined;
     if (current === 1)
       break;
     visited.add(current);
@@ -88,7 +88,57 @@ function shortestRoute(source: Point, target: Point, obstacles: Obstacle[]): Poi
   return route.reverse();
 }
 
-/** Routes edges outside unrelated node bodies and their two label rows. */
+/** Obstacles beyond this many make the visibility search too costly, so the edge keeps its curve. */
+const MAX_DETOUR_OBSTACLES = 12;
+/** How far past the edge's own bounding box an obstacle can still shape a detour. */
+const DETOUR_MARGIN = 120;
+
+function obstacleFor(node: InteractionNode, endpoint: boolean, padding: number): Obstacle {
+  return {
+    left: node.x - 92 - padding,
+    right: node.x + 92 + padding,
+    top: node.y + (endpoint ? 28 : -36 - padding),
+    bottom: node.y + 74 + padding,
+  };
+}
+
+function overlaps(obstacle: Obstacle, area: Obstacle): boolean {
+  return obstacle.left < area.right && obstacle.right > area.left && obstacle.top < area.bottom && obstacle.bottom > area.top;
+}
+
+function quadraticSamples(source: Point, control: Point, target: Point): Point[] {
+  return Array.from({ length: 33 }, (_, step): Point => {
+    const t = step / 32;
+    return {
+      x: (1 - t) ** 2 * source.x + 2 * (1 - t) * t * control.x + t ** 2 * target.x,
+      y: (1 - t) ** 2 * source.y + 2 * (1 - t) * t * control.y + t ** 2 * target.y,
+    };
+  });
+}
+
+function labelOf(route: Point[], fallback: Point): Point {
+  let longest = 0;
+  let label = fallback;
+  for (let step = 1; step < route.length; step++) {
+    const start = route[step - 1];
+    const end = route[step];
+    const length = Math.hypot(end.x - start.x, end.y - start.y);
+    if (length > longest) {
+      longest = length;
+      label = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+    }
+  }
+  return label;
+}
+
+/**
+ * Routes an edge outside unrelated node bodies and their two label rows.
+ *
+ * @remarks
+ * Never throws: the padding that keeps parallel edges apart can make neighbouring obstacles overlap
+ * and wall an endpoint in, so a blocked search is retried without padding, and an edge that still
+ * has no route (or sits among too many obstacles to search) keeps its direct curve.
+ */
 export function routeInteractionEdge(source: InteractionNode, target: InteractionNode, nodes: readonly InteractionNode[], index: number, count: number): EdgeRoute {
   const distance = Math.hypot(target.x - source.x, target.y - source.y);
   const offset = (index - (count - 1) / 2) * 64;
@@ -98,44 +148,37 @@ export function routeInteractionEdge(source: InteractionNode, target: Interactio
     x: midX - (target.y - source.y) / distance * offset,
     y: midY + (target.x - source.x) / distance * offset,
   };
+  const samples = quadraticSamples(source, control, target);
+  const area: Obstacle = {
+    left: Math.min(...samples.map(point => point.x)) - DETOUR_MARGIN,
+    right: Math.max(...samples.map(point => point.x)) + DETOUR_MARGIN,
+    top: Math.min(...samples.map(point => point.y)) - DETOUR_MARGIN,
+    bottom: Math.max(...samples.map(point => point.y)) + DETOUR_MARGIN,
+  };
+  const nearby = nodes.filter(node => overlaps(obstacleFor(node, false, 0), area));
+  const obstaclesAt = (padding: number): Obstacle[] =>
+    nearby.map(node => obstacleFor(node, node.id === source.id || node.id === target.id, padding));
+
   const padding = 14 * index / count;
-  const obstacles = nodes.map(node => ({
-    left: node.x - 92 - padding,
-    right: node.x + 92 + padding,
-    top: node.y + (node.id === source.id || node.id === target.id ? 28 : -36 - padding),
-    bottom: node.y + 74 + padding,
-  }));
-  const samples = Array.from({ length: 33 }, (_, step): Point => {
-    const t = step / 32;
-    return {
-      x: (1 - t) ** 2 * source.x + 2 * (1 - t) * t * control.x + t ** 2 * target.x,
-      y: (1 - t) ** 2 * source.y + 2 * (1 - t) * t * control.y + t ** 2 * target.y,
-    };
-  });
-  if (!samples.some((point, step) => step > 0 && obstacles.some(obstacle => intersects(samples[step - 1], point, obstacle)))) {
-    return {
-      path: `M ${source.x} ${source.y} Q ${control.x} ${control.y} ${target.x} ${target.y}`,
-      labelX: (midX + control.x) / 2,
-      labelY: (midY + control.y) / 2,
-    };
-  }
-  const route = shortestRoute(source, target, obstacles);
-  let longest = 0;
-  let labelX = midX;
-  let labelY = midY;
-  for (let step = 1; step < route.length; step++) {
-    const start = route[step - 1];
-    const end = route[step];
-    const length = Math.hypot(end.x - start.x, end.y - start.y);
-    if (length > longest) {
-      longest = length;
-      labelX = (start.x + end.x) / 2;
-      labelY = (start.y + end.y) / 2;
-    }
-  }
+  const padded = obstaclesAt(padding);
+  const curve: EdgeRoute = {
+    path: `M ${source.x} ${source.y} Q ${control.x} ${control.y} ${target.x} ${target.y}`,
+    labelX: (midX + control.x) / 2,
+    labelY: (midY + control.y) / 2,
+  };
+  if (!samples.some((point, step) => step > 0 && padded.some(obstacle => intersects(samples[step - 1], point, obstacle))))
+    return curve;
+  if (nearby.length > MAX_DETOUR_OBSTACLES)
+    return curve;
+
+  const route = shortestRoute(source, target, padded) ?? shortestRoute(source, target, obstaclesAt(0));
+  if (!route)
+    return curve;
+
+  const label = labelOf(route, { x: midX, y: midY });
   return {
     path: route.map((point, step) => `${step === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' '),
-    labelX,
-    labelY,
+    labelX: label.x,
+    labelY: label.y,
   };
 }

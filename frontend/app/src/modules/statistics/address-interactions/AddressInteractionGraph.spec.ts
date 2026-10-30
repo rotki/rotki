@@ -41,8 +41,12 @@ vi.mock('@/modules/balances/blockchain/use-blockchain-account-data', () => ({
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({
     getChainName: (chain: string): string => chain,
-    matchChain: (): undefined => undefined,
+    matchChain: (value: string): string | undefined => ['eth', 'ethereum'].includes(value) ? 'eth' : undefined,
   }),
+}));
+
+vi.mock('@/modules/core/common/use-locations', () => ({
+  useLocations: (): object => ({ tradeLocations: ref([{ identifier: 'optimism' }, { identifier: 'ethereum' }]) }),
 }));
 
 const SOURCE = '0x1111111111111111111111111111111111111111';
@@ -283,11 +287,11 @@ describe('address interaction graph', () => {
     await wrapper.get('[data-testid=interaction-history-link]').trigger('click');
     expect(push).toHaveBeenLastCalledWith({
       name: '/history/events/',
-      query: { txRefs: ['0xeth-transaction', '0xsecond-transaction'] },
+      query: { location: 'ethereum', txRefs: ['0xeth-transaction', '0xsecond-transaction'] },
     });
 
     await wrapper.findAll('[data-testid=interaction-tx-history]')[1].trigger('click');
-    expect(push).toHaveBeenLastCalledWith({ name: '/history/events/', query: { txRefs: ['0xsecond-transaction'] } });
+    expect(push).toHaveBeenLastCalledWith({ name: '/history/events/', query: { location: 'ethereum', txRefs: ['0xsecond-transaction'] } });
   });
 
   it('should focus a suggested address, combine it with chain filters and let users reset an empty result', async () => {

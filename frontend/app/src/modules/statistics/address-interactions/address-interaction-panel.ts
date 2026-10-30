@@ -1,6 +1,8 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { InteractionConnection, InteractionNode } from './address-interaction-graph';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
+import { useLocations } from '@/modules/core/common/use-locations';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 /** Strongest relations first: more shared transactions, then the graph's own stable order. */
 export function sortByActivity(connections: readonly InteractionConnection[]): InteractionConnection[] {
@@ -20,9 +22,33 @@ export function counterpartOf(connection: InteractionConnection, nodeId?: string
   return undefined;
 }
 
-/** The history events page filtered to exactly these transactions. */
-export function historyEventsRoute(txHashes: readonly string[]): RouteLocationRaw {
-  return { name: '/history/events/', query: { txRefs: [...txHashes] } };
+/**
+ * The history events page filtered to exactly these transactions, on one location when known.
+ *
+ * @remarks
+ * `txRefs` does not restrict the location, and the same hash can exist on several chains, so the
+ * connection's location is part of the filter to keep this in step with the graph's per-chain
+ * connections. A `location` of `undefined` leaves the filter off rather than send a value the
+ * history page would not recognise.
+ */
+export function historyEventsRoute(location: string | undefined, txHashes: readonly string[]): RouteLocationRaw {
+  return { name: '/history/events/', query: { ...(location && { location }), txRefs: [...txHashes] } };
+}
+
+/**
+ * Resolves a connection's chain id (`eth`) to the history location that holds its events (`ethereum`).
+ *
+ * @remarks
+ * The interactions API names chains by blockchain id, while the history `location` filter only
+ * accepts location identifiers, so the two cannot be passed through unchanged.
+ */
+export function useChainLocation(): (chain: string) => string | undefined {
+  const { tradeLocations } = useLocations();
+  const { matchChain } = useSupportedChains();
+  return (chain) => {
+    const blockchain = matchChain(chain);
+    return blockchain ? get(tradeLocations).find(({ identifier }) => matchChain(identifier) === blockchain)?.identifier : undefined;
+  };
 }
 
 /**

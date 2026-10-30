@@ -4,7 +4,7 @@ import { useAddressNameResolution } from '@/modules/accounts/address-book/use-ad
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useScramble } from '@/modules/settings/use-scramble';
-import { routeInteractionEdge } from './interaction-edge-routing';
+import { useInteractionRoutes } from './use-interaction-routes';
 import { useInteractionViewport } from './use-interaction-viewport';
 
 interface CanvasNode {
@@ -14,13 +14,6 @@ interface CanvasNode {
   label: string;
   x: number;
   y: number;
-}
-
-interface CanvasConnection {
-  connection: InteractionConnection;
-  path: string;
-  labelX: number;
-  labelY: number;
 }
 
 const { graph, selectedNodeId, selectedConnectionId } = defineProps<{
@@ -82,19 +75,7 @@ const nodes = computed<CanvasNode[]>(() => graph.nodes.map((node) => {
   };
 }));
 
-const connections = computed<CanvasConnection[]>(() => {
-  const pairs = new Map<string, InteractionConnection[]>();
-  for (const connection of graph.connections) {
-    const key = JSON.stringify([connection.source.id, connection.target.id]);
-    const pair = pairs.get(key) ?? [];
-    pair.push(connection);
-    pairs.set(key, pair);
-  }
-  return [...pairs.values()].flatMap(pair => pair.map((connection, index) => ({
-    connection,
-    ...routeInteractionEdge(connection.source, connection.target, graph.nodes, index, pair.length),
-  })));
-});
+const connections = useInteractionRoutes(() => graph);
 
 function isRelated(connection: InteractionConnection): boolean {
   return !selectedNodeId || connection.source.id === selectedNodeId || connection.target.id === selectedNodeId;

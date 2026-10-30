@@ -4,7 +4,7 @@ import { startPromise } from '@shared/utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
-import { historyEventsRoute } from './address-interaction-panel';
+import { historyEventsRoute, useChainLocation } from './address-interaction-panel';
 
 const { connection } = defineProps<{ connection: InteractionConnection }>();
 
@@ -15,9 +15,10 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const { getChainName } = useSupportedChains();
+const chainLocation = useChainLocation();
 
 function openInHistory(txHashes: readonly string[]): void {
-  startPromise(router.push(historyEventsRoute(txHashes)));
+  startPromise(router.push(historyEventsRoute(chainLocation(connection.chain), txHashes)));
 }
 </script>
 

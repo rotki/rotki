@@ -28,7 +28,11 @@ describe('address interaction panel helpers', () => {
     expect(counterpartOf(entry)).toBeUndefined();
   });
 
-  it('should filter history events to every transaction of the connection', () => {
-    expect(historyEventsRoute(['0x1', '0x2'])).toEqual({ name: '/history/events/', query: { txRefs: ['0x1', '0x2'] } });
+  it('should filter history events to every transaction of the connection on its own location', () => {
+    expect(historyEventsRoute('ethereum', ['0x1', '0x2'])).toEqual({ name: '/history/events/', query: { location: 'ethereum', txRefs: ['0x1', '0x2'] } });
+  });
+
+  it('should leave the location filter off rather than send one the history page would not recognise', () => {
+    expect(historyEventsRoute(undefined, ['0x1'])).toEqual({ name: '/history/events/', query: { txRefs: ['0x1'] } });
   });
 });
