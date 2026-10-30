@@ -486,6 +486,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/statistics/address-interactions/': RouteRecordInfo<
+      '/statistics/address-interactions/',
+      '/statistics/address-interactions',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/statistics/graphs/': RouteRecordInfo<
       '/statistics/graphs/',
       '/statistics/graphs',
@@ -1084,6 +1091,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/statistics/index.vue': {
       routes:
         | '/statistics/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/statistics/address-interactions/index.vue': {
+      routes:
+        | '/statistics/address-interactions/'
       views:
         | never
       pathParamNames:

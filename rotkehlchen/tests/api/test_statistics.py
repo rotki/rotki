@@ -2,11 +2,14 @@ import contextlib
 from contextlib import ExitStack
 from datetime import UTC, datetime
 from http import HTTPStatus
+from operator import itemgetter
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 import requests
+from eth_typing import HexAddress, HexStr
+from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -18,7 +21,8 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
@@ -49,6 +53,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTransaction,
     Location,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -771,3 +776,121 @@ def test_wrap_stats_counts_non_evm_chains(
     transactions_per_chain = result['transactions_per_chain']
     assert transactions_per_chain.get(SupportedBlockchain.SOLANA.name) == 1
     assert transactions_per_chain.get(SupportedBlockchain.BITCOIN.name) == 1
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True, False])
+def test_address_interactions(rotkehlchen_api_server: APIServer) -> None:
+    """Pairs are undirected, chain-local, distinct per transaction and currently tracked."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    url = api_url_for(rotkehlchen_api_server, 'statisticsaddressinteractionsresource')
+    assert assert_proper_sync_response_with_result(requests.get(url)) == []
+    first = to_checksum_address('0x00000000000000000000000000000000000000aa')
+    second = to_checksum_address('0x00000000000000000000000000000000000000bb')
+    other_chain = to_checksum_address('0x00000000000000000000000000000000000000cc')
+    untracked = to_checksum_address('0x00000000000000000000000000000000000000dd')
+    sol_first = 'So11111111111111111111111111111111111111112'
+    sol_second = '11111111111111111111111111111111'
+    tx_hash = deserialize_evm_tx_hash(b'\x01' * 32)
+    next_hash = deserialize_evm_tx_hash(b'\x02' * 32)
+    signature = SolanaEvent._deserialize_tx_ref(b'\x01' * 64)
+    btc_hash = BitcoinEvent._deserialize_tx_ref(b'\x03' * 32)
+    history: list[HistoryBaseEntry] = [
+        EvmEvent(
+            timestamp=TimestampMS(1700000000000),
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            amount=ONE,
+            tx_ref=tx,
+            sequence_index=index,
+            location=location,
+            asset=A_ETH,
+            location_label=source,
+            address=ChecksumEvmAddress(HexAddress(HexStr(target))),
+        )
+        for index, (source, target, location, tx) in enumerate([
+            (str(first).lower(), str(second).lower(), Location.ETHEREUM, tx_hash),
+            (second, first, Location.ETHEREUM, tx_hash),  # reciprocal
+            (first, second, Location.ETHEREUM, tx_hash),  # repeated
+            (first, second, Location.ETHEREUM, next_hash),  # another transaction
+            (first, str(first).lower(), Location.ETHEREUM, tx_hash),  # self
+            (first, other_chain, Location.ETHEREUM, tx_hash),  # tracked elsewhere
+            (other_chain, first, Location.ETHEREUM, tx_hash),
+            (first, untracked, Location.ETHEREUM, tx_hash),
+            (untracked, second, Location.ETHEREUM, tx_hash),
+            (first, second, Location.OPTIMISM, tx_hash),  # same hash, another chain
+        ])
+    ]
+    history.extend(SolanaEvent(
+        timestamp=TimestampMS(1700000000000),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        amount=ONE,
+        tx_ref=signature,
+        sequence_index=index,
+        asset=A_SOL,
+        location_label=source,
+        address=SolanaAddress(target),
+    ) for index, (source, target) in enumerate([
+        (sol_first, sol_second),
+        (sol_second, sol_first),
+        (sol_first.lower(), sol_second),  # must not match a different case
+        (sol_second, sol_first.lower()),
+        (sol_first, sol_first),
+    ]))
+    history.append(BitcoinEvent(
+        timestamp=TimestampMS(1700000000000),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        amount=ONE,
+        tx_ref=btc_hash,
+        sequence_index=0,
+        asset=A_BTC,
+        location_label=UNIT_BTC_ADDRESS1,
+        counterparty_addresses=[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2],
+    ))
+    with db.conn.write_ctx() as cursor:
+        cursor.executemany(
+            'INSERT OR IGNORE INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            [
+                ('ETH', first), ('ETH', second),
+                ('OPTIMISM', first), ('OPTIMISM', second), ('OPTIMISM', other_chain),
+                ('SOLANA', sol_first), ('SOLANA', sol_second),
+                ('BTC', UNIT_BTC_ADDRESS1), ('BTC', UNIT_BTC_ADDRESS2),
+            ],
+        )
+        DBHistoryEvents(db).add_history_events(write_cursor=cursor, history=history)
+
+    expected = sorted([
+        {
+            'chain': chain.serialize(),
+            'source': min(source, target),
+            'target': max(source, target),
+            'tx_hash': str(tx),
+        }
+        for chain, source, target, tx in [
+            (SupportedBlockchain.ETHEREUM, first, second, tx_hash),
+            (SupportedBlockchain.ETHEREUM, first, second, next_hash),
+            (SupportedBlockchain.OPTIMISM, first, second, tx_hash),
+            (SupportedBlockchain.SOLANA, sol_first, sol_second, signature),
+            (SupportedBlockchain.BITCOIN, UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2, btc_hash),
+        ]
+    ], key=itemgetter('chain', 'source', 'target', 'tx_hash'))
+    assert assert_proper_sync_response_with_result(requests.get(url)) == expected
+
+    # No stale cached links after removing an account; history remains untouched.
+    with db.conn.write_ctx() as cursor:
+        cursor.execute(
+            'DELETE FROM blockchain_accounts WHERE blockchain=? AND account=?',
+            ('ETH', second),
+        )
+    assert assert_proper_sync_response_with_result(requests.get(url)) == [
+        row for row in expected if row['chain'] != SupportedBlockchain.ETHEREUM.serialize()
+    ]
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
+def test_address_interactions_requires_login(rotkehlchen_api_server: APIServer) -> None:
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server, 'statisticsaddressinteractionsresource',
+    ))
+    assert response.status_code == HTTPStatus.UNAUTHORIZED

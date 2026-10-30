@@ -1772,6 +1772,14 @@ class RestAPI:
             return OK_RESULT
         return wrap_in_fail_result(msg, status_code=HTTPStatus.CONFLICT)
 
+    def query_address_interactions(self) -> Response:
+        return api_response(
+            result=_wrap_in_ok_result(
+                DBHistoryEvents(self.rotkehlchen.data.db).get_address_interactions(),
+            ),
+            status_code=HTTPStatus.OK,
+        )
+
     def query_netvalue_data(self, include_nfts: bool) -> Response:
         from_ts = Timestamp(0)
         premium = self.rotkehlchen.premium
