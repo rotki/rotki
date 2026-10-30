@@ -16,6 +16,7 @@ import {
   toAssetMovementPayload,
 } from '@/modules/history/management/forms/asset-movement-event-form';
 import AssetMovementFeeEntry from '@/modules/history/management/forms/common/AssetMovementFeeEntry.vue';
+import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
@@ -210,55 +211,48 @@ defineExpose({
 
     <RuiDivider class="mb-2 mt-6" />
 
-    <RuiAccordions>
-      <RuiAccordion
-        data-testid="asset-movement-event-form-advance"
-        :class-names="{ header: 'py-4' }"
-        eager
-      >
-        <template #header>
-          {{ t('transactions.events.form.advanced') }}
-        </template>
-        <div class="py-2">
-          <RuiTextField
-            v-model="state.groupIdentifier"
-            color="primary"
-            data-testid="group-identifier"
-            :disabled="state.hasActualGroupIdentifier"
-            :label="t('transactions.events.form.group_identifier.label')"
-            :error-messages="form.errors('groupIdentifier')"
-            @blur="form.touch('groupIdentifier')"
-          />
+    <EventDetailsSection
+      data-testid="asset-movement-event-form-advance"
+      :errors="form.errors"
+      :paths="['groupIdentifier', 'uniqueId', 'transactionId', 'blockchain']"
+    >
+      <RuiTextField
+        v-model="state.groupIdentifier"
+        color="primary"
+        data-testid="group-identifier"
+        :disabled="state.hasActualGroupIdentifier"
+        :label="t('transactions.events.form.group_identifier.label')"
+        :error-messages="form.errors('groupIdentifier')"
+        @blur="form.touch('groupIdentifier')"
+      />
 
-          <RuiTextField
-            v-model="state.uniqueId"
-            data-testid="unique-id"
-            color="primary"
-            :label="t('transactions.events.form.unique_id.label')"
-            :error-messages="form.errors('uniqueId')"
-            @blur="form.touch('uniqueId')"
-          />
+      <RuiTextField
+        v-model="state.uniqueId"
+        data-testid="unique-id"
+        color="primary"
+        :label="t('transactions.events.form.unique_id.label')"
+        :error-messages="form.errors('uniqueId')"
+        @blur="form.touch('uniqueId')"
+      />
 
-          <RuiTextField
-            v-model="state.transactionId"
-            color="primary"
-            data-testid="tx-ref"
-            :label="t('common.tx_hash')"
-            :error-messages="form.errors('transactionId')"
-            @blur="form.touch('transactionId')"
-          />
+      <RuiTextField
+        v-model="state.transactionId"
+        color="primary"
+        data-testid="tx-ref"
+        :label="t('common.tx_hash')"
+        :error-messages="form.errors('transactionId')"
+        @blur="form.touch('transactionId')"
+      />
 
-          <ChainSelect
-            v-model="state.blockchain"
-            data-testid="blockchain-id"
-            color="primary"
-            custom-value
-            :label="t('common.blockchain')"
-            :error-messages="form.errors('blockchain')"
-            @blur="form.touch('blockchain')"
-          />
-        </div>
-      </RuiAccordion>
-    </RuiAccordions>
+      <ChainSelect
+        v-model="state.blockchain"
+        data-testid="blockchain-id"
+        color="primary"
+        custom-value
+        :label="t('common.blockchain')"
+        :error-messages="form.errors('blockchain')"
+        @blur="form.touch('blockchain')"
+      />
+    </EventDetailsSection>
   </div>
 </template>
