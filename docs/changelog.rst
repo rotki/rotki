@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Historical balance buckets now remain blocked after enabling ETH2-as-ETH or when rebasing balance reconciliation fails. Successful reconciliation clears the rebasing blockage.
 * :feature:`-` Venice unstaking requests on Base are now decoded in transaction history.
 * :feature:`-` Lido withdrawal requests and ETH claims are now decoded in transaction history.
 * :feature:`-` Lido withdrawals and Venice staking withdrawals that are waiting for a claim now count towards balances. A chip next to the protocol opens each withdrawal request with its status and date, the accounts that need to claim and a link to the claim page, and turns green once a request can be claimed.
@@ -17,7 +18,6 @@ Changelog
 * :bug:`-` When the selected month has no upcoming events, the calendar's upcoming events list now keeps to the selected accounts instead of showing events for every account.
 * :bug:`-` The dates under the dashboard net value graph no longer draw on top of each other. Every date now names its month, for example "Jul 17" instead of "17".
 * :feature:`-` rotki is now available in Turkish. Pick Türkçe in the language selector on the login screen or under Settings > Interface-only.
-* :feature:`12291` rotki now checks that the balance it calculates for each of your EVM addresses matches the balance on chain at your last balance refresh, and flags any difference as a balance mismatch in the data issues page.
 * :bug:`-` When the asset database update fails during login, the login screen now shows the reason the backend gave instead of a generic sentence. Failed token detection no longer raises a popup, since its row in the task centre already reports it, and failures such as a backup that could not be created, RPC nodes that could not connect or history mappings that could not load are now filed as errors in the notification area instead of as information.
 * :feature:`-` Backend errors and warnings are now grouped in the notification area by what went wrong and where, for example every unreadable kucoin balance in one entry with a count, and titled accordingly. Rejected API keys now pop up with a link to the keys that need replacing.
 * :bug:`-` rotki now reconnects to the backend after the backend closes a connection that fell too far behind. Before, the window stayed disconnected for the rest of the session and missed live progress.

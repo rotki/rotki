@@ -33,6 +33,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.bucket_state import BucketStop, get_bucket_stops
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -2224,6 +2225,11 @@ def test_negative_rebasing_token_without_archive_node_writes_specific_issue(
             'reason': 'archive_node_unavailable',
         }
         node_inquirer.get_historical_token_balance.assert_called_once()
+        assert spend_id is not None
+        with database.conn.read_ctx() as cursor:
+            assert get_bucket_stops(cursor) == {(
+                Location.ETHEREUM.serialize_for_db(), TEST_ADDR1, '', A_DAI.identifier,
+            ): BucketStop(spend_id, TimestampMS(2000), FVal(10), FVal(-1))}
 
         DataIssuesManager(database).retry_auto_remediation(issue.id)
         process_historical_balances(
@@ -2253,6 +2259,7 @@ def test_negative_rebasing_token_without_archive_node_writes_specific_issue(
         assert len(issue.auto_remediation_attempts) == 2
         assert issue.auto_remediation_attempts[1]['success'] is True
         with database.conn.read_ctx() as cursor:
+            assert get_bucket_stops(cursor) == {}
             assert cursor.execute(
                 'SELECT metric_value FROM event_metrics '
                 'WHERE event_identifier=? AND metric_key=?',
@@ -2317,6 +2324,7 @@ def test_rebasing_reconciliation_resumes_after_transient_query_failure(
         assert issue.payload['event_identifier'] == event_ids[1]
         assert node_inquirer.get_historical_token_balance.call_count == 2
         with database.conn.read_ctx() as cursor:
+            assert get_bucket_stops(cursor) == {}
             assert cursor.execute(
                 'SELECT metric_key, metric_value FROM event_metrics '
                 'WHERE event_identifier=? ORDER BY rowid',
@@ -2387,6 +2395,11 @@ def test_rebasing_reconciliation_reports_only_first_failure(
             'reason': 'archive_node_unavailable',
         }
         assert node_inquirer.get_historical_token_balance.call_count == 2
+        assert (stop_id := event_ids[1]) is not None
+        with database.conn.read_ctx() as cursor:
+            assert get_bucket_stops(cursor) == {(
+                Location.ETHEREUM.serialize_for_db(), TEST_ADDR1, '', A_DAI.identifier,
+            ): BucketStop(stop_id, TimestampMS(2000), FVal(10), FVal(-1))}
     finally:
         GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=False)
 

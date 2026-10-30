@@ -134,6 +134,10 @@ from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.bucket_state import (
+    delete_balance_checks,
+    get_evm_location_code,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -812,6 +816,11 @@ class DBHandler:
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 to_upsert,
             )
+        if (
+            settings.treat_eth2_as_eth is not None and
+            settings.treat_eth2_as_eth != CachedSettings().get_entry('treat_eth2_as_eth')
+        ):  # the saved comparisons of ETH and ETH2 were aggregated under the previous mapping
+            delete_balance_checks(write_cursor=write_cursor, assets=(A_ETH.identifier, A_ETH2.identifier))  # noqa: E501
         CachedSettings().update_entries(settings)
 
     def patch_frontend_settings(
@@ -2220,6 +2229,11 @@ class DBHandler:
             'DELETE FROM blockchain_accounts WHERE '
             'blockchain = ? and account = ?;', tuples,
         )
+        if (location_code := get_evm_location_code(blockchain)) is not None:
+            delete_balance_checks(
+                write_cursor=write_cursor,
+                accounts=[(location_code, account) for account in accounts],
+            )
         # Only remove the address' tag mappings if it is no longer tracked on any
         # other chain. The same address (e.g. an EVM address) can be tracked on
         # multiple chains, all sharing a single address-keyed tag mapping, so the
@@ -4224,6 +4238,10 @@ class DBHandler:
                 write_cursor.execute(
                     'UPDATE assets SET identifier=? WHERE identifier=?;',
                     (target_asset.identifier, source_identifier),
+                )
+                delete_balance_checks(  # the history events now sit under the target asset
+                    write_cursor=write_cursor,
+                    assets=(source_identifier, target_asset.identifier),
                 )
 
     def get_latest_location_value_distribution(self) -> list[LocationData]:
