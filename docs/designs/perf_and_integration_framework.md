@@ -300,12 +300,14 @@ history for "did the last month of changes help?".
     artifact. The job runs unprivileged because fork PRs (rotki's normal
     contribution flow) get a read-only token regardless of declared
     permissions. Concurrency-cancelled on new pushes.
-  - **Comment workflow** (`rotki_benchmarks_comment.yml`): triggered by
-    `workflow_run` on Benchmarks completion, runs in repo context with
-    `pull-requests: write`, downloads the artifact and posts/updates a single
-    PR comment (`gh pr comment --edit-last --create-if-none`). Like the
-    nightly cron, `workflow_run` only fires once the file reaches the default
-    branch; until then the table is visible in the run summary and artifact.
+  - **Comment workflow** (`rotki_pr_comment.yml`, shared with SQLDiff):
+    triggered by `workflow_run` on Benchmarks completion, runs in repo context
+    with `pull-requests: write`, downloads the run's `pr-comment` artifact,
+    checks the PR is open at the run's head commit, and creates or updates a
+    single comment found by its `<!-- rotki-pr-comment:benchmarks -->` marker.
+    Like the nightly cron, `workflow_run` only fires once the file reaches the
+    default branch; until then the table is visible in the run summary and
+    artifact.
   - **Nightly job**: matrix over the measured rotki branches (`develop`,
     `bugfixes`), each checked out explicitly (the cron only fires from the
     default branch) → `bench run --gha-output` → push datapoint to the

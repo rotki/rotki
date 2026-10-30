@@ -1,0 +1,89 @@
+name: PR cache cleanup
+
+# Deletes a closed PR's caches, which nothing can restore but which evict the base branch
+# caches from the 10 GB budget. The PR number comes from "PR closed", whose workflow file the
+# PR could have changed, so it is used only once the API confirms the PR is closed and its head
+# is the triggering run's commit. workflow_run triggers only once this file is on develop.
+on:
+  workflow_run:  # zizmor: ignore[dangerous-triggers] no checkout, only a PR number the API confirms
+    workflows: [ PR closed ]
+    types: [ completed ]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'Number of the closed pull request whose caches to delete'
+        required: true
+        type: number
+
+permissions: { }
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.id || inputs.pr }}
+  cancel-in-progress: false
+
+jobs:
+  delete-caches:
+    name: 'Delete the PR caches'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.repository == 'rotki/rotki' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
+    permissions:
+      actions: write  # download the triggering run's artifact and delete caches
+      pull-requests: read  # confirm the PR is closed and matches the triggering run
+    steps:
+      - name: Download the PR number
+        if: ${{ github.event_name == 'workflow_run' }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: pr-closed
+          path: ${{ runner.temp }}/pr-closed
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Confirm the PR is closed
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_PR: ${{ inputs.pr }}
+          ARTIFACT_FILE: ${{ runner.temp }}/pr-closed/pr-number.txt
+          RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
+            number=$(printf '%s' "$DISPATCH_PR" | tr -cd '0-9')
+          else
+            number=$(tr -cd '0-9' < "$ARTIFACT_FILE")
+          fi
+          if [ -z "$number" ]; then
+            echo "::error::No pull request number to clean up"
+            exit 1
+          fi
+          pr=$(gh pr view "$number" --json state,headRefOid --jq '.state + " " + .headRefOid')
+          read -r state head_sha <<< "$pr"
+          if [ "$state" = 'OPEN' ]; then
+            echo "::warning::PR #$number is still open, keeping its caches"
+            exit 0
+          fi
+          if [ "$EVENT_NAME" = 'workflow_run' ] && [ "$head_sha" != "$RUN_HEAD_SHA" ]; then
+            echo "::warning::PR #$number head $head_sha is not the triggering run's $RUN_HEAD_SHA, skipping"
+            exit 0
+          fi
+          echo "ref=refs/pull/$number/merge" >> "$GITHUB_OUTPUT"
+
+      - name: Delete caches saved under the PR merge ref
+        if: ${{ steps.pr.outputs.ref != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_REF: ${{ steps.pr.outputs.ref }}
+        run: |
+          ids=$(gh cache list --ref "$PR_REF" --limit 100 --json id --jq '.[].id')
+          if [ -z "$ids" ]; then
+            echo "No caches under $PR_REF"
+            exit 0
+          fi
+          for id in $ids; do
+            gh cache delete "$id"
+          done
+          echo "Deleted $(echo "$ids" | wc -l) caches under $PR_REF"

@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
         with:
           env_file: .github/.env.ci
 
@@ -31,7 +31,7 @@ jobs:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version-file: 'frontend/.nvmrc'
           cache: 'pnpm'

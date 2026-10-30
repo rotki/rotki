@@ -32,6 +32,7 @@ jobs:
       e2e_tasks: ${{ steps.checker.outputs.e2e_tasks }}
       documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
       test_environment: ${{ steps.checker.outputs.backend_environment }}
+      codeql_languages: ${{ steps.codeql.outputs.languages }}
     permissions:
       contents: read
     steps:
@@ -41,7 +42,7 @@ jobs:
           persist-credentials: false
 
       - name: Run check action
-        uses: rotki/action-job-checker@c507ef41d38d78c43014d42175dc1725019f0c23  # v6.1.0
+        uses: rotki/action-job-checker@06547b531456e382853879a65f964996527fdd70  # v6.1.1
         id: checker
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -53,6 +54,7 @@ jobs:
                 run_tag: run frontend
                 implies: [e2e]
               - name: e2e
+                paths: [.github/workflows/task_e2e_tests.yml]
                 run_tag: run e2e
               - name: backend
                 paths:
@@ -75,6 +77,21 @@ jobs:
               - name: documentation
                 paths: [docs]
 
+      # One CodeQL analysis per language whose sources changed, fed to the code-analyze matrix.
+      - name: Pick CodeQL languages
+        id: codeql
+        env:
+          FRONTEND: ${{ steps.checker.outputs.frontend_tasks }}
+          BACKEND: ${{ steps.checker.outputs.backend_tasks }}
+          COLIBRI: ${{ steps.checker.outputs.colibri_tasks }}
+          STARLING: ${{ steps.checker.outputs.starling_tasks }}
+        run: |
+          languages=()
+          if [[ "$FRONTEND" == 'true' ]]; then languages+=(javascript); fi
+          if [[ "$BACKEND" == 'true' ]]; then languages+=(python); fi
+          if [[ "$COLIBRI" == 'true' || "$STARLING" == 'true' ]]; then languages+=(rust); fi
+          echo "languages=$(jq -cn '$ARGS.positional' --args "${languages[@]}")" >> "$GITHUB_OUTPUT"
+
   check-typos:
     name: 'Check Typos'
     runs-on: ubuntu-latest
@@ -87,35 +104,67 @@ jobs:
           persist-credentials: false
 
       - name: Run typos checker
-        uses: crate-ci/typos@8a48f81b6c64dcfea44b3633223084c4be58ac5f  # v1.49.0
+        uses: crate-ci/typos@7f9d0819ca1c008ade73f4b41fa9d258d48f605b  # v1.51.1
 
-  code-analyze-frontend:
-    name: 'Code analyze frontend'
+  code-analyze:
+    name: 'Code analyze ${{ matrix.language }}'
     needs: [ 'check-changes', 'check-typos' ]
     permissions:
-      actions: read
-      contents: read
-      security-events: write
-    if: ${{ needs.check-changes.outputs.frontend_tasks }}
+      actions: read  # codeql reads the workflow run it reports for
+      contents: read  # check out the code to analyze
+      security-events: write  # upload the codeql results
+    if: ${{ needs.check-changes.outputs.codeql_languages != '[]' }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(needs.check-changes.outputs.codeql_languages) }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
 
+      # None of the three needs a build: javascript and python are read from source, and rust
+      # is extracted through rust-analyzer.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@d1ba80a13dd99fba24a470575428917156a28b43  # v4.37.5
+        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
         with:
-          languages: 'javascript'
+          languages: ${{ matrix.language }}
+          build-mode: none
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@d1ba80a13dd99fba24a470575428917156a28b43  # v4.37.5
-
+      # The category keeps the existing javascript and python alert history attached.
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@d1ba80a13dd99fba24a470575428917156a28b43  # v4.37.5
+        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
         with:
-          category: "/language:javascript"
+          category: "/language:${{ matrix.language }}"
+
+  # Each base branch scan saves a full overlay-base database per language (about 320 MB for
+  # javascript, 125 MB for python) under its commit, and a pull request scan restores only the
+  # newest. Nothing removed the rest, so they filled half the repository's 10 GB cache budget.
+  # Two per series stay, so a pull request scan that started before this one still finds a base.
+  prune-codeql-caches:
+    name: 'Prune CodeQL overlay caches'
+    needs: [ 'code-analyze' ]
+    if: ${{ github.event_name == 'push' && !cancelled() && needs.code-analyze.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write  # delete the superseded cache entries
+    steps:
+      - name: Keep the two newest overlay-base databases per series
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH_REF: ${{ github.ref }}
+        # A key ends in <commit>-<run id>-<attempt>; everything before that names the series.
+        run: |
+          ids=$(gh cache list --ref "$BRANCH_REF" --key codeql-overlay-base-database- --limit 100 \
+            --json id,key,createdAt \
+            --jq 'group_by(.key | split("-") | .[:-3] | join("-")) | map(sort_by(.createdAt) | reverse | .[2:]) | flatten | .[].id')
+          for id in $ids; do
+            gh cache delete "$id"
+          done
+          echo "Deleted $(echo "$ids" | grep -c . || true) superseded overlay-base databases"
 
   lint-frontend:
     name: 'Frontend checks'
@@ -132,7 +181,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
         with:
           env_file: .github/.env.ci
 
@@ -142,7 +191,7 @@ jobs:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version-file: 'frontend/.nvmrc'
           cache: 'pnpm'
@@ -222,7 +271,7 @@ jobs:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version-file: 'frontend/.nvmrc'
           cache: 'pnpm'
@@ -240,11 +289,10 @@ jobs:
     name: 'Frontend unit tests'
     needs: [ 'check-changes' ]
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.frontend_tasks }}
-    uses: ./.github/workflows/task_fe_unit_tests.yml
+    uses: $/.github/workflows/task_fe_unit_tests.yml
     permissions:
       contents: read
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      id-token: write  # the Codecov upload authenticates with OIDC
 
   docs:
     name: 'Documentation build'
@@ -260,7 +308,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
         with:
           env_file: .github/.env.ci
 
@@ -283,34 +331,6 @@ jobs:
       - name: Build html docs
         run: cd docs && uv run make html
 
-  code-analyze-backend:
-    name: 'Code analyze backend'
-    needs: [ 'check-changes', 'check-typos' ]
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    if: ${{ needs.check-changes.outputs.backend_tasks }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@d1ba80a13dd99fba24a470575428917156a28b43  # v4.37.5
-        with:
-          languages: 'python'
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@d1ba80a13dd99fba24a470575428917156a28b43  # v4.37.5
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@d1ba80a13dd99fba24a470575428917156a28b43  # v4.37.5
-        with:
-          category: "/language:python"
-
   lint-colibri:
     name: 'Colibri lint and test'
     needs: [ 'check-changes', 'check-typos' ]
@@ -323,14 +343,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: dtolnay/rust-toolchain@a10f8ba42083c4371848c3dd6d3cd3622a939cd1  # clippy
-        with:
-          toolchain: 1.91
-          components: clippy
+      - name: Setup Rust
+        run: |
+          rustup toolchain install 1.91 --profile minimal --component clippy --no-self-update
+          rustup default 1.91
 
-      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+      # Restore only: warm-rust-caches fills this key from the base branch.
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
         with:
-          cache-on-failure: true
+          shared-key: rust-linux
+          save-if: false
           workspaces: |
             . -> target
 
@@ -357,14 +379,16 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: dtolnay/rust-toolchain@a10f8ba42083c4371848c3dd6d3cd3622a939cd1  # clippy
-        with:
-          toolchain: 1.91
-          components: clippy, rustfmt
+      - name: Setup Rust
+        run: |
+          rustup toolchain install 1.91 --profile minimal --component clippy,rustfmt --no-self-update
+          rustup default 1.91
 
-      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+      # Restore only: warm-rust-caches fills this key from the base branch.
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
         with:
-          cache-on-failure: true
+          shared-key: rust-linux
+          save-if: false
           workspaces: |
             . -> target
 
@@ -398,17 +422,21 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
         with:
           env_file: .github/.env.ci
 
-      - uses: dtolnay/rust-toolchain@a10f8ba42083c4371848c3dd6d3cd3622a939cd1
-        with:
-          toolchain: 1.91
+      - name: Setup Rust
+        shell: bash
+        run: |
+          rustup toolchain install 1.91 --profile minimal --no-self-update
+          rustup default 1.91
 
-      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+      # Restore only: warm-rust-caches-windows fills this key from the base branch.
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
         with:
-          cache-on-failure: true
+          shared-key: starling-windows
+          save-if: false
           workspaces: |
             . -> target
 
@@ -440,7 +468,7 @@ jobs:
       # `--with` keeps pyinstaller out of the project env (it is not a project dep).
       - name: Build the pyinstaller fixture bundle
         run: >
-          uv run --no-sync --with pyinstaller==${{ env.PYINSTALLER_VERSION }} pyinstaller
+          uv run --no-sync --with pyinstaller==$env:PYINSTALLER_VERSION pyinstaller
           --onedir --noconfirm --clean
           --name fake_bootloader_pyi
           --distpath target/pyi/dist
@@ -451,6 +479,88 @@ jobs:
       - run: cargo test -p starling-core --locked --test process_tree_python_bundle -- --ignored
         env:
           RUSTFLAGS: -Dwarnings
+
+  # GitHub serves a pull request only its own caches and its base branch's, and the Rust jobs
+  # above run on pull requests alone, so each PR compiled every dependency from scratch and
+  # saved a copy no other PR could read. These two fill the caches the Rust jobs restore, from
+  # the base branch, on pushes that touch Rust. The key moves only with Cargo.lock and the
+  # toolchain, so a lookup that finds it skips the build: nothing is linted or tested again.
+  warm-rust-caches:
+    name: 'Warm Rust caches'
+    needs: [ 'check-changes' ]
+    if: ${{ github.event_name == 'push' && (needs.check-changes.outputs.colibri_tasks || needs.check-changes.outputs.starling_tasks) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust
+        run: |
+          rustup toolchain install 1.91 --profile minimal --component clippy --no-self-update
+          rustup default 1.91
+
+      - name: Look up the Rust cache
+        id: rust-cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+        with:
+          shared-key: rust-linux
+          lookup-only: true
+          workspaces: |
+            . -> target
+
+      # RUSTFLAGS goes on this step, not the job: rust-cache hashes every RUST* variable present
+      # when it runs into the key, and the Rust jobs set it only on their build steps.
+      - name: Build what lint-colibri and lint-starling compile
+        if: steps.rust-cache.outputs.cache-hit != 'true'
+        env:
+          RUSTFLAGS: -Dwarnings  # matches the Rust jobs, whose artifacts are fingerprinted with it
+        run: |
+          cargo check -p colibri --locked
+          cargo clippy -p colibri --all-targets --locked
+          cargo test -p colibri --locked --no-run
+          cargo check --workspace --exclude colibri --locked
+          cargo clippy --workspace --exclude colibri --all-targets --locked
+          cargo test --workspace --exclude colibri --locked --no-run
+
+  warm-rust-caches-windows:
+    name: 'Warm Rust caches (windows)'
+    needs: [ 'check-changes' ]
+    if: ${{ github.event_name == 'push' && needs.check-changes.outputs.starling_tasks }}
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust
+        shell: bash
+        run: |
+          rustup toolchain install 1.91 --profile minimal --no-self-update
+          rustup default 1.91
+
+      - name: Look up the Rust cache
+        id: rust-cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+        with:
+          shared-key: starling-windows
+          lookup-only: true
+          workspaces: |
+            . -> target
+
+      # On the step for the same reason as in warm-rust-caches.
+      - name: Build what test-starling-windows compiles
+        if: steps.rust-cache.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          RUSTFLAGS: -Dwarnings  # matches test-starling-windows
+        run: |
+          cargo test -p starling-core --locked --test windows_lifecycle --no-run
+          cargo test -p starling-core --locked --test process_tree_python_bundle --no-run
 
   lint-backend:
     name: 'Backend lint'
@@ -467,7 +577,7 @@ jobs:
           fetch-depth: 0  # full history so the diff-scoped logging lint can reach the PR base
 
       - name: Load env
-        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
         with:
           env_file: .github/.env.ci
 
@@ -493,9 +603,9 @@ jobs:
 
       - name: Setup Rust
         if: steps.fdc-cache.outputs.cache-hit != 'true'
-        uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30  # stable
-        with:
-          toolchain: 1.91
+        run: |
+          rustup toolchain install 1.91 --profile minimal --no-self-update
+          rustup default 1.91
 
       - name: Cache Rust dependencies
         if: steps.fdc-cache.outputs.cache-hit != 'true'
@@ -520,12 +630,10 @@ jobs:
   test-backend:
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
     needs: [ 'lint-backend', 'check-changes' ]
-    uses: ./.github/workflows/task_backend_tests.yml
+    uses: $/.github/workflows/task_backend_tests.yml
     with:
       os: ubuntu-22.04
       test_environment: ${{needs.check-changes.outputs.test_environment}}
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     permissions:
       contents: read
 
@@ -536,7 +644,7 @@ jobs:
     name: 'API contract tests'
     needs: [ 'check-changes' ]
     if: ${{ github.event_name != 'push' && (needs.check-changes.outputs.backend_tasks || needs.check-changes.outputs.frontend_tasks) }}
-    uses: ./.github/workflows/task_contract_tests.yml
+    uses: $/.github/workflows/task_contract_tests.yml
     permissions:
       contents: read
 
@@ -544,18 +652,30 @@ jobs:
     name: 'Frontend e2e tests'
     needs: check-changes
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.e2e_tasks }}
-    uses: ./.github/workflows/task_e2e_tests.yml
+    uses: $/.github/workflows/task_e2e_tests.yml
     secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
     permissions:
       contents: read
+      id-token: write  # the Codecov upload authenticates with OIDC
+
+  warm-e2e-caches:
+    name: 'Warm e2e build caches'
+    if: ${{ github.event_name == 'push' }}
+    uses: $/.github/workflows/task_e2e_tests.yml
+    with:
+      build_only: true
+    permissions:
+      contents: read
+      id-token: write  # unused with build_only, but GitHub validates every nested job's permissions
 
   done:
     name: 'Success check'
     if: ${{ always() }}
     needs: [ 'check-changes', 'lint-frontend', 'check-backend-mapping-keys', 'unittest-frontend', 'docs', 'lint-colibri', 'lint-starling', 'test-starling-windows', 'lint-backend', 'test-backend', 'test-e2e' ]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # authenticate the Codecov notification with OIDC
     steps:
       - name: Check if any task failed
         run: |
@@ -565,3 +685,16 @@ jobs:
           fi
         env:
           RESULT: ${{ toJSON(needs.*.result) }}
+
+      # .codecov.yml sets manual_trigger, so the PR comment waits for this call instead of
+      # appearing after the first upload and rewriting itself as the rest land.
+      - name: Send coverage notifications
+        if: ${{ !cancelled() && github.event_name == 'pull_request' && (needs.unittest-frontend.result != 'skipped' || needs.test-e2e.result != 'skipped') }}
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
+        with:
+          run_command: send-notifications
+          # A fork PR gets no OIDC token; Codecov accepts its call without one.
+          use_oidc: ${{ !github.event.pull_request.head.repo.fork }}
+          override_commit: ${{ github.event.pull_request.head.sha }}
+          override_pr: ${{ github.event.pull_request.number }}
+          fail_ci_if_error: false

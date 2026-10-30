@@ -2,9 +2,6 @@ name: Backend Tests
 
 on:
   workflow_call:
-    secrets:
-      CODECOV_TOKEN:
-        required: false
     inputs:
       os:
         required: true
@@ -86,7 +83,7 @@ jobs:
           echo "VCR setup: $SOURCE_BRANCH not fully rebased on $TARGET_BRANCH" && exit 1
 
       - name: Load env
-        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
         with:
           env_file: .github/.env.ci
 
@@ -102,11 +99,18 @@ jobs:
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
-      - name: Cache rotkehlchen test directory
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      # The tests persist data here between runs (the global DB among it). Under one constant
+      # key the cache was written once and never again, so every run restored a copy frozen in
+      # May 2025. The nightly run now saves a fresh one per test group, and every run restores
+      # the newest; the bare key is the old entry, kept as the last fallback.
+      - name: Restore rotkehlchen test directory
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ~/.cache/.rotkehlchen-test-dir
-          key: ${{ runner.os }}-testdir
+          key: ${{ runner.os }}-testdir-${{ matrix.test-group }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-testdir-${{ matrix.test-group }}-
+            ${{ runner.os }}-testdir
 
       - name: Setup minupnpc
         if: runner.os == 'Windows'
@@ -140,8 +144,8 @@ jobs:
           FORCE_COLOR: 1
           MATRIX_JOB: ${{ matrix.test-group }}
         run: |
-          if [ "${{ inputs.collect_coverage }}" = 'true' ]; then
-            export COVERAGE_FILE=".coverage.${{ matrix.test-group }}"
+          if [ "$COLLECT_COVERAGE" = 'true' ]; then
+            export COVERAGE_FILE=".coverage.$MATRIX_JOB"
             COVERAGE_ARGS='--cov=rotkehlchen --cov-report=term-missing'
           else
             COVERAGE_ARGS=''
@@ -149,26 +153,35 @@ jobs:
 
           export CASSETTES_DIR="$(pwd)/test-caching"
 
-          if [ "${{ matrix.test-group }}" == 'api' ]
+          if [ "$MATRIX_JOB" == 'api' ]
           then
             uv run pytest $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/api
-          elif [ "${{ matrix.test-group }}" == 'decoders' ]
+          elif [ "$MATRIX_JOB" == 'decoders' ]
           then
             uv run pytest $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/unit/decoders rotkehlchen/tests/unit/solana_decoders
           else
             uv run pytest $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders --ignore=rotkehlchen/tests/unit/solana_decoders rotkehlchen/tests/
           fi
 
-          if [ "${{ matrix.test-group }}" == 'others' ]
+          if [ "$MATRIX_JOB" == 'others' ]
           then
             # dead-fixtures needs only one full collection, so run it once in this leg
             uv run pytest --dead-fixtures
           fi
         shell: bash
 
+      # Only the nightly run saves, so pull requests restore a fresh directory without each
+      # writing a copy of their own.
+      - name: Save rotkehlchen test directory
+        if: ${{ !cancelled() && github.event_name == 'schedule' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.cache/.rotkehlchen-test-dir
+          key: ${{ runner.os }}-testdir-${{ matrix.test-group }}-${{ github.run_id }}
+
       - name: Upload coverage artifacts
         if: ${{ inputs.collect_coverage }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: coverage-${{ inputs.os }}-${{ matrix.test-group }}
           path: .coverage.${{ matrix.test-group }}

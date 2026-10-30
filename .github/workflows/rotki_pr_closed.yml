@@ -1,0 +1,33 @@
+name: PR closed
+
+# Uploads the closed PR's number for "PR cache cleanup", which needs the write token a fork
+# PR's own run never gets.
+on:
+  pull_request:
+    types: [ closed ]
+
+permissions: { }
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  record:
+    name: 'Record the closed PR'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ github.repository == 'rotki/rotki' }}
+    steps:
+      - name: Write the PR number
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: echo "$PR_NUMBER" > pr-number.txt
+
+      - name: Upload the PR number
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: pr-closed
+          path: pr-number.txt
+          if-no-files-found: error
+          retention-days: 1

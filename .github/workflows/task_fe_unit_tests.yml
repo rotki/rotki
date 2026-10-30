@@ -2,9 +2,6 @@ name: Frontend Unit Tests
 
 on:
   workflow_call:
-    secrets:
-      CODECOV_TOKEN:
-        required: false
 
 permissions: { }
 
@@ -14,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write  # authenticate the Codecov upload with OIDC
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -22,7 +20,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
         with:
           env_file: .github/.env.ci
 
@@ -32,7 +30,7 @@ jobs:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version-file: 'frontend/.nvmrc'
           cache: 'pnpm'
@@ -51,4 +49,5 @@ jobs:
         with:
           files: ./frontend/app/tests/unit/coverage/lcov.info
           flags: frontend_unit
-          token: ${{ secrets.CODECOV_TOKEN }}
+          # A fork PR gets no OIDC token; Codecov accepts its upload without one.
+          use_oidc: ${{ !github.event.pull_request.head.repo.fork }}

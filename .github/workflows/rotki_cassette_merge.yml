@@ -1,19 +1,83 @@
 name: Cassette Merge
 
-# only trigger on pull request closed events
+# Merges the test-caching cassettes of the PR that a push to a base branch merged. It runs on push
+# rather than on the PR closing because it needs MERGE_TOKEN, which a fork PR's run never gets.
 on:
-  pull_request_target:
-    types: [ closed ]
+  push:
+    branches:
+      - develop
+      - bugfixes
+      - master
 
 permissions: { }
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.sha }}
+  cancel-in-progress: false
+
 jobs:
-  merge:
+  find-pr:
+    name: 'Find the merged PR'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: ${{ github.repository == 'rotki/rotki' }}
-    environment: cassette-merge
+    permissions:
+      contents: read  # read the pushed commit
+      pull-requests: read  # list the PRs that merged it
+    outputs:
+      number: ${{ steps.pr.outputs.number }}
     steps:
-      - uses: rotki/action-cassette-deck@56ee180ca0d2c8db88e61d7e68a0613e9407278e  # v4.0.0
+      - name: Find the merged PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          find_pr() {
+            gh api "repos/$GH_REPO/commits/$SHA/pulls" \
+              --jq "[.[] | select(.merged_at != null and .base.ref == \"$BRANCH\")][0].number // empty"
+          }
+          # The endpoint intermittently answers a 500 for a large merge commit, so an error is retried
+          # like an empty answer and the step only fails when no attempt got through.
+          number=''
+          answered=0
+          for attempt in 1 2 3 4 5; do
+            if result=$(find_pr); then
+              number=$result
+              answered=$((answered + 1))
+              # Right after a merge the commit may not be linked to its PR yet.
+              if [ -n "$number" ] || [ "$answered" -ge 2 ]; then
+                break
+              fi
+            fi
+            if [ "$attempt" -lt 5 ]; then
+              sleep 10
+            fi
+          done
+          if [ "$answered" -eq 0 ]; then
+            echo "::error::Could not list the PRs of $SHA"
+            exit 1
+          fi
+          if [ -z "$number" ]; then
+            echo "No PR merged into $BRANCH by $SHA"
+            exit 0
+          fi
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+  merge:
+    name: 'Merge the PR cassettes'
+    needs: [ find-pr ]
+    if: ${{ needs.find-pr.outputs.number != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: cassette-merge
+    permissions: { }
+    steps:
+      - name: Merge the cassettes
+        uses: rotki/action-cassette-deck@f641d23657c1dc06ac76ad046f63ed1195642749  # v4.2.1
         with:
           token: ${{ secrets.MERGE_TOKEN }}
           cassette_repo: test-caching
+          pr_number: ${{ needs.find-pr.outputs.number }}

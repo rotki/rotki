@@ -2,9 +2,15 @@ name: E2E tests
 
 on:
   workflow_call:
+    inputs:
+      # GitHub serves a pull request only its own caches and those of its base branch. Nothing
+      # else runs these builds on a base branch, so without a build_only run there every PR
+      # compiled the Rust services and froze the core from scratch.
+      build_only:
+        description: 'Fill the Rust services and frozen core caches, and run nothing else.'
+        type: boolean
+        default: false
     secrets:
-      CODECOV_TOKEN:
-        required: false
       ETHERSCAN_API_KEY:
         required: false
 
@@ -13,6 +19,7 @@ permissions: { }
 jobs:
   build-frontend:
     name: 'Build Frontend'
+    if: ${{ !inputs.build_only }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,7 +31,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
         with:
           env_file: .github/.env.ci
 
@@ -34,7 +41,7 @@ jobs:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version-file: 'frontend/.nvmrc'
           cache: 'pnpm'
@@ -56,7 +63,7 @@ jobs:
         run: pnpm run build:app --mode e2e
 
       - name: Upload frontend build
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: frontend-dist
           path: frontend/app/dist
@@ -88,16 +95,17 @@ jobs:
 
       - name: Setup Rust
         if: steps.rust-cache.outputs.cache-hit != 'true'
-        uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30  # stable
-        with:
-          toolchain: 1.91
+        run: |
+          rustup toolchain install 1.91 --profile minimal --no-self-update
+          rustup default 1.91
 
       - name: Build Rust services
         if: steps.rust-cache.outputs.cache-hit != 'true'
         run: cargo build --release --locked -p colibri -p starling
 
       - name: Upload Rust binaries
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        if: ${{ !inputs.build_only }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: rust-binaries
           path: |
@@ -118,7 +126,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
         with:
           env_file: .github/.env.ci
 
@@ -159,7 +167,8 @@ jobs:
             pyinstaller --noconfirm --clean --distpath target/backend rotkehlchen.spec
 
       - name: Upload frozen core
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        if: ${{ !inputs.build_only }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: backend-binary
           path: target/backend
@@ -167,6 +176,7 @@ jobs:
 
   e2e:
     name: 'shard-${{ matrix.shard }}'
+    if: ${{ !inputs.build_only }}
     needs: [ build-frontend, build-rust-services, build-backend ]
     env:
       CI: true
@@ -178,6 +188,7 @@ jobs:
         shard: [ 1, 2, 3, 4 ]
     permissions:
       contents: read
+      id-token: write  # authenticate the Codecov upload with OIDC
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -186,7 +197,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
         with:
           env_file: .github/.env.ci
 
@@ -202,7 +213,7 @@ jobs:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version-file: 'frontend/.nvmrc'
           cache: 'pnpm'
@@ -234,13 +245,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download frontend build
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: frontend-dist
           path: frontend/app/dist
 
       - name: Download Rust binaries
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: rust-binaries
           path: target/release
@@ -251,7 +262,7 @@ jobs:
       # starling launches this instead of the interpreter once it is present
       # (see `devCoreLauncherArgs`), so the suite drives the shipping binary.
       - name: Download frozen core
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: backend-binary
           path: target/backend
@@ -276,7 +287,8 @@ jobs:
           ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
           E2E_COVERAGE: true
           VITE_COVERAGE: true
-        run: pnpm run test:e2e --project=chromium --shard=${{ matrix.shard }}/4
+          SHARD: ${{ matrix.shard }}
+        run: pnpm run test:e2e --project=chromium "--shard=${SHARD}/4"
         working-directory: ./frontend/app
 
       - name: Generate coverage report
@@ -288,20 +300,31 @@ jobs:
         if: success()
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          # A fork PR gets no OIDC token; Codecov accepts its upload without one.
+          use_oidc: ${{ !github.event.pull_request.head.repo.fork }}
           files: ./frontend/app/tests/e2e/coverage/lcov.info
           flags: frontend_integration
           fail_ci_if_error: false
 
+      # Playwright splits shards by test count, not duration, so the per-test timings are what
+      # rebalancing the shards is decided from.
+      - name: Upload test timings
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        if: success() || failure()
+        with:
+          name: test-timings-shard-${{ matrix.shard }}
+          path: ./frontend/app/tests/e2e/results.json
+          retention-days: 14
+
       - name: Upload test artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         if: failure()
         with:
           name: test-artifacts-${{ runner.os }}-shard-${{ matrix.shard }}
           path: ./frontend/app/tests/e2e/test-results
 
       - name: Upload backend logs
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         if: always()
         with:
           name: backend-logs-${{ runner.os }}-shard-${{ matrix.shard }}
@@ -311,6 +334,8 @@ jobs:
         if: always()
         continue-on-error: true
         shell: bash
+        env:
+          SHARD: ${{ matrix.shard }}
         run: |
           # Sanitize content to prevent log injection and annotation spoofing
           sanitize() {
@@ -330,7 +355,7 @@ jobs:
                 error_line=$(sanitize "$error_line")
                 echo "::error file=$filename,line=$linenum::Python Traceback: $error_line"
               else
-                echo "::error file=$filename,line=$linenum::Python Traceback found - check backend-logs-${{ runner.os }}-shard-${{ matrix.shard }} artifact"
+                echo "::error file=$filename,line=$linenum::Python Traceback found - check backend-logs-${RUNNER_OS}-shard-${SHARD} artifact"
               fi
             done < <(grep -n "Traceback (most recent call last)" "$logfile" 2>/dev/null || true)
 
