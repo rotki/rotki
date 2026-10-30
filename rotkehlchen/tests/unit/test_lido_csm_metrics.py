@@ -22,12 +22,12 @@ class DummyContract:
 
 def test_lido_csm_metrics_fetcher_converts_values() -> None:
     accounting_contract = DummyContract({
-        'getBondCurveId': 1,
+        'getBondCurveId': 0,
         'getBondSummaryShares': (10**18, 2 * 10**18),
         'getClaimableBondShares': 5 * 10**17,
     })
     module_contract = DummyContract({
-        'getNodeOperatorTotalDepositedKeys': 42,
+        'getNodeOperatorSummary': (0, 0, 0, 0, 0, 0, 42, 0),
     })
     steth_contract = DummyContract({
         'getPooledEthByShares': lambda shares: shares,
@@ -68,3 +68,11 @@ def test_lido_csm_metrics_fetcher_converts_values() -> None:
     # rewards pending: cumulative(0.5e18) - distributed(0.2e18) = 0.3e18 => 0.3 stETH
     assert serialized['rewards']['pending'] == '0.3'
     assert serialized['keys']['total_deposited'] == 42
+
+
+def test_lido_csm_operator_type_matches_onchain_curve_ids() -> None:
+    """Curve ids as assigned by the mainnet CSM gates and CSAccounting.DEFAULT_BOND_CURVE_ID"""
+    assert LidoCsmOperatorType(0).label == 'Permissionless'
+    assert LidoCsmOperatorType(1).label == 'Early Adopter'
+    assert LidoCsmOperatorType(2).label == 'ICS'
+    assert LidoCsmOperatorType(3).label == 'Identified DVT Cluster'
