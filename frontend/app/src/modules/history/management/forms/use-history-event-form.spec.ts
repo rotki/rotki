@@ -1,3 +1,4 @@
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddSwapEventPayload, EditSwapEventPayload } from '@/modules/history/events/event-edit-payloads';
 import type { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import type { PriceIntent, usePriceIntents } from '@/modules/history/management/forms/price-intent';
@@ -96,7 +97,12 @@ interface Host {
   wrapper: VueWrapper;
 }
 
-function mountForm(errorMessages?: Ref<Record<string, string[]>>): Host {
+interface MountOptions {
+  errorMessages?: Ref<Record<string, string[]>>;
+  serverErrorPaths?: (errors: ValidationErrors) => ValidationErrors;
+}
+
+function mountForm({ errorMessages, serverErrorPaths }: MountOptions = {}): Host {
   let handle!: FormHandle;
   const wrapper = mount(defineComponent({
     emits: ['update:stateUpdated'],
@@ -104,6 +110,7 @@ function mountForm(errorMessages?: Ref<Record<string, string[]>>): Host {
     setup(props) {
       handle = useHistoryEventForm({
         errorMessages,
+        serverErrorPaths,
         initial: (): FormState => ({ amount: '', asset: 'ETH' }),
         priceIntentKeys: ['price'],
         priceIntents: state => (state.price ? [state.price] : []),
@@ -268,6 +275,16 @@ describe('useHistoryEventForm', () => {
       expect(showErrorMessage).not.toHaveBeenCalled();
     });
 
+    it('should show a field error the endpoint sends as one message, not split into characters', async () => {
+      addHistoryEvent.mockResolvedValue({ message: { amount: 'too small' }, success: false });
+      const { handle } = mountForm();
+      handle.seed(filledState());
+
+      await expect(handle.save()).resolves.toBe(false);
+
+      expect(handle.form.errors('amount')).toEqual(['too small']);
+    });
+
     it('should report a save rejected with an empty message as unsaved, without showing anything', async () => {
       addHistoryEvent.mockResolvedValue({ message: '', success: false });
       const { handle } = mountForm();
@@ -294,7 +311,28 @@ describe('useHistoryEventForm', () => {
 
     it('should mirror errors written by another source into the form', async () => {
       const errorMessages = ref<Record<string, string[]>>({});
-      const { handle } = mountForm(errorMessages);
+      const { handle } = mountForm({ errorMessages });
+      handle.seed(filledState());
+
+      set(errorMessages, { amount: ['lookup failed'] });
+      await nextTick();
+
+      expect(handle.form.errors('amount')).toEqual(['lookup failed']);
+    });
+
+    it('should move the field errors of a rejected save onto the form\'s own paths', async () => {
+      addHistoryEvent.mockResolvedValue({ message: { spendAmount: ['too small'] }, success: false });
+      const { handle } = mountForm({ serverErrorPaths: errors => ({ amount: errors.spendAmount }) });
+      handle.seed(filledState());
+
+      await expect(handle.save()).resolves.toBe(false);
+
+      expect(handle.form.errors('amount')).toEqual(['too small']);
+    });
+
+    it('should leave errors written by another source where they are', async () => {
+      const errorMessages = ref<Record<string, string[]>>({});
+      const { handle } = mountForm({ errorMessages, serverErrorPaths: () => ({}) });
       handle.seed(filledState());
 
       set(errorMessages, { amount: ['lookup failed'] });

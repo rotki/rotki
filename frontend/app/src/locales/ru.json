@@ -3814,7 +3814,6 @@
   "swap_event_form": {
     "add_asset": "Добавить актив",
     "fee_notes": "Заметки о комиссии",
-    "fee_notes_indexed": "Заметки о комиссии #{index}",
     "receive_notes": "Заметки о получении",
     "spend_notes": "Заметки о трате",
     "unique_id": "Уникальный идентификатор",
