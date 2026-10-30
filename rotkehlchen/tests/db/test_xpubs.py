@@ -1,6 +1,9 @@
+from unittest.mock import Mock, patch
+
 import pytest
 
-from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
+from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubManager
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.types import SupportedBlockchain
 
@@ -157,3 +160,45 @@ def test_edit_bitcoin_xpub_not_existing_tag(setup_db_for_xpub_tests):
     assert result[0].derivation_path == xpub.derivation_path
     assert result[0].tags != {'test'}
     db.logout()
+
+
+@pytest.mark.parametrize('xpub_type', [None, *XpubType])
+def test_xpub_type_roundtrip(database, xpub_type):
+    """Keep the address type when a saved key is loaded for discovery or balances."""
+    xpub = XpubData(
+        xpub=HDKey.from_xpub(
+            'xpub6BgBgsespWvERF3LHQu6CnqdvfEvtMcQjYrcRzx53QJjSxarj2afYWcLteoGVky7D3UKDP9QyrLprQ3VCECoY49yfdDEHGCtMMj92pReUsQ',
+            xpub_type=xpub_type,
+            path='m',
+        ),
+        blockchain=SupportedBlockchain.BITCOIN,
+    )
+    address = xpub.xpub.derive_path('m/0/0').address()
+    with database.user_write() as cursor:
+        database.add_bitcoin_xpub(cursor, xpub)
+        cursor.execute(
+            'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            ('BTC', address),
+        )
+        cursor.execute(
+            'INSERT INTO xpub_mappings VALUES (?, ?, ?, ?, ?, ?)',
+            (address, xpub.xpub.xpub, '', 0, 0, 'BTC'),
+        )
+    with database.conn.read_ctx() as cursor:
+        saved = database.get_bitcoin_xpub_data(cursor, SupportedBlockchain.BITCOIN)[0]
+        mapped = database.get_addresses_to_xpub_mapping(
+            cursor, SupportedBlockchain.BITCOIN, [address],
+        )[address]
+    for restored in (saved, mapped):
+        assert restored.xpub.xpub_type == xpub_type
+        assert restored.xpub.derive_path('m/0/0').address() == address
+
+    manager = XpubManager(Mock(database=database))
+    # A refresh request has only the key and path, without its saved address type.
+    request = XpubData(
+        xpub=HDKey.from_xpub(xpub.xpub.xpub, path='m'),
+        blockchain=SupportedBlockchain.BITCOIN,
+    )
+    with patch.object(manager, '_derive_xpub_addresses') as derive:
+        manager.check_for_new_xpub_addresses(SupportedBlockchain.BITCOIN, request)
+    assert derive.call_args.args[0].xpub.xpub_type == xpub_type

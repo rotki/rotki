@@ -244,6 +244,7 @@ CREATE TABLE IF NOT EXISTS xpubs (
     derivation_path TEXT NOT NULL,
     label TEXT,
     blockchain TEXT NOT NULL,
+    xpub_type TEXT,
     PRIMARY KEY (xpub, derivation_path, blockchain)
 );
 """

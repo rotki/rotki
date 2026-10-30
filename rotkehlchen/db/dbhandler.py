@@ -30,7 +30,7 @@ from rotkehlchen.chain.accounts import (
     SingleBlockchainAccountData,
 )
 from rotkehlchen.chain.balances import BlockchainBalances
-from rotkehlchen.chain.bitcoin.hdkey import HDKey
+from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.xpub import (
     XpubData,
     XpubDerivedAddressData,
@@ -4547,13 +4547,14 @@ class DBHandler:
         """
         try:
             write_cursor.execute(
-                'INSERT INTO xpubs(xpub, derivation_path, label, blockchain) '
-                'VALUES (?, ?, ?, ?)',
+                'INSERT INTO xpubs(xpub, derivation_path, label, blockchain, xpub_type) '
+                'VALUES (?, ?, ?, ?, ?)',
                 (
                     xpub_data.xpub.xpub,
                     xpub_data.serialize_derivation_path_for_db(),
                     xpub_data.label,
                     xpub_data.blockchain.value,
+                    xpub_data.xpub.xpub_type.name.lower() if xpub_data.xpub.xpub_type else None,
                 ),
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -4685,7 +4686,8 @@ class DBHandler:
     ) -> list[XpubData]:
         query = cursor.execute(
             "SELECT A.xpub, A.blockchain, A.derivation_path, A.label, "
-            "group_concat(B.tag_name,',') FROM xpubs as A LEFT OUTER JOIN tag_mappings AS B ON "
+            "group_concat(B.tag_name,','), A.xpub_type FROM xpubs as A "
+            "LEFT OUTER JOIN tag_mappings AS B ON "
             "B.object_reference = A.xpub || A.derivation_path WHERE A.blockchain=? GROUP BY A.xpub || A.derivation_path",  # noqa: E501
             (blockchain.value,),
         )
@@ -4693,7 +4695,11 @@ class DBHandler:
         for entry in query:
             tags = deserialize_tags_from_db(entry[4])
             result.append(XpubData(
-                xpub=HDKey.from_xpub(entry[0], path='m'),
+                xpub=HDKey.from_xpub(
+                    entry[0],
+                    xpub_type=XpubType.deserialize(entry[5]) if entry[5] else None,
+                    path='m',
+                ),
                 blockchain=SupportedBlockchain.deserialize(entry[1]),  # type: ignore
                 derivation_path=deserialize_derivation_path_for_db(entry[2]),
                 label=entry[3],
@@ -4744,7 +4750,7 @@ class DBHandler:
         data = {}
         for address in addresses:
             cursor.execute(
-                'SELECT B.address, A.xpub, A.derivation_path FROM xpubs as A '
+                'SELECT B.address, A.xpub, A.derivation_path, A.xpub_type FROM xpubs as A '
                 'LEFT OUTER JOIN xpub_mappings as B '
                 'ON B.xpub = A.xpub AND B.derivation_path IS A.derivation_path AND B.blockchain = A.blockchain '  # noqa: E501
                 'WHERE B.address=? AND B.blockchain=?;', (address, blockchain.value),
@@ -4754,7 +4760,11 @@ class DBHandler:
                 continue
 
             data[result[0][0]] = XpubData(
-                xpub=HDKey.from_xpub(result[0][1], path='m'),
+                xpub=HDKey.from_xpub(
+                    result[0][1],
+                    xpub_type=XpubType.deserialize(result[0][3]) if result[0][3] else None,
+                    path='m',
+                ),
                 blockchain=blockchain,
                 derivation_path=deserialize_derivation_path_for_db(result[0][2]),
             )

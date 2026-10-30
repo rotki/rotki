@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13421` Saved Taproot xpubs now keep their address type when checking for new addresses, including manual refreshes. Existing keys with tracked Taproot addresses are repaired during the database upgrade.
 * :feature:`-` Statistics now has an address interactions graph showing which of your tracked addresses have transacted with each other.
 * :feature:`-` Venice unstaking requests on Base are now decoded in transaction history.
 * :feature:`-` Lido withdrawal requests and ETH claims are now decoded in transaction history.

@@ -4952,6 +4952,23 @@ def test_upgrade_db_53_to_54(
         resume_from_backup=False,
     )
     with db_v53.conn.write_ctx() as write_cursor:
+        assert not column_exists(write_cursor, 'xpubs', 'xpub_type')
+        # The same key can have independent paths and chains. Only a saved BTC
+        # Taproot address is enough evidence to restore its type.
+        xpub = 'xpub6BgBgsespWvERF3LHQu6CnqdvfEvtMcQjYrcRzx53QJjSxarj2afYWcLteoGVky7D3UKDP9QyrLprQ3VCECoY49yfdDEHGCtMMj92pReUsQ'  # noqa: E501
+        address = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr'
+        write_cursor.executemany(
+            'INSERT INTO xpubs(xpub, derivation_path, blockchain) VALUES (?, ?, ?)',
+            [(xpub, '', 'BTC'), (xpub, 'm/1', 'BTC'), (xpub, '', 'BCH')],
+        )
+        write_cursor.execute(
+            'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            ('BTC', address),
+        )
+        write_cursor.execute(
+            'INSERT INTO xpub_mappings VALUES (?, ?, ?, ?, ?, ?)',
+            (address, xpub, '', 0, 0, 'BTC'),
+        )
         assert not column_exists(write_cursor, 'rpc_nodes', 'is_archive')
         assert not column_exists(write_cursor, 'rpc_nodes', 'is_pruned')
         # make sure the locations this upgrade adds are not in the old DB
@@ -5085,6 +5102,10 @@ def test_upgrade_db_53_to_54(
         resume_from_backup=False,
     )
     with db.conn.write_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT derivation_path, blockchain, xpub_type FROM xpubs WHERE xpub=? '
+            'ORDER BY blockchain, derivation_path', (xpub,),
+        ).fetchall() == [('', 'BCH', None), ('', 'BTC', 'p2tr'), ('m/1', 'BTC', None)]
         assert column_exists(cursor, 'blockchain_balances_cache', 'awaiting_claim')
         assert column_exists(cursor, 'blockchain_balances_cache', 'claims')
         # make sure the locations this upgrade adds exist

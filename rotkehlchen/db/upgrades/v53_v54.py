@@ -21,6 +21,18 @@ log = RotkehlchenLogsAdapter(logger)
 def upgrade_v53_to_v54(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v53 to v54. This happened in 1.45."""
 
+    @progress_step(description='Preserve the address type of saved xpubs.')
+    def _add_xpub_type(write_cursor: DBCursor) -> None:
+        write_cursor.execute('ALTER TABLE xpubs ADD COLUMN xpub_type TEXT')
+        # Taproot and legacy keys share the xpub prefix. Recover Taproot only where
+        # a previously derived address proves its type; other keys keep prefix inference.
+        write_cursor.execute(
+            "UPDATE xpubs SET xpub_type='p2tr' WHERE blockchain='BTC' "
+            "AND xpub LIKE 'xpub%' AND EXISTS(SELECT 1 FROM xpub_mappings M "
+            'WHERE M.xpub=xpubs.xpub AND M.derivation_path=xpubs.derivation_path '
+            "AND M.blockchain=xpubs.blockchain AND M.address LIKE 'bc1p%')",
+        )
+
     @progress_step(description='Store claimable withdrawal balances.')
     def _add_awaiting_claim_balance(write_cursor: DBCursor) -> None:
         write_cursor.execute(

@@ -315,11 +315,11 @@ class XpubManager:
         """
         log.debug(f'Starting task for derivation of new {blockchain!s} xpub addresses')
 
+        with self.db.conn.read_ctx() as cursor:
+            xpubs = self.db.get_bitcoin_xpub_data(cursor, blockchain)
         if xpub_data is not None:
-            xpubs = [xpub_data]
-        else:
-            with self.db.conn.read_ctx() as cursor:
-                xpubs = self.db.get_bitcoin_xpub_data(cursor, blockchain)
+            # Requests need not include the address type. Use the saved key for discovery.
+            xpubs = [saved for saved in xpubs if saved == xpub_data]
 
         with self.lock:
             for xpub_data_item in xpubs:
