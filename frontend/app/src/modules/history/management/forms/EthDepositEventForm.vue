@@ -3,6 +3,8 @@ import type { EthDepositEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import { Blockchain } from '@rotki/common';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';
+import TxRefField from '@/modules/history/management/forms/common/TxRefField.vue';
 import { EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/eth-block-event-form';
 import {
   emptyEthDepositForm,
@@ -119,47 +121,16 @@ defineExpose({
       />
     </div>
 
-    <RuiTextField
+    <TxRefField
       v-model="state.txRef"
-      color="primary"
-      data-testid="tx-ref"
       :label="t('common.tx_hash')"
-      required
       :hint="txRefHint"
+      :loading="lookupLoading"
+      :can-retry="lookupCanRetry"
       :error-messages="form.errors('txRef')"
       @blur="form.touch('txRef')"
-    >
-      <template
-        v-if="lookupLoading || lookupCanRetry"
-        #append
-      >
-        <RuiProgress
-          v-if="lookupLoading"
-          circular
-          variant="indeterminate"
-          color="primary"
-          size="20"
-          data-testid="tx-ref-loading"
-        />
-        <RuiTooltip
-          v-else
-          :open-delay="400"
-        >
-          <template #activator>
-            <RuiButton
-              icon
-              variant="text"
-              size="sm"
-              data-testid="tx-ref-retry"
-              @click="retryLookup()"
-            >
-              <RuiIcon name="lu-refresh-cw" />
-            </RuiButton>
-          </template>
-          {{ t('actions.evm_tx_lookup.retry') }}
-        </RuiTooltip>
-      </template>
-    </RuiTextField>
+      @retry="retryLookup()"
+    />
 
     <RuiDivider class="mb-6 mt-2" />
 
@@ -201,32 +172,25 @@ defineExpose({
 
     <RuiDivider class="mb-2 mt-6" />
 
-    <RuiAccordions>
-      <RuiAccordion
-        data-testid="eth-deposit-event-form-advance"
-        :class-names="{ header: 'py-4' }"
-        eager
-      >
-        <template #header>
-          {{ t('transactions.events.form.advanced') }}
-        </template>
-        <div class="py-2">
-          <RuiTextField
-            v-model="state.groupIdentifier"
-            color="primary"
-            data-testid="group-identifier"
-            :disabled="state.hasActualGroupIdentifier"
-            :label="t('transactions.events.form.group_identifier.label')"
-            :error-messages="form.errors('groupIdentifier')"
-            @blur="form.touch('groupIdentifier')"
-          />
+    <EventDetailsSection
+      data-testid="eth-deposit-event-form-advance"
+      :errors="form.errors"
+      :paths="['groupIdentifier']"
+    >
+      <RuiTextField
+        v-model="state.groupIdentifier"
+        color="primary"
+        data-testid="group-identifier"
+        :disabled="state.hasActualGroupIdentifier"
+        :label="t('transactions.events.form.group_identifier.label')"
+        :error-messages="form.errors('groupIdentifier')"
+        @blur="form.touch('groupIdentifier')"
+      />
 
-          <JsonInput
-            v-model="state.extraData"
-            :label="t('transactions.events.form.extra_data.label')"
-          />
-        </div>
-      </RuiAccordion>
-    </RuiAccordions>
+      <JsonInput
+        v-model="state.extraData"
+        :label="t('transactions.events.form.extra_data.label')"
+      />
+    </EventDetailsSection>
   </div>
 </template>
