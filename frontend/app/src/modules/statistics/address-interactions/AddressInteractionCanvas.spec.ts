@@ -2,12 +2,13 @@ import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { useResizeObserver } from '@vueuse/core';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick, ref } from 'vue';
+import { type ComponentPublicInstance, nextTick, ref } from 'vue';
 import { createAddressInteractionGraph, type InteractionGraph } from './address-interaction-graph';
 import AddressInteractionCanvas from './AddressInteractionCanvas.vue';
 
-const { getAddressName } = vi.hoisted(() => ({
+const { getAddressName, sceneUpdated } = vi.hoisted(() => ({
   getAddressName: vi.fn<() => string | undefined>(),
+  sceneUpdated: vi.fn<() => void>(),
 }));
 const scrambleData = ref(false);
 
@@ -34,6 +35,12 @@ const TARGET = '0x2222222222222222222222222222222222222222';
 function createWrapper(graph: InteractionGraph = createAddressInteractionGraph([{ chain: 'eth', source: SOURCE, target: TARGET, txHash: '0xtransaction' }])): VueWrapper<InstanceType<typeof AddressInteractionCanvas>> {
   return mount(AddressInteractionCanvas, {
     global: {
+      mixins: [{
+        updated(this: ComponentPublicInstance): void {
+          if (this.$options.__name === 'AddressInteractionScene')
+            sceneUpdated();
+        },
+      }],
       stubs: {
         RuiButton: { emits: ['click'], template: '<button type="button" v-bind="$attrs" @click="$emit(\'click\')"><slot /></button>' },
         RuiIcon: true,
@@ -84,6 +91,24 @@ describe('address interaction canvas', () => {
     expect((120 - after[1]) / after[2]).toBeCloseTo((120 - before[1]) / before[2]);
     await wrapper.get('[data-testid=interaction-fit-graph]').trigger('click');
     expect(content.attributes('transform')).toBe(initial);
+  });
+
+  it('should not re-render the graph while panning or zooming', async () => {
+    const wrapper = createWrapper();
+    await resizeViewport(960, 600);
+    const viewport = wrapper.get('[data-testid=interaction-canvas-viewport]');
+    const content = wrapper.get('[data-testid=interaction-canvas-transform]');
+    const initial = content.attributes('transform');
+    sceneUpdated.mockClear();
+
+    await viewport.trigger('wheel', { deltaMode: 0, deltaY: -60, clientX: 220, clientY: 190 });
+    await viewport.trigger('keydown', { key: 'ArrowRight' });
+    await wrapper.get('[data-testid=interaction-zoom-in]').trigger('click');
+    await viewport.trigger('pointerdown', { button: 0, isPrimary: true, pointerId: 1, clientX: 100, clientY: 100 });
+    await viewport.trigger('pointermove', { pointerId: 1, clientX: 160, clientY: 140 });
+
+    expect(content.attributes('transform')).not.toBe(initial);
+    expect(sceneUpdated).not.toHaveBeenCalled();
   });
 
   it('should allow zooming out from the fitted view and keep button zoom centered', async () => {
@@ -169,6 +194,37 @@ describe('address interaction canvas', () => {
 
     expect(node.attributes('aria-pressed')).toBe('true');
     expect(edge.attributes('aria-pressed')).toBe('true');
+  });
+
+  it('should dim the edges and addresses unrelated to the selected address, and restore them on clear', async () => {
+    const wrapper = createWrapper(createAddressInteractionGraph([
+      { chain: 'eth', source: '0xa', target: '0xb', txHash: '0x1' },
+      { chain: 'eth', source: '0xc', target: '0xd', txHash: '0x2' },
+    ]));
+    const unrelatedStroke = (): string | undefined => wrapper.get('[data-testid=interaction-edge][aria-label*="0xc"] path[stroke=currentColor]').attributes('stroke-opacity');
+    const dimmedNodes = (): (string | undefined)[] => wrapper.findAll('[data-testid=interaction-node].opacity-25').map(node => node.attributes('aria-label'));
+
+    await wrapper.setProps({ selectedNodeId: '0xa' });
+
+    expect(unrelatedStroke()).toBe('0.09');
+    expect(dimmedNodes()).toEqual([expect.stringContaining('0xc'), expect.stringContaining('0xd')]);
+
+    await wrapper.setProps({ selectedNodeId: undefined });
+
+    expect(unrelatedStroke()).toBe('0.45');
+    expect(dimmedNodes()).toEqual([]);
+  });
+
+  it('should emit the replacement graph\'s connection when an edge keeps its path across graphs', async () => {
+    const wrapper = createWrapper();
+    const replacement = createAddressInteractionGraph([{ chain: 'eth', source: SOURCE, target: TARGET, txHash: '0xother' }]);
+
+    await wrapper.setProps({ graph: replacement });
+    await wrapper.get('[data-testid=interaction-edge]').trigger('click');
+
+    const [connection] = wrapper.props('graph').connections;
+    expect(connection.txHashes).toEqual(['0xother']);
+    expect(wrapper.emitted('select-connection')?.at(-1)?.[0]).toBe(connection);
   });
 
   it('should resolve address labels but remove names and raw addresses from labels and tooltips when scrambling', async () => {

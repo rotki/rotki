@@ -131,6 +131,41 @@ function labelOf(route: Point[], fallback: Point): Point {
   return label;
 }
 
+interface DirectCurve {
+  control: Point;
+  route: EdgeRoute;
+}
+
+function directCurve(source: InteractionNode, target: InteractionNode, index: number, count: number): DirectCurve {
+  const distance = Math.hypot(target.x - source.x, target.y - source.y);
+  const offset = (index - (count - 1) / 2) * 64;
+  const midX = (source.x + target.x) / 2;
+  const midY = (source.y + target.y) / 2;
+  const control = {
+    x: midX - (target.y - source.y) / distance * offset,
+    y: midY + (target.x - source.x) / distance * offset,
+  };
+  return {
+    control,
+    route: {
+      path: `M ${source.x} ${source.y} Q ${control.x} ${control.y} ${target.x} ${target.y}`,
+      labelX: (midX + control.x) / 2,
+      labelY: (midY + control.y) / 2,
+    },
+  };
+}
+
+/**
+ * The curve an edge takes when nothing is in its way, fanned out from its parallel connections.
+ *
+ * @remarks
+ * Costs no obstacle search, and is exactly the route {@link routeInteractionEdge} falls back to,
+ * so an edge whose curve needs no detour yields the same path from both.
+ */
+export function directInteractionEdge(source: InteractionNode, target: InteractionNode, index: number, count: number): EdgeRoute {
+  return directCurve(source, target, index, count).route;
+}
+
 /**
  * Routes an edge outside unrelated node bodies and their two label rows.
  *
@@ -140,14 +175,7 @@ function labelOf(route: Point[], fallback: Point): Point {
  * has no route (or sits among too many obstacles to search) keeps its direct curve.
  */
 export function routeInteractionEdge(source: InteractionNode, target: InteractionNode, nodes: readonly InteractionNode[], index: number, count: number): EdgeRoute {
-  const distance = Math.hypot(target.x - source.x, target.y - source.y);
-  const offset = (index - (count - 1) / 2) * 64;
-  const midX = (source.x + target.x) / 2;
-  const midY = (source.y + target.y) / 2;
-  const control = {
-    x: midX - (target.y - source.y) / distance * offset,
-    y: midY + (target.x - source.x) / distance * offset,
-  };
+  const { control, route: curve } = directCurve(source, target, index, count);
   const samples = quadraticSamples(source, control, target);
   const area: Obstacle = {
     left: Math.min(...samples.map(point => point.x)) - DETOUR_MARGIN,
@@ -161,11 +189,6 @@ export function routeInteractionEdge(source: InteractionNode, target: Interactio
 
   const padding = 14 * index / count;
   const padded = obstaclesAt(padding);
-  const curve: EdgeRoute = {
-    path: `M ${source.x} ${source.y} Q ${control.x} ${control.y} ${target.x} ${target.y}`,
-    labelX: (midX + control.x) / 2,
-    labelY: (midY + control.y) / 2,
-  };
   if (!samples.some((point, step) => step > 0 && padded.some(obstacle => intersects(samples[step - 1], point, obstacle))))
     return curve;
   if (nearby.length > MAX_DETOUR_OBSTACLES)
@@ -175,7 +198,7 @@ export function routeInteractionEdge(source: InteractionNode, target: Interactio
   if (!route)
     return curve;
 
-  const label = labelOf(route, { x: midX, y: midY });
+  const label = labelOf(route, { x: (source.x + target.x) / 2, y: (source.y + target.y) / 2 });
   return {
     path: route.map((point, step) => `${step === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' '),
     labelX: label.x,

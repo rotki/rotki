@@ -4,6 +4,9 @@ import { useAddressNameResolution } from '@/modules/accounts/address-book/use-ad
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
+/** How many connection rows the side panel reveals at a time; each row mounts up to two `HashLink`s. */
+export const CONNECTION_PAGE_SIZE = 50;
+
 /** Strongest relations first: more shared transactions, then the graph's own stable order. */
 export function sortByActivity(connections: readonly InteractionConnection[]): InteractionConnection[] {
   return [...connections].sort((a, b) => b.txHashes.length - a.txHashes.length || a.id.localeCompare(b.id));

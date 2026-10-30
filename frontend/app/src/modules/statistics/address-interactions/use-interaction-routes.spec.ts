@@ -46,6 +46,18 @@ describe('use-interaction-routes', () => {
     stop();
   });
 
+  it('should keep the same route object for a connection whose curve needs no detour', async () => {
+    const { routes, stop } = withRoutes(() => star(60));
+    const initial = new Map(routes.value.map(route => [route.connection.id, route]));
+
+    await vi.runAllTimersAsync();
+    const unchanged = routes.value.filter(({ path }) => path.includes(' Q '));
+    expect(unchanged.length).toBeGreaterThan(0);
+    for (const route of unchanged)
+      expect(route).toBe(initial.get(route.connection.id));
+    stop();
+  });
+
   it('should not let the batch of a replaced graph overwrite the routes of the new one', async () => {
     const replacement = star(3);
     const graph = ref<InteractionGraph>(star(40));

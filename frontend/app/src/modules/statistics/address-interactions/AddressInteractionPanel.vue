@@ -2,7 +2,7 @@
 import type { InteractionConnection, InteractionNode } from './address-interaction-graph';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
-import { useNamedChain } from './address-interaction-panel';
+import { CONNECTION_PAGE_SIZE, useNamedChain } from './address-interaction-panel';
 import AddressInteractionConnectionList from './AddressInteractionConnectionList.vue';
 import AddressInteractionDetails from './AddressInteractionDetails.vue';
 
@@ -24,7 +24,14 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const connectionLimit = shallowRef<number>(CONNECTION_PAGE_SIZE);
+
 const namedChain = useNamedChain();
+
+watch(() => connections, () => {
+  set(connectionLimit, CONNECTION_PAGE_SIZE);
+});
 </script>
 
 <template>
@@ -88,6 +95,7 @@ const namedChain = useNamedChain();
         </p>
       </div>
       <AddressInteractionConnectionList
+        v-model:limit="connectionLimit"
         :connections="connections"
         :focus-node-id="selectedNode?.id"
         :connection-label="connectionLabel"

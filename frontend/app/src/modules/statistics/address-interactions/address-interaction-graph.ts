@@ -61,9 +61,10 @@ function layoutGraph(nodes: InteractionNode[], connections: Iterable<Interaction
   }
   const remaining = new Set(nodes);
   const components: GraphComponent[] = [];
-  while (remaining.size > 0) {
-    const root = [...remaining].sort((a, b) => neighbors.get(b.id)!.size - neighbors.get(a.id)!.size || a.id.localeCompare(b.id))[0];
-    components.push(layoutComponent(root, remaining, neighbors));
+  const roots = [...nodes].sort((a, b) => neighbors.get(b.id)!.size - neighbors.get(a.id)!.size || a.id.localeCompare(b.id));
+  for (const root of roots) {
+    if (remaining.has(root))
+      components.push(layoutComponent(root, remaining, neighbors));
   }
   const targetWidth = Math.max(440, Math.sqrt(components.reduce((area, component) => area + component.width * component.height, 0) * 1.6));
   let left = 0;
@@ -90,6 +91,7 @@ function layoutGraph(nodes: InteractionNode[], connections: Iterable<Interaction
 export function createAddressInteractionGraph(interactions: readonly AddressInteraction[]): InteractionGraph {
   const nodes = new Map<string, InteractionNode>();
   const connections = new Map<string, InteractionConnection>();
+  const txHashes = new Map<InteractionConnection, Set<string>>();
 
   function node(chain: string, address: string): InteractionNode {
     const id = address;
@@ -115,9 +117,9 @@ export function createAddressInteractionGraph(interactions: readonly AddressInte
     if (!connection) {
       connection = { chain, id, source: node(chain, source), target: node(chain, target), txHashes: [] };
       connections.set(id, connection);
+      txHashes.set(connection, new Set());
     }
-    if (!connection.txHashes.includes(txHash))
-      connection.txHashes.push(txHash);
+    txHashes.get(connection)!.add(txHash);
   }
 
   const sortedNodes = [...nodes.values()].sort((a, b) => a.id.localeCompare(b.id));
@@ -127,7 +129,7 @@ export function createAddressInteractionGraph(interactions: readonly AddressInte
 
   const sortedConnections = [...connections.values()].sort((a, b) => a.id.localeCompare(b.id));
   for (const connection of sortedConnections)
-    connection.txHashes.sort();
+    connection.txHashes = [...txHashes.get(connection)!].sort();
 
   return { connections: sortedConnections, nodes: sortedNodes, size };
 }

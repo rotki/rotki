@@ -3,11 +3,17 @@ import type { InteractionConnection, InteractionNode } from './address-interacti
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
-import { counterpartOf, useNamedChain } from './address-interaction-panel';
+import { CONNECTION_PAGE_SIZE, counterpartOf, useNamedChain } from './address-interaction-panel';
+
+const limit = defineModel<number>('limit', { default: CONNECTION_PAGE_SIZE });
 
 /**
  * Rows of related address pairs. With a focused address each row names only the counterpart, since
  * the focused address is already stated above the list.
+ *
+ * @remarks
+ * Only the first `limit` rows render, since a busy graph has hundreds of connections. The limit is a
+ * model so the panel can keep it while this list is unmounted behind a connection's details.
  */
 const { connections, focusNodeId, connectionLabel } = defineProps<{
   connections: readonly InteractionConnection[];
@@ -24,7 +30,12 @@ const { getChainName } = useSupportedChains();
 const namedChain = useNamedChain();
 
 const rows = computed<{ connection: InteractionConnection; counterpart?: InteractionNode }[]>(() =>
-  connections.map(connection => ({ connection, counterpart: counterpartOf(connection, focusNodeId) })));
+  connections.slice(0, get(limit)).map(connection => ({ connection, counterpart: counterpartOf(connection, focusNodeId) })));
+const hiddenCount = computed<number>(() => Math.max(0, connections.length - get(limit)));
+
+function showMore(): void {
+  set(limit, get(limit) + CONNECTION_PAGE_SIZE);
+}
 </script>
 
 <template>
@@ -85,6 +96,18 @@ const rows = computed<{ connection: InteractionConnection; counterpart?: Interac
           {{ t('address_interactions.tx_count', { count: connection.txHashes.length }, connection.txHashes.length) }}
         </span>
       </button>
+    </li>
+    <li v-if="hiddenCount > 0">
+      <RuiButton
+        variant="text"
+        color="primary"
+        size="sm"
+        class="w-full"
+        data-testid="interaction-connection-show-more"
+        @click="showMore()"
+      >
+        {{ t('address_interactions.show_more', { count: Math.min(hiddenCount, CONNECTION_PAGE_SIZE) }) }}
+      </RuiButton>
     </li>
   </ul>
 </template>

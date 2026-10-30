@@ -1103,6 +1103,7 @@
     "select_connection": "Select connection between {source} and {target} on {chain}",
     "selected_address": "Selected address",
     "selected_connection": "Connection details",
+    "show_more": "Show {count} more",
     "sorted_by_activity": "Most shared transactions first",
     "transactions": "Transactions ({count})",
     "tx_count": "{count} tx | {count} txs",

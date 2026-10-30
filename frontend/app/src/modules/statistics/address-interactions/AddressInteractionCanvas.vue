@@ -1,20 +1,7 @@
 <script setup lang="ts">
 import type { InteractionConnection, InteractionGraph, InteractionNode } from './address-interaction-graph';
-import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
-import { truncateAddress } from '@/modules/core/common/display/truncate';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useScramble } from '@/modules/settings/use-scramble';
-import { useInteractionRoutes } from './use-interaction-routes';
+import AddressInteractionScene from './AddressInteractionScene.vue';
 import { useInteractionViewport } from './use-interaction-viewport';
-
-interface CanvasNode {
-  node: InteractionNode;
-  address: string;
-  chain: string;
-  label: string;
-  x: number;
-  y: number;
-}
 
 const { graph, selectedNodeId, selectedConnectionId } = defineProps<{
   graph: InteractionGraph;
@@ -28,66 +15,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { getAddressName } = useAddressNameResolution();
-const { getChainName } = useSupportedChains();
-const { scrambleAddress, scrambleData } = useScramble();
-
-const relatedNodeIds = computed<Set<string>>(() => {
-  const ids = new Set<string>();
-  if (!selectedNodeId)
-    return ids;
-
-  ids.add(selectedNodeId);
-  for (const connection of graph.connections) {
-    if (connection.source.id === selectedNodeId || connection.target.id === selectedNodeId) {
-      ids.add(connection.source.id);
-      ids.add(connection.target.id);
-    }
-  }
-  return ids;
-});
-
-function addressLabel(node: InteractionNode): string {
-  if (!get(scrambleData)) {
-    const name = node.chains.map(chain => getAddressName(node.address, chain)).find(Boolean);
-    if (name)
-      return name;
-  }
-  return scrambleAddress(node.address);
-}
-
-function shortLabel(node: InteractionNode, address: string): string {
-  if (address === scrambleAddress(node.address))
-    return truncateAddress(address, 6);
-  const limit = 22;
-  return address.length > limit ? `${address.slice(0, limit - 1)}…` : address;
-}
-
-const nodes = computed<CanvasNode[]>(() => graph.nodes.map((node) => {
-  const address = addressLabel(node);
-  return {
-    node,
-    address,
-    chain: node.chains.map(getChainName).join(', '),
-    label: shortLabel(node, address),
-    x: node.x,
-    y: node.y,
-  };
-}));
-
-const connections = useInteractionRoutes(() => graph);
-
-function isRelated(connection: InteractionConnection): boolean {
-  return !selectedNodeId || connection.source.id === selectedNodeId || connection.target.id === selectedNodeId;
-}
-
-function connectionLabel(connection: InteractionConnection): string {
-  return t('address_interactions.select_connection', {
-    chain: getChainName(connection.chain),
-    source: addressLabel(connection.source),
-    target: addressLabel(connection.target),
-  });
-}
 
 const viewport = useTemplateRef<HTMLDivElement>('viewport');
 const bounds = computed<{ width: number; height: number }>(() => ({
@@ -194,99 +121,13 @@ const {
           :transform="transform"
           data-testid="interaction-canvas-transform"
         >
-          <g
-            v-for="{ connection, path, labelX, labelY } in connections"
-            :key="connection.id"
-            role="button"
-            tabindex="0"
-            :aria-label="connectionLabel(connection)"
-            :aria-pressed="selectedConnectionId === connection.id"
-            :class="[
-              selectedConnectionId === connection.id ? 'text-rui-primary' : 'text-rui-text-secondary',
-              { 'opacity-20': !isRelated(connection) },
-            ]"
-            class="group cursor-pointer outline-offset-4 focus-visible:outline focus-visible:outline-rui-primary"
-            data-testid="interaction-edge"
-            @click="emit('select-connection', connection)"
-            @keydown.enter.prevent="emit('select-connection', connection)"
-            @keydown.space.prevent="emit('select-connection', connection)"
-          >
-            <title>{{ connectionLabel(connection) }}</title>
-            <path
-              :d="path"
-              fill="none"
-              stroke="transparent"
-              stroke-width="20"
-            />
-            <path
-              :d="path"
-              fill="none"
-              stroke="currentColor"
-              stroke-linejoin="round"
-              :stroke-width="selectedConnectionId === connection.id ? 4 : 2"
-              :stroke-opacity="selectedConnectionId === connection.id ? 1 : 0.45"
-              class="group-hover:stroke-rui-primary group-focus-visible:stroke-rui-primary"
-            />
-            <text
-              :x="labelX"
-              :y="labelY - 5"
-              text-anchor="middle"
-              class="fill-rui-text-secondary text-[10px]"
-            >
-              {{ getChainName(connection.chain) }}
-            </text>
-          </g>
-          <g
-            v-for="{ node, address, chain, label, x, y } in nodes"
-            :key="node.id"
-            :transform="`translate(${x}, ${y})`"
-            role="button"
-            tabindex="0"
-            :aria-label="t('address_interactions.select_address', { address, chain })"
-            :aria-pressed="selectedNodeId === node.id"
-            :class="{ 'opacity-25': selectedNodeId && !relatedNodeIds.has(node.id) }"
-            class="group cursor-pointer text-rui-primary outline-offset-4 focus-visible:outline focus-visible:outline-rui-primary"
-            data-testid="interaction-node"
-            @click="emit('select-node', node)"
-            @keydown.enter.prevent="emit('select-node', node)"
-            @keydown.space.prevent="emit('select-node', node)"
-          >
-            <title>{{ t('address_interactions.select_address', { address, chain }) }}</title>
-            <circle
-              v-if="selectedNodeId === node.id"
-              r="29"
-              fill="currentColor"
-              fill-opacity="0.15"
-            />
-            <circle
-              r="21"
-              class="fill-rui-surface group-hover:fill-rui-primary/10"
-              stroke="currentColor"
-              :stroke-width="selectedNodeId === node.id ? 3 : 1.5"
-            />
-            <path
-              d="M-8-5h16v12H-8z M-8-5v-3H5v3 M3 0h5v4H3z"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            />
-            <text
-              y="43"
-              text-anchor="middle"
-              class="fill-rui-text text-[13px] font-medium"
-            >
-              {{ label }}
-            </text>
-            <text
-              y="61"
-              text-anchor="middle"
-              class="fill-rui-text-secondary text-xs"
-            >
-              {{ node.chains.length > 1 ? t('address_interactions.chain_count', { count: node.chains.length }) : chain }}
-            </text>
-          </g>
+          <AddressInteractionScene
+            :graph="graph"
+            :selected-node-id="selectedNodeId"
+            :selected-connection-id="selectedConnectionId"
+            @select-node="emit('select-node', $event)"
+            @select-connection="emit('select-connection', $event)"
+          />
         </g>
       </svg>
     </div>
