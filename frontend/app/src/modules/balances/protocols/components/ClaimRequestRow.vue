@@ -26,11 +26,11 @@ const { scrambleIdentifier } = useScramble();
         v-if="ready"
         class="text-rui-success"
       >
-        {{ t('common.claim_ready') }}
+        {{ t('claims.request.ready') }}
       </span>
       <i18n-t
         v-else-if="claim.availableAt"
-        keypath="common.claim_pending_ready_on"
+        keypath="claims.request.ready_on"
         scope="global"
         tag="span"
         class="text-rui-text-secondary"
@@ -44,7 +44,7 @@ const { scrambleIdentifier } = useScramble();
       </i18n-t>
       <i18n-t
         v-else-if="claim.requestedAt"
-        keypath="common.claim_pending_requested"
+        keypath="claims.request.requested"
         scope="global"
         tag="span"
         class="text-rui-text-secondary"
@@ -60,7 +60,7 @@ const { scrambleIdentifier } = useScramble();
         v-else
         class="text-rui-text-secondary"
       >
-        {{ t('common.claim_pending') }}
+        {{ t('claims.status.pending') }}
       </span>
     </div>
     <AssetAmountDisplay

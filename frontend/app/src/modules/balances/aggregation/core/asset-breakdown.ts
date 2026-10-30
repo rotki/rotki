@@ -1,8 +1,8 @@
-import type { AssetBalance } from '@rotki/common';
 import type { Accounts, AssetBreakdown, Balances, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
+import type { EthBalance, ProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
+import { type AssetBalance, Zero } from '@rotki/common';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { groupAddresses } from '@/modules/accounts/core/account-groups';
 import { zeroBalance } from '@/modules/core/common/data/bignumbers';
@@ -55,6 +55,13 @@ function countsAs(identifier: string, asset: string, ports: BreakdownPorts): boo
   return identifier === asset || ports.resolveIdentifier(identifier) === asset;
 }
 
+/** The withdrawals still waiting to be claimed across an account's protocols, left out when there are none. */
+function awaitingClaimOf(protocols: ProtocolBalances): Pick<AssetBreakdown, 'awaitingClaim'> {
+  const total = Object.values(protocols)
+    .reduce((sum, { awaitingClaim }) => (awaitingClaim ? sum.plus(awaitingClaim) : sum), Zero);
+  return total.gt(0) ? { awaitingClaim: total } : {};
+}
+
 /** The account rows for `asset` on-chain, one per address and identifier held. */
 function blockchainRows(
   asset: string,
@@ -77,6 +84,7 @@ function blockchainRows(
           address,
           location: ports.chainLabel(chain),
           ...perProtocolBalanceSum(zeroBalance(), protocols),
+          ...awaitingClaimOf(protocols),
           tags: tags.get(address),
         })));
   });

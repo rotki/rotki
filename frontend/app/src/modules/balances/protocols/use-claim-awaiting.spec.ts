@@ -1,6 +1,6 @@
 import { bigNumberify, type ClaimRequest, type ProtocolBalance } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { claimAccounts, isClaimReady, useClaimAwaiting } from '@/modules/balances/protocols/use-claim-awaiting';
+import { claimAccounts, claimStatus, isClaimReady, useClaimAwaiting } from '@/modules/balances/protocols/use-claim-awaiting';
 
 function claim(overrides: Partial<ClaimRequest> = {}): ClaimRequest {
   return { amount: bigNumberify(1), finalized: false, ...overrides };
@@ -34,21 +34,48 @@ describe('claimAccounts', () => {
   });
 });
 
+describe('claimStatus', () => {
+  it('should be ready as soon as one request is ready', () => {
+    expect(claimStatus([claim({ availableAt: 500 }), claim({ finalized: true })], 100)).toEqual({ kind: 'ready' });
+  });
+
+  it('should unlock at the earliest date when every pending request has one', () => {
+    expect(claimStatus([claim({ availableAt: 500 }), claim({ availableAt: 300 })], 100))
+      .toEqual({ availableAt: 300, kind: 'unlocks' });
+  });
+
+  it('should be pending when a pending request has no unlock date', () => {
+    expect(claimStatus([claim({ availableAt: 300 }), claim({ requestedAt: 50 })], 100)).toEqual({ kind: 'pending' });
+  });
+
+  it('should be pending when there are no requests', () => {
+    expect(claimStatus([], 100)).toEqual({ kind: 'pending' });
+  });
+});
+
 describe('useClaimAwaiting', () => {
   function balance(claims?: ClaimRequest[]): ProtocolBalance {
     return { amount: bigNumberify(1), claims, protocol: 'lido', value: bigNumberify(1) };
   }
 
-  it('should report a ready request when any request can be claimed', () => {
-    const { hasReady } = useClaimAwaiting(() => balance([claim(), claim({ finalized: true })]));
+  it('should be ready, with only the ready amount, when any request can be claimed', () => {
+    const { status, statusAmount } = useClaimAwaiting(() => ({
+      ...balance([claim({ amount: bigNumberify(2) }), claim({ amount: bigNumberify(3), finalized: true })]),
+      awaitingClaim: bigNumberify(5),
+    }));
 
-    expect(hasReady.value).toBe(true);
+    expect(status.value).toEqual({ kind: 'ready' });
+    expect(statusAmount.value).toEqual(bigNumberify(3));
   });
 
-  it('should report nothing ready while every request is still pending', () => {
-    const { hasReady, isReady } = useClaimAwaiting(() => balance([claim({ availableAt: 4_102_444_800 })]));
+  it('should count everything awaiting a claim while nothing is ready', () => {
+    const { isReady, status, statusAmount } = useClaimAwaiting(() => ({
+      ...balance([claim({ availableAt: 4_102_444_800 })]),
+      awaitingClaim: bigNumberify(1),
+    }));
 
-    expect(hasReady.value).toBe(false);
+    expect(status.value).toEqual({ availableAt: 4_102_444_800, kind: 'unlocks' });
+    expect(statusAmount.value).toEqual(bigNumberify(1));
     expect(isReady(claim({ availableAt: 1 }))).toBe(true);
   });
 

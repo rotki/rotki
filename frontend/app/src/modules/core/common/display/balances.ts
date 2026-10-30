@@ -1,14 +1,15 @@
-import type {
-  AssetBalance,
-  AssetBalanceWithPrice,
-  BigNumber,
-  ProtocolBalance,
-  Writeable,
-} from '@rotki/common';
 import type { DataTableSortData } from '@rotki/ui-library';
 import type { AssetBreakdown } from '@/modules/accounts/blockchain-accounts';
 import type { PlainAssetInfoReturn } from '@/modules/assets/use-asset-info-retrieval';
-import { sortDesc, zeroBalance } from '@/modules/core/common/data/bignumbers';
+import {
+  type AssetBalance,
+  type AssetBalanceWithPrice,
+  type BigNumber,
+  type ProtocolBalance,
+  type Writeable,
+  Zero,
+} from '@rotki/common';
+import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { balanceSum, bigNumberSum } from '@/modules/core/common/data/calculation';
 import { getSortItems } from '@/modules/core/common/display/assets';
 
@@ -19,12 +20,17 @@ export function groupAssetBreakdown(
   const initial: Record<string, Writeable<AssetBreakdown>> = {};
   const grouped = breakdowns.reduce((acc, breakdown) => {
     const key = groupBy(breakdown);
-    if (!acc[key])
-      acc[key] = { ...breakdown, ...zeroBalance() };
+    const existing = acc[key];
+    if (!existing) {
+      acc[key] = { ...breakdown };
+      return acc;
+    }
 
-    const balance = balanceSum(acc[key], breakdown);
-    acc[key].amount = balance.amount;
-    acc[key].value = balance.value;
+    const balance = balanceSum(existing, breakdown);
+    existing.amount = balance.amount;
+    existing.value = balance.value;
+    if (breakdown.awaitingClaim)
+      existing.awaitingClaim = (existing.awaitingClaim ?? Zero).plus(breakdown.awaitingClaim);
     return acc;
   }, initial);
 

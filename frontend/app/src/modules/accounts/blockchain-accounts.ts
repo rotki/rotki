@@ -249,6 +249,8 @@ export interface AssetBreakdown extends Balance {
   readonly address: string;
   readonly tags?: string[];
   readonly detailPath?: string;
+  /** The part of `amount` that is a withdrawal still waiting to be claimed. */
+  readonly awaitingClaim?: BigNumber;
 }
 
 export interface ERC20Token {

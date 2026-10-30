@@ -99,6 +99,46 @@ describe('assetBreakdown', () => {
   });
 });
 
+describe('assetBreakdown with withdrawals awaiting a claim', () => {
+  const claiming: BreakdownInputs = {
+    accounts: {
+      eth: [
+        createAccount({ address: '0x1', label: null, tags: null }, 'eth'),
+        createAccount({ address: '0x2', label: null, tags: null }, 'eth'),
+      ],
+    },
+    balances: {
+      eth: {
+        '0x1': {
+          assets: {
+            ETH: {
+              address: createTestBalance(1, 10),
+              lido: { ...createTestBalance(2, 20), awaitingClaim: bigNumberify(2) },
+            },
+            ETH2: { venice: { ...createTestBalance(1, 10), awaitingClaim: bigNumberify('0.5') } },
+          },
+          liabilities: {},
+        },
+        '0x2': { assets: { ETH: { address: createTestBalance(4, 40) } }, liabilities: {} },
+      },
+    },
+    exchanges: {},
+    manual: [],
+  };
+
+  it('should report the claim part of an account, summed over its protocols and merged identifiers', () => {
+    const row = assetBreakdown('ETH', claiming, false, {}, ports).find(({ address }) => address === '0x1');
+    expect(row?.amount).toEqual(bigNumberify(4));
+    expect(row?.awaitingClaim).toEqual(bigNumberify('2.5'));
+  });
+
+  it('should report no claim part for an account without one', () => {
+    const row = assetBreakdown('ETH', claiming, false, {}, ports).find(({ address }) => address === '0x2');
+    expect(row).toBeDefined();
+    expect(row).not.toHaveProperty('awaitingClaim');
+  });
+});
+
 describe('assetBreakdown with an asset treated as another', () => {
   const staking: BreakdownInputs = {
     accounts: {
