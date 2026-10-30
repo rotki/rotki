@@ -9,6 +9,7 @@ from sqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.api.websockets.typedefs import UserMessageEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.migration_utils import (
     create_swap_events_v47_v48,
     get_swap_spend_receive_v47_48,
@@ -17,8 +18,9 @@ from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.legacy_chars import location_from_v53_char, location_to_v53_char
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import AssetAmount, FVal, Location, Price
+from rotkehlchen.types import LEGACY_PROTOCOL_LOCATIONS, AssetAmount, FVal, Location, Price
 from rotkehlchen.user_messages import LocalDbProblem
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
@@ -249,7 +251,7 @@ def data_migration_20(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                 )
                 recovered_events.extend(create_swap_events_v47_v48(
                     timestamp=ts_sec_to_ms(row[0]),
-                    location=Location.deserialize_from_db(row[1]),
+                    location=location_from_v53_char(row[1]),  # the backup is a v47 DB
                     spend=spend,
                     receive=receive,
                     fee=AssetAmount(
@@ -262,36 +264,41 @@ def data_migration_20(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                 ))
 
         old_db_conn.close()
-        with db.conn.write_ctx() as write_cursor:
-            write_cursor.execute(
-                f'DELETE FROM history_events WHERE group_identifier IN ({placeholders})',
-                location_hashes,
-            )
-            log.debug(f'removed {affected_events_count} incorrectly imported events')
-            for event in recovered_events:
-                try:
-                    write_cursor.execute(
-                        'INSERT INTO history_events(entry_type, group_identifier, '
-                        'sequence_index, timestamp, location, location_label, asset, amount, '
-                        'notes, type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',  # noqa: E501
-                        (
-                            event.entry_type.value,
-                            event.group_identifier,
-                            event.sequence_index,
-                            event.timestamp,
-                            event.location.serialize_for_db(),
-                            event.location_label,
-                            event.asset.identifier,
-                            str(event.amount),
-                            event.notes,
-                            event.event_type.serialize(),
-                            event.event_subtype.serialize(),
-                            json.dumps(event.extra_data) if event.extra_data else None,
-                        ),
-                    )
-                except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                    log.error(f'failed to add swap event {event.serialize()} due to {e!s}. skipping.')  # noqa: E501
+        try:  # a failure rolls back the deletion too, so the affected events stay as they were
+            with db.conn.write_ctx() as write_cursor:
+                for location in {x.location for x in recovered_events}:
+                    if location in LEGACY_PROTOCOL_LOCATIONS:  # a node exists only if data uses it
+                        DBLocations.add_legacy_location(
+                            write_cursor=write_cursor,
+                            char=location_to_v53_char(location),
+                        )
 
-            log.debug(f'successfully recovered {write_cursor.rowcount} lost trade events')
+                write_cursor.execute(
+                    f'DELETE FROM history_events WHERE group_identifier IN ({placeholders})',
+                    location_hashes,
+                )
+                log.debug('removed %s incorrectly imported events', affected_events_count)
+                write_cursor.executemany(
+                    'INSERT INTO history_events(entry_type, group_identifier, '
+                    'sequence_index, timestamp, location, location_label, asset, amount, '
+                    'notes, type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',  # noqa: E501
+                    [(
+                        event.entry_type.value,
+                        event.group_identifier,
+                        event.sequence_index,
+                        event.timestamp,
+                        event.location.serialize_for_db(),
+                        event.location_label,
+                        event.asset.identifier,
+                        str(event.amount),
+                        event.notes,
+                        event.event_type.serialize(),
+                        event.event_subtype.serialize(),
+                        json.dumps(event.extra_data) if event.extra_data else None,
+                    ) for event in recovered_events],
+                )
+                log.debug('successfully recovered %s lost trade events', len(recovered_events))
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            log.error('failed to recover the lost trade events due to %s. Nothing was changed', e)
 
     perform_userdb_migration_steps(rotki, progress_handler, should_vacuum=True)

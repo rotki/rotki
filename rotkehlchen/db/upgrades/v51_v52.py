@@ -8,6 +8,7 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingSt
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.locations.legacy_chars import location_from_v53_char
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
@@ -88,8 +89,8 @@ def upgrade_v51_to_v52(db: DBHandler, progress_handler: DBUpgradeProgressHandler
             'SELECT identifier, location, notes FROM history_events '
             'WHERE location IN (?, ?) AND notes IS NOT NULL AND type IN (?, ?, ?)',
             (
-                Location.BITCOIN.serialize_for_db(),
-                Location.BITCOIN_CASH.serialize_for_db(),
+                'q',
+                'r',
                 HistoryEventType.SPEND.serialize(),
                 HistoryEventType.RECEIVE.serialize(),
                 HistoryEventType.TRANSFER.serialize(),
@@ -99,8 +100,8 @@ def upgrade_v51_to_v52(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         mappings: list[tuple[int, str]] = []
         for identifier, location, notes in rows:
             try:
-                deserialized_location = Location.deserialize_from_db(location)
-            except (ValueError, DeserializationError):
+                deserialized_location = location_from_v53_char(location)
+            except DeserializationError:
                 continue
 
             mappings.extend([
@@ -130,8 +131,8 @@ def upgrade_v51_to_v52(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         write_cursor.executemany(
             'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
             (
-                (Location.HYPERLIQUID.serialize_for_db(), 57),
-                (Location.MONAD.serialize_for_db(), 58),
+                ('y', 57),
+                ('z', 58),
             ),
         )
 
