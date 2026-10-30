@@ -35,6 +35,17 @@ describe('xpubRowSummary', () => {
     expect(wrapper.find('[data-testid=xpub-funded-count]').text()).toBe('account_balances.xpub.funded::6, 4');
   });
 
+  it.each([
+    ['legacy', 'account_form.xpub_detected.legacy'],
+    ['segwit', 'account_form.xpub_detected.segwit'],
+    ['taproot', 'account_form.xpub_detected.taproot'],
+  ] as const)('should name a %s xpub by the type wallets call it', (addressType, label) => {
+    const wrapper = render(xpubGroup({ addressType }));
+
+    expect(wrapper.find('[data-testid=xpub-address-type]').text()).toBe(label);
+    expect(wrapper.find('[data-testid=xpub-funded-count]').exists()).toBe(false);
+  });
+
   it('should leave the type out while it is undecided and still count the addresses', () => {
     const wrapper = render(xpubGroup({ addressCount: 3 }));
 
