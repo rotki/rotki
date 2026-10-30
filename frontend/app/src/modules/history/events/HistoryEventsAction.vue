@@ -120,6 +120,7 @@ function redecodeWithOptions(target: DecodableEventType): void {
     </RuiButton>
     <RuiMenu
       v-model="showMenu"
+      lazy
       :class-names="{ menu: 'max-w-60' }"
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'bottom-end' }"
       close-on-content-click

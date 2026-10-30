@@ -36,19 +36,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const menuOpened = ref<boolean>(false);
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
-const menuButton = useTemplateRef<{ $el: HTMLElement }>('menuButton');
-
-/**
- * Whether the row has built its menu yet.
- *
- * @remarks
- * A `RuiMenu` reads its activator's size when it mounts, which forces a synchronous layout. A table
- * mounting many rows at once paid that once per row for menus nobody opened, so the menu is built
- * when the pointer first enters the row or focus first lands in it, before it can be opened. Once
- * built it stays. Until then the activator sits in the same two wrappers `RuiMenu` puts around it,
- * so building the menu moves nothing on screen.
- */
-const menuBuilt = shallowRef<boolean>(false);
 
 const { isPending } = useAssetInfoCache();
 const shouldShowAmount = useSetting('shouldShowAmount');
@@ -83,60 +70,10 @@ const { navigateToDetails } = useAssetPageNavigation(() => asset.identifier, () 
 const [DefineImage, ReuseImage] = createReusableTemplate();
 const [DefineActivator, ReuseActivator] = createReusableTemplate<{ attrs: Record<string, unknown> }>();
 
-/**
- * Whether a pointer event comes from a finger.
- *
- * @remarks
- * A touch fires `pointerenter` in the same gesture as its tap, so building the menu then would swap
- * the button out from under the tap and lose its click. A touch builds the menu from the tap itself.
- */
-function isTouch(event: Event): boolean {
-  return event instanceof PointerEvent && event.pointerType === 'touch';
-}
-
-/**
- * Builds the menu ahead of its first use.
- *
- * @remarks
- * Building it swaps the row's activator for the menu's own copy, so a keyboard user whose focus
- * brought it here would lose the focus with the old button. It is handed to the new one.
- */
-async function buildMenu(event: Event): Promise<void> {
-  if (get(menuBuilt) || isTouch(event))
-    return;
-
-  const hadButtonFocus = event.type === 'focusin' && event.target === get(menuButton)?.$el;
-  set(menuBuilt, true);
-  if (!hadButtonFocus)
-    return;
-
-  await nextTick();
-  get(menuButton)?.$el.focus();
-}
-
-const buildTriggers: Record<string, unknown> = {
-  onFocusin: buildMenu,
-  onPointerenter: buildMenu,
-};
-
-/**
- * Toggles the menu, building it first when nothing has yet.
- *
- * @remarks
- * `RuiMenu` opens on a change of its `v-model` after it has mounted, never on the value it mounts
- * with, so a menu built by this click is opened once it is in place.
- */
-async function openMenuHandler(event: MouseEvent): Promise<void> {
+function openMenuHandler(event: MouseEvent): void {
   event.preventDefault();
   event.stopPropagation();
-  if (get(menuBuilt)) {
-    set(menuOpened, !get(menuOpened));
-    return;
-  }
-
-  set(menuBuilt, true);
-  await nextTick();
-  set(menuOpened, true);
+  set(menuOpened, !get(menuOpened));
 }
 
 function useContextMenu(attrs: Record<string, unknown>) {
@@ -200,7 +137,6 @@ watch(menuOpened, (menuOpened) => {
       </ListItem>
 
       <RuiButton
-        ref="menuButton"
         variant="text"
         icon
         size="sm"
@@ -240,9 +176,10 @@ watch(menuOpened, (menuOpened) => {
     </template>
   </ListItem>
   <RuiMenu
-    v-else-if="menuBuilt"
+    v-else
     :key="asset.identifier"
     v-model="menuOpened"
+    lazy
     class="flex min-w-0"
     :class-names="{ menu: 'w-64 max-w-[90%]' }"
     :options="{ placement: 'bottom-start' }"
@@ -260,13 +197,4 @@ watch(menuOpened, (menuOpened) => {
       @refresh="emit('refresh')"
     />
   </RuiMenu>
-  <div
-    v-else
-    class="flex min-w-0"
-    data-testid="asset-details-menu-pending"
-  >
-    <div class="relative inline-flex max-w-full">
-      <ReuseActivator :attrs="buildTriggers" />
-    </div>
-  </div>
 </template>

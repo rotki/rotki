@@ -50,7 +50,10 @@ const multiple = computed<boolean>(() => assets.length > 2);
         :show-chain="false"
         hide-protocol
       />
-      <RuiMenu v-else>
+      <RuiMenu
+        v-else
+        lazy
+      >
         <template #activator>
           <div class="z-0 -ml-2 cursor-pointer rounded-full w-7 h-7 bg-rui-grey-300 dark:bg-rui-grey-700 text-rui-text text-xs flex items-center justify-center font-bold">
             +{{ assets.length - 1 }}

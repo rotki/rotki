@@ -31,6 +31,7 @@ const protocolName = computed<string>(() => toSentenceCase(protocolBalance.proto
   >
     <RuiMenu
       v-model="open"
+      lazy
       :options="{ placement: 'bottom-start' }"
     >
       <template #activator="{ attrs }">

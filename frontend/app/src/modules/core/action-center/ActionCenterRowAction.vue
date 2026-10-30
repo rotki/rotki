@@ -37,6 +37,7 @@ const leadsAway = computed<boolean>(() => leavesCenter(item.target));
 <template>
   <RuiMenu
     v-if="item.choices.length > 0"
+    lazy
     :options="{ placement: 'bottom-end' }"
   >
     <template #activator="{ attrs }">

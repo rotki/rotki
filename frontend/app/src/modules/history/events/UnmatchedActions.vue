@@ -231,6 +231,7 @@ function accept(): void {
       <RuiMenu
         v-if="hasMenu"
         v-model="menuOpen"
+        lazy
         :options="{ placement: 'bottom-end' }"
         close-on-content-click
       >

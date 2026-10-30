@@ -98,6 +98,7 @@ watch(menuOpen, (open) => {
     />
     <RuiMenu
       v-model="menuOpen"
+      lazy
       :options="{ placement: 'bottom-end' }"
     >
       <template #activator="{ attrs }">

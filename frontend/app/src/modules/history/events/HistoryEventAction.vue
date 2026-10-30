@@ -41,6 +41,7 @@ function onEditRule(): void {
 <template>
   <div class="flex items-center">
     <RuiMenu
+      lazy
       :class-names="{ menu: 'max-w-60' }"
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'bottom-end' }"
       close-on-content-click

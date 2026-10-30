@@ -161,6 +161,7 @@ const placeholder = computed<string | undefined>(() => {
       <RuiMenu
         v-model="modelBreakdownOpen"
         open-on-hover
+        lazy
         :close-delay="200"
         :close-on-content-click="false"
         :options="{ placement: 'left', strategy: 'fixed', autoUpdate: { resize: false, scroll: false } }"
