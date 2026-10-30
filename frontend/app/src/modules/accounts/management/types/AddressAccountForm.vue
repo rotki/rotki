@@ -20,7 +20,10 @@ defineProps<{
 
 const emit = defineEmits<{
   'detected-xpub': [key: string];
+  'import-csv': [];
 }>();
+
+const { t } = useI18n({ useScope: 'global' });
 
 const address = useTemplateRef<InstanceType<typeof AddressInput>>('address');
 const selectedModules = ref<Module[]>([]);
@@ -151,7 +154,29 @@ defineExpose({
         :show-wallet-import="showWalletImport"
         :check="editMode ? undefined : addressCheck(modelValue.chain)"
         @detected-xpub="emit('detected-xpub', $event)"
-      />
+      >
+        <template
+          v-if="!editMode"
+          #bulk-actions
+        >
+          <RuiButton
+            variant="text"
+            color="primary"
+            size="sm"
+            :disabled="loading"
+            data-testid="account-form-import-csv"
+            @click="emit('import-csv')"
+          >
+            <template #prepend>
+              <RuiIcon
+                size="16"
+                name="lu-file-up"
+              />
+            </template>
+            {{ t('blockchain_balances.form_dialog.import_action') }}
+          </RuiButton>
+        </template>
+      </AddressInput>
       <AccountDataInput
         v-model:tags="tags"
         v-model:label="label"

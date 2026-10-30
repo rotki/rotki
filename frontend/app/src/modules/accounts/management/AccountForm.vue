@@ -23,6 +23,10 @@ defineProps<{
   chainIds: string[];
 }>();
 
+const emit = defineEmits<{
+  'import-csv': [];
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const form = useTemplateRef<
@@ -160,6 +164,7 @@ defineExpose({
       v-model:error-messages="errors"
       :loading="loading"
       @detected-xpub="startPromise(handleDetectedXpub($event))"
+      @import-csv="emit('import-csv')"
     />
   </div>
 </template>
