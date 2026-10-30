@@ -11,6 +11,24 @@ interface UseLocationsReturn {
   useLocationData: (identifier: MaybeRefOrGetter<string | null>) => ComputedRef<TradeLocationData | undefined>;
 }
 
+const locationIndexes = new WeakMap<readonly TradeLocationData[], Map<string, TradeLocationData>>();
+
+/**
+ * The locations by identifier, built once per list.
+ *
+ * @remarks
+ * A history page looks a location up for every row, so a linear search per lookup adds up. The
+ * index is keyed by the list itself, so it is rebuilt only when the store produces a new list.
+ */
+function indexOf(locations: readonly TradeLocationData[]): Map<string, TradeLocationData> {
+  let index = locationIndexes.get(locations);
+  if (!index) {
+    index = new Map(locations.map(location => [location.identifier, location]));
+    locationIndexes.set(locations, index);
+  }
+  return index;
+}
+
 export function useLocations(): UseLocationsReturn {
   const { tradeLocations } = storeToRefs(useLocationStore());
   const { getBlockchainRedirectLink, getChainImageUrl, getChainName, matchChain } = useSupportedChains();
@@ -29,8 +47,7 @@ export function useLocations(): UseLocationsReturn {
       };
     }
 
-    const locations = get(tradeLocations);
-    return locations.find(location => location.identifier === id);
+    return indexOf(get(tradeLocations)).get(id);
   }
 
   function useLocationData(identifier: MaybeRefOrGetter<string | null>): ComputedRef<TradeLocationData | undefined> {
@@ -44,8 +61,7 @@ export function useLocations(): UseLocationsReturn {
   }
 
   function getExchangeName(location: string): string {
-    const exchange = get(tradeLocations).find(tl => tl.identifier === location);
-    return exchange?.name ?? '';
+    return indexOf(get(tradeLocations)).get(location)?.name ?? '';
   }
 
   return {
