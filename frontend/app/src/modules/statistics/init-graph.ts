@@ -1,5 +1,6 @@
-import { LineChart, PieChart } from 'echarts/charts';
+import { GraphChart, LineChart, PieChart } from 'echarts/charts';
 import {
+  AriaComponent,
   BrushComponent,
   DataZoomComponent,
   GridComponent,
@@ -21,5 +22,7 @@ export function initGraph(): void {
     LegendComponent,
     BrushComponent,
     ToolboxComponent,
+    GraphChart,
+    AriaComponent,
   ]);
 }

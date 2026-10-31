@@ -4,132 +4,104 @@ export interface InteractionNode {
   id: string;
   chains: string[];
   address: string;
-  x: number;
-  y: number;
 }
 
+export interface ChainActivity {
+  chain: string;
+  txHashes: string[];
+}
+
+/** Every transaction two addresses share, on any chain. */
 export interface InteractionConnection {
   id: string;
-  chain: string;
   source: InteractionNode;
   target: InteractionNode;
-  txHashes: string[];
+  /** One entry per chain the pair shares a transaction on, ordered by chain id. */
+  activity: ChainActivity[];
+  txCount: number;
 }
 
 export interface InteractionGraph {
   nodes: InteractionNode[];
   connections: InteractionConnection[];
-  size: number;
 }
 
-interface GraphComponent {
-  nodes: InteractionNode[];
-  width: number;
-  height: number;
+/** Shared transactions of a connection, restricted to one chain when `chain` is set. */
+export function transactionsOn(connection: InteractionConnection, chain?: string): number {
+  if (!chain)
+    return connection.txCount;
+  return connection.activity.find(entry => entry.chain === chain)?.txHashes.length ?? 0;
 }
 
-function layoutComponent(root: InteractionNode, remaining: Set<InteractionNode>, neighbors: Map<string, Set<InteractionNode>>): GraphComponent {
-  let layer = [root];
-  remaining.delete(root);
-  const layers: InteractionNode[][] = [];
-  while (layer.length > 0) {
-    layers.push(layer);
-    const next: InteractionNode[] = [];
-    for (const node of layer) {
-      for (const neighbor of neighbors.get(node.id)!) {
-        if (remaining.delete(neighbor))
-          next.push(neighbor);
-      }
-    }
-    layer = next.sort((a, b) => a.id.localeCompare(b.id));
-  }
-  const rows = Math.max(...layers.map(layer => layer.length));
-  layers.forEach((layer, column) => {
-    layer.forEach((node, row) => {
-      node.x = 110 + column * 200;
-      node.y = 50 + row * 110 + (rows - layer.length) * 55;
-    });
-  });
-  return { nodes: layers.flat(), width: layers.length * 200 + 20, height: rows * 110 + 40 };
+/** Whether one end of the connection is the given address. */
+export function touches(connection: InteractionConnection, nodeId?: string): boolean {
+  return connection.source.id === nodeId || connection.target.id === nodeId;
 }
 
-function layoutGraph(nodes: InteractionNode[], connections: Iterable<InteractionConnection>): number {
-  const neighbors = new Map(nodes.map(node => [node.id, new Set<InteractionNode>()]));
-  for (const connection of connections) {
-    neighbors.get(connection.source.id)!.add(connection.target);
-    neighbors.get(connection.target.id)!.add(connection.source);
+/** How many connections each address has among `connections`. */
+export function degreesOf(connections: Iterable<InteractionConnection>): Map<string, number> {
+  const degrees = new Map<string, number>();
+  for (const { source, target } of connections) {
+    degrees.set(source.id, (degrees.get(source.id) ?? 0) + 1);
+    degrees.set(target.id, (degrees.get(target.id) ?? 0) + 1);
   }
-  const remaining = new Set(nodes);
-  const components: GraphComponent[] = [];
-  const roots = [...nodes].sort((a, b) => neighbors.get(b.id)!.size - neighbors.get(a.id)!.size || a.id.localeCompare(b.id));
-  for (const root of roots) {
-    if (remaining.has(root))
-      components.push(layoutComponent(root, remaining, neighbors));
-  }
-  const targetWidth = Math.max(440, Math.sqrt(components.reduce((area, component) => area + component.width * component.height, 0) * 1.6));
-  let left = 0;
-  let top = 0;
-  let rowHeight = 0;
-  let width = 0;
-  for (const component of components) {
-    if (left > 0 && left + component.width > targetWidth) {
-      top += rowHeight;
-      left = 0;
-      rowHeight = 0;
-    }
-    for (const node of component.nodes) {
-      node.x += left;
-      node.y += top;
-    }
-    left += component.width;
-    width = Math.max(width, left);
-    rowHeight = Math.max(rowHeight, component.height);
-  }
-  return Math.max(width, top + rowHeight);
+  return degrees;
 }
 
+/**
+ * Builds one connection per address pair from the per-transaction interactions.
+ *
+ * @remarks
+ * The API reports one row per chain, pair and transaction. Folding the chains into one connection
+ * keeps a pair active on five chains as one relation, while `activity` keeps the per-chain detail.
+ * Nodes and connections come back sorted, so the same input always gives the same order.
+ */
 export function createAddressInteractionGraph(interactions: readonly AddressInteraction[]): InteractionGraph {
   const nodes = new Map<string, InteractionNode>();
   const connections = new Map<string, InteractionConnection>();
-  const txHashes = new Map<InteractionConnection, Set<string>>();
+  const txHashes = new Map<string, Map<string, Set<string>>>();
 
   function node(chain: string, address: string): InteractionNode {
-    const id = address;
-    let result = nodes.get(id);
+    let result = nodes.get(address);
     if (!result) {
-      result = { address, chains: [], id, x: 0, y: 0 };
-      nodes.set(id, result);
+      result = { address, chains: [], id: address };
+      nodes.set(address, result);
     }
     if (!result.chains.includes(chain))
       result.chains.push(chain);
     return result;
   }
 
-  for (const interaction of interactions) {
-    const { chain, txHash } = interaction;
-    if (interaction.source === interaction.target)
+  for (const { chain, source: from, target: to, txHash } of interactions) {
+    if (from === to)
       continue;
 
-    const source = interaction.source < interaction.target ? interaction.source : interaction.target;
-    const target = interaction.source < interaction.target ? interaction.target : interaction.source;
-    const id = JSON.stringify([chain, source, target]);
-    let connection = connections.get(id);
-    if (!connection) {
-      connection = { chain, id, source: node(chain, source), target: node(chain, target), txHashes: [] };
-      connections.set(id, connection);
-      txHashes.set(connection, new Set());
+    const [source, target] = from < to ? [node(chain, from), node(chain, to)] : [node(chain, to), node(chain, from)];
+    const id = JSON.stringify([source.id, target.id]);
+    if (!connections.has(id)) {
+      connections.set(id, { activity: [], id, source, target, txCount: 0 });
+      txHashes.set(id, new Map());
     }
-    txHashes.get(connection)!.add(txHash);
+    const byChain = txHashes.get(id)!;
+    const hashes = byChain.get(chain) ?? new Set<string>();
+    hashes.add(txHash);
+    byChain.set(chain, hashes);
+  }
+
+  for (const [id, byChain] of txHashes) {
+    const connection = connections.get(id)!;
+    connection.activity = [...byChain]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([chain, hashes]) => ({ chain, txHashes: [...hashes].sort() }));
+    connection.txCount = connection.activity.reduce((sum, entry) => sum + entry.txHashes.length, 0);
   }
 
   const sortedNodes = [...nodes.values()].sort((a, b) => a.id.localeCompare(b.id));
-  for (const node of sortedNodes)
-    node.chains.sort();
-  const size = layoutGraph(sortedNodes, connections.values());
+  for (const item of sortedNodes)
+    item.chains.sort();
 
-  const sortedConnections = [...connections.values()].sort((a, b) => a.id.localeCompare(b.id));
-  for (const connection of sortedConnections)
-    connection.txHashes = [...txHashes.get(connection)!].sort();
-
-  return { connections: sortedConnections, nodes: sortedNodes, size };
+  return {
+    connections: [...connections.values()].sort((a, b) => a.id.localeCompare(b.id)),
+    nodes: sortedNodes,
+  };
 }

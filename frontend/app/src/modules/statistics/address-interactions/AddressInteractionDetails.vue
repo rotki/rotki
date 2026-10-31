@@ -1,30 +1,48 @@
 <script setup lang="ts">
 import type { InteractionConnection } from './address-interaction-graph';
-import { startPromise } from '@shared/utils';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
-import { historyEventsRoute, useChainLocation } from './address-interaction-panel';
+import AddressInteractionChainActivity from './AddressInteractionChainActivity.vue';
+import { useChainColors } from './use-chain-colors';
 
-const { connection } = defineProps<{ connection: InteractionConnection }>();
+/**
+ * One address pair: both addresses, then the transactions they share, grouped by chain.
+ *
+ * @remarks
+ * The addresses link to the explorer of the first chain the pair shares, since both addresses are
+ * known to exist there.
+ */
+const { connection, chains } = defineProps<{
+  connection: InteractionConnection;
+  /** Every chain in the data, so each chain keeps the colour it has on the graph. */
+  chains: readonly string[];
+}>();
 
 const emit = defineEmits<{
   back: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const router = useRouter();
-const { getChainName } = useSupportedChains();
-const chainLocation = useChainLocation();
 
-function openInHistory(txHashes: readonly string[]): void {
-  startPromise(router.push(historyEventsRoute(chainLocation(connection.chain), txHashes)));
+const explorerChain = computed<string | undefined>(() => connection.activity[0]?.chain);
+
+const { chainColor } = useChainColors(() => chains);
+
+interface ChainShare {
+  chain: string;
+  color: string;
+  /** Share of the pair's transactions, in percent. */
+  percent: number;
 }
+
+const shares = computed<ChainShare[]>(() => connection.activity.map(({ chain, txHashes }) => ({
+  chain,
+  color: chainColor(chain),
+  percent: txHashes.length / Math.max(1, connection.txCount) * 100,
+})));
 </script>
 
 <template>
   <div
-    aria-live="polite"
     class="flex min-w-0 flex-col"
     data-testid="interaction-details"
   >
@@ -44,13 +62,16 @@ function openInHistory(txHashes: readonly string[]): void {
         </template>
         {{ t('common.actions.back') }}
       </RuiButton>
-      <h3 class="text-base font-semibold">
+      <h3
+        class="text-base font-semibold"
+        aria-live="polite"
+      >
         {{ t('address_interactions.selected_connection') }}
       </h3>
       <div class="flex flex-col">
         <HashLink
           :text="connection.source.address"
-          :location="connection.chain"
+          :location="explorerChain"
           :size="14"
         />
         <div class="flex items-center gap-2 py-1 pl-1 text-xs text-rui-text-secondary">
@@ -59,75 +80,34 @@ function openInHistory(txHashes: readonly string[]): void {
             size="14"
             aria-hidden="true"
           />
-          <LocationIcon
-            :item="connection.chain"
-            icon
-            size="16px"
-          />
-          <span>
-            {{ t('address_interactions.connection_summary', { chain: getChainName(connection.chain), count: connection.txHashes.length }, connection.txHashes.length) }}
-          </span>
+          {{ t('address_interactions.transactions', { count: connection.txCount }) }}
         </div>
         <HashLink
           :text="connection.target.address"
-          :location="connection.chain"
+          :location="explorerChain"
           :size="14"
         />
       </div>
-    </div>
-    <section class="flex min-w-0 flex-col gap-2 p-4">
-      <div class="flex items-center justify-between gap-2">
-        <h4 class="text-xs font-medium text-rui-text-secondary">
-          {{ t('address_interactions.transactions', { count: connection.txHashes.length }) }}
-        </h4>
-        <RuiButton
-          variant="text"
-          color="primary"
-          size="sm"
-          class="-mr-2"
-          data-testid="interaction-history-link"
-          @click="openInHistory(connection.txHashes)"
-        >
-          {{ t('address_interactions.view_in_history') }}
-          <template #append>
-            <RuiIcon
-              name="lu-arrow-right"
-              size="14"
-            />
-          </template>
-        </RuiButton>
+      <div
+        class="flex h-1.5 w-full gap-0.5 overflow-hidden rounded-full"
+        aria-hidden="true"
+        data-testid="interaction-chain-split"
+      >
+        <span
+          v-for="share in shares"
+          :key="share.chain"
+          class="h-full"
+          :style="{ backgroundColor: share.color, width: `${share.percent}%` }"
+        />
       </div>
-      <ul class="flex min-w-0 flex-col divide-y divide-rui-grey-200 rounded-md border border-default dark:divide-rui-grey-800">
-        <li
-          v-for="hash in connection.txHashes"
-          :key="hash"
-          class="group/row flex min-w-0 items-center justify-between gap-2 py-1 pl-3 pr-1"
-        >
-          <HashLink
-            :text="hash"
-            :location="connection.chain"
-            :truncate-length="8"
-            :size="14"
-            type="transaction"
-            reveal-actions
-          />
-          <RuiButton
-            variant="text"
-            icon
-            size="sm"
-            class="shrink-0"
-            :aria-label="t('address_interactions.open_tx_in_history')"
-            :title="t('address_interactions.open_tx_in_history')"
-            data-testid="interaction-tx-history"
-            @click="openInHistory([hash])"
-          >
-            <RuiIcon
-              name="lu-history"
-              size="16"
-            />
-          </RuiButton>
-        </li>
-      </ul>
-    </section>
+    </div>
+    <div class="flex min-w-0 flex-col gap-5 p-4">
+      <AddressInteractionChainActivity
+        v-for="activity in connection.activity"
+        :key="`${connection.id}:${activity.chain}`"
+        :activity="activity"
+        :color="chainColor(activity.chain)"
+      />
+    </div>
   </div>
 </template>

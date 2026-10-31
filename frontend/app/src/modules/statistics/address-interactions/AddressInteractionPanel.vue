@@ -1,107 +1,102 @@
 <script setup lang="ts">
-import type { InteractionConnection, InteractionNode } from './address-interaction-graph';
-import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
-import HashLink from '@/modules/shell/components/HashLink.vue';
-import { CONNECTION_PAGE_SIZE, useNamedChain } from './address-interaction-panel';
+import type { AddressInteractionExplorer } from './use-address-interaction-explorer';
+import { PAGE_SIZE } from './address-interaction-panel';
+import AddressInteractionClusters from './AddressInteractionClusters.vue';
 import AddressInteractionConnectionList from './AddressInteractionConnectionList.vue';
 import AddressInteractionDetails from './AddressInteractionDetails.vue';
+import AddressInteractionNodeSummary from './AddressInteractionNodeSummary.vue';
+import AddressInteractionPath from './AddressInteractionPath.vue';
 
 /**
- * Side panel that follows the graph selection: every connection, then the connections of a selected
- * address, then the transactions of a selected connection.
+ * Side panel that follows the graph selection: the clusters and every connection, then a selected
+ * address and its connections, then a connection's transactions, or the path between two addresses.
+ *
+ * @remarks
+ * `explorer` is the page's one explorer instance; it is never replaced, so reading its refs once in
+ * setup keeps them reactive.
  */
-const { connections, selectedNode, selectedConnection, connectionLabel } = defineProps<{
-  connections: readonly InteractionConnection[];
-  selectedNode?: InteractionNode;
-  selectedConnection?: InteractionConnection;
-  connectionLabel: (connection: InteractionConnection) => string;
-}>();
-
-const emit = defineEmits<{
-  'select-connection': [connection: InteractionConnection];
-  'clear-connection': [];
-  'clear-node': [];
-}>();
+const { explorer } = defineProps<{ explorer: AddressInteractionExplorer }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const connectionLimit = shallowRef<number>(CONNECTION_PAGE_SIZE);
+const {
+  activeChain,
+  chains,
+  clearConnection,
+  clearPath,
+  clearSelection,
+  clusters,
+  connections,
+  hideNode,
+  path,
+  pathTarget,
+  selectCluster,
+  selectConnection,
+  selectedClusterIndex,
+  selectedConnection,
+  selectedNode,
+  startPath,
+} = explorer;
 
-const namedChain = useNamedChain();
+const connectionLimit = shallowRef<number>(PAGE_SIZE);
 
-watch(() => connections, () => {
-  set(connectionLimit, CONNECTION_PAGE_SIZE);
+watch(connections, () => {
+  set(connectionLimit, PAGE_SIZE);
 });
 </script>
 
 <template>
+  <AddressInteractionPath
+    v-if="selectedNode && pathTarget"
+    :path="path"
+    :from="selectedNode"
+    :to="pathTarget"
+    @back="clearPath()"
+  />
   <AddressInteractionDetails
-    v-if="selectedConnection"
+    v-else-if="selectedConnection"
     :connection="selectedConnection"
-    @back="emit('clear-connection')"
+    :chains="chains"
+    @back="clearConnection()"
   />
   <div
     v-else
     class="flex min-w-0 flex-col"
   >
-    <div
+    <AddressInteractionNodeSummary
       v-if="selectedNode"
-      class="flex flex-col gap-2 border-b border-default p-4"
-      data-testid="interaction-panel-node"
-    >
-      <div class="flex items-center justify-between gap-2">
-        <h3 class="text-xs font-medium text-rui-text-secondary">
-          {{ t('address_interactions.selected_address') }}
-        </h3>
-        <RuiButton
-          variant="text"
-          icon
-          size="sm"
-          class="-my-1 text-rui-text-secondary!"
-          :aria-label="t('address_interactions.clear_selection')"
-          data-testid="interaction-panel-clear-node"
-          @click="emit('clear-node')"
-        >
-          <RuiIcon
-            name="lu-x"
-            size="16"
-          />
-        </RuiButton>
-      </div>
-      <HashLink
-        :text="selectedNode.address"
-        :location="namedChain(selectedNode.address, selectedNode.chains)"
-        :size="14"
+      :node="selectedNode"
+      @clear="clearSelection()"
+      @find-path="startPath()"
+      @hide="hideNode(selectedNode)"
+    />
+    <div class="flex flex-col gap-4 p-4">
+      <AddressInteractionClusters
+        v-if="!selectedNode && clusters.length > 0"
+        :clusters="clusters"
+        :selected-index="selectedClusterIndex"
+        @select="selectCluster($event)"
       />
-      <div class="flex flex-wrap items-center gap-1">
-        <LocationIcon
-          v-for="chain in selectedNode.chains"
-          :key="chain"
-          :item="chain"
-          icon
-          size="16px"
+      <div class="flex flex-col gap-2">
+        <div class="flex flex-col">
+          <h3 class="text-sm font-semibold">
+            {{ selectedNode
+              ? t('address_interactions.connected_addresses', { count: connections.length })
+              : t('address_interactions.connections', { count: connections.length }) }}
+          </h3>
+          <p class="text-xs text-rui-text-secondary">
+            {{ t('address_interactions.sorted_by_activity') }}
+          </p>
+        </div>
+        <AddressInteractionConnectionList
+          v-model:limit="connectionLimit"
+          :connections="connections"
+          :focus-node-id="selectedNode?.id"
+          :chain="activeChain"
+          class="-mx-2"
+          @select="selectConnection($event)"
         />
       </div>
-    </div>
-    <div class="flex flex-col gap-2 p-4">
-      <div class="flex flex-col">
-        <h3 class="text-sm font-semibold">
-          {{ selectedNode
-            ? t('address_interactions.connected_addresses', { count: connections.length })
-            : t('address_interactions.connections', { count: connections.length }) }}
-        </h3>
-        <p class="text-xs text-rui-text-secondary">
-          {{ t('address_interactions.sorted_by_activity') }}
-        </p>
-      </div>
-      <AddressInteractionConnectionList
-        v-model:limit="connectionLimit"
-        :connections="connections"
-        :focus-node-id="selectedNode?.id"
-        :connection-label="connectionLabel"
-        class="-mx-2"
-        @select="emit('select-connection', $event)"
-      />
     </div>
   </div>
 </template>
