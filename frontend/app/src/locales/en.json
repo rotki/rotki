@@ -1089,11 +1089,18 @@
     }
   },
   "address_interactions": {
-    "addresses": "Addresses ({count})",
     "all_chains": "All chains",
-    "canvas_hint": "Scroll to zoom, drag to pan. Select an address or connection to explore. Use Fit graph to reset the view.",
-    "chain_count": "{count} chains",
+    "canvas_hint": "Scroll to zoom, drag to pan. Select an address or connection to explore.",
     "clear_selection": "Clear selection",
+    "cluster": {
+      "addresses": "{count} address | {count} addresses",
+      "heading": "Clusters ({count})",
+      "help": "Addresses in one cluster can be tied together by anyone reading the chain.",
+      "no_weakest_link": "No single transaction holds it together",
+      "show_all": "Show all {count}",
+      "show_less": "Show fewer",
+      "weakest_link": "Weakest link"
+    },
     "connected_addresses": "Connected addresses ({count})",
     "connection_summary": "{chain} · {count} shared transaction | {chain} · {count} shared transactions",
     "connections": "Connections ({count})",
@@ -1101,28 +1108,46 @@
     "empty": "No interactions found between your tracked addresses. Sync and decode your transaction history, then refresh this graph.",
     "error": "Could not load address interactions.",
     "filter_chain": "Filter by chain",
+    "filtered_out": "No pairs match these filters",
     "fit_graph": "Fit graph",
-    "graph_help": "Each address appears once across all chains. Select an address to see its connections, or a chain-labeled connection to see its transactions.",
+    "graph_help": "Each address appears once. A line joins two addresses that share a transaction on any chain; thicker lines share more.",
     "graph_label": "Address network",
+    "hide": "Hide from graph",
+    "legend": {
+      "few": "Few transactions",
+      "many": "Many transactions",
+      "several_chains": "Grey: several chains",
+      "title": "Legend"
+    },
     "loading": "Loading address interactions",
-    "no_results": "No matching connections",
-    "no_results_hint": "Try another address or name, or choose a different chain.",
+    "min_transactions": "At least 1 shared transaction | At least {count} shared transactions",
     "open_tx_in_history": "Open this transaction in history events",
+    "path": {
+      "find": "Find path to…",
+      "linked": "Directly linked | Linked in {count} steps",
+      "linked_help": "Anyone following these transactions can tie {from} to {to}.",
+      "not_linked": "Not linked",
+      "not_linked_help": "No transaction ties {from} to {to}.",
+      "picking": "Select another address to see how it is linked to {address}."
+    },
     "reset_filters": "Reset filters",
     "search": "Find an address or name",
-    "select_address": "Select {address} on {chain}",
-    "select_connection": "Select connection between {source} and {target} on {chain}",
+    "select_connection": "Select connection between {source} and {target}",
     "selected_address": "Selected address",
     "selected_connection": "Connection details",
+    "show_hidden": "Show {count} hidden address | Show {count} hidden addresses",
     "show_more": "Show {count} more",
     "sorted_by_activity": "Most shared transactions first",
+    "stats": {
+      "addresses": "{count} address | {count} addresses",
+      "clusters": "{count} cluster | {count} clusters",
+      "muted": "{count} greyed out",
+      "pairs": "{count} pair | {count} pairs"
+    },
     "transactions": "Transactions ({count})",
     "tx_count": "{count} tx | {count} txs",
     "view_history": "Open history events",
-    "view_in_history": "View in history events",
-    "zoom_in": "Zoom in",
-    "zoom_level": "{percent}%",
-    "zoom_out": "Zoom out"
+    "view_in_history": "View in history events"
   },
   "airdrops": {
     "claim_by": "Claim by",

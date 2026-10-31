@@ -8,6 +8,7 @@ import { useAddressInteractions } from '@/modules/statistics/address-interaction
 definePage({
   meta: {
     nav: { labelKey: msg.$t('navigation_menu.statistics_sub.address_interactions'), icon: 'lu-network', parent: '/statistics/', order: 50, drawer: 'statistics-address-interactions' },
+    scrollsItself: true,
   },
 });
 
@@ -45,7 +46,7 @@ onMounted(() => startPromise(refresh()));
       {{ t('address_interactions.error') }} {{ error }}
     </RuiAlert>
     <RuiProgress
-      v-if="loading"
+      v-if="loading && interactions.length === 0"
       variant="indeterminate"
       color="primary"
       :aria-label="t('address_interactions.loading')"
@@ -53,6 +54,7 @@ onMounted(() => startPromise(refresh()));
     <AddressInteractionGraph
       v-if="interactions.length > 0"
       :interactions="interactions"
+      :loading="loading"
     />
     <RuiCard
       v-else-if="!loading && !error"

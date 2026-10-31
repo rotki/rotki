@@ -1,15 +1,22 @@
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
-import type { InteractionConnection, InteractionNode } from './address-interaction-graph';
-import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { type InteractionConnection, type InteractionNode, transactionsOn } from './address-interaction-graph';
 
-/** How many connection rows the side panel reveals at a time; each row mounts up to two `HashLink`s. */
-export const CONNECTION_PAGE_SIZE = 50;
+/** How many rows a paged side-panel list reveals at a time; each row mounts at least one `HashLink`. */
+export const PAGE_SIZE = 50;
 
-/** Strongest relations first: more shared transactions, then the graph's own stable order. */
-export function sortByActivity(connections: readonly InteractionConnection[]): InteractionConnection[] {
-  return [...connections].sort((a, b) => b.txHashes.length - a.txHashes.length || a.id.localeCompare(b.id));
+/**
+ * Strongest relations first: more shared transactions on `chain` (all chains when unset).
+ *
+ * @remarks
+ * The sort is stable, so ties keep the order they came in, which for the graph's connections is
+ * already sorted by id.
+ */
+export function sortByActivity(connections: readonly InteractionConnection[], chain?: string): InteractionConnection[] {
+  const weights = new Map(connections.map(connection => [connection, transactionsOn(connection, chain)]));
+  return [...connections].sort((a, b) => weights.get(b)! - weights.get(a)!);
 }
 
 /**
@@ -30,8 +37,8 @@ export function counterpartOf(connection: InteractionConnection, nodeId?: string
  *
  * @remarks
  * `txRefs` does not restrict the location, and the same hash can exist on several chains, so the
- * connection's location is part of the filter to keep this in step with the graph's per-chain
- * connections. A `location` of `undefined` leaves the filter off rather than send a value the
+ * chain's location is part of the filter to keep this in step with one chain of a connection's
+ * activity. A `location` of `undefined` leaves the filter off rather than send a value the
  * history page would not recognise.
  */
 export function historyEventsRoute(location: string | undefined, txHashes: readonly string[]): RouteLocationRaw {
@@ -54,14 +61,26 @@ export function useChainLocation(): (chain: string) => string | undefined {
   };
 }
 
+interface PagedList<T> {
+  shown: ComputedRef<T[]>;
+  /** How many more rows the next page reveals; 0 when everything shows. */
+  nextCount: ComputedRef<number>;
+  showMore: () => void;
+}
+
 /**
- * Picks the chain to resolve an address's name on, so the panel shows the same name as the canvas.
+ * Reveals a long list a page at a time.
  *
- * @remarks
- * An address may only be named on one of its chains. Only use this where no explorer link depends
- * on the chain, since the named chain can differ from the connection's.
+ * @param items - The full list.
+ * @param limit - How many rows show; pass a ref the caller owns to keep it across unmounts.
  */
-export function useNamedChain(): (address: string, chains: readonly string[]) => string {
-  const { getAddressName } = useAddressNameResolution();
-  return (address, chains) => chains.find(chain => getAddressName(address, chain)) ?? chains[0];
+export function usePagedList<T>(items: MaybeRefOrGetter<readonly T[]>, limit: Ref<number> = ref<number>(PAGE_SIZE)): PagedList<T> {
+  const shown = computed<T[]>(() => toValue(items).slice(0, get(limit)));
+  const nextCount = computed<number>(() => Math.min(PAGE_SIZE, Math.max(0, toValue(items).length - get(limit))));
+
+  function showMore(): void {
+    set(limit, get(limit) + PAGE_SIZE);
+  }
+
+  return { nextCount, showMore, shown };
 }

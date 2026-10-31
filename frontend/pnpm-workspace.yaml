@@ -67,6 +67,7 @@ catalog:
   '@scure/base': 1.2.6
   '@tailwindcss/postcss': 4.3.3
   '@tsconfig/node24': 24.0.5
+  '@types/d3-force': 3.0.10
   '@types/node': 24.19.1
   '@types/qrcode': 1.5.6
   '@types/semver': 7.8.0
@@ -88,6 +89,7 @@ catalog:
   bufferutil: 4.1.0
   cac: 7.0.1
   consola: 3.4.2
+  d3-force: 3.0.0
   dayjs: 1.11.23
   dexie: 4.4.6
   dmg-license: 1.0.11

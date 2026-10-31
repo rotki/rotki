@@ -1,12 +1,12 @@
+import type { ECElementEvent } from 'echarts';
 import type { AddressInteraction } from './address-interaction-types';
+import { ClickButtonStub, graphSeries, interaction, OTHER, SOURCE, TARGET } from '@test/utils/address-interactions';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Router, useRouter } from 'vue-router';
 import LocationLabelSelector from '@/modules/history/LocationLabelSelector.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
-import { createAddressInteractionGraph } from './address-interaction-graph';
-import AddressInteractionConnectionList from './AddressInteractionConnectionList.vue';
 import AddressInteractionGraph from './AddressInteractionGraph.vue';
 
 const { getAddressName, scrambleAddress } = vi.hoisted(() => ({
@@ -23,6 +23,18 @@ vi.mock('@/modules/settings/use-scramble', () => ({
   }),
 }));
 
+vi.mock('vue-echarts', () => ({
+  default: { emits: ['click'], name: 'VChart', props: ['option'], template: '<div />' },
+}));
+
+vi.mock('./use-node-avatars', () => ({
+  useNodeAvatars: (): object => ref(new Map()),
+}));
+
+vi.mock('@/modules/statistics/use-graph', () => ({
+  useGraph: (): object => ({ baseColor: ref('#7e4a3b'), secondaryColor: ref('#3f3f46') }),
+}));
+
 vi.mock('@/modules/settings/use-setting', () => ({
   useSetting: (): object => ref({}),
 }));
@@ -31,6 +43,7 @@ vi.mock('@/modules/accounts/address-book/use-address-name-resolution', () => ({
   useAddressNameResolution: (): object => ({
     getAddressName,
     getAddressNameSource: (): undefined => undefined,
+    getEnsName: (): null => null,
   }),
 }));
 
@@ -49,14 +62,6 @@ vi.mock('@/modules/core/common/use-locations', () => ({
   useLocations: (): object => ({ tradeLocations: ref([{ identifier: 'optimism' }, { identifier: 'ethereum' }]) }),
 }));
 
-const SOURCE = '0x1111111111111111111111111111111111111111';
-const TARGET = '0x2222222222222222222222222222222222222222';
-const OTHER = '0x3333333333333333333333333333333333333333';
-
-function interaction(chain = 'eth', txHash = '0xeth-transaction', source = SOURCE, target = TARGET): AddressInteraction {
-  return { chain, source, target, txHash };
-}
-
 function createWrapper(interactions: readonly AddressInteraction[]): VueWrapper<InstanceType<typeof AddressInteractionGraph>> {
   return mount(AddressInteractionGraph, {
     global: {
@@ -68,7 +73,8 @@ function createWrapper(interactions: readonly AddressInteraction[]): VueWrapper<
         LinkButton: true,
         LocationIcon: true,
         LocationLabelSelector: true,
-        RuiButton: { emits: ['click'], template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /></button>' },
+        RuiButton: ClickButtonStub,
+        RuiSlider: { emits: ['update:modelValue'], name: 'RuiSlider', props: ['modelValue', 'max'], template: '<div data-testid="slider" />' },
         TagDisplay: true,
       },
     },
@@ -85,129 +91,199 @@ function transactionLinks(wrapper: VueWrapper): VueWrapper<InstanceType<typeof H
   return wrapper.findAllComponents(HashLink).filter(link => link.props('type') === 'transaction');
 }
 
+function nodeIds(wrapper: VueWrapper): unknown[] {
+  return (graphSeries(wrapper).data ?? []).map(item => typeof item === 'object' && item !== null && 'id' in item ? item.id : undefined);
+}
+
+function linkOpacities(wrapper: VueWrapper): unknown[] {
+  return graphSeries(wrapper).links?.map(link => link.lineStyle?.opacity) ?? [];
+}
+
+async function clickNode(wrapper: VueWrapper, address: string): Promise<void> {
+  const dataIndex = nodeIds(wrapper).indexOf(address);
+  assert(dataIndex >= 0);
+  wrapper.getComponent({ name: 'VChart' }).vm.$emit('click', createMock<ECElementEvent>({ dataIndex, dataType: 'node' }));
+  await nextTick();
+}
+
+function selectedAddress(wrapper: VueWrapper): unknown {
+  return wrapper.get('[data-testid=interaction-panel-node]').findComponent(HashLink).props('text');
+}
+
+function listedConnections(wrapper: VueWrapper): number {
+  return wrapper.findAll('[data-testid=interaction-connection]').length;
+}
+
 describe('address interaction graph', () => {
   beforeEach(() => {
     scrambleAddress.mockImplementation(address => address);
     getAddressName.mockReturnValue(undefined);
   });
 
-  it('should aggregate unordered pairs and distinct transactions without merging chains', async () => {
+  it('should draw one connection per pair and break its transactions down by chain', async () => {
     const wrapper = createWrapper([
       interaction(),
       interaction('eth', '0xsecond-transaction', TARGET, SOURCE),
-      interaction('eth', '0xeth-transaction', TARGET, SOURCE),
       interaction('optimism', '0xoptimism-transaction'),
       interaction('eth', '0xself', SOURCE, SOURCE),
     ]);
 
-    expect(wrapper.findAll('[data-testid=interaction-edge]')).toHaveLength(2);
-    expect(wrapper.findAll('[data-testid=interaction-connection]')).toHaveLength(2);
-    expect(wrapper.findAll('[data-testid=interaction-node]')).toHaveLength(2);
-    const edges = wrapper.findAll('[data-testid=interaction-edge]');
-    expect(edges[0].get('path').attributes('d')).not.toBe(edges[1].get('path').attributes('d'));
-    expect(edges.map(edge => edge.get('text').text())).toEqual(['eth', 'optimism']);
+    expect(graphSeries(wrapper).links).toHaveLength(1);
+    expect(listedConnections(wrapper)).toBe(1);
+    expect(wrapper.get('[data-testid=interaction-connection-count]').text()).toBe('address_interactions.tx_count::3');
 
-    await wrapper.findAll('[data-testid=interaction-connection]')[0].trigger('click');
+    await wrapper.get('[data-testid=interaction-connection]').trigger('click');
 
-    const details = wrapper.get('[data-testid=interaction-details]');
-    expect(details.text()).toContain('eth');
+    const sections = wrapper.findAll('[data-testid=interaction-chain-activity]');
+    expect(sections.map(section => section.attributes('data-chain'))).toEqual(['eth', 'optimism']);
     expect(transactionLinks(wrapper).map(link => ({ chain: link.props('location'), hash: link.props('text') }))).toEqual([
       { chain: 'eth', hash: '0xeth-transaction' },
       { chain: 'eth', hash: '0xsecond-transaction' },
-    ]);
-    expect(transactionLinks(wrapper)[0].getComponent({ name: 'LinkButton' }).props()).toMatchObject({
-      base: 'https://etherscan.io/tx/',
-      text: '0xeth-transaction',
-    });
-  });
-
-  it('should select one global address and explore its separate connections on every chain', async () => {
-    const wrapper = createWrapper([
-      interaction(),
-      interaction('optimism', '0xoptimism-transaction'),
-      interaction('eth', '0xother', TARGET, OTHER),
-    ]);
-    const sourceNode = wrapper.findAll('[data-testid=interaction-node]').find(node =>
-      node.attributes('aria-label')?.includes(SOURCE),
-    );
-
-    assert(sourceNode);
-    await sourceNode.trigger('keydown', { key: 'Enter' });
-    expect(sourceNode.attributes('aria-pressed')).toBe('true');
-    expect(wrapper.findAll('[data-testid=interaction-node]')).toHaveLength(3);
-    expect(wrapper.findAll('[data-testid=interaction-connection]')).toHaveLength(2);
-    const optimismConnection = wrapper.findAll('[data-testid=interaction-connection]').find(connection =>
-      connection.attributes('aria-label')?.includes('optimism'),
-    );
-    assert(optimismConnection);
-    await optimismConnection.trigger('click');
-    expect(transactionLinks(wrapper).map(link => ({ chain: link.props('location'), hash: link.props('text') }))).toEqual([
       { chain: 'optimism', hash: '0xoptimism-transaction' },
     ]);
-    expect(transactionLinks(wrapper)[0].getComponent({ name: 'LinkButton' }).props('base')).toBe('https://optimistic.etherscan.io/tx/');
-
-    await wrapper.get('[data-testid=clear-interaction-selection]').trigger('click');
-    expect(wrapper.findAll('[data-testid=interaction-connection]')).toHaveLength(3);
-    expect(transactionLinks(wrapper)).toHaveLength(0);
+    expect(transactionLinks(wrapper)[2].getComponent({ name: 'LinkButton' }).props('base')).toBe('https://optimistic.etherscan.io/tx/');
   });
 
-  it('should keep the global address selected when filtering to another chain', async () => {
-    const wrapper = createWrapper([interaction(), interaction('optimism')]);
-    const sourceNode = wrapper.findAll('[data-testid=interaction-node]').find(node =>
-      node.attributes('aria-label')?.includes(SOURCE),
-    );
-    assert(sourceNode);
-    await sourceNode.trigger('click');
+  it('should page a chain\'s transactions and start over on the first page when another pair is opened from the graph', async () => {
+    const many = (target: string): AddressInteraction[] => Array.from({ length: 60 }, (_, index) => interaction('eth', `${target}-${index}`, SOURCE, target));
+    const wrapper = createWrapper([...many(TARGET), ...many(OTHER)]);
+    await wrapper.findAll('[data-testid=interaction-connection]')[0].trigger('click');
+    expect(transactionLinks(wrapper)).toHaveLength(50);
+    await wrapper.get('[data-testid=interaction-tx-show-more]').trigger('click');
+    expect(transactionLinks(wrapper)).toHaveLength(60);
+
+    wrapper.getComponent({ name: 'VChart' }).vm.$emit('click', createMock<ECElementEvent>({ dataIndex: 1, dataType: 'edge' }));
+    await nextTick();
+
+    expect(wrapper.findComponent(HashLink).props('text')).toBe(SOURCE);
+    expect(transactionLinks(wrapper).map(link => link.props('text'))).toContain(`${OTHER}-0`);
+    expect(transactionLinks(wrapper)).toHaveLength(50);
+  });
+
+  it('should open history events filtered to one chain of the pair, or a single transaction', async () => {
+    const push = vi.fn<Router['push']>().mockResolvedValue(undefined);
+    vi.mocked(useRouter).mockReturnValue(createMock<Router>({ push }));
+    const wrapper = createWrapper([interaction(), interaction('eth', '0xsecond-transaction'), interaction('optimism', '0xop')]);
+    await wrapper.get('[data-testid=interaction-connection]').trigger('click');
+
+    await wrapper.findAll('[data-testid=interaction-history-link]')[0].trigger('click');
+    expect(push).toHaveBeenLastCalledWith({
+      name: '/history/events/',
+      query: { location: 'ethereum', txRefs: ['0xeth-transaction', '0xsecond-transaction'] },
+    });
+
+    await wrapper.findAll('[data-testid=interaction-tx-history]')[1].trigger('click');
+    expect(push).toHaveBeenLastCalledWith({ name: '/history/events/', query: { location: 'ethereum', txRefs: ['0xsecond-transaction'] } });
+    vi.mocked(useRouter).mockReset();
+  });
+
+  it('should select an address from the graph and list only its counterparts', async () => {
+    const wrapper = createWrapper([interaction(), interaction('eth', '0xother', TARGET, OTHER)]);
+
+    await clickNode(wrapper, TARGET);
+
+    expect(selectedAddress(wrapper)).toBe(TARGET);
+    const listed = wrapper.findAll('[data-testid=interaction-connection-label]').map(label => label.text());
+    expect(listed).toEqual(['0x111111...111111', '0x333333...333333']);
+
+    await wrapper.get('[data-testid=interaction-panel-clear-node]').trigger('click');
+    expect(wrapper.find('[data-testid=interaction-panel-node]').exists()).toBe(false);
+  });
+
+  it('should grey out connections on other chains instead of removing them, keeping the selection', async () => {
+    const wrapper = createWrapper([interaction(), interaction('optimism', '0xop', TARGET, OTHER)]);
+    await clickNode(wrapper, TARGET);
+
     await wrapper.get('[data-testid=interaction-chain][data-chain=optimism]').trigger('click');
-    expect(wrapper.get('[data-testid=interaction-node][aria-pressed=true]').attributes('aria-label')).toContain(SOURCE);
-    expect(wrapper.findAll('[data-testid=interaction-connection]')).toHaveLength(1);
+
+    expect(nodeIds(wrapper)).toHaveLength(3);
+    expect(linkOpacities(wrapper)).toEqual([0.07, 0.6]);
+    expect(selectedAddress(wrapper)).toBe(TARGET);
+    expect(listedConnections(wrapper)).toBe(1);
+    expect(wrapper.get('[data-testid=interaction-muted]').text()).toContain('1');
+
     await wrapper.get('[data-testid=interaction-all-chains]').trigger('click');
-    expect(wrapper.findAll('[data-testid=interaction-node]')).toHaveLength(2);
-    expect(wrapper.findAll('[data-testid=interaction-connection]')).toHaveLength(2);
+    expect(listedConnections(wrapper)).toBe(2);
   });
 
-  it('should suggest each address on the chain where it has a name, and find all its connections', async () => {
+  it('should grey out pairs below the minimum number of shared transactions', async () => {
+    const wrapper = createWrapper([interaction(), interaction('eth', '0xsecond'), interaction('eth', '0xother', TARGET, OTHER)]);
+    const slider = wrapper.getComponent({ name: 'RuiSlider' });
+    expect(slider.props('max')).toBe(2);
+
+    slider.vm.$emit('update:modelValue', 2);
+    await nextTick();
+
+    expect(linkOpacities(wrapper)).toEqual([0.6, 0.07]);
+    expect(listedConnections(wrapper)).toBe(1);
+
+    await wrapper.get('[data-testid=interaction-reset-filters]').trigger('click');
+    expect(listedConnections(wrapper)).toBe(2);
+  });
+
+  it('should say so on the canvas when the filters leave no pair, and reset from there', async () => {
+    const wrapper = createWrapper([interaction(), interaction('eth', '0xsecond'), interaction('optimism', '0xop', TARGET, OTHER)]);
+    wrapper.getComponent({ name: 'RuiSlider' }).vm.$emit('update:modelValue', 2);
+    await nextTick();
+    expect(wrapper.find('[data-testid=interaction-filtered-out]').exists()).toBe(false);
+
+    await wrapper.get('[data-testid=interaction-chain][data-chain=optimism]').trigger('click');
+    const overlay = wrapper.get('[data-testid=interaction-filtered-out]');
+
+    await overlay.get('button').trigger('click');
+    expect(wrapper.find('[data-testid=interaction-filtered-out]').exists()).toBe(false);
+    expect(listedConnections(wrapper)).toBe(2);
+  });
+
+  it('should select a searched address without filtering the graph down to it', async () => {
     getAddressName.mockImplementation((address, chain) => address === SOURCE && chain === 'optimism' ? 'Savings' : undefined);
-    const wrapper = createWrapper([interaction(), interaction('optimism')]);
+    const wrapper = createWrapper([interaction(), interaction('optimism'), interaction('eth', '0xother', TARGET, OTHER)]);
     expect(wrapper.getComponent(LocationLabelSelector).props('options')).toEqual([
       { location: 'optimism', locationLabel: SOURCE },
       { location: 'eth', locationLabel: TARGET },
+      { location: 'eth', locationLabel: OTHER },
     ]);
-    await searchAddress(wrapper, SOURCE);
-    expect(wrapper.findAll('[data-testid=interaction-node]')).toHaveLength(2);
-    expect(wrapper.findAll('[data-testid=interaction-connection]')).toHaveLength(2);
-    expect(wrapper.get('[data-testid=interaction-panel-node]').findComponent(HashLink).props('location')).toBe('optimism');
-  });
 
-  it('should restore the whole graph when the searched address is cleared', async () => {
-    const wrapper = createWrapper([interaction(), interaction('eth', '0xother', TARGET, OTHER)]);
     await searchAddress(wrapper, OTHER);
-    expect(wrapper.findAll('[data-testid=interaction-edge]')).toHaveLength(1);
 
-    await wrapper.get('[data-testid=interaction-panel-clear-node]').trigger('click');
+    expect(graphSeries(wrapper).links).toHaveLength(2);
+    expect(selectedAddress(wrapper)).toBe(OTHER);
+    expect(listedConnections(wrapper)).toBe(1);
 
-    expect(wrapper.findAll('[data-testid=interaction-edge]')).toHaveLength(2);
+    await wrapper.get('[data-testid=clear-interaction-selection]').trigger('click');
     expect(wrapper.getComponent(LocationLabelSelector).props('modelValue')).toBe('');
   });
 
-  it('should select a non-EVM connection from the SVG and use its transaction explorer', async () => {
-    const wrapper = createWrapper([interaction('solana', '5SolanaSignature', 'SolanaAddressA', 'SolanaAddressB')]);
+  it('should hide an address from the graph until the user shows hidden addresses again', async () => {
+    const wrapper = createWrapper([interaction(), interaction('eth', '0xother', TARGET, OTHER)]);
+    await clickNode(wrapper, OTHER);
 
-    await wrapper.get('[data-testid=interaction-edge]').trigger('keydown', { key: ' ' });
+    await wrapper.get('[data-testid=interaction-hide-node]').trigger('click');
 
-    expect(transactionLinks(wrapper)[0].props()).toMatchObject({
-      location: 'solana',
-      text: '5SolanaSignature',
-      type: 'transaction',
-    });
-    expect(transactionLinks(wrapper)[0].getComponent({ name: 'LinkButton' }).props('base')).toBe('https://solscan.io/tx/');
+    expect(nodeIds(wrapper)).toEqual([SOURCE, TARGET]);
+    expect(listedConnections(wrapper)).toBe(1);
+
+    await wrapper.get('[data-testid=interaction-show-hidden]').trigger('click');
+    expect(nodeIds(wrapper)).toEqual([SOURCE, TARGET, OTHER]);
   });
 
-  it('should scramble graph labels, accessible names, connection buttons and selected hashes', async () => {
+  it('should ask for a second address and then trace the path to it', async () => {
+    const wrapper = createWrapper([interaction(), interaction('eth', '0xother', TARGET, OTHER)]);
+    await clickNode(wrapper, SOURCE);
+    await wrapper.get('[data-testid=interaction-find-path]').trigger('click');
+    expect(wrapper.find('[data-testid=interaction-path-picking]').exists()).toBe(true);
+
+    await clickNode(wrapper, OTHER);
+
+    expect(wrapper.find('[data-testid=interaction-path-picking]').exists()).toBe(false);
+    expect(wrapper.findAll('[data-testid=interaction-path-step]')).toHaveLength(3);
+    expect(linkOpacities(wrapper)).toEqual([1, 1]);
+  });
+
+  it('should scramble labels, accessible names and selected hashes', async () => {
     scrambleAddress.mockImplementation(() => 'hidden-address');
     const wrapper = createWrapper([interaction()]);
 
-    expect(wrapper.get('[data-testid=interaction-node]').attributes('aria-label')).not.toContain(SOURCE);
     expect(wrapper.get('[data-testid=interaction-connection]').attributes('aria-label')).not.toContain(TARGET);
     expect(wrapper.text()).not.toContain(SOURCE);
     expect(wrapper.text()).not.toContain(TARGET);
@@ -223,113 +299,9 @@ describe('address interaction graph', () => {
     await wrapper.get('[data-testid=interaction-connection]').trigger('click');
     expect(transactionLinks(wrapper)).toHaveLength(1);
 
-    await wrapper.setProps({ interactions: [interaction('solana', 'SolanaSignature')] });
-
-    expect(transactionLinks(wrapper)).toHaveLength(0);
-    expect(wrapper.find('[data-testid=interaction-details]').exists()).toBe(false);
-    expect(wrapper.findAll('[data-testid=interaction-connection]')).toHaveLength(1);
-  });
-
-  it('should list strongest connections first with their transaction counts', () => {
-    const wrapper = createWrapper([
-      interaction('eth', '0xother', TARGET, OTHER),
-      interaction(),
-      interaction('eth', '0xsecond-transaction'),
-    ]);
-    const rows = wrapper.findAll('[data-testid=interaction-connection]');
-    expect(rows[0].attributes('aria-label')).toContain(SOURCE);
-    expect(rows.map(row => row.get('[data-testid=interaction-connection-count]').text())).toEqual([
-      'address_interactions.tx_count::2',
-      'address_interactions.tx_count::1',
-    ]);
-  });
-
-  it('should state the selected address once and list only its counterparts', async () => {
-    const wrapper = createWrapper([interaction(), interaction('eth', '0xother', TARGET, OTHER)]);
-    const targetNode = wrapper.findAll('[data-testid=interaction-node]').find(node =>
-      node.attributes('aria-label')?.includes(TARGET),
-    );
-    assert(targetNode);
-    await targetNode.trigger('click');
-
-    const header = wrapper.get('[data-testid=interaction-panel-node]');
-    expect(header.findComponent(HashLink).props('text')).toBe(TARGET);
-    const listed = wrapper.getComponent(AddressInteractionConnectionList).findAllComponents(HashLink).map(link => link.props('text'));
-    expect(listed).toEqual([SOURCE, OTHER]);
-
-    await wrapper.get('[data-testid=interaction-panel-clear-node]').trigger('click');
-    expect(wrapper.find('[data-testid=interaction-panel-node]').exists()).toBe(false);
-    expect(wrapper.getComponent(AddressInteractionConnectionList).findAllComponents(HashLink)).toHaveLength(4);
-  });
-
-  it('should go back from a connection to the selected address', async () => {
-    const wrapper = createWrapper([interaction(), interaction('eth', '0xother', TARGET, OTHER)]);
-    const targetNode = wrapper.findAll('[data-testid=interaction-node]').find(node =>
-      node.attributes('aria-label')?.includes(TARGET),
-    );
-    assert(targetNode);
-    await targetNode.trigger('click');
-    await wrapper.findAll('[data-testid=interaction-connection]')[0].trigger('click');
-    expect(wrapper.find('[data-testid=interaction-connection-list]').exists()).toBe(false);
-
-    await wrapper.get('[data-testid=interaction-details-back]').trigger('click');
+    await wrapper.setProps({ interactions: [interaction('solana', 'SolanaSignature', 'SolanaAddressA', 'SolanaAddressB')] });
 
     expect(wrapper.find('[data-testid=interaction-details]').exists()).toBe(false);
-    expect(wrapper.get('[data-testid=interaction-panel-node]').findComponent(HashLink).props('text')).toBe(TARGET);
-  });
-
-  it('should open history events filtered to the connection or a single transaction', async () => {
-    const push = vi.fn<Router['push']>().mockResolvedValue(undefined);
-    vi.mocked(useRouter).mockReturnValueOnce(createMock<Router>({ push }));
-    const wrapper = createWrapper([interaction(), interaction('eth', '0xsecond-transaction')]);
-    await wrapper.get('[data-testid=interaction-connection]').trigger('click');
-
-    await wrapper.get('[data-testid=interaction-history-link]').trigger('click');
-    expect(push).toHaveBeenLastCalledWith({
-      name: '/history/events/',
-      query: { location: 'ethereum', txRefs: ['0xeth-transaction', '0xsecond-transaction'] },
-    });
-
-    await wrapper.findAll('[data-testid=interaction-tx-history]')[1].trigger('click');
-    expect(push).toHaveBeenLastCalledWith({ name: '/history/events/', query: { location: 'ethereum', txRefs: ['0xsecond-transaction'] } });
-  });
-
-  it('should focus a suggested address, combine it with chain filters and let users reset an empty result', async () => {
-    getAddressName.mockImplementation(address => address === OTHER ? 'Savings' : undefined);
-    const wrapper = createWrapper([
-      interaction(),
-      interaction('optimism'),
-      interaction('eth', '0xother', TARGET, OTHER),
-    ]);
-
-    await searchAddress(wrapper, OTHER);
-    expect(wrapper.findAll('[data-testid=interaction-edge]')).toHaveLength(1);
-    expect(wrapper.get('[data-testid=interaction-panel-node]').findComponent(HashLink).props('text')).toBe(OTHER);
-
-    await wrapper.get('[data-testid=interaction-chain][data-chain=optimism]').trigger('click');
-    expect(wrapper.find('[data-testid=interaction-no-results]').exists()).toBe(true);
-    expect(wrapper.findAll('[data-testid=interaction-connection]')).toHaveLength(0);
-
-    await wrapper.get('[data-testid=interaction-reset-filters]').trigger('click');
-    expect(wrapper.findAll('[data-testid=interaction-edge]')).toHaveLength(3);
-    expect(wrapper.getComponent(LocationLabelSelector).props('modelValue')).toBe('');
-    expect(wrapper.find('[data-testid=interaction-no-results]').exists()).toBe(false);
-  });
-
-  it('should clear transaction details when a chain filter hides the selected connection', async () => {
-    const wrapper = createWrapper([interaction(), interaction('optimism')]);
-    await wrapper.findAll('[data-testid=interaction-connection]')[0].trigger('click');
-    expect(transactionLinks(wrapper).map(link => link.props('location'))).toEqual(['eth']);
-
-    await wrapper.get('[data-testid=interaction-chain][data-chain=optimism]').trigger('click');
-    expect(transactionLinks(wrapper)).toHaveLength(0);
-    expect(wrapper.findAll('[data-testid=interaction-edge]')).toHaveLength(1);
-    await wrapper.get('[data-testid=interaction-connection]').trigger('click');
-    expect(transactionLinks(wrapper).map(link => link.props('location'))).toEqual(['optimism']);
-  });
-
-  it('should lay out nodes and connections deterministically regardless of history order', () => {
-    const interactions = [interaction(), interaction('optimism'), interaction('eth', '0xother', TARGET, OTHER)];
-    expect(createAddressInteractionGraph(interactions)).toEqual(createAddressInteractionGraph([...interactions].reverse()));
+    expect(listedConnections(wrapper)).toBe(1);
   });
 });
