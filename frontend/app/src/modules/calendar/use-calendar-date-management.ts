@@ -25,14 +25,24 @@ export function useCalendarDateManagement(
     set(modelVisibleDate, selected);
   });
 
-  watch([modelSelectedDate, eventsWithDate], ([modelSelectedDate, eventsWithDate]) => {
-    const selectedDateFormatted = modelSelectedDate.format(dateFormat);
+  /**
+   * Shows the selected day's events.
+   *
+   * @remarks
+   * Only the visible month's events are loaded, so while another month is browsed the selected day
+   * keeps the list it had. Inside the visible month an empty list is the truth: comparing with the
+   * visible day instead missed month navigation, which moves the visible day on the 31st.
+   */
+  function showSelectedDateEvents([selected, eventsWithDate]: [Dayjs, (CalendarEvent & { date: string })[]]): void {
+    const selectedDateFormatted = selected.format(dateFormat);
     const events = eventsWithDate.filter(item => item.date === selectedDateFormatted);
-    if (events.length === 0 && selectedDateFormatted !== get(modelVisibleDate).format(dateFormat))
+    if (events.length === 0 && !selected.isSame(get(modelVisibleDate), 'month'))
       return;
 
     set(selectedDateEvents, events);
-  });
+  }
+
+  watch([modelSelectedDate, eventsWithDate], showSelectedDateEvents);
 
   return {
     modelSelectedDate,

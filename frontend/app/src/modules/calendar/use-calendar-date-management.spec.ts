@@ -92,4 +92,36 @@ describe('useCalendarDateManagement', () => {
     await nextTick();
     expect(get(selectedDateEvents)).toEqual([]);
   });
+
+  it('should keep the selected day\'s events while another month is visible', async () => {
+    const list = ref<(CalendarEvent & { date: string })[]>([makeEvent('2026-10-31', 1)]);
+    const events = computed(() => get(list));
+    const { setSelectedDate, selectedDateEvents, modelVisibleDate } = useCalendarDateManagement(events, DATE_FORMAT);
+
+    setSelectedDate(dayjs('2026-10-31'));
+    await nextTick();
+
+    set(modelVisibleDate, dayjs('2026-11-30'));
+    set(list, []);
+    await nextTick();
+
+    expect(get(selectedDateEvents).map(e => e.identifier)).toEqual([1]);
+  });
+
+  it('should clear a deleted event after navigating away from the 31st and back', async () => {
+    const list = ref<(CalendarEvent & { date: string })[]>([makeEvent('2026-10-31', 1)]);
+    const events = computed(() => get(list));
+    const { setSelectedDate, selectedDateEvents, modelVisibleDate } = useCalendarDateManagement(events, DATE_FORMAT);
+
+    setSelectedDate(dayjs('2026-10-31'));
+    await nextTick();
+    set(modelVisibleDate, get(modelVisibleDate).add(1, 'month').subtract(1, 'month'));
+    await nextTick();
+    expect(get(modelVisibleDate).format(DATE_FORMAT)).toBe('2026-10-30');
+
+    set(list, []);
+    await nextTick();
+
+    expect(get(selectedDateEvents)).toEqual([]);
+  });
 });

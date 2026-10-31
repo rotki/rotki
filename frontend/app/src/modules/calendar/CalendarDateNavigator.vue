@@ -18,7 +18,7 @@ const { t } = useI18n({ useScope: 'global' });
 const datetime = ref<number>(0);
 const open = ref<boolean>(false);
 
-const alreadyOnToday = computed<boolean>(() => visibleDate.isSame(today, 'day'));
+const alreadyOnToday = computed<boolean>(() => visibleDate.isSame(today, 'month') && get(model).isSame(today, 'day'));
 
 function goToSelectedDate(): void {
   set(model, dayjs(get(datetime) * 1000));
