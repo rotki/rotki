@@ -15,7 +15,7 @@ const modelValue = defineModel<SwapSubEventState[]>({ required: true });
  * validation lives in one schema on the parent. `path` is this list's key in that schema (`spend`,
  * `receive` or `fee`), which is what turns a row index into a dotted path like `spend.1.amount`.
  */
-const { path, errors, touch, type } = defineProps<{
+const { path, errors, plain = false, touch, type } = defineProps<{
   location: string;
   disabled?: boolean;
   timestamp: number;
@@ -23,7 +23,17 @@ const { path, errors, touch, type } = defineProps<{
   path: string;
   errors: (path: string) => string[];
   touch: (path: string) => void;
+  /**
+   * A list of a swap without a transaction: its rows have no account, and its spend and receive
+   * sides hold one row each, so they offer no button to add another.
+   */
+  plain?: boolean;
 }>();
+
+/** What the list as a whole breaks, such as holding more rows than it may. */
+const listErrors = computed<string[]>(() => errors(path));
+
+const canAdd = computed<boolean>(() => !plain || type === 'fee');
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -77,6 +87,7 @@ function add(): void {
       </div>
 
       <RuiButton
+        v-if="canAdd"
         variant="outlined"
         color="primary"
         data-testid="swap-sub-event-add"
@@ -93,6 +104,16 @@ function add(): void {
         </template>
         {{ t('swap_event_form.add_asset') }}
       </RuiButton>
+    </div>
+
+    <div
+      v-for="message in listErrors"
+      :key="message"
+      class="-mt-2 mb-4 text-sm text-rui-error"
+      data-testid="swap-sub-event-list-error"
+      :data-key="type"
+    >
+      {{ message }}
     </div>
 
     <SwapSubEvent
@@ -120,6 +141,7 @@ function add(): void {
         :disabled="disabled"
         :error-messages="fieldErrors(index)"
         :single="modelValue.length === 1"
+        :hide-location-label="plain"
         @remove="remove($event)"
         @blur="onBlur(index, $event)"
       />

@@ -2,6 +2,7 @@ import type { MaybeRefOrGetter, ModelRef, Ref, UnwrapNestedRefs } from 'vue';
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddHistoryEventPayload, ModifyHistoryEventPayload } from '@/modules/history/events/request-types';
+import { toServerErrors } from '@/modules/core/form/server-errors';
 import { type FormApi, useForm } from '@/modules/core/form/use-form';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
@@ -37,6 +38,11 @@ interface UseHistoryEventFormOptions<TState extends object, TAdd, TEdit> {
    * and the composable owns the ref.
    */
   readonly errorMessages?: Ref<Record<string, string[]>>;
+  /**
+   * Moves the field errors of a rejected save onto the form's own paths, for an endpoint that names
+   * its fields differently from the form's state.
+   */
+  readonly serverErrorPaths?: (errors: ValidationErrors) => ValidationErrors;
 }
 
 interface UseHistoryEventFormReturn<TState extends object, TAdd> {
@@ -60,7 +66,7 @@ export function useHistoryEventForm<
 >(
   options: UseHistoryEventFormOptions<TState, TAdd, TEdit>,
 ): UseHistoryEventFormReturn<TState, TAdd> {
-  const { initial, priceIntentKeys, priceIntents, schema, stateUpdated, toEditPayload, transform } = options;
+  const { initial, priceIntentKeys, priceIntents, schema, serverErrorPaths, stateUpdated, toEditPayload, transform } = options;
   const errorMessages = options.errorMessages ?? ref<Record<string, string[]>>({});
 
   const { t } = useI18n({ useScope: 'global' });
@@ -100,6 +106,13 @@ export function useHistoryEventForm<
     return false;
   }
 
+  /** The field errors of a rejected save: none for a plain message, else moved onto the form's paths. */
+  function fieldErrorsOf(message: FormMessage): Record<string, string[]> {
+    if (typeof message === 'string')
+      return {};
+    return toServerErrors(serverErrorPaths ? serverErrorPaths(message) : message);
+  }
+
   async function save(): Promise<boolean> {
     if (!form.validate())
       return false;
@@ -124,7 +137,7 @@ export function useHistoryEventForm<
       const { message } = outcome;
       if (typeof message === 'string')
         showErrorMessage(message);
-      set(errorMessages, typeof message === 'string' ? {} : message);
+      set(errorMessages, fieldErrorsOf(message));
     }
 
     return false;

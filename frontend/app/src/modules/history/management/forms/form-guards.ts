@@ -32,7 +32,7 @@ export function isSolanaTypeEvent(type: HistoryEventEntryType): boolean {
   return Array.prototype.includes.call(SOLANA_EVENTS, type);
 }
 
-const SWAP_EVENTS = [
+export const SWAP_EVENTS = [
   HistoryEventEntryType.SWAP_EVENT,
   HistoryEventEntryType.EVM_SWAP_EVENT,
   HistoryEventEntryType.SOLANA_SWAP_EVENT,

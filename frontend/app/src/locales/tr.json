@@ -5999,7 +5999,6 @@
   "swap_event_form": {
     "add_asset": "Varlık ekle",
     "fee_notes": "Ücret notları",
-    "fee_notes_indexed": "Ücret notları #{index}",
     "receive_notes": "Alınan varlık notları",
     "spend_notes": "Harcanan varlık notları",
     "unique_id": "Benzersiz tanımlayıcı",

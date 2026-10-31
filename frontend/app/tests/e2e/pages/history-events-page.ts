@@ -149,9 +149,7 @@ export class HistoryEventsPage {
 
     if (data.fee) {
       await this.page.locator('[data-testid=has-fee]').click();
-      await this.page.locator('[data-testid=fee-amount] input').clear();
-      await this.page.locator('[data-testid=fee-amount] input').fill(data.fee.amount);
-      await selectAsset(this.page, '[data-testid=fee-asset]', data.fee.asset, data.fee.assetId);
+      await this.fillSubEventList('fee', [data.fee]);
     }
   }
 
@@ -163,6 +161,19 @@ export class HistoryEventsPage {
     await this.page.locator('[data-testid=amount] input').clear();
     await this.page.locator('[data-testid=amount] input').fill(data.amount);
     await this.page.locator('[data-testid=notes] textarea:not([aria-hidden])').fill(data.notes);
+  }
+
+  /** The picker's place on screen, which a change of entry type must not move. */
+  async entryTypeBox(): Promise<{ x: number; y: number; width: number; height: number }> {
+    const box = await this.page.locator('[data-testid=entry-type]').boundingBox();
+    if (!box)
+      throw new Error('the entry type picker is not on screen');
+    return box;
+  }
+
+  async cancelForm(): Promise<void> {
+    await this.page.locator('[data-testid=bottom-dialog] [data-testid=cancel]').click();
+    await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
   }
 
   async saveForm(): Promise<void> {

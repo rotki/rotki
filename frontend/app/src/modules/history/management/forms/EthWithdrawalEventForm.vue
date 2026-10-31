@@ -3,6 +3,7 @@ import type { EthWithdrawalEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import { Blockchain } from '@rotki/common';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';
 import { EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/eth-block-event-form';
 import {
   emptyEthWithdrawalForm,
@@ -120,27 +121,20 @@ defineExpose({
 
     <RuiDivider class="mb-2" />
 
-    <RuiAccordions>
-      <RuiAccordion
-        data-testid="eth-withdrawal-event-form-advance"
-        :class-names="{ header: 'py-4' }"
-        eager
-      >
-        <template #header>
-          {{ t('transactions.events.form.advanced') }}
-        </template>
-        <div class="py-2">
-          <RuiTextField
-            v-model="state.groupIdentifier"
-            color="primary"
-            data-testid="group-identifier"
-            :disabled="state.hasActualGroupIdentifier"
-            :label="t('transactions.events.form.group_identifier.label')"
-            :error-messages="form.errors('groupIdentifier')"
-            @blur="form.touch('groupIdentifier')"
-          />
-        </div>
-      </RuiAccordion>
-    </RuiAccordions>
+    <EventDetailsSection
+      data-testid="eth-withdrawal-event-form-advance"
+      :errors="form.errors"
+      :paths="['groupIdentifier']"
+    >
+      <RuiTextField
+        v-model="state.groupIdentifier"
+        color="primary"
+        data-testid="group-identifier"
+        :disabled="state.hasActualGroupIdentifier"
+        :label="t('transactions.events.form.group_identifier.label')"
+        :error-messages="form.errors('groupIdentifier')"
+        @blur="form.touch('groupIdentifier')"
+      />
+    </EventDetailsSection>
   </div>
 </template>
