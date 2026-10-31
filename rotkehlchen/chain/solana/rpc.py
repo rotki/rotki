@@ -257,6 +257,7 @@ class EncodedConfirmedTransactionWithStatusMeta:
 @dataclass(frozen=True)
 class SignatureStatus:
     signature: Signature
+    slot: int
 
 
 @dataclass(frozen=True)
@@ -509,7 +510,10 @@ class Client:
             config['until'] = str(until)
         try:
             return RPCResponse(value=[
-                SignatureStatus(signature=Signature.from_string(entry['signature']))
+                SignatureStatus(
+                    signature=Signature.from_string(entry['signature']),
+                    slot=int(entry['slot']),
+                )
                 for entry in self._request('getSignaturesForAddress', [str(account), config])
             ])
         except _RPC_DECODE_EXCEPTIONS as e:

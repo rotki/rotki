@@ -5,10 +5,13 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.solana.constants import SOLANA_V1_ACTIVATION_SLOT
 from rotkehlchen.chain.solana.types import SolanaTransaction
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import SolanaEventFilterQuery, SolanaTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.solanatx import DBSolanaTx
+from rotkehlchen.errors.misc import MissingAPIKey, RemoteError
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -17,7 +20,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.factories import make_solana_address, make_solana_signature
-from rotkehlchen.types import SolanaAddress, SupportedBlockchain
+from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -244,6 +247,146 @@ def test_query_associated_token_account_transactions(
         (jl_usdc_ata, jlusdc_ata_signature),
         (user_address, main_account_signature),
     }
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('solana_accounts', [[make_solana_address()]])
+def test_backfill_missed_v1_transactions(
+        rotkehlchen_api_server: APIServer,
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    """A failed v1 recovery remains scheduled, succeeds on retry, and then stays dormant."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    transactions = rotki.chains_aggregator.solana.transactions
+    user_address = solana_accounts[0]
+    old_signature, missed_signature, second_missed_signature, new_signature = (
+        make_solana_signature(),
+        make_solana_signature(),
+        make_solana_signature(),
+        make_solana_signature(),
+    )
+
+    def make_transaction(
+            signature: Signature,
+            slot: int,
+            block_time: Timestamp,
+    ) -> SolanaTransaction:
+        return SolanaTransaction(
+            fee=0,
+            slot=slot,
+            success=True,
+            signature=signature,
+            block_time=block_time,
+            account_keys=[],
+            instructions=[],
+        )
+
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        transactions.dbtx.add_transactions(
+            write_cursor=write_cursor,
+            solana_transactions=[
+                make_transaction(old_signature, SOLANA_V1_ACTIVATION_SLOT - 1, Timestamp(1)),
+                make_transaction(new_signature, SOLANA_V1_ACTIVATION_SLOT + 2, Timestamp(3)),
+            ],
+            relevant_address=user_address,
+        )
+        rotki.data.db.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT,
+            value=SOLANA_V1_ACTIVATION_SLOT,
+            address=user_address,
+        )
+
+    def query_signatures(
+            address: SolanaAddress,
+            before: Signature | None = None,
+            until: Signature | None = None,
+    ) -> list[Signature]:
+        assert address == user_address
+        assert before is None
+        assert until == new_signature
+        return []
+
+    def query_signature_pages(
+            address: SolanaAddress,
+            before: Signature | None = None,
+            until: Signature | None = None,
+            min_slot: int | None = None,
+    ) -> list[list[Signature]]:
+        assert address == user_address
+        assert before is None
+        assert until == old_signature
+        assert min_slot == SOLANA_V1_ACTIVATION_SLOT
+        return [[new_signature, missed_signature], [second_missed_signature]]
+
+    with (
+        patch.object(
+            transactions.node_inquirer,
+            'query_token_accounts_by_owner',
+            return_value=[],
+        ),
+        patch.object(
+            transactions.node_inquirer,
+            'query_tx_signatures_for_address',
+            side_effect=query_signatures,
+        ) as query_signatures_mock,
+        patch.object(
+            transactions.node_inquirer,
+            'query_tx_signature_pages_for_address',
+            side_effect=query_signature_pages,
+        ) as query_signature_pages_mock,
+        patch.object(
+            transactions.helius,
+            'get_transactions',
+            side_effect=MissingAPIKey('No Helius key'),
+        ),
+        patch.object(
+            transactions.node_inquirer,
+            'get_transaction_for_signature',
+            side_effect=[
+                RemoteError('temporary RPC failure'),
+                (make_transaction(
+                    second_missed_signature,
+                    SOLANA_V1_ACTIVATION_SLOT,
+                    Timestamp(2),
+                ), {}),
+                (make_transaction(
+                    missed_signature,
+                    SOLANA_V1_ACTIVATION_SLOT + 1,
+                    Timestamp(2),
+                ), {}),
+            ],
+        ) as get_transaction_mock,
+    ):
+        transactions.query_transactions_for_address(user_address)
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert rotki.data.db.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT,
+                address=user_address,
+            ) == SOLANA_V1_ACTIVATION_SLOT
+            assert transactions.dbtx.get_existing_signatures(
+                cursor=cursor,
+                signatures=[second_missed_signature],
+            ) == {second_missed_signature}
+
+        transactions.query_transactions_for_address(user_address)
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert rotki.data.db.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT,
+                address=user_address,
+            ) is None
+            assert transactions.dbtx.get_existing_signatures(
+                cursor=cursor,
+                signatures=[missed_signature, second_missed_signature],
+            ) == {missed_signature, second_missed_signature}
+
+        transactions.query_transactions_for_address(user_address)
+
+    assert get_transaction_mock.call_count == 3
+    assert query_signatures_mock.call_count == 3  # regular incremental query on each sync
+    assert query_signature_pages_mock.call_count == 2  # recovery stays dormant after completion
 
 
 @pytest.mark.vcr

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13508` Solana v1 transactions are now included in transaction history. Previously skipped transactions are recovered during the next Solana transaction refresh.
 * :release:`1.44.2 <2026-10-22>`
 * :bug:`-` rotki now uses updated certificate trust lists that no longer trust the eMudhra certificate authorities affected by the key compromise announced on 20 October 2026, so certificates issued with those keys are no longer accepted.
 * :bug:`-` When restoring the premium database backup fails while creating an account, for example because of a wrong password, this device is no longer left registered to your premium account, where it took up one of the devices your plan allows. The error now says that the password cannot unlock the backup, instead of pointing at the API keys.

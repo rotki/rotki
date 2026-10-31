@@ -289,6 +289,11 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
         """Deletes all solana transactions and their related data for a given address
         and all its ATAs.
         """
+        self.db.delete_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT,
+            address=address,
+        )
         where_str = """
         WHERE (M.address = ? OR
         M.address IN (SELECT ata_address FROM solana_ata_address_mappings WHERE account = ?))

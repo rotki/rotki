@@ -13,6 +13,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_solana_token, get_solana_token
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import RPCNode, SolanaNodeCapabilities
+from rotkehlchen.chain.solana.constants import SOLANA_V1_ACTIVATION_SLOT
 from rotkehlchen.chain.solana.rpc import (
     Client,
     MemcmpOpts,
@@ -141,6 +142,79 @@ def test_solana_rpc_method_decode_errors_raise_serde_error() -> None:
             pytest.raises(SerdeJSONError, match='Failed to decode solana'),
         ):
             method()
+
+
+def test_query_v1_tx_from_rpc(solana_inquirer: SolanaInquirer) -> None:
+    """Test that v1 transactions are requested and deserialized."""
+    signature_str = '3UTqecoEGPw1fq28hHFiJSWAPtKBtBQAv8dLyDEUbtmwC7bC1DZwxuLvDhZPPVSr69YnSQjDA2wwBwzZKiFnyR5q'  # noqa: E501
+    client = Client(endpoint='http://example.invalid', timeout=1)
+    response = mock_solana_rpc_response({'result': {
+        'blockTime': 1793440000,
+        'meta': {
+            'err': None,
+            'fee': 10470,
+            'innerInstructions': [],
+            'postTokenBalances': [],
+            'preTokenBalances': [],
+        },
+        'slot': 463752700,
+        'transaction': {
+            'message': {
+                'accountKeys': [
+                    'ybrFb3UHYRgs2NXJviyGAWVKk1F87uRfCD6KmpnZWkt',
+                    '11111111111111111111111111111111',
+                ],
+                'header': {
+                    'numReadonlySignedAccounts': 0,
+                    'numReadonlyUnsignedAccounts': 1,
+                    'numRequiredSignatures': 1,
+                },
+                'instructions': [{
+                    'accounts': [0],
+                    'data': '3Bxs412MvVNQj175',
+                    'programIdIndex': 1,
+                    'stackHeight': 1,
+                }],
+                'recentBlockhash': '48qiYiwKXgi7rCS7YjFctEtoYpas28ban25FUNRtWUk7',
+                'transactionConfig': {
+                    'computeUnitLimit': 46956,
+                    'heapSize': None,
+                    'loadedAccountsDataSizeLimit': 67108864,
+                    'priorityFee': 470,
+                },
+            },
+            'signatures': [signature_str],
+        },
+        'version': 1,
+    }})
+    with (
+        patch.object(client.session, 'post', return_value=response) as post_mock,
+        patch.object(
+            solana_inquirer,
+            'query',
+            side_effect=lambda method, **_: method(client),
+        ),
+    ):
+        tx, token_account_mapping = solana_inquirer.get_transaction_for_signature(
+            signature=(signature := deserialize_tx_signature(signature_str)),
+        )
+
+    assert post_mock.call_args.kwargs['json']['params'] == [signature_str, {
+        'encoding': 'json',
+        'maxSupportedTransactionVersion': 1,
+    }]
+    assert tx.signature == signature
+    assert tx.fee == 10470
+    assert tx.slot == 463752700
+    assert tx.block_time == Timestamp(1793440000)
+    assert tx.success is True
+    assert tx.account_keys == [
+        'ybrFb3UHYRgs2NXJviyGAWVKk1F87uRfCD6KmpnZWkt',
+        '11111111111111111111111111111111',
+    ]
+    assert len(tx.instructions) == 1
+    assert tx.instructions[0].program_id == '11111111111111111111111111111111'
+    assert token_account_mapping == {}
 
 
 @pytest.mark.vcr
@@ -317,6 +391,45 @@ def test_query_signatures_for_address(solana_inquirer: SolanaInquirer) -> None:
     assert len(signatures) == 312
     assert signatures[0] == deserialize_tx_signature('5gJFZweW8EsTQCNWH2EyjJA3vm2VcT91vQtrNAcx7YXeq4zHmqXzSqxxnhb9GxiLvecWJJZv8xxW6opHSnJME643')  # noqa: E501
     assert signatures[63] == deserialize_tx_signature('63u9VxkLKDSBs2nH7Knv4MwX7dU9BKx8WEMGXquWkzVkCm9McGrDcbhhfw8TRm7LgRzXDvutdX74pNMRmo7L2TbL')  # noqa: E501
+
+
+def test_query_signatures_for_address_min_slot(solana_inquirer: SolanaInquirer) -> None:
+    """Signatures at the boundary are included and pagination stops after reaching older slots."""
+    boundary_signature, old_signature = Signature.new_unique(), Signature.new_unique()
+    client = MagicMock(spec=Client)
+    client.get_signatures_for_address.side_effect = [
+        SimpleNamespace(value=[
+            *[SimpleNamespace(
+                signature=Signature.new_unique(),
+                slot=SOLANA_V1_ACTIVATION_SLOT + 1,
+            ) for _ in range(999)],
+            SimpleNamespace(
+                signature=boundary_signature,
+                slot=SOLANA_V1_ACTIVATION_SLOT,
+            ),
+        ]),
+        SimpleNamespace(value=[SimpleNamespace(
+            signature=old_signature,
+            slot=SOLANA_V1_ACTIVATION_SLOT - 1,
+        )]),
+    ]
+    with patch.object(
+        solana_inquirer,
+        'query',
+        side_effect=lambda method, **kwargs: method(client),
+    ):
+        signatures = solana_inquirer.query_tx_signatures_for_address(
+            address=SolanaAddress('7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY'),
+            min_slot=SOLANA_V1_ACTIVATION_SLOT,
+        )
+
+    assert len(signatures) == 1000
+    assert signatures[-1] == boundary_signature
+    assert old_signature not in signatures
+    assert client.get_signatures_for_address.call_count == 2
+    assert (
+        client.get_signatures_for_address.call_args_list[1].kwargs['before'] == boundary_signature
+    )
 
 
 @pytest.mark.parametrize('solana_accounts', [[SolanaAddress('7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY')]])  # noqa: E501

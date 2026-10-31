@@ -11,10 +11,12 @@ import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
+from rotkehlchen.chain.solana.constants import SOLANA_V1_ACTIVATION_SLOT
 from rotkehlchen.concurrency import spawn_later
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_SOL
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import (
     AddressbookFilterQuery,
     HistoryEventFilterQuery,
@@ -2042,6 +2044,14 @@ def test_remove_solana_address_with_transactions(rotkehlchen_api_server: APIServ
         rotki.chains_aggregator.accounts.add(SupportedBlockchain.SOLANA, address1)
         rotki.chains_aggregator.accounts.add(SupportedBlockchain.SOLANA, address2)
 
+        for address in (address1, address2):
+            rotki.data.db.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT,
+                value=SOLANA_V1_ACTIVATION_SLOT,
+                address=address,
+            )
+
         write_cursor.executemany(
             'INSERT INTO solana_ata_address_mappings(account, ata_address) VALUES (?, ?)',
             [(address1, address1_ata), (address2, address2_ata)],
@@ -2091,6 +2101,16 @@ def test_remove_solana_address_with_transactions(rotkehlchen_api_server: APIServ
 
     expected_remaining_count = len(txs_for_addy2) + len(txs_for_addy2_ata)
     with rotki.data.db.conn.read_ctx() as cursor:
+        assert rotki.data.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT,
+            address=address1,
+        ) is None
+        assert rotki.data.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT,
+            address=address2,
+        ) == SOLANA_V1_ACTIVATION_SLOT
         assert len(remaining_txs := solana_tx_db.get_transactions(cursor, SolanaTransactionsFilterQuery.make())) == expected_remaining_count  # noqa: E501
         assert len(remaining_events := events_db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == expected_remaining_count  # noqa: E501
         assert all(

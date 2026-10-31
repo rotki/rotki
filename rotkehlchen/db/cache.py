@@ -138,6 +138,7 @@ class DBCacheDynamic(Enum):
     ZKSYNC_LITE_ELIGIBILITY: Final = 'zksync_lite_eligibility_{address}', lambda x: x
     ZKSYNC_LITE_HISTORY_SYNCED: Final = 'zksync_lite_history_synced_{address}', _deserialize_int_from_str  # noqa: E501
     SOLANA_TOKEN_ACCOUNT: Final = 'solana_token_account_{address}', _deserialize_solana_token_account_from_str  # noqa: E501
+    SOLANA_TX_BACKFILL_FROM_SLOT: Final = 'solana_tx_backfill_from_slot_{address}', _deserialize_int_from_str  # noqa: E501
     CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX: Final = 'customized_event_original_{group_identifier}_{sequence_index}', _deserialize_int_from_str  # noqa: E501
     LAST_BLOCKCHAIN_BALANCES_QUERY_TS: Final = (
         '{blockchain}_last_balances_query_ts',
