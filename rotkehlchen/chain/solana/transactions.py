@@ -9,6 +9,7 @@ from rotkehlchen.api.websockets.typedefs import (
 )
 from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.types import SolanaTransaction, pubkey_to_solana_address
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import SolanaTransactionsFilterQuery
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.utils import get_query_chunks
@@ -114,6 +115,11 @@ class SolanaTransactions:
         last_existing_sigs: dict[SolanaAddress, Signature | None] = {}
         start_timestamps, end_ts = set(), ts_now()
         with self.database.conn.read_ctx() as cursor:
+            backfill_from_slot = self.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT,
+                address=address,
+            )
             # Query the user address and all its ATAs with the signature and block time of the
             # latest existing tx associated with each address.
             for result in cursor.execute(
@@ -169,11 +175,87 @@ class SolanaTransactions:
                 f'{address}.',
             )
 
+        if backfill_from_slot is not None:
+            self._backfill_transactions(
+                address=address,
+                addresses=list(last_existing_sigs),
+                from_slot=backfill_from_slot,
+            )
+
         self._send_tx_status_message(
             address=address,
             period=(min_start_ts, end_ts),
             status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
         )
+
+    def _backfill_transactions(
+            self,
+            address: SolanaAddress,
+            addresses: list[SolanaAddress],
+            from_slot: int,
+    ) -> None:
+        """Query and persist any missing transactions at or after from_slot.
+
+        The marker is removed only after every returned signature for the account and its ATAs is
+        present in the DB. Failed queries therefore leave it in place for the next sync. May raise
+        RemoteError if querying signatures fails.
+        """
+        completed = True
+        for ata_or_account in addresses:
+            with self.database.conn.read_ctx() as cursor:
+                result = cursor.execute(
+                    'SELECT st.signature FROM solana_transactions st '
+                    'JOIN solanatx_address_mappings sam ON st.identifier = sam.tx_id '
+                    'WHERE sam.address=? AND st.slot < ? ORDER BY st.slot DESC LIMIT 1',
+                    (ata_or_account, from_slot),
+                ).fetchone()
+                until = None if result is None else deserialize_tx_signature(result[0])
+
+            log.debug(
+                'Backfilling solana transactions for %s belonging to %s from slot %s with '
+                'until=%s.',
+                ata_or_account,
+                address,
+                from_slot,
+                until,
+            )
+            for signatures in self.node_inquirer.query_tx_signature_pages_for_address(
+                address=ata_or_account,
+                until=until,
+                min_slot=from_slot,
+            ):
+                self.query_transactions_for_signatures(
+                    signatures=signatures,
+                    relevant_address=ata_or_account,
+                )
+
+                with self.database.conn.read_ctx() as cursor:
+                    missing_signatures = set(signatures) - self.dbtx.get_existing_signatures(
+                        cursor=cursor,
+                        signatures=signatures,
+                    )
+                if len(missing_signatures) != 0:
+                    completed = False
+                    log.error(
+                        'Failed to complete solana transaction backfill for %s belonging to %s. '
+                        '%s transactions remain.',
+                        ata_or_account,
+                        address,
+                        len(missing_signatures),
+                    )
+
+        if completed:
+            with self.database.conn.write_ctx() as write_cursor:
+                self.database.delete_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT,
+                    address=address,
+                )
+            log.debug(
+                'Completed solana transaction backfill for %s from slot %s.',
+                address,
+                from_slot,
+            )
 
     @overload
     def query_transactions_for_signatures(

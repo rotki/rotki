@@ -18,6 +18,9 @@ from construct import (
 from rotkehlchen.chain.solana.rpc import Hash, Pubkey
 
 SOLANA_GENESIS_BLOCK_HASH: Final = Hash.from_string('4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZAMdL4VZHirAn')
+# Transaction version 1 was activated on mainnet at this slot. It is also the earliest
+# slot that needs to be revisited for transactions skipped by clients supporting only v0.
+SOLANA_V1_ACTIVATION_SLOT: Final = 447120000
 
 # Native Solana Stake Program
 # https://docs.solanalabs.com/runtime/programs#stake-program

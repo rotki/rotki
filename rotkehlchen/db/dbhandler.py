@@ -992,6 +992,15 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
+            name: Literal[DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT],
+            **kwargs: Unpack[AddressArgType],
+    ) -> int | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.WITHDRAWALS_TS],
             **kwargs: Unpack[AddressArgType],
     ) -> Timestamp | None:
@@ -1280,6 +1289,16 @@ class DBHandler:
             write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.SOLANA_TOKEN_ACCOUNT],
             value: str,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT],
+            value: int,
             **kwargs: Unpack[AddressArgType],
     ) -> None:
         ...

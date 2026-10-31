@@ -59,7 +59,7 @@ from .constants import (
 from .types import SolanaTransaction, pubkey_to_solana_address
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterator, Sequence
 
     from rotkehlchen.chain.evm.types import NodeName, WeightedNode
     from rotkehlchen.db.dbhandler import DBHandler
@@ -453,11 +453,37 @@ class SolanaInquirer(SolanaRPCMixin):
             address: SolanaAddress,
             before: Signature | None = None,
             until: Signature | None = None,
+            min_slot: int | None = None,
     ) -> list[Signature]:
-        """Query all the transaction signatures for the given address.
+        """Query transaction signatures for the given address.
+
+        If min_slot is given, only signatures at or after that slot are returned and pagination
+        stops as soon as older signatures are reached. Signatures are returned newest first.
         May raise RemoteError if there is a problem with querying the external service.
         """
-        signatures, pages_queried = [], 0
+        return [
+            signature
+            for page in self.query_tx_signature_pages_for_address(
+                address=address,
+                before=before,
+                until=until,
+                min_slot=min_slot,
+            )
+            for signature in page
+        ]
+
+    def query_tx_signature_pages_for_address(
+            self,
+            address: SolanaAddress,
+            before: Signature | None = None,
+            until: Signature | None = None,
+            min_slot: int | None = None,
+    ) -> Iterator[list[Signature]]:
+        """Yield newest-first pages of signatures, optionally bounded by min_slot.
+
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        pages_queried, signatures_queried = 0, 0
         while True:
             log.debug(
                 f'Querying solana transaction signatures for {address} '
@@ -473,17 +499,26 @@ class SolanaInquirer(SolanaRPCMixin):
                 only_archive_nodes=True,
             )
             pages_queried += 1
-            signatures.extend([tx_sig.signature for tx_sig in response.value])
+            page = [
+                tx_sig.signature for tx_sig in response.value
+                if min_slot is None or tx_sig.slot >= min_slot
+            ]
+            signatures_queried += len(page)
             log.debug(
                 f'Queried solana transaction signatures page {pages_queried} for {address}. '
-                f'Got {len(response.value)} signatures in this page and {len(signatures)} total.',
+                f'Got {len(response.value)} signatures in this page and '
+                f'{signatures_queried} matching signatures total.',
             )
-            if len(response.value) < SIGNATURES_PAGE_SIZE:
+            if len(page) != 0:
+                yield page
+
+            if (
+                len(response.value) < SIGNATURES_PAGE_SIZE or
+                (min_slot is not None and response.value[-1].slot < min_slot)
+            ):
                 break  # all signatures have been queried
 
             before = response.value[-1].signature
-
-        return signatures
 
     def get_transaction_for_signature(self, signature: Signature) -> tuple[SolanaTransaction, dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]]]:  # noqa: E501
         """Query the transaction with the given signature.
@@ -496,7 +531,7 @@ class SolanaInquirer(SolanaRPCMixin):
         if (response := self.query(
             method=lambda client: client.get_transaction(
                 tx_sig=signature,
-                max_supported_transaction_version=0,  # include the new v0 txs
+                max_supported_transaction_version=1,  # include v0 and v1 transactions
             ),
             only_archive_nodes=True,
         ).value) is None:
