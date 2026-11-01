@@ -292,6 +292,11 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
         'query_multiple_current_prices',
         wraps=mock_query_price,
     )
+    uncached_cc_patch = patch.object(
+        inquirer._cryptocompare,
+        'query_multiple_current_prices_uncached',
+        wraps=inquirer._cryptocompare.query_multiple_current_prices_uncached,
+    )
     api_key_patch = patch.object(
         inquirer._cryptocompare,
         '_get_api_key',
@@ -300,7 +305,7 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
     with api_key_patch:
         inquirer.set_oracles_order(oracles=[CurrentPriceOracle.CRYPTOCOMPARE])
 
-    with cc_patch as cc:
+    with cc_patch as cc, uncached_cc_patch as uncached_cc:
         price = inquirer.find_usd_price(A_ETH)
         assert cc.call_count == 1
         assert price == Price(FVal('1'))
@@ -325,6 +330,7 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
         assert price == Price(FVal('2'))
         price = inquirer.find_usd_price(A_ETH, ignore_cache=True)
         assert cc.call_count == 3
+        assert uncached_cc.call_count == 1
         assert price == Price(FVal('2'))
 
 

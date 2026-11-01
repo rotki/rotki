@@ -21,6 +21,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ApiKey, ChainID, ExternalService, Price, Timestamp
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import get_chunks, set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import (
     ORACLE_PROBE_TIMEOUT,
@@ -51,6 +52,8 @@ DEFILLAMA_RATE_LIMIT_BURST: Final = 10
 # key; 429-driven shrink narrows it if we overshoot.
 DEFILLAMA_PRO_RATE_LIMIT_RPS: Final = 10.0
 DEFILLAMA_PRO_RATE_LIMIT_BURST: Final = 50
+DEFILLAMA_MISSING_PRICE_CACHE_SECS: Final = 300
+DEFILLAMA_MISSING_PRICE_CACHE_SIZE: Final = 2048
 
 
 class Defillama(
@@ -78,6 +81,9 @@ class Defillama(
             rps=DEFILLAMA_RATE_LIMIT_RPS,
             capacity=DEFILLAMA_RATE_LIMIT_BURST,
         )
+        self._missing_price_cache: LRUCacheWithRemove[str, Timestamp] = LRUCacheWithRemove(
+            maxsize=DEFILLAMA_MISSING_PRICE_CACHE_SIZE,
+        )
         self._probed = False
 
     def _maybe_probe(self) -> None:
@@ -96,6 +102,7 @@ class Defillama(
             rps=DEFILLAMA_RATE_LIMIT_RPS,
             capacity=DEFILLAMA_RATE_LIMIT_BURST,
         )
+        self._missing_price_cache.clear()
         self._probed = False
 
     @staticmethod
@@ -257,6 +264,29 @@ class Defillama(
             from_assets: list[AssetWithOracles],
             to_asset: AssetWithOracles,
     ) -> dict[AssetWithOracles, Price]:
+        return self._query_multiple_current_prices(
+            from_assets=from_assets,
+            to_asset=to_asset,
+            ignore_cache=False,
+        )
+
+    def query_multiple_current_prices_uncached(
+            self,
+            from_assets: list[AssetWithOracles],
+            to_asset: AssetWithOracles,
+    ) -> dict[AssetWithOracles, Price]:
+        return self._query_multiple_current_prices(
+            from_assets=from_assets,
+            to_asset=to_asset,
+            ignore_cache=True,
+        )
+
+    def _query_multiple_current_prices(
+            self,
+            from_assets: list[AssetWithOracles],
+            to_asset: AssetWithOracles,
+            ignore_cache: bool,
+    ) -> dict[AssetWithOracles, Price]:
         """Queries simple prices for from_assets to to_asset in Defillama.
         Returns a dict mapping assets to prices found. Assets for which no price was found
         are not included in the dict.
@@ -265,9 +295,10 @@ class Defillama(
         - RemoteError if there is a problem querying defillama.
         """
         coin_id_mapping: dict[str, AssetWithOracles] = {}
+        now = ts_now()
         for from_asset in from_assets:
             try:
-                coin_id_mapping[self._get_asset_id(from_asset)] = from_asset
+                coin_id = self._get_asset_id(from_asset)
             except UnsupportedAsset:
                 log.warning(
                     f'Tried to query current price using Defillama from {from_asset} to '
@@ -275,6 +306,16 @@ class Defillama(
                     f'supported by defillama',
                 )
                 continue
+
+            if (
+                ignore_cache is False and
+                (missing_since := self._missing_price_cache.get(coin_id)) is not None
+            ):
+                if now - missing_since <= DEFILLAMA_MISSING_PRICE_CACHE_SECS:
+                    continue
+                self._missing_price_cache.remove(coin_id)
+
+            coin_id_mapping[coin_id] = from_asset
 
         if len(coin_id_mapping) == 0:
             return {}
@@ -285,11 +326,22 @@ class Defillama(
             chunk_mapping = {coin_id: coin_id_mapping[coin_id] for coin_id in chunk_coin_ids}
 
             try:
+                result = self._query(
+                    module='prices',
+                    subpath=f'current/{",".join(chunk_coin_ids)}',
+                )
+                if (
+                    isinstance(result, dict) and
+                    isinstance(coins_result := result.get('coins'), dict)
+                ):
+                    for coin_id in chunk_coin_ids:
+                        if coin_id in coins_result:
+                            self._missing_price_cache.remove(coin_id)
+                        else:
+                            self._missing_price_cache.add(coin_id, now)
+
                 all_usd_prices.update(self._deserialize_prices(
-                    result=self._query(
-                        module='prices',
-                        subpath=f'current/{",".join(chunk_coin_ids)}',
-                    ),
+                    result=result,
                     coin_id_mapping=chunk_mapping,
                     from_assets=[chunk_mapping[coin_id] for coin_id in chunk_coin_ids],
                     to_asset=to_asset,

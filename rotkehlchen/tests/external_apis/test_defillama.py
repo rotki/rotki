@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -15,6 +15,7 @@ from rotkehlchen.types import (
     ExternalServiceApiCredentials,
     Price,
     SolanaAddress,
+    Timestamp,
 )
 
 if TYPE_CHECKING:
@@ -205,6 +206,98 @@ def test_query_multiple_current_prices_stops_chunking_once_penalized(defillama: 
 
     assert get_mock.call_count == 1
     assert defillama.is_penalized() is True
+
+
+def test_missing_current_price_is_cached(defillama: Defillama) -> None:
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    usd = A_USD.resolve_to_asset_with_oracles()
+    with patch.object(defillama, '_query', return_value={'coins': {}}) as query:
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+
+    assert query.call_count == 1
+
+
+def test_cached_missing_current_price_is_removed_from_batch(defillama: Defillama) -> None:
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    dai = A_DAI.resolve_to_asset_with_oracles()
+    usd = A_USD.resolve_to_asset_with_oracles()
+    with patch.object(defillama, '_query', side_effect=[
+        {'coins': {}},
+        {'coins': {'coingecko:dai': {'price': 1, 'confidence': 0.99}}},
+    ]) as query:
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+        assert defillama.query_multiple_current_prices([eth, dai], usd) == {dai: Price(FVal(1))}
+
+    assert query.call_args_list[1].kwargs['subpath'] == 'current/coingecko:dai'
+
+
+def test_missing_current_price_cache_expires(defillama: Defillama) -> None:
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    usd = A_USD.resolve_to_asset_with_oracles()
+    with (
+        patch('rotkehlchen.externalapis.defillama.ts_now', side_effect=[
+            Timestamp(1000),
+            Timestamp(1301),
+        ]),
+        patch.object(defillama, '_query', return_value={'coins': {}}) as query,
+    ):
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+
+    assert query.call_count == 2
+
+
+def test_uncached_query_refreshes_missing_current_price(defillama: Defillama) -> None:
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    usd = A_USD.resolve_to_asset_with_oracles()
+    with patch.object(defillama, '_query', side_effect=[
+        {'coins': {}},
+        {'coins': {'coingecko:ethereum': {'price': 1, 'confidence': 0.99}}},
+        {'coins': {}},
+    ]) as query:
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+        assert defillama.query_multiple_current_prices_uncached(
+            [eth],
+            usd,
+        ) == {eth: Price(FVal(1))}
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+
+    assert query.call_count == 3
+
+
+@pytest.mark.parametrize('result', [
+    [],
+    {},
+    {'coins': {'coingecko:ethereum': {'confidence': 0.1, 'price': 1}}},
+    {'coins': {'coingecko:ethereum': {'confidence': 0.99}}},
+])
+def test_unconfirmed_missing_current_price_is_not_cached(
+        defillama: Defillama,
+        result: Any,
+) -> None:
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    usd = A_USD.resolve_to_asset_with_oracles()
+    with patch.object(defillama, '_query', return_value=result) as query:
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+
+    assert query.call_count == 2
+
+
+def test_current_price_transport_error_is_not_cached(defillama: Defillama) -> None:
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    usd = A_USD.resolve_to_asset_with_oracles()
+    with patch.object(
+        defillama,
+        '_query',
+        side_effect=[RemoteError('first failure'), RemoteError('second failure')],
+    ) as query:
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+        assert defillama.query_multiple_current_prices([eth], usd) == {}
+
+    assert query.call_count == 2
 
 
 def test_api_key_is_not_read_after_logout():
