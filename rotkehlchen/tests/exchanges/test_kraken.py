@@ -1249,6 +1249,140 @@ def test_kraken_failed_withdrawals(kraken):
     assert len(withdrawals) == 0
 
 
+@pytest.mark.parametrize('raw_type', ['receive', 'spend'])
+@pytest.mark.parametrize(('first_fee', 'second_fee'), [('0', '0'), ('0.1', '-0.1')])
+def test_kraken_failed_receive_spend_events(kraken, raw_type, first_fee, second_fee):
+    """Check cancellation detection independently of the generated event collections."""
+    first_amount = '1' if raw_type == 'receive' else '-1'
+    events, skipped, found_unknown = kraken.history_event_from_kraken(
+        events=[{
+            'refid': '1',
+            'time': 1636406000.8555,
+            'type': raw_type,
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'XETH',
+            'amount': first_amount,
+            'fee': first_fee,
+        }, {
+            'refid': '1',
+            'time': 1636508000.8555,
+            'type': raw_type,
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'ZEUR',
+            'amount': str(-FVal(first_amount)),
+            'fee': second_fee,
+        }],
+        save_skipped_events=False,
+    )
+
+    assert events == []
+    assert skipped is False
+    assert found_unknown is False
+
+
+@pytest.mark.parametrize(('raw_type', 'amount', 'expected_type'), [
+    ('receive', '1', HistoryEventType.RECEIVE),
+    ('spend', '-1', HistoryEventType.SPEND),
+])
+def test_kraken_same_type_events_are_not_trades(kraken, raw_type, amount, expected_type):
+    """Two same-type entries with a shared refid are not necessarily a trade or cancellation."""
+    events, skipped, found_unknown = kraken.history_event_from_kraken(
+        events=[{
+            'refid': '1',
+            'time': 1636406000.8555,
+            'type': raw_type,
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'XETH',
+            'amount': amount,
+            'fee': '0',
+        }, {
+            'refid': '1',
+            'time': 1636508000.8555,
+            'type': raw_type,
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'XETH',
+            'amount': str(FVal(amount) * 2),
+            'fee': '0',
+        }],
+        save_skipped_events=False,
+    )
+
+    assert [event.event_type for event in events] == [expected_type, expected_type]
+    assert skipped is False
+    assert found_unknown is False
+    processed_events, _ = kraken.process_kraken_trades(
+        trade_events=[event for event in events if isinstance(event, HistoryEvent)],
+        adjustments=[],
+    )
+    assert processed_events == events
+
+
+@pytest.mark.parametrize(('first_asset', 'first_amount'), [('XETH', '0'), ('KFEE', '1')])
+def test_kraken_pair_with_omitted_first_event(kraken, first_asset, first_amount):
+    """A raw entry may intentionally generate no event, leaving group_events empty."""
+    events, skipped, found_unknown = kraken.history_event_from_kraken(
+        events=[{
+            'refid': '1',
+            'time': 1636406000.8555,
+            'type': 'adjustment',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': first_asset,
+            'amount': first_amount,
+            'fee': '0',
+        }, {
+            'refid': '1',
+            'time': 1636508000.8555,
+            'type': 'adjustment',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'XETH',
+            'amount': '2',
+            'fee': '0',
+        }],
+        save_skipped_events=False,
+    )
+
+    assert len(events) == 1
+    assert events[0].amount == FVal(2)
+    assert skipped is False
+    assert found_unknown is False
+
+
+def test_kraken_same_sign_events_do_not_cancel(kraken):
+    """Equal absolute amounts only cancel when their signs are opposite."""
+    events, skipped, found_unknown = kraken.history_event_from_kraken(
+        events=[{
+            'refid': '1',
+            'time': 1636406000.8555,
+            'type': 'adjustment',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'XETH',
+            'amount': '1',
+            'fee': '0',
+        }, {
+            'refid': '1',
+            'time': 1636508000.8555,
+            'type': 'adjustment',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'XETH',
+            'amount': '1',
+            'fee': '0',
+        }],
+        save_skipped_events=False,
+    )
+
+    assert len(events) == 2
+    assert skipped is False
+    assert found_unknown is False
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_trade_from_kraken_unexpected_data(kraken):
     """Test that getting unexpected data from kraken leads to skipping the trade
