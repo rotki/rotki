@@ -139,12 +139,12 @@ describe('useBanksApi', () => {
     });
 
     it('should hand back the next challenge when the bank asks again', async () => {
-      answerWith(202, { ...wireChallenge, primitive: 'app approval poll' }, []);
+      answerWith(202, { ...wireChallenge, poll_delay_seconds: 7, primitive: 'app approval poll' }, []);
 
       const outcome = await useBanksApi().answerAuthentication({ location: 'fints', name: 'main' });
 
       assert(outcome.ok);
-      expect(outcome.value).toMatchObject({ challengeData: null, primitive: 'app approval poll', prompt: 'Enter the TAN' });
+      expect(outcome.value).toMatchObject({ challengeData: null, pollDelaySeconds: 7, primitive: 'app approval poll', prompt: 'Enter the TAN' });
     });
 
     it('should hand back a completed setup with its history start', async () => {

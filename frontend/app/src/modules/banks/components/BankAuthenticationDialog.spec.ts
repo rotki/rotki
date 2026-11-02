@@ -1,7 +1,7 @@
 import type { BankAuthChallenge, BankAuthenticationRequest, BankSetupError } from '@/modules/banks/types';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { err, ok } from 'plainfp/result';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticationDialog.vue';
 import '@test/i18n';
@@ -56,6 +56,10 @@ describe('bankAuthenticationDialog', () => {
     syncBanks.mockResolvedValue(true);
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('should answer with the connection identity only and close after success', async () => {
     answerBankAuthentication.mockResolvedValue(ok(true));
     wrapper = createWrapper(request);
@@ -78,13 +82,17 @@ describe('bankAuthenticationDialog', () => {
     expect(action()?.disabled).toBe(false);
   });
 
-  it('should let an app approval be checked without a TAN and show the next poll', async () => {
-    const poll: BankAuthChallenge = { ...otp, primitive: 'app approval poll' };
+  it('should automatically check an app approval after the bank delay and show the next poll', async () => {
+    vi.useFakeTimers();
+    const poll: BankAuthChallenge = { ...otp, pollDelaySeconds: 2, primitive: 'app approval poll' };
     answerBankAuthentication.mockResolvedValue(ok(poll));
     wrapper = createWrapper({ ...request, challenge: poll });
 
-    expect(action()?.disabled).toBe(false);
-    await confirm();
+    expect(action()?.disabled).toBe(true);
+    await vi.advanceTimersByTimeAsync(1999);
+    expect(answerBankAuthentication).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    await flushPromises();
 
     expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ location: 'fints', name: 'Checking' }, undefined);
     expect(wrapper.emitted('update:modelValue')).toEqual([[{ ...request, challenge: poll }]]);

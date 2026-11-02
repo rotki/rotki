@@ -29,6 +29,7 @@ class BankAuthChallenge:
     challenge_html: str | None = None
     challenge_data: str | None = None
     challenge_mime_type: str | None = None
+    poll_delay_seconds: int | None = None
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -38,6 +39,7 @@ class BankAuthChallenge:
             'challenge_html': self.challenge_html,
             'challenge_data': self.challenge_data,
             'challenge_mime_type': self.challenge_mime_type,
+            'poll_delay_seconds': self.poll_delay_seconds,
         }
 
 

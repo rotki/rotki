@@ -2,6 +2,7 @@
 import { startPromise } from '@shared/utils';
 import BankAuthChallengeFields from '@/modules/banks/components/BankAuthChallengeFields.vue';
 import { type BankAuthenticationRequest, type BankSetupError, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
+import { useBankAuthenticationPolling } from '@/modules/banks/use-bank-authentication-polling';
 import { useBanks } from '@/modules/banks/use-banks';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
@@ -16,6 +17,7 @@ const expired = ref<boolean>(false);
 
 const { answerBankAuthentication, syncBanks } = useBanks();
 const { t } = useI18n({ useScope: 'global' });
+const polling = useBankAuthenticationPolling(() => get(modelValue)?.challenge, confirm);
 
 const missingResponse = computed<boolean>(() => {
   const request = get(modelValue);
@@ -87,7 +89,7 @@ watch(response, () => {
   <BigDialog
     :display="!!modelValue"
     :title="modelValue?.name ?? ''"
-    :action="{ primary: primaryAction, disabled: !expired && missingResponse }"
+    :action="{ primary: primaryAction, disabled: !expired && (missingResponse || polling) }"
     :loading="submitting"
     @confirm="confirm()"
     @cancel="close()"

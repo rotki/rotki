@@ -320,6 +320,50 @@ def test_product_registration_response_aborts_the_dialog() -> None:
     assert dialog.open is False
 
 
+@pytest.mark.parametrize(('response_codes', 'decoupled'), [
+    (('0030',), False),
+    (('3955', '0030'), True),
+])
+def test_dialog_initialization_preserves_decoupled_response(
+        response_codes: tuple[str, ...],
+        decoupled: bool,
+) -> None:
+    client = object.__new__(RotkiFinTS3PinTanClient)
+    client.bank_identifier = SimpleNamespace(bank_code=FINTS_VALUES['bank_code'])
+    challenge = FixtureTANResponse()
+
+    def initialize_dialog(client: RotkiFinTS3PinTanClient) -> None:
+        dialog = SimpleNamespace(open=True)
+        for code in response_codes:
+            client._process_response(  # pylint: disable=protected-access
+                dialog=dialog,
+                segment=None,
+                response=SimpleNamespace(code=code),
+            )
+        client.init_tan_response = challenge
+
+    with (
+        patch.object(FinTS3PinTanClient, '__enter__', initialize_dialog),
+        patch.object(FinTS3PinTanClient, '_process_response'),
+    ):
+        client.__enter__()
+
+    assert challenge.decoupled is decoupled
+
+
+def test_decoupled_poll_uses_bank_delays() -> None:
+    client = object.__new__(RotkiFinTS3PinTanClient)
+    with (
+        patch.object(client, 'get_current_tan_mechanism', return_value='940'),
+        patch.object(client, 'get_tan_mechanisms', return_value={'940': SimpleNamespace(
+            wait_before_first_poll=5,
+            wait_before_next_poll=3,
+        )}),
+    ):
+        assert client.get_tan_poll_delay(repeated_poll=False) == 5
+        assert client.get_tan_poll_delay(repeated_poll=True) == 3
+
+
 @pytest.mark.parametrize(('code', 'error'), [
     ('9340', FinTSClientPINError),
     ('3938', FinTSClientTemporaryAuthError),
@@ -486,6 +530,53 @@ def test_fints_endpoint_whitespace_is_removed() -> None:
 
     assert 'https://bank.example/fints' in credentials.api_key
     assert ' https://bank.example/fints ' not in credentials.api_key
+
+
+def test_zero_value_mt940_transactions_are_ignored(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        transport := FinTSFixtureTransport(),
+    )
+    transport.data['transactions'].append({
+        'date': '2026-08-05',
+        'amount': '0',
+        'currency': 'EUR',
+        'purpose': 'Informational entry',
+        'purpose_code': 'NTRF',
+        'bank_reference': 'REF-4',
+    })
+    account = connector.query_accounts()[0]
+
+    assert len(connector.query_transactions(account=account, updated_since=None)) == 3
+
+
+def test_date_only_mt940_transactions_preserve_statement_order(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        transport := FinTSFixtureTransport(),
+    )
+    for transaction in transport.data['transactions']:
+        transaction['date'] = '2026-08-01'
+
+    transactions = connector.query_transactions(
+        account=connector.query_accounts()[0],
+        updated_since=None,
+    )
+
+    assert [transaction.calendar_date for transaction in transactions] == ['2026-08-01'] * 3
+    assert [transaction.timestamp for transaction in transactions] == [
+        transactions[0].timestamp,
+        transactions[0].timestamp + 1,
+        transactions[0].timestamp + 2,
+    ]
 
 
 @pytest.mark.parametrize(('challenge', 'primitive', 'answer'), [

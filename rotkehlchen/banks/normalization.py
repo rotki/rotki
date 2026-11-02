@@ -62,6 +62,7 @@ class BankTransaction:
     counterparty_account: str | None = None  # IBAN or whatever the bank shows
     reference: str | None = None  # the payment reference / description
     updated_at: Timestamp | None = None  # the bank's last-modified time, feeds the cursor
+    calendar_date: str | None = None  # set when the source supplies a date without a time
 
     def validate(self) -> None:
         if self.amount <= ZERO:
@@ -112,6 +113,8 @@ def bank_transaction_to_event(
         extra_data['counterparty_account'] = transaction.counterparty_account
     if transaction.reference is not None:
         extra_data['reference'] = transaction.reference
+    if transaction.calendar_date is not None:
+        extra_data['calendar_date'] = transaction.calendar_date
 
     return BankTransactionEvent(
         group_identifier=create_group_identifier_from_unique_id(

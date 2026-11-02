@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LocationAndTxRef, PullEventPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventEntry, StandaloneEditableEvents } from '@/modules/history/events/schemas';
+import { HistoryEventEntryType } from '@rotki/common';
 import { type DuplicateHandlingStatus, getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventsAction from '@/modules/history/events/HistoryEventsAction.vue';
@@ -48,6 +49,9 @@ const emit = defineEmits<{
   'ignore-duplicate': [];
 }>();
 
+const FINTS_LOCATION = 'fints';
+const MILLISECONDS_PER_DAY = 86_400_000;
+
 const { t } = useI18n({ useScope: 'global' });
 
 const selection = injectHistoryEventsSelection();
@@ -57,6 +61,16 @@ const redecoding = useEventRedecodeStatus(() => group, () => groupEvents);
 const showingIgnoredAssets = computed<boolean>(() => ignoredAssets === 'showing');
 
 const isCard = computed<boolean>(() => variant === 'card');
+
+const calendarDate = computed<string | undefined>(() => {
+  if (group.entryType !== HistoryEventEntryType.BANK_TRANSACTION_EVENT)
+    return undefined;
+  if (group.extraData?.calendarDate)
+    return group.extraData.calendarDate;
+  if (group.location !== FINTS_LOCATION || group.timestamp % MILLISECONDS_PER_DAY !== 0)
+    return undefined;
+  return new Date(group.timestamp).toISOString().slice(0, 10);
+});
 
 /** Selection mode widens every row's gutter for the event checkboxes; the header follows so it stays lined up. */
 const selecting = computed<boolean>(() => !!selection && get(selection.isSelectionMode));
@@ -152,8 +166,10 @@ const selecting = computed<boolean>(() => !!selection && get(selection.isSelecti
       />
 
       <DateDisplay
+        :calendar-date="calendarDate"
         :timestamp="group.timestamp"
         milliseconds
+        :no-time="!!calendarDate"
         class="text-xs text-rui-text-secondary shrink-0"
       />
     </div>
@@ -233,8 +249,10 @@ const selecting = computed<boolean>(() => !!selection && get(selection.isSelecti
     </div>
 
     <DateDisplay
+      :calendar-date="calendarDate"
       :timestamp="group.timestamp"
       milliseconds
+      :no-time="!!calendarDate"
       class="text-right shrink-0 text-sm"
     />
 
