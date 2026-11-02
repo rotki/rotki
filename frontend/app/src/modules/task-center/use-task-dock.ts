@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import { isTerminalStatus, needsAttention } from '@/modules/task-center/core/status';
 import { someInSubtree } from '@/modules/task-center/core/tree';
-import { type Activity, type ActivityId, ActivityStatus } from '@/modules/task-center/core/types';
+import { type Activity, type ActivityId, ActivityKind, ActivityStatus } from '@/modules/task-center/core/types';
 import { DISMISSED_HIDE_DELAY, DockState } from '@/modules/task-center/dock-state';
 import { useDockAutoOpen } from '@/modules/task-center/use-dock-auto-open';
 import { type PendingJob, usePendingJobs } from '@/modules/task-center/use-pending-jobs';
@@ -48,6 +48,10 @@ function isFailed(activity: Activity): boolean {
   return activity.status === ActivityStatus.FAILED;
 }
 
+function isBackgroundTask(activity: Activity): boolean {
+  return activity.kind === ActivityKind.BACKGROUND_TASK;
+}
+
 /**
  * What the corner dock is showing, and whether its panel is open.
  *
@@ -70,6 +74,11 @@ function isFailed(activity: Activity): boolean {
  * The exception is a failure: one that settled before the dock mounted, as work started during login
  * can, is reported anyway, since nowhere else shows it. The ledger is reset on logout, so what is
  * there at mount belongs to this session.
+ *
+ * A backend background task is shown while it runs, but is not part of a batch: it neither holds a
+ * batch open nor opens the panel, and a clean finish is not reported, since the user did not ask
+ * for it. Its failure is reported like any other, even one that arrives already failed, as a failure
+ * the backend held while no client was connected does.
  */
 export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   const { isActive, model } = useTaskCenter();
@@ -83,9 +92,15 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   /** Jobs that failed before the dock mounted; see the remarks on {@link useTaskDock}. */
   const failedBeforeMount = get(model).roots.filter(root => isTerminalStatus(root.status) && hasFailure(root)).map(root => root.id);
 
+  /** Whether work other than background tasks is running or queued; only that work makes a batch. */
+  const foregroundActive = computed<boolean>(() => {
+    const { active, pending } = get(model);
+    return [...active, ...pending].some(activity => !isBackgroundTask(activity));
+  });
+
   const modelExpanded = shallowRef<boolean>(false);
   /** Whether a batch is under way: set as soon as work runs, cleared once it stays idle for {@link BATCH_GRACE}. */
-  const batchActive = shallowRef<boolean>(get(isActive));
+  const batchActive = shallowRef<boolean>(get(foregroundActive));
   const tracked = shallowRef<ReadonlySet<ActivityId>>(new Set(failedBeforeMount));
   const acknowledged = shallowRef<ReadonlySet<ActivityId>>(new Set());
 
@@ -98,9 +113,12 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
 
   const flagged = computed<Activity[]>(() => get(settled).filter(root => isHeld(root) && !hasFailure(root) && !get(acknowledged).has(root.id)));
 
-  const finished = computed<Activity[]>(() => get(settled).filter(root => !isHeld(root) && !get(acknowledged).has(root.id)));
+  const finished = computed<Activity[]>(() => get(settled).filter(root => !isHeld(root) && !isBackgroundTask(root) && !get(acknowledged).has(root.id)));
 
   const held = computed<Activity[]>(() => [...get(failed), ...get(flagged)]);
+
+  /** The held jobs that may open the panel: a background task's failure only marks the pill. */
+  const heldForeground = computed<Activity[]>(() => get(held).filter(root => !isBackgroundTask(root)));
 
   const dismissed = computed<Activity[]>(() => get(settled).filter(root => get(acknowledged).has(root.id)));
 
@@ -148,6 +166,29 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
     const replaced = new Set(get(settled).filter(root => !kept.has(root.id)).map(root => root.id));
     set(tracked, new Set([...get(tracked)].filter(id => !replaced.has(id))));
     set(acknowledged, new Set([...get(acknowledged)].filter(id => !replaced.has(id))));
+  }
+
+  /** The background failures already tracked, so a dismissed one is not tracked again. */
+  const trackedBackgroundFailures = new Set<ActivityId>();
+
+  /**
+   * Tracks a background task's failure even when it was never seen running: a failure the backend
+   * held while no client was connected arrives already settled. An entry is forgotten once its
+   * activity is gone, as on logout.
+   */
+  function trackBackgroundFailures(roots: Activity[]): void {
+    const present = new Set<ActivityId>(roots.map(root => root.id));
+    for (const id of trackedBackgroundFailures) {
+      if (!present.has(id))
+        trackedBackgroundFailures.delete(id);
+    }
+
+    const fresh = roots.filter(root => isBackgroundTask(root) && isFailed(root) && !trackedBackgroundFailures.has(root.id)).map(root => root.id);
+    if (fresh.length === 0)
+      return;
+    for (const id of fresh)
+      trackedBackgroundFailures.add(id);
+    set(tracked, new Set([...get(tracked), ...fresh]));
   }
 
   function acknowledgeAll(ids: ActivityId[]): void {
@@ -209,11 +250,12 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   }
 
   watch(jobs, track, { immediate: true });
-  watch(isActive, followActivity);
+  watch(() => get(model).roots, trackBackgroundFailures, { immediate: true });
+  watch(foregroundActive, followActivity);
   watch(batchActive, replacePreviousRun);
   watch(batchActive, collapseWhenIdle);
   watch([state, modelExpanded, interacting], scheduleHide, { immediate: true });
-  useDockAutoOpen({ failedBeforeMount, finished, held, interacting, isActive: batchActive, jobs, modelExpanded, working: isActive });
+  useDockAutoOpen({ failedBeforeMount, finished, held: heldForeground, interacting, isActive: batchActive, jobs, modelExpanded, working: foregroundActive });
 
   return {
     acknowledge,
