@@ -103,11 +103,12 @@ describe('plain swap payload', () => {
       { ...base, amount: bigNumberify('0.01'), asset: 'ETH', eventSubtype: 'spend', identifier: 10, userNotes: 'spend note' },
     ];
 
-    const payload = toSwapPayload(swapStateFromEvents(events), () => 'ignored');
+    const payload = toSwapPayload(swapStateFromEvents(events), () => 'generated');
 
     expect(toSwapEditPayload(payload, swapIdentifiers(events))).toEqual({
       entryType: HistoryEventEntryType.SWAP_EVENT,
       fees: [{ amount: '1', asset: 'USD' }],
+      groupIdentifier: 'group',
       identifiers: [10, 11, 12],
       location: 'kraken',
       receiveAmount: '20',
@@ -115,14 +116,39 @@ describe('plain swap payload', () => {
       spendAmount: '0.01',
       spendAsset: 'ETH',
       timestamp: TIMESTAMP,
+      uniqueId: '',
       userNotes: ['spend note', 'receive note', 'fee note'],
     } satisfies EditSwapEventPayload);
+  });
+
+  it('should send an edited swap back with the unique id it was created with', () => {
+    const base = {
+      autoNotes: '',
+      entryType: HistoryEventEntryType.SWAP_EVENT,
+      eventType: 'trade',
+      extraData: { reference: 'kraken-42' },
+      groupIdentifier: 'group',
+      location: 'kraken',
+      locationLabel: null,
+      sequenceIndex: 0,
+      timestamp: TIMESTAMP,
+      userNotes: '',
+    } satisfies Partial<SwapEvent>;
+    const events: SwapEvent[] = [
+      { ...base, amount: bigNumberify('0.01'), asset: 'ETH', eventSubtype: 'spend', identifier: 10 },
+      { ...base, amount: bigNumberify('20'), asset: 'USD', eventSubtype: 'receive', identifier: 11 },
+    ];
+
+    const payload = toSwapEditPayload(toSwapPayload(swapStateFromEvents(events), () => 'generated'), swapIdentifiers(events));
+
+    expect(payload).toMatchObject({ groupIdentifier: 'group', uniqueId: 'kraken-42' });
   });
 });
 
 describe('evm swap payload', () => {
   const filled: SwapFormState = {
     address: evmAddress,
+    groupIdentifier: '',
     counterparty: 'uniswap-v3',
     fee: [{ amount: '0.005', asset: 'ETH', locationLabel: evmAccount, userNotes: 'gas' }],
     hasFee: true,
@@ -202,6 +228,7 @@ describe('evm swap payload', () => {
 describe('solana swap payload', () => {
   const filled: SwapFormState = {
     address: solanaAddress,
+    groupIdentifier: '',
     counterparty: 'jupiter',
     fee: [{ amount: '0.00001', asset: 'SOL', locationLabel: solanaAccount, userNotes: 'network fee' }],
     hasFee: true,

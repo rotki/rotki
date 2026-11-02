@@ -122,6 +122,7 @@ export function chainSwapStateFromEvents(kind: ChainSwapKind, events: ChainSwapE
     address: firstSpend.address ?? '',
     counterparty: firstSpend.counterparty ?? '',
     fee: fee.map(toSubEventState),
+    groupIdentifier: '',
     hasFee: fee.length > 0,
     kind,
     location: chainSwapLocation(kind, firstSpend.location),

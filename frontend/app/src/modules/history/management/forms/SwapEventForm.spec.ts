@@ -271,7 +271,7 @@ describe('forms/SwapEventForm', () => {
       }));
     });
 
-    it('should send an edit with the identifiers as spend, receive, then the fees', async () => {
+    it('should send an edit with the identifiers as spend, receive, then the fees, in the group it was loaded from', async () => {
       await createWrapper(HistoryEventEntryType.SWAP_EVENT, {
         eventsInGroup: [plainEvent('fee', 12, '1', 'USD'), plainEvent('receive', 11, '20', 'USD'), plainEvent('spend', 10, '0.01', 'ETH')],
         type: 'edit-group',
@@ -280,8 +280,12 @@ describe('forms/SwapEventForm', () => {
 
       await expect(wrapper.vm.save()).resolves.toBe(true);
 
-      expect(editHistoryEvent).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ identifiers: [10, 11, 12], spendAmount: '0.02' }));
-      expect(editHistoryEvent.mock.calls[0][0]).not.toHaveProperty('uniqueId');
+      expect(editHistoryEvent).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+        groupIdentifier: 'group',
+        identifiers: [10, 11, 12],
+        spendAmount: '0.02',
+        uniqueId: '',
+      }));
     });
 
     it('should show the endpoint\'s flat field errors on the rows', async () => {

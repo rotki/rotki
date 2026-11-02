@@ -5,7 +5,6 @@ import type { PriceIntent, usePriceIntents } from '@/modules/history/management/
 import { HistoryEventEntryType } from '@rotki/common';
 import { mockUseNotifications } from '@test/utils/mocks/notifications';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { omit } from 'es-toolkit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, nextTick, ref, type Ref, useModel } from 'vue';
 import { z } from 'zod';
@@ -56,7 +55,7 @@ const schema = z.object({
 });
 
 const toEditPayload = vi.fn((payload: AddSwapEventPayload, identifiers: number[]): EditSwapEventPayload => ({
-  ...omit(payload, ['uniqueId']),
+  ...payload,
   identifiers,
 }));
 
