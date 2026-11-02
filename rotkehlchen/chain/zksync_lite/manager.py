@@ -180,7 +180,8 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 continue
 
             if response.status_code != HTTPStatus.OK:
-                raise remote_error_for_status(response.status_code)(
+                raise remote_error_for_status(
+                    response.status_code,
                     f'ZKSync Lite API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',

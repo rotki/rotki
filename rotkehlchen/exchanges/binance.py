@@ -24,6 +24,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
@@ -138,6 +139,9 @@ class BinancePermissionError(RemoteError):
     """Exception raised when a binance permission problem is detected
 
     Example is when there is no margin account to query or insufficient api key permissions."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, cause=FailureCause.AUTH)
 
 
 def trade_from_binance(

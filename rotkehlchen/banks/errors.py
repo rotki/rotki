@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from rotkehlchen.banks.manifest import AuthPrimitive  # noqa: TC001  # serialized at runtime
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 
 
@@ -18,6 +19,9 @@ class BankError(RemoteError):
 class BankAuthExpired(BankError):
     """The stored credentials or session no longer authenticate. The user has to re-run the
     connector's auth flow (for a static secret: enter a new key)."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, cause=FailureCause.AUTH)
 
 
 @dataclass(frozen=True)
@@ -48,7 +52,7 @@ class BankMFARequired(BankError):
     says which primitive (otp input, app approval, challenge) satisfies it."""
 
     def __init__(self, challenge: BankAuthChallenge) -> None:
-        super().__init__(challenge.prompt)
+        super().__init__(challenge.prompt, cause=FailureCause.AUTH)
         self.challenge = challenge
 
 
@@ -57,7 +61,7 @@ class BankRateLimited(BankError):
     wait, when it said so."""
 
     def __init__(self, message: str, retry_after: float | None = None) -> None:
-        super().__init__(message)
+        super().__init__(message, cause=FailureCause.RATE_LIMITED)
         self.retry_after = retry_after
 
 
@@ -67,7 +71,7 @@ class BankSchemaDrift(BankError):
     and never carries account data: endpoint, HTTP status, key names, enum values."""
 
     def __init__(self, message: str, context: dict[str, Any] | None = None) -> None:
-        super().__init__(message)
+        super().__init__(message, cause=FailureCause.BAD_DATA)
         self.context = context if context is not None else {}
 
     def __str__(self) -> str:
