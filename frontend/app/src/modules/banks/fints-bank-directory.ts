@@ -6,32 +6,48 @@ function isSafeEndpoint(value: string): boolean {
   return url.protocol === 'https:' && url.username === '' && url.password === '';
 }
 
-export const FintsBank = z.object({
-  aliases: z.array(z.string()),
-  blz: z.string().regex(/^\d{8}$/u),
-  city: z.string().optional(),
-  endpoint: z.url().refine(isSafeEndpoint).optional(),
-  name: z.string().min(1),
-  source: z.url(),
-});
+const BankCodes = z.union([
+  z.string().regex(/^\d{8}$/u),
+  z.array(z.string().regex(/^\d{8}$/u)).min(2),
+]);
 
-export type FintsBank = z.infer<typeof FintsBank>;
+const CompactFintsBank = z.tuple([
+  z.string().min(1),
+  z.string(),
+  z.number().int().nonnegative(),
+  BankCodes,
+  z.array(z.string().min(1)).optional(),
+]);
 
 export const FintsBankDirectory = z.object({
-  banks: z.array(FintsBank),
-  provenance: z.string().min(1),
-  version: z.string().min(1),
-}).superRefine(({ banks }, ctx) => {
+  b: z.array(CompactFintsBank),
+  e: z.array(z.url().refine(isSafeEndpoint)),
+  h: z.string().regex(/^[a-f\d]{64}$/u),
+  v: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),
+}).superRefine(({ b: banks, e: endpoints }, ctx) => {
   const bankCodes = new Set<string>();
-  banks.forEach((bank, index) => {
-    if (bankCodes.has(bank.blz))
-      ctx.addIssue({ code: 'custom', message: `Duplicate BLZ ${bank.blz}`, path: ['banks', index, 'blz'] });
+  banks.forEach(([, , endpointIndex, codes], index) => {
+    if (endpoints[endpointIndex] === undefined)
+      ctx.addIssue({ code: 'custom', message: `Unknown endpoint index ${endpointIndex}`, path: ['b', index, 2] });
 
-    bankCodes.add(bank.blz);
+    for (const bankCode of Array.isArray(codes) ? codes : [codes]) {
+      if (bankCodes.has(bankCode))
+        ctx.addIssue({ code: 'custom', message: `Duplicate BLZ ${bankCode}`, path: ['b', index, 3] });
+      bankCodes.add(bankCode);
+    }
   });
 });
 
 export type FintsBankDirectory = z.infer<typeof FintsBankDirectory>;
+
+export interface FintsBank {
+  aliases: string[];
+  bankCodes: string[];
+  city?: string;
+  endpoint: string;
+  id: string;
+  name: string;
+}
 
 export interface FintsBankOption extends FintsBank {
   searchText: string;
@@ -39,7 +55,23 @@ export interface FintsBankOption extends FintsBank {
 
 export const fintsBankDirectory: FintsBankDirectory = FintsBankDirectory.parse(catalog);
 
-export const fintsBanks: FintsBank[] = fintsBankDirectory.banks;
+function expandBank([name, city, endpointIndex, codes, aliases = []]: FintsBankDirectory['b'][number]): FintsBank {
+  const bankCodes = Array.isArray(codes) ? codes : [codes];
+  const endpoint = fintsBankDirectory.e[endpointIndex];
+  if (endpoint === undefined)
+    throw new Error(`FinTS catalog entry ${name} has no endpoint`);
+
+  return {
+    aliases,
+    bankCodes,
+    city: city || undefined,
+    endpoint,
+    id: bankCodes.join('-'),
+    name,
+  };
+}
+
+export const fintsBanks: FintsBank[] = fintsBankDirectory.b.map(expandBank);
 
 function normalizeSearch(value: string): string {
   return value
@@ -49,7 +81,7 @@ function normalizeSearch(value: string): string {
 }
 
 function searchableText(bank: FintsBank): string {
-  return normalizeSearch([bank.name, bank.blz, bank.city, ...bank.aliases]
+  return normalizeSearch([bank.name, bank.city, ...bank.bankCodes, ...bank.aliases]
     .filter(isDefined)
     .join(' '));
 }

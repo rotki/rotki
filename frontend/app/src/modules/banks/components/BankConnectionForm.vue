@@ -8,6 +8,8 @@ import {
   isEditing,
   toBankConnectionFormState,
 } from '@/modules/banks/bank-connection-form';
+import { type BankSelectionOption, toManifestSelection } from '@/modules/banks/bank-connection-selection';
+import BankConnectionPicker from '@/modules/banks/components/BankConnectionPicker.vue';
 import BankLabel from '@/modules/banks/components/BankLabel.vue';
 import FinTsConnectionFields from '@/modules/banks/components/FinTsConnectionFields.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
@@ -25,6 +27,7 @@ const { t } = useI18n({ useScope: 'global' });
 const editMode = computed<boolean>(() => isEditing(get(modelValue).mode));
 const manifest = computed<BankManifest | undefined>(() => manifestFor(get(modelValue).location));
 const fintsAddMode = computed<boolean>(() => !get(editMode) && get(modelValue).location === 'fints');
+const selectedOption = ref<BankSelectionOption>();
 
 const form = useMappedModelForm<BankFormData, BankConnectionFormState>({
   model: modelValue,
@@ -48,10 +51,19 @@ const name = computed<string>({
 const nameErrors = computed<string[]>(() => form.errors(get(editMode) ? 'newName' : 'name'));
 
 /** Switching the bank starts the credentials over: another bank has other slots. */
-function selectLocation(location: string | undefined): void {
-  form.state.location = location ?? '';
-  form.state.credentials = emptyCredentials(location === undefined ? undefined : manifestFor(location));
+function selectBank(option: BankSelectionOption | undefined): void {
+  set(selectedOption, option);
+  form.state.location = option?.location ?? '';
+  form.state.credentials = emptyCredentials(option === undefined ? undefined : manifestFor(option.location));
 }
+
+watch(manifests, (available) => {
+  if (get(selectedOption) || !form.state.location)
+    return;
+  const selectedManifest = available.find(item => item.location === form.state.location);
+  if (selectedManifest)
+    set(selectedOption, toManifestSelection(selectedManifest, t('bank_settings.form.bank_other_fints')));
+}, { immediate: true });
 
 defineExpose({
   validate: (): boolean => form.validate(),
@@ -63,30 +75,13 @@ defineExpose({
     class="flex flex-col gap-4"
     data-testid="bank-connection-form"
   >
-    <RuiMenuSelect
+    <BankConnectionPicker
       v-if="!editMode"
-      :model-value="form.state.location"
-      :options="manifests"
-      :label="t('bank_settings.form.connection_type')"
+      v-model="selectedOption"
+      :manifests="manifests"
       :error-messages="form.errors('location')"
-      key-attr="location"
-      text-attr="displayName"
-      data-testid="bank-connection-location"
-      @update:model-value="selectLocation($event)"
-    >
-      <template #selection="{ item }">
-        <BankLabel
-          :location="item.location"
-          :name="item.displayName"
-        />
-      </template>
-      <template #item="{ item }">
-        <BankLabel
-          :location="item.location"
-          :name="item.displayName"
-        />
-      </template>
-    </RuiMenuSelect>
+      @update:model-value="selectBank($event)"
+    />
     <BankLabel
       v-else
       :location="form.state.location"
@@ -100,6 +95,8 @@ defineExpose({
       v-model:name="form.state.name"
       :manifest="manifest"
       :errors="form.errors"
+      :bank="selectedOption?.bank"
+      :manual="selectedOption?.kind === 'fints-manual'"
     />
 
     <RuiTextField

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { FintsBank } from '@/modules/banks/fints-bank-directory';
 import type { BankConnection, BankManifest } from '@/modules/banks/types';
-import FinTsBankPicker from '@/modules/banks/components/FinTsBankPicker.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 
 type BankSecretField = BankManifest['secrets'][number];
@@ -9,9 +8,11 @@ type BankSecretField = BankManifest['secrets'][number];
 const credentials = defineModel<Record<string, string>>('credentials', { required: true });
 const name = defineModel<string>('name', { required: true });
 
-const { errors, manifest } = defineProps<{
+const { bank, errors, manifest, manual = false } = defineProps<{
+  bank?: FintsBank;
   errors: (path: string) => string[];
   manifest: BankManifest;
+  manual?: boolean;
 }>();
 
 const { connections } = storeToRefs(useBankConnectionsStore());
@@ -20,18 +21,15 @@ const { t } = useI18n({ useScope: 'global' });
 const CLOSED = -1;
 const OPEN = 0;
 
-const selectedBank = ref<FintsBank>();
 const suggestedName = ref<string>();
 const nameCustomized = ref<boolean>(get(name).trim() !== '');
-const advancedOpen = ref<number>(CLOSED);
+const advancedOpen = ref<number>(manual ? OPEN : CLOSED);
 
 const advancedErrorCount = computed<number>(() => [
   'name',
   'credentials.bank_code',
   'credentials.endpoint',
 ].filter(path => errors(path).length > 0).length);
-
-const missingEndpoint = computed<boolean>(() => !!get(selectedBank) && !get(selectedBank)?.endpoint);
 
 function secret(slot: string): BankSecretField | undefined {
   return manifest.secrets.find(field => field.slot === slot);
@@ -48,19 +46,16 @@ function uniqueName(base: string, existing: readonly BankConnection[]): string {
 }
 
 function selectBank(bank: FintsBank | undefined): void {
-  set(selectedBank, bank);
   if (!bank)
     return;
 
-  get(credentials).bank_code = bank.blz;
-  get(credentials).endpoint = bank.endpoint ?? '';
+  get(credentials).bank_code = bank.bankCodes.length === 1 ? bank.bankCodes[0] ?? '' : '';
+  get(credentials).endpoint = bank.endpoint;
   if (!get(nameCustomized) || get(name) === get(suggestedName)) {
     const nextName = uniqueName(bank.name, get(connections));
     set(suggestedName, nextName);
     set(name, nextName);
   }
-  if (!bank.endpoint)
-    set(advancedOpen, OPEN);
 }
 
 function updateName(value: string): void {
@@ -68,39 +63,28 @@ function updateName(value: string): void {
   set(nameCustomized, value.trim() !== '' && value !== get(suggestedName));
 }
 
-function enterDetailsManually(): void {
-  set(advancedOpen, OPEN);
-}
-
 watch(advancedErrorCount, (count, previous) => {
   if (count > 0 && previous === 0)
     set(advancedOpen, OPEN);
 });
+
+watch(() => bank, selectBank, { immediate: true });
+
+watch(() => manual, (value) => {
+  if (value)
+    set(advancedOpen, OPEN);
+}, { immediate: true });
 </script>
 
 <template>
-  <FinTsBankPicker
-    v-model="selectedBank"
-    @update:model-value="selectBank($event)"
+  <RuiMenuSelect
+    v-if="bank && bank.bankCodes.length > 1"
+    v-model="credentials.bank_code"
+    :options="bank.bankCodes"
+    :label="secret('bank_code')?.label"
+    :error-messages="errors('credentials.bank_code')"
+    data-testid="fints-bank-code"
   />
-
-  <RuiButton
-    class="self-start"
-    variant="text"
-    color="primary"
-    data-testid="fints-manual-details"
-    @click="enterDetailsManually()"
-  >
-    {{ t('bank_settings.form.bank_manual') }}
-  </RuiButton>
-
-  <RuiAlert
-    v-if="missingEndpoint"
-    type="warning"
-    data-testid="fints-missing-endpoint"
-  >
-    {{ t('bank_settings.form.bank_missing_endpoint') }}
-  </RuiAlert>
 
   <RuiTextField
     v-model="credentials.username"
