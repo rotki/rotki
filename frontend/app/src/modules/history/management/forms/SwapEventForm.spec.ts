@@ -2,7 +2,6 @@ import type { Pinia } from 'pinia';
 import type { TradeLocationData } from '@/modules/core/common/location';
 import type { EvmSwapEvent, SolanaSwapEvent, SwapEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
-import type { SwapKind } from '@/modules/history/management/forms/swap-event-form';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { selectorContract } from '@test/utils/selector-contract';
@@ -25,6 +24,18 @@ vi.mock('@/modules/core/common/use-locations', () => ({
   useLocations: vi.fn(),
 }));
 
+/** The locations an evm swap can be on, which decide the kind of a swap being added. */
+const evmLocations = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
+  return ref<string[]>([]);
+});
+
+vi.mock('@/modules/core/common/use-supported-chains', async () => {
+  const { mockUseSupportedChains } = await import('@test/utils/mocks/supported-chains');
+  const vue = await import('vue');
+  return mockUseSupportedChains({ txChainsToLocation: vue.computed<string[]>(() => vue.toValue(evmLocations)) });
+});
+
 vi.mock('@/modules/assets/api/use-asset-info-api', () => ({
   useAssetInfoApi: vi.fn(),
 }));
@@ -33,8 +44,8 @@ vi.mock('@/modules/accounts/address-book/use-addresses-names-api', () => ({
   useAddressesNamesApi: vi.fn(),
 }));
 
-/** The options the form hands the transaction lookup, so a test can ask when it would run. */
-const lookup = vi.hoisted(() => ({ enabled: (): boolean => false }));
+/** The options the form hands the transaction lookup, so a test can ask when it would run, and how often it was reset. */
+const lookup = vi.hoisted(() => ({ enabled: (): boolean => false, resets: 0 }));
 
 vi.mock('@/modules/history/management/forms/use-evm-tx-lookup', async (importOriginal) => {
   const original = await importOriginal<typeof import('@/modules/history/management/forms/use-evm-tx-lookup')>();
@@ -42,7 +53,14 @@ vi.mock('@/modules/history/management/forms/use-evm-tx-lookup', async (importOri
     ...original,
     useEvmTxAutoFill: (options: Parameters<typeof original.useEvmTxAutoFill>[0]): ReturnType<typeof original.useEvmTxAutoFill> => {
       lookup.enabled = (): boolean => toValue(options.enabled);
-      return original.useEvmTxAutoFill(options);
+      const autoFill = original.useEvmTxAutoFill(options);
+      return {
+        ...autoFill,
+        reset: (): void => {
+          lookup.resets++;
+          autoFill.reset();
+        },
+      };
     },
   };
 });
@@ -116,6 +134,7 @@ describe('forms/SwapEventForm', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    set(evmLocations, ['ethereum', 'optimism']);
     addHistoryEvent = vi.fn<HistoryEvents['addHistoryEvent']>().mockResolvedValue({ success: true });
     editHistoryEvent = vi.fn<HistoryEvents['editHistoryEvent']>().mockResolvedValue({ success: true });
 
@@ -134,10 +153,14 @@ describe('forms/SwapEventForm', () => {
     vi.useRealTimers();
   });
 
-  async function createWrapper(entryType: SwapKind, data: SwapGroupData = addData): Promise<Wrapper> {
+  async function locate(location: string): Promise<void> {
+    await wrapper.findComponent({ name: 'LocationSelector' }).setValue(location);
+  }
+
+  async function createWrapper(data: SwapGroupData = addData): Promise<Wrapper> {
     wrapper = mount(SwapEventForm, {
       global: { plugins: [pinia] },
-      props: { data, entryType },
+      props: { data },
     });
     await vi.advanceTimersToNextTimerAsync();
     return wrapper;
@@ -160,7 +183,8 @@ describe('forms/SwapEventForm', () => {
 
   describe('the selectors the e2e suite uses', () => {
     it('should keep them for an evm swap', async () => {
-      await createWrapper(HistoryEventEntryType.EVM_SWAP_EVENT);
+      await createWrapper();
+      await locate('ethereum');
 
       expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
         [
@@ -189,7 +213,8 @@ describe('forms/SwapEventForm', () => {
     });
 
     it('should keep them for a solana swap', async () => {
-      await createWrapper(HistoryEventEntryType.SOLANA_SWAP_EVENT);
+      await createWrapper();
+      await locate(SOLANA_CHAIN);
 
       expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
         [
@@ -218,7 +243,7 @@ describe('forms/SwapEventForm', () => {
     });
 
     it('should keep them for a plain swap', async () => {
-      await createWrapper(HistoryEventEntryType.SWAP_EVENT);
+      await createWrapper();
 
       expect(selectorContract(wrapper)).toMatchInlineSnapshot(`
         [
@@ -242,7 +267,7 @@ describe('forms/SwapEventForm', () => {
 
   describe('a plain swap', () => {
     it('should hold one row a side and no account, and show a unique id instead of a transaction', async () => {
-      await createWrapper(HistoryEventEntryType.SWAP_EVENT);
+      await createWrapper();
 
       expect(has('[data-testid=swap-sub-event-add]')).toBe(false);
       expect(has('[data-testid=location-label]')).toBe(false);
@@ -252,7 +277,7 @@ describe('forms/SwapEventForm', () => {
     });
 
     it('should save the flat plain payload', async () => {
-      await createWrapper(HistoryEventEntryType.SWAP_EVENT);
+      await createWrapper();
       await fill('location', 'kraken');
       await fillRows();
       await fill('unique-id', 'abcd');
@@ -272,7 +297,7 @@ describe('forms/SwapEventForm', () => {
     });
 
     it('should send an edit with the identifiers as spend, receive, then the fees, in the group it was loaded from', async () => {
-      await createWrapper(HistoryEventEntryType.SWAP_EVENT, {
+      await createWrapper({
         eventsInGroup: [plainEvent('fee', 12, '1', 'USD'), plainEvent('receive', 11, '20', 'USD'), plainEvent('spend', 10, '0.01', 'ETH')],
         type: 'edit-group',
       });
@@ -290,7 +315,7 @@ describe('forms/SwapEventForm', () => {
 
     it('should show the endpoint\'s flat field errors on the rows', async () => {
       editHistoryEvent.mockResolvedValue({ message: { spendAmount: ['too small'] }, success: false });
-      await createWrapper(HistoryEventEntryType.SWAP_EVENT, {
+      await createWrapper({
         eventsInGroup: [plainEvent('receive', 11, '20', 'USD'), plainEvent('spend', 10, '0.01', 'ETH')],
         type: 'edit-group',
       });
@@ -305,7 +330,7 @@ describe('forms/SwapEventForm', () => {
 
   describe('a chain swap', () => {
     it('should send an edit with the group\'s identifiers in the group\'s own order', async () => {
-      await createWrapper(HistoryEventEntryType.EVM_SWAP_EVENT, {
+      await createWrapper({
         eventsInGroup: [evmEvent('fee', 3, '0.005', 'ETH'), evmEvent('receive', 2, '300', 'USDC'), evmEvent('spend', 1, '0.1', 'ETH')],
         type: 'edit-group',
       });
@@ -320,8 +345,24 @@ describe('forms/SwapEventForm', () => {
       }));
     });
 
+    it('should keep an edited swap the kind it was saved as, on a location that would imply another', async () => {
+      await createWrapper({
+        eventsInGroup: [evmEvent('spend', 1, '0.1', 'ETH'), evmEvent('receive', 2, '300', 'USDC')],
+        type: 'edit-group',
+      });
+      await wrapper.setProps({ data: {
+        eventsInGroup: [{ ...evmEvent('spend', 1, '0.1', 'ETH'), location: 'base' }, { ...evmEvent('receive', 2, '300', 'USDC'), location: 'base' }],
+        type: 'edit-group',
+      } });
+      await vi.advanceTimersToNextTimerAsync();
+      await wrapper.find('[data-testid=sub-event-amount][data-key=spend] input').setValue('0.2');
+
+      await expect(wrapper.vm.save()).resolves.toBe(true);
+      expect(editHistoryEvent.mock.calls[0][0]).toMatchObject({ entryType: HistoryEventEntryType.EVM_SWAP_EVENT, location: 'base' });
+    });
+
     it('should seed an addition into an existing transaction from that transaction', async () => {
-      await createWrapper(HistoryEventEntryType.EVM_SWAP_EVENT, {
+      await createWrapper({
         group: evmEvent('spend', 1, '0.1', 'ETH'),
         nextSequenceId: '7',
         type: 'group-add',
@@ -338,8 +379,12 @@ describe('forms/SwapEventForm', () => {
       }));
     });
 
-    it('should show the fixed solana location, locked', async () => {
-      await createWrapper(HistoryEventEntryType.SOLANA_SWAP_EVENT);
+    it('should show the fixed solana location, locked, adding into a solana transaction', async () => {
+      await createWrapper({
+        group: createMock<SolanaSwapEvent>({ entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT, location: 'kraken', timestamp: TIMESTAMP, txRef: solanaTxRef }),
+        nextSequenceId: '3',
+        type: 'group-add',
+      });
 
       const location = wrapper.find<HTMLInputElement>('[data-testid=location] input');
       expect(location.element.disabled).toBe(true);
@@ -347,15 +392,57 @@ describe('forms/SwapEventForm', () => {
     });
   });
 
-  describe('switching the kind', () => {
+  describe('the kind of a swap being added', () => {
+    it('should start as a plain swap, with the location open', async () => {
+      await createWrapper();
+
+      expect(has('[data-testid=unique-id]')).toBe(true);
+      expect(wrapper.find<HTMLInputElement>('[data-testid=location] input').element.disabled).toBe(false);
+    });
+
+    it.each([
+      { location: 'optimism', reference: 'tx-ref' },
+      { location: SOLANA_CHAIN, reference: 'tx-ref' },
+      { location: 'kraken', reference: 'unique-id' },
+    ])('should ask for the $reference of a swap on $location', async ({ location, reference }) => {
+      await createWrapper();
+      await locate(location);
+
+      expect(has(`[data-testid=${reference}]`)).toBe(true);
+    });
+
+    it('should make a swap picked on an evm chain an evm swap once the chains load', async () => {
+      set(evmLocations, []);
+      await createWrapper();
+      await locate('ethereum');
+      expect(has('[data-testid=unique-id]')).toBe(true);
+
+      set(evmLocations, ['ethereum']);
+      await nextTick();
+
+      expect(has('[data-testid=tx-ref]')).toBe(true);
+    });
+
+    it('should save a swap on solana as a solana swap, and keep the location open to move it again', async () => {
+      await createWrapper();
+      await locate(SOLANA_CHAIN);
+      await fill('tx-ref', solanaTxRef);
+      await fillRows();
+
+      expect(wrapper.find<HTMLInputElement>('[data-testid=location] input').element.disabled).toBe(false);
+      await expect(wrapper.vm.save()).resolves.toBe(true);
+      expect(addHistoryEvent.mock.calls[0][0]).toMatchObject({ entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT, txRef: solanaTxRef });
+    });
+
     it('should clear the transaction and address moving from evm to solana, and keep the rest', async () => {
-      await createWrapper(HistoryEventEntryType.EVM_SWAP_EVENT);
+      await createWrapper();
+      await locate('ethereum');
       await fill('tx-ref', evmTxRef);
       await fill('address', evmAddress);
       await fill('counterparty', 'uniswap-v3');
       await fillRows();
 
-      await wrapper.setProps({ entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT });
+      await locate(SOLANA_CHAIN);
       await fill('tx-ref', solanaTxRef);
 
       await expect(wrapper.vm.save()).resolves.toBe(true);
@@ -367,19 +454,20 @@ describe('forms/SwapEventForm', () => {
     });
 
     it('should count a switch as an edit', async () => {
-      await createWrapper(HistoryEventEntryType.EVM_SWAP_EVENT);
+      await createWrapper();
 
-      await wrapper.setProps({ entryType: HistoryEventEntryType.SWAP_EVENT });
+      await locate('ethereum');
       await nextTick();
 
       expect(wrapper.emitted('update:stateUpdated')?.at(-1)).toEqual([true]);
     });
 
     it('should keep extra rows moving to a plain swap, and say a plain swap holds one a side', async () => {
-      await createWrapper(HistoryEventEntryType.EVM_SWAP_EVENT);
+      await createWrapper();
+      await locate('ethereum');
       await wrapper.find('[data-testid=swap-sub-event-add][data-key=receive]').trigger('click');
 
-      await wrapper.setProps({ entryType: HistoryEventEntryType.SWAP_EVENT });
+      await locate('kraken');
       await expect(wrapper.vm.save()).resolves.toBe(false);
       await nextTick();
 
@@ -391,18 +479,31 @@ describe('forms/SwapEventForm', () => {
 
   describe('the transaction lookup', () => {
     it('should run only for an evm swap being added', async () => {
-      await createWrapper(HistoryEventEntryType.EVM_SWAP_EVENT);
+      await createWrapper();
+      await locate('ethereum');
       expect(lookup.enabled()).toBe(true);
 
-      await wrapper.setProps({ entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT });
+      await locate(SOLANA_CHAIN);
       expect(lookup.enabled()).toBe(false);
 
-      await wrapper.setProps({ entryType: HistoryEventEntryType.SWAP_EVENT });
+      await locate('kraken');
       expect(lookup.enabled()).toBe(false);
     });
 
+    it('should be reset when the kind changes, and kept moving between two evm chains', async () => {
+      await createWrapper();
+      await locate('ethereum');
+      const resets = lookup.resets;
+
+      await locate('optimism');
+      expect(lookup.resets).toBe(resets);
+
+      await locate(SOLANA_CHAIN);
+      expect(lookup.resets).toBe(resets + 1);
+    });
+
     it('should not run while an evm swap is edited', async () => {
-      await createWrapper(HistoryEventEntryType.EVM_SWAP_EVENT, {
+      await createWrapper({
         eventsInGroup: [evmEvent('receive', 2, '300', 'USDC'), evmEvent('spend', 1, '0.1', 'ETH')],
         type: 'edit-group',
       });
@@ -417,7 +518,8 @@ describe('forms/SwapEventForm', () => {
     }
 
     it('should add a row to a side and remove it again', async () => {
-      await createWrapper(HistoryEventEntryType.EVM_SWAP_EVENT);
+      await createWrapper();
+      await locate('ethereum');
       await wrapper.find('[data-testid=swap-sub-event-add][data-key=receive]').trigger('click');
       await wrapper.findAll('[data-testid=sub-event-amount][data-key=receive] input')[1].setValue('2');
       expect(amounts('receive')).toEqual(['', '2']);
@@ -428,7 +530,6 @@ describe('forms/SwapEventForm', () => {
     });
 
     async function fillFee(): Promise<void> {
-      await fill('location', 'ethereum');
       await fill('tx-ref', evmTxRef);
       await fillRows();
       await wrapper.find('[data-testid=has-fee] input').setValue(true);
@@ -437,7 +538,8 @@ describe('forms/SwapEventForm', () => {
     }
 
     it('should send no fee once the fee is turned off', async () => {
-      await createWrapper(HistoryEventEntryType.EVM_SWAP_EVENT);
+      await createWrapper();
+      await locate('ethereum');
       await fillFee();
 
       await wrapper.find('[data-testid=has-fee] input').setValue(false);
@@ -449,7 +551,8 @@ describe('forms/SwapEventForm', () => {
     });
 
     it('should start from an empty fee row when the fee is turned back on', async () => {
-      await createWrapper(HistoryEventEntryType.EVM_SWAP_EVENT);
+      await createWrapper();
+      await locate('ethereum');
       await fillFee();
 
       await wrapper.find('[data-testid=has-fee] input').setValue(false);
@@ -474,8 +577,8 @@ describe('forms/SwapEventForm', () => {
         withFee: [evmEvent('spend', 1, '0.1', 'ETH'), evmEvent('receive', 2, '300', 'USDC'), evmEvent('fee', 3, '0.005', 'ETH')],
         withoutFee: [evmEvent('spend', 1, '0.1', 'ETH'), evmEvent('receive', 2, '300', 'USDC')],
       },
-    ] as const)('should show the new group\'s fee rows ($kind)', async ({ kind, withFee, withoutFee }) => {
-      await createWrapper(kind, { eventsInGroup: [...withoutFee], type: 'edit-group' });
+    ] as const)('should show the new group\'s fee rows ($kind)', async ({ withFee, withoutFee }) => {
+      await createWrapper({ eventsInGroup: [...withoutFee], type: 'edit-group' });
 
       await wrapper.setProps({ data: { eventsInGroup: [...withFee], type: 'edit-group' } });
       await vi.advanceTimersToNextTimerAsync();

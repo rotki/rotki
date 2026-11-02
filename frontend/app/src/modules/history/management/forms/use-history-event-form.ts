@@ -40,9 +40,9 @@ interface UseHistoryEventFormOptions<TState extends object, TAdd, TEdit> {
   readonly errorMessages?: Ref<Record<string, string[]>>;
   /**
    * Moves the field errors of a rejected save onto the form's own paths, for an endpoint that names
-   * its fields differently from the form's state.
+   * its fields differently from the form's state. It is given the state the save was made from.
    */
-  readonly serverErrorPaths?: (errors: ValidationErrors) => ValidationErrors;
+  readonly serverErrorPaths?: (errors: ValidationErrors, state: UnwrapNestedRefs<TState>) => ValidationErrors;
 }
 
 interface UseHistoryEventFormReturn<TState extends object, TAdd> {
@@ -110,7 +110,7 @@ export function useHistoryEventForm<
   function fieldErrorsOf(message: FormMessage): Record<string, string[]> {
     if (typeof message === 'string')
       return {};
-    return toServerErrors(serverErrorPaths ? serverErrorPaths(message) : message);
+    return toServerErrors(serverErrorPaths ? serverErrorPaths(message, form.state) : message);
   }
 
   async function save(): Promise<boolean> {

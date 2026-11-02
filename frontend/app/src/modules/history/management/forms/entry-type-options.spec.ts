@@ -32,8 +32,24 @@ function editGroup(entryType: GroupEditableHistoryEvents['entryType']): GroupEve
 }
 
 describe('entryTypeOptions', () => {
-  it('should offer every entry type for a new event', () => {
-    expect(entryTypeOptions(add)).toEqual(Object.values(HistoryEventEntryType));
+  it('should offer a new event every entry type but the chain swaps, which a swap takes from its location', () => {
+    expect(entryTypeOptions(add)).toEqual([
+      HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
+      HistoryEventEntryType.BANK_TRANSACTION_EVENT,
+      HistoryEventEntryType.BITCOIN_EVENT,
+      HistoryEventEntryType.ETH_BLOCK_EVENT,
+      HistoryEventEntryType.ETH_DEPOSIT_EVENT,
+      HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
+      HistoryEventEntryType.EVM_EVENT,
+      HistoryEventEntryType.HISTORY_EVENT,
+      HistoryEventEntryType.SOLANA_EVENT,
+      HistoryEventEntryType.SWAP_EVENT,
+    ]);
+  });
+
+  it('should offer an edited event every entry type, so an edited chain swap still shows its own', () => {
+    expect(entryTypeOptions(editGroup(HistoryEventEntryType.SWAP_EVENT))).toEqual(Object.values(HistoryEventEntryType));
+    expect(entryTypeOptions(edit(HistoryEventEntryType.EVM_EVENT))).toEqual(Object.values(HistoryEventEntryType));
   });
 
   it('should offer only the evm types when adding into an evm transaction', () => {

@@ -93,7 +93,8 @@ test.describe.serial('history events', () => {
 
   /**
    * A form only moves the picker when it is shorter than the dialog's content area, so the window
-   * is made tall enough for the eth block form to fit while the evm swap form does not.
+   * is made tall enough for the eth block form to fit while the evm swap form does not. A swap
+   * becomes an evm swap on an evm chain, so that form is reached through the location.
    */
   test('keeps the entry type picker in place while the form below it changes', async () => {
     const viewport = ctx.sharedPage.viewportSize();
@@ -103,10 +104,12 @@ test.describe.serial('history events', () => {
     await page.selectEntryType('eth block event');
     const start = await page.entryTypeBox();
 
-    for (const type of ['evm swap event', 'swap event', 'eth block event']) {
-      await page.selectEntryType(type);
-      expect(await page.entryTypeBox(), type).toEqual(start);
-    }
+    await page.selectEntryType('swap event');
+    expect(await page.entryTypeBox(), 'swap event').toEqual(start);
+    await page.selectLocation('ethereum');
+    expect(await page.entryTypeBox(), 'evm swap event').toEqual(start);
+    await page.selectEntryType('eth block event');
+    expect(await page.entryTypeBox(), 'eth block event').toEqual(start);
 
     await page.cancelForm();
     if (viewport)
@@ -273,7 +276,7 @@ test.describe.serial('history events', () => {
     const before = await page.rows.idsOf(SWAP_ROW);
 
     await page.openAddDialog();
-    await page.selectEntryType('solana swap event');
+    await page.selectEntryType('swap event');
     await page.fillSolanaSwapEventForm(solanaSwapEventFixture);
     await page.saveForm();
 
@@ -429,7 +432,7 @@ test.describe.serial('evm history events', () => {
     const before = await page.rows.idsOf(SWAP_ROW);
 
     await page.openAddDialog();
-    await page.selectEntryType('evm swap event');
+    await page.selectEntryType('swap event');
     await page.fillEvmSwapEventForm(evmSwapEventFixture);
     await page.saveForm();
 
@@ -458,7 +461,7 @@ test.describe.serial('evm history events', () => {
     const before = await page.rows.idsOf(SWAP_ROW);
 
     await page.openAddDialog();
-    await page.selectEntryType('evm swap event');
+    await page.selectEntryType('swap event');
     await page.fillEvmMultiSwapEventForm(evmMultiSwapEventFixture);
     await page.saveForm();
 

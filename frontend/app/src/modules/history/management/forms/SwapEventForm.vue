@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import type { SwapKind } from '@/modules/history/management/forms/swap-event-form';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';
@@ -11,10 +10,9 @@ import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-/** One form for the three swap entry types; the entry type picked above it sets the kind. */
-const { data, entryType } = defineProps<{
+/** One form for the three swap entry types; a new swap takes its kind from its location. */
+const { data } = defineProps<{
   data: SwapFormData;
-  entryType: SwapKind;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -23,14 +21,12 @@ const {
   form,
   isEvm,
   isPlain,
-  isSolana,
-  locations,
   lookupCanRetry,
   lookupHint,
   lookupLoading,
   retryLookup,
   save,
-} = useSwapEventForm({ data: () => data, entryType: () => entryType, stateUpdated });
+} = useSwapEventForm({ data: () => data, stateUpdated });
 
 const { state } = form;
 
@@ -44,9 +40,8 @@ defineExpose({
   <div>
     <LocationSelector
       v-model="state.location"
-      :disabled="data.type !== 'add' || isSolana"
+      :disabled="data.type !== 'add'"
       data-testid="location"
-      :items="locations"
       :label="t('common.location')"
       required
       :error-messages="form.errors('location')"

@@ -46,11 +46,12 @@ const formComponents: Record<HistoryEventEntryType, Component> = {
   [HistoryEventEntryType.SWAP_EVENT]: SwapEventForm,
 };
 
-/** Forms that serve several entry types, and so are told which one is picked. */
-const formsOfSeveralTypes = new Set<Component>([OnlineHistoryEventForm, SwapEventForm]);
-
+/**
+ * The entry type for the one form that serves several and is told which is picked. The swap form
+ * serves several too, but takes its kind from the swap's location or events.
+ */
 const formEntryType = computed<HistoryEventEntryType | undefined>(() =>
-  (formsOfSeveralTypes.has(formComponents[entryType]) ? entryType : undefined));
+  (formComponents[entryType] === OnlineHistoryEventForm ? entryType : undefined));
 
 const errorCount = computed<number>(() => {
   const formRef = get(form);

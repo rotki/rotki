@@ -5,7 +5,7 @@ import { HistoryEventEntryType, toSnakeCase } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
-import { type AddPayload, emptySwapForm, type SwapFormState, swapIdentifiers, type SwapKind, swapSchema, swapServerErrorPaths, swapStateForGroupAdd, swapStateFromEvents, switchSwapKind, toSwapEditPayload, toSwapPayload } from '@/modules/history/management/forms/swap-event-form';
+import { type AddPayload, emptySwapForm, relocateSwap, type SwapFormState, swapIdentifiers, swapSchema, swapServerErrorPaths, swapStateForGroupAdd, swapStateFromEvents, toSwapEditPayload, toSwapPayload } from '@/modules/history/management/forms/swap-event-form';
 import { emptySubEvent, SUB_EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/swap/swap-sub-event';
 import { useFeeRows } from '@/modules/history/management/forms/swap/use-fee-rows';
 import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
@@ -16,8 +16,6 @@ export type SwapFormData = StandaloneEventData<EvmHistoryEvent | SolanaEvent> | 
 interface UseSwapEventFormOptions {
   /** The dialog's data: a new swap, one added into a transaction, or a group being edited. */
   readonly data: () => SwapFormData;
-  /** The entry type picked above the form, which the form's kind follows. */
-  readonly entryType: () => SwapKind;
   /** The dialog's `prompt-on-close` flag, kept in step with the form being dirty. */
   readonly stateUpdated: ModelRef<boolean>;
 }
@@ -26,10 +24,7 @@ interface UseSwapEventFormReturn {
   readonly form: ReturnType<typeof useHistoryEventForm<SwapFormState, AddPayload, ReturnType<typeof toSwapEditPayload>>>['form'];
   readonly save: () => Promise<boolean>;
   readonly isEvm: ComputedRef<boolean>;
-  readonly isSolana: ComputedRef<boolean>;
   readonly isPlain: ComputedRef<boolean>;
-  /** The locations to pick from: an EVM swap's chains, or every location for the other kinds. */
-  readonly locations: ComputedRef<string[]>;
   readonly lookupLoading: Readonly<Ref<boolean>>;
   readonly lookupCanRetry: Readonly<Ref<boolean>>;
   readonly lookupHint: ComputedRef<string>;
@@ -40,11 +35,13 @@ interface UseSwapEventFormReturn {
  * The swap form's behaviour, for the three swap entry types.
  *
  * @remarks
- * The form seeds from the dialog's data, and follows the entry type picked above it by switching
- * the kind in place: a switch counts as an edit, so it changes the state rather than reseeding.
+ * The form seeds from the dialog's data. A swap being added starts as a plain swap and takes the kind
+ * its location implies, so the picker above offers one swap type: the kind switches in place, and
+ * counts as an edit. A swap added into a transaction takes that transaction's chain, and an edited
+ * swap keeps the kind it was saved as.
  * Only an EVM swap being added looks its transaction up as it is typed.
  */
-export function useSwapEventForm({ data, entryType, stateUpdated }: UseSwapEventFormOptions): UseSwapEventFormReturn {
+export function useSwapEventForm({ data, stateUpdated }: UseSwapEventFormOptions): UseSwapEventFormReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { txChainsToLocation } = useSupportedChains();
 
@@ -53,11 +50,11 @@ export function useSwapEventForm({ data, entryType, stateUpdated }: UseSwapEvent
 
   const { form, save, seed } = useHistoryEventForm({
     errorMessages,
-    initial: () => emptySwapForm(entryType()),
+    initial: emptySwapForm,
     priceIntentKeys: SUB_EVENT_PRICE_INTENT_KEYS,
     priceIntents: state => collectPriceIntents(state.spend, state.receive, state.fee),
     schema: swapSchema(),
-    serverErrorPaths: errors => swapServerErrorPaths(entryType(), errors),
+    serverErrorPaths: (errors, { kind }) => swapServerErrorPaths(kind, errors),
     stateUpdated,
     toEditPayload: toSwapEditPayload,
     transform: state => toSwapPayload(state, generateUUID),
@@ -66,7 +63,6 @@ export function useSwapEventForm({ data, entryType, stateUpdated }: UseSwapEvent
   const { state } = form;
 
   const isEvm = computed<boolean>(() => state.kind === HistoryEventEntryType.EVM_SWAP_EVENT);
-  const isSolana = computed<boolean>(() => state.kind === HistoryEventEntryType.SOLANA_SWAP_EVENT);
   const isPlain = computed<boolean>(() => state.kind === HistoryEventEntryType.SWAP_EVENT);
 
   const {
@@ -87,8 +83,6 @@ export function useSwapEventForm({ data, entryType, stateUpdated }: UseSwapEvent
     txHash: () => state.txRef,
   });
 
-  const locations = computed<string[]>(() => (get(isEvm) ? get(txChainsToLocation) : []));
-
   const lookupHint = computed<string>(() => {
     if (get(lookupLoading))
       return t('actions.evm_tx_lookup.loading');
@@ -100,26 +94,34 @@ export function useSwapEventForm({ data, entryType, stateUpdated }: UseSwapEvent
   function seedFrom(current: SwapFormData): void {
     resetLookup();
     if (current.type === 'group-add')
-      seed(swapStateForGroupAdd(entryType(), current.group, current.nextSequenceId.toString()));
+      seed(swapStateForGroupAdd(current.group, current.nextSequenceId.toString()));
     else if (current.type === 'edit-group')
       seed(swapStateFromEvents(current.eventsInGroup), swapIdentifiers(current.eventsInGroup));
   }
 
-  function switchKind(kind: SwapKind): void {
-    resetLookup();
-    Object.assign(state, switchSwapKind({ ...state }, kind));
+  /**
+   * Gives a swap being added the kind its location implies.
+   *
+   * @remarks
+   * It runs again when the EVM chains change, so a location picked before they loaded is re-read.
+   */
+  function relocate(location: string): void {
+    if (data().type !== 'add')
+      return;
+    const relocated = relocateSwap({ ...state }, location, get(txChainsToLocation));
+    if (relocated.kind !== state.kind)
+      resetLookup();
+    Object.assign(state, relocated);
   }
 
   watchImmediate(data, seedFrom);
-  watch(entryType, switchKind);
+  watch([(): string => state.location, txChainsToLocation], ([location]): void => relocate(location));
   useFeeRows(() => state.hasFee, () => state.fee, emptySubEvent);
 
   return {
     form,
     isEvm,
     isPlain,
-    isSolana,
-    locations,
     lookupCanRetry,
     lookupHint,
     lookupLoading,
