@@ -14,6 +14,7 @@ from fints.exceptions import (
 )
 from fints.formals import UserDefinedSignature
 from fints.parser import FinTS3Parser
+from fints.segments.base import FinTS3Segment
 from fints.utils import Password, mt940_to_array
 
 from rotkehlchen.api.services.banks import BanksService
@@ -462,6 +463,21 @@ def test_initial_transaction_sync_uses_bank_parameter_retention(
     params = next(params for request, params in transport.requests if request == 'transactions')
     assert connector.history_retention_days() == 60
     assert params['end_date'] - params['start_date'] == timedelta(days=60)
+
+
+def test_unknown_bank_parameter_segment_preserves_retention_fallback(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    connector = create_fints(database, function_scope_messages_aggregator, FinTSFixtureTransport())
+    connector._retention_days = 90  # pylint: disable=protected-access
+    client = SimpleNamespace(bpd=SimpleNamespace(
+        find_segment_highest_version=MagicMock(return_value=FinTS3Segment()),
+    ))
+
+    connector._update_retention_days(client)  # pylint: disable=protected-access
+
+    assert connector.history_retention_days() == 90
 
 
 def test_other_banks_process_tan_mechanisms_normally() -> None:

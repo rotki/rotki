@@ -318,7 +318,8 @@ class Fints(BankConnector):
         if (
                 (bpd := getattr(client, 'bpd', None)) is not None and
                 (segment := bpd.find_segment_highest_version('HIKAZS', (5, 6, 7))) is not None and
-                isinstance(period := segment.parameter.storage_period, int) and
+                (parameter := getattr(segment, 'parameter', None)) is not None and
+                isinstance(period := getattr(parameter, 'storage_period', None), int) and
                 period > 0
         ):
             self._retention_days = period
