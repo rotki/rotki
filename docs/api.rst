@@ -34,10 +34,27 @@ In the case of a successful response the ``"result"`` attribute is populated and
 
     {
         "result": null,
-        "message": "An error happened"
+        "message": "An error happened",
+        "cause": "network"
     }
 
-In the case of a failed response the ``"result"`` attribute is going to be ``null`` and the ``"message"`` attribute will optionally contain information about the error.
+In the case of a failed response the ``"result"`` attribute is usually ``null`` and the ``"message"`` attribute will optionally contain information about the error. A few failures hand data back in ``"result"`` next to the error, as documented on their endpoints.
+
+A failed response also carries a ``"cause"``, which says why it failed and so whether retrying can help. The HTTP status code says how the request failed, but not that: a ``502`` is both an unreachable remote and a rejected API key. A successful response carries no ``"cause"``. The causes are:
+
+- ``network``: a remote could not be reached, or did not answer in time. Retrying can help.
+- ``rate_limited``: a remote asked rotki to slow down. Retrying after a wait can help.
+- ``auth``: credentials are missing, rejected or expired.
+- ``remote_rejected``: a remote was reached and refused the request.
+- ``bad_data``: a remote answered with something rotki could not read.
+- ``invalid_input``: the request was malformed or out of range.
+- ``not_found``: the thing the request names does not exist.
+- ``conflict``: the current state does not allow the request.
+- ``forbidden``: the request needs premium, or exceeds its limits.
+- ``unsupported``: rotki does not support this yet, or the configured services cannot serve it.
+- ``local_db``: rotki's own stored data is inconsistent or could not be written.
+- ``internal``: an invariant broke. Only a bug report can help.
+- ``cancelled``: the task was stopped by the user or a logout. Not a failure to show.
 
 Async Queries
 ==============
@@ -1686,11 +1703,13 @@ Query the result of an ongoing backend task
               "status": "not-found",
               "outcome": null
           },
-          "message": "No task with the task id 42 found"
+          "message": "No task with the task id 42 found",
+          "cause": "not_found"
       }
 
    :resjson string status: The status of the given task id. Can be one of ``"completed"``, ``"pending"`` and ``"not-found"``.
-   :resjson any outcome: IF the result of the task id is not yet ready this should be ``null``. If the task has finished then this would contain the original task response. Inside the response can also be an optional status_code entry which would have been the status code of the original endpoint query had it not been made async.
+   :resjson any outcome: IF the result of the task id is not yet ready this should be ``null``. If the task has finished then this would contain the original task response, including the ``cause`` of a failed one. A task cancelled by the user or by a logout finishes with the ``cancelled`` cause.
+   :resjson int status_code: Set once the task has finished: the status code the original endpoint query would have returned had it not been made async.
 
    :statuscode 200: The task's outcome is successfully returned or pending
    :statuscode 400: Provided JSON is in some way malformed
