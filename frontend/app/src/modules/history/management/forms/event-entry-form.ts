@@ -4,7 +4,6 @@ import { HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { z, type ZodType } from 'zod';
 import {
-  BITCOIN_LOCATIONS,
   chainEventCarried,
   type ChainEventKind,
   chainEventKindAt,
@@ -12,6 +11,7 @@ import {
   chainEventRules,
   isChainEventKind,
 } from '@/modules/history/management/forms/chain-event-entry-form';
+import { BITCOIN_LOCATIONS } from '@/modules/history/management/forms/common/chain-location';
 import { groupIdentifierSchema } from '@/modules/history/management/forms/common/group-identifier';
 import {
   carriedThrough,

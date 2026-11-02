@@ -2,6 +2,7 @@ import type { EventEntryFormState } from '@/modules/history/management/forms/eve
 import { HistoryEventEntryType } from '@rotki/common';
 import { z } from 'zod';
 import { SOLANA_CHAIN } from '@/modules/assets/types';
+import { BITCOIN_LOCATIONS, ChainFamily, chainFamilyAt } from '@/modules/history/management/forms/common/chain-location';
 import {
   optionalEthAddress,
   optionalSolanaAddress,
@@ -18,9 +19,8 @@ export type ChainEventKind =
   | typeof HistoryEventEntryType.SOLANA_EVENT
   | typeof HistoryEventEntryType.BITCOIN_EVENT;
 
-export const BITCOIN_LOCATIONS = ['bitcoin', 'bitcoin_cash'] as const;
-
 interface ChainEventRules {
+  readonly chain: ChainFamily;
   /** The address field, for the chains that have one. */
   readonly address?: () => z.ZodType<string>;
   /** The asset, picked unless the chain decides it. */
@@ -32,32 +32,27 @@ interface ChainEventRules {
    * the form shows that location but never sends it.
    */
   readonly fixedLocation?: string;
-  /** The locations to pick from, when the kind has a list of its own; otherwise the EVM chains or none. */
-  readonly locations?: readonly string[];
-  /** Whether an event on this location is an event of this kind, given the chains an EVM event can be on. */
-  readonly holds: (location: string, evmLocations: readonly string[]) => boolean;
 }
 
 /** Everything the EVM, Solana and bitcoin events differ in, so each rule below reads its kind's row. */
 const CHAIN_EVENT_RULES: Record<ChainEventKind, ChainEventRules> = {
   [HistoryEventEntryType.BITCOIN_EVENT]: {
-    holds: location => Array.prototype.includes.call(BITCOIN_LOCATIONS, location),
+    chain: ChainFamily.BITCOIN,
     location: requiredLocation,
-    locations: BITCOIN_LOCATIONS,
     txRef: requiredBitcoinTxId,
   },
   [HistoryEventEntryType.EVM_EVENT]: {
     address: optionalEthAddress,
     asset: requiredAsset,
-    holds: (location, evmLocations) => evmLocations.includes(location),
+    chain: ChainFamily.EVM,
     location: requiredLocation,
     txRef: requiredEvmTxHash,
   },
   [HistoryEventEntryType.SOLANA_EVENT]: {
     address: optionalSolanaAddress,
     asset: requiredAsset,
+    chain: ChainFamily.SOLANA,
     fixedLocation: SOLANA_CHAIN,
-    holds: location => location === SOLANA_CHAIN,
     location: z.string,
     txRef: requiredSolanaSignature,
   },
@@ -79,7 +74,8 @@ export function chainEventRules(kind: ChainEventKind): ChainEventRules {
 
 /** The chain event kind a location implies, if any. */
 export function chainEventKindAt(location: string, evmLocations: readonly string[]): ChainEventKind | undefined {
-  return CHAIN_EVENT_KINDS.find(kind => CHAIN_EVENT_RULES[kind].holds(location, evmLocations));
+  const chain = chainFamilyAt(location, evmLocations);
+  return CHAIN_EVENT_KINDS.find(kind => CHAIN_EVENT_RULES[kind].chain === chain);
 }
 
 /** The location of an event of this kind: its fixed one, or else the one given. */
