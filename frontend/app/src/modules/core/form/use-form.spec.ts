@@ -58,6 +58,26 @@ describe('useForm', () => {
       expect(form.errors('txRef')).toEqual(['tx_required']);
     });
 
+    it('should hide a field\'s errors again once it is untouched, and leave the other fields touched', () => {
+      const form = createForm();
+      form.touch('txRef');
+      form.touch('spend.0.amount');
+
+      form.untouch('txRef');
+
+      expect(form.errors('txRef')).toEqual([]);
+      expect(form.errors('spend.0.amount')).not.toEqual([]);
+    });
+
+    it('should still show every error after a submit, untouched or not', async () => {
+      const form = createForm();
+      await form.submit();
+
+      form.untouch('txRef');
+
+      expect(form.errors('txRef')).toEqual(['tx_required']);
+    });
+
     it('should key errors by dotted path so rows do not share messages', () => {
       const form = createForm(() => ({
         spend: [{ amount: '1', asset: 'ETH' }, { amount: '', asset: '' }],

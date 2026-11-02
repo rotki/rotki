@@ -453,6 +453,19 @@ describe('forms/SwapEventForm', () => {
       expect(payload).toMatchObject({ spend: [{ amount: '0.1', asset: 'ETH' }] });
     });
 
+    it('should not flag the signature a move to solana emptied, until it is touched', async () => {
+      await createWrapper();
+      await locate('ethereum');
+      await fill('tx-ref', evmTxRef);
+      await wrapper.find('[data-testid=tx-ref] input').trigger('blur');
+
+      await locate(SOLANA_CHAIN);
+      expect(wrapper.find('[data-testid=tx-ref] .details').text()).toBe('');
+
+      await wrapper.find('[data-testid=tx-ref] input').trigger('blur');
+      expect(wrapper.find('[data-testid=tx-ref] .details').text()).not.toBe('');
+    });
+
     it('should count a switch as an edit', async () => {
       await createWrapper();
 
