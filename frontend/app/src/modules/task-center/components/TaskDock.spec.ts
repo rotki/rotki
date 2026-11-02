@@ -260,6 +260,24 @@ describe('taskDock', () => {
     expect(wrapper.find('[data-testid=task-dock-steps]').exists()).toBe(false);
   });
 
+  it('should say background tasks are running while only the backend\'s own work runs', () => {
+    set(activities, [
+      activity(ActivityKind.BACKGROUND_TASK, 'db_upload:3', ActivityStatus.RUNNING),
+      activity(ActivityKind.BACKGROUND_TASK, 'data_updates:4', ActivityStatus.RUNNING),
+    ]);
+
+    expect(createWrapper().find('[data-testid=task-dock-caption]').text()).toBe('task_dock.background');
+  });
+
+  it('should describe upkeep generically when background tasks run beside it', () => {
+    set(activities, [
+      activity(ActivityKind.BACKGROUND_TASK, 'db_upload:3', ActivityStatus.RUNNING),
+      activity(ActivityKind.PRICES, 'latest', ActivityStatus.RUNNING),
+    ]);
+
+    expect(createWrapper().find('[data-testid=task-dock-caption]').text()).toBe('task_dock.updating');
+  });
+
   /**
    * `isActive` is WORKING while anything is RUNNING *or PENDING*, but the panel lists running work
    * only. The removed sidebar list once rendered "0 pending tasks" above an empty body in exactly this

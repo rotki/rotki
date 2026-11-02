@@ -11,7 +11,7 @@ import {
   BackgroundTaskStatus,
   type BackgroundTaskStatusData,
 } from './background-task-types';
-import { backgroundTaskActivity, backgroundTaskLabel } from './background-task.activity';
+import { backgroundTaskActivity, backgroundTaskLabel, backgroundTaskTitle } from './background-task.activity';
 
 type MirrorOutcome = Result<void, TaskError>;
 
@@ -80,7 +80,7 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
         priority: Priority.BACKGROUND,
         run: async () => outcome,
         subtitle: backgroundTaskLabel(task, getChainName),
-        title: t('task_center.group.background_task'),
+        title: t(backgroundTaskTitle(task)),
       });
       mirrors.delete(task.id);
     })());

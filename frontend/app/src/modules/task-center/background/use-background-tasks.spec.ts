@@ -79,6 +79,7 @@ describe('useBackgroundTasks', () => {
       kind: ActivityKind.BACKGROUND_TASK,
       lane: BACKGROUND_LANE,
       subtitle: { key: 'task_center.activity.background_task.evm_transactions', params: { address: '0xabc' } },
+      title: 'task_center.background_task.evm_transactions',
     });
   });
 

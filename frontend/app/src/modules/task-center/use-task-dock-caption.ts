@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
 import { someInSubtree, subtreeLeaves } from '@/modules/task-center/core/tree';
-import { type Activity, type ActivityId, ActivityStatus } from '@/modules/task-center/core/types';
+import { type Activity, type ActivityId, ActivityKind, ActivityStatus } from '@/modules/task-center/core/types';
 import { DockState } from '@/modules/task-center/dock-state';
 import { useActivityLabel } from '@/modules/task-center/use-activity-label';
 import { useDockPrimary } from '@/modules/task-center/use-dock-primary';
@@ -78,6 +78,11 @@ export function useTaskDockCaption(
       : t('task_dock.done_count', { count: roots.length }, roots.length);
   }
 
+  /** Whether everything in flight is the backend's own background work, which the pill then names as such. */
+  function onlyBackgroundTasks(): boolean {
+    return toValue(jobs).every(job => job.activity.kind === ActivityKind.BACKGROUND_TASK);
+  }
+
   /** Dismissed jobs are described by their failures when they hold any, the way the icon they shrink to is. */
   function dismissedCaption(): string {
     const withFailure = get(dismissed).filter(root => someInSubtree(toValue(children), root, isFailed));
@@ -99,7 +104,9 @@ export function useTaskDockCaption(
         const job = get(primary);
         if (!job)
           return t('task_dock.queued');
-        return get(isPrimaryRanked) ? job.activity.title : t('task_dock.updating');
+        if (get(isPrimaryRanked))
+          return job.activity.title;
+        return onlyBackgroundTasks() ? t('task_dock.background') : t('task_dock.updating');
       }
     }
   });

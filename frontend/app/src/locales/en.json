@@ -7015,6 +7015,21 @@
         "chain": "Syncing transactions on {chain}"
       }
     },
+    "background_task": {
+      "calendar_sync": "Calendar sync",
+      "data_updates": "Data updates",
+      "db_upload": "Database backup",
+      "eth_staking": "Ethereum staking",
+      "evm_accounts_detection": "Account detection",
+      "evm_receipts": "Transaction receipts",
+      "evm_transactions": "Transaction sync",
+      "exchange_history": "Exchange history",
+      "historical_balances": "Historical balances",
+      "other": "Background task",
+      "snapshot_balances": "Balance snapshot",
+      "transaction_decoding": "Transaction decoding",
+      "xpub_derivation": "Xpub addresses"
+    },
     "count": {
       "transactions": "{count} transaction | {count} transactions"
     },
@@ -7060,6 +7075,7 @@
   "task_dock": {
     "attention": "{title} needs attention",
     "attention_count": "{count} job needs attention | {count} jobs need attention",
+    "background": "Running background tasks",
     "cancelled": "{title} cancelled",
     "cancelled_count": "{count} job cancelled | {count} jobs cancelled",
     "detail": {

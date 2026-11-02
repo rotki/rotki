@@ -75,6 +75,31 @@ const LABELS: Readonly<Record<Exclude<BackgroundTaskKind, typeof BackgroundTaskK
   [BackgroundTaskKind.XPUB_DERIVATION]: msg.$t('task_center.activity.background_task.xpub_derivation'),
 };
 
+/**
+ * The short name each kind's row is titled with, as other rows are by their job ("Transaction sync").
+ * Every row already sits under the "Background tasks" group, so the title says what the task does.
+ */
+const TITLES: Readonly<Record<BackgroundTaskKind, MessageKey>> = {
+  [BackgroundTaskKind.CALENDAR_SYNC]: msg.$t('task_center.background_task.calendar_sync'),
+  [BackgroundTaskKind.DATA_UPDATES]: msg.$t('task_center.background_task.data_updates'),
+  [BackgroundTaskKind.DB_UPLOAD]: msg.$t('task_center.background_task.db_upload'),
+  [BackgroundTaskKind.ETH_STAKING]: msg.$t('task_center.background_task.eth_staking'),
+  [BackgroundTaskKind.EVM_ACCOUNTS_DETECTION]: msg.$t('task_center.background_task.evm_accounts_detection'),
+  [BackgroundTaskKind.EVM_RECEIPTS]: msg.$t('task_center.background_task.evm_receipts'),
+  [BackgroundTaskKind.EVM_TRANSACTIONS]: msg.$t('task_center.background_task.evm_transactions'),
+  [BackgroundTaskKind.EXCHANGE_HISTORY]: msg.$t('task_center.background_task.exchange_history'),
+  [BackgroundTaskKind.HISTORICAL_BALANCES]: msg.$t('task_center.background_task.historical_balances'),
+  [BackgroundTaskKind.OTHER]: msg.$t('task_center.background_task.other'),
+  [BackgroundTaskKind.SNAPSHOT_BALANCES]: msg.$t('task_center.background_task.snapshot_balances'),
+  [BackgroundTaskKind.TRANSACTION_DECODING]: msg.$t('task_center.background_task.transaction_decoding'),
+  [BackgroundTaskKind.XPUB_DERIVATION]: msg.$t('task_center.background_task.xpub_derivation'),
+};
+
+/** The key of the row's title. */
+export function backgroundTaskTitle(task: BackgroundTask): MessageKey {
+  return TITLES[backgroundTaskKindOf(task.kind)];
+}
+
 interface LabelParams {
   readonly params: Record<string, unknown>;
   readonly plural?: number;
