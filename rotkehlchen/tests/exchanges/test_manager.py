@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
@@ -83,7 +84,10 @@ def test_requery_exchange_history_events_flushes_and_finishes_on_error() -> None
     exchange.name = 'test'
     exchange.location = Location.BINANCE
     exchange.location_id.return_value = 'binance_test'
-    exchange.requery_online_history_events_into_queue.side_effect = RemoteError('query failed')
+    exchange.requery_online_history_events_into_queue.side_effect = RemoteError(
+        'query failed',
+        cause=FailureCause.NETWORK,
+    )
     manager.connected_exchanges[Location.BINANCE].append(exchange)
     event_queue = MagicMock(spec=HistoryEventQueue)
 
@@ -116,8 +120,14 @@ def test_query_exchange_history_events_continues_after_remote_error() -> None:
         exchange.name = f'test_{idx}'
         exchange.location = Location.BINANCE
         exchange.location_id.return_value = f'binance_test_{idx}'
-    exchanges[0].query_history_events.side_effect = RemoteError('first failed')
-    exchanges[1].query_history_events.side_effect = RemoteError('second failed')
+    exchanges[0].query_history_events.side_effect = RemoteError(
+        'first failed',
+        cause=FailureCause.NETWORK,
+    )
+    exchanges[1].query_history_events.side_effect = RemoteError(
+        'second failed',
+        cause=FailureCause.NETWORK,
+    )
     manager.connected_exchanges[Location.BINANCE].extend(exchanges)
 
     with pytest.raises(

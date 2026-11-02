@@ -418,7 +418,7 @@ class ExchangeManager:
             exchanges_list.extend(exchanges)
 
         errors: list[str] = []
-        causes: set[FailureCause | None] = set()
+        causes: set[FailureCause] = set()
         for exchange in exchanges_list:
             if exchange.location_id() in excluded:
                 log.info(

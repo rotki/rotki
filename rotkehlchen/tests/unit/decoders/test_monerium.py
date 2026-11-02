@@ -9,6 +9,7 @@ from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.monerium.decoder import MoneriumCommonDecoder
 from rotkehlchen.constants.assets import A_ETH_EURE
 from rotkehlchen.db.constants import TX_DECODED
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -375,7 +376,7 @@ def test_monerium_post_processing_handles_remote_error(
         oauth_client = FailingOAuthClient()
 
         def update_events(self, events: list[EvmEvent]) -> None:
-            raise RemoteError(error_message)
+            raise RemoteError(error_message, cause=FailureCause.NETWORK)
 
     decoder.monerium_api = FailingMoneriumAPI()
     decoded_events = [

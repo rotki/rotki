@@ -27,6 +27,7 @@ from rotkehlchen.chain.evm.decoding.yearn import decoder as yearn_decoder_module
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
@@ -217,7 +218,10 @@ def test_staking_token_saved_when_the_nodes_fail(
 
     with (
         patch.object(requests, 'get', wraps=mock_yearn_api),
-        patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError('nodes down')),
+        patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError(
+            'nodes down',
+            cause=FailureCause.NETWORK,
+        )),
     ):
         query_yearn_vaults(db=database, node_inquirer=ethereum_inquirer)
 

@@ -28,6 +28,7 @@ from rotkehlchen.banks.normalization import (
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.fval import FVal
@@ -109,7 +110,10 @@ class BankConnector(ExchangeInterface, ABC):
 
     def answer_authentication(self, response: str | None) -> None:
         """Continue an interactive authentication request. Static connectors never use it."""
-        raise BankError(f'{self.manifest.display_name} has no pending authentication request')
+        raise BankError(
+            f'{self.manifest.display_name} has no pending authentication request',
+            cause=FailureCause.CONFLICT,
+        )
 
     def pending_authentication(self) -> BankAuthChallenge | None:
         """Return a resumable authentication challenge restored with the connector."""

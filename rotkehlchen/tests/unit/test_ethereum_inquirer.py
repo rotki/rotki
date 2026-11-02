@@ -32,6 +32,7 @@ from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import EventNotInABI, InputError, RemoteError
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
@@ -416,25 +417,43 @@ def _test_get_blocknumber_by_time(ethereum_inquirer: EthereumInquirer) -> None:
             (EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT),
             {
                 'etherscan': BLOCKNUMBER_BY_TS_BLOCK,
-                'routescan': RemoteError('Routescan should not be queried'),
-                'blockscout': RemoteError('Blockscout should not be queried'),
+                'routescan': RemoteError(
+                    'Routescan should not be queried',
+                    cause=FailureCause.NETWORK,
+                ),
+                'blockscout': RemoteError(
+                    'Blockscout should not be queried',
+                    cause=FailureCause.NETWORK,
+                ),
             },
             ['etherscan'],
         ),
         (
             (EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT),
             {
-                'etherscan': RemoteError('Intentional etherscan error'),
+                'etherscan': RemoteError(
+                    'Intentional etherscan error',
+                    cause=FailureCause.NETWORK,
+                ),
                 'routescan': BLOCKNUMBER_BY_TS_BLOCK,
-                'blockscout': RemoteError('Blockscout should not be queried'),
+                'blockscout': RemoteError(
+                    'Blockscout should not be queried',
+                    cause=FailureCause.NETWORK,
+                ),
             },
             ['etherscan', 'routescan'],
         ),
         (
             (EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN),
             {
-                'etherscan': RemoteError('Etherscan should not be queried'),
-                'routescan': RemoteError('Intentional routescan error'),
+                'etherscan': RemoteError(
+                    'Etherscan should not be queried',
+                    cause=FailureCause.NETWORK,
+                ),
+                'routescan': RemoteError(
+                    'Intentional routescan error',
+                    cause=FailureCause.NETWORK,
+                ),
                 'blockscout': BLOCKNUMBER_BY_TS_BLOCK,
             },
             ['routescan', 'blockscout'],

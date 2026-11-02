@@ -24,6 +24,7 @@ from rotkehlchen.errors.api import (
     PremiumAuthenticationError,
     PremiumPermissionError,
 )
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -346,7 +347,10 @@ def test_user_creation_with_invalid_premium_credentials(
     for side_effect, expected_msg in (
         (PremiumAuthenticationError('Wrong key or secret'), 'Could not verify keys for the new account. Wrong key or secret.'),  # noqa: E501
         (PremiumPermissionError('Device limit of 4 exceeded'), 'Could not activate premium on this device. Device limit of 4 exceeded. _DEVICE_LIMIT_LINK_'),  # noqa: E501
-        (RemoteError('Rotki server unavailable'), 'Could not reach the rotki server to verify premium keys. Rotki server unavailable.'),  # noqa: E501
+        (RemoteError(
+            'Rotki server unavailable',
+            cause=FailureCause.NETWORK,
+        ), 'Could not reach the rotki server to verify premium keys. Rotki server unavailable.'),
     ):
         with (
             ExitStack() as stack,
@@ -1182,7 +1186,10 @@ def test_user_set_premium_credentials_errors(
 
     # Set valid format but not authenticated premium credentials for logged in user
     data = {'premium_api_key': VALID_PREMIUM_KEY, 'premium_api_secret': VALID_PREMIUM_SECRET}
-    with patch('rotkehlchen.premium.premium.Premium.authenticate_device', side_effect=RemoteError('Invalid API-KEY')):  # noqa: E501
+    with patch('rotkehlchen.premium.premium.Premium.authenticate_device', side_effect=RemoteError(
+        'Invalid API-KEY',
+        cause=FailureCause.NETWORK,
+    )):
         response = requests.patch(
             api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
             json=data,

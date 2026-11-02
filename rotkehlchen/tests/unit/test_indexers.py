@@ -7,6 +7,7 @@ import pytest
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.types import deserialize_evm_tx_hash
@@ -20,15 +21,15 @@ if TYPE_CHECKING:
 
 ETHERSCAN_PATCH: Final = patch(
     target='rotkehlchen.externalapis.etherscan.Etherscan._query',
-    side_effect=RemoteError('BOOM'),
+    side_effect=RemoteError('BOOM', cause=FailureCause.NETWORK),
 )
 BLOCKSCOUT_PATCH: Final = patch(
     target='rotkehlchen.externalapis.blockscout.Blockscout._query_and_process',
-    side_effect=RemoteError('BOOM'),
+    side_effect=RemoteError('BOOM', cause=FailureCause.NETWORK),
 )
 ROUTESCAN_PATCH: Final = patch(
     target='rotkehlchen.externalapis.routescan.Routescan._query',
-    side_effect=RemoteError('BOOM'),
+    side_effect=RemoteError('BOOM', cause=FailureCause.NETWORK),
 )
 
 

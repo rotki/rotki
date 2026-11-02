@@ -39,7 +39,8 @@ from rotkehlchen.errors.api import (
     PremiumAuthenticationError,
     PremiumPermissionError,
 )
-from rotkehlchen.errors.misc import BackupTooLargeError, InputError, RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import BackupTooLargeError, InputError, RemoteError, cause_for_status
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import BadData
@@ -186,7 +187,7 @@ def check_response_status_code(
             f'rotki server responded with an error response to {response.url} '
             f'{response.status_code=} and {response.text=}',
         )
-        raise RemoteError(user_msg)
+        raise RemoteError(user_msg, cause=cause_for_status(response.status_code))
 
 
 def _process_dict_response(
@@ -205,13 +206,16 @@ def _process_dict_response(
         result_dict = jsonloads_dict(response.text)
     except JSONDecodeError as e:
         log.error(f'Could not decode rotki response {response.text} as json due to {e}')
-        raise RemoteError('Could not decode rotki server response as json. Check logs') from e
+        raise RemoteError(
+            'Could not decode rotki server response as json. Check logs',
+            cause=FailureCause.BAD_DATA,
+        ) from e
 
     if response.status_code == HTTPStatus.UNAUTHORIZED:
         raise PremiumAuthenticationError(result_dict.get('error', 'no message given'))
 
     if 'error' in result_dict:
-        raise RemoteError(result_dict['error'])
+        raise RemoteError(result_dict['error'], cause=FailureCause.REMOTE_REJECTED)
 
     return result_dict
 
@@ -260,7 +264,7 @@ def fetch_capability_unlocks() -> dict[str, str]:
     except requests.exceptions.RequestException as e:
         msg = f'Could not connect to rotki server due to {e!s}'
         log.error(msg)
-        raise RemoteError(msg) from e
+        raise RemoteError(msg, cause=FailureCause.NETWORK) from e
 
     result = _process_dict_response(
         response=response,
@@ -269,7 +273,7 @@ def fetch_capability_unlocks() -> dict[str, str]:
     if not isinstance(unlocks := result.get('unlocks'), dict):
         msg = 'Problem connecting to rotki server. limits/unlocks response missing unlocks key'
         log.error(f'{msg}. Response was {result}')
-        raise RemoteError(msg)
+        raise RemoteError(msg, cause=FailureCause.BAD_DATA)
 
     return cast('dict[str, str]', unlocks)
 
@@ -500,6 +504,7 @@ def _decode_response_json(response: requests.Response) -> Any:
         raise RemoteError(
             f'Could not decode json from {response.text} to {response.request.method} '
             f'query {response.url}',
+            cause=FailureCause.BAD_DATA,
         ) from e
 
     return json_response
@@ -585,7 +590,7 @@ class Premium:
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.NETWORK) from e
 
         result = _process_dict_response(response)
         result['current_device_id'] = extended_get_machine_id(self.username)
@@ -616,7 +621,10 @@ class Premium:
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to check device registration due to: {e}') from e
+            raise RemoteError(
+                f'Failed to check device registration due to: {e}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         match response.status_code:
             case HTTPStatus.OK:
@@ -718,7 +726,10 @@ class Premium:
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to register device due to: {e}') from e
+            raise RemoteError(
+                f'Failed to register device due to: {e}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code in (HTTPStatus.CREATED, HTTPStatus.CONFLICT):
             # Cache Docker device info on successful registration
@@ -787,7 +798,10 @@ class Premium:
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to delete device due to: {e}') from e
+            raise RemoteError(
+                f'Failed to delete device due to: {e}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         check_response_status_code(response=response, status_codes=[HTTPStatus.OK])
 
@@ -837,7 +851,10 @@ class Premium:
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to edit device due to: {e}') from e
+            raise RemoteError(
+                f'Failed to edit device due to: {e}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         check_response_status_code(response=response, status_codes=[HTTPStatus.OK])
 
@@ -942,7 +959,7 @@ class Premium:
                     )
                 except requests.exceptions.RequestException as e:
                     log.error(msg := f'Could not connect to rotki server due to {e!s}')
-                    raise RemoteError(msg) from e
+                    raise RemoteError(msg, cause=FailureCause.NETWORK) from e
 
                 expected_status = HTTPStatus.OK if is_last_chunk else HTTPStatus.PARTIAL_CONTENT
                 if response.status_code != expected_status:
@@ -975,7 +992,7 @@ class Premium:
                     upload_id = response.json()['upload_id']
                 except (json.JSONDecodeError, KeyError) as e:
                     log.error(msg := f'Invalid response from server during chunked upload: {e!s}')
-                    raise RemoteError(msg) from e
+                    raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
     def pull_data(self) -> bytes | None:
         """Pulls data from the server and returns the binary file with the database encrypted
@@ -999,7 +1016,7 @@ class Premium:
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.NETWORK) from e
 
         check_response_status_code(response, (HTTPStatus.OK, HTTPStatus.NOT_FOUND))
         if response.status_code == HTTPStatus.NOT_FOUND:
@@ -1027,7 +1044,7 @@ class Premium:
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.NETWORK) from e
 
         result = _process_dict_response(response)
         try:
@@ -1039,7 +1056,7 @@ class Premium:
         except KeyError as e:
             msg = f'Problem connecting to rotki server. last_data_metadata response missing {e!s} key'  # noqa: E501
             log.error(f'{msg}. Response was {result}')
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
         return metadata
 
@@ -1066,13 +1083,13 @@ class Premium:
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.NETWORK) from e
 
         result = _process_dict_response(response)
         if 'data' not in result:
             msg = 'Problem connecting to rotki server. statistics_rendererv2 response missing data key'  # noqa: E501
             log.error(f'{msg}. Response was {result}')
-            raise RemoteError(msg)
+            raise RemoteError(msg, cause=FailureCause.BAD_DATA)
 
         return result['data']
 
@@ -1098,7 +1115,7 @@ class Premium:
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.NETWORK) from e
 
         self._cached_limits = cast('UserLimits', _process_dict_response(response))
         log.debug(f'Fetched user limits from server: {self._cached_limits}')
@@ -1164,7 +1181,7 @@ class Premium:
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.NETWORK) from e
 
         check_response_status_code(
             response=response,

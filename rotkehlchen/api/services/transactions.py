@@ -38,6 +38,7 @@ from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import PremiumApiError
 from rotkehlchen.errors.asset import WrongAssetType
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     AlreadyExists,
     DataIntegrityError,
@@ -1416,6 +1417,7 @@ class TransactionsService:
         )) is None:
             raise RemoteError(
                 f'Failed to fetch transaction {tx_ref!s} from the zksync lite API',
+                cause=FailureCause.NOT_FOUND,
             )
 
         self.rotkehlchen.chains_aggregator.zksync_lite.decode_transaction(

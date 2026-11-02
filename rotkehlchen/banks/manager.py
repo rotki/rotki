@@ -23,6 +23,7 @@ from rotkehlchen.banks.errors import (
     BankMFARequired,
 )
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -461,6 +462,7 @@ class BankManager:
             banks = [bank]
 
         errors = []
+        causes: set[FailureCause] = set()
         for bank in banks:
             try:
                 self.sync_one(bank)
@@ -468,8 +470,12 @@ class BankManager:
                 raise
             except RemoteError as e:
                 errors.append(f'{bank.manifest.display_name} {bank.name}: {e!s}')
+                causes.add(e.cause)
         if len(errors) != 0:
-            raise RemoteError('; '.join(errors))
+            raise RemoteError(
+                '; '.join(errors),
+                cause=causes.pop() if len(causes) == 1 else FailureCause.REMOTE_REJECTED,
+            )
 
     def sync_one(self, bank: BankConnector) -> None:
         """Run one connection's history sync and record its status.

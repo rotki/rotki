@@ -36,6 +36,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.internal_tx_conflicts import INTERNAL_TX_CONFLICT_ACTION_REPULL
 from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.fval import FVal
@@ -1591,7 +1592,7 @@ def test_repulling_transaction_fetch_error_does_not_drop_existing_data(
     with patch.object(
         rotki.chains_aggregator.ethereum.node_inquirer,
         'get_transaction_by_hash',
-        side_effect=RemoteError('indexer temporarily unavailable'),
+        side_effect=RemoteError('indexer temporarily unavailable', cause=FailureCause.NETWORK),
     ):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
@@ -1731,7 +1732,7 @@ def test_repulling_transaction_internal_fetch_error_restores_previous_internal_t
         patch.object(
             rotki.chains_aggregator.ethereum.transactions,
             '_query_internal_transactions_for_parent_hash',
-            side_effect=RemoteError('internal indexer unavailable'),
+            side_effect=RemoteError('internal indexer unavailable', cause=FailureCause.NETWORK),
         ),
     ):
         response = requests.put(
@@ -1802,7 +1803,7 @@ def test_repulling_transaction_internal_replace_failure_rolls_back_tx_data(
         patch.object(
             rotki.chains_aggregator.ethereum.transactions,
             '_replace_internal_transactions_for_parent_hash',
-            side_effect=RemoteError('failed replacing internals'),
+            side_effect=RemoteError('failed replacing internals', cause=FailureCause.NETWORK),
         ),
     ):
         response = requests.put(

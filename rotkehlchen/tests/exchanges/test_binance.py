@@ -18,6 +18,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.binance import (
     API_TIME_INTERVAL_CONSTRAINT_TS,
@@ -478,7 +479,7 @@ def test_binance_query_history_events_failure_keeps_range(function_scope_binance
         return []
 
     def query_failure(**kwargs):
-        raise RemoteError('boom')
+        raise RemoteError('boom', cause=FailureCause.NETWORK)
 
     binance = function_scope_binance
     end_ts = Timestamp(1638529919)
@@ -517,7 +518,7 @@ def test_binance_flushes_asset_movements_before_trade_failure(
         patch.object(
             function_scope_binance,
             '_query_online_trade_history',
-            side_effect=RemoteError('failed to query trades'),
+            side_effect=RemoteError('failed to query trades', cause=FailureCause.NETWORK),
         ),
     ):
         _, actual_end_ts = function_scope_binance._query_online_history_events(
@@ -553,8 +554,14 @@ def test_binance_history_query_persists_completed_pairs_on_rate_limit(
             'api_query_list',
             side_effect=(
                 [first_trade],
-                RemoteError('HTTP status code: 429 after exhausting the retries'),
-                RemoteError('HTTP status code: 429 after exhausting the retries'),
+                RemoteError(
+                    'HTTP status code: 429 after exhausting the retries',
+                    cause=FailureCause.NETWORK,
+                ),
+                RemoteError(
+                    'HTTP status code: 429 after exhausting the retries',
+                    cause=FailureCause.NETWORK,
+                ),
                 [second_trade],
             ),
         ) as mock_api_query,

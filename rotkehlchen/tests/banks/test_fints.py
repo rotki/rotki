@@ -31,6 +31,7 @@ from rotkehlchen.banks.fints import (
 from rotkehlchen.banks.manager import BankCredentialInput, BankManager, BankSyncStatus
 from rotkehlchen.banks.manifest import AuthPrimitive
 from rotkehlchen.banks.normalization import BankTransactionKind
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.banks import FinTSFixtureTransport
 from rotkehlchen.types import ExchangeApiCredentials, Location
@@ -906,7 +907,10 @@ def test_accepted_tan_stays_accepted_when_the_resumed_sync_fails(
     with (
         patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
         patch.object(connector, 'pending_authentication_resumes_history', return_value=True),
-        patch.object(connector, 'query_history_events', side_effect=RemoteError('bank down')),
+        patch.object(connector, 'query_history_events', side_effect=RemoteError(
+            'bank down',
+            cause=FailureCause.NETWORK,
+        )),
     ):
         assert manager.answer_bank_authentication(
             name=connector.name,

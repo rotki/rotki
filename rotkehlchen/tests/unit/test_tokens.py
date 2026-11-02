@@ -25,6 +25,7 @@ from rotkehlchen.constants.assets import A_CRV, A_DAI, A_ETH, A_OMG, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError, RequestTooLargeError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -418,7 +419,7 @@ def test_query_chunks_marks_failure_on_remote_error(tokens: EthereumTokens) -> N
             call_order: list[Any],
     ) -> dict[Asset, FVal]:
         if any(token.identifier == token_data[0].identifier for token in tokens):
-            raise RemoteError('all nodes failed')
+            raise RemoteError('all nodes failed', cause=FailureCause.NETWORK)
 
         return {Asset(tokens[0].identifier): ONE}
 
@@ -1130,7 +1131,7 @@ def test_erc721_token_ownership_verification(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('multicall_mock_kwargs', [
-    {'side_effect': RemoteError('node down')},
+    {'side_effect': RemoteError('node down', cause=FailureCause.NETWORK)},
     {'return_value': []},  # fewer results than calls
     {'return_value': [(False, b''), (True, b'')]},  # failed and empty ownerOf results
 ])
@@ -1240,7 +1241,7 @@ def test_erc721_balances_count_only_owned_token_ids(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('multicall_mock_kwargs', [
-    {'side_effect': RemoteError('node down')},
+    {'side_effect': RemoteError('node down', cause=FailureCause.NETWORK)},
     {'return_value': []},  # fewer results than calls
 ])
 def test_erc721_balances_raise_on_unknown_ownership(

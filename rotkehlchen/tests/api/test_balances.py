@@ -31,6 +31,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import LocationData
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -764,7 +765,7 @@ def test_balance_snapshot_error_message(
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
 
     def mock_binance_method() -> None:
-        raise RemoteError('Made a booboo')
+        raise RemoteError('Made a booboo', cause=FailureCause.NETWORK)
 
     binance_patch = patch.object(binance, 'first_connection', side_effect=mock_binance_method)
     with binance_patch:
@@ -1679,7 +1680,10 @@ def test_blockchain_balances_partial_chain_failure(
 
     def mock_query_chain_balances(blockchain: SupportedBlockchain, **kwargs: Any) -> None:
         if blockchain == SupportedBlockchain.OPTIMISM:
-            raise RemoteError('Error querying information from optimism')
+            raise RemoteError(
+                'Error querying information from optimism',
+                cause=FailureCause.NETWORK,
+            )
         chains_aggregator.balances.eth[eth_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(2))  # noqa: E501
 
     with patch.object(chains_aggregator, '_query_chain_balances', side_effect=mock_query_chain_balances):  # noqa: E501

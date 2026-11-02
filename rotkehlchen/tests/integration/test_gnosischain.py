@@ -9,6 +9,7 @@ from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.gnosis.transactions import DEPLOYED_TS
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
@@ -89,7 +90,7 @@ def test_gnosischain_specific_chain_data_failing_logic(
     def mocked_etherscan_logs(*args, **kwargs):
         nonlocal processed_queries
         if processed_queries == 1:
-            raise RemoteError('Remote error from patch')
+            raise RemoteError('Remote error from patch', cause=FailureCause.NETWORK)
 
         processed_queries += 1
         return real_logs(*args, **kwargs)
@@ -151,7 +152,7 @@ def test_gnosischain_specific_chain_data_ts_logic(
         nonlocal counter
         counter += 1
         if counter == 5:
-            raise RemoteError('Intended circuit breaker')
+            raise RemoteError('Intended circuit breaker', cause=FailureCause.NETWORK)
         return []
 
     gno_etherscan = gnosis_transactions.evm_inquirer.etherscan
@@ -178,7 +179,7 @@ def test_gnosischain_specific_chain_data_ts_logic(
             to_block: int | str = 'latest',
     ) -> list[dict[str, Any]]:
         assert from_block == 10253328  # matching the previous timestamp to ensure that we save the progress  # noqa: E501
-        raise RemoteError('Intended circuit breaker')
+        raise RemoteError('Intended circuit breaker', cause=FailureCause.NETWORK)
 
     with patch.object(gno_etherscan, 'get_logs', new=get_logs_second_step):
         gnosis_transactions.get_chain_specific_multiaddress_data(

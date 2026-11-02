@@ -10,6 +10,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_woo
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT, A_WOO
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.woo import API_MAX_LIMIT, Woo
 from rotkehlchen.fval import FVal
@@ -36,16 +37,21 @@ def test_woo_assets_are_known(mock_woo):
     except requests.exceptions.RequestException as e:
         raise RemoteError(
             f'Woo get request at {request_url} connection error: {e!s}.',
+            cause=FailureCause.NETWORK,
         ) from e
     if response.status_code != 200:
         raise RemoteError(
             f'Woo query responded with error status code: {response.status_code} '
             f'and text: {response.text}',
+            cause=FailureCause.NETWORK,
         )
     try:
         response_list = response.json()
     except JSONDecodeError as e:
-        raise RemoteError(f'Woo returned invalid JSON response: {response.text}') from e
+        raise RemoteError(
+            f'Woo returned invalid JSON response: {response.text}',
+            cause=FailureCause.NETWORK,
+        ) from e
     for row in response_list['rows']:
         try:
             asset_from_woo(row['token'])

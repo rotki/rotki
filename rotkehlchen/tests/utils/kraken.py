@@ -3,6 +3,7 @@ import random
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.kraken import Kraken, KrakenApiMethod
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -547,7 +548,7 @@ class MockKraken(Kraken):
     ) -> dict:
         # Pretty ugly ... mock a kraken remote error
         if self.remote_errors:
-            raise RemoteError('Kraken remote error')
+            raise RemoteError('Kraken remote error', cause=FailureCause.NETWORK)
 
         if self.use_original_kraken:
             return super().api_query(method, req)

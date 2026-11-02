@@ -3,7 +3,7 @@ from contextlib import ExitStack, contextmanager
 from functools import partial
 from http import HTTPStatus
 from threading import Event
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -28,6 +28,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import EVMLIKE_ACCOUNTS_DETECTION_RETRY
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import NoAvailableIndexers, RecoverableRemoteError, RemoteError
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
@@ -500,7 +501,10 @@ def test_query_balances_partial_chain_failure(blockchain: ChainsAggregator) -> N
 
     def mock_query_chain(blockchain: SupportedBlockchain, **kwargs: Any) -> None:
         if blockchain in failing_chains:
-            raise RemoteError(f'Error querying information from {blockchain!s}')
+            raise RemoteError(
+                f'Error querying information from {blockchain!s}',
+                cause=FailureCause.NETWORK,
+            )
         if blockchain == SupportedBlockchain.ETHEREUM:
             chains_aggregator.balances.eth[eth_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(2))  # noqa: E501
 
@@ -527,14 +531,18 @@ def test_query_balances_partial_chain_failure(blockchain: ChainsAggregator) -> N
             chains_aggregator.query_balances(ignore_cache=True)
 
 
+CORE_FAILED: Final = RemoteError('core', cause=FailureCause.NETWORK)
+EVM_FAILED: Final = RemoteError('evm', cause=FailureCause.NETWORK)
+
+
 @pytest.mark.parametrize(('evm_result', 'core_result', 'expected'), [
     (HasChainActivity.NONE, True, True),  # no HyperEVM activity but active in Core
     (HasChainActivity.NONE, False, False),
-    (HasChainActivity.NONE, RemoteError('core'), None),
-    (HasChainActivity.TRANSACTIONS, RemoteError('core'), True),  # HyperEVM is enough
-    (RemoteError('evm'), True, True),  # HyperEVM lookup failed but Core is active
-    (RemoteError('evm'), False, None),  # a HyperEVM failure is not mistaken for inactivity
-    (RemoteError('evm'), RemoteError('core'), None),
+    (HasChainActivity.NONE, CORE_FAILED, None),
+    (HasChainActivity.TRANSACTIONS, CORE_FAILED, True),  # HyperEVM is enough
+    (EVM_FAILED, True, True),  # HyperEVM lookup failed but Core is active
+    (EVM_FAILED, False, None),  # a HyperEVM failure is not mistaken for inactivity
+    (EVM_FAILED, CORE_FAILED, None),
 ])
 def test_hyperliquid_activity_checks_core(
         blockchain: ChainsAggregator,
@@ -577,8 +585,11 @@ def _track(
 
 
 @pytest.mark.parametrize(('error', 'is_retried'), [
-    (RecoverableRemoteError('rate limited'), True),
-    (RemoteError('malformed response'), False),  # permanent errors wait for the full detection
+    (RecoverableRemoteError('rate limited', cause=FailureCause.NETWORK), True),
+    (RemoteError(
+        'malformed response',
+        cause=FailureCause.NETWORK,
+    ), False),  # permanent errors wait for the full detection
     (NoAvailableIndexers('no indexer'), False),  # won't go away by itself
 ])
 def test_detect_evm_accounts_retries_only_failed_pairs(
@@ -645,8 +656,11 @@ def test_recoverable_failure_outside_detection_is_not_retried_immediately(
     with patch.object(
         blockchain.hyperliquid.node_inquirer,
         'has_activity',
-        side_effect=RecoverableRemoteError('timeout'),
-    ), patch.object(HyperliquidAPI, 'has_core_activity', side_effect=RecoverableRemoteError('x')):
+        side_effect=RecoverableRemoteError('timeout', cause=FailureCause.NETWORK),
+    ), patch.object(HyperliquidAPI, 'has_core_activity', side_effect=RecoverableRemoteError(
+        'x',
+        cause=FailureCause.NETWORK,
+    )):
         assert blockchain._check_single_chain_activity(
             address=(address := make_evm_address()),
             chain=SupportedBlockchain.HYPERLIQUID,
@@ -678,8 +692,8 @@ def test_avalanche_transient_failure_is_retried(
 
 
 @pytest.mark.parametrize(('error', 'is_retried'), [
-    (RecoverableRemoteError('rate limited'), True),
-    (RemoteError('malformed response'), False),
+    (RecoverableRemoteError('rate limited', cause=FailureCause.NETWORK), True),
+    (RemoteError('malformed response', cause=FailureCause.NETWORK), False),
 ])
 def test_zksync_lite_failure_is_retried_only_if_recoverable(
         blockchain: ChainsAggregator,
@@ -801,7 +815,7 @@ def test_untracked_submitted_address_is_retried(blockchain: ChainsAggregator) ->
     retry must still reconsider it, also after a retry that fails again. The full detection
     also must not forget it."""
     address = make_evm_address()
-    error = RecoverableRemoteError('rate limited')
+    error = RecoverableRemoteError('rate limited', cause=FailureCause.NETWORK)
     with (
         patch(
             'rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.has_activity',
@@ -888,7 +902,10 @@ def _blocked_core_activity(started: Event, release: Event, result: bool | Remote
     return result
 
 
-@pytest.mark.parametrize('result', [True, RecoverableRemoteError('still unavailable')])
+@pytest.mark.parametrize('result', [True, RecoverableRemoteError(
+    'still unavailable',
+    cause=FailureCause.NETWORK,
+)])
 def test_removal_during_activity_retry_is_respected(
         blockchain: ChainsAggregator,
         result: bool | RemoteError,
@@ -1008,7 +1025,10 @@ def test_removal_during_explicit_add_is_respected(blockchain: ChainsAggregator) 
         patch.object(blockchain.avalanche, 'w3', MagicMock(**{'eth.get_transaction_count.return_value': 0})),  # noqa: E501
         patch.object(blockchain.avalanche, 'get_avax_balance', return_value=ZERO),
         patch.object(HyperliquidAPI, 'has_core_activity', side_effect=partial(
-            _blocked_core_activity, started, release, RecoverableRemoteError('unavailable'),
+            _blocked_core_activity, started, release, RecoverableRemoteError(
+                'unavailable',
+                cause=FailureCause.NETWORK,
+            ),
         )),
     ):
         task = spawn(blockchain.add_accounts_to_all_evm, [address])
@@ -1064,7 +1084,7 @@ def test_removal_during_earlier_account_of_batch_is_respected(
     def core_activity(**kwargs: Any) -> bool:
         if kwargs['address'] == other:
             return _blocked_core_activity(started, release, False)
-        raise RecoverableRemoteError('unavailable')
+        raise RecoverableRemoteError('unavailable', cause=FailureCause.NETWORK)
 
     with (
         patch('rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.has_activity', return_value=HasChainActivity.NONE),  # noqa: E501
@@ -1158,13 +1178,13 @@ def _only_hyperliquid_check_fails(blockchain: ChainsAggregator) -> Iterator[None
     checks fail recoverably."""
     def has_activity(self: Any, chain_id: ChainID, account: ChecksumEvmAddress) -> HasChainActivity:  # noqa: E501
         if chain_id == ChainID.HYPERLIQUID:
-            raise RecoverableRemoteError('rate limited')
+            raise RecoverableRemoteError('rate limited', cause=FailureCause.NETWORK)
         return HasChainActivity.NONE
 
     with (
         patch('rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.has_activity', has_activity),
         patch('rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.is_contract', return_value=False),  # noqa: E501
-        patch.object(HyperliquidAPI, 'has_core_activity', side_effect=RecoverableRemoteError('rate limited')),  # noqa: E501
+        patch.object(HyperliquidAPI, 'has_core_activity', side_effect=RecoverableRemoteError('rate limited', cause=FailureCause.NETWORK)),  # noqa: E501
         patch.object(blockchain.zksync_lite, '_query_api', return_value={'list': []}),
         patch.object(blockchain.avalanche, 'w3', MagicMock(**{'eth.get_transaction_count.return_value': 0})),  # noqa: E501
         patch.object(blockchain.avalanche, 'get_avax_balance', return_value=ZERO),

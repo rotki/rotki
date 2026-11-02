@@ -7,6 +7,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.converters import asset_from_bit2me
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -543,7 +544,7 @@ def test_bit2me_history_query_should_report_transaction_errors(bit2me) -> None:
         patch.object(
             bit2me,
             '_query_transactions',
-            side_effect=RemoteError('API unavailable'),
+            side_effect=RemoteError('API unavailable', cause=FailureCause.NETWORK),
         ),
         patch.object(bit2me, 'query_online_trade_history') as query_trades,
         pytest.raises(RemoteError, match='API unavailable'),

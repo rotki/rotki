@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.gnosispay import GNOSIS_PAY_SAFE_MIGRATION_ID
 from rotkehlchen.tests.utils.api import (
@@ -54,7 +55,10 @@ def test_gnosis_pay_safe_migration(
 
 @pytest.mark.parametrize(('gnosis_pay', 'message'), [
     (None, 'Gnosis Pay credentials are not configured'),
-    (MagicMock(get_safe_migration_data=MagicMock(side_effect=RemoteError('API unavailable'))), 'API unavailable'),  # noqa: E501
+    (MagicMock(get_safe_migration_data=MagicMock(side_effect=RemoteError(
+        'API unavailable',
+        cause=FailureCause.NETWORK,
+    ))), 'API unavailable'),
 ])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_gnosis_pay_safe_migration_error(

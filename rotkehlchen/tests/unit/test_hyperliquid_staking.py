@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_HYPE
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI, StakingSummary
 from rotkehlchen.fval import FVal
@@ -273,7 +274,7 @@ def test_query_staking_summaries_skips_failing_address(
 
     def query_staking_summary(address: ChecksumEvmAddress) -> StakingSummary:
         if address == other:
-            raise RemoteError('rate limited')
+            raise RemoteError('rate limited', cause=FailureCause.NETWORK)
         return StakingSummary(delegated=FVal(2), undelegated=ZERO, pending_withdrawal=ZERO)
 
     with patch.object(HyperliquidAPI, 'query_staking_summary', side_effect=query_staking_summary):

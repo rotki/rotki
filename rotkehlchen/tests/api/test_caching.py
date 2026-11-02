@@ -9,6 +9,7 @@ import requests
 
 from rotkehlchen.constants.misc import AVATARIMAGESDIR_NAME, IMAGESDIR_NAME
 from rotkehlchen.db.ens import DBEns
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -239,7 +240,7 @@ def test_yearn_refresh_continues_after_a_chain_fails(rotkehlchen_api_server: API
     """A failing chain is reported, and the yearn vaults of the other chains are still refreshed"""
     def query_yearn_vaults(db: DBHandler, node_inquirer: EvmNodeInquirer) -> None:  # pylint: disable=unused-argument
         if node_inquirer.chain_id == ChainID.OPTIMISM:
-            raise RemoteError('Kong is down')
+            raise RemoteError('Kong is down', cause=FailureCause.NETWORK)
 
     with patch(
         'rotkehlchen.api.services.assets.query_yearn_vaults',

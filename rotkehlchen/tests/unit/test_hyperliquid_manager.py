@@ -21,6 +21,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import IncompleteTransactionsQuery, RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI, create_weight_limiter
 from rotkehlchen.fval import FVal
@@ -111,7 +112,7 @@ def test_query_proprietary_history_failure_midway_keeps_saved_pages_but_not_the_
     manager, add_error = _manager_with_db(database)
     (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query(
         [_event('page1')],
-        error=RemoteError('boom'),
+        error=RemoteError('boom', cause=FailureCause.NETWORK),
     )
     hyperliquid.iter_staking_history_event_batches = _batch_query([_event('staking')])
     with patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid):
@@ -149,7 +150,10 @@ def test_query_proprietary_history_staking_failure_names_staking_and_keeps_core_
         [_event('page1')],
         [_event('page2')],
     )
-    hyperliquid.iter_staking_history_event_batches = _batch_query(error=RemoteError('boom'))
+    hyperliquid.iter_staking_history_event_batches = _batch_query(error=RemoteError(
+        'boom',
+        cause=FailureCause.NETWORK,
+    ))
 
     with patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid):
         manager.query_proprietary_history(addresses=[ADDRESS], from_timestamp=Timestamp(0), to_timestamp=Timestamp(10))  # noqa: E501
@@ -228,7 +232,7 @@ def test_refetch_proprietary_history_failure_keeps_the_refetched_pages(
     manager, _ = _manager_with_db(database)
     (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query(
         [_event('page1')],
-        error=RemoteError('boom'),
+        error=RemoteError('boom', cause=FailureCause.NETWORK),
     )
     with (
         patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid),
@@ -248,7 +252,10 @@ def test_refetch_proprietary_history_staking_failure_keeps_refetched_core_histor
 ) -> None:
     manager, _ = _manager_with_db(database)
     (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query([_event('page1')])
-    hyperliquid.iter_staking_history_event_batches = _batch_query(error=RemoteError('boom'))
+    hyperliquid.iter_staking_history_event_batches = _batch_query(error=RemoteError(
+        'boom',
+        cause=FailureCause.NETWORK,
+    ))
 
     with (
         patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid),
@@ -338,7 +345,10 @@ def test_incomplete_evm_query_wins_over_failed_proprietary_history() -> None:
     manager.node_inquirer = MagicMock(database=db)
     manager.transactions = MagicMock()
     (ranges := MagicMock()).get_location_query_ranges.return_value = [(Timestamp(1), Timestamp(2))]
-    (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query(error=RemoteError('core history down'))  # noqa: E501
+    (hyperliquid := MagicMock()).iter_history_event_batches = _batch_query(error=RemoteError(
+        'core history down',
+        cause=FailureCause.NETWORK,
+    ))
     hyperliquid.iter_staking_history_event_batches = _batch_query()
     with (
         patch.object(EvmManager, 'query_transactions', side_effect=IncompleteTransactionsQuery('incomplete')),  # noqa: E501

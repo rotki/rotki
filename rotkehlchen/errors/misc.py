@@ -99,7 +99,7 @@ class RemoteError(Exception):
             self,
             message: str = '',
             *,
-            cause: FailureCause | None = None,
+            cause: FailureCause,
             error_code: int = 0,
     ) -> None:
         self.cause = cause

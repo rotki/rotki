@@ -7,6 +7,7 @@ import requests
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.solana.utils import StakeAccountInfo
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI, StakingSummary
 from rotkehlchen.fval import FVal
@@ -69,7 +70,7 @@ def test_solana_stake_accounts_remote_error(rotkehlchen_api_server: APIServer) -
     with patch.object(
         rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.solana,
         'get_stake_accounts_by_owner',
-        side_effect=RemoteError('rpc down'),
+        side_effect=RemoteError('rpc down', cause=FailureCause.NETWORK),
     ):
         response = requests.get(api_url_for(rotkehlchen_api_server, 'solanastakeaccountsresource'))
 
@@ -85,7 +86,7 @@ def test_hyperliquid_staking_summaries(
     address whose query failed is listed apart without dropping the others."""
     def query_staking_summary(address: ChecksumEvmAddress) -> StakingSummary:
         if address == FAILED_HYPERLIQUID_STAKER:
-            raise RemoteError('rate limited')
+            raise RemoteError('rate limited', cause=FailureCause.NETWORK)
         return StakingSummary(
             delegated=FVal('10.5'),
             undelegated=FVal('2.25'),
@@ -109,7 +110,7 @@ def test_hyperliquid_staking_summaries_remote_error(rotkehlchen_api_server: APIS
     with patch.object(
         HyperliquidAPI,
         'query_staking_summary',
-        side_effect=RemoteError('api down'),
+        side_effect=RemoteError('api down', cause=FailureCause.NETWORK),
     ):
         response = requests.get(
             api_url_for(rotkehlchen_api_server, 'hyperliquidstakingsummariesresource'),

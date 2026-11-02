@@ -35,6 +35,7 @@ from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import BlockchainAccountData
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -66,7 +67,10 @@ def test_transaction_query_failure_sends_finished_status(
 ) -> None:
     """A failed explorer query must not leave the frontend progress row running forever."""
     with (
-        patch.object(bitcoin_manager, '_query', side_effect=RemoteError('explorers unavailable')),
+        patch.object(bitcoin_manager, '_query', side_effect=RemoteError(
+            'explorers unavailable',
+            cause=FailureCause.NETWORK,
+        )),
         patch.object(bitcoin_manager.database.msg_aggregator, 'add_message') as add_message,
         pytest.raises(RemoteError, match='explorers unavailable'),
     ):
@@ -1474,7 +1478,10 @@ def test_blockcypher_checkpoint_preserves_transactions_after_end_timestamp(
 
 @pytest.mark.parametrize('btc_accounts', [[CHANGE_TX_INPUT1]])
 @pytest.mark.parametrize(('processing_error', 'raw_height', 'expected_checkpoint'), [
-    pytest.param(RemoteError('TxIO timeout'), 900_001, 900_000, id='remote-error'),
+    pytest.param(RemoteError(
+        'TxIO timeout',
+        cause=FailureCause.NETWORK,
+    ), 900_001, 900_000, id='remote-error'),
     pytest.param(
         DeserializationError('Invalid TxIO'), 900_001, 900_000, id='deserialization-error',
     ),
@@ -1483,8 +1490,14 @@ def test_blockcypher_checkpoint_preserves_transactions_after_end_timestamp(
     pytest.param(
         UnableToDecryptRemoteData('Invalid response'), 900_001, 900_000, id='invalid-response',
     ),
-    pytest.param(RemoteError('TxIO timeout'), 'invalid', 900_000, id='invalid-height'),
-    pytest.param(RemoteError('TxIO timeout'), 900_003, 900_002, id='advance-to-safe-block'),
+    pytest.param(RemoteError(
+        'TxIO timeout',
+        cause=FailureCause.NETWORK,
+    ), 'invalid', 900_000, id='invalid-height'),
+    pytest.param(RemoteError(
+        'TxIO timeout',
+        cause=FailureCause.NETWORK,
+    ), 900_003, 900_002, id='advance-to-safe-block'),
 ])
 def test_blockcypher_failed_transaction_is_retried(
         bitcoin_manager: BitcoinManager,
