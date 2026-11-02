@@ -11,6 +11,8 @@ from rotkehlchen.chain.ethereum.modules.ens.constants import (
     CPT_ENS,
     ENS_PUBLIC_RESOLVER_3_ADDRESS,
     ENS_REGISTRY_WITH_FALLBACK,
+    ENS_V2_HCA_FACTORY,
+    ENS_V2_UNLOCKED_MIGRATION_CONTROLLER,
 )
 from rotkehlchen.chain.ethereum.modules.ens.decoder import (
     ENS_GOVERNOR,
@@ -1146,5 +1148,86 @@ def test_address_changed(ethereum_inquirer, ethereum_accounts, add_subgraph_api_
             notes=f'Address for karapetsas.eth changed to {ADDY}',
             counterparty=CPT_ENS,
             address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_ens_v2_create_account(ethereum_inquirer, ethereum_accounts):
+    """Test that deploying the ENS v2 account contract is decoded"""
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x91fe56ad20d90938ec0e97f4484bdc772392ec30732d7ebb475907a27fda4a91')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1793114543000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.0000577953366'),
+            location_label=user_address,
+            notes='Burn 0.0000577953366 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1260,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes='Create ENS v2 account contract 0xcB7A83F6aa09e5c01Ac9901EdF56D7C1E5C0e030',
+            counterparty=CPT_ENS,
+            address=ENS_V2_HCA_FACTORY,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_ens_v2_migrate_name(ethereum_inquirer, ethereum_accounts):
+    """Test that migrating an unwrapped ENS v1 name to v2 is decoded as a single migrate event
+    and that the v1 registry owner/resolver logs of the migration are not decoded on their own.
+    """
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x566272cb6ff182335281e4f06e356dbb07be6792ec4a2eebe58f23e747281a39')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1793114603000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.000410015403101586'),
+            location_label=user_address,
+            notes='Burn 0.000410015403101586 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=726,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.MIGRATE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85/26612040215479394739615825115912800930061094786769410446114278812336794170041'),
+            amount=ONE,
+            location_label=user_address,
+            notes='Migrate ENS name yabir.eth to ENS v2',
+            counterparty=CPT_ENS,
+            address=ENS_V2_UNLOCKED_MIGRATION_CONTROLLER,
+            extra_data={'name': 'yabir.eth', 'expires': 1833929774},
         ),
     ]

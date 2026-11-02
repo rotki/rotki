@@ -1,10 +1,12 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 import ens
+from eth_utils import keccak
 
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
+from rotkehlchen.chain.evm.decoding.ens.constants import NEW_OWNER, NEW_RESOLVER
 from rotkehlchen.chain.evm.decoding.ens.decoder import EnsCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -27,7 +29,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, EVMTxHash
-from rotkehlchen.utils.misc import from_wei
+from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 from .constants import (
     CPT_ENS,
@@ -40,6 +42,14 @@ from .constants import (
     ENS_REGISTRAR_CONTROLLER_2,
     ENS_REGISTRY_WITH_FALLBACK,
     ENS_REVERSE_RESOLVER,
+    ENS_V2_ETH_REGISTRY,
+    ENS_V2_HCA_FACTORY,
+    ENS_V2_LOCKED_MIGRATION_CONTROLLER,
+    ENS_V2_UNLOCKED_MIGRATION_CONTROLLER,
+    ETH_NODE,
+    HCA_DEPLOYED,
+    LABEL_REGISTERED,
+    LABEL_REGISTERED_ABI,
     NAME_REGISTERED_BASE_COST_AND_PREMIUM,
     NAME_REGISTERED_BASE_COST_AND_PREMIUM_ABI,
     NAME_REGISTERED_SINGLE_COST,
@@ -57,6 +67,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+MIGRATION_CONTROLLERS: Final = {
+    ENS_V2_UNLOCKED_MIGRATION_CONTROLLER,
+    ENS_V2_LOCKED_MIGRATION_CONTROLLER,
+}
 
 
 def _save_hash_mappings_get_fullname(name: str, tx_hash: EVMTxHash) -> str:
@@ -363,6 +378,115 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
 
         return name_to_show or None  # Return None if name_to_show is blank
 
+    def _migrated_labelhashes(self, context: DecoderContext) -> set[bytes]:
+        """Labelhashes of the names that the transaction migrates from ENS v1 to v2"""
+        return {
+            log_entry.topics[2] for log_entry in context.all_logs
+            if (
+                log_entry.address == ENS_V2_ETH_REGISTRY and
+                log_entry.topics[0] == LABEL_REGISTERED and
+                bytes_to_address(log_entry.topics[3]) in MIGRATION_CONTROLLERS
+            )
+        }
+
+    def _decode_ens_registry_with_fallback_event(self, context: DecoderContext) -> EvmDecodingOutput:  # noqa: E501
+        """The v1 registry logs emitted when a name is migrated to v2 only describe moving the
+        name to the migration controller and clearing its resolver. They are covered by the
+        migration event so don't decode them separately."""
+        if context.tx_log.topics[0] in (NEW_OWNER, NEW_RESOLVER) and len(
+            labelhashes := self._migrated_labelhashes(context),
+        ) != 0:
+            if context.tx_log.topics[0] == NEW_OWNER:
+                is_migration_log = (
+                    context.tx_log.topics[1] == ETH_NODE and
+                    context.tx_log.topics[2] in labelhashes
+                )
+            else:
+                is_migration_log = context.tx_log.topics[1] in {
+                    keccak(ETH_NODE + labelhash) for labelhash in labelhashes
+                }
+
+            if is_migration_log:
+                return DEFAULT_EVM_DECODING_OUTPUT
+
+        return super()._decode_ens_registry_with_fallback_event(context)
+
+    def _decode_v2_registry_event(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode the migration of a name from ENS v1 to ENS v2. The v2 registry logs a
+        LabelRegistered with the migration controller as sender when that happens.
+
+        The v2 token is an ERC-1155 that is not decoded, so the migration is represented by
+        the v1 ERC-721 that leaves the user.
+        """
+        if (
+            context.tx_log.topics[0] != LABEL_REGISTERED or
+            bytes_to_address(context.tx_log.topics[3]) not in MIGRATION_CONTROLLERS
+        ):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        try:
+            _, decoded_data = decode_event_data_abi_str(context.tx_log, LABEL_REGISTERED_ABI)
+        except DeserializationError as e:
+            log.error('Failed to decode ENS v2 label registered event', tx_hash=str(context.transaction.tx_hash), error=str(e))  # noqa: E501
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        fullname = _save_hash_mappings_get_fullname(name=decoded_data[0], tx_hash=context.transaction.tx_hash)  # noqa: E501
+        new_owner, expires = decoded_data[1], decoded_data[2]
+        v1_asset_id = f'eip155:1/erc721:{ENS_BASE_REGISTRAR_IMPLEMENTATION}/{int.from_bytes(context.tx_log.topics[2])}'  # noqa: E501
+        for event in context.decoded_events:
+            if event.event_type == HistoryEventType.SPEND and event.asset.identifier == v1_asset_id:  # noqa: E501
+                event.event_type = HistoryEventType.MIGRATE
+                event.event_subtype = HistoryEventSubType.SPEND
+                event.counterparty = CPT_ENS
+                event.notes = f'Migrate ENS name {fullname} to ENS v2'
+                if new_owner != event.location_label:
+                    event.notes += f' with new owner {new_owner}'
+                event.extra_data = {'name': fullname, 'expires': expires}
+                return DEFAULT_EVM_DECODING_OUTPUT
+
+        # Not a v1 ERC-721 (e.g. wrapped name) or not decoded. Still note the migration
+        if self.base.is_tracked(new_owner):
+            location_label = new_owner
+        elif self.base.is_tracked(context.transaction.from_address):
+            location_label = context.transaction.from_address
+        else:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=location_label,
+            notes=f'Migrate ENS name {fullname} to ENS v2',
+            counterparty=CPT_ENS,
+            address=context.tx_log.address,
+            extra_data={'name': fullname, 'expires': expires},
+        )])
+
+    def _decode_hca_factory_event(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode the deployment of the user's ENS v2 account contract"""
+        if (
+            context.tx_log.topics[0] != HCA_DEPLOYED or
+            not self.base.is_tracked(owner := bytes_to_address(context.tx_log.topics[2]))
+        ):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=owner,
+            notes=f'Create ENS v2 account contract {bytes_to_address(context.tx_log.topics[1])}',
+            counterparty=CPT_ENS,
+            address=context.tx_log.address,
+        )])
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
@@ -372,6 +496,8 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
             ENS_REGISTRAR_CONTROLLER_2: (self._decode_ens_registrar_event,),
             ENS_BASE_REGISTRAR_IMPLEMENTATION: (self._decode_name_transfer,),
             ENS_REGISTRY_WITH_FALLBACK: (self._decode_ens_registry_with_fallback_event,),
+            ENS_V2_ETH_REGISTRY: (self._decode_v2_registry_event,),
+            ENS_V2_HCA_FACTORY: (self._decode_hca_factory_event,),
             ENS_PUBLIC_RESOLVER_2_ADDRESS: (self._decode_ens_public_resolver_events,),
             ENS_PUBLIC_RESOLVER_3_ADDRESS: (self._decode_ens_public_resolver_events,),
         }

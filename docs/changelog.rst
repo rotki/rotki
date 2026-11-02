@@ -6,6 +6,7 @@ Changelog
 * :bug:`13514` Profit and loss reports no longer crash while refreshing Kraken history containing two receive or two spend ledger entries with the same transaction reference.
 * :bug:`13463` Repeated current price queries no longer ask DeFiLlama again for assets it has just confirmed it cannot price.
 * :bug:`13508` Solana v1 transactions are now included in transaction history. Previously skipped transactions are recovered during the next Solana transaction refresh.
+* :feature:`-` ENS v2 account creation and the migration of ENS names from v1 to v2 are now properly decoded.
 
 * :release:`1.44.2 <2026-10-22>`
 * :bug:`-` rotki now uses updated certificate trust lists that no longer trust the eMudhra certificate authorities affected by the key compromise announced on 20 October 2026, so certificates issued with those keys are no longer accepted.
