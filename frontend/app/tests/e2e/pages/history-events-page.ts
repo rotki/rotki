@@ -123,7 +123,7 @@ export class HistoryEventsPage {
     await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
 
-  private async selectLocation(location: string): Promise<void> {
+  async selectLocation(location: string): Promise<void> {
     await this.selectAutocompleteOption('location', location);
   }
 
@@ -222,6 +222,7 @@ export class HistoryEventsPage {
 
   async fillSolanaSwapEventForm(data: SolanaSwapEventFixture): Promise<void> {
     await this.fillDatetime();
+    await this.selectLocation('solana');
     await this.page.locator('[data-testid=tx-ref] input').click();
     await this.page.locator('[data-testid=tx-ref] input').fill(data.txRef);
     await selectAsset(this.page, '[data-testid=sub-event-asset][data-key=spend]', data.spendAsset, data.spendAssetId);

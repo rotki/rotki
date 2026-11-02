@@ -9,7 +9,6 @@ import type {
   SwapEventUserNotes,
 } from '@/modules/history/events/event-edit-payloads';
 import type { EvmHistoryEvent, EvmSwapEvent, SolanaEvent, SolanaSwapEvent, SwapEvent } from '@/modules/history/events/schemas';
-import type { SWAP_EVENTS } from '@/modules/history/management/forms/form-guards';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { z, type ZodType } from 'zod';
@@ -17,6 +16,7 @@ import { msg } from '@/message-key';
 import { isEvmSwapEvent, isSolanaSwapEvent } from '@/modules/history/event-utils';
 import {
   chainSwapCarried,
+  chainSwapKindAt,
   chainSwapLocation,
   chainSwapSchema,
   chainSwapStateFromEvents,
@@ -30,6 +30,7 @@ import {
   requiredLocation,
   serverValidatedOnly,
 } from '@/modules/history/management/forms/event-field-schemas';
+import { isSolanaTypeEvent, type SWAP_EVENTS } from '@/modules/history/management/forms/form-guards';
 import { emptySubEvent, type SwapSubEventState } from '@/modules/history/management/forms/swap/swap-sub-event';
 
 /** The three swap entry types, which share one form. */
@@ -42,7 +43,7 @@ export type AddPayload = AddSwapEventPayload | AddEvmSwapEventPayload | AddSolan
 type EditPayload = EditSwapEventPayload | EditEvmSwapEventPayload | EditSolanaSwapEventPayload;
 
 /**
- * The swap form's state, one object for every kind so a switch of kind keeps what they share.
+ * The swap form's state, one object for every kind so a move of location keeps what the kinds share.
  *
  * @remarks
  * Each kind reads only its own fields: a plain swap has a `uniqueId` and no transaction, the chain
@@ -70,22 +71,18 @@ export interface SwapFormState {
   sequenceIndex: string;
 }
 
-function defaultLocation(kind: SwapKind): string {
-  return isChainSwapKind(kind) ? chainSwapLocation(kind) : '';
-}
-
 /**
- * Seeds a swap being added into an existing transaction: its location, reference and time, and
- * the next free sequence index. Only a chain swap has a transaction to add into.
+ * Seeds a swap being added into an existing transaction: the transaction's chain kind, location,
+ * reference and time, and the next free sequence index.
  */
 export function swapStateForGroupAdd(
-  kind: SwapKind,
-  group: Pick<EvmHistoryEvent | SolanaEvent | EvmSwapEvent | SolanaSwapEvent, 'location' | 'timestamp' | 'txRef'>,
+  group: Pick<EvmHistoryEvent | SolanaEvent | EvmSwapEvent | SolanaSwapEvent, 'entryType' | 'location' | 'timestamp' | 'txRef'>,
   nextSequenceId: string,
 ): SwapFormState {
-  assert(isChainSwapKind(kind));
+  const kind = isSolanaTypeEvent(group.entryType) ? HistoryEventEntryType.SOLANA_SWAP_EVENT : HistoryEventEntryType.EVM_SWAP_EVENT;
   return {
-    ...emptySwapForm(kind),
+    ...emptySwapForm(),
+    kind,
     location: chainSwapLocation(kind, group.location),
     sequenceIndex: nextSequenceId,
     timestamp: group.timestamp,
@@ -93,15 +90,16 @@ export function swapStateForGroupAdd(
   };
 }
 
-export function emptySwapForm(kind: SwapKind): SwapFormState {
+/** A swap being added, which is a plain swap until its location implies a chain. */
+export function emptySwapForm(): SwapFormState {
   return {
     address: '',
     counterparty: '',
     fee: [],
     groupIdentifier: '',
     hasFee: false,
-    kind,
-    location: defaultLocation(kind),
+    kind: HistoryEventEntryType.SWAP_EVENT,
+    location: '',
     receive: [emptySubEvent()],
     sequenceIndex: '0',
     spend: [emptySubEvent()],
@@ -112,24 +110,37 @@ export function emptySwapForm(kind: SwapKind): SwapFormState {
 }
 
 /**
- * Moves the form to another swap kind, keeping everything the two share.
+ * The swap kind a location implies: a Solana swap on Solana, an EVM swap on an EVM chain, and a
+ * plain swap anywhere else.
+ *
+ * @param location - the location picked for the swap
+ * @param evmLocations - the locations of the chains an EVM swap can be recorded on
+ */
+export function swapKindAt(location: string, evmLocations: readonly string[]): SwapKind {
+  return chainSwapKindAt(location, evmLocations) ?? HistoryEventEntryType.SWAP_EVENT;
+}
+
+/**
+ * Moves a swap being added to another location, and so to the kind that location implies, keeping
+ * everything the two kinds share.
  *
  * @remarks
  * A chain swap keeps the transaction reference and the address only when they are valid on its
  * chain, so neither moves between EVM and Solana, directly or through a plain swap. A plain swap
- * keeps them unseen, so a round trip back to their chain restores them. The location resets to the
- * new kind's default. Rows are never dropped: a plain swap with several spend or receive rows fails
- * validation instead.
+ * keeps them unseen, so a return to their chain restores them. Rows are never dropped: a plain swap
+ * with several spend or receive rows fails validation instead.
+ *
+ * @param state - the swap being added
+ * @param location - the location picked for it
+ * @param evmLocations - the locations of the chains an EVM swap can be recorded on
  */
-export function switchSwapKind(state: SwapFormState, kind: SwapKind): SwapFormState {
-  if (state.kind === kind)
-    return state;
-
+export function relocateSwap(state: SwapFormState, location: string, evmLocations: readonly string[]): SwapFormState {
+  const kind = swapKindAt(location, evmLocations);
   return {
     ...state,
     ...(isChainSwapKind(kind) ? chainSwapCarried(kind, state) : {}),
     kind,
-    location: defaultLocation(kind),
+    location,
   };
 }
 
@@ -206,7 +217,7 @@ function plainSwapStateFromEvents(events: SwapEvent[]): SwapFormState {
   assert(receive);
 
   return {
-    ...emptySwapForm(HistoryEventEntryType.SWAP_EVENT),
+    ...emptySwapForm(),
     fee: fee.map(plainRow),
     groupIdentifier: spend.groupIdentifier,
     hasFee: fee.length > 0,

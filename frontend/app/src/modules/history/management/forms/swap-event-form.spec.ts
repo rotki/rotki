@@ -12,13 +12,14 @@ import { describe, expect, it } from 'vitest';
 import { SOLANA_CHAIN } from '@/modules/assets/types';
 import {
   emptySwapForm,
+  relocateSwap,
   type SwapFormState,
   swapIdentifiers,
+  swapKindAt,
   swapSchema,
   swapServerErrorPaths,
   swapStateForGroupAdd,
   swapStateFromEvents,
-  switchSwapKind,
   toSwapEditPayload,
   toSwapPayload,
 } from '@/modules/history/management/forms/swap-event-form';
@@ -51,7 +52,7 @@ const solanaAccount = 'DRpbCBMxVnDK7maPM5tGv6MvB3v1sRMC86PZ8okm21hy';
 
 describe('plain swap payload', () => {
   const filled: SwapFormState = {
-    ...emptySwapForm(HistoryEventEntryType.SWAP_EVENT),
+    ...emptySwapForm(),
     fee: [row('1', 'USD', { userNotes: 'first fee' }), row('0.5', 'BTC')],
     hasFee: true,
     location: 'kraken',
@@ -319,7 +320,7 @@ function plainEvent(overrides: Partial<SwapEvent>): SwapEvent {
 
 function validPlain(): SwapFormState {
   return {
-    ...emptySwapForm(HistoryEventEntryType.SWAP_EVENT),
+    ...emptySwapForm(),
     location: 'binance',
     receive: [row('20', 'USD')],
     spend: [row('0.01', 'ETH')],
@@ -340,7 +341,7 @@ describe('plain swap schema', () => {
   });
 
   it('should require a location and both sides of the swap', () => {
-    expect(issuePaths(emptySwapForm(HistoryEventEntryType.SWAP_EVENT)))
+    expect(issuePaths(emptySwapForm()))
       .toEqual(['location', 'receive.0.amount', 'receive.0.asset', 'spend.0.amount', 'spend.0.asset']);
   });
 
@@ -427,17 +428,17 @@ describe('swap payload', () => {
   });
 
   it('should address a chain swap edit by identifiers and keep the rest of its payload', () => {
-    const payload = toSwapPayload({ ...emptySwapForm(HistoryEventEntryType.EVM_SWAP_EVENT), location: 'ethereum', txRef: evmTxRef }, noUniqueId);
+    const payload = toSwapPayload({ ...emptySwapForm(), kind: HistoryEventEntryType.EVM_SWAP_EVENT, location: 'ethereum', txRef: evmTxRef }, noUniqueId);
 
     expect(toSwapEditPayload(payload, [1, 2])).toEqual({ ...payload, identifiers: [1, 2] });
   });
 });
 
 describe('a swap added into an existing transaction', () => {
-  const group = { location: 'optimism', timestamp: TIMESTAMP, txRef: evmTxRef };
+  const group = { entryType: HistoryEventEntryType.EVM_EVENT, location: 'optimism', timestamp: TIMESTAMP, txRef: evmTxRef };
 
-  it('should take the transaction\'s location, reference, time and the next sequence index', () => {
-    expect(swapStateForGroupAdd(HistoryEventEntryType.EVM_SWAP_EVENT, group, '7')).toMatchObject({
+  it('should take the transaction\'s chain kind, location, reference, time and the next sequence index', () => {
+    expect(swapStateForGroupAdd(group, '7')).toMatchObject({
       kind: HistoryEventEntryType.EVM_SWAP_EVENT,
       location: 'optimism',
       sequenceIndex: '7',
@@ -446,21 +447,38 @@ describe('a swap added into an existing transaction', () => {
     });
   });
 
-  it('should keep a solana swap on solana whatever the transaction says', () => {
-    expect(swapStateForGroupAdd(HistoryEventEntryType.SOLANA_SWAP_EVENT, { ...group, txRef: solanaTxRef }, '2').location)
-      .toBe(SOLANA_CHAIN);
-  });
+  it('should make a swap added into a solana transaction a solana swap on solana, whatever its location says', () => {
+    const state = swapStateForGroupAdd({ ...group, entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT, txRef: solanaTxRef }, '2');
 
-  it('should refuse a plain swap, which has no transaction to add into', () => {
-    expect(() => swapStateForGroupAdd(HistoryEventEntryType.SWAP_EVENT, group, '1')).toThrow();
+    expect(state).toMatchObject({ kind: HistoryEventEntryType.SOLANA_SWAP_EVENT, location: SOLANA_CHAIN });
   });
 });
 
-describe('switching the swap kind', () => {
+/** The chains an evm swap can be on, as the supported chains name them. */
+const evmLocations = ['ethereum', 'optimism'];
+
+describe('the swap kind a location implies', () => {
+  it('should make a swap on solana a solana swap', () => {
+    expect(swapKindAt(SOLANA_CHAIN, evmLocations)).toBe(HistoryEventEntryType.SOLANA_SWAP_EVENT);
+  });
+
+  it('should make a swap on an evm chain an evm swap', () => {
+    expect(swapKindAt('optimism', evmLocations)).toBe(HistoryEventEntryType.EVM_SWAP_EVENT);
+  });
+
+  it('should make a swap anywhere else, or nowhere yet, a plain swap', () => {
+    expect(swapKindAt('kraken', evmLocations)).toBe(HistoryEventEntryType.SWAP_EVENT);
+    expect(swapKindAt('bitcoin', evmLocations)).toBe(HistoryEventEntryType.SWAP_EVENT);
+    expect(swapKindAt('', evmLocations)).toBe(HistoryEventEntryType.SWAP_EVENT);
+  });
+});
+
+describe('moving a swap being added to another location', () => {
   function evmState(): SwapFormState {
     return {
-      ...emptySwapForm(HistoryEventEntryType.EVM_SWAP_EVENT),
+      ...emptySwapForm(),
       address: evmAddress,
+      kind: HistoryEventEntryType.EVM_SWAP_EVENT,
       counterparty: 'uniswap-v3',
       location: 'ethereum',
       receive: [row('300', 'USDC'), row('1', 'DAI')],
@@ -471,10 +489,12 @@ describe('switching the swap kind', () => {
     };
   }
 
-  it('should clear the transaction and address moving between EVM and Solana, and keep the rest', () => {
-    const state = switchSwapKind(evmState(), HistoryEventEntryType.SOLANA_SWAP_EVENT);
+  function relocate(state: SwapFormState, location: string): SwapFormState {
+    return relocateSwap(state, location, evmLocations);
+  }
 
-    expect(state).toEqual({
+  it('should clear the transaction and address moving from an evm chain to solana, and keep the rest', () => {
+    expect(relocate(evmState(), SOLANA_CHAIN)).toEqual({
       ...evmState(),
       address: '',
       kind: HistoryEventEntryType.SOLANA_SWAP_EVENT,
@@ -483,34 +503,30 @@ describe('switching the swap kind', () => {
     });
   });
 
-  it('should not carry an EVM transaction or address into a Solana swap through a plain one', () => {
-    const plain = switchSwapKind(evmState(), HistoryEventEntryType.SWAP_EVENT);
-    const state = switchSwapKind(plain, HistoryEventEntryType.SOLANA_SWAP_EVENT);
+  it('should keep the transaction and address moving between two evm chains', () => {
+    expect(relocate(evmState(), 'optimism')).toEqual({ ...evmState(), location: 'optimism' });
+  });
+
+  it('should not carry an evm transaction or address into a solana swap through a plain one', () => {
+    const state = relocate(relocate(evmState(), 'kraken'), SOLANA_CHAIN);
 
     expect(state.txRef).toBe('');
     expect(state.address).toBe('');
   });
 
-  it('should bring the transaction and address back on a round trip through a plain swap', () => {
-    const plain = switchSwapKind(evmState(), HistoryEventEntryType.SWAP_EVENT);
-    const state = switchSwapKind(plain, HistoryEventEntryType.EVM_SWAP_EVENT);
+  it('should bring the transaction and address back on a return to an evm chain through a plain swap', () => {
+    const state = relocate(relocate(evmState(), 'kraken'), 'ethereum');
 
     expect(state.txRef).toBe(evmTxRef);
     expect(state.address).toBe(evmAddress);
   });
 
   it('should keep every row moving to a plain swap, which then holds too many', () => {
-    const state = switchSwapKind(evmState(), HistoryEventEntryType.SWAP_EVENT);
+    const state = relocate(evmState(), 'binance');
 
+    expect(state.kind).toBe(HistoryEventEntryType.SWAP_EVENT);
     expect(state.receive).toEqual(evmState().receive);
-    expect(state.location).toBe('');
-    expect(issuePaths({ ...state, location: 'binance' })).toEqual(['receive']);
-  });
-
-  it('should leave the state alone when the kind does not change', () => {
-    const state = evmState();
-
-    expect(switchSwapKind(state, HistoryEventEntryType.EVM_SWAP_EVENT)).toBe(state);
+    expect(issuePaths(state)).toEqual(['receive']);
   });
 });
 

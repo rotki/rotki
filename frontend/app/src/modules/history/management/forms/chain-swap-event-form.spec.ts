@@ -45,7 +45,7 @@ const solanaAddress = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8';
 
 const evm: ChainSwapKind<SwapFormState, EvmSwapEvent> = {
   address: evmAddress,
-  empty: () => emptySwapForm(HistoryEventEntryType.EVM_SWAP_EVENT),
+  empty: () => ({ ...emptySwapForm(), kind: HistoryEventEntryType.EVM_SWAP_EVENT }),
   entryType: HistoryEventEntryType.EVM_SWAP_EVENT,
   event: overrides => ({
     address: evmAddress,
@@ -81,7 +81,7 @@ const evm: ChainSwapKind<SwapFormState, EvmSwapEvent> = {
 
 const solana: ChainSwapKind<SwapFormState, SolanaSwapEvent> = {
   address: solanaAddress,
-  empty: () => emptySwapForm(HistoryEventEntryType.SOLANA_SWAP_EVENT),
+  empty: () => ({ ...emptySwapForm(), kind: HistoryEventEntryType.SOLANA_SWAP_EVENT, location: SOLANA_CHAIN }),
   entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT,
   event: overrides => ({
     address: solanaAddress,

@@ -25,6 +25,8 @@ interface ChainSwapRules {
   readonly address: () => z.ZodType<string>;
   readonly txRef: () => z.ZodType<string>;
   readonly location: () => z.ZodType<string>;
+  /** Whether a swap on this location is a swap of this kind, given the chains an EVM swap can be on. */
+  readonly holds: (location: string, evmLocations: readonly string[]) => boolean;
   /**
    * The location a swap of this kind always has, if any. An EVM swap's chain is picked by the user;
    * a Solana swap is always on Solana, and the form shows that location but never sends it.
@@ -37,6 +39,7 @@ const CHAIN_SWAP_RULES: Record<ChainSwapKind, ChainSwapRules> = {
   [HistoryEventEntryType.EVM_SWAP_EVENT]: {
     address: optionalEthAddress,
     chain: 'evm',
+    holds: (location, evmLocations) => evmLocations.includes(location),
     location: requiredLocation,
     txRef: requiredEvmTxHash,
   },
@@ -44,16 +47,24 @@ const CHAIN_SWAP_RULES: Record<ChainSwapKind, ChainSwapRules> = {
     address: optionalSolanaAddress,
     chain: 'solana',
     fixedLocation: SOLANA_CHAIN,
+    holds: location => location === SOLANA_CHAIN,
     location: z.string,
     txRef: requiredSolanaSignature,
   },
 };
 
+const CHAIN_SWAP_KINDS: readonly ChainSwapKind[] = [HistoryEventEntryType.EVM_SWAP_EVENT, HistoryEventEntryType.SOLANA_SWAP_EVENT];
+
 export function isChainSwapKind(kind: string): kind is ChainSwapKind {
   return kind === HistoryEventEntryType.EVM_SWAP_EVENT || kind === HistoryEventEntryType.SOLANA_SWAP_EVENT;
 }
 
-/** The transaction reference and address a switch carries into a chain swap of this kind. */
+/** The chain swap kind a location implies, if any. */
+export function chainSwapKindAt(location: string, evmLocations: readonly string[]): ChainSwapKind | undefined {
+  return CHAIN_SWAP_KINDS.find(kind => CHAIN_SWAP_RULES[kind].holds(location, evmLocations));
+}
+
+/** The transaction reference and address a move of location carries into a chain swap of this kind. */
 type ChainSwapCarried = Pick<SwapFormState, 'address' | 'txRef'>;
 
 /**
@@ -71,8 +82,8 @@ export function chainSwapCarried(kind: ChainSwapKind, { address, txRef }: ChainS
   };
 }
 
-/** The location of a swap of this kind: its fixed one, or else the one given (blank for a new swap). */
-export function chainSwapLocation(kind: ChainSwapKind, given = ''): string {
+/** The location of a swap of this kind: its fixed one, or else the one given. */
+export function chainSwapLocation(kind: ChainSwapKind, given: string): string {
   return CHAIN_SWAP_RULES[kind].fixedLocation ?? given;
 }
 

@@ -1,16 +1,24 @@
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import { HistoryEventEntryType } from '@rotki/common';
+import { isChainSwapKind } from '@/modules/history/management/forms/chain-swap-event-form';
 import { EVM_EVENTS, isEvmTypeEvent, isSolanaTypeEvent, SOLANA_EVENTS } from '@/modules/history/management/forms/form-guards';
 
 type EventFormData = GroupEventData | StandaloneEventData;
 
-/** The entry types a new event may take: within an existing transaction, only its chain's types. */
+/**
+ * The entry types an event may take: within an existing transaction, only its chain's types.
+ *
+ * @remarks
+ * A new event is offered one swap type, since a swap takes its chain kind from its location. An
+ * edited event shows its own type, chain swaps included.
+ */
 export function entryTypeOptions(data: EventFormData): HistoryEventEntryType[] {
   if (data.type === 'group-add' && isEvmTypeEvent(data.group.entryType))
     return [...EVM_EVENTS];
   if (data.type === 'group-add' && isSolanaTypeEvent(data.group.entryType))
     return [...SOLANA_EVENTS];
-  return Object.values(HistoryEventEntryType);
+  const types = Object.values(HistoryEventEntryType);
+  return data.type === 'add' ? types.filter(type => !isChainSwapKind(type)) : types;
 }
 
 /**
