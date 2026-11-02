@@ -15,6 +15,7 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.constants import GATE_LOCATION_KEY
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.gate import (
@@ -135,7 +136,7 @@ def test_gate_history_query_commits_30_day_chunks(gate_exchange: Gate) -> None:
 
 
 @pytest.mark.parametrize('error', [
-    RemoteError('query failed'),
+    RemoteError('query failed', cause=FailureCause.NETWORK),
     KeyError('query failed'),
 ])
 def test_gate_history_query_flushes_and_finishes_on_error(
@@ -175,7 +176,7 @@ def test_gate_flushes_successful_movement_query_before_raising(gate_exchange: Ga
     ) -> list[AssetMovement]:
         if query_for == HistoryEventType.DEPOSIT:
             return [deposit]
-        raise RemoteError('Failed to query withdrawals')
+        raise RemoteError('Failed to query withdrawals', cause=FailureCause.NETWORK)
 
     with (
         patch.object(
@@ -198,7 +199,7 @@ def test_gate_flushes_successful_movement_query_before_raising(gate_exchange: Ga
 
 @pytest.mark.parametrize(('api_error', 'response', 'expected_error'), [
     (
-        RemoteError('API unavailable'),
+        RemoteError('API unavailable', cause=FailureCause.NETWORK),
         None,
         'Failed to query Gate trades due to API unavailable',
     ),
@@ -230,7 +231,7 @@ def test_gate_trade_query_should_report_remote_errors(
 
 @pytest.mark.parametrize(('api_error', 'response', 'expected_error'), [
     (
-        RemoteError('API unavailable'),
+        RemoteError('API unavailable', cause=FailureCause.NETWORK),
         None,
         'Failed to query Gate deposit due to API unavailable',
     ),

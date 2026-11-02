@@ -13,6 +13,7 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD, A_USDC
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.bitstamp import (
     API_ERR_AUTH_NONCE_CODE,
@@ -53,17 +54,22 @@ def test_bitstamp_exchange_assets_are_known(mock_bitstamp):
     except requests.exceptions.RequestException as e:
         raise RemoteError(
             f'Bitstamp get request at {request_url} connection error: {e!s}.',
+            cause=FailureCause.NETWORK,
         ) from e
 
     if response.status_code != 200:
         raise RemoteError(
             f'Bitstamp query responded with error status code: {response.status_code} '
             f'and text: {response.text}',
+            cause=FailureCause.NETWORK,
         )
     try:
         response_list = jsonloads_list(response.text)
     except JSONDecodeError as e:
-        raise RemoteError(f'Bitstamp returned invalid JSON response: {response.text}') from e
+        raise RemoteError(
+            f'Bitstamp returned invalid JSON response: {response.text}',
+            cause=FailureCause.NETWORK,
+        ) from e
 
     # Extract the unique symbols from the exchange pairs
     pairs = [raw_result.get('name') for raw_result in response_list]
@@ -1331,7 +1337,7 @@ def test_bitstamp_flushes_movements_before_trade_query(
         patch.object(
             mock_bitstamp,
             '_query_trades',
-            side_effect=RemoteError('trade query failed'),
+            side_effect=RemoteError('trade query failed', cause=FailureCause.NETWORK),
         ),
         pytest.raises(RemoteError, match='trade query failed'),
     ):

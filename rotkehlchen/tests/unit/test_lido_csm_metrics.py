@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
 )
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
 from rotkehlchen.constants import ZERO
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 
@@ -169,7 +170,7 @@ def test_lido_csm_get_operator_stats_handles_rewards_failure() -> None:
     })
 
     def failing_get_rewards(*_args: Any, **_kwargs: Any) -> FVal:
-        raise RemoteError('Fee distributor failure')
+        raise RemoteError('Fee distributor failure', cause=FailureCause.NETWORK)
 
     fetcher.get_operator_rewards = failing_get_rewards  # type: ignore[method-assign]
 

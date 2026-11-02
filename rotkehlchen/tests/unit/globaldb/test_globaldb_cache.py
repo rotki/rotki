@@ -74,6 +74,7 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.filtering import AddressbookFilterQuery
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -329,7 +330,10 @@ def test_velodrome_cache_chunk_halving(
         if offset == 0:
             return raw_v2  # a full first page of v2 pools
         if limit >= 100:
-            raise RemoteError('gas limit error')  # the CL region needs smaller chunks
+            raise RemoteError(
+                'gas limit error',
+                cause=FailureCause.NETWORK,
+            )  # the CL region needs smaller chunks
         return [raw_cl] if offset == POOL_DATA_CHUNK_SIZE else []
 
     inquirer = MagicMock(database=database, chain_id=chain_id)
@@ -440,7 +444,7 @@ def test_velodrome_cache_gauge_backfill_failure(database, reload_all):
     missing gauge, while an automatic refresh only logs it and keeps the new pools."""
     with (
         patch('rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache.query_velodrome_data_from_chain', return_value=[]),  # noqa: E501
-        patch('rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache.backfill_velodrome_gauges_from_voter', side_effect=RemoteError('voter unavailable')),  # noqa: E501
+        patch('rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache.backfill_velodrome_gauges_from_voter', side_effect=RemoteError('voter unavailable', cause=FailureCause.NETWORK)),  # noqa: E501
     ):
         inquirer = MagicMock(database=database, chain_id=ChainID.BASE, chain_name='base')
         if reload_all:
@@ -466,7 +470,7 @@ def test_curve_cache_progress():
     messages = MagicMock()
     address = make_evm_address()
     query = MagicMock(
-        side_effect=[3, address, RemoteError('pool unavailable')],
+        side_effect=[3, address, RemoteError('pool unavailable', cause=FailureCause.NETWORK)],
     )
     call_order = MagicMock()
     call_order.attach_mock(query, 'query')
@@ -604,7 +608,10 @@ def test_gearbox_cache_progress(globaldb, query_result):  # pylint: disable=unus
     messages = MagicMock()
     inquirer = MagicMock(chain_id=ChainID.ETHEREUM)
     inquirer.contracts.contract.return_value.call.return_value = pools
-    inquirer.multicall_2.side_effect = RemoteError('second pool failed')
+    inquirer.multicall_2.side_effect = RemoteError(
+        'second pool failed',
+        cause=FailureCause.NETWORK,
+    )
     with (
         patch('rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache.get_existing_pools', return_value={address} if query_result == 'cached' else set()),  # noqa: E501
         patch('rotkehlchen.chain.evm.contracts.EvmContract.encode', return_value='0x'),

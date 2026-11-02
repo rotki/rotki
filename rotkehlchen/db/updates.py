@@ -23,6 +23,7 @@ from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.unresolved_conflicts import ConflictType, DBRemoteConflicts
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
@@ -237,13 +238,17 @@ class RotkiDataUpdater:
         try:
             response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to query {url} during assets update: {e!s}') from e
+            raise RemoteError(
+                f'Failed to query {url} during assets update: {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         try:
             json_data = response.json()
         except json.decoder.JSONDecodeError as e:
             raise RemoteError(
                 f'Could not parse update info from {url} as json: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return json_data
@@ -437,7 +442,10 @@ class RotkiDataUpdater:
             applied_version = update_version
 
         if len(rules_data) == 0:  # do not wipe the user's rules if we got nothing to restore
-            raise RemoteError('Did not receive any accounting rules from the data repo')
+            raise RemoteError(
+                'Did not receive any accounting rules from the data repo',
+                cause=FailureCause.BAD_DATA,
+            )
 
         # Deserialize everything before touching the DB so the write transaction below stays as
         # lean as possible and we hold the db lock for as little time as we can.

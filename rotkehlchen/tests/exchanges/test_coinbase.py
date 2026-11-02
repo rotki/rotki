@@ -21,6 +21,7 @@ from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.coinbase import COINBASE_CANDLES_MAX_LIMIT, Coinbase
 from rotkehlchen.fval import FVal
@@ -582,7 +583,10 @@ def test_account_failure_does_not_advance_cursors(
             }]
         elif 'account_b/transactions' in endpoint:
             if failing:
-                raise RemoteError('Coinbase API request failed due to a transient error')
+                raise RemoteError(
+                    'Coinbase API request failed due to a transient error',
+                    cause=FailureCause.NETWORK,
+                )
             return []
 
         raise AssertionError(f'Unexpected endpoint {endpoint} for test')

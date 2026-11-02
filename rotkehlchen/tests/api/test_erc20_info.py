@@ -8,6 +8,7 @@ from eth_abi import encode
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -137,7 +138,10 @@ def test_query_token_info_ignores_the_failure_cooldown(
         ChainID.ETHEREUM,
     ).node_inquirer
     address = to_checksum_address('0x' + '1' * 40)
-    with patch.object(inquirer, 'multicall_2', side_effect=[RemoteError('down'), [
+    with patch.object(inquirer, 'multicall_2', side_effect=[RemoteError(
+        'down',
+        cause=FailureCause.NETWORK,
+    ), [
         (True, encode(['uint8'], [6])),
         (True, encode(['string'], ['TKN'])),
         (True, encode(['string'], ['Token'])),

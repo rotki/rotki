@@ -22,6 +22,7 @@ from rotkehlchen.db.filtering import AccountingRulesFilterQuery, AddressbookFilt
 from rotkehlchen.db.unresolved_conflicts import ConflictType
 from rotkehlchen.db.updates import PENDING_RPC_NODES_UPDATE, RotkiDataUpdater, UpdateType
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -779,7 +780,7 @@ def test_invalid_rpc_weight_does_not_stop_accounting_rules(data_updater: RotkiDa
 
 def _raise_after_call(wrapped: Callable, *args: Any, **kwargs: Any) -> None:
     wrapped(*args, **kwargs)
-    raise RemoteError('injected failure after committed stage')
+    raise RemoteError('injected failure after committed stage', cause=FailureCause.NETWORK)
 
 
 @pytest.mark.parametrize('failed_stage', ['before_user', 'user', 'runtime', 'global'])
@@ -839,7 +840,7 @@ def test_rpc_update_retries_after_partial_application(
             if failed_stage == 'before_user':
                 stack.enter_context(patch.object(
                     updater, '_update_user_nodes',
-                    side_effect=RemoteError('injected user failure'),
+                    side_effect=RemoteError('injected user failure', cause=FailureCause.NETWORK),
                 ))
             elif failed_stage == 'user':
                 update_user_nodes = updater._update_user_nodes
@@ -849,7 +850,10 @@ def test_rpc_update_retries_after_partial_application(
                 ))
             elif failed_stage == 'runtime':
                 stack.enter_context(patch.object(
-                    inquirer, 'refresh_nodes', side_effect=RemoteError('injected runtime failure'),
+                    inquirer, 'refresh_nodes', side_effect=RemoteError(
+                        'injected runtime failure',
+                        cause=FailureCause.NETWORK,
+                    ),
                 ))
             else:
                 update_rpc_nodes = updater.update_rpc_nodes

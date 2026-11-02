@@ -24,6 +24,7 @@ from rotkehlchen.constants.assets import (
     A_USD,
 )
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.cryptocompare import (
     CRYPTOCOMPARE_SPECIAL_CASES_MAPPING,
@@ -416,7 +417,10 @@ def test_query_multiple_current_prices_handles_exceptions(cryptocompare: Cryptoc
         call_count += 1
 
         if call_count == 1:  # Fail the first chunk to simulate problematic assets
-            raise RemoteError('cccagg_or_exchange market does not exist for this coin pair')
+            raise RemoteError(
+                'cccagg_or_exchange market does not exist for this coin pair',
+                cause=FailureCause.NETWORK,
+            )
 
         # Succeed for subsequent chunks
         return original_api_query(*args, **kwargs)
@@ -445,7 +449,7 @@ def test_query_multiple_current_prices_handles_special_case_exceptions(cryptocom
 
     def mock_special_case(*args, **kwargs):
         if 'from_asset' in kwargs and kwargs['from_asset'] == from_assets[-1]:
-            raise RemoteError('Special case handling failed')
+            raise RemoteError('Special case handling failed', cause=FailureCause.NETWORK)
 
         return original_special_case(*args, **kwargs)
 

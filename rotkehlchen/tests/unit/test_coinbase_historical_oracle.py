@@ -7,6 +7,7 @@ import pytest
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -129,7 +130,10 @@ def test_auth_permission_and_rate_limit_errors_fall_through(
         patch.object(
             coinbase,
             'query_product_candles',
-            side_effect=RemoteError('request failed', error_code=status_code),
+            side_effect=RemoteError(
+                'request failed', error_code=status_code,
+                cause=FailureCause.NETWORK,
+            ),
         ),
         pytest.raises(RemoteError) as exc_info,
     ):
@@ -200,7 +204,10 @@ def test_cached_coinbase_price_avoids_second_request(
 def test_historian_falls_back_after_coinbase_error(price_historian: PriceHistorian) -> None:
     coinbase = MagicMock(spec=CoinbaseHistoricalPriceOracle)
     coinbase.can_query_history.return_value = True
-    coinbase.query_historical_price.side_effect = RemoteError('Coinbase unavailable')
+    coinbase.query_historical_price.side_effect = RemoteError(
+        'Coinbase unavailable',
+        cause=FailureCause.NETWORK,
+    )
     coingecko = price_historian._coingecko
     price_historian.__dict__.pop('query_historical_price', None)
     price_historian._coinbase = coinbase

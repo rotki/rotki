@@ -29,6 +29,7 @@ from rotkehlchen.assets import asset as asset_module
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconNode
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import resolver as resolver_module
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -212,7 +213,7 @@ def fixture_force_beacon_rpc_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
         node.rpc_endpoint = rpc_endpoint.rstrip('/')
 
     def fail_beacon_rpc(*args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
-        raise RemoteError('Beacon RPC intentionally disabled in test')
+        raise RemoteError('Beacon RPC intentionally disabled in test', cause=FailureCause.NETWORK)
 
     monkeypatch.setattr(BeaconNode, 'set_rpc_endpoint', set_rpc_endpoint)
     monkeypatch.setattr(BeaconNode, 'query', fail_beacon_rpc)

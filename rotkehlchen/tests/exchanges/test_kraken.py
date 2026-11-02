@@ -45,6 +45,7 @@ from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.kraken import Kraken
@@ -211,6 +212,7 @@ def test_kraken_connection_reset_does_not_notify_user(kraken: Kraken) -> None:
         side_effect=RemoteError(
             "Kraken API request failed due to ('Connection aborted.', "
             "ConnectionResetError(104, 'Connection reset by peer'))",
+            cause=FailureCause.NETWORK,
         ),
     ):
         events, queried_until = kraken.query_online_history_events(

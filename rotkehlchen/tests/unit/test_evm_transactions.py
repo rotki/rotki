@@ -38,6 +38,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     DataIntegrityError,
     IncompleteTransactionsQuery,
@@ -163,7 +164,7 @@ def test_erc20_transfers_range_not_updated_on_remote_error(database: DBHandler, 
             stack.enter_context(patch.object(
                 target=indexer,
                 attribute='get_token_transaction_data',
-                side_effect=RemoteError('FAIL')),
+                side_effect=RemoteError('FAIL', cause=FailureCause.NETWORK)),
             )
 
         assert ethereum_manager.transactions._get_erc20_transfers_for_ranges(
@@ -1098,7 +1099,7 @@ def test_indexers_fall_back_properly(
             ) if name == tested_indexer else patch.object(
                 target=indexer,
                 attribute='get_blocknumber_by_time',
-                side_effect=RemoteError('FAIL'),
+                side_effect=RemoteError('FAIL', cause=FailureCause.NETWORK),
             ))
             txs_mock = stack.enter_context(patch.object(
                 target=indexer,
@@ -1107,7 +1108,7 @@ def test_indexers_fall_back_properly(
             ) if name == tested_indexer else patch.object(
                 target=indexer,
                 attribute='get_transactions',
-                side_effect=RemoteError('FAIL'),
+                side_effect=RemoteError('FAIL', cause=FailureCause.NETWORK),
             ))
             hashes_mock = stack.enter_context(patch.object(
                 target=indexer,
@@ -1116,7 +1117,7 @@ def test_indexers_fall_back_properly(
             ) if name == tested_indexer else patch.object(
                 target=indexer,
                 attribute='get_token_transaction_data',
-                side_effect=RemoteError('FAIL'),
+                side_effect=RemoteError('FAIL', cause=FailureCause.NETWORK),
             ))
 
             if have_reached_tested_indexer:
@@ -1322,7 +1323,7 @@ def test_split_range_keeps_progress_of_later_chunks(
         if (from_value, to_value) in {(1_000_000, 101_000_000), (51_000_001, 101_000_000)}:
             raise RequestTooLargeError('Query Timeout occurred')
         if from_value == 76_000_001:
-            raise RemoteError('rate limited')
+            raise RemoteError('rate limited', cause=FailureCause.NETWORK)
         return Timestamp(from_value + 1000)
 
     def get_token_transaction_hashes(
@@ -1423,7 +1424,7 @@ def test_stale_indexer_is_not_asked_for_the_range_it_failed(
         stack.enter_context(patch.object(
             target=inquirer.etherscan,
             attribute='get_blocknumber_by_time',
-            side_effect=RemoteError('Could not read blocknumber'),
+            side_effect=RemoteError('Could not read blocknumber', cause=FailureCause.NETWORK),
         ))
         stack.enter_context(patch.object(
             target=inquirer.blockscout,
@@ -1524,7 +1525,7 @@ def test_query_range_unrecorded_when_coverage_is_unknown(
     with patch.object(
         target=ethereum_manager.node_inquirer,
         attribute='get_blocknumber_by_time',
-        side_effect=RemoteError('FAIL'),
+        side_effect=RemoteError('FAIL', cause=FailureCause.NETWORK),
     ):
         ethereum_manager.transactions._mark_range_as_queried(
             location_string=(location_string := 'txs_unknown'),
@@ -1549,7 +1550,7 @@ def test_nothing_queried_when_query_end_is_unknown(
         blocknumber_lookups = [stack.enter_context(patch.object(
             target=indexer,
             attribute='get_blocknumber_by_time',
-            side_effect=RemoteError('FAIL'),
+            side_effect=RemoteError('FAIL', cause=FailureCause.NETWORK),
         )) for _, indexer in inquirer._get_indexers_in_order()]
         get_transactions = stack.enter_context(patch.object(inquirer, 'get_transactions'))
         get_token_hashes = stack.enter_context(patch.object(
@@ -1606,7 +1607,7 @@ def test_sync_resolves_its_end_once(
     ) -> int:
         """Resolves the start of the range fine, only its index does not reach the end"""
         if ts == sync_end_ts:
-            raise RemoteError('FAIL')
+            raise RemoteError('FAIL', cause=FailureCause.NETWORK)
         return ts // 10
 
     def get_transactions(
@@ -1705,7 +1706,10 @@ def test_sync_settles_every_address_when_query_end_is_unknown(
             stack.enter_context(patch.object(
                 target=indexer,
                 attribute='get_blocknumber_by_time',
-                side_effect=RemoteError('https://indexer.example/api?apikey=SECRET'),
+                side_effect=RemoteError(
+                    'https://indexer.example/api?apikey=SECRET',
+                    cause=FailureCause.NETWORK,
+                ),
             ))
         get_transactions = stack.enter_context(patch.object(inquirer, 'get_transactions'))
         stack.enter_context(patch.object(transactions.msg_aggregator, 'rotki_notifier', notifier))
@@ -1817,12 +1821,12 @@ def test_address_fails_when_every_indexer_fails_its_query(
             indexers_get_transactions.append(stack.enter_context(patch.object(
                 target=indexer,
                 attribute='get_transactions',
-                side_effect=RemoteError('FAIL'),
+                side_effect=RemoteError('FAIL', cause=FailureCause.NETWORK),
             )))
             stack.enter_context(patch.object(
                 target=indexer,
                 attribute='get_token_transaction_data',
-                side_effect=RemoteError('FAIL'),
+                side_effect=RemoteError('FAIL', cause=FailureCause.NETWORK),
             ))
         stack.enter_context(patch.object(transactions.msg_aggregator, 'rotki_notifier', notifier))
         transactions.single_address_query_transactions(

@@ -18,6 +18,7 @@ from rotkehlchen.chain.evm.types import (
     string_to_evm_address,
 )
 from rotkehlchen.constants import ONE
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError, RequestTooLargeError
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.ethereum import (
@@ -187,8 +188,8 @@ def test_query_raises_request_too_large_when_gas_limit_seen(
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            raise RemoteError('out of gas')
-        raise RemoteError('connection timeout')
+            raise RemoteError('out of gas', cause=FailureCause.NETWORK)
+        raise RemoteError('connection timeout', cause=FailureCause.NETWORK)
 
     call_order = ethereum_inquirer.default_call_order()
     with pytest.raises(RequestTooLargeError):

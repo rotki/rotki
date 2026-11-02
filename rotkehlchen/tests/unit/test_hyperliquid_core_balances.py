@@ -12,6 +12,7 @@ from rotkehlchen.chain.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_HYPE, A_USDC
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.fval import FVal
@@ -151,7 +152,10 @@ def test_query_balances_core_failure_still_returns_evm_and_staking(
         patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI') as mock_api_cls,
         patch('rotkehlchen.chain.hyperliquid.manager.Inquirer') as mock_inquirer,
     ):
-        mock_api_cls.return_value.query_balances.side_effect = RemoteError('api down')
+        mock_api_cls.return_value.query_balances.side_effect = RemoteError(
+            'api down',
+            cause=FailureCause.NETWORK,
+        )
         mock_api_cls.return_value.query_staking_balance.return_value = FVal('5')
         mock_inquirer.find_price.return_value = FVal('20')
         result = hyperliquid_manager.query_balances(addresses=[ADDR_A])
@@ -173,7 +177,10 @@ def test_query_balances_staking_failure_still_returns_core_balances(
         patch('rotkehlchen.chain.hyperliquid.manager.Inquirer') as mock_inquirer,
     ):
         mock_api_cls.return_value.query_balances.return_value = {A_USDC: FVal('500')}
-        mock_api_cls.return_value.query_staking_balance.side_effect = RemoteError('api down')
+        mock_api_cls.return_value.query_staking_balance.side_effect = RemoteError(
+            'api down',
+            cause=FailureCause.NETWORK,
+        )
         mock_inquirer.find_price.return_value = ONE
         result = hyperliquid_manager.query_balances(addresses=[ADDR_A])
 

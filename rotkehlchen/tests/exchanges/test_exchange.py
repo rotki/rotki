@@ -10,6 +10,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import ExchangeWithoutApiSecret, HistoryEventQueue
@@ -65,7 +66,7 @@ def test_history_event_queue_does_not_move_range_backwards() -> None:
 
 
 @pytest.mark.parametrize('error', [
-    RemoteError('query failed'),
+    RemoteError('query failed', cause=FailureCause.NETWORK),
     DeserializationError('query failed'),
 ])
 def test_history_query_flushes_and_finishes_on_error(
