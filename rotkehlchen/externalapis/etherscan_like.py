@@ -20,6 +20,7 @@ from rotkehlchen.db.constants import TX_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     RecoverableRemoteError,
     RemoteError,
@@ -209,6 +210,7 @@ class EtherscanLikeApi(ABC):
             raise RecoverableRemoteError(
                 f'Getting {self.name} too many requests error '
                 f'even after we incrementally backed off while querying {chain_id}',
+                cause=FailureCause.RATE_LIMITED,
             )
 
         log.debug(
@@ -396,7 +398,10 @@ class EtherscanLikeApi(ABC):
             try:
                 response = self.session.get(url=api_url, params=params, timeout=timeout)
             except requests.exceptions.RequestException as e:
-                raise RecoverableRemoteError(f'{self.name} API request failed due to {e!s}') from e
+                raise RecoverableRemoteError(
+                    f'{self.name} API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 self._rate_limiter.shrink_after_429()
@@ -423,6 +428,7 @@ class EtherscanLikeApi(ABC):
                 raise RemoteError(
                     f'{self.name} API request {response.url} returned invalid '
                     f'JSON response: {response.text}',
+                    cause=FailureCause.BAD_DATA,
                 ) from e
 
             try:
@@ -441,6 +447,7 @@ class EtherscanLikeApi(ABC):
                             raise RecoverableRemoteError(
                                 f'{self.name} is still overloaded while querying {chain_id}. '
                                 f'Not retrying. Response was: {response.text}',
+                                cause=FailureCause.NETWORK,
                             )
 
                         break  # no retry would follow, so do not sleep before failing
@@ -464,6 +471,7 @@ class EtherscanLikeApi(ABC):
                     raise RemoteError(
                         f'Unexpected format of {self.name} response for request {response.url}. '
                         f'Missing a result in response. Response was: {response.text}',
+                        cause=FailureCause.BAD_DATA,
                     )
 
                 handling_response = self._additional_json_response_handling(
@@ -485,6 +493,7 @@ class EtherscanLikeApi(ABC):
                 raise RemoteError(
                     f'Unexpected format of {chain_id} {self.name} response for request {response.url}. '  # noqa: E501
                     f'Missing key entry for {e!s}. Response was: {response.text}',
+                    cause=FailureCause.BAD_DATA,
                 ) from e
 
             # success, break out of the loop and return result
@@ -497,7 +506,7 @@ class EtherscanLikeApi(ABC):
             f'due to backing off longer than the max backoff of {backoff_limit} seconds.'
         )
         log.error(msg)
-        raise RecoverableRemoteError(msg)
+        raise RecoverableRemoteError(msg, cause=FailureCause.RATE_LIMITED)
 
     @overload
     def _query_rpc_method(
@@ -871,6 +880,7 @@ class EtherscanLikeApi(ABC):
             raise RemoteError(
                 f'Could not read blocknumber from {self.name} for {chain_id}  '
                 f'getblocknobytime result {result}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return number
@@ -1002,7 +1012,10 @@ class EtherscanLikeApi(ABC):
             method='eth_getBlockByNumber',
             options={'tag': hex(block_number), 'boolean': str(full_transactions).lower()},
         )) is None:
-            raise RemoteError(f'Null response from {self.name} for block {block_number}')
+            raise RemoteError(
+                f'Null response from {self.name} for block {block_number}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         block_data['timestamp'] = hexstr_to_int(block_data['timestamp'])
         block_data['number'] = hexstr_to_int(block_data['number'])
@@ -1080,7 +1093,10 @@ class EtherscanLikeApi(ABC):
         options = {'to': to_address, 'data': input_data}
         if block_identifier != 'latest':
             if self.supports_historical_eth_call is False:
-                raise RemoteError(f'{self.name} does not support eth_call at a past block')
+                raise RemoteError(
+                    f'{self.name} does not support eth_call at a past block',
+                    cause=FailureCause.UNSUPPORTED,
+                )
 
             options['tag'] = hex(block_identifier) if isinstance(block_identifier, int) else str(block_identifier)  # noqa: E501
 
@@ -1160,6 +1176,9 @@ class EtherscanLikeApi(ABC):
                     )
 
             except DeserializationError as e:
-                raise RemoteError(f'Failed to decode a {self.name} log event due to {e!s}') from e
+                raise RemoteError(
+                    f'Failed to decode a {self.name} log event due to {e!s}',
+                    cause=FailureCause.BAD_DATA,
+                ) from e
 
         return new_events

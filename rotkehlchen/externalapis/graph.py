@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import APIKeyNotConfigured
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -80,6 +81,7 @@ class Graph(ExternalServiceWithApiKey):
         except (requests.exceptions.RequestException) as e:
             raise RemoteError(
                 f'Failed to connect to the graph with id {self.subgraph_id} due to {e!s}',
+                cause=FailureCause.NETWORK,
             ) from e
 
         self.api_key = api_key
@@ -118,11 +120,20 @@ class Graph(ExternalServiceWithApiKey):
                 base_msg = f'The Graph query to {self.graph_label}({self.subgraph_id}) failed'
                 error_msg = str(e)
                 if 'Subgraph not authorized by user' in error_msg:
-                    raise RemoteError(f'{base_msg} because subgraph is not authorized. {error_msg}') from e  # noqa: E501
+                    raise RemoteError(
+                        f'{base_msg} because subgraph is not authorized. {error_msg}',
+                        cause=FailureCause.AUTH,
+                    ) from e
                 if 'invalid bearer token: invalid auth token' in error_msg:
-                    raise RemoteError(f'{base_msg} because the token is not valid. {error_msg}') from e  # noqa: E501
+                    raise RemoteError(
+                        f'{base_msg} because the token is not valid. {error_msg}',
+                        cause=FailureCause.AUTH,
+                    ) from e
                 if 'malformed API key' in error_msg:
-                    raise RemoteError(f'{base_msg} because the given API key is malformed') from e
+                    raise RemoteError(
+                        f'{base_msg} because the given API key is malformed',
+                        cause=FailureCause.AUTH,
+                    ) from e
 
                 # we retry again
                 retry_base_msg = base_msg + f' with payload {querystr} due to {error_msg}'
@@ -141,10 +152,19 @@ class Graph(ExternalServiceWithApiKey):
                     log.error(f'{retry_base_msg}. {retry_msg}')
                     cancellable_sleep(sleep_seconds)
                 else:
-                    raise RemoteError(f'{base_msg}. No retries left.') from e
+                    raise RemoteError(
+                        f'{base_msg}. No retries left.',
+                        cause=FailureCause.NETWORK,
+                    ) from e
 
             except (GraphQLError, TransportError) as e:
-                raise RemoteError(f'Failed to query the graph for {querystr} due to {e}') from e
+                raise RemoteError(
+                    f'Failed to query the graph for {querystr} due to {e}',
+                    cause=(  # a GraphQLError is the query refused, a TransportError a lost link
+                        FailureCause.REMOTE_REJECTED if isinstance(e, GraphQLError)
+                        else FailureCause.NETWORK
+                    ),
+                ) from e
             else:
                 break
 

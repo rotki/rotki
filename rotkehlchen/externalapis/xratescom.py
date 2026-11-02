@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup, SoupStrainer
 from rotkehlchen.assets.asset import FiatAsset
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -32,12 +33,16 @@ def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
     try:
         response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
     except requests.exceptions.RequestException as e:
-        raise RemoteError(f'x-rates.com request {url} failed due to {e!s}') from e
+        raise RemoteError(
+            f'x-rates.com request {url} failed due to {e!s}',
+            cause=FailureCause.NETWORK,
+        ) from e
 
     if response.status_code != 200:
         raise RemoteError(
             f'x-rates.com request {url} failed with code: {response.status_code}'
             f' and response: {response.text}',
+            cause=cause_for_status(response.status_code),
         )
 
     soup = BeautifulSoup(
@@ -49,18 +54,27 @@ def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
     try:
         tr = soup.table.tbody.tr  # type: ignore  # we catch it with the AttributeError
     except AttributeError as e:
-        raise RemoteError('Could not find first <tr> while parsing x-rates.com page') from e
+        raise RemoteError(
+            'Could not find first <tr> while parsing x-rates.com page',
+            cause=FailureCause.BAD_DATA,
+        ) from e
 
     while tr is not None:
         secondtd = tr.select('td:nth-of-type(2)')[0]
         try:
             href = secondtd.a['href']  # type: ignore  # we catch it with the excepts below
         except (AttributeError, KeyError, TypeError) as e:
-            raise RemoteError('Could not find a href of 2nd td while parsing x-rates.com page') from e  # noqa: E501
+            raise RemoteError(
+                'Could not find a href of 2nd td while parsing x-rates.com page',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         parts = href.split('to=')  # type: ignore  # this is a string
         if len(parts) != 2:
-            raise RemoteError(f'Could not find to= in {href} while parsing x-rates.com page')
+            raise RemoteError(
+                f'Could not find to= in {href} while parsing x-rates.com page',
+                cause=FailureCause.BAD_DATA,
+            )
 
         try:
             to_asset = FiatAsset(parts[1])

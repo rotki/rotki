@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import ChainNotSupported, RecoverableRemoteError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
@@ -139,6 +140,7 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
                     f'{display_name} rate limit reached for {self.name} on '
                     f'{chain_id.name.capitalize()} with {time_until_reset} seconds until reset '
                     f'while max backoff is {backoff_limit} seconds.',
+                    cause=FailureCause.RATE_LIMITED,
                 )
             else:
                 cancellable_sleep(time_until_reset)
@@ -151,7 +153,10 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
             f'{msg} Expected rate limit headers with no remaining requests but got: '
             f'{response.headers}. Response body: {response.text}.',
         )
-        raise RecoverableRemoteError(f'{msg} Check logs for details.')
+        raise RecoverableRemoteError(
+            f'{msg} Check logs for details.',
+            cause=FailureCause.RATE_LIMITED,
+        )
 
     def get_l1_fee(
             self,
@@ -172,9 +177,15 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
             action='eth_getTransactionReceipt',
             options={'txhash': str(tx_hash)},
         )) is None:
-            raise RemoteError(f'Failed to get receipt data from {self.name} for tx {tx_hash!s}')
+            raise RemoteError(
+                f'Failed to get receipt data from {self.name} for tx {tx_hash!s}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         try:
             return read_integer(data=raw_receipt_data, key='l1Fee', api=self.name)
         except (KeyError, DeserializationError) as e:
-            raise RemoteError(f'Failed to get L1 fee for tx {tx_hash!s} from {self.name} due to {e!r}') from e  # noqa: E501
+            raise RemoteError(
+                f'Failed to get L1 fee for tx {tx_hash!s} from {self.name} due to {e!r}',
+                cause=FailureCause.BAD_DATA,
+            ) from e

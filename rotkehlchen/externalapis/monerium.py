@@ -17,7 +17,8 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import AuthenticationError
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -107,6 +108,7 @@ class Monerium:
             raise RemoteError(
                 f'Monerium API request {response.url} failed with HTTP status code '
                 f'{response.status_code} and text {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
@@ -114,6 +116,7 @@ class Monerium:
         except JSONDecodeError as e:
             raise RemoteError(
                 f'Monerium API returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
     @staticmethod
@@ -202,7 +205,10 @@ class Monerium:
             )
         except AuthenticationError as e:
             log.error(f'Failed to authenticate monerium request due to {e}')
-            raise RemoteError('Monerium authentication failed. Check logs for more details') from e
+            raise RemoteError(
+                'Monerium authentication failed. Check logs for more details',
+                cause=FailureCause.AUTH,
+            ) from e
 
         dbevents, created_bridge_leg = DBHistoryEvents(self.database), False
         for order in response['orders']:
@@ -537,11 +543,17 @@ class MoneriumOAuthClient:
                 timeout=timeout,
             )
         except requests.RequestException as exc:
-            raise RemoteError(f'Querying {url} failed due to {exc!s}') from exc  # pyright: ignore [reportPossiblyUnboundVariable] # url is defined since it is evaluated before the requests call
+            raise RemoteError(
+                f'Querying {url} failed due to {exc!s}',  # pyright: ignore [reportPossiblyUnboundVariable] # url is defined since it is evaluated before the requests call
+                cause=FailureCause.NETWORK,
+            ) from exc
 
         if response.status_code == 401:
             # Tokens are invalid, clear stored credentials so user can re-authenticate.
-            raise RemoteError('Monerium access token rejected. Please re-authorize.')
+            raise RemoteError(
+                'Monerium access token rejected. Please re-authorize.',
+                cause=FailureCause.AUTH,
+            )
 
         return response
 
@@ -557,13 +569,17 @@ class MoneriumOAuthClient:
         if response.status_code != 200:
             raise RemoteError(
                 f'Failed to query Monerium auth context: {response.status_code} {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
             return response.json()
         except requests.RequestException as exc:
             log.error(f'Monerium returned invalid json {response.text}')
-            raise RemoteError('Monerium auth context returned invalid JSON') from exc
+            raise RemoteError(
+                'Monerium auth context returned invalid JSON',
+                cause=FailureCause.BAD_DATA,
+            ) from exc
 
     def _refresh_access_token(self) -> None:
         """Refresh the stored access token using the refresh token flow.
@@ -573,7 +589,7 @@ class MoneriumOAuthClient:
         """
         log.debug('Preparing to refresh monerium oauth token')
         if not self.is_authenticated():
-            raise RemoteError('Monerium not authenticated')
+            raise RemoteError('Monerium not authenticated', cause=FailureCause.AUTH)
 
         assert self._credentials is not None, 'checked in is_authenticated'
         if self._oauth_client is None:
@@ -592,7 +608,10 @@ class MoneriumOAuthClient:
             )
         except requests.RequestException as exc:
             log.error('Failed to refresh Monerium access token due to %s', exc)
-            raise RemoteError(f'Failed to refresh Monerium access token: {exc!s}') from exc
+            raise RemoteError(
+                f'Failed to refresh Monerium access token: {exc!s}',
+                cause=FailureCause.NETWORK,
+            ) from exc
 
         if response.status_code != 200:
             if self._is_invalid_grant_refresh_response(response):
@@ -606,16 +625,23 @@ class MoneriumOAuthClient:
                 )
             raise RemoteError(
                 f'Failed to refresh Monerium access token: {response.status_code} {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
             token_response = self._oauth_client.parse_request_body_response(response.text)
         except ValueError as exc:
             log.error('Failed to parse Monerium token refresh response due to %s', exc)
-            raise RemoteError('Monerium token refresh response was invalid') from exc
+            raise RemoteError(
+                'Monerium token refresh response was invalid',
+                cause=FailureCause.BAD_DATA,
+            ) from exc
         if (access_token := token_response.get('access_token')) is None:
             log.error('Monerium token refresh response did not contain an access token')
-            raise RemoteError('Monerium token refresh did not return an access token')
+            raise RemoteError(
+                'Monerium token refresh did not return an access token',
+                cause=FailureCause.BAD_DATA,
+            )
 
         refresh_token = token_response.get('refresh_token', self._credentials.refresh_token)
         expires_in_raw = token_response.get('expires_in', HOUR_IN_SECONDS)
@@ -626,7 +652,10 @@ class MoneriumOAuthClient:
                 'Monerium token refresh response contained invalid expires_in %s',
                 expires_in_raw,
             )
-            raise RemoteError(f'Monerium returned invalid expires_in {expires_in_raw}') from e
+            raise RemoteError(
+                f'Monerium returned invalid expires_in {expires_in_raw}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         self._credentials.access_token = access_token
         self._credentials.refresh_token = refresh_token

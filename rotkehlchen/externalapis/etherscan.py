@@ -7,6 +7,7 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError, RequestTooLargeError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
@@ -286,7 +287,10 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                     return current_backoff * 2
 
                 elif result.startswith('Max daily'):
-                    raise RemoteError(f'{self.name} max daily rate limit reached.')
+                    raise RemoteError(
+                        f'{self.name} max daily rate limit reached.',
+                        cause=FailureCause.RATE_LIMITED,
+                    )
 
                 elif result.startswith('Free API access is not supported for this chain'):
                     raise ChainNotSupported(result)
@@ -311,7 +315,10 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             return []
 
         # else
-        raise RemoteError(f'{chain_id} {self.name} returned error response: {json_ret}')
+        raise RemoteError(
+            f'{chain_id} {self.name} returned error response: {json_ret}',
+            cause=FailureCause.REMOTE_REJECTED,
+        )
 
     def get_validated_blocks(
             self,
@@ -352,11 +359,17 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             try:
                 new_options = self._maybe_paginate(result=result, options=options)
             except KeyError as e:
-                raise RemoteError(f'Malformed Etherscan validated blocks response for {address}: missing {e!s}') from e  # noqa: E501
+                raise RemoteError(
+                    f'Malformed Etherscan validated blocks response for {address}: missing {e!s}',
+                    cause=FailureCause.BAD_DATA,
+                ) from e
             if new_options is None:
                 break
             if (new_options.get('startblock'), new_options.get('page')) == previous_page_state:
-                raise RemoteError(f'Etherscan validated blocks pagination made no progress for {address}')  # noqa: E501
+                raise RemoteError(
+                    f'Etherscan validated blocks pagination made no progress for {address}',
+                    cause=FailureCause.BAD_DATA,
+                )
             options = new_options
 
         return blocks
@@ -502,4 +515,5 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         raise RemoteError(
             f'Failed to retrieve L1 fees from {self.name} txlist for '
             f'{chain_id.to_name()} tx {tx_hash!s} due to {msg}',
+            cause=FailureCause.BAD_DATA,
         )

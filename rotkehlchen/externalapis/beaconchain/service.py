@@ -19,7 +19,8 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError, cause_for_status
 from rotkehlchen.externalapis.interface import (
     ExternalServiceWithApiKey,
     ExternalServiceWithRecommendedApiKey,
@@ -103,6 +104,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             raise RemoteError(
                 'Beaconcha.in is rate limited until '
                 f'{timestamp_to_iso8601(self.ratelimited_until)}. Check logs for more details',
+                cause=FailureCause.RATE_LIMITED,
             )
 
         query_str = f'{self.url}{endpoint}'
@@ -130,7 +132,10 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                     timeout=timeout,
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
+                raise RemoteError(
+                    f'Querying {query_str} failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code == 429:
                 if all(response.headers.get(header) == '0' for header in (
@@ -166,7 +171,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                         f'{rate_limit_info}'
                     )
                     log.debug(msg)
-                    raise RemoteError(msg)
+                    raise RemoteError(msg, cause=FailureCause.RATE_LIMITED)
 
                 retry_after = response.headers.get('ratelimit-reset') or response.headers.get('retry-after')  # noqa: E501
                 if retry_after is not None:
@@ -180,7 +185,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                         )
                         log.debug(msg)
                         self.ratelimited_until = Timestamp(ts_now() + retry_after_secs)
-                        raise RemoteError(msg)
+                        raise RemoteError(msg, cause=FailureCause.RATE_LIMITED)
                     # else
                     sleep_seconds = retry_after_secs
                 else:
@@ -208,6 +213,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                 f'Beaconchain API request {response.url} failed '
                 f'with HTTP status code {response.status_code} and text '
                 f'{response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
@@ -215,10 +221,14 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         except JSONDecodeError as e:
             raise RemoteError(
                 f'Beaconchain API returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         if 'data' not in json_ret:
-            raise RemoteError(f'Beaconchain API did not contain a data key. Response: {json_ret}')
+            raise RemoteError(
+                f'Beaconchain API did not contain a data key. Response: {json_ret}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         paging = json_ret.get('paging', {})
         return BeaconChainQueryResponse(
@@ -623,6 +633,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                 )) is None:
                     raise RemoteError(
                         'Beaconcha.in produced blocks response error. Missing fee recipient',
+                        cause=FailureCause.BAD_DATA,
                     )
                 fee_recipient = deserialize_evm_address(fee_recipient_raw)
                 proposer_index = entry['validator']['index']
@@ -675,6 +686,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         except KeyError as e:  # raising and not continuing since if 1 key missing something is off
             raise RemoteError(
                 f'Beaconcha.in produced blocks response error. Missing key entry {e!s}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
     def get_eth1_address_validators(self, address: ChecksumEvmAddress) -> list[ValidatorID]:
@@ -706,5 +718,6 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         except KeyError as e:
             raise RemoteError(
                 f'Beaconcha.in eth1 response processing error. Missing key entry {e!s}',
+                cause=FailureCause.BAD_DATA,
             ) from e
         return validators
