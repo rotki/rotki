@@ -1755,6 +1755,19 @@ describe('forms/HistoryEventEntryForm.vue, the kind of an event being added', ()
     expect(wrapper.find<HTMLInputElement>('[data-testid=tx-ref] input').element.value).toBe('');
   });
 
+  it('should not flag the signature a move to solana emptied, until it is touched', async () => {
+    await createWrapper();
+    await locate(wrapper, 'ethereum');
+    await wrapper.find('[data-testid=tx-ref] input').setValue(evmTxRef);
+    await wrapper.find('[data-testid=tx-ref] input').trigger('blur');
+
+    await locate(wrapper, 'solana');
+    expect(wrapper.find('[data-testid=tx-ref] .details').text()).toBe('');
+
+    await wrapper.find('[data-testid=tx-ref] input').trigger('blur');
+    expect(wrapper.find('[data-testid=tx-ref] .details').text()).not.toBe('');
+  });
+
   it('should make an event picked on an evm chain an evm event once the chains load', async () => {
     set(evmLocations, []);
     await createWrapper();

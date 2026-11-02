@@ -72,6 +72,8 @@ export interface FormApi<TState extends object, TPayload, TMessage = string> {
   /** Visible messages for a dotted path, e.g. `txRef` or `spend.0.amount`. */
   readonly errors: (path: string) => string[];
   readonly touch: (path: string) => void;
+  /** Forgets that a field was touched, so its errors stay hidden until it is touched again. */
+  readonly untouch: (path: string) => void;
   readonly dirty: ComputedRef<boolean>;
   readonly errorCount: ComputedRef<number>;
   readonly valid: ComputedRef<boolean>;
@@ -241,6 +243,19 @@ export function useForm<TState extends object, TPayload, TMessage = string>(
     set(touched, next);
   }
 
+  function untouch(path: string): void {
+    const target = resolve(path);
+    const keys = target ? get(touched).get(target.owner) : undefined;
+    if (!target || !keys?.has(target.key))
+      return;
+
+    const next = new Map(get(touched));
+    const remaining = new Set(keys);
+    remaining.delete(target.key);
+    next.set(target.owner, remaining);
+    set(touched, next);
+  }
+
   function setServerErrors(errorMessages: Record<string, string[]>): void {
     const next = new Map<string, ServerError>();
     for (const [path, messages] of Object.entries(errorMessages)) {
@@ -298,6 +313,7 @@ export function useForm<TState extends object, TPayload, TMessage = string>(
     submit,
     submitting: computed<boolean>(() => get(busy)),
     touch,
+    untouch,
     valid,
     validate,
   };
