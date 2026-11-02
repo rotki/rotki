@@ -43,7 +43,11 @@ vi.mock('@/modules/banks/components/BankConnectionForm.vue', () => ({
 
 const BigDialogStub = defineComponent({
   emits: ['cancel', 'confirm'],
-  props: { action: { default: undefined, type: Object } },
+  props: {
+    action: { default: undefined, type: Object },
+    promptOnClose: { default: false, type: Boolean },
+    title: { default: '', type: String },
+  },
   setup: (_props, { slots }) => (): VNode => h('div', slots.default?.()),
 });
 
@@ -95,6 +99,29 @@ describe('bankConnectionFormDialog', () => {
     expect(setupBank).toHaveBeenCalledWith(createForm());
     expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
+  });
+
+  it('should show limited history as the final setup step until Done is selected', async () => {
+    setupBank.mockResolvedValue(ok({ historyStartTs: 1_700_000_000, success: true }));
+    wrapper = createWrapper(createForm());
+
+    await confirm();
+
+    const completion = wrapper.find('[data-testid=bank-setup-complete]');
+    expect(completion.text()).toContain('bank_settings.dialog.added.message::Qonto main');
+    expect(completion.text()).toMatch(/bank_settings\.history_limit\.message::.+/u);
+    expect(wrapper.findComponent(BigDialogStub).props()).toMatchObject({
+      action: { primary: 'common.actions.done' },
+      promptOnClose: false,
+      title: 'bank_settings.dialog.added.title',
+    });
+    expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+
+    await confirm();
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
+    expect(setupBank).toHaveBeenCalledOnce();
   });
 
   describe('when closed', () => {
@@ -227,6 +254,19 @@ describe('bankConnectionFormDialog', () => {
       '123456',
     );
     expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
+  });
+
+  it('should show the final history step when authentication completes setup', async () => {
+    setupBank.mockResolvedValue(ok(otp));
+    answerBankAuthentication.mockResolvedValue(ok({ historyStartTs: 1_700_000_000, success: true }));
+    wrapper = createWrapper(createForm());
+
+    await confirm();
+    await wrapper.find('[data-testid=bank-auth-response] input').setValue('123456');
+    await confirm();
+
+    expect(wrapper.find('[data-testid=bank-setup-complete]').exists()).toBe(true);
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
 
   it('should automatically finish setup after an app approval', async () => {

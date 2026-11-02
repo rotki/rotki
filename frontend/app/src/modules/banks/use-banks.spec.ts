@@ -259,7 +259,7 @@ describe('useBanks', () => {
     expect(getBanks).toHaveBeenCalledTimes(2);
     expect(queryBankBalances).toHaveBeenCalledOnce();
     expect(queryAllBankEvents).toHaveBeenCalledWith([{ location: 'qonto', name: 'Qonto main' }]);
-    expect(notifyInfo).toHaveBeenCalledOnce();
+    expect(notifyInfo).not.toHaveBeenCalled();
   });
 
   it.each([

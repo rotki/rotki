@@ -1768,6 +1768,10 @@
       "add": {
         "title": "Banka bağlantısı ekle"
       },
+      "added": {
+        "message": "“{name}” banka bağlantısı başarıyla eklendi.",
+        "title": "Banka bağlantısı eklendi"
+      },
       "edit": {
         "title": "Banka bağlantısını düzenle"
       }

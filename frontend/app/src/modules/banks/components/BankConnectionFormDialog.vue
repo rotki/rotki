@@ -5,10 +5,12 @@ import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import BankAuthChallengeFields from '@/modules/banks/components/BankAuthChallengeFields.vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
-import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
+import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, type BankSetupSuccess, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
 import { useBankAuthenticationPolling } from '@/modules/banks/use-bank-authentication-polling';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
+import { displayDateFormatter } from '@/modules/core/common/date-formatter';
+import { useSetting } from '@/modules/settings/use-setting';
 import BigDialog, { type BigDialogAction } from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<BankFormData | undefined>({ required: true });
@@ -22,6 +24,7 @@ const stateUpdated = ref<boolean>(false);
 const errorMessages = ref<ValidationErrors>({});
 const authChallenge = ref<BankAuthChallenge>();
 const authResponse = ref<string>('');
+const setupSuccess = ref<BankSetupSuccess>();
 /** why the backend refused the last save or answer, shown until the next attempt */
 const setupError = ref<string>();
 const form = useTemplateRef<ComponentExposed<typeof BankConnectionForm>>('form');
@@ -29,11 +32,14 @@ const form = useTemplateRef<ComponentExposed<typeof BankConnectionForm>>('form')
 const { answerBankAuthentication, cancelBankSetup, setupBank } = useBanks();
 const { bankNameFor } = useBankConnectionsStore();
 const { t } = useI18n({ useScope: 'global' });
+const dateDisplayFormat = useSetting('dateDisplayFormat');
 const polling = useBankAuthenticationPolling(authChallenge, save);
 
 const title = computed<string>(() => {
   if (!isDefined(modelValue))
     return '';
+  if (isDefined(setupSuccess))
+    return t('bank_settings.dialog.added.title');
   return get(modelValue).mode === 'edit'
     ? t('bank_settings.dialog.edit.title')
     : t('bank_settings.dialog.add.title');
@@ -44,9 +50,22 @@ const missingResponse = computed<boolean>(() => {
   return !!challenge && challengeNeedsResponse(challenge) && get(authResponse).trim() === '';
 });
 
-const action = computed<BigDialogAction>(() => isDefined(authChallenge)
-  ? { disabled: get(missingResponse) || get(polling), primary: t('bank_settings.authentication.continue') }
-  : { primary: t('common.actions.save') });
+const action = computed<BigDialogAction>(() => {
+  if (isDefined(setupSuccess))
+    return { primary: t('common.actions.done') };
+  return isDefined(authChallenge)
+    ? { disabled: get(missingResponse) || get(polling), primary: t('bank_settings.authentication.continue') }
+    : { primary: t('common.actions.save') };
+});
+
+const historyLimitMessage = computed<string>(() => {
+  const timestamp = get(setupSuccess)?.historyStartTs;
+  if (timestamp === null || timestamp === undefined)
+    return '';
+  return t('bank_settings.history_limit.message', {
+    date: displayDateFormatter.format(new Date(timestamp * 1000), get(dateDisplayFormat)),
+  });
+});
 
 /** The api keys credential errors by slot; the form binds them at `credentials.<slot>`. */
 function toFieldErrors(errors: ValidationErrors, form: BankFormData): ValidationErrors {
@@ -102,11 +121,31 @@ async function save(): Promise<void> {
     set(authResponse, '');
     return;
   }
-  if (payload.mode !== 'edit')
-    emit('added', { location: payload.location, name: payload.name });
+  completeSetup(payload, outcome.value);
+}
+
+function completeSetup(payload: BankFormData, result: true | BankSetupSuccess): void {
+  if (payload.mode === 'edit') {
+    set(modelValue, undefined);
+    return;
+  }
+  emit('added', { location: payload.location, name: payload.name });
+  if (result !== true && result.historyStartTs !== null) {
+    set(setupSuccess, result);
+    set(stateUpdated, false);
+    set(authChallenge, undefined);
+    set(authResponse, '');
+    return;
+  }
   set(modelValue, undefined);
-  set(authChallenge, undefined);
-  set(authResponse, '');
+}
+
+async function confirm(): Promise<void> {
+  if (isDefined(setupSuccess)) {
+    set(modelValue, undefined);
+    return;
+  }
+  await save();
 }
 
 /** Closing an add at its TAN step drops the setup, so the next add of that name starts clean. */
@@ -123,6 +162,7 @@ watch(modelValue, (value) => {
     set(setupError, undefined);
     set(authChallenge, undefined);
     set(authResponse, '');
+    set(setupSuccess, undefined);
     set(stateUpdated, false);
   }
 });
@@ -135,24 +175,45 @@ watch(modelValue, (value) => {
     :action="action"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
-    @confirm="save()"
+    @confirm="confirm()"
     @cancel="cancel()"
   >
     <div class="flex flex-col gap-4">
+      <div
+        v-if="setupSuccess"
+        class="flex flex-col gap-4"
+        data-testid="bank-setup-complete"
+      >
+        <div class="flex items-center gap-3">
+          <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-rui-success/10 text-rui-success">
+            <RuiIcon
+              name="lu-circle-check"
+              size="24"
+            />
+          </div>
+          <span>{{ t('bank_settings.dialog.added.message', { name: modelValue?.name }) }}</span>
+        </div>
+        <RuiAlert
+          type="info"
+          :title="t('bank_settings.history_limit.title')"
+        >
+          {{ historyLimitMessage }}
+        </RuiAlert>
+      </div>
       <RuiAlert
-        v-if="setupError"
+        v-else-if="setupError"
         type="error"
         data-testid="bank-setup-error"
       >
         {{ setupError }}
       </RuiAlert>
       <BankAuthChallengeFields
-        v-if="authChallenge"
+        v-if="!setupSuccess && authChallenge"
         v-model:response="authResponse"
         :challenge="authChallenge"
       />
       <BankConnectionForm
-        v-else-if="modelValue"
+        v-else-if="!setupSuccess && modelValue"
         ref="form"
         v-model="modelValue"
         v-model:state-updated="stateUpdated"
