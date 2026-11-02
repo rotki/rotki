@@ -17,7 +17,8 @@ from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -225,6 +226,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'Gemini {method} query at {url} connection error: {e!s}',
+                    cause=FailureCause.NETWORK,
                 ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
@@ -253,6 +255,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(
                 f'Gemini query at {response.url} responded with error '
                 f'status code: {response.status_code} and text: {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
@@ -261,6 +264,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(
                 f'Gemini  query at {response.url} '
                 f'returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return json_ret
@@ -308,6 +312,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(
                 f'Gemini query at {response.url} responded with error '
                 f'status code: {response.status_code} and text: {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         deserialization_fn: Callable[[str], dict[str, Any]] | Callable[[str], list[Any]]
@@ -319,6 +324,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(
                 f'Gemini query at {response.url} '
                 f'returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return json_ret

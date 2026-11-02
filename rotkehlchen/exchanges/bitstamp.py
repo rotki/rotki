@@ -17,7 +17,8 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -189,7 +190,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         except JSONDecodeError as e:
             msg = f'Bitstamp returned invalid JSON response: {response.text}.'
             log.error(msg)
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for entry, raw_amount in response_dict.items():
@@ -408,7 +409,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                     ),
                     NetworkFailure(record=UserMessageRecord.ASSET_MOVEMENT, error=msg),
                 )
-                raise RemoteError(msg)
+                raise RemoteError(msg, cause=cause_for_status(response.status_code))
 
             try:
                 response_dict = jsonloads_dict(response.text)
@@ -419,7 +420,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                     f'Got remote error while querying Bitstamp crypto transactions: {msg}',
                     BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
                 )
-                raise RemoteError(msg) from e
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
             asset_movements = [
                 self._deserialize_asset_movement_from_crypto_transaction(
@@ -602,6 +603,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         except requests.exceptions.RequestException as e:
             raise RemoteError(
                 f'Bitstamp {method} request at {request_url} connection error: {e!s}.',
+                cause=FailureCause.NETWORK,
             ) from e
 
         return response
@@ -671,7 +673,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                     ),
                     NetworkFailure(record=record, error=msg),
                 )
-                raise RemoteError(msg)
+                raise RemoteError(msg, cause=cause_for_status(response.status_code))
             try:
                 response_list = jsonloads_list(response.text)
             except JSONDecodeError as e:
@@ -681,7 +683,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                     f'Got remote error while querying Bitstamp trades: {msg}',
                     BadData(record=record, error=str(e)),
                 )
-                raise RemoteError(msg) from e
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
             has_results = False
             is_result_timestamp_gt_end_ts = False

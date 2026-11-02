@@ -21,7 +21,8 @@ from rotkehlchen.db.constants import GATE_LOCATION_KEY
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -185,28 +186,37 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 ),
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Gate API request failed due to {e}') from e
+            raise RemoteError(
+                f'Gate API request failed due to {e}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             raise RemoteError(
                 f'Gate api request for {response.url} failed with HTTP '
                 f'status code {response.status_code} due to rate limiting',
+                cause=FailureCause.RATE_LIMITED,
             )
 
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
                 f'Gate api request for {response.url} failed with HTTP status '
                 f'code {response.status_code} and response {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
             json_ret = json.loads(response.text)
         except json.JSONDecodeError as e:
-            raise RemoteError('Gate returned invalid JSON response') from e
+            raise RemoteError(
+                'Gate returned invalid JSON response',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         if isinstance(json_ret, dict) and 'label' in json_ret:
             raise RemoteError(
                 f'Gate returned error: {json_ret.get("message")} ({json_ret.get("label")})',
+                cause=FailureCause.REMOTE_REJECTED,
             )
 
         return json_ret
@@ -313,7 +323,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     msg := f'Gate trades response is not a list: {raw_data}',
                     BadData(record=UserMessageRecord.TRADE, error=msg),
                 )
-                raise RemoteError(msg)
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA)
 
             if len(raw_data) == 0:
                 break
@@ -468,7 +478,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         msg := f'Gate {query_for!s} response is not a list: {result}',
                         BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=msg),
                     )
-                    raise RemoteError(msg)
+                    raise RemoteError(msg, cause=FailureCause.BAD_DATA)
 
                 raw_data.extend(result)
                 if len(result) < GATE_MOVEMENTS_PAGINATION_LIMIT:

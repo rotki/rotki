@@ -20,7 +20,8 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -226,6 +227,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'{self.name} {method} request at {request_url} connection error: {e!s}.',
+                    cause=FailureCause.NETWORK,
                 ) from e
 
         return response
@@ -673,6 +675,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 f'bitfinex failed to request exchange currency map. '
                 f'Response status code: {response.status_code}. '
                 f'Response text: {response.text}.',
+                cause=cause_for_status(response.status_code),
             )
 
     def _query_exchange_pairs(self) -> ExchangePairsResponse:
@@ -805,6 +808,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 f'bitfinex failed to request currencies list. '
                 f'Response status code: {currencies_response.response.status_code}. '
                 f'Response text: {currencies_response.response.text}.',
+                cause=cause_for_status(currencies_response.response.status_code),
             )
 
         exchange_pairs_response = self._query_exchange_pairs()
@@ -813,6 +817,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 f'bitfinex failed to request exchange pairs list. '
                 f'Response status code: {exchange_pairs_response.response.status_code}. '
                 f'Response text: {exchange_pairs_response.response.text}.',
+                cause=cause_for_status(exchange_pairs_response.response.status_code),
             )
 
         self._query_currency_map()
@@ -863,7 +868,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         except JSONDecodeError as e:
             msg = f'{self.name} returned invalid JSON response: {response.text}.'
             log.error(msg)
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
         # Wallet items indices
         currency_index = 1
