@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 import requests
 
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SupportedBlockchain, Timestamp
@@ -60,15 +61,24 @@ class CowswapAPI:
         try:
             response = self.session.get(url=query_str, timeout=timeout)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
+            raise RemoteError(
+                f'Querying {query_str} failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code != 200:
-            raise RemoteError(f'Cowswap API request {response.url} failed with HTTP status code {response.status_code} and text {response.text}')  # noqa: E501
+            raise RemoteError(
+                f'Cowswap API request {response.url} failed with HTTP status code {response.status_code} and text {response.text}',  # noqa: E501
+                cause=cause_for_status(response.status_code),
+            )
 
         try:
             json_ret = json.loads(response.text)
         except json.decoder.JSONDecodeError as e:
-            raise RemoteError(f'Cowswap API returned invalid JSON response: {response.text}') from e  # noqa: E501
+            raise RemoteError(
+                f'Cowswap API returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         return json_ret
 
@@ -123,6 +133,9 @@ def parse_order_data(data: dict[str, Any]) -> tuple[int, str]:
                 order_type = 'limit'
     except (KeyError, json.decoder.JSONDecodeError, ValueError, DeserializationError) as e:
         log.error(f'Could not process Cowswap API response: {data} due to {e!s}')
-        raise RemoteError('Invalid data from Cowswap API response') from e
+        raise RemoteError(
+            'Invalid data from Cowswap API response',
+            cause=FailureCause.BAD_DATA,
+        ) from e
 
     return raw_fee_amount, order_type

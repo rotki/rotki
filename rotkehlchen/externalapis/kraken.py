@@ -7,7 +7,8 @@ import requests
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
@@ -58,32 +59,49 @@ class Kraken(CurrentPriceOracleInterface):
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Kraken API request failed due to {e!s}') from e
+            raise RemoteError(
+                f'Kraken API request failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             self.last_rate_limit = ts_now()
             raise RemoteError(
                 message='Got rate limited by Kraken querying ticker prices',
                 error_code=HTTPStatus.TOO_MANY_REQUESTS,
+                cause=FailureCause.RATE_LIMITED,
             )
 
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
                 f'Kraken ticker query failed with HTTP status code: {response.status_code}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
             data = response.json()
         except requests.exceptions.JSONDecodeError as e:
-            raise RemoteError(f'Invalid JSON in Kraken ticker response. {e!s}') from e
+            raise RemoteError(
+                f'Invalid JSON in Kraken ticker response. {e!s}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         if not isinstance(data, dict):
-            raise RemoteError(f'Kraken ticker response was not a JSON object: {data}')
+            raise RemoteError(
+                f'Kraken ticker response was not a JSON object: {data}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         if len(errors := data.get('error', [])) != 0:
-            raise RemoteError(f'Kraken ticker query failed with errors: {errors}')
+            raise RemoteError(
+                f'Kraken ticker query failed with errors: {errors}',
+                cause=FailureCause.REMOTE_REJECTED,
+            )
         if not isinstance(result := data.get('result'), dict):
-            raise RemoteError(f'Kraken ticker response is missing a result object: {data}')
+            raise RemoteError(
+                f'Kraken ticker response is missing a result object: {data}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return result
 

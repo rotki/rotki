@@ -9,7 +9,8 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKeyOptionalDB
@@ -389,25 +390,31 @@ class Alchemy(
             )
         except requests.RequestException as e:
             self.note_request_failure(e)
-            raise RemoteError(f'Alchemy API request failed due to {e!s}') from e
+            raise RemoteError(
+                f'Alchemy API request failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             self.last_rate_limit = ts_now()
             msg = f'Got rate limited by Alchemy API querying {url}'
             log.warning(msg)
-            raise RemoteError(message=msg, error_code=HTTPStatus.TOO_MANY_REQUESTS)
+            raise RemoteError(
+                message=msg, error_code=HTTPStatus.TOO_MANY_REQUESTS,
+                cause=FailureCause.RATE_LIMITED,
+            )
 
         if response.status_code != HTTPStatus.OK:
             msg = (
                 f'Alchemy API request {response.url} failed with HTTP status '
                 f'code: {response.status_code} with reason: {response.text}'
             )
-            raise RemoteError(msg)
+            raise RemoteError(msg, cause=cause_for_status(response.status_code))
 
         try:
             decoded_json = response.json()
         except requests.RequestException as e:
             msg = f'Invalid JSON in Alchemy API response. {e}'
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
         return decoded_json

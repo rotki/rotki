@@ -14,6 +14,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from rotkehlchen.errors.api import AuthenticationError
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -212,8 +213,12 @@ class GoogleCalendarAPI:
                 raise RemoteError(
                     'Insufficient permissions for Google Calendar. Please disconnect and '
                     'reconnect to grant the necessary permissions.',
+                    cause=FailureCause.AUTH,
                 ) from e
-            raise RemoteError(f'Failed to get or create Rotki calendar: {e}') from e
+            raise RemoteError(
+                f'Failed to get or create Rotki calendar: {e}',
+                cause=FailureCause.REMOTE_REJECTED,
+            ) from e
         else:
             return calendar_id
 
@@ -270,7 +275,10 @@ class GoogleCalendarAPI:
                 calendar_id = self._get_or_create_calendar()
                 existing_events = {}
             else:
-                raise RemoteError(f'Failed to list existing calendar events: {e}') from e
+                raise RemoteError(
+                    f'Failed to list existing calendar events: {e}',
+                    cause=FailureCause.REMOTE_REJECTED,
+                ) from e
 
         # Sync each rotki event
         for entry in events:
@@ -477,7 +485,10 @@ class GoogleCalendarAPI:
         )
 
         if response.status_code != 200:
-            raise RemoteError(f'Invalid access token: {response.status_code} {response.text}')
+            raise RemoteError(
+                f'Invalid access token: {response.status_code} {response.text}',
+                cause=FailureCause.AUTH,
+            )
 
         user_info = response.json()
         log.info(f'Access token validated for user: {user_info.get("email", "unknown")}')
@@ -507,6 +518,7 @@ class GoogleCalendarAPI:
             raise RemoteError(
                 f'Access token is missing required scope: {required_scope}. '
                 f'Token has scopes: {actual_scopes}',
+                cause=FailureCause.AUTH,
             )
 
     def _create_credentials(self, access_token: str, refresh_token: str) -> Credentials:

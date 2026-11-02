@@ -19,6 +19,7 @@ from rotkehlchen.constants.assets import A_HYPE
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnknownCounterpartyMapping, WrongAssetType
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     RecoverableRemoteError,
     RemoteError,
@@ -330,7 +331,10 @@ class HyperliquidAPI:
                     timeout=timeout,
                 )
             except requests.exceptions.RequestException as e:
-                raise RecoverableRemoteError(f'Failed to query hyperliquid info due to {e}') from e
+                raise RecoverableRemoteError(
+                    f'Failed to query hyperliquid info due to {e}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 attempts += 1
@@ -341,6 +345,7 @@ class HyperliquidAPI:
                         f'Hyperliquid API request {response.url} failed with HTTP status code '
                         f'{response.status_code} and text {response.text} after waiting '
                         f'{slept} seconds for the rate limit for payload {payload}',
+                        cause=FailureCause.RATE_LIMITED,
                     )
 
                 backoff = max(1, backoff * 2)
@@ -369,6 +374,7 @@ class HyperliquidAPI:
             except json.JSONDecodeError as e:
                 raise RemoteError(
                     f'Failed to decode hyperliquid JSON response: {response.text[:200]}',
+                    cause=FailureCause.BAD_DATA,
                 ) from e
 
             if isinstance(data, list):
@@ -388,6 +394,7 @@ class HyperliquidAPI:
             raise RemoteError(
                 f'Hyperliquid {query_name} returned malformed response type '
                 f'{type(result).__name__}: {result!s}',
+                cause=FailureCause.BAD_DATA,
             )
 
         return result
@@ -410,6 +417,7 @@ class HyperliquidAPI:
             raise RemoteError(
                 f'Hyperliquid {query_name} returned malformed response type '
                 f'{type(result).__name__}: {result!s}',
+                cause=FailureCause.BAD_DATA,
             )
 
         return [entry for entry in result if isinstance(entry, dict)]
@@ -467,7 +475,10 @@ class HyperliquidAPI:
         if role in HYPERLIQUID_CORE_NON_ACCOUNT_ROLES:
             return False
 
-        raise RemoteError(f'Hyperliquid userRole returned unexpected role {role!r} for {address}')
+        raise RemoteError(
+            f'Hyperliquid userRole returned unexpected role {role!r} for {address}',
+            cause=FailureCause.BAD_DATA,
+        )
 
     def query_balances(
             self,
@@ -648,6 +659,7 @@ class HyperliquidAPI:
         except (KeyError, DeserializationError) as e:
             raise RemoteError(
                 f'Hyperliquid delegatorSummary returned malformed response {data}: {e}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
     def query_staking_balance(self, address: ChecksumEvmAddress) -> FVal:
@@ -924,12 +936,14 @@ class HyperliquidAPI:
                 raise RemoteError(
                     f'Hyperliquid {query_type} for {address} returned an entry with an '
                     f'unreadable time: {entry}',
+                    cause=FailureCause.BAD_DATA,
                 ) from e
 
             if not start_ms <= entry_time <= end_ms:
                 raise RemoteError(
                     f'Hyperliquid {query_type} for {address} returned an entry at '
                     f'{entry_time} outside of the requested range {start_ms}-{end_ms}',
+                    cause=FailureCause.BAD_DATA,
                 )
             page.append((entry_time, entry))
 
@@ -959,6 +973,7 @@ class HyperliquidAPI:
             raise RemoteError(
                 f'Hyperliquid {query_type} for {address} did not return the oldest entries '
                 f'from {range_start}. Paging forward would miss history',
+                cause=FailureCause.BAD_DATA,
             )
 
     def _iter_entry_pages(
