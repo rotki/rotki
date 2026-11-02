@@ -20,12 +20,17 @@ const CommonHistoryEvent = z.object({
   userNotes: z.string().optional(),
 });
 
-export const EvmHistoryEvent = CommonHistoryEvent.extend({
+/** The fields every event of a chain transaction has: its reference, the contract and the protocol it touched. */
+const ChainEventFields = {
   address: z.string().nullable(),
   counterparty: z.string().nullable(),
-  entryType: z.literal(HistoryEventEntryType.EVM_EVENT),
   extraData: z.unknown().nullish(),
   txRef: z.string(),
+};
+
+export const EvmHistoryEvent = CommonHistoryEvent.extend({
+  ...ChainEventFields,
+  entryType: z.literal(HistoryEventEntryType.EVM_EVENT),
 });
 
 export type EvmHistoryEvent = z.infer<typeof EvmHistoryEvent>;
@@ -71,11 +76,8 @@ export const EthBlockEvent = CommonHistoryEvent.extend({
 export type EthBlockEvent = z.infer<typeof EthBlockEvent>;
 
 export const EthDepositEvent = CommonHistoryEvent.extend({
-  address: z.string().nullable(),
-  counterparty: z.string().nullable(),
+  ...ChainEventFields,
   entryType: z.literal(HistoryEventEntryType.ETH_DEPOSIT_EVENT),
-  extraData: z.unknown().nullable().nullish(),
-  txRef: z.string(),
   validatorIndex: z.number(),
 });
 
@@ -101,41 +103,29 @@ const SwapEventSchema = CommonHistoryEvent.extend({
 export type SwapEvent = z.infer<typeof SwapEventSchema>;
 
 const EvmSwapEventSchema = CommonHistoryEvent.extend({
-  address: z.string().nullable(),
-  counterparty: z.string().nullable(),
+  ...ChainEventFields,
   entryType: z.literal(HistoryEventEntryType.EVM_SWAP_EVENT),
-  extraData: z.unknown().nullable(),
-  txRef: z.string(),
 });
 
 export type EvmSwapEvent = z.infer<typeof EvmSwapEventSchema>;
 
 const BitcoinEventSchema = CommonHistoryEvent.extend({
-  address: z.string().nullable(),
-  counterparty: z.string().nullable(),
+  ...ChainEventFields,
   entryType: z.literal(HistoryEventEntryType.BITCOIN_EVENT),
-  extraData: z.unknown().nullish(),
-  txRef: z.string(),
 });
 
 export type BitcoinEvent = z.infer<typeof BitcoinEventSchema>;
 
 const SolanaEventSchema = CommonHistoryEvent.extend({
-  address: z.string().nullable(),
-  counterparty: z.string().nullable(),
+  ...ChainEventFields,
   entryType: z.literal(HistoryEventEntryType.SOLANA_EVENT),
-  extraData: z.unknown().nullish(),
-  txRef: z.string(),
 });
 
 export type SolanaEvent = z.infer<typeof SolanaEventSchema>;
 
 const SolanaSwapEventSchema = CommonHistoryEvent.extend({
-  address: z.string().nullable(),
-  counterparty: z.string().nullable(),
+  ...ChainEventFields,
   entryType: z.literal(HistoryEventEntryType.SOLANA_SWAP_EVENT),
-  extraData: z.unknown().nullish(),
-  txRef: z.string(),
 });
 
 export type SolanaSwapEvent = z.infer<typeof SolanaSwapEventSchema>;
