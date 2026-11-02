@@ -212,6 +212,7 @@ export class HistoryEventsPage {
 
   async fillSolanaEventForm(data: SolanaEventFixture): Promise<void> {
     await this.fillDatetime();
+    await this.selectLocation('solana');
     await this.page.locator('[data-testid=tx-ref] input').fill(data.txRef);
     await this.selectAction(data.eventType, data.eventSubtype);
     await selectAsset(this.page, '[data-testid=asset]', data.asset, data.assetId);

@@ -32,17 +32,14 @@ function editGroup(entryType: GroupEditableHistoryEvents['entryType']): GroupEve
 }
 
 describe('entryTypeOptions', () => {
-  it('should offer a new event every entry type but the chain swaps, which a swap takes from its location', () => {
+  it('should offer a new event every entry type but the chain swaps and chain events, which take their kind from the location', () => {
     expect(entryTypeOptions(add)).toEqual([
       HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
       HistoryEventEntryType.BANK_TRANSACTION_EVENT,
-      HistoryEventEntryType.BITCOIN_EVENT,
       HistoryEventEntryType.ETH_BLOCK_EVENT,
       HistoryEventEntryType.ETH_DEPOSIT_EVENT,
       HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
-      HistoryEventEntryType.EVM_EVENT,
       HistoryEventEntryType.HISTORY_EVENT,
-      HistoryEventEntryType.SOLANA_EVENT,
       HistoryEventEntryType.SWAP_EVENT,
     ]);
   });
