@@ -321,11 +321,13 @@ class PremiumSyncManager(LockableQueryMixIn):
             log.warning('Could not query the max backup size, skipping size check', error=str(e))
             max_backup_size_mb = None
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+        # The export closes the file to reopen it by name, so it must not be deleted on close.
+        # It is still deleted on every way out of this block, including errors while
+        # exporting, compressing or encrypting.
+        with tempfile.NamedTemporaryFile(suffix='.db', delete_on_close=False) as tempdbfile:
             tempdbpath = self.data.db.export_unencrypted(tempdbfile)
             exported_ok, exported_error = plaintext_db_integrity_check(tempdbpath)
             if not exported_ok:
-                tempdbpath.unlink(missing_ok=True)
                 message = f'Exported database failed the integrity check: {exported_error}'
                 log.error('upload to server aborted -- %s', message)
                 self.data.msg_aggregator.add_message(

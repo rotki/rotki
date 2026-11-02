@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, call, patch
 
 import machineid
 import pytest
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
 from rotkehlchen.concurrency import spawn, wait
@@ -393,6 +394,38 @@ def test_upload_aborts_on_local_db_integrity_failure(rotkehlchen_instance: Rotke
         assert rotkehlchen_instance.data.db.get_static_cache(
             cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS,
         ) is None
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize(('failing_function', 'error'), [
+    ('rotkehlchen.db.dbhandler.DBHandler.export_unencrypted', sqlcipher.OperationalError('database or disk is full')),  # pylint: disable=no-member  # noqa: E501
+    ('rotkehlchen.data_handler.encrypt_backup', MemoryError()),
+])
+def test_upload_removes_exported_db_on_error(
+        rotkehlchen_instance: Rotkehlchen,
+        tmp_path: Path,
+        failing_function: str,
+        error: BaseException,
+) -> None:
+    """The plaintext copy of the DB exported for an upload is removed when the upload fails
+    with an error that is not handled, while exporting it or while compressing/encrypting it"""
+    assert rotkehlchen_instance.premium is not None
+    (tempdir := tmp_path / 'tempdir').mkdir()
+    with (
+        create_patched_requests_get_for_premium(
+            session=rotkehlchen_instance.premium.session,
+            metadata_last_modify_ts=0,
+            metadata_data_hash='somehash',
+            metadata_data_size=2,
+            saved_data=b'foo',
+        ),
+        patch.object(tempfile, 'tempdir', str(tempdir)),
+        patch(failing_function, side_effect=error),
+        pytest.raises(type(error)),
+    ):
+        rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server(force_upload=True)
+
+    assert list(tempdir.iterdir()) == []
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
