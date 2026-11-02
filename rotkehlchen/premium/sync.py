@@ -364,7 +364,17 @@ class PremiumSyncManager(LockableQueryMixIn):
                 ask_user_upon_size_discrepancy = self.data.db.get_setting(
                     cursor=cursor, name='ask_user_upon_size_discrepancy',
                 )
-            if ask_user_upon_size_discrepancy is True:
+                last_password_change_ts = self.data.db.get_static_cache(
+                    cursor=cursor, name=DBCacheStatic.LAST_PASSWORD_CHANGE_TS,
+                )
+            # A remote backup from before the last password change can only be opened with
+            # the old password, so replace it without the size check. The rekey adds no data
+            # and only shifts the compressed size by a few bytes either way.
+            backup_has_old_password = (
+                last_password_change_ts is not None and
+                metadata.last_modify_ts < last_password_change_ts
+            )
+            if ask_user_upon_size_discrepancy is True and not backup_has_old_password:
                 message = 'Remote database bigger than the local one'
                 log.debug(
                     f'upload to server stopped -- remote db({metadata.data_size}) '

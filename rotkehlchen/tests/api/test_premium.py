@@ -1,4 +1,5 @@
 import json
+import tempfile
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
@@ -175,35 +176,24 @@ def test_upload_db_plan_without_backups(rotkehlchen_api_server: APIServer) -> No
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
+@pytest.mark.parametrize('remote_is_bigger', [False, True])
 def test_password_change_makes_backup_upload_due(
         rotkehlchen_api_server: APIServer,
         username: str,
         db_password: str,
+        remote_is_bigger: bool,
 ) -> None:
     """The backup on the server is encrypted with the password it was made with. After a
     password change it is replaced at the next scheduled upload, even though it holds the
-    latest data and an upload was attempted less than an hour ago."""
+    latest data and an upload was attempted less than an hour ago. That also holds when it
+    is a few bytes bigger than the new backup, since the compressed size shifts slightly."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     assert rotki.premium is not None
     db, sync_manager = rotki.data.db, rotki.premium_sync_manager
     with db.conn.read_ctx() as cursor:
         backup_ts = db.get_setting(cursor, name='last_write_ts')
     sync_manager.last_upload_attempt_ts = ts_now()
-    with (
-        patch.object(rotki.premium, 'get_capabilities', return_value={'max_backup_size_mb': 100}),
-        create_patched_requests_get_for_premium(
-            session=rotki.premium.session,
-            metadata_last_modify_ts=backup_ts,
-            metadata_data_hash='remote_hash',
-            metadata_data_size=2,
-            saved_data=b'foo',
-        ),
-        patch.object(
-            rotki.premium.session,
-            'post',
-            return_value=MockResponse(HTTPStatus.OK, '{"success": true}'),
-        ) as post_mock,
-    ):
+    with patch.object(rotki.premium, 'get_capabilities', return_value={'max_backup_size_mb': 100}):
         assert sync_manager.check_if_should_sync(force_upload=False) == (False, None)
         with patch('rotkehlchen.db.dbhandler.ts_now', return_value=backup_ts + 100):
             assert_simple_ok_response(requests.patch(
@@ -211,8 +201,27 @@ def test_password_change_makes_backup_upload_due(
                 json={'name': username, 'current_password': db_password, 'new_password': 'foo'},
             ))
 
-        assert sync_manager.check_if_should_sync(force_upload=False) == (True, None)
-        assert sync_manager.maybe_upload_data_to_server() == (True, None)
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+            new_backup, _ = rotki.data.compress_and_encrypt_db(
+                tempdbpath=db.export_unencrypted(tempdbfile),
+                last_modify_ts=Timestamp(backup_ts + 100),
+            )
+        with (
+            create_patched_requests_get_for_premium(
+                session=rotki.premium.session,
+                metadata_last_modify_ts=backup_ts,
+                metadata_data_hash='remote_hash',
+                metadata_data_size=len(new_backup) + 1 if remote_is_bigger else 2,
+                saved_data=b'foo',
+            ),
+            patch.object(
+                rotki.premium.session,
+                'post',
+                return_value=MockResponse(HTTPStatus.OK, '{"success": true}'),
+            ) as post_mock,
+        ):
+            assert sync_manager.check_if_should_sync(force_upload=False) == (True, None)
+            assert sync_manager.maybe_upload_data_to_server() == (True, None)
 
     assert post_mock.call_count == 1
 
