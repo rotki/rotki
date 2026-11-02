@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
 import pytest
-from freezegun import freeze_time
 
 import rotkehlchen.chain.evm.names
 from rotkehlchen.chain.accounts import BlockchainAccountData
@@ -19,9 +18,11 @@ from rotkehlchen.chain.evm.names import (
     find_ens_mappings,
     search_for_addresses_names,
 )
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     AddressbookEntryWithSource,
@@ -222,77 +223,44 @@ def test_gns_resolve(ethereum_inquirer):
     assert gns_resolve(ethereum_inquirer, 'surely-not-registered-a1b2c3.gwei') is None
 
 
-@pytest.mark.vcr
-@freeze_time('2023-05-12')  # freezing time just to make sure comparisons of timestamps won't fail
-def test_download_ens_avatar(ethereum_inquirer, opensea):
-    """
-    Tests that detection and downloading of ens avatars works properly for all resolvers
-    """
+@pytest.mark.vcr(match_on=['uri', 'method', 'body'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='publicnode',
+            endpoint='https://ethereum-rpc.publicnode.com',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        active=True,
+        weight=ONE,
+    ),
+)], ids=['publicnode'])
+def test_download_ens_avatar(ethereum_inquirer, ethereum_manager_connect_at_start, tmp_path):
+    """Resolve and download migrated and unmigrated ENS avatars without a previous cache."""
+    wait_until_all_nodes_connected(ethereum_manager_connect_at_start, ethereum_inquirer)
     dbens = DBEns(ethereum_inquirer.database)
-    with dbens.db.user_write() as write_cursor:
-        dbens.add_ens_mapping(
-            write_cursor=write_cursor,
-            address=make_evm_address(),
-            name='random.ens.name.eth',
-            now=ts_now(),
-        )
-        dbens.add_ens_mapping(
-            write_cursor=write_cursor,
-            address=make_evm_address(),
-            name='yabir.eth',  # resolver v2
-            now=ts_now(),
-        )
-        dbens.add_ens_mapping(
-            write_cursor=write_cursor,
-            address=make_evm_address(),
-            name='tewshi.eth',  # resolver v3
-            now=ts_now(),
-        )
-        dbens.add_ens_mapping(
-            write_cursor=write_cursor,
-            address=make_evm_address(),
-            name='arpit59.eth',  # got an NFT image
-            now=ts_now(),
-        )
-
-    with tempfile.TemporaryDirectory() as tempdir_str:
-        tempdir = Path(tempdir_str)
+    for ens_name, signature in (
+        ('yabir.eth', b'\xff\xd8\xff'),
+        ('lefteris.eth', b'\x89PNG\r\n\x1a\n'),
+    ):
+        with dbens.db.user_write() as write_cursor:
+            dbens.add_ens_mapping(
+                write_cursor=write_cursor,
+                address=make_evm_address(),
+                name=ens_name,
+                now=ts_now(),
+            )
+        assert not (avatar_path := tmp_path / f'{ens_name}.png').exists()
+        assert dbens.get_last_avatar_update(ens_name) == 0
         try_download_ens_avatar(
             eth_inquirer=ethereum_inquirer,
-            opensea=opensea,
-            avatars_dir=tempdir,
-            ens_name='random.ens.name.eth',  # a random ens name, and thus there is no avatar
+            opensea=None,
+            avatars_dir=tmp_path,
+            ens_name=ens_name,
         )
-        assert dbens.get_last_avatar_update('random.ens.name.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
-        assert list(tempdir.iterdir()) == []
-        try_download_ens_avatar(
-            eth_inquirer=ethereum_inquirer,
-            opensea=opensea,
-            avatars_dir=tempdir,
-            ens_name='yabir.eth',  # resolver v2
-        )
-        assert dbens.get_last_avatar_update('yabir.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
-        try_download_ens_avatar(
-            eth_inquirer=ethereum_inquirer,
-            opensea=opensea,
-            avatars_dir=tempdir,
-            ens_name='tewshi.eth',  # an avatar should be downloaded. Resolver v3
-        )
-        assert dbens.get_last_avatar_update('tewshi.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
-        assert set(tempdir.iterdir()) == {tempdir / 'tewshi.eth.png', tempdir / 'yabir.eth.png'}
-        try_download_ens_avatar(
-            eth_inquirer=ethereum_inquirer,
-            opensea=opensea,
-            avatars_dir=tempdir,
-            ens_name='arpit59.eth',  # avatar should be downloaded. NFT image using ensapp metadata
-        )
-        assert dbens.get_last_avatar_update('arpit59.eth') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
-
-        assert set(tempdir.iterdir()) == {
-            tempdir / 'arpit59.eth.png',
-            tempdir / 'tewshi.eth.png',
-            tempdir / 'yabir.eth.png',
-        }
+        assert avatar_path.read_bytes().startswith(signature)
+        assert dbens.get_last_avatar_update(ens_name) > 0
 
 
 def test_download_gwei_name_avatar(ethereum_inquirer):

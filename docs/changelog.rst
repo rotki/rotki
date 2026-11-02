@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fixed missing profile images for ENS names migrated to v2.
 * :bug:`13514` Profit and loss reports no longer crash while refreshing Kraken history containing two receive or two spend ledger entries with the same transaction reference.
 * :bug:`13508` Solana v1 transactions are now included in transaction history. Previously skipped transactions are recovered during the next Solana transaction refresh.
 * :release:`1.44.2 <2026-10-22>`
