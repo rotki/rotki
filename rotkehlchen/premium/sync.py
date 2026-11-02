@@ -47,6 +47,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 NO_REMOTE_BACKUP_MSG: Final = 'There is no database backup on the server.'
+# How much smaller than the remote backup, as a fraction of its size, the new backup can be
+# right after a password change without asking the user. The rekey adds no data and only
+# shifts the compressed size by a few bytes either way.
+PASSWORD_CHANGE_SIZE_TOLERANCE: Final = 0.01
 
 
 class CanSync(Enum):
@@ -368,11 +372,14 @@ class PremiumSyncManager(LockableQueryMixIn):
                     cursor=cursor, name=DBCacheStatic.LAST_PASSWORD_CHANGE_TS,
                 )
             # A remote backup from before the last password change can only be opened with
-            # the old password, so replace it without the size check. The rekey adds no data
-            # and only shifts the compressed size by a few bytes either way.
+            # the old password, so replace it if the sizes differ only as much as a rekey can
+            # make them. A much bigger remote backup still holds data we don't have.
             backup_has_old_password = (
                 last_password_change_ts is not None and
-                metadata.last_modify_ts < last_password_change_ts
+                metadata.last_modify_ts < last_password_change_ts and
+                metadata.data_size - data_bytes_size <= (
+                    metadata.data_size * PASSWORD_CHANGE_SIZE_TOLERANCE
+                )
             )
             if ask_user_upon_size_discrepancy is True and not backup_has_old_password:
                 message = 'Remote database bigger than the local one'
