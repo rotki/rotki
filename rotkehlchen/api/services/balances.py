@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.api.result import ApiResult, OkResult
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.inquirer import Inquirer
@@ -37,10 +38,10 @@ class BalancesService:
             save_data: bool,
             ignore_errors: bool,
             ignore_cache: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         result = self.rotkehlchen.query_balances(
             requested_save_data=save_data,
             save_despite_errors=ignore_errors,
             ignore_cache=ignore_cache,
         )
-        return {'result': result, 'message': ''}
+        return OkResult(result)

@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.misc import combine_dicts, ts_now
@@ -41,7 +43,7 @@ class ExchangesService:
             binance_history_start_ts: Timestamp | None,
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
-    ) -> tuple[bool | None, str, HTTPStatus]:
+    ) -> ApiResult:
         result, msg = self.rotkehlchen.setup_exchange(
             name=name,
             location=location,
@@ -57,8 +59,8 @@ class ExchangesService:
             gate_location=gate_location,
         )
         if not result:
-            return None, msg, HTTPStatus.CONFLICT
-        return True, msg, HTTPStatus.OK
+            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+        return OkResult(True, message=msg)
 
     def get_binance_history_start_timestamp(self) -> Timestamp:
         """Return the inclusive API start timestamp suggested for a new Binance key."""
@@ -85,7 +87,7 @@ class ExchangesService:
             binance_markets: list[str] | None,
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
-    ) -> tuple[bool | None, str, HTTPStatus]:
+    ) -> ApiResult:
         edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
             name=name,
             location=location,
@@ -101,46 +103,38 @@ class ExchangesService:
             gate_location=gate_location,
         )
         if not edited:
-            return None, msg, HTTPStatus.CONFLICT
-        return True, msg, HTTPStatus.OK
+            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+        return OkResult(True, message=msg)
 
     def remove_exchange(
             self,
             name: str,
             location: Location,
-    ) -> tuple[bool | None, str, HTTPStatus]:
+    ) -> ApiResult:
         result, message = self.rotkehlchen.exchange_manager.delete_exchange(
             name=name,
             location=location,
         )
         if not result:
-            return None, message, HTTPStatus.CONFLICT
-        return True, message, HTTPStatus.OK
+            return FailResult(message, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+        return OkResult(True, message=message)
 
     def query_exchange_history_events(
             self,
             location: Location,
             name: str | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             self.rotkehlchen.exchange_manager.query_exchange_history_events(
                 name=name,
                 location=location,
             )
         except RemoteError as e:
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.BAD_GATEWAY,
-            }
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
         except InputError as e:
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
-        return {'result': True, 'message': ''}
+        return OkResult(True)
 
     def query_exchange_history_events_in_range(
             self,
@@ -148,7 +142,7 @@ class ExchangesService:
             name: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             total_events, stored_events, skipped_events, actual_end_ts = (
                 self.rotkehlchen.exchange_manager.requery_exchange_history_events(
@@ -159,17 +153,9 @@ class ExchangesService:
                 )
             )
         except RemoteError as e:
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.BAD_GATEWAY,
-            }
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
         except (InputError, DeserializationError, sqlcipher.IntegrityError) as e:  # pylint: disable=no-member
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
         result = {
             'queried_events': total_events,
@@ -177,14 +163,14 @@ class ExchangesService:
             'skipped_events': skipped_events,
             'actual_end_ts': actual_end_ts,
         }
-        return {'result': result, 'message': ''}
+        return OkResult(result)
 
     def query_exchange_balances(
             self,
             location: Location | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         if location is None:
             return self._query_all_exchange_balances(
                 ignore_cache=ignore_cache,
@@ -193,21 +179,17 @@ class ExchangesService:
 
         exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(location)
         if exchanges_list is None:
-            return {
-                'result': None,
-                'message': f'Could not query balances for {location!s} since it is not registered',
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                f'Could not query balances for {location!s} since it is not registered',
+                HTTPStatus.CONFLICT,
+                FailureCause.NOT_FOUND,
+            )
 
         balances: dict[AssetWithOracles, Balance] = {}
         for exchange in exchanges_list:
             result, msg = exchange.query_balances(ignore_cache=ignore_cache)
             if result is None:
-                return {
-                    'result': result,
-                    'message': msg,
-                    'status_code': HTTPStatus.CONFLICT,
-                }
+                return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.NETWORK, result=result)
             balances = combine_dicts(balances, result)
 
         if value_threshold is not None:
@@ -216,17 +198,13 @@ class ExchangesService:
                 if balance.value > value_threshold
             }
 
-        return {
-            'result': balances,
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(balances)
 
     def _query_all_exchange_balances(
             self,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         final_balances: dict[str, dict[AssetWithOracles, Balance]] = {}
         error_msg = ''
         for exchange_obj in self.rotkehlchen.exchange_manager.iterate_exchanges():
@@ -244,11 +222,7 @@ class ExchangesService:
                     )
 
         if final_balances == {}:
-            return {
-                'result': None,
-                'message': error_msg,
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(error_msg, HTTPStatus.CONFLICT, FailureCause.NETWORK)
 
         if value_threshold is not None:
             filtered_balances = {}
@@ -261,8 +235,4 @@ class ExchangesService:
         else:
             result = final_balances
 
-        return {
-            'result': result,
-            'message': error_msg,
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(result, message=error_msg)

@@ -299,7 +299,7 @@ def test_force_refetch_transactions_also_refetches_hyperliquid_core_history() ->
         to_timestamp=Timestamp(100),
         address=address,
     )
-    assert result['result'] == {
+    assert result.result == {
         'new_transactions': {},
         'new_transactions_count': 0,
         'new_history_events_count': 1,

@@ -2,9 +2,11 @@ import logging
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.chain.evm.types import ChainID
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.gnosispay import (
@@ -33,56 +35,44 @@ class IntegrationsService:
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
 
-    def create_calendar_entry(self, calendar: CalendarEntry) -> dict[str, Any]:
+    def create_calendar_entry(self, calendar: CalendarEntry) -> ApiResult:
         try:
             calendar_event_id = DBCalendar(self.rotkehlchen.data.db).create_calendar_entry(
                 calendar=calendar,
             )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return {
-            'result': {'entry_id': calendar_event_id},
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult({'entry_id': calendar_event_id})
 
-    def delete_calendar_entry(self, identifier: int) -> dict[str, Any]:
+    def delete_calendar_entry(self, identifier: int) -> ApiResult:
         try:
             DBCalendar(self.rotkehlchen.data.db).delete_entry(
                 identifier=identifier,
                 entry_type='calendar',
             )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def query_calendar(self, filter_query: CalendarFilterQuery) -> dict[str, Any]:
+    def query_calendar(self, filter_query: CalendarFilterQuery) -> ApiResult:
         result = DBCalendar(self.rotkehlchen.data.db).query_calendar_entry(
             filter_query=filter_query,
         )
-        return {
-            'result': process_result(result),
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(process_result(result))
 
-    def update_calendar_entry(self, calendar: CalendarEntry) -> dict[str, Any]:
+    def update_calendar_entry(self, calendar: CalendarEntry) -> ApiResult:
         try:
             calendar_event_id = DBCalendar(self.rotkehlchen.data.db).update_calendar_entry(
                 calendar=calendar,
             )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return {
-            'result': {'entry_id': calendar_event_id},
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult({'entry_id': calendar_event_id})
 
-    def create_calendar_reminder(self, reminders: list[ReminderEntry]) -> dict[str, Any]:
+    def create_calendar_reminder(self, reminders: list[ReminderEntry]) -> ApiResult:
         success, failed = DBCalendar(self.rotkehlchen.data.db).create_reminder_entries(
             reminders=reminders,
         )
@@ -90,42 +80,34 @@ class IntegrationsService:
         if len(failed):
             result['failed'] = failed
 
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(result)
 
-    def delete_reminder_entry(self, identifier: int) -> dict[str, Any]:
+    def delete_reminder_entry(self, identifier: int) -> ApiResult:
         try:
             DBCalendar(self.rotkehlchen.data.db).delete_entry(
                 identifier=identifier,
                 entry_type='calendar_reminders',
             )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def update_reminder_entry(self, reminder: ReminderEntry) -> dict[str, Any]:
+    def update_reminder_entry(self, reminder: ReminderEntry) -> ApiResult:
         try:
             calendar_event_id = DBCalendar(self.rotkehlchen.data.db).update_reminder_entry(
                 reminder=reminder,
             )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return {
-            'result': {'entry_id': calendar_event_id},
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult({'entry_id': calendar_event_id})
 
-    def query_reminders(self, event_id: int) -> dict[str, Any]:
+    def query_reminders(self, event_id: int) -> ApiResult:
         result = DBCalendar(self.rotkehlchen.data.db).query_reminder_entry(event_id=event_id)
-        return {
-            'result': process_result(result),
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(process_result(result))
 
-    def get_google_calendar_status(self) -> dict[str, Any]:
+    def get_google_calendar_status(self) -> ApiResult:
         try:
             google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
             is_authenticated = google_calendar.is_authenticated()
@@ -135,17 +117,17 @@ class IntegrationsService:
                 user_email = google_calendar.get_connected_user_email()
 
         except Exception as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
-        return {
-            'result': {
-                'authenticated': is_authenticated,
-                'user_email': user_email,
-            },
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+            return FailResult(
+                str(e),
+                HTTPStatus.BAD_REQUEST,
+                e.cause if isinstance(e, RemoteError) else FailureCause.INTERNAL,
+            )
+        return OkResult({
+            'authenticated': is_authenticated,
+            'user_email': user_email,
+        })
 
-    def sync_google_calendar(self) -> dict[str, Any]:
+    def sync_google_calendar(self) -> ApiResult:
         try:
             google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
             db_calendar = DBCalendar(self.rotkehlchen.data.db)
@@ -155,49 +137,57 @@ class IntegrationsService:
             calendar_entries = calendar_result['entries']
             result = google_calendar.sync_events(calendar_entries)
         except Exception as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+            return FailResult(
+                str(e),
+                HTTPStatus.BAD_REQUEST,
+                e.cause if isinstance(e, RemoteError) else FailureCause.INTERNAL,
+            )
+        return OkResult(result)
 
-    def disconnect_google_calendar(self) -> dict[str, Any]:
+    def disconnect_google_calendar(self) -> ApiResult:
         try:
             google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
             success = google_calendar.disconnect()
             if success.get('success') is not True:
-                return {
-                    'result': None,
-                    'message': 'Failed to disconnect Google Calendar',
-                    'status_code': HTTPStatus.BAD_REQUEST,
-                }
+                return FailResult(
+                    'Failed to disconnect Google Calendar',
+                    HTTPStatus.BAD_REQUEST,
+                    FailureCause.REMOTE_REJECTED,
+                )
         except Exception as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
-        return {'result': {'success': True}, 'message': '', 'status_code': HTTPStatus.OK}
+            return FailResult(
+                str(e),
+                HTTPStatus.BAD_REQUEST,
+                e.cause if isinstance(e, RemoteError) else FailureCause.INTERNAL,
+            )
+        return OkResult({'success': True})
 
     def complete_google_calendar_oauth(
             self,
             access_token: str,
             refresh_token: str,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
             result = google_calendar.complete_oauth_with_token(access_token, refresh_token)
         except Exception as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+            return FailResult(
+                str(e),
+                HTTPStatus.BAD_REQUEST,
+                e.cause if isinstance(e, RemoteError) else FailureCause.INTERNAL,
+            )
+        return OkResult(result)
 
-    def get_monerium_status(self) -> dict[str, Any]:
+    def get_monerium_status(self) -> ApiResult:
         assert self.rotkehlchen.monerium is not None, 'Monerium should be initialized after login'
-        return {
-            'result': self.rotkehlchen.monerium.oauth_client.get_status(),
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(self.rotkehlchen.monerium.oauth_client.get_status())
 
     def complete_monerium_oauth(
             self,
             access_token: str,
             refresh_token: str,
             expires_in: int,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         assert self.rotkehlchen.monerium is not None, 'Monerium should be initialized after login'
         try:
             result = self.rotkehlchen.monerium.oauth_client.complete_oauth(
@@ -206,7 +196,7 @@ class IntegrationsService:
                 expires_in=expires_in,
             )
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, e.cause)
 
         # track through the supervisor: this endpoint is synchronous, so a raw
         # spawn() would inherit no cancellation token and the task would keep
@@ -217,7 +207,7 @@ class IntegrationsService:
             exception_is_error=True,
             method=self._query_monerium_orders,
         )
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(result)
 
     def _query_monerium_orders(self) -> None:
         """Process all monerium orders and match any bridge legs the run creates.
@@ -238,7 +228,7 @@ class IntegrationsService:
             ),
         )
 
-    def disconnect_monerium(self) -> dict[str, Any]:
+    def disconnect_monerium(self) -> ApiResult:
         assert self.rotkehlchen.monerium is not None, 'Monerium should be initialized after login'
         self.rotkehlchen.monerium.oauth_client.clear_credentials()
         # Forget that the user had connected, so that a later request to sign in is worded
@@ -249,55 +239,59 @@ class IntegrationsService:
                 'DELETE FROM key_value_cache WHERE name=?',
                 (DBCacheStatic.LAST_MONERIUM_QUERY_TS.value,),
             )
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def get_gnosis_pay_safe_admin_addresses(self) -> dict[str, Any]:
+    def get_gnosis_pay_safe_admin_addresses(self) -> ApiResult:
         if not (tracked_addresses := self.rotkehlchen.chains_aggregator.accounts.gnosis):
-            return {'result': {}, 'message': '', 'status_code': HTTPStatus.OK}
+            return OkResult({})
 
         gnosis_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS)
         try:
             addresses_with_admins = gnosis_manager.node_inquirer.get_safe_admins_for_addresses(tracked_addresses)  # type: ignore  # mypy doesn't identify the inquirer as GnosisInquirer  # noqa: E501
         except (RemoteError, DeserializationError) as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                e.cause if isinstance(e, RemoteError) else FailureCause.BAD_DATA,
+            )
 
-        return {'result': addresses_with_admins, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(addresses_with_admins)
 
-    def get_gnosis_pay_safe_migration(self) -> dict[str, Any]:
+    def get_gnosis_pay_safe_migration(self) -> ApiResult:
         if (gnosis_pay := init_gnosis_pay(self.rotkehlchen.data.db)) is None:
-            return {
-                'result': None,
-                'message': 'Gnosis Pay credentials are not configured',
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                'Gnosis Pay credentials are not configured',
+                HTTPStatus.CONFLICT,
+                FailureCause.AUTH,
+            )
 
         try:
             result = gnosis_pay.get_safe_migration_data()
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, e.cause)
 
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(result)
 
-    def fetch_gnosis_pay_nonce(self) -> dict[str, Any]:
+    def fetch_gnosis_pay_nonce(self) -> ApiResult:
         try:
             nonce = fetch_gnosis_pay_siwe_nonce()
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, e.cause)
 
-        return {'result': nonce, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(nonce)
 
     def verify_gnosis_pay_siwe_signature(
             self,
             message: str,
             signature: str,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             token = external_verify_gnosis_pay_siwe_signature(
                 message=message,
                 signature=signature,
             )
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, e.cause)
 
         log.debug('Got a valid token from gnosis pay. Saving it in credentials')
         with self.rotkehlchen.data.db.user_write() as write_cursor:
@@ -324,4 +318,4 @@ class IntegrationsService:
                     method=gnosispay_decoder.gnosispay_api.backfill_missing_events,  # type: ignore
                 )
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)

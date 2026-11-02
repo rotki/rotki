@@ -493,6 +493,7 @@ def test_add_get_edit_delete_eth2_validators(
             response=response,
             contained_in_msg='ETH staking limit exceeded. Current staked: 0 ETH, limit: 0 ETH. Would be: 32.002413771 ETH',  # noqa: E501
             status_code=HTTPStatus.FORBIDDEN,
+            result_exists=True,  # the limit details
         )
         response = requests.get(
             api_url_for(

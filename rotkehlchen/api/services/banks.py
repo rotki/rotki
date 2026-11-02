@@ -3,10 +3,12 @@ from __future__ import annotations
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.banks.errors import BankAuthExpired, BankMFARequired
 from rotkehlchen.banks.manager import BankCredentialInput
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.utils.misc import combine_dicts, ts_now
 
@@ -46,7 +48,7 @@ class BanksService:
             name: str,
             location: Location,
             credentials: dict[str, str],
-    ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
+    ) -> ApiResult:
         try:
             result, msg = self.rotkehlchen.bank_manager.setup_bank(
                 name=name,
@@ -55,21 +57,21 @@ class BanksService:
                 database=self.rotkehlchen.data.db,
             )
         except BankMFARequired as e:
-            return e.challenge.serialize(), '', HTTPStatus.ACCEPTED
+            return OkResult(e.challenge.serialize(), status=HTTPStatus.ACCEPTED)
         except InputError as e:
-            return None, str(e), HTTPStatus.BAD_REQUEST
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
         if not result:
-            return None, msg, HTTPStatus.CONFLICT
+            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
         if (bank := self.rotkehlchen.bank_manager.get_bank(name=name, location=location)) is None:
             raise AssertionError('successful bank setup did not register the connection')
-        return self._setup_success(bank), msg, HTTPStatus.OK
+        return OkResult(self._setup_success(bank), message=msg)
 
     def answer_authentication(
             self,
             name: str,
             location: Location,
             response: str | None,
-    ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
+    ) -> ApiResult:
         manager = self.rotkehlchen.bank_manager
         completes_setup = manager.get_bank(name=name, location=location) is None
         try:
@@ -79,18 +81,18 @@ class BanksService:
                 response=response,
             )
         except BankMFARequired as e:
-            return e.challenge.serialize(), '', HTTPStatus.ACCEPTED
+            return OkResult(e.challenge.serialize(), status=HTTPStatus.ACCEPTED)
         except BankAuthExpired as e:  # dropped by the bank: only a new sync or setup helps
-            return None, str(e), HTTPStatus.GONE
+            return FailResult(str(e), HTTPStatus.GONE, FailureCause.AUTH)
         except RemoteError as e:
-            return None, str(e), HTTPStatus.CONFLICT
+            return FailResult(str(e), HTTPStatus.CONFLICT, e.cause)
         if result is False:
-            return None, message, HTTPStatus.CONFLICT
+            return FailResult(message, HTTPStatus.CONFLICT, FailureCause.REMOTE_REJECTED)
         if completes_setup:
             if (bank := manager.get_bank(name=name, location=location)) is None:
                 raise AssertionError('successful bank setup authentication did not register it')
-            return self._setup_success(bank), '', HTTPStatus.OK
-        return True, '', HTTPStatus.OK
+            return OkResult(self._setup_success(bank))
+        return OkResult(True)
 
     def edit_bank(
             self,
@@ -98,7 +100,7 @@ class BanksService:
             location: Location,
             new_name: str | None,
             credentials: dict[str, str],
-    ) -> tuple[bool | None, str, HTTPStatus]:
+    ) -> ApiResult:
         try:
             result, msg = self.rotkehlchen.bank_manager.edit_bank(
                 name=name,
@@ -107,51 +109,55 @@ class BanksService:
                 credentials=BankCredentialInput(values=credentials),
             )
         except InputError as e:
-            return None, str(e), HTTPStatus.BAD_REQUEST
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
         if not result:
-            return None, msg, HTTPStatus.CONFLICT
-        return True, msg, HTTPStatus.OK
+            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+        return OkResult(True, message=msg)
 
-    def remove_bank(self, name: str, location: Location) -> tuple[bool | None, str, HTTPStatus]:
+    def remove_bank(self, name: str, location: Location) -> ApiResult:
         result, msg = self.rotkehlchen.bank_manager.delete_bank(name=name, location=location)
         if not result:
-            return None, msg, HTTPStatus.CONFLICT
-        return True, msg, HTTPStatus.OK
+            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+        return OkResult(True, message=msg)
 
     def cancel_authentication(
             self,
             name: str,
             location: Location,
-    ) -> tuple[bool | None, str, HTTPStatus]:
+    ) -> ApiResult:
         if not self.rotkehlchen.bank_manager.cancel_bank_authentication(name=name, location=location):  # noqa: E501
-            return None, f'{location!s} bank connection {name} does not exist', HTTPStatus.CONFLICT
-        return True, '', HTTPStatus.OK
+            return FailResult(
+                f'{location!s} bank connection {name} does not exist',
+                HTTPStatus.CONFLICT,
+                FailureCause.NOT_FOUND,
+            )
+        return OkResult(True)
 
-    def sync_banks(self, location: Location | None, name: str | None) -> dict[str, Any]:
+    def sync_banks(self, location: Location | None, name: str | None) -> ApiResult:
         try:
             self.rotkehlchen.bank_manager.query_bank_history_events(location=location, name=name)
         except BankMFARequired:
-            return {'result': None, 'message': '', 'status_code': HTTPStatus.ACCEPTED}
+            return OkResult(None, status=HTTPStatus.ACCEPTED)
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
-        return {'result': True, 'message': ''}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
+        return OkResult(True)
 
     def query_bank_balances(
             self,
             location: Location | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Balances per bank location, in the shape of the exchange balances endpoint"""
         manager = self.rotkehlchen.bank_manager
         if location is not None and location not in manager.connected_banks:
-            return {
-                'result': None,
-                'message': f'No {location!s} bank connection exists',
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                f'No {location!s} bank connection exists',
+                HTTPStatus.CONFLICT,
+                FailureCause.NOT_FOUND,
+            )
 
         final: dict[str, dict[AssetWithOracles, Balance]] = {}
         error_msg = ''
@@ -175,6 +181,6 @@ class BanksService:
             final[key] = combine_dicts(final[key], balances) if key in final else balances
 
         if len(final) == 0 and error_msg != '':
-            return {'result': None, 'message': error_msg, 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(error_msg, HTTPStatus.CONFLICT, FailureCause.NETWORK)
         result: Any = final[str(location)] if location is not None else final
-        return {'result': result, 'message': error_msg, 'status_code': HTTPStatus.OK}
+        return OkResult(result, message=error_msg)
