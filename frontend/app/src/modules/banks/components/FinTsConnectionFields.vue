@@ -36,7 +36,7 @@ function secret(slot: string): BankSecretField | undefined {
 }
 
 function uniqueName(base: string, existing: readonly BankConnection[]): string {
-  const names = new Set(existing.filter(connection => connection.location === 'fints').map(connection => connection.name));
+  const names = new Set(existing.filter(connection => connection.connector === 'fints').map(connection => connection.name));
   if (!names.has(base))
     return base;
   let suffix = 2;

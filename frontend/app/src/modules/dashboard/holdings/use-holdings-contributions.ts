@@ -37,7 +37,7 @@ export function useHoldingsContributions(): HoldingsInputs {
   const { isPricePending } = usePriceUtils();
   const { useLiabilities } = useAggregatedBalances();
   const { exchanges } = useExchangeData();
-  const { banks } = useBankData();
+  const { total: bankTotal } = useBankData();
   const { tradeLocations } = useLocations();
   const { matchChain } = useSupportedChains();
   const nftsInNetValue = useSetting('nftsInNetValue');
@@ -70,7 +70,9 @@ export function useHoldingsContributions(): HoldingsInputs {
   const contributions = computed<SourceContribution[]>(() => [
     ...Object.entries(get(balances)).map(([chain, accounts]) => chainContribution(chain, accounts)),
     ...get(exchanges).map(({ location, total }): SourceContribution => ({ kind: SourceKind.EXCHANGE, loading: false, location, value: total })),
-    ...get(banks).map(({ location, total }): SourceContribution => ({ kind: SourceKind.BANK, loading: false, location, value: total })),
+    ...(get(bankTotal).isZero()
+      ? []
+      : [{ kind: SourceKind.BANK, loading: false, location: 'banks', value: get(bankTotal) } satisfies SourceContribution]),
     ...get(manualBalances)
       .filter(({ asset }) => !isAssetIgnored(asset))
       .map(({ location, value }): SourceContribution => ({ kind: SourceKind.MANUAL, loading: false, location, value })),

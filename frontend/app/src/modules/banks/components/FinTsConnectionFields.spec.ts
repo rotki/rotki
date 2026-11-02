@@ -15,7 +15,7 @@ const manifest: BankManifest = {
   capabilities: ['balances', 'transactions'],
   displayName: 'FinTS/HBCI',
   docsUrl: 'https://example.com',
-  location: 'fints',
+  connector: 'fints',
   maintainer: 'rotki',
   secrets: [
     { description: '', label: 'Bank code (BLZ)', secret: false, slot: 'bank_code' },
@@ -30,7 +30,7 @@ const manifest: BankManifest = {
 function connection(name: string): BankConnection {
   return {
     displayName: 'FinTS/HBCI',
-    location: 'fints',
+    connector: 'fints',
     name,
     syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false },
   };

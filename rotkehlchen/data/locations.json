@@ -354,12 +354,6 @@
     "icon": "lu-landmark"
   },
   {
-    "identifier": "qonto",
-    "name": "Qonto",
-    "parent_identifier": "banks",
-    "image": "qonto.svg"
-  },
-  {
     "identifier": "other",
     "name": "Other",
     "parent_identifier": "total",

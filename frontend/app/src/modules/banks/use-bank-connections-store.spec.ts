@@ -12,13 +12,13 @@ describe('useBankConnectionsStore', () => {
 
   it('should name a bank by its manifest display name', () => {
     const store = useBankConnectionsStore();
-    store.setManifests([createMock<BankManifest>({ displayName: 'Qonto Business', location: 'qonto' })]);
+    store.setManifests([createMock<BankManifest>({ displayName: 'Qonto Business', connector: 'qonto' })]);
     expect(store.bankNameFor('qonto')).toBe('Qonto Business');
   });
 
-  it('should fall back to the location in sentence case for a bank without a loaded manifest', () => {
+  it('should fall back to the connector in sentence case for a bank without a loaded manifest', () => {
     const store = useBankConnectionsStore();
-    store.setManifests([createMock<BankManifest>({ displayName: 'Qonto Business', location: 'qonto' })]);
+    store.setManifests([createMock<BankManifest>({ displayName: 'Qonto Business', connector: 'qonto' })]);
     expect(store.bankNameFor('revolut')).toBe('Revolut');
   });
 });

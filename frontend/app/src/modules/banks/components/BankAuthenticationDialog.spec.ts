@@ -8,7 +8,7 @@ import '@test/i18n';
 
 const { answerBankAuthentication, syncBanks } = vi.hoisted(() => ({
   answerBankAuthentication: vi.fn(),
-  syncBanks: vi.fn<(payload?: { location?: string; name?: string }) => Promise<boolean>>(),
+  syncBanks: vi.fn<(payload?: { connector?: string; name?: string }) => Promise<boolean>>(),
 }));
 
 vi.mock('@/modules/banks/use-banks', () => ({
@@ -30,7 +30,7 @@ const otp: BankAuthChallenge = {
   prompt: 'Enter TAN',
 };
 
-const request: BankAuthenticationRequest = { challenge: otp, location: 'fints', name: 'Checking' };
+const request: BankAuthenticationRequest = { challenge: otp, connector: 'fints', name: 'Checking' };
 
 describe('bankAuthenticationDialog', () => {
   let wrapper: VueWrapper<InstanceType<typeof BankAuthenticationDialog>>;
@@ -67,7 +67,7 @@ describe('bankAuthenticationDialog', () => {
     await wrapper.find('[data-testid=bank-auth-response] input').setValue(' 123456 ');
     await confirm();
 
-    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ location: 'fints', name: 'Checking' }, '123456');
+    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ connector: 'fints', name: 'Checking' }, '123456');
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
 
@@ -94,7 +94,7 @@ describe('bankAuthenticationDialog', () => {
     await vi.advanceTimersByTimeAsync(1);
     await flushPromises();
 
-    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ location: 'fints', name: 'Checking' }, undefined);
+    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ connector: 'fints', name: 'Checking' }, undefined);
     expect(wrapper.emitted('update:modelValue')).toEqual([[{ ...request, challenge: poll }]]);
   });
 
@@ -143,7 +143,7 @@ describe('bankAuthenticationDialog', () => {
 
       await confirm();
 
-      expect(syncBanks).toHaveBeenCalledExactlyOnceWith({ location: 'fints', name: 'Checking' });
+      expect(syncBanks).toHaveBeenCalledExactlyOnceWith({ connector: 'fints', name: 'Checking' });
       expect(answerBankAuthentication).toHaveBeenCalledOnce();
       expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
     });

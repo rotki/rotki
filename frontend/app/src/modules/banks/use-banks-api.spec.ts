@@ -12,7 +12,7 @@ const wireManifest = {
   capabilities: ['balances', 'transactions'],
   display_name: 'Qonto',
   docs_url: 'https://docs.qonto.com',
-  location: 'qonto',
+  connector: 'qonto',
   maintainer: 'rotki',
   secrets: [{ description: 'The organization login', label: 'Login', secret: true, slot: 'api_key' }],
   setup_notes: ['Only one key per organization'],
@@ -31,12 +31,12 @@ describe('useBanksApi', () => {
   it('should parse the bank connections with their sync status', async () => {
     server.use(http.get(`${backendUrl}/api/1/banks`, () => HttpResponse.json({
       message: '',
-      result: [{ display_name: 'Qonto', location: 'qonto', name: 'main', sync_status: { auth_challenge: null, auth_expired: false, last_error: 'boom', last_sync_ts: 10, running: false } }],
+      result: [{ display_name: 'Qonto', connector: 'qonto', name: 'main', sync_status: { auth_challenge: null, auth_expired: false, last_error: 'boom', last_sync_ts: 10, running: false } }],
     })));
 
     expect(await useBanksApi().getBanks()).toEqual([{
       displayName: 'Qonto',
-      location: 'qonto',
+      connector: 'qonto',
       name: 'main',
       syncStatus: { authChallenge: null, authExpired: false, lastError: 'boom', lastSyncTs: 10, running: false },
     }]);
@@ -49,10 +49,10 @@ describe('useBanksApi', () => {
       return HttpResponse.json({ message: '', result: { history_start_ts: 1_700_000_000, success: true } });
     }));
 
-    const outcome = await useBanksApi().addBank({ credentials: { api_key: 'login', api_secret: 'secret' }, location: 'qonto', name: 'main' });
+    const outcome = await useBanksApi().addBank({ credentials: { api_key: 'login', api_secret: 'secret' }, connector: 'qonto', name: 'main' });
 
     expect(outcome).toEqual(ok({ historyStartTs: 1_700_000_000, success: true }));
-    expect(body).toEqual({ credentials: { api_key: 'login', api_secret: 'secret' }, location: 'qonto', name: 'main' });
+    expect(body).toEqual({ credentials: { api_key: 'login', api_secret: 'secret' }, connector: 'qonto', name: 'main' });
   });
 
   it('should leave an empty new name out of an edit and send the credentials it is given', async () => {
@@ -62,14 +62,14 @@ describe('useBanksApi', () => {
       return HttpResponse.json({ message: '', result: true });
     }));
 
-    const outcome = await useBanksApi().editBank({ credentials: { api_secret: 'new-secret' }, location: 'qonto', name: 'main', newName: '' });
+    const outcome = await useBanksApi().editBank({ credentials: { api_secret: 'new-secret' }, connector: 'qonto', name: 'main', newName: '' });
 
     expect(outcome).toEqual(ok(true));
-    expect(body).toEqual({ credentials: { api_secret: 'new-secret' }, location: 'qonto', name: 'main' });
+    expect(body).toEqual({ credentials: { api_secret: 'new-secret' }, connector: 'qonto', name: 'main' });
   });
 
   describe('a refused add', () => {
-    const payload = { credentials: { api_key: 'login', api_secret: 'secret' }, location: 'qonto', name: 'main' };
+    const payload = { credentials: { api_key: 'login', api_secret: 'secret' }, connector: 'qonto', name: 'main' };
 
     function refuseAdd(status: number, message: string): void {
       server.use(http.put(`${backendUrl}/api/1/banks`, () => HttpResponse.json({ message, result: null }, { status })));
@@ -105,7 +105,7 @@ describe('useBanksApi', () => {
       { status: 400 },
     )));
 
-    const outcome = await useBanksApi().editBank({ credentials: { api_secret: 'new-secret' }, location: 'qonto', name: 'main' });
+    const outcome = await useBanksApi().editBank({ credentials: { api_secret: 'new-secret' }, connector: 'qonto', name: 'main' });
 
     assert(!outcome.ok);
     expect(outcome.error).toEqual({ message: 'required', type: 'rejected' });
@@ -132,16 +132,16 @@ describe('useBanksApi', () => {
       const bodies: unknown[] = [];
       answerWith(200, true, bodies);
 
-      const outcome = await useBanksApi().answerAuthentication({ location: 'fints', name: 'main', response: '123456' });
+      const outcome = await useBanksApi().answerAuthentication({ connector: 'fints', name: 'main', response: '123456' });
 
       expect(outcome).toEqual(ok(true));
-      expect(bodies).toEqual([{ location: 'fints', name: 'main', response: '123456' }]);
+      expect(bodies).toEqual([{ connector: 'fints', name: 'main', response: '123456' }]);
     });
 
     it('should hand back the next challenge when the bank asks again', async () => {
       answerWith(202, { ...wireChallenge, poll_delay_seconds: 7, primitive: 'app approval poll' }, []);
 
-      const outcome = await useBanksApi().answerAuthentication({ location: 'fints', name: 'main' });
+      const outcome = await useBanksApi().answerAuthentication({ connector: 'fints', name: 'main' });
 
       assert(outcome.ok);
       expect(outcome.value).toMatchObject({ challengeData: null, pollDelaySeconds: 7, primitive: 'app approval poll', prompt: 'Enter the TAN' });
@@ -150,7 +150,7 @@ describe('useBanksApi', () => {
     it('should hand back a completed setup with its history start', async () => {
       answerWith(200, { history_start_ts: 1_700_000_000, success: true }, []);
 
-      expect(await useBanksApi().answerAuthentication({ location: 'fints', name: 'main', response: '1' }))
+      expect(await useBanksApi().answerAuthentication({ connector: 'fints', name: 'main', response: '1' }))
         .toEqual(ok({ historyStartTs: 1_700_000_000, success: true }));
     });
 
@@ -160,7 +160,7 @@ describe('useBanksApi', () => {
         { status: 409 },
       )));
 
-      const outcome = await useBanksApi().answerAuthentication({ location: 'fints', name: 'main', response: '1' });
+      const outcome = await useBanksApi().answerAuthentication({ connector: 'fints', name: 'main', response: '1' });
 
       assert(!outcome.ok);
       expect(outcome.error).toEqual({ message: 'The TAN was rejected by the bank', type: 'rejected' });
@@ -172,22 +172,22 @@ describe('useBanksApi', () => {
         { status: 410 },
       )));
 
-      const outcome = await useBanksApi().answerAuthentication({ location: 'fints', name: 'main', response: '1' });
+      const outcome = await useBanksApi().answerAuthentication({ connector: 'fints', name: 'main', response: '1' });
 
       assert(!outcome.ok);
       expect(outcome.error).toEqual({ message: 'The TAN was rejected by the bank', type: 'expired' });
     });
   });
 
-  it('should remove a connection by location and name', async () => {
+  it('should remove a connection by connector and name', async () => {
     let body: unknown;
     server.use(http.delete(`${backendUrl}/api/1/banks`, async ({ request }) => {
       body = await request.json();
       return HttpResponse.json({ message: '', result: true });
     }));
 
-    expect(await useBanksApi().removeBank({ location: 'qonto', name: 'main' })).toBe(true);
-    expect(body).toEqual({ location: 'qonto', name: 'main' });
+    expect(await useBanksApi().removeBank({ connector: 'qonto', name: 'main' })).toBe(true);
+    expect(body).toEqual({ connector: 'qonto', name: 'main' });
   });
 
   it('should start a sync task for one connection', async () => {
@@ -197,8 +197,8 @@ describe('useBanksApi', () => {
       return HttpResponse.json({ message: '', result: { task_id: 7 } });
     }));
 
-    expect(await useBanksApi().syncBanks({ location: 'qonto', name: 'main' })).toEqual({ taskId: 7 });
-    expect(body).toEqual({ async_query: true, location: 'qonto', name: 'main' });
+    expect(await useBanksApi().syncBanks({ connector: 'qonto', name: 'main' })).toEqual({ taskId: 7 });
+    expect(body).toEqual({ async_query: true, connector: 'qonto', name: 'main' });
   });
 
   it('should only ask to bypass the balance cache when told to', async () => {

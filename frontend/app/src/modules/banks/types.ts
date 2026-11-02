@@ -18,7 +18,7 @@ const BankAuthStep = z.object({
 
 /** What the backend knows about a bank connector without running it. */
 export const BankManifest = z.object({
-  location: z.string(),
+  connector: z.string(),
   displayName: z.string(),
   accessTier: z.string(),
   capabilities: z.array(z.string()),
@@ -77,7 +77,7 @@ const BankSyncStatus = z.object({
 
 export const BankConnection = z.object({
   name: z.string(),
-  location: z.string(),
+  connector: z.string(),
   displayName: z.string(),
   syncStatus: BankSyncStatus,
 });
@@ -88,12 +88,23 @@ export const BankConnections = z.array(BankConnection);
 
 export type BankConnections = z.infer<typeof BankConnections>;
 
-export const BankBalancesByLocation = z.record(z.string(), AssetBalances);
+export const BankConnectionBalances = z.object({
+  connector: z.string(),
+  name: z.string(),
+  balances: AssetBalances,
+});
 
-export type BankBalancesByLocation = z.infer<typeof BankBalancesByLocation>;
+export type BankConnectionBalances = z.infer<typeof BankConnectionBalances>;
+
+export const BankBalancesResponse = z.object({
+  aggregate: AssetBalances,
+  connections: z.array(BankConnectionBalances),
+});
+
+export type BankBalancesResponse = z.infer<typeof BankBalancesResponse>;
 
 export interface BankConnectionIdentity {
-  readonly location: string;
+  readonly connector: string;
   readonly name: string;
 }
 
@@ -124,7 +135,7 @@ export type BankSetupError =
   | { readonly type: 'rejected' | 'expired'; readonly message: string };
 
 export interface BankSyncPayload {
-  readonly location?: string;
+  readonly connector?: string;
   readonly name?: string;
 }
 

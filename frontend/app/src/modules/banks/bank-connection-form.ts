@@ -3,7 +3,7 @@ import { z, type ZodType } from 'zod';
 import { msg } from '@/message-key';
 
 export interface BankConnectionFormState {
-  location: string;
+  connector: string;
   name: string;
   newName: string;
   credentials: Record<string, string>;
@@ -16,7 +16,7 @@ export function isEditing(mode: BankFormData['mode']): boolean {
 export function toBankConnectionFormState(data: BankFormData): BankConnectionFormState {
   return {
     credentials: { ...data.credentials },
-    location: data.location,
+    connector: data.connector,
     name: data.name,
     newName: data.newName,
   };
@@ -41,7 +41,7 @@ function isPresent(value: string | undefined): boolean {
 export function bankConnectionSchema(mode: BankFormData['mode'], manifest: BankManifest | undefined): ZodType<BankConnectionFormState> {
   return z.object({
     credentials: z.record(z.string(), z.string()),
-    location: z.string(),
+    connector: z.string(),
     name: z.string(),
     newName: z.string(),
   }).superRefine((state, ctx) => {
@@ -50,8 +50,8 @@ export function bankConnectionSchema(mode: BankFormData['mode'], manifest: BankM
       ctx.addIssue({ code: 'custom', message: required, path: [isEditing(mode) ? 'newName' : 'name'] });
     if (isEditing(mode))
       return;
-    if (!isPresent(state.location))
-      ctx.addIssue({ code: 'custom', message: required, path: ['location'] });
+    if (!isPresent(state.connector))
+      ctx.addIssue({ code: 'custom', message: required, path: ['connector'] });
     for (const secret of manifest?.secrets ?? []) {
       if (!isPresent(state.credentials[secret.slot]))
         ctx.addIssue({ code: 'custom', message: required, path: ['credentials', secret.slot] });

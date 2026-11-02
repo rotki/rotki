@@ -1,12 +1,10 @@
 """Display details of every location the backend can report, keyed by location identifier.
 
-Names, icons and images come from the location tree catalog. Exchange and bank connector details
-are merged in for the locations that have a connector.
+Names, icons and images come from the location tree catalog. Exchange details are merged in
+for exchange locations, and the shared banks location is marked for bank integrations.
 """
 from typing import Any, Final
 
-from rotkehlchen.banks.constants import FINTS_CONNECTOR
-from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.exchanges.constants import (
     ALL_SUPPORTED_EXCHANGES,
     EXCHANGES_WITH_PASSPHRASE,
@@ -15,6 +13,7 @@ from rotkehlchen.exchanges.constants import (
     SUPPORTED_EXCHANGES,
 )
 from rotkehlchen.locations.catalog import load_builtin_catalog
+from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.locations.legacy_chars import V53_LEGACY_LOCATION_CHARS
 from rotkehlchen.locations.types import LocationIdentifier
 
@@ -30,8 +29,6 @@ def _location_details() -> dict[LocationIdentifier, dict[str, Any]]:
     }
     for identifier, name, image in V53_LEGACY_LOCATION_CHARS.values():  # only in upgraded DBs
         details[LocationIdentifier(identifier)] = _visuals(name, None, image)
-    # FinTS is a connector, not a location, but the bank setup still reads its details here
-    details[FINTS_CONNECTOR] = _visuals('FinTS', 'lu-landmark', None)
 
     for key, value in details.items():
         if key in ALL_SUPPORTED_EXCHANGES:
@@ -45,9 +42,8 @@ def _location_details() -> dict[LocationIdentifier, dict[str, Any]]:
                     value['exchange_details']['experimental'] = True
                 continue
             value['is_exchange'] = True
-        elif key in BANK_MANIFESTS:
+        elif key == LOCATION_BANKS:
             value['is_bank'] = True
-            value['bank_details'] = BANK_MANIFESTS[key].serialize()
 
     return details
 

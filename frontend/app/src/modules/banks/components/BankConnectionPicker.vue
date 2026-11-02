@@ -42,14 +42,14 @@ const options = computed<BankSelectionOption[]>(() =>
   >
     <template #selection="{ item }">
       <BankLabel
-        :location="item.location"
+        :connector="item.connector"
         :name="item.name"
       />
     </template>
     <template #item="{ item }">
       <div class="flex min-w-0 flex-col py-1">
         <BankLabel
-          :location="item.location"
+          :connector="item.connector"
           :name="item.name"
         />
         <span

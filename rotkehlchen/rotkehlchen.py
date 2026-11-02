@@ -454,12 +454,13 @@ class Rotkehlchen:
             self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
 
             exchange_credentials = self.data.db.get_exchange_credentials(cursor)
+            bank_credentials = self.data.db.get_bank_credentials(cursor)
             self.exchange_manager.initialize_exchanges(
                 exchange_credentials=exchange_credentials,
                 database=self.data.db,
             )
             self.bank_manager.initialize_banks(
-                credentials=exchange_credentials,  # same table; the manager keeps bank locations
+                credentials=bank_credentials,
                 database=self.data.db,
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)

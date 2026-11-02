@@ -3,24 +3,23 @@
 Framework-level: a new connector gets covered by adding a kit to BANK_KITS, not by
 writing these tests again.
 """
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.asset import FiatAsset
-from rotkehlchen.banks.constants import FINTS_CONNECTOR, SUPPORTED_BANKS
+from rotkehlchen.banks.constants import SUPPORTED_BANK_CONNECTORS
 from rotkehlchen.banks.errors import BankAuthExpired, BankRateLimited, BankSchemaDrift
 from rotkehlchen.banks.manager import BankManager
+from rotkehlchen.banks.manifest import BankConnectorType
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
-from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.history.events.structures.bank_transaction import BankTransactionEvent
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.tests.utils.banks import (
     BANK_KITS,
     BankConnectorKit,
@@ -35,8 +34,7 @@ ALLOWED_EVENT_TYPES = {
     (HistoryEventType.SPEND, HistoryEventSubType.NONE),
     (HistoryEventType.SPEND, HistoryEventSubType.FEE),
 }
-FRONTEND_IMAGES_DIR = Path(__file__).resolve().parents[3] / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'protocols'  # noqa: E501
-KITS = pytest.mark.parametrize('kit', BANK_KITS, ids=[str(kit.location) for kit in BANK_KITS])
+KITS = pytest.mark.parametrize('kit', BANK_KITS, ids=[str(kit.connector) for kit in BANK_KITS])
 
 
 def _db_events(database) -> list[HistoryBaseEntry]:
@@ -49,35 +47,28 @@ def _db_events(database) -> list[HistoryBaseEntry]:
 
 
 def test_every_supported_bank_has_a_kit_and_a_manifest():
-    assert {kit.location for kit in BANK_KITS} == set(SUPPORTED_BANKS)
-    assert set(BANK_MANIFESTS) == set(SUPPORTED_BANKS)
+    assert {kit.connector for kit in BANK_KITS} == set(SUPPORTED_BANK_CONNECTORS)
+    assert set(BANK_MANIFESTS) == set(SUPPORTED_BANK_CONNECTORS)
 
 
 @KITS
 def test_manifest_is_valid_and_registered(kit: BankConnectorKit):
     manifest = kit.connector_class.manifest
     manifest.validate()
-    assert manifest is BANK_MANIFESTS[kit.location]
-    assert manifest.location == kit.location
-    assert kit.location not in SUPPORTED_EXCHANGES, 'a bank is its own integration'
+    assert manifest is BANK_MANIFESTS[kit.connector]
+    assert manifest.connector == kit.connector
     # the manager stores credentials by slot, so the manifest must declare the key slot
     # and whatever the connector constructor needs
     slots = {secret.slot for secret in manifest.secrets}
     assert len(slots) >= 2
-    # the UI derives the setup form and the icon from the location details
-    details = LOCATION_DETAILS[kit.location]
-    assert details['is_bank'] is True
-    assert 'exchange_details' not in details
-    assert details['bank_details'] == manifest.serialize()
-    assert 'icon' in details or (FRONTEND_IMAGES_DIR / details['image']).is_file()
     # the module/class naming the bank manager relies on to instantiate it
-    assert BankManager._connector_class(kit.location) is kit.connector_class
+    assert BankManager._connector_class(kit.connector) is kit.connector_class
 
 
 @KITS
 def test_manifest_serializes_to_plain_json_types(kit: BankConnectorKit):
     serialized = kit.connector_class.manifest.serialize()
-    assert serialized['location'] == kit.location
+    assert serialized['connector'] == kit.connector.serialize()
     assert isinstance(serialized['access_tier'], str)
     assert all(isinstance(step['primitive'], str) for step in serialized['auth_flow'])
     assert all({'slot', 'label', 'description'} <= set(s) for s in serialized['secrets'])
@@ -118,7 +109,7 @@ def test_normalization_output(kit: BankConnectorKit, database, function_scope_me
     for event in events:
         assert isinstance(event, BankTransactionEvent)
         assert event.entry_type == HistoryBaseEntryType.BANK_TRANSACTION_EVENT
-        assert event.location == connector.data_location != FINTS_CONNECTOR
+        assert event.location == connector.data_location == LOCATION_BANKS
         assert event.location_label == connector.name
         assert event.sequence_index == 0
         assert (event.event_type, event.event_subtype) in ALLOWED_EVENT_TYPES
@@ -163,7 +154,7 @@ def test_cursor_dedup_and_full_resync(kit: BankConnectorKit, database, function_
         transport.requests.clear()
         queue = HistoryEventQueue(
             database=database,
-            location_string=f'{kit.location!s}_history_events_{connector.name}',
+            location_string=f'banks_history_events_{connector.name}',
             query_start_ts=Timestamp(0),
         )
         connector.requery_online_history_events_into_queue(Timestamp(0), ts_now(), queue)
@@ -177,7 +168,7 @@ def test_cursor_dedup_and_full_resync(kit: BankConnectorKit, database, function_
             transaction['label'] = 'Updated counterparty'
             queue = HistoryEventQueue(
                 database=database,
-                location_string=f'{kit.location!s}_history_events_{connector.name}',
+                location_string=f'banks_history_events_{connector.name}',
                 query_start_ts=Timestamp(0),
             )
             connector.requery_online_history_events_into_queue(Timestamp(0), ts_now(), queue)
@@ -264,6 +255,6 @@ def test_purge_local_state_on_removal(kit: BankConnectorKit, database, function_
         assert all(connector.get_cursor(cursor, a.identifier) is None for a in accounts)
 
 
-def test_location_is_a_bank_only_once():
-    assert len(set(SUPPORTED_BANKS)) == len(SUPPORTED_BANKS)
-    assert all(isinstance(location, str) for location in SUPPORTED_BANKS)
+def test_connector_is_registered_only_once():
+    assert len(set(SUPPORTED_BANK_CONNECTORS)) == len(SUPPORTED_BANK_CONNECTORS)
+    assert all(isinstance(connector, BankConnectorType) for connector in SUPPORTED_BANK_CONNECTORS)

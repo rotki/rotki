@@ -261,7 +261,7 @@ URLS_V1: URLS = [
     ('/banks/supported', SupportedBanksResource),
     ('/banks/sync', BankSyncResource),
     ('/banks/balances', BankBalancesResource),
-    ('/banks/balances/<string:location>', BankBalancesResource, 'named_bank_balances_resource'),
+    ('/banks/balances/<string:connector>', BankBalancesResource, 'named_bank_balances_resource'),
     ('/exchanges', ExchangesResource),
     ('/exchanges/balances', ExchangeBalancesResource),
     (

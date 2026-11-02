@@ -28,7 +28,7 @@ const stubs = {
 function connection(syncStatus: Partial<BankConnection['syncStatus']> = {}): BankConnection {
   return {
     displayName: 'Sparkasse',
-    location: 'fints',
+    connector: 'fints',
     name: 'main',
     syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false, ...syncStatus },
   };
@@ -80,7 +80,7 @@ describe('modules/banks/components/BankConnectionItem', () => {
 
     await wrapper.find('[data-testid=bank-balances-connection-action]').trigger('click');
 
-    expect(push).toHaveBeenCalledWith({ name: '/api-keys/banks/', query: { authenticate: 'main', location: 'fints' } });
+    expect(push).toHaveBeenCalledWith({ name: '/api-keys/banks/', query: { authenticate: 'main', connector: 'fints' } });
   });
 
   it('should say an expired TAN needs a new sync instead of showing the last sync time, and ask for that sync', async () => {
@@ -93,7 +93,7 @@ describe('modules/banks/components/BankConnectionItem', () => {
 
     await wrapper.find('[data-testid=bank-balances-connection-action]').trigger('click');
 
-    expect(wrapper.emitted('sync')).toEqual([[{ location: 'fints', name: 'main' }]]);
+    expect(wrapper.emitted('sync')).toEqual([[{ connector: 'fints', name: 'main' }]]);
     expect(push).not.toHaveBeenCalled();
   });
 

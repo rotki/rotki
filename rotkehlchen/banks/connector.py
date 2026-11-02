@@ -14,6 +14,11 @@ from collections import defaultdict
 from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from rotkehlchen.api.websockets.typedefs import (
+    HistoryEventsQueryType,
+    HistoryEventsStep,
+    WSMessageType,
+)
 from rotkehlchen.banks.errors import (
     BankAuthChallenge,
     BankAuthExpired,
@@ -31,6 +36,7 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
@@ -75,12 +81,49 @@ class BankConnector(ExchangeInterface, ABC):
     ) -> None:
         super().__init__(
             name=name,
-            location=self.manifest.location,
+            location=LOCATION_BANKS,
             api_key=api_key,
             secret=secret,
             database=database,
             msg_aggregator=msg_aggregator,
         )
+
+    @property
+    def connector(self) -> str:
+        return self.manifest.connector.serialize()
+
+    def send_history_events_status_msg(
+            self,
+            step: HistoryEventsStep,
+            period: list[Timestamp] | None = None,
+            name: str | None = None,
+    ) -> None:
+        """Identify sync progress by connector while persisted events use the banks location."""
+        data: dict[str, Any] = {
+            'status': str(step),
+            'location': self.connector,
+            'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
+            'name': name or self.name,
+        }
+        if period is not None:
+            data['period'] = period
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.HISTORY_EVENTS_STATUS,
+            data=data,
+        )
+
+    def reset_to_db_credentials(self) -> None:
+        with self.db.conn.read_ctx() as cursor:
+            credentials = self.db.get_bank_credentials(
+                cursor=cursor,
+                connector=self.manifest.connector,
+                name=self.name,
+            )[self.manifest.connector][0]
+        self.edit_exchange_credentials(ExchangeAuthCredentials(
+            api_key=credentials.api_key,
+            api_secret=credentials.api_secret,
+            passphrase=credentials.passphrase,
+        ))
 
     @classmethod
     def api_credentials_from_values(
@@ -273,6 +316,7 @@ class BankConnector(ExchangeInterface, ABC):
                 transaction=transaction,
                 location=self.data_location,
                 location_label=self.name,
+                source_label=self.connector,
             ))
             if transaction.updated_at is not None and (newest is None or transaction.updated_at > newest):  # noqa: E501
                 newest = transaction.updated_at

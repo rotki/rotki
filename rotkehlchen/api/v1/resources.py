@@ -49,7 +49,7 @@ from rotkehlchen.api.v1.schemas import (
     AsyncTaskSchema,
     BankAuthenticationSchema,
     BankBalanceQuerySchema,
-    BankLocationWithNameSchema,
+    BankConnectorWithNameSchema,
     BanksResourceAddSchema,
     BanksResourceEditSchema,
     BankSyncSchema,
@@ -297,6 +297,7 @@ if TYPE_CHECKING:
     )
     from rotkehlchen.assets.nft_handling import NftHandling
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
+    from rotkehlchen.banks.manifest import BankConnectorType
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
     from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
     from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
@@ -1023,7 +1024,7 @@ class BanksResource(BaseMethodView):
 
     put_schema = BanksResourceAddSchema()
     patch_schema = BanksResourceEditSchema()
-    delete_schema = BankLocationWithNameSchema()
+    delete_schema = BankConnectorWithNameSchema()
 
     @require_loggedin_user()
     def get(self) -> Response:
@@ -1031,29 +1032,34 @@ class BanksResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
-    def put(self, name: str, location: LocationIdentifier, credentials: dict[str, str]) -> Response:  # noqa: E501
-        return self.rest_api.setup_bank(name=name, location=location, credentials=credentials)
+    def put(
+            self,
+            name: str,
+            connector: BankConnectorType,
+            credentials: dict[str, str],
+    ) -> Response:
+        return self.rest_api.setup_bank(name=name, connector=connector, credentials=credentials)
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json')
     def patch(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: BankConnectorType,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> Response:
         return self.rest_api.edit_bank(
             name=name,
-            location=location,
+            connector=connector,
             new_name=new_name,
             credentials=credentials,
         )
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, location: LocationIdentifier) -> Response:
-        return self.rest_api.remove_bank(name=name, location=location)
+    def delete(self, name: str, connector: BankConnectorType) -> Response:
+        return self.rest_api.remove_bank(name=name, connector=connector)
 
 
 class SupportedBanksResource(BaseMethodView):
@@ -1066,18 +1072,18 @@ class BankAuthenticationResource(BaseMethodView):
     """Continue a TAN, challenge, or decoupled app-approval request."""
 
     post_schema = BankAuthenticationSchema()
-    delete_schema = BankLocationWithNameSchema()
+    delete_schema = BankConnectorWithNameSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, name: str, location: LocationIdentifier, response: str | None) -> Response:
-        return self.rest_api.answer_bank_authentication(name, location, response)
+    def post(self, name: str, connector: BankConnectorType, response: str | None) -> Response:
+        return self.rest_api.answer_bank_authentication(name, connector, response)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, name: str, location: LocationIdentifier) -> Response:
+    def delete(self, name: str, connector: BankConnectorType) -> Response:
         """Drop the pending challenge, so the next query asks the bank for a fresh one."""
-        return self.rest_api.cancel_bank_authentication(name, location)
+        return self.rest_api.cancel_bank_authentication(name, connector)
 
 
 class BankSyncResource(BaseMethodView):
@@ -1087,8 +1093,13 @@ class BankSyncResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
-    def post(self, location: LocationIdentifier | None, name: str | None, async_query: bool) -> Response:  # noqa: E501
-        return self.rest_api.sync_banks(location=location, name=name, async_query=async_query)
+    def post(
+            self,
+            connector: BankConnectorType | None,
+            name: str | None,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.sync_banks(connector=connector, name=name, async_query=async_query)
 
 
 class BankBalancesResource(BaseMethodView):
@@ -1099,13 +1110,13 @@ class BankBalancesResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
             self,
-            location: LocationIdentifier | None,
+            connector: BankConnectorType | None,
             async_query: bool,
             ignore_cache: bool,
             value_threshold: FVal | None,
     ) -> Response:
         return self.rest_api.query_bank_balances(
-            location=location,
+            connector=connector,
             async_query=async_query,
             ignore_cache=ignore_cache,
             value_threshold=value_threshold,

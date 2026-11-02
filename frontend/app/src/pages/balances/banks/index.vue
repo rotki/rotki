@@ -26,7 +26,7 @@ definePage({
 const search = ref<string>('');
 
 const { connections, connectionsError } = storeToRefs(useBankConnectionsStore());
-const { balances, banks } = useBankData();
+const { banks } = useBankData();
 const { fetchBankBalances, refreshBankConnections, refreshSupportedBanks, syncBanks } = useBanks();
 const { useIsActive } = useTaskCenter();
 const failureMessage = useFailureMessage();
@@ -40,8 +40,8 @@ async function refresh(ignoreCache = false): Promise<void> {
   await fetchBankBalances(ignoreCache);
 }
 
-async function connect(location?: string): Promise<void> {
-  await router.push({ path: '/api-keys/banks', query: { add: 'true', ...(location ? { location } : {}) } });
+async function connect(connector?: string): Promise<void> {
+  await router.push({ path: '/api-keys/banks', query: { add: 'true', ...(connector ? { connector } : {}) } });
 }
 
 onBeforeMount(() => {
@@ -125,7 +125,7 @@ onBeforeMount(() => {
         >
           <BankConnectionItem
             v-for="connection in connections"
-            :key="`${connection.location}#${connection.name}`"
+            :key="`${connection.connector}#${connection.name}`"
             :connection="connection"
             @sync="startPromise(syncBanks($event))"
           />
@@ -136,23 +136,33 @@ onBeforeMount(() => {
         />
       </template>
 
-      <AssetBalances
-        v-model:search="search"
-        data-testid="bank-asset-balances"
-        :breakdown="{ hide: true }"
-        :loading="loading && balances.length === 0"
-        :balances="balances"
-        :show-per-protocol="banks.length > 1"
-        sticky-header
+      <div
+        v-if="banks.length > 0"
+        class="flex flex-col gap-6 p-4"
       >
-        <template #empty>
-          <TableEmptyNotice
-            icon="lu-landmark"
-            :title="t('bank_balances.empty_table.title')"
-            :description="t('bank_balances.empty_table.description')"
+        <section
+          v-for="bank in banks"
+          :key="`${bank.connector}#${bank.name}`"
+          :data-testid="`bank-balance-${bank.name}`"
+        >
+          <h2 class="text-h6 font-medium mb-2">
+            {{ bank.name }}
+          </h2>
+          <AssetBalances
+            v-model:search="search"
+            :breakdown="{ hide: true }"
+            :loading="loading && bank.balances.length === 0"
+            :balances="bank.balances"
+            sticky-header
           />
-        </template>
-      </AssetBalances>
+        </section>
+      </div>
+      <TableEmptyNotice
+        v-else
+        icon="lu-landmark"
+        :title="t('bank_balances.empty_table.title')"
+        :description="t('bank_balances.empty_table.description')"
+      />
     </TableFrame>
   </TablePageLayout>
 </template>

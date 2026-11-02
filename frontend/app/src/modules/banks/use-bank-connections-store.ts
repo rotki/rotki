@@ -1,20 +1,21 @@
-import type { BankConnection, BankManifest } from '@/modules/banks/types';
+import type { BankConnection, BankConnectionBalances, BankManifest } from '@/modules/banks/types';
 import { toSentenceCase } from '@rotki/common';
 
 export const useBankConnectionsStore = defineStore('banks/connections', () => {
   const manifests = ref<BankManifest[]>([]);
   const connections = ref<BankConnection[]>([]);
+  const connectionBalances = ref<BankConnectionBalances[]>([]);
   /** Why the supported banks could not be loaded, until a later load succeeds. */
   const manifestsError = shallowRef<unknown>();
   /** Why the connections could not be loaded, until a later load succeeds. */
   const connectionsError = shallowRef<unknown>();
 
-  const manifestFor = (location: string): BankManifest | undefined =>
-    get(manifests).find(manifest => manifest.location === location);
+  const manifestFor = (connector: string): BankManifest | undefined =>
+    get(manifests).find(manifest => manifest.connector === connector);
 
-  /** The bank's manifest display name, or its location in sentence case while the manifests have not loaded. */
-  const bankNameFor = (location: string): string =>
-    manifestFor(location)?.displayName ?? toSentenceCase(location);
+  /** The manifest display name, or the connector in sentence case before manifests load. */
+  const bankNameFor = (connector: string): string =>
+    manifestFor(connector)?.displayName ?? toSentenceCase(connector);
 
   const setManifests = (value: BankManifest[]): void => {
     set(manifests, value);
@@ -34,14 +35,20 @@ export const useBankConnectionsStore = defineStore('banks/connections', () => {
     set(connectionsError, error);
   };
 
+  const setConnectionBalances = (value: BankConnectionBalances[]): void => {
+    set(connectionBalances, value);
+  };
+
   return {
     bankNameFor,
+    connectionBalances,
     connections,
     connectionsError,
     manifestFor,
     manifests,
     manifestsError,
     setConnections,
+    setConnectionBalances,
     setConnectionsError,
     setManifests,
     setManifestsError,

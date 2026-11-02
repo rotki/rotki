@@ -65,7 +65,7 @@ interface UseBanksApiReturn {
   cancelAuthentication: (payload: BankConnectionIdentity) => Promise<boolean>;
   /** Starts a backend task that pulls new transactions; the caller awaits it through the task center. */
   syncBanks: (payload: BankSyncPayload) => Promise<PendingTask>;
-  /** Starts a backend task that queries every bank's balances, keyed by location. */
+  /** Starts a backend task that queries aggregate and per-connection bank balances. */
   queryBankBalances: (ignoreCache?: boolean) => Promise<PendingTask>;
 }
 
@@ -116,11 +116,11 @@ export function useBanksApi(): UseBanksApiReturn {
       cause => toBankSetupError(cause, payload),
     );
 
-  const cancelAuthentication = async ({ location, name }: BankConnectionIdentity): Promise<boolean> =>
-    api.delete<boolean>('/banks/auth', { body: { location, name } });
+  const cancelAuthentication = async ({ connector, name }: BankConnectionIdentity): Promise<boolean> =>
+    api.delete<boolean>('/banks/auth', { body: { connector, name } });
 
-  const removeBank = async ({ location, name }: BankConnectionIdentity): Promise<boolean> =>
-    api.delete<boolean>('/banks', { body: { location, name } });
+  const removeBank = async ({ connector, name }: BankConnectionIdentity): Promise<boolean> =>
+    api.delete<boolean>('/banks', { body: { connector, name } });
 
   const syncBanks = async (payload: BankSyncPayload): Promise<PendingTask> => {
     const response = await api.post<PendingTask>('/banks/sync', { ...payload, asyncQuery: true }, { filterEmptyProperties: true });
