@@ -7,8 +7,8 @@ import HistoryEventType from './HistoryEventType.vue';
 
 vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
   useHistoryEventMappings: vi.fn().mockReturnValue({
-    getEventTypeData: (): ComputedRef<{ label: string; icon: string; color: string; identifier: string }> =>
-      computed(() => ({ color: 'primary', icon: 'lu-circle', identifier: 'transfer', label: 'Transfer' })),
+    getEventTypeData: (): ComputedRef<{ label: string; icon: string; color: string; direction: string; identifier: string }> =>
+      computed(() => ({ color: 'error', direction: 'out', icon: 'lu-circle', identifier: 'swap', label: 'Swap' })),
   }),
 }));
 
@@ -24,7 +24,7 @@ describe('history/events/HistoryEventType', () => {
   let pinia: Pinia;
 
   const stubs = {
-    HistoryEventTypeCombination: { template: '<div data-testid="combination" />' },
+    HistoryEventTypeCombination: { props: ['type'], template: '<div data-testid="combination" />' },
     HistoryEventTypeCounterparty: {
       props: ['counterparty', 'address', 'location'],
       template: '<div data-testid="counterparty-badge"><slot /></div>',
@@ -85,10 +85,11 @@ describe('history/events/HistoryEventType', () => {
   function createWrapper(
     event: HistoryEventEntry,
     linkedLeg?: boolean,
+    neutral?: boolean,
   ): VueWrapper<InstanceType<typeof HistoryEventType>> {
     return mount(HistoryEventType, {
       global: { plugins: [pinia], stubs },
-      props: { event, linkedLeg },
+      props: { event, linkedLeg, neutral },
     });
   }
 
@@ -125,5 +126,20 @@ describe('history/events/HistoryEventType', () => {
 
     expect(wrapper.find('[data-testid="location-badge"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="counterparty-badge"]').exists()).toBe(false);
+  });
+
+  it('should keep the category color and direction on a single event', () => {
+    const wrapper = createWrapper(createOnlineEvent('kraken'));
+
+    expect(wrapper.findComponent(stubs.HistoryEventTypeCombination).props('type')).toMatchObject({ color: 'error', direction: 'out' });
+  });
+
+  it('should drop the color and direction on a neutral group row', () => {
+    const wrapper = createWrapper(createOnlineEvent('kraken'), false, true);
+
+    const type = wrapper.findComponent(stubs.HistoryEventTypeCombination).props('type');
+    expect(type.color).toBeUndefined();
+    expect(type.direction).toBe('neutral');
+    expect(type.label).toBe('Swap');
   });
 });

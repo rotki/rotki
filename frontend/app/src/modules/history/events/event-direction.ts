@@ -1,4 +1,5 @@
 import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
+import type { HistoryEventCategoryDetailWithId } from '@/modules/history/events/event-type';
 
 /** The three directions an event can move balance: incoming, outgoing, or neither. */
 export type EventDirection = 'in' | 'out' | 'neutral';
@@ -45,4 +46,9 @@ export function getEventDirectionTextClass(direction: EventDirection): string {
     case 'neutral':
       return 'text-rui-text-secondary';
   }
+}
+
+/** The category shown as neutral: no direction color, and the neutral direction. */
+export function toNeutralCategory(detail: HistoryEventCategoryDetailWithId): HistoryEventCategoryDetailWithId {
+  return { ...detail, color: undefined, direction: 'neutral' };
 }

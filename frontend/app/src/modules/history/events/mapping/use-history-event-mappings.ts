@@ -13,6 +13,7 @@ import { uniqueStrings } from '@/modules/core/common/data/data';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { toNeutralCategory } from '@/modules/history/events/event-direction';
 
 type Event = MaybeRefOrGetter<{
   eventType: string;
@@ -28,10 +29,7 @@ type Event = MaybeRefOrGetter<{
  * comes in (a relayer-reported MEV reward, a queued withdrawal), and it gets no color.
  */
 function withInformationalNeutral(detail: HistoryEventCategoryDetailWithId, eventType: string): HistoryEventCategoryDetailWithId {
-  if (eventType !== 'informational')
-    return detail;
-
-  return { ...detail, color: undefined, direction: 'neutral' };
+  return eventType === 'informational' ? toNeutralCategory(detail) : detail;
 }
 
 export const useHistoryEventMappings = createSharedComposable(() => {

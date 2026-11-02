@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
+import type { HistoryEventCategoryDetailWithId } from '@/modules/history/events/event-type';
 import type { HistoryEventEntry, HistoryEventState } from '@/modules/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { toNeutralCategory } from '@/modules/history/events/event-direction';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventStateChip from '@/modules/history/events/HistoryEventStateChip.vue';
 import HistoryEventTypeCombination from '@/modules/history/events/HistoryEventTypeCombination.vue';
@@ -11,7 +13,7 @@ import HistoryEventTypeLocationBadge from '@/modules/history/events/HistoryEvent
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
-const { event, groupLocationLabel, icon, label, highlight, hideStateChips, linkedLeg } = defineProps<{
+const { event, groupLocationLabel, icon, label, highlight, hideStateChips, linkedLeg, neutral } = defineProps<{
   event: HistoryEventEntry;
   groupLocationLabel?: string;
   icon?: RuiIcons;
@@ -22,6 +24,9 @@ const { event, groupLocationLabel, icon, label, highlight, hideStateChips, linke
   hideStateChips?: boolean;
   /** Set when the event is rendered inside an expanded linked (matched) movement. */
   linkedLeg?: boolean;
+  /** Set on a collapsed group row (swap, bridge, matched movement) that stands for an out leg and
+   * an in leg together, so it takes neither leg's direction color. */
+  neutral?: boolean;
 }>();
 
 defineSlots<{
@@ -32,7 +37,12 @@ defineSlots<{
 const { getEventTypeData } = useHistoryEventMappings();
 const { matchChain } = useSupportedChains();
 
-const attrs = getEventTypeData(() => event);
+const eventTypeData = getEventTypeData(() => event);
+
+const attrs = computed<HistoryEventCategoryDetailWithId>(() => {
+  const data = get(eventTypeData);
+  return neutral ? toNeutralCategory(data) : data;
+});
 
 const counterparty = computed<string | undefined>(() =>
   'counterparty' in event ? (event.counterparty ?? undefined) : undefined,
