@@ -140,10 +140,11 @@ function plainPayload(state: EventEntryFormState, groupIdentifier: string): NewO
   return { ...common, entryType: HistoryEventEntryType.HISTORY_EVENT };
 }
 
-/** The fields every chain kind sends the same way; the counterparty differs, see each kind below. */
-function chainPayload(state: EventEntryFormState): Pick<NewEvmHistoryEventPayload, 'eventSubtype' | 'extraData' | 'groupIdentifier' | 'locationLabel' | 'txRef'> & ReturnType<typeof commonPayload> {
+/** The fields every chain kind sends the same way. */
+function chainPayload(state: EventEntryFormState): Pick<NewEvmHistoryEventPayload, 'counterparty' | 'extraData' | 'groupIdentifier' | 'locationLabel' | 'txRef'> & ReturnType<typeof commonPayload> {
   return {
     ...commonPayload(state),
+    counterparty: toNullableText(state.counterparty),
     extraData: state.extraData,
     groupIdentifier: toNullableText(state.groupIdentifier),
     locationLabel: toNullableText(state.locationLabel),
@@ -155,8 +156,7 @@ function chainPayload(state: EventEntryFormState): Pick<NewEvmHistoryEventPayloa
  * Builds the API payload for an event of the state's kind.
  *
  * @remarks
- * Empty fields are normalised to the nulls and defaults the backend expects. The counterparty is
- * the exception on Solana and bitcoin, whose endpoints want it blank rather than null when unset.
+ * Empty fields are normalised to the nulls and defaults the backend expects.
  *
  * @param state - the validated form state
  * @param generateGroupIdentifier - a new plain or bank event needs a group of its own, which a pure
@@ -171,7 +171,6 @@ export function toEventEntryPayload(state: EventEntryFormState, generateGroupIde
       return {
         ...chainPayload(state),
         address: toNullableText(state.address),
-        counterparty: toNullableText(state.counterparty),
         entryType: HistoryEventEntryType.EVM_EVENT,
         location: state.location,
       } satisfies NewEvmHistoryEventPayload;
@@ -179,14 +178,12 @@ export function toEventEntryPayload(state: EventEntryFormState, generateGroupIde
       return {
         ...chainPayload(state),
         address: toNullableText(state.address),
-        counterparty: state.counterparty,
         entryType: HistoryEventEntryType.SOLANA_EVENT,
       } satisfies NewSolanaEventPayload;
     case HistoryEventEntryType.BITCOIN_EVENT:
       return {
         ...chainPayload(state),
         asset: bitcoinAssetFor(state.location),
-        counterparty: state.counterparty,
         entryType: HistoryEventEntryType.BITCOIN_EVENT,
         location: state.location,
       } satisfies NewBitcoinEventPayload;

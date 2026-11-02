@@ -198,8 +198,8 @@ describe('bitcoin events', () => {
     expect(toEventEntryPayload({ ...validState(), location: 'bitcoin_cash' }, noGroupIdentifier).asset).toBe('BCH');
   });
 
-  it('should send a blank counterparty rather than null, which is what this endpoint wants', () => {
-    expect(toEventEntryPayload(validState(), noGroupIdentifier)).toMatchObject({ counterparty: '' });
+  it('should send a blank counterparty as null, as every chain does', () => {
+    expect(toEventEntryPayload(validState(), noGroupIdentifier)).toMatchObject({ counterparty: null });
   });
 
   it('should send null for a blank location label', () => {
@@ -324,8 +324,8 @@ describe('solana events', () => {
     expect(payload.locationLabel).toBeNull();
   });
 
-  it('should send a blank counterparty rather than null, which is what this endpoint wants', () => {
-    expect(toEventEntryPayload(validState(), noGroupIdentifier)).toMatchObject({ counterparty: '' });
+  it('should send a blank counterparty as null, as every chain does', () => {
+    expect(toEventEntryPayload(validState(), noGroupIdentifier)).toMatchObject({ counterparty: null });
   });
 
   it('should send a blank amount as zero', () => {
