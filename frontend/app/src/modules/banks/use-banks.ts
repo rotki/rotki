@@ -17,13 +17,11 @@ import {
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
-import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useBankEventsRefresh } from '@/modules/history/events/tx/use-bank-events-refresh';
-import { useSetting } from '@/modules/settings/use-setting';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -81,24 +79,9 @@ export function useBanks(): UseBanksReturn {
   const store = useBankConnectionsStore();
   const { exchangeBalances } = storeToRefs(useBalancesStore());
   const { banks: bankLocations } = storeToRefs(useLocationStore());
-  const { notifyError, notifyInfo } = useNotifications();
-  const dateDisplayFormat = useSetting('dateDisplayFormat');
+  const { notifyError } = useNotifications();
   const { submitTask } = useNativeTask();
   const { queryAllBankEvents } = useBankEventsRefresh();
-
-  function notifyHistoryLimit(result: BankSetupResult): void {
-    if (result === true || !('success' in result) || result.historyStartTs === null)
-      return;
-    notifyInfo(
-      t('bank_settings.history_limit.title'),
-      t('bank_settings.history_limit.message', {
-        date: displayDateFormatter.format(
-          new Date(result.historyStartTs * 1000),
-          get(dateDisplayFormat),
-        ),
-      }),
-    );
-  }
 
   const refreshSupportedBanks = async (): Promise<void> => {
     try {
@@ -184,7 +167,6 @@ export function useBanks(): UseBanksReturn {
       await refreshBankConnections();
       startPromise(fetchBankBalances());
       if (mode === 'add') {
-        notifyHistoryLimit(outcome.value);
         startPromise(syncBanks({ location, name }));
       }
     }
@@ -201,7 +183,6 @@ export function useBanks(): UseBanksReturn {
     if (outcome.ok && isBankSetupComplete(outcome.value)) {
       startPromise(fetchBankBalances());
       if (outcome.value !== true) {
-        notifyHistoryLimit(outcome.value);
         startPromise(syncBanks(connection));
       }
     }

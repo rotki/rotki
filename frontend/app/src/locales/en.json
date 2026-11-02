@@ -2052,6 +2052,10 @@
       "add": {
         "title": "Add a bank connection"
       },
+      "added": {
+        "message": "The bank connection “{name}” was added successfully.",
+        "title": "Bank connection added"
+      },
       "edit": {
         "title": "Edit a bank connection"
       }
