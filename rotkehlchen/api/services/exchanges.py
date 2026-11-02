@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.misc import combine_dicts, ts_now
@@ -56,7 +58,7 @@ class ExchangesService:
             binance_history_start_ts: Timestamp | None,
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
-    ) -> tuple[dict[str, str] | None, str, HTTPStatus]:
+    ) -> ApiResult:
         """Returns the identifier of the new connection"""
         identifier, msg = self.rotkehlchen.setup_exchange(
             name=name,
@@ -73,8 +75,8 @@ class ExchangesService:
             gate_location=gate_location,
         )
         if identifier is None:
-            return None, msg, HTTPStatus.CONFLICT
-        return {'identifier': identifier}, msg, HTTPStatus.OK
+            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+        return OkResult({'identifier': identifier}, message=msg)
 
     def get_binance_history_start_timestamp(self) -> Timestamp:
         """Return the inclusive API start timestamp suggested for a new Binance key."""
@@ -100,7 +102,7 @@ class ExchangesService:
             binance_markets: list[str] | None,
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
-    ) -> tuple[bool | None, str, HTTPStatus]:
+    ) -> ApiResult:
         edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
             identifier=identifier,
             new_name=new_name,
@@ -115,46 +117,38 @@ class ExchangesService:
             gate_location=gate_location,
         )
         if not edited:
-            return None, msg, HTTPStatus.CONFLICT
-        return True, msg, HTTPStatus.OK
+            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+        return OkResult(True, message=msg)
 
-    def remove_exchange(self, identifier: str) -> tuple[bool | None, str, HTTPStatus]:
+    def remove_exchange(self, identifier: str) -> ApiResult:
         result, message = self.rotkehlchen.exchange_manager.delete_exchange(identifier)
         if not result:
-            return None, message, HTTPStatus.CONFLICT
-        return True, message, HTTPStatus.OK
+            return FailResult(message, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+        return OkResult(True, message=message)
 
     def query_exchange_history_events(
             self,
             location: LocationIdentifier | None,
             identifier: str | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             self.rotkehlchen.exchange_manager.query_exchange_history_events(
                 location=location,
                 identifier=identifier,
             )
         except RemoteError as e:
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.BAD_GATEWAY,
-            }
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
         except InputError as e:
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
-        return {'result': True, 'message': ''}
+        return OkResult(True)
 
     def query_exchange_history_events_in_range(
             self,
             identifier: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             total_events, stored_events, skipped_events, actual_end_ts = (
                 self.rotkehlchen.exchange_manager.requery_exchange_history_events(
@@ -164,17 +158,13 @@ class ExchangesService:
                 )
             )
         except RemoteError as e:
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.BAD_GATEWAY,
-            }
-        except (InputError, DeserializationError, sqlcipher.IntegrityError) as e:  # pylint: disable=no-member
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
+        except InputError as e:
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
+        except DeserializationError as e:
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.BAD_DATA)
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.CONFLICT)
 
         result = {
             'queried_events': total_events,
@@ -182,14 +172,14 @@ class ExchangesService:
             'skipped_events': skipped_events,
             'actual_end_ts': actual_end_ts,
         }
-        return {'result': result, 'message': ''}
+        return OkResult(result)
 
     def query_exchange_balances(
             self,
             location: LocationIdentifier | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Return the balances of each exchange connection and the totals of each location.
 
         Connections are keyed by their identifier, since it survives renames and clients
@@ -206,11 +196,11 @@ class ExchangesService:
         if location is None:
             exchanges = manager.iterate_exchanges()
         elif (location_exchanges := manager.connected_exchanges.get(location)) is None:
-            return {
-                'result': None,
-                'message': f'Could not query balances for {location!s} since it is not registered',
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                f'Could not query balances for {location!s} since it is not registered',
+                HTTPStatus.CONFLICT,
+                FailureCause.NOT_FOUND,
+            )
         else:
             exchanges = location_exchanges
 
@@ -230,11 +220,7 @@ class ExchangesService:
             totals[location_str] = combine_dicts(totals.get(location_str, {}), balances)
 
         if len(per_account) == 0:
-            return {
-                'result': None,
-                'message': ' '.join(errors),
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(' '.join(errors), HTTPStatus.CONFLICT, FailureCause.NETWORK)
 
         result: dict[str, Any] = {
             'per_account': per_account,
@@ -246,8 +232,4 @@ class ExchangesService:
         if len(failed_accounts) != 0:
             result['failed_accounts'] = failed_accounts
 
-        return {
-            'result': result,
-            'message': ' '.join(errors),
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(result, message=' '.join(errors))

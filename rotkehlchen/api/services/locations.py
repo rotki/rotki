@@ -1,9 +1,11 @@
 import threading
 from collections import defaultdict
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.db.locations import DBLocations
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.icons import check_if_image_is_cached, maybe_create_image_response
 from rotkehlchen.locations.images import (
@@ -23,16 +25,12 @@ if TYPE_CHECKING:
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
-def _error(message: str, status_code: HTTPStatus) -> dict[str, Any]:
-    return {'result': None, 'message': message, 'status_code': status_code}
-
-
-def _ok(result: Any) -> dict[str, Any]:
-    return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
-
-
-def _not_found(identifier: str) -> dict[str, Any]:
-    return _error(f'Location {identifier} does not exist', HTTPStatus.NOT_FOUND)
+def _not_found(identifier: str) -> FailResult:
+    return FailResult(
+        f'Location {identifier} does not exist',
+        HTTPStatus.NOT_FOUND,
+        FailureCause.NOT_FOUND,
+    )
 
 
 class LocationsService:
@@ -50,16 +48,16 @@ class LocationsService:
         assert self.rotkehlchen.data.user_data_dir is not None, 'only called when logged in'
         return location_images_dir(self.rotkehlchen.data.user_data_dir)
 
-    def get_locations(self) -> dict[str, Any]:
+    def get_locations(self) -> ApiResult:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            return _ok([x.serialize() for x in self.db_locations.get_all(cursor)])
+            return OkResult([x.serialize() for x in self.db_locations.get_all(cursor)])
 
     def add_location(
             self,
             name: str,
             parent_identifier: LocationIdentifier,
             icon: str | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             with self.rotkehlchen.data.db.user_write() as write_cursor:
                 node = self.db_locations.add_custom(
@@ -69,9 +67,9 @@ class LocationsService:
                     icon=icon,
                 )
         except InputError as e:
-            return _error(str(e), HTTPStatus.BAD_REQUEST)
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return _ok(node.serialize())
+        return OkResult(node.serialize())
 
     def _path_names(self, cursor: DBCursor, node: LocationNode) -> list[str]:
         if node.parent_identifier is None:
@@ -86,7 +84,7 @@ class LocationsService:
             icon: str | EllipsisType | None,
             is_active: bool | None,
             dry_run: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Edit a custom location, or with dry_run only check the edit. The display path
         before and after the edit lets the client warn that a move changes where the
         location's history is aggregated."""
@@ -109,11 +107,11 @@ class LocationsService:
                 )
                 new_path = self._path_names(cursor, node)
         except InputError as e:
-            return _error(str(e), HTTPStatus.BAD_REQUEST)
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return _ok({'location': node.serialize(), 'old_path': old_path, 'new_path': new_path})
+        return OkResult({'location': node.serialize(), 'old_path': old_path, 'new_path': new_path})
 
-    def delete_location(self, identifier: LocationIdentifier) -> dict[str, Any]:
+    def delete_location(self, identifier: LocationIdentifier) -> ApiResult:
         with self._image_locks[identifier]:
             try:
                 with self.rotkehlchen.data.db.user_write() as write_cursor:
@@ -121,42 +119,42 @@ class LocationsService:
                         return _not_found(identifier)
                     node = self.db_locations.delete_custom(write_cursor, identifier)
             except InputError as e:
-                return _error(str(e), HTTPStatus.CONFLICT)
+                return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.CONFLICT)
 
             delete_location_image(self._images_dir, node.image)
-        return _ok(True)
+        return OkResult(True)
 
-    def get_location_aliases(self) -> dict[str, Any]:
+    def get_location_aliases(self) -> ApiResult:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             aliases = self.db_locations.get_aliases(cursor)
-        return _ok([
+        return OkResult([
             {'alias': alias, 'location_identifier': identifier}
             for alias, identifier in aliases.items()
         ])
 
-    def set_location_alias(self, alias: str, identifier: LocationIdentifier) -> dict[str, Any]:
+    def set_location_alias(self, alias: str, identifier: LocationIdentifier) -> ApiResult:
         try:
             with self.rotkehlchen.data.db.user_write() as write_cursor:
                 self.db_locations.set_alias(write_cursor, alias, identifier)
         except InputError as e:
-            return _error(str(e), HTTPStatus.BAD_REQUEST)
-        return _ok(True)
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
+        return OkResult(True)
 
-    def delete_location_alias(self, alias: str) -> dict[str, Any]:
+    def delete_location_alias(self, alias: str) -> ApiResult:
         try:
             with self.rotkehlchen.data.db.user_write() as write_cursor:
                 self.db_locations.delete_alias(write_cursor, alias)
         except InputError as e:
-            return _error(str(e), HTTPStatus.NOT_FOUND)
-        return _ok(True)
+            return FailResult(str(e), HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND)
+        return OkResult(True)
 
-    def get_location_usage(self, identifier: LocationIdentifier) -> dict[str, Any]:
+    def get_location_usage(self, identifier: LocationIdentifier) -> ApiResult:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if (node := self.db_locations.get(cursor, identifier)) is None:
                 return _not_found(identifier)
             usage = self.db_locations.usage(cursor, identifier)
 
-        return _ok({
+        return OkResult({
             'usage': usage,
             'deletable': not node.is_builtin and len(usage) == 0,
         })
@@ -165,7 +163,7 @@ class LocationsService:
             self,
             identifier: LocationIdentifier,
             filepath: Path,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Store the image, then point the location at it and remove the image it replaces,
         so a failure never leaves the location without a readable image"""
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -176,20 +174,24 @@ class LocationsService:
             try:
                 image = store_location_image(self._images_dir, identifier, filepath)
             except OSError as e:
-                return _error(f'Failed to store the location image: {e!s}', HTTPStatus.CONFLICT)
+                return FailResult(
+                    f'Failed to store the location image: {e!s}',
+                    HTTPStatus.CONFLICT,
+                    FailureCause.LOCAL_DB,
+                )
 
             try:
                 with self.rotkehlchen.data.db.user_write() as write_cursor:
                     old_image = self.db_locations.set_custom_image(write_cursor, identifier, image)
             except InputError as e:
                 delete_location_image(self._images_dir, image)
-                return _error(str(e), HTTPStatus.BAD_REQUEST)
+                return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
             if old_image != image:
                 delete_location_image(self._images_dir, old_image)
-        return _ok({'image': image})
+        return OkResult({'image': image})
 
-    def delete_location_image(self, identifier: LocationIdentifier) -> dict[str, Any]:
+    def delete_location_image(self, identifier: LocationIdentifier) -> ApiResult:
         with self._image_locks[identifier]:
             try:
                 with self.rotkehlchen.data.db.user_write() as write_cursor:
@@ -197,10 +199,10 @@ class LocationsService:
                         return _not_found(identifier)
                     old_image = self.db_locations.set_custom_image(write_cursor, identifier, None)
             except InputError as e:
-                return _error(str(e), HTTPStatus.BAD_REQUEST)
+                return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
             delete_location_image(self._images_dir, old_image)
-        return _ok(True)
+        return OkResult(True)
 
     def get_location_image(self, identifier: LocationIdentifier, match_header: str | None) -> Response:  # noqa: E501
         """The uploaded image of a custom location. Images of built-in locations are packaged

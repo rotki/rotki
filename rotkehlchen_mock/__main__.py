@@ -1,9 +1,9 @@
 import logging
 import threading
-from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.api.rest import RestAPI, api_response
+from rotkehlchen.api.result import OkResult
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.args import app_args
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
@@ -24,7 +24,7 @@ def get_well_formed_response(*_: Any) -> Response:
 
     Arguments passed to this function are ignored.
     """
-    return api_response(result={'result': {}}, status_code=HTTPStatus.OK)
+    return api_response(OkResult({}))
 
 
 class RotkehlchenServerMock(RotkehlchenServer):

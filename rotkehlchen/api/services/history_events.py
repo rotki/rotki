@@ -2,15 +2,17 @@ from __future__ import annotations
 
 from contextlib import suppress
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.rest_helpers.history_events import edit_grouped_events_with_optional_fee
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.locations import DBLocations
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import AlreadyExists, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -26,6 +28,16 @@ if TYPE_CHECKING:
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
+def cause_of_event_write_error(error: Exception) -> FailureCause:
+    """A unique constraint rejecting an event that already exists is a conflict, any other
+    database error is our own data, and an overflow is a value out of range."""
+    if isinstance(error, sqlcipher.IntegrityError):  # pylint: disable=no-member
+        return FailureCause.CONFLICT
+    if isinstance(error, sqlcipher.DatabaseError):  # pylint: disable=no-member
+        return FailureCause.LOCAL_DB
+    return FailureCause.INVALID_INPUT
+
+
 class HistoryEventsService:
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
@@ -34,7 +46,7 @@ class HistoryEventsService:
             self,
             events: list[HistoryBaseEntry],
             allow_archived: bool,
-    ) -> dict[str, Any] | None:
+    ) -> FailResult | None:
         """Error response if an event's location can not hold data, None otherwise.
         Edits accept archived locations so that their history stays editable."""
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -47,10 +59,14 @@ class HistoryEventsService:
                         allow_category=True,
                     )
                 except InputError as e:
-                    return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}  # noqa: E501
+                    return FailResult(
+                        str(e),
+                        HTTPStatus.BAD_REQUEST,
+                        FailureCause.INVALID_INPUT,
+                    )
         return None
 
-    def add_history_events(self, events: list[HistoryBaseEntry]) -> dict[str, Any]:
+    def add_history_events(self, events: list[HistoryBaseEntry]) -> ApiResult:
         if (error := self._ensure_event_tx_existence(events[0])) is not None:
             return error
         if (error := self._ensure_assignable_locations(events, allow_archived=False)) is not None:
@@ -72,31 +88,23 @@ class HistoryEventsService:
                         main_identifier = identifier
         except (sqlcipher.DatabaseError, OverflowError) as e:  # pylint: disable=no-member
             error_msg = f'Failed to add event to the DB due to a DB error: {e!s}'
-            return {
-                'result': None,
-                'message': error_msg,
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                error_msg,
+                HTTPStatus.CONFLICT,
+                cause_of_event_write_error(e),
+            )
 
         if main_identifier is None:
             error_msg = 'Failed to add event to the DB. It already exists'
-            return {
-                'result': None,
-                'message': error_msg,
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(error_msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
 
-        return {
-            'result': {'identifier': main_identifier},
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult({'identifier': main_identifier})
 
     def edit_history_events(
             self,
             events: list[HistoryBaseEntry],
             identifiers: list[int] | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         if (error := self._ensure_event_tx_existence(events[0])) is not None:
             return error
         if (error := self._ensure_assignable_locations(events, allow_archived=True)) is not None:
@@ -119,13 +127,9 @@ class HistoryEventsService:
                         identifiers=identifiers,
                     )
             except InputError as e:
-                return {
-                    'result': None,
-                    'message': str(e),
-                    'status_code': HTTPStatus.CONFLICT,
-                }
+                return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
             else:
-                return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+                return OkResult(True)
 
         try:
             with self.rotkehlchen.data.db.user_write() as write_cursor:
@@ -136,20 +140,16 @@ class HistoryEventsService:
                         mapping_state=HistoryMappingState.CUSTOMIZED,
                     )
         except InputError as e:
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
     def delete_history_events(
             self,
             filter_query: HistoryBaseEntryFilterQuery,
             force_delete: bool,
             requested_identifiers: list[int] | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         _, error_msg = db.delete_history_events_by_filter(
             filter_query=filter_query,
@@ -157,15 +157,11 @@ class HistoryEventsService:
             requested_identifiers=requested_identifiers,
         )
         if error_msg is not None:
-            return {
-                'result': None,
-                'message': error_msg,
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(error_msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def _ensure_event_tx_existence(self, event: HistoryBaseEntry) -> dict[str, Any] | None:
+    def _ensure_event_tx_existence(self, event: HistoryBaseEntry) -> FailResult | None:
         """Check if an evm/evmlike event tx is present in the DB and if not, query it from onchain.
         Returns None if the tx was successfully found, or if the event is not an evm event,
         otherwise returns error data for the response.
@@ -185,11 +181,11 @@ class HistoryEventsService:
         try:
             associated_address = deserialize_evm_address(event.location_label)  # type: ignore  # if label is None TypeError will be caught
         except (DeserializationError, TypeError):
-            return {
-                'result': None,
-                'message': 'The location_label must be set to a valid EVM address to pull the tx for the given hash from onchain.',  # noqa: E501
-                'status_code': HTTPStatus.BAD_REQUEST,
-            }
+            return FailResult(
+                'The location_label must be set to a valid EVM address to pull the tx for the given hash from onchain.',  # noqa: E501
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.INVALID_INPUT,
+            )
 
         if blockchain.is_evmlike():
             if self.rotkehlchen.chains_aggregator.zksync_lite.query_single_transaction(
@@ -207,8 +203,8 @@ class HistoryEventsService:
                 )
                 return None
 
-        return {
-            'result': None,
-            'message': f'The provided transaction hash does not exist for {get_formatted_location_name(event.location)}.',  # noqa: E501
-            'status_code': HTTPStatus.BAD_REQUEST,
-        }
+        return FailResult(
+            f'The provided transaction hash does not exist for {get_formatted_location_name(event.location)}.',  # noqa: E501
+            HTTPStatus.BAD_REQUEST,
+            FailureCause.NOT_FOUND,
+        )
