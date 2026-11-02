@@ -2,6 +2,7 @@ import type { MessageHandlerRegistry } from '../interfaces';
 import { createNegativeBalanceDetectedHandler } from '@/modules/history/balances/negative-balance-detected-handler';
 import { createEventsStatusHandler } from '@/modules/history/events-status-handler';
 import { createTransactionStatusHandler } from '@/modules/history/transaction-status-handler';
+import { createBackgroundTaskStatusHandler } from '@/modules/task-center/background/background-task-status-handler';
 import { createDataMigrationHandler, createDbUpgradeHandler } from '../handlers/database-migration';
 import { createEvmAccountsHandler } from '../handlers/evm-accounts';
 import { createInternalTxFixedHandler } from '../handlers/internal-tx-fixed';
@@ -12,6 +13,7 @@ export function createStatusRegistry(
   t: ReturnType<typeof useI18n>['t'],
 ): Pick<
   MessageHandlerRegistry,
+  | typeof SocketMessageType.BACKGROUND_TASK_STATUS
   | typeof SocketMessageType.DATA_MIGRATION_STATUS
   | typeof SocketMessageType.DB_UPGRADE_STATUS
   | typeof SocketMessageType.EVM_ACCOUNTS_DETECTION
@@ -22,6 +24,7 @@ export function createStatusRegistry(
   | typeof SocketMessageType.TRANSACTION_STATUS
 > {
   return {
+    [SocketMessageType.BACKGROUND_TASK_STATUS]: createBackgroundTaskStatusHandler(),
     [SocketMessageType.DATA_MIGRATION_STATUS]: createDataMigrationHandler(),
     [SocketMessageType.DB_UPGRADE_STATUS]: createDbUpgradeHandler(),
     [SocketMessageType.EVM_ACCOUNTS_DETECTION]: createEvmAccountsHandler(),

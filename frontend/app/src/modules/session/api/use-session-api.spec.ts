@@ -104,6 +104,10 @@ describe('composables/api/session/index', () => {
               },
               last_balance_save: 1700000000,
               last_data_upload_ts: 1700100000,
+              running_tasks: [{
+                name: 'Query ethereum transactions for 0xdead',
+                started_at: 1700000100,
+              }],
             },
             message: '',
           })),
@@ -118,6 +122,10 @@ describe('composables/api/session/index', () => {
       expect(result.failedToConnect?.arbitrum).toEqual(['arb_node1']);
       expect(result.lastBalanceSave).toBe(1700000000);
       expect(result.lastDataUploadTs).toBe(1700100000);
+      expect(result.runningTasks).toEqual([{
+        name: 'Query ethereum transactions for 0xdead',
+        startedAt: 1700000100,
+      }]);
     });
 
     it('should handle empty connected nodes', async () => {
@@ -128,6 +136,7 @@ describe('composables/api/session/index', () => {
               connected_nodes: {},
               last_balance_save: 0,
               last_data_upload_ts: 0,
+              running_tasks: [],
             },
             message: '',
           })),

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { NewDetectedToken } from '@/modules/assets/detection/types';
 import { CalendarEventWithReminder } from '@/modules/calendar/types';
+import { BackgroundTaskStatusData } from '@/modules/task-center/background/background-task-types';
 import { SocketMessageType, UserMessageData } from './types/base';
 import {
   AccountingRuleConflictData,
@@ -30,6 +31,11 @@ import {
   ProgressUpdateResultData,
   UnifiedTransactionStatusData,
 } from './types/status-types';
+
+const BackgroundTaskStatusMessage = z.object({
+  data: BackgroundTaskStatusData,
+  type: z.literal(SocketMessageType.BACKGROUND_TASK_STATUS),
+});
 
 const UserMessageWebsocketMessage = z.object({
   data: UserMessageData,
@@ -177,6 +183,7 @@ const CurrentBalanceDetectionCompletedMessage = z.object({
 });
 
 export const WebsocketMessage = z.discriminatedUnion('type', [
+  BackgroundTaskStatusMessage,
   UserMessageWebsocketMessage,
   BalancesSnapshotErrorMessage,
   TransactionStatusMessage,
