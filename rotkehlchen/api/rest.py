@@ -31,6 +31,7 @@ from rotkehlchen.api.rest_helpers.downloads import (
     register_post_download_cleanup,
 )
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult, serialize_result
 from rotkehlchen.api.services.accounting import AccountingService
 from rotkehlchen.api.services.accounts import AccountsService
 from rotkehlchen.api.services.assets import AssetsService
@@ -143,6 +144,7 @@ from rotkehlchen.errors.api import (
     RotkehlchenPermissionError,
 )
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     BackupTooLargeError,
     DBSchemaError,
@@ -343,10 +345,16 @@ def wrap_in_fail_result(message: str, status_code: HTTPStatus | None = None) -> 
 
 
 def api_response(
-        result: dict[str, Any],
-        status_code: HTTPStatus = HTTPStatus.OK,
+        result: ApiResult | dict[str, Any],
+        status_code: HTTPStatus | None = None,
         log_result: bool = True,
 ) -> Response:
+    if isinstance(result, OkResult | FailResult):
+        assert status_code is None, 'An ApiResult carries its own status'
+        status_code, result = result.status, serialize_result(result)
+    elif status_code is None:
+        status_code = HTTPStatus.OK
+
     if status_code == HTTPStatus.NO_CONTENT:
         assert not result, 'Provided 204 response with non-zero length response'
         data = ''
@@ -365,7 +373,32 @@ def api_response(
     )
 
 
-def make_response_from_dict(response_data: dict[str, Any]) -> Response:
+def _serialize_task_outcome(task_result: ApiResult | dict[str, Any]) -> dict[str, Any]:
+    """The `completed` entry of a finished task, with the status the request would have
+    answered with had it run synchronously."""
+    if isinstance(task_result, OkResult | FailResult):
+        return {
+            'status': 'completed',
+            'outcome': serialize_result(task_result),
+            'status_code': task_result.status,
+        }
+
+    serialized: dict[str, Any] = {
+        'status': 'completed',
+        'outcome': process_result({
+            'result': task_result['result'],
+            'message': task_result['message'],
+        }),
+    }
+    if status_code := task_result.get('status_code'):
+        serialized['status_code'] = status_code
+    return serialized
+
+
+def make_response_from_dict(response_data: ApiResult | dict[str, Any]) -> Response:
+    if isinstance(response_data, OkResult | FailResult):
+        return api_response(response_data)
+
     result = response_data.get('result')
     message = response_data.get('message', '')
     status_code = response_data.get('status_code', HTTPStatus.OK)
@@ -422,7 +455,7 @@ def async_api_call(session_token: bool = False) -> Callable:
                 result = command(rest_api, **kwargs)
                 if isinstance(result, Response):  # returning a file in an async response
                     return result
-                if mint_session and result.get('result') is None:
+                if mint_session and _is_failure(result):
                     token = None  # revoke ran inside command; don't ship a dead cookie
                 response = make_response_from_dict(result)
 
@@ -438,16 +471,22 @@ def async_api_call(session_token: bool = False) -> Callable:
     return wrapper
 
 
+def _is_failure(result: ApiResult | dict[str, Any]) -> bool:
+    if isinstance(result, OkResult | FailResult):
+        return isinstance(result, FailResult)
+    return result.get('result') is None
+
+
 def _revoke_session_on_failed_create(
-        func: Callable[..., dict[str, Any]],
+        func: Callable[..., ApiResult | dict[str, Any]],
         name: str,
-) -> Callable[..., dict[str, Any]]:
+) -> Callable[..., ApiResult | dict[str, Any]]:
     """Wrap an account-creation command so the session minted for `name` on the ack is
     revoked when the create itself fails (every failure path returns `result=None`).
     Runs in the async task worker, so revocation happens once the outcome is known."""
-    def wrapped(rest_api: RestAPI, **kwargs: Any) -> dict[str, Any]:
+    def wrapped(rest_api: RestAPI, **kwargs: Any) -> ApiResult | dict[str, Any]:
         result = func(rest_api, **kwargs)
-        if result.get('result') is None and rest_api.session_store is not None:
+        if _is_failure(result) and rest_api.session_store is not None:
             rest_api.session_store.revoke(name)
         return result
     return wrapped
@@ -510,7 +549,7 @@ class RestAPI:
         self.login_lock = threading.Lock()  # a Lock and not a Semaphore since .locked() is needed
         self.migration_lock = threading.Semaphore()
         self.task_id = 0
-        self.task_results: dict[int, Any] = {}
+        self.task_results: dict[int, ApiResult | dict[str, Any]] = {}
         # Guarded by task_lock. Non-None while api tasks are being cancelled at
         # logout/shutdown and until the teardown finishes: a task spawned in that
         # window is cancelled on the spot, so it dies at its first checkpoint as an
@@ -610,7 +649,7 @@ class RestAPI:
             self.task_id += 1
         return task_id
 
-    def _write_task_result(self, task_id: int, result: Any) -> None:
+    def _write_task_result(self, task_id: int, result: ApiResult | dict[str, Any]) -> None:
         with self.task_lock:
             if not any(x.task_id == task_id for x in self.rotkehlchen.api_tasks):
                 # An abandoned task of a torn-down session finishing late: its entry
@@ -638,8 +677,10 @@ class RestAPI:
         ):
             log.debug('%s was cancelled. %s', task_str, task.exception)
             if task_id is not None:
-                # Setting empty message to signify that the death of the task is expected.
-                self._write_task_result(task_id, {'result': None, 'message': ''})
+                self._write_task_result(
+                    task_id,
+                    FailResult('', HTTPStatus.OK, FailureCause.CANCELLED),
+                )
             return
 
         log.error(
@@ -653,11 +694,11 @@ class RestAPI:
         )
         # also write an error for the task result if it's not the main loop
         if task_id is not None:
-            result = {
-                'result': None,
-                'message': f'The backend query task died unexpectedly: {task.exception!s}',
-            }
-            self._write_task_result(task_id, result)
+            self._write_task_result(task_id, FailResult(
+                f'The backend query task died unexpectedly: {task.exception!s}',
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                FailureCause.INTERNAL,
+            ))
 
     def _do_query_async(self, command: Callable, task_id: int, **kwargs: Any) -> None:
         log.debug(f'Async task with task id {task_id} started')
@@ -771,19 +812,8 @@ class RestAPI:
                 if task.task_id == task_id:
                     if task_id in self.task_results:
                         # Task has completed and we just got the outcome
-                        function_response = self.task_results.pop(int(task_id), None)
-                        # The result of the original request
-                        result = function_response['result']
-                        # The message of the original request
-                        message = function_response['message']
-                        status_code = function_response.get('status_code')
-                        ret = {'result': result, 'message': message}
-                        returned_task_result = {
-                            'status': 'completed',
-                            'outcome': process_result(ret),
-                        }
-                        if status_code:
-                            returned_task_result['status_code'] = status_code
+                        task_result = self.task_results.pop(int(task_id))
+                        returned_task_result = _serialize_task_outcome(task_result)
                         result_dict = {
                             'result': returned_task_result,
                             'message': '',
