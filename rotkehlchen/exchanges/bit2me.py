@@ -17,7 +17,8 @@ from rotkehlchen.assets.converters import asset_from_bit2me
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -204,6 +205,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'{self.name} GET request at {request_url} connection error: {e!s}.',
+                    cause=FailureCause.NETWORK,
                 ) from e
 
         if response.status_code != HTTPStatus.OK:
@@ -223,7 +225,10 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             status_code=response.status_code,
             error=error_message,
         )
-        raise RemoteError(f'{self.name} API error: {error_message}')
+        raise RemoteError(
+            f'{self.name} API error: {error_message}',
+            cause=cause_for_status(response.status_code),
+        )
 
     @protect_with_lock()
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
@@ -335,6 +340,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             except JSONDecodeError as e:
                 raise RemoteError(
                     f'{self.name} returned invalid JSON for transactions. {e!s}',
+                    cause=FailureCause.BAD_DATA,
                 ) from e
 
             page = response_data.get('data', [])
@@ -626,7 +632,10 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                     f'{self.name} returned invalid JSON for trades. {e!s}',
                     BadData(record=UserMessageRecord.TRADE, error=str(e)),
                 )
-                raise RemoteError(f'{self.name} returned invalid JSON for trades') from e
+                raise RemoteError(
+                    f'{self.name} returned invalid JSON for trades',
+                    cause=FailureCause.BAD_DATA,
+                ) from e
 
             trades_list = response_data.get('data', [])
             page_events: list[SwapEvent] = []

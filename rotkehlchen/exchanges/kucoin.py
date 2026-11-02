@@ -18,6 +18,7 @@ from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
@@ -259,6 +260,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'Kucoin {method} request at {request_url} connection error: {e!s}.',
+                    cause=FailureCause.NETWORK,
                 ) from e
 
             log.debug('Kucoin API response', text=response.text)
@@ -392,7 +394,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     f'Got remote error while querying kucoin {case}: {msg}',
                     BadData(record=PAGINATED_CASE_RECORDS[case], error=msg),
                 )
-                raise RemoteError(msg) from e
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
             try:
                 response_data = response_dict['data']
@@ -408,7 +410,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     # else update query ts
                     current_query_ts += time_step  # type: ignore
                     continue
-                raise RemoteError(msg) from e
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
             page_events: list[Any] = []
             for raw_result in raw_results:
@@ -476,7 +478,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
         except KeyError as e:
             msg = 'Kucoin balances JSON response is missing data key'
             log.error(msg, response_dict)
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for raw_result in accounts_data:
@@ -701,7 +703,10 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             try:
                 error_code = deserialize_int_from_str(error_code, 'kucoin response parsing')
             except DeserializationError as e:
-                raise RemoteError(f'Could not read Kucoin error code {error_code} as an int') from e  # noqa: E501
+                raise RemoteError(
+                    f'Could not read Kucoin error code {error_code} as an int',
+                    cause=FailureCause.BAD_DATA,
+                ) from e
 
         if error_code in API_KEY_ERROR_CODE_ACTION:
             msg = API_KEY_ERROR_CODE_ACTION[error_code]
@@ -747,7 +752,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
         except JSONDecodeError as e:
             msg = f'Kucoin balances returned an invalid JSON response: {accounts_response.text}.'
             log.error(msg)
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
         return self._deserialize_accounts_balances(response_dict), ''
 

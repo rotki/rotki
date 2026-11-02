@@ -15,7 +15,8 @@ from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -208,12 +209,16 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                     timeout=timeout,
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'IndependentReserve API request failed due to {e!s}') from e
+                raise RemoteError(
+                    f'IndependentReserve API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code not in {200, 429}:
                 raise RemoteError(
                     f'IndependentReserve api request for {response.url} failed with HTTP status '
                     f'code {response.status_code} and response {response.text}',
+                    cause=cause_for_status(response.status_code),
                 )
 
             if response.status_code == 429:
@@ -231,6 +236,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                 raise RemoteError(
                     f'IndependentReserve api request for {response.url} failed with HTTP '
                     f'status code {response.status_code} and response {response.text}',
+                    cause=FailureCause.RATE_LIMITED,
                 )
 
             break  # else all good, we can break off the retry loop
@@ -238,7 +244,10 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
         try:
             json_ret = json.loads(response.text)
         except JSONDecodeError as e:
-            raise RemoteError('IndependentReserve returned invalid JSON response') from e
+            raise RemoteError(
+                'IndependentReserve returned invalid JSON response',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         return json_ret
 
@@ -349,7 +358,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
         except KeyError as e:
             msg = f'Error processing independentreserve trades response. Missing key: {e!s}.'
             self.add_classified_error(msg, BadData(record=UserMessageRecord.TRADE, error=str(e)))
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
         return events
 
@@ -441,7 +450,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                     msg,
                     BadData(record=UserMessageRecord.ASSET_MOVEMENT, error=str(e)),
                 )
-                raise RemoteError(msg) from e
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
             account_movements: list[AssetMovement] = []
             for entry in resp:

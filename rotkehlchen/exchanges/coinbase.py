@@ -25,7 +25,8 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -219,7 +220,10 @@ class Coinbase(ExchangeInterface):
                 case CoinbaseKeyType.ED25519:
                     private_key = ed25519.Ed25519PrivateKey.from_private_bytes(base64.b64decode(self.secret)[:32])  # noqa: E501
                 case None:
-                    raise RemoteError('Unable to generate JWT token due to invalid Coinbase API key')  # noqa: E501
+                    raise RemoteError(
+                        'Unable to generate JWT token due to invalid Coinbase API key',
+                        cause=FailureCause.AUTH,
+                    )
 
             current_time = int(time.time())
             jwt_payload = {
@@ -236,7 +240,7 @@ class Coinbase(ExchangeInterface):
                 headers={'kid': self.api_key, 'nonce': secrets.token_hex()},
             )
         except (jwt.PyJWTError, ValueError) as e:
-            raise RemoteError('Error generating JWT token') from e
+            raise RemoteError('Error generating JWT token', cause=FailureCause.AUTH) from e
 
         return jwt_token
 
@@ -320,7 +324,10 @@ class Coinbase(ExchangeInterface):
             try:
                 response = self.session.get(full_url, timeout=timeout, headers=headers)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Coinbase API request failed due to {e!s}') from e
+                raise RemoteError(
+                    f'Coinbase API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code in (401, 429) and had_4xx is False:
                 had_4xx = True
@@ -334,6 +341,7 @@ class Coinbase(ExchangeInterface):
                 raise RemoteError(
                     f'Coinbase query {full_url} responded with error status code: '
                     f'{response.status_code} and text: {response.text}',
+                    cause=cause_for_status(response.status_code),
                 )
 
             try:
@@ -341,10 +349,14 @@ class Coinbase(ExchangeInterface):
             except JSONDecodeError as e:
                 raise RemoteError(
                     f'Coinbase returned invalid JSON response: {response.text}',
+                    cause=FailureCause.BAD_DATA,
                 ) from e
 
             if 'data' not in json_ret:
-                raise RemoteError(f'Coinbase json response does not contain data: {response.text}')
+                raise RemoteError(
+                    f'Coinbase json response does not contain data: {response.text}',
+                    cause=FailureCause.BAD_DATA,
+                )
 
             all_items.extend(json_ret['data'])  # `data` attr is a list in itself
             if ignore_pagination or 'pagination' not in json_ret:
@@ -352,7 +364,10 @@ class Coinbase(ExchangeInterface):
                 break
 
             if 'next_uri' not in json_ret['pagination']:
-                raise RemoteError('Coinbase json response contained no "next_uri" key')
+                raise RemoteError(
+                    'Coinbase json response contained no "next_uri" key',
+                    cause=FailureCause.BAD_DATA,
+                )
 
             # otherwise, let the loop run to gather subsequent queries
             # this next_uri will be used in next iteration
@@ -390,7 +405,10 @@ class Coinbase(ExchangeInterface):
                     timeout=CachedSettings().get_timeout_tuple(),
                 )
             except requests.RequestException as e:
-                raise RemoteError('Coinbase Advanced Trade products request failed') from e
+                raise RemoteError(
+                    'Coinbase Advanced Trade products request failed',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code != HTTPStatus.OK:
                 raise RemoteError(
@@ -399,15 +417,22 @@ class Coinbase(ExchangeInterface):
                         f'{response.status_code}'
                     ),
                     error_code=response.status_code,
+                    cause=cause_for_status(response.status_code),
                 )
 
             try:
                 result = jsonloads_dict(response.text)
             except JSONDecodeError as e:
-                raise RemoteError('Coinbase Advanced Trade returned invalid products JSON') from e
+                raise RemoteError(
+                    'Coinbase Advanced Trade returned invalid products JSON',
+                    cause=FailureCause.BAD_DATA,
+                ) from e
 
             if not isinstance(page_products := result.get('products'), list):
-                raise RemoteError('Coinbase Advanced Trade response does not contain products')
+                raise RemoteError(
+                    'Coinbase Advanced Trade response does not contain products',
+                    cause=FailureCause.BAD_DATA,
+                )
 
             for product in page_products:
                 if (
@@ -429,7 +454,10 @@ class Coinbase(ExchangeInterface):
                     next_cursor == '' or
                     next_cursor in seen_cursors
             ):
-                raise RemoteError('Coinbase Advanced Trade products pagination is invalid')
+                raise RemoteError(
+                    'Coinbase Advanced Trade products pagination is invalid',
+                    cause=FailureCause.BAD_DATA,
+                )
 
             seen_cursors.add(next_cursor)
             params['cursor'] = next_cursor
@@ -469,7 +497,10 @@ class Coinbase(ExchangeInterface):
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.RequestException as e:
-            raise RemoteError('Coinbase Advanced Trade candle request failed') from e
+            raise RemoteError(
+                'Coinbase Advanced Trade candle request failed',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code == 404:
             return []
@@ -480,16 +511,23 @@ class Coinbase(ExchangeInterface):
                     f'{response.status_code}'
                 ),
                 error_code=response.status_code,
+                cause=cause_for_status(response.status_code),
             )
 
         try:
             result = jsonloads_dict(response.text)
         except JSONDecodeError as e:
-            raise RemoteError('Coinbase Advanced Trade returned invalid JSON') from e
+            raise RemoteError(
+                'Coinbase Advanced Trade returned invalid JSON',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         candles = result.get('candles')
         if not isinstance(candles, list):
-            raise RemoteError('Coinbase Advanced Trade response does not contain a candle list')
+            raise RemoteError(
+                'Coinbase Advanced Trade response does not contain a candle list',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return candles
 

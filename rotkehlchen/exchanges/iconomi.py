@@ -15,7 +15,8 @@ from rotkehlchen.assets.converters import asset_from_iconomi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AUST
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -132,20 +133,30 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                 headers=headers,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'ICONOMI API request failed due to {e!s}') from e
+            raise RemoteError(
+                f'ICONOMI API request failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         try:
             json_ret = json.loads(response.text)
         except JSONDecodeError as exc:
-            raise RemoteError('ICONOMI returned invalid JSON response') from exc
+            raise RemoteError(
+                'ICONOMI returned invalid JSON response',
+                cause=FailureCause.BAD_DATA,
+            ) from exc
 
         if response.status_code not in {200, 201}:
             if isinstance(json_ret, dict) and 'message' in json_ret:
-                raise RemoteError(json_ret['message'])
+                raise RemoteError(
+                    json_ret['message'],
+                    cause=cause_for_status(response.status_code),
+                )
 
             raise RemoteError(
                 f'ICONOMI api request for {response.url} '
                 f'failed with HTTP status code {response.status_code}',
+                cause=cause_for_status(response.status_code),
             )
 
         return json_ret
@@ -175,7 +186,10 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
             return None, msg
 
         if resp_info['currency'] != 'USD':
-            raise RemoteError('Iconomi API did not return values in USD')
+            raise RemoteError(
+                'Iconomi API did not return values in USD',
+                cause=FailureCause.BAD_DATA,
+            )
 
         for balance_info in resp_info['assetList']:
             ticker = balance_info['ticker']

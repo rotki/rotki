@@ -15,7 +15,8 @@ from rotkehlchen.constants.assets import A_BEST
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeQueryBalances,
@@ -378,13 +379,19 @@ class Bitpanda(ExchangeWithoutApiSecret):
             try:
                 response = self.session.get(request_url, timeout=timeout)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Bitpanda API request failed due to {e!s}') from e
+                raise RemoteError(
+                    f'Bitpanda API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 backoff_in_seconds = int(20 / retries_left)
                 retries_left -= 1
                 if retries_left == 0:
-                    raise RemoteError(f'Ran out of retries for Bitpanda query of {request_url}')
+                    raise RemoteError(
+                        f'Ran out of retries for Bitpanda query of {request_url}',
+                        cause=FailureCause.RATE_LIMITED,
+                    )
 
                 log.debug(
                     f'Got a 429 from Bitpanda query of {request_url}. Will backoff '
@@ -397,21 +404,29 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 raise RemoteError(
                     f'Bitpanda API request failed with response: {response.text} '
                     f'and status code: {response.status_code}',
+                    cause=cause_for_status(response.status_code),
                 )
 
             # we got it, so break
             break
         else:  # retries left are zero
-            raise RemoteError(f'Ran out of retries for Bitpanda query of {request_url}')
+            raise RemoteError(
+                f'Ran out of retries for Bitpanda query of {request_url}',
+                cause=FailureCause.RATE_LIMITED,
+            )
 
         try:
             decoded_json = jsonloads_dict(response.text)
         except json.decoder.JSONDecodeError as e:
-            raise RemoteError(f'Invalid JSON {response.text} in Bitpanda response. {e}') from e
+            raise RemoteError(
+                f'Invalid JSON {response.text} in Bitpanda response. {e}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         if 'data'not in decoded_json:
             raise RemoteError(
                 f'Invalid JSON {response.text} in Bitpanda response. Expected "data" key',
+                cause=FailureCause.BAD_DATA,
             )
 
         log.debug(f'Got Bitpanda response: {decoded_json}')
@@ -451,6 +466,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 raise RemoteError(
                     f'A bitpanda paginated query for {endpoint} did '
                     f'not contain meta["total_count"]',
+                    cause=FailureCause.BAD_DATA,
                 )
             if count_so_far >= meta['total_count']:
                 break
