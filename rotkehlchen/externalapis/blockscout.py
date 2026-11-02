@@ -400,7 +400,8 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 )
 
             if response.status_code != 200:
-                raise remote_error_for_status(response.status_code)(
+                raise remote_error_for_status(
+                    response.status_code,
                     f'Blockscout API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
