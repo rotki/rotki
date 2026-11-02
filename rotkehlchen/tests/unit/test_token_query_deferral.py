@@ -30,6 +30,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.pending_transactions import TOKEN_QUERY_DEFERRAL_RETRY_AFTER
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryFailed
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
@@ -60,7 +61,7 @@ if TYPE_CHECKING:
 
 TOKEN_ADDRESS = to_checksum_address('0x' + '1' * 40)
 FALLBACKS: dict[str, Any] = {'fallback_name': 'Fallback', 'fallback_symbol': 'FB', 'fallback_decimals': 18}  # noqa: E501
-NODES_DOWN: dict[str, Any] = {'side_effect': RemoteError('nodes down')}
+NODES_DOWN: dict[str, Any] = {'side_effect': RemoteError('nodes down', cause=FailureCause.NETWORK)}
 
 
 def _erc20_output(decimals: int = 6) -> list[tuple[bool, bytes]]:

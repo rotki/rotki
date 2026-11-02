@@ -45,6 +45,7 @@ from rotkehlchen.banks.normalization import (
 )
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
@@ -197,7 +198,10 @@ class Fints(BankConnector):
             self.endpoint = configuration['endpoint']
             self.username = configuration['username']
         except (JSONDecodeError, KeyError, TypeError) as e:
-            raise BankError('Invalid stored FinTS connection configuration') from e
+            raise BankError(
+                'Invalid stored FinTS connection configuration',
+                cause=FailureCause.LOCAL_DB,
+            ) from e
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         if (changed := super().edit_exchange_credentials(credentials)):
@@ -216,10 +220,16 @@ class Fints(BankConnector):
     @staticmethod
     def _validate_connection(bank_code: str, endpoint: str) -> None:
         if len(bank_code) != 8 or not bank_code.isdecimal():
-            raise BankError('The FinTS bank code (BLZ) must contain exactly eight digits')
+            raise BankError(
+                'The FinTS bank code (BLZ) must contain exactly eight digits',
+                cause=FailureCause.INVALID_INPUT,
+            )
         parsed = urlparse(endpoint)
         if parsed.scheme != 'https' or parsed.hostname is None or parsed.username is not None:
-            raise BankError('The FinTS endpoint must be an HTTPS URL without embedded credentials')
+            raise BankError(
+                'The FinTS endpoint must be an HTTPS URL without embedded credentials',
+                cause=FailureCause.INVALID_INPUT,
+            )
 
     @classmethod
     def api_credentials_from_values(
@@ -232,13 +242,19 @@ class Fints(BankConnector):
             try:
                 existing = json.loads(current.api_key)
             except (JSONDecodeError, TypeError) as e:
-                raise BankError('Invalid stored FinTS connection configuration') from e
+                raise BankError(
+                    'Invalid stored FinTS connection configuration',
+                    cause=FailureCause.LOCAL_DB,
+                ) from e
         configuration = {
             key: values.get(key, existing.get(key))
             for key in ('bank_code', 'endpoint', 'username')
         }
         if not all(isinstance(value, str) for value in configuration.values()):
-            raise BankError('FinTS requires a bank code, endpoint and username')
+            raise BankError(
+                'FinTS requires a bank code, endpoint and username',
+                cause=FailureCause.INVALID_INPUT,
+            )
         bank_code, endpoint, username = (
             str(configuration[key]) for key in ('bank_code', 'endpoint', 'username')
         )
@@ -251,7 +267,10 @@ class Fints(BankConnector):
             if current is not None and current.api_secret is not None else None,
         )
         if pin is None:
-            raise BankError('FinTS requires an online banking PIN')
+            raise BankError(
+                'FinTS requires an online banking PIN',
+                cause=FailureCause.INVALID_INPUT,
+            )
         return ExchangeAuthCredentials(
             api_key=ApiKey(json.dumps({
                 'bank_code': bank_code,
@@ -298,6 +317,7 @@ class Fints(BankConnector):
         if len(self.product_id) != 25:
             raise BankError(
                 "rotki's 25-character FinTS product registration ID is not configured",
+                cause=FailureCause.UNSUPPORTED,
             )
         client = self.client_factory(
             self.bank_code,
@@ -387,7 +407,10 @@ class Fints(BankConnector):
 
     def _pending_response(self) -> NeedTANResponse:
         if self._pending is None:
-            raise BankError('FinTS has no pending authentication request')
+            raise BankError(
+                'FinTS has no pending authentication request',
+                cause=FailureCause.CONFLICT,
+            )
         try:
             retry = NeedRetryResponse.from_data(base64.b64decode(
                 self._pending['retry'],
@@ -397,7 +420,10 @@ class Fints(BankConnector):
                 raise TypeError('FinTS only exposes TAN retries here')
             retry.decoupled = self._pending['decoupled']
         except (KeyError, TypeError, ValueError) as e:
-            raise BankError('The saved FinTS authentication request is invalid or expired') from e
+            raise BankError(
+                'The saved FinTS authentication request is invalid or expired',
+                cause=FailureCause.CONFLICT,
+            ) from e
         return retry
 
     def pending_authentication(self) -> BankAuthChallenge | None:
@@ -432,7 +458,10 @@ class Fints(BankConnector):
                 'iban', 'bic', 'accountnumber', 'subaccount', 'blz',
             )))
         except KeyError as e:
-            raise BankError('The saved FinTS account request is invalid or expired') from e
+            raise BankError(
+                'The saved FinTS account request is invalid or expired',
+                cause=FailureCause.CONFLICT,
+            ) from e
 
     def _run_operation(
             self,
@@ -455,7 +484,10 @@ class Fints(BankConnector):
                 end_date=date.fromisoformat(request['end_date']),
                 include_pending=False,
             )
-        raise BankError('The saved FinTS operation is invalid or expired')
+        raise BankError(
+            'The saved FinTS operation is invalid or expired',
+            cause=FailureCause.CONFLICT,
+        )
 
     def _execute(self, operation: str, request: dict[str, Any] | None = None) -> Any:
         if operation in self._completed:
@@ -490,6 +522,7 @@ class Fints(BankConnector):
         except FinTSProductRegistrationError as e:
             raise BankError(
                 "The bank does not recognize rotki's FinTS product registration yet (code 9078)",
+                cause=FailureCause.REMOTE_REJECTED,
             ) from e
         except FinTSClientPINError as e:
             raise BankAuthExpired(
@@ -502,13 +535,23 @@ class Fints(BankConnector):
         except FinTSDialogInitError as e:
             raise BankError(
                 f'The FinTS dialog could not be initialized{self._response_code_suffix(client)}',
+                cause=FailureCause.REMOTE_REJECTED,
             ) from e
         except (FinTSConnectionError, requests.exceptions.RequestException) as e:
-            raise RemoteError(f'Could not connect to the FinTS endpoint: {e!s}') from e
+            raise RemoteError(
+                f'Could not connect to the FinTS endpoint: {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
         except FinTSUnsupportedOperation as e:
-            raise BankError(f'The bank does not support this FinTS operation: {e!s}') from e
+            raise BankError(
+                f'The bank does not support this FinTS operation: {e!s}',
+                cause=FailureCause.UNSUPPORTED,
+            ) from e
         except FinTSError as e:
-            raise BankError(f'The FinTS operation failed: {e!s}') from e
+            raise BankError(
+                f'The FinTS operation failed: {e!s}',
+                cause=FailureCause.REMOTE_REJECTED,
+            ) from e
         self._pending = None
         self._update_retention_days(client)
         self._save_state(client)
@@ -527,7 +570,10 @@ class Fints(BankConnector):
         rejected or expired the pending one (which is then dropped), BankError or RemoteError.
         """
         if self._pending is None:
-            raise BankError('FinTS has no pending authentication request')
+            raise BankError(
+                'FinTS has no pending authentication request',
+                cause=FailureCause.CONFLICT,
+            )
         client = self._new_client()
         pending = self._pending
         try:
@@ -537,7 +583,10 @@ class Fints(BankConnector):
             raise BankAuthExpired(str(e)) from e
         try:
             if retry.decoupled is False and not response:
-                raise BankError('A TAN is required to complete the FinTS authentication')
+                raise BankError(
+                    'A TAN is required to complete the FinTS authentication',
+                    cause=FailureCause.INVALID_INPUT,
+                )
             with client.resume_dialog(base64.b64decode(pending['dialog'], validate=True)):
                 result = client.send_tan(retry, '' if retry.decoupled else response)
                 if isinstance(result, NeedTANResponse):
@@ -572,9 +621,15 @@ class Fints(BankConnector):
             self._drop_pending(client)
             raise BankAuthExpired('The TAN was rejected by the bank') from e
         except (FinTSConnectionError, requests.exceptions.RequestException) as e:
-            raise RemoteError(f'Could not connect to the FinTS endpoint: {e!s}') from e
+            raise RemoteError(
+                f'Could not connect to the FinTS endpoint: {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
         except FinTSError as e:
-            raise BankError(f'The FinTS authentication failed: {e!s}') from e
+            raise BankError(
+                f'The FinTS authentication failed: {e!s}',
+                cause=FailureCause.REMOTE_REJECTED,
+            ) from e
 
         operation = pending['operation']
         self._pending = None
@@ -712,6 +767,7 @@ class Fints(BankConnector):
         if (sepa_account := self._accounts.get(account.identifier)) is None:
             raise BankError(
                 f'FinTS account {account.identifier} is not present in account discovery',
+                cause=FailureCause.NOT_FOUND,
             )
         end_date = datetime.now(tz=UTC).date()
         if updated_since is not None:

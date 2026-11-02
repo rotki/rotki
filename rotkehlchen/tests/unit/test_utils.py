@@ -21,6 +21,7 @@ from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.constants.assets import A_USDC, A_WBTC
 from rotkehlchen.constants.resolver import identifier_to_evm_address, identifier_to_evm_chain
 from rotkehlchen.constants.timing import TOKEN_QUERY_FAILURE_COOLDOWN
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError, TokenQueryFailed
 from rotkehlchen.errors.serialization import ConversionError
 from rotkehlchen.externalapis.github import Github
@@ -462,7 +463,13 @@ def test_failed_contract_info_query_is_not_cached(ethereum_inquirer: EthereumInq
         with patch.object(
             ethereum_inquirer,
             'multicall_2',
-            side_effect=[RemoteError('down'), RemoteError('down'), output],
+            side_effect=[RemoteError(
+                'down',
+                cause=FailureCause.NETWORK,
+            ), RemoteError(
+                'down',
+                cause=FailureCause.NETWORK,
+            ), output],
         ) as multicall:
             with patch('rotkehlchen.chain.evm.node_inquirer.ts_now', return_value=now):
                 for _ in range(2):  # the second time is in the cooldown and does not query

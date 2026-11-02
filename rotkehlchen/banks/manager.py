@@ -30,6 +30,7 @@ from rotkehlchen.connections.types import (
     new_connection_identifier,
 )
 from rotkehlchen.db.connections import DBConnections
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -488,6 +489,7 @@ class BankManager:
             banks = list(self.connected_banks.get(connector, ()))
 
         errors = []
+        causes: set[FailureCause] = set()
         for bank in banks:
             try:
                 self.sync_one(bank)
@@ -495,8 +497,12 @@ class BankManager:
                 raise
             except RemoteError as e:
                 errors.append(f'{bank.manifest.display_name} {bank.name}: {e!s}')
+                causes.add(e.cause)
         if len(errors) != 0:
-            raise RemoteError('; '.join(errors))
+            raise RemoteError(
+                '; '.join(errors),
+                cause=causes.pop() if len(causes) == 1 else FailureCause.REMOTE_REJECTED,
+            )
 
     def sync_one(self, bank: BankConnector) -> None:
         """Run one connection's history sync and record its status.

@@ -15,6 +15,7 @@ from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, TX_DECODED, HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -141,7 +142,7 @@ def test_migration_28_resets_legacy_zero_fees(database: DBHandler) -> None:
     def mock_ensure_tx_data_exists(cursor, tx_hash, relevant_address):  # pylint: disable=unused-argument
         """Resolve the fee like the real repair does, failing for the last transaction"""
         if tx_hash == transactions[7].tx_hash:
-            raise RemoteError('all indexers failed')
+            raise RemoteError('all indexers failed', cause=FailureCause.NETWORK)
 
         idx = next(idx for idx, tx in enumerate(transactions) if tx.tx_hash == tx_hash)
         (tx := transactions[idx]).l1_fee = 500000

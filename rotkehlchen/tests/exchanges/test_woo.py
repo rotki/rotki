@@ -10,6 +10,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_woo
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT, A_WOO
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.woo import API_MAX_LIMIT, Woo
 from rotkehlchen.fval import FVal
@@ -22,6 +23,33 @@ from rotkehlchen.locations.constants import (
 from rotkehlchen.tests.utils.constants import A_SOL
 from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
+
+
+def _malformed_json_response() -> requests.Response:
+    response = requests.Response()
+    response.status_code = 200
+    response._content = b'not json'
+    return response
+
+
+def test_malformed_json_is_bad_data(mock_woo):
+    with (
+        patch.object(mock_woo.session, 'request', return_value=_malformed_json_response()),
+        pytest.raises(RemoteError, match='failed to decode JSON') as excinfo,
+    ):
+        mock_woo._api_query('v3/balances')
+
+    assert excinfo.value.cause == FailureCause.BAD_DATA
+
+
+def test_connection_failure_is_network(mock_woo):
+    with (
+        patch.object(mock_woo.session, 'request', side_effect=requests.exceptions.ConnectionError),
+        pytest.raises(RemoteError, match='connection error') as excinfo,
+    ):
+        mock_woo._api_query('v3/balances')
+
+    assert excinfo.value.cause == FailureCause.NETWORK
 
 
 def test_name():
@@ -39,16 +67,21 @@ def test_woo_assets_are_known(mock_woo):
     except requests.exceptions.RequestException as e:
         raise RemoteError(
             f'Woo get request at {request_url} connection error: {e!s}.',
+            cause=FailureCause.NETWORK,
         ) from e
     if response.status_code != 200:
         raise RemoteError(
             f'Woo query responded with error status code: {response.status_code} '
             f'and text: {response.text}',
+            cause=FailureCause.NETWORK,
         )
     try:
         response_list = response.json()
     except JSONDecodeError as e:
-        raise RemoteError(f'Woo returned invalid JSON response: {response.text}') from e
+        raise RemoteError(
+            f'Woo returned invalid JSON response: {response.text}',
+            cause=FailureCause.NETWORK,
+        ) from e
     for row in response_list['rows']:
         try:
             asset_from_woo(row['token'])

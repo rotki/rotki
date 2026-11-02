@@ -13,6 +13,7 @@ from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_LINK, A_USDC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
@@ -56,17 +57,22 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin):
     except requests.exceptions.RequestException as e:
         raise RemoteError(
             f'Kucoin get request at {request_url} connection error: {e!s}.',
+            cause=FailureCause.NETWORK,
         ) from e
 
     if response.status_code != HTTPStatus.OK:
         raise RemoteError(
             f'Kucoin query responded with error status code: {response.status_code} '
             f'and text: {response.text}',
+            cause=FailureCause.NETWORK,
         )
     try:
         response_dict = jsonloads_dict(response.text)
     except JSONDecodeError as e:
-        raise RemoteError(f'Kucoin returned invalid JSON response: {response.text}') from e
+        raise RemoteError(
+            f'Kucoin returned invalid JSON response: {response.text}',
+            cause=FailureCause.NETWORK,
+        ) from e
 
     missing_assets = {
         'ZEUSCC8',  # no information about this token

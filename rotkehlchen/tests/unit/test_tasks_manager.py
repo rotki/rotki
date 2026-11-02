@@ -33,6 +33,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.db.utils import LocationData
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -730,7 +731,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
 
         with patch(
             'rotkehlchen.premium.premium.Premium.authenticate_device',
-            MagicMock(side_effect=RemoteError()),
+            MagicMock(side_effect=RemoteError(cause=FailureCause.NETWORK)),
         ):
             for check_trial in range(3):
                 mock_check_premium_status()
@@ -748,7 +749,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
 @pytest.mark.parametrize('use_function_scope_msg_aggregator', [True])
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('error_case', [
-    (RemoteError(), False),
+    (RemoteError(cause=FailureCause.NETWORK), False),
     (PremiumAuthenticationError(), True),
 ])
 def test_premium_status_error_conditions(
@@ -2130,7 +2131,7 @@ def test_failed_snapshot_waits_to_retry(rotkehlchen_api_server: APIServer) -> No
 
     def mock_query_balances(**kwargs):
         """Raise RemoteError to simulate a failed balance snapshot."""
-        raise RemoteError
+        raise RemoteError('failed', cause=FailureCause.NETWORK)
 
     with patch.object(
         target=rotki.chains_aggregator,
@@ -2382,7 +2383,7 @@ def test_schedule_survives_failing_task_check(task_manager: TaskManager) -> None
     checked_after_failure = []
 
     def failing_check() -> None:
-        raise RemoteError('rotki server unreachable')
+        raise RemoteError('rotki server unreachable', cause=FailureCause.NETWORK)
 
     def working_check() -> None:
         checked_after_failure.append(True)
@@ -2403,7 +2404,10 @@ def test_check_if_should_sync_survives_premium_errors() -> None:
     """
     sync_manager = object.__new__(PremiumSyncManager)
     sync_manager.premium = MagicMock()
-    for error in (RemoteError('connection timeout'), PremiumAuthenticationError('key rejected')):
+    for error in (RemoteError(
+        'connection timeout',
+        cause=FailureCause.NETWORK,
+    ), PremiumAuthenticationError('key rejected')):
         sync_manager.premium.get_capabilities.side_effect = error
         should_sync, reason = sync_manager.check_if_should_sync(force_upload=False)
         assert should_sync is False

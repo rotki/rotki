@@ -11,6 +11,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH, A_ETH_MATIC, A_USDC
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.bybit import (
     BYBIT_LAUNCH_TS,
@@ -63,7 +64,10 @@ def bybit_account_mock(
         ):
             # simulate an error on Bybit if we query a period of time that is older than the
             # maximum allowed in the API
-            raise RemoteError(f'Invalid startTime provided: {options["startTime"]}')
+            raise RemoteError(
+                f'Invalid startTime provided: {options["startTime"]}',
+                cause=FailureCause.NETWORK,
+            )
 
         return next(iterators.get(path, iter([{}])))
 
@@ -345,7 +349,10 @@ def test_query_trades_range(bybit_exchange: Bybit) -> None:
         ):
             # simulate an error on Bybit if we query a period of time that is older than the
             # maximum allowed in the API
-            raise RemoteError(f'Invalid startTime provided: {options["startTime"]}')
+            raise RemoteError(
+                f'Invalid startTime provided: {options["startTime"]}',
+                cause=FailureCause.NETWORK,
+            )
 
         return json.loads('{"nextPageCursor":"","category":"spot","list":[]}')
 

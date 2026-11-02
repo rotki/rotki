@@ -21,6 +21,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryFailed
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -136,7 +137,10 @@ def _details(token: EvmToken | ChecksumEvmAddress) -> tuple[str, str | None, int
 
 
 @pytest.mark.parametrize(('multicall_kwargs', 'create_kwargs', 'error', 'details', 'marked'), [
-    pytest.param({'side_effect': RemoteError('down')}, {}, TokenQueryFailed, None, False, id='unreachable'),  # noqa: E501
+    pytest.param({'side_effect': RemoteError(
+        'down',
+        cause=FailureCause.NETWORK,
+    )}, {}, TokenQueryFailed, None, False, id='unreachable'),
     pytest.param({'return_value': _output(name=None)}, FALLBACKS, None, ('Fallback', 'TKN', 6), False, id='partial'),  # fallbacks only fill what is missing  # noqa: E501
     pytest.param({'return_value': _output(decimals=None)}, FALLBACKS | {'symbol': 'GIV'}, None, ('Token', 'GIV', 18), True, id='partial-given'),  # noqa: E501
     pytest.param({'return_value': _output(decimals=None)}, {}, None, ('Token', 'TKN', 18), True, id='no-decimals'),  # noqa: E501
@@ -344,7 +348,10 @@ def test_repair_on_access_saves_what_came_back(
             )
         return _details(token)
 
-    assert access({'side_effect': RemoteError('down')}) == (token.identifier, '', 6)
+    assert access({'side_effect': RemoteError(
+        'down',
+        cause=FailureCause.NETWORK,
+    )}) == (token.identifier, '', 6)
     assert _without_decimals() == set()  # a failed query says nothing about the decimals
     assert access({'return_value': output}) == details
     assert _without_decimals() == ({token.identifier} if marked else set())
@@ -374,7 +381,10 @@ def test_placeholder_named_by_a_decoder_is_repaired(
             )
         return _details(token)
 
-    assert access({'side_effect': RemoteError('down')}) == (token.identifier, '', 18)
+    assert access({'side_effect': RemoteError(
+        'down',
+        cause=FailureCause.NETWORK,
+    )}) == (token.identifier, '', 18)
     assert EvmToken(token.identifier).protocol == 'some-protocol'  # the rest is still saved
     with GlobalDBHandler().conn.read_ctx() as cursor:  # it is still selected to be queried
         assert cursor.execute(
@@ -386,7 +396,7 @@ def test_placeholder_named_by_a_decoder_is_repaired(
 
 
 @pytest.mark.parametrize(('error', 'raises'), [
-    (RemoteError('nodes down'), None),
+    (RemoteError('nodes down', cause=FailureCause.NETWORK), None),
     (ValueError('unexpected'), ValueError),
 ])
 def test_progress_is_saved_when_the_query_fails(
@@ -471,7 +481,7 @@ def test_token_failing_its_chunk_does_not_block_the_rest(database: DBHandler) ->
 
     def infos(queried: list[ChecksumEvmAddress]) -> dict[str, Any]:
         if poison.evm_address in queried:
-            raise RemoteError('out of gas')
+            raise RemoteError('out of gas', cause=FailureCause.NETWORK)
         return {address: _info('Found') for address in queried}
 
     chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=infos)
@@ -495,7 +505,7 @@ def test_tokens_not_queried_are_first_in_the_next_run(database: DBHandler) -> No
 
     def infos(queried: list[ChecksumEvmAddress]) -> dict[str, Any]:
         if any(x.evm_address in queried for x in broken):
-            raise RemoteError('out of gas')
+            raise RemoteError('out of gas', cause=FailureCause.NETWORK)
         return {address: _info('Found') for address in queried}
 
     chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=infos)
@@ -523,7 +533,7 @@ def test_failing_chain_does_not_hold_back_the_others(database: DBHandler) -> Non
 
     def infos(queried: list[ChecksumEvmAddress]) -> dict[str, Any]:
         if any(x in failing for x in queried):
-            raise RemoteError('down')
+            raise RemoteError('down', cause=FailureCause.NETWORK)
         return {address: _info('Found') for address in queried}
 
     chains_aggregator, _ = _chains_aggregator(
@@ -547,7 +557,7 @@ def test_querying_stops_when_the_nodes_are_down(database: DBHandler) -> None:
     def infos(queried: list[ChecksumEvmAddress]) -> dict[str, Any]:
         if queried == addresses[:2]:
             return {}  # the nodes answered, but these tokens have no details
-        raise RemoteError('down')
+        raise RemoteError('down', cause=FailureCause.NETWORK)
 
     chains_aggregator, node_inquirer = _chains_aggregator(database=database, infos=infos)
     with patch('rotkehlchen.tasks.assets.TOKEN_DETAILS_RETRY_CHUNK_SIZE', 2):

@@ -1063,7 +1063,10 @@ class EtherscanLikeApi(ABC):
         try:
             return bytes.fromhex(result.removeprefix('0x'))
         except (ValueError, AttributeError) as e:
-            raise RemoteError(f'{self.name} returned an invalid storage value {result}') from e
+            raise RemoteError(
+                f'{self.name} returned an invalid storage value {result}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
     def get_transaction_receipt(
             self,

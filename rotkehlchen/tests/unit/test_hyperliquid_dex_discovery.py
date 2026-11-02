@@ -7,6 +7,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.concurrency import spawn, wait
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import EntryContext, HyperliquidAPI, ParsedFillEntry
 from rotkehlchen.fval import FVal
@@ -231,7 +232,10 @@ def test_parse_fill_entry_omits_dex_for_non_hip3_fills() -> None:
 def test_dex_discovery_failure_is_not_cached() -> None:
     """A temporary failure must not disable HIP-3 discovery for the lifetime of the client"""
     api = HyperliquidAPI()
-    with patch.object(api, '_post_info', side_effect=[RemoteError('timeout'), [{'name': 'xyz'}]]):
+    with patch.object(api, '_post_info', side_effect=[RemoteError(
+        'timeout',
+        cause=FailureCause.NETWORK,
+    ), [{'name': 'xyz'}]]):
         assert api._discover_available_dex_names() == []
         assert api._discover_available_dex_names() == ['xyz']
 

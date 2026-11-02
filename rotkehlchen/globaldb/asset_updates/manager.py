@@ -20,6 +20,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.settings import DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.utils import initialize_globaldb
@@ -218,13 +219,17 @@ class AssetsUpdater:
         try:
             response = requests.get(url=url, timeout=REQUESTS_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to query Github {url} during assets update: {e!s}') from e
+            raise RemoteError(
+                f'Failed to query Github {url} during assets update: {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         try:
             json_data = response.json()
         except requests.exceptions.RequestException as e:
             raise RemoteError(
                 f'Could not parse assets update info as json from Github: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return json_data
@@ -249,9 +254,15 @@ class AssetsUpdater:
                 if applicable_update:
                     new_asset_changes += entry['changes']
         except KeyError as e:
-            raise RemoteError(f'Didnt find expected key {e!s} in github assets json during update') from e  # noqa: E501
+            raise RemoteError(
+                f'Didnt find expected key {e!s} in github assets json during update',
+                cause=FailureCause.BAD_DATA,
+            ) from e
         except ValueError as e:
-            raise RemoteError(f'{e!s} in github assets json during update') from e
+            raise RemoteError(
+                f'{e!s} in github assets json during update',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         self.last_remote_checked_version = remote_version
         return self.local_assets_version, remote_version, new_asset_changes

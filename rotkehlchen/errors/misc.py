@@ -99,7 +99,7 @@ class RemoteError(Exception):
             self,
             message: str = '',
             *,
-            cause: FailureCause | None = None,
+            cause: FailureCause,
             error_code: int = 0,
     ) -> None:
         self.cause = cause
@@ -230,6 +230,9 @@ class ContractReverted(RemoteError):
 
     The revert is deterministic, so querying other nodes can't change the outcome.
     """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, cause=FailureCause.REMOTE_REJECTED)
 
 
 class BlockchainQueryError(Exception):

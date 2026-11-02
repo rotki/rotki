@@ -19,6 +19,7 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -200,7 +201,7 @@ def test_failed_fetch_does_not_mark_zksync_lite_history_synced(zksync_lite_manag
     with patch.object(
             zksync_lite_manager,
             '_query_and_save_transactions_from_hash',
-            side_effect=RemoteError('Failed to query ZKSync Lite'),
+            side_effect=RemoteError('Failed to query ZKSync Lite', cause=FailureCause.NETWORK),
     ):
         zksync_lite_manager.fetch_transactions(address)
 

@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.modules.lido.balances import LidoBalances
 from rotkehlchen.chain.ethereum.modules.lido.constants import CPT_LIDO
 from rotkehlchen.chain.evm.contracts import WEB3
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -93,7 +94,7 @@ def test_lido_withdrawals_batch_all_owners_in_one_multicall():
 def test_lido_withdrawals_rpc_error():
     owner = make_evm_address()
     balances, multicall = make_balances([owner], {})
-    multicall.side_effect = RemoteError('unavailable')
+    multicall.side_effect = RemoteError('unavailable', cause=FailureCause.NETWORK)
     with patch.object(Inquirer, 'find_main_currency_price') as price:
         assert len(balances.query_balances([owner])) == 0
     price.assert_not_called()

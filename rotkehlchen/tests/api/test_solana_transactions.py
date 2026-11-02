@@ -12,6 +12,7 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import SolanaEventFilterQuery, SolanaTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.solanatx import DBSolanaTx
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import MissingAPIKey, RemoteError
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tests.utils.api import (
@@ -345,7 +346,7 @@ def test_backfill_missed_v1_transactions(
             transactions.node_inquirer,
             'get_transaction_for_signature',
             side_effect=[
-                RemoteError('temporary RPC failure'),
+                RemoteError('temporary RPC failure', cause=FailureCause.NETWORK),
                 (make_transaction(
                     second_missed_signature,
                     SOLANA_V1_ACTIVATION_SLOT,
@@ -443,9 +444,10 @@ def test_backfill_gives_up_on_unrecoverable_transaction(
             transactions.node_inquirer,
             'get_transaction_for_signature',
             side_effect=[
-                RemoteError('closed'),  # run 1: nothing recovered
-                RemoteError('closed'),
-                RemoteError('closed'),  # run 2: late_signature recovered, so the count resets
+                RemoteError('closed', cause=FailureCause.NETWORK),  # run 1: nothing recovered
+                RemoteError('closed', cause=FailureCause.NETWORK),
+                # run 2: late_signature recovered, so the count resets
+                RemoteError('closed', cause=FailureCause.NETWORK),
                 (SolanaTransaction(
                     fee=0,
                     slot=SOLANA_V1_ACTIVATION_SLOT,
@@ -455,7 +457,9 @@ def test_backfill_gives_up_on_unrecoverable_transaction(
                     account_keys=[],
                     instructions=[],
                 ), {}),
-                *[RemoteError('closed')] * MAX_BACKFILL_FAILED_ATTEMPTS,
+                *[
+                    RemoteError('closed', cause=FailureCause.NETWORK),
+                ] * MAX_BACKFILL_FAILED_ATTEMPTS,
             ],
         ),
     ):
