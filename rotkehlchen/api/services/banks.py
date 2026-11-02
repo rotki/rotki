@@ -14,8 +14,8 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.balance import Balance
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.banks.connector import BankConnector
+    from rotkehlchen.banks.manifest import BankConnectorType
     from rotkehlchen.fval import FVal
-    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
@@ -44,13 +44,13 @@ class BanksService:
     def setup_bank(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: BankConnectorType,
             credentials: dict[str, str],
     ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
         try:
             result, msg = self.rotkehlchen.bank_manager.setup_bank(
                 name=name,
-                location=location,
+                connector=connector,
                 credentials=BankCredentialInput(values=credentials),
                 database=self.rotkehlchen.data.db,
             )
@@ -60,22 +60,24 @@ class BanksService:
             return None, str(e), HTTPStatus.BAD_REQUEST
         if not result:
             return None, msg, HTTPStatus.CONFLICT
-        if (bank := self.rotkehlchen.bank_manager.get_bank(name=name, location=location)) is None:
+        if (
+            bank := self.rotkehlchen.bank_manager.get_bank(name=name, connector=connector)
+        ) is None:
             raise AssertionError('successful bank setup did not register the connection')
         return self._setup_success(bank), msg, HTTPStatus.OK
 
     def answer_authentication(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: BankConnectorType,
             response: str | None,
     ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
         manager = self.rotkehlchen.bank_manager
-        completes_setup = manager.get_bank(name=name, location=location) is None
+        completes_setup = manager.get_bank(name=name, connector=connector) is None
         try:
             result, message = manager.answer_bank_authentication(
                 name=name,
-                location=location,
+                connector=connector,
                 response=response,
             )
         except BankMFARequired as e:
@@ -87,7 +89,7 @@ class BanksService:
         if result is False:
             return None, message, HTTPStatus.CONFLICT
         if completes_setup:
-            if (bank := manager.get_bank(name=name, location=location)) is None:
+            if (bank := manager.get_bank(name=name, connector=connector)) is None:
                 raise AssertionError('successful bank setup authentication did not register it')
             return self._setup_success(bank), '', HTTPStatus.OK
         return True, '', HTTPStatus.OK
@@ -95,14 +97,14 @@ class BanksService:
     def edit_bank(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: BankConnectorType,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> tuple[bool | None, str, HTTPStatus]:
         try:
             result, msg = self.rotkehlchen.bank_manager.edit_bank(
                 name=name,
-                location=location,
+                connector=connector,
                 new_name=new_name,
                 credentials=BankCredentialInput(values=credentials),
             )
@@ -112,8 +114,12 @@ class BanksService:
             return None, msg, HTTPStatus.CONFLICT
         return True, msg, HTTPStatus.OK
 
-    def remove_bank(self, name: str, location: LocationIdentifier) -> tuple[bool | None, str, HTTPStatus]:  # noqa: E501
-        result, msg = self.rotkehlchen.bank_manager.delete_bank(name=name, location=location)
+    def remove_bank(
+            self,
+            name: str,
+            connector: BankConnectorType,
+    ) -> tuple[bool | None, str, HTTPStatus]:
+        result, msg = self.rotkehlchen.bank_manager.delete_bank(name=name, connector=connector)
         if not result:
             return None, msg, HTTPStatus.CONFLICT
         return True, msg, HTTPStatus.OK
@@ -121,15 +127,23 @@ class BanksService:
     def cancel_authentication(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: BankConnectorType,
     ) -> tuple[bool | None, str, HTTPStatus]:
-        if not self.rotkehlchen.bank_manager.cancel_bank_authentication(name=name, location=location):  # noqa: E501
-            return None, f'{location!s} bank connection {name} does not exist', HTTPStatus.CONFLICT
+        if not self.rotkehlchen.bank_manager.cancel_bank_authentication(name=name, connector=connector):  # noqa: E501
+            return (
+                None,
+                f'{connector!s} bank connection {name} does not exist',
+                HTTPStatus.CONFLICT,
+            )
         return True, '', HTTPStatus.OK
 
-    def sync_banks(self, location: LocationIdentifier | None, name: str | None) -> dict[str, Any]:
+    def sync_banks(
+            self,
+            connector: BankConnectorType | None,
+            name: str | None,
+    ) -> dict[str, Any]:
         try:
-            self.rotkehlchen.bank_manager.query_bank_history_events(location=location, name=name)
+            self.rotkehlchen.bank_manager.query_bank_history_events(connector=connector, name=name)
         except BankMFARequired:
             return {'result': None, 'message': '', 'status_code': HTTPStatus.ACCEPTED}
         except RemoteError as e:
@@ -140,22 +154,23 @@ class BanksService:
 
     def query_bank_balances(
             self,
-            location: LocationIdentifier | None,
+            connector: BankConnectorType | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
-        """Balances per bank location, in the shape of the exchange balances endpoint"""
+        """Return aggregate balances and the balances of each individual bank connection."""
         manager = self.rotkehlchen.bank_manager
-        if location is not None and location not in manager.connected_banks:
+        if connector is not None and connector not in manager.connected_banks:
             return {
                 'result': None,
-                'message': f'No {location!s} bank connection exists',
+                'message': f'No {connector!s} bank connection exists',
                 'status_code': HTTPStatus.CONFLICT,
             }
 
-        final: dict[str, dict[AssetWithOracles, Balance]] = {}
+        aggregate: dict[AssetWithOracles, Balance] = {}
+        connections: list[dict[str, Any]] = []
         error_msg = ''
-        banks = manager.connected_banks.get(location, []) if location is not None else list(manager.iterate_banks())  # noqa: E501
+        banks = manager.connected_banks.get(connector, []) if connector is not None else list(manager.iterate_banks())  # noqa: E501
         for bank in banks:
             status = manager.sync_status[bank.location_id()]
             try:
@@ -171,10 +186,17 @@ class BanksService:
             status.drop_challenge(still_pending=bank.has_pending_authentication)
             if value_threshold is not None:
                 balances = {a: b for a, b in balances.items() if b.value > value_threshold}
-            key = str(bank.location)
-            final[key] = combine_dicts(final[key], balances) if key in final else balances
+            aggregate = combine_dicts(aggregate, balances)
+            connections.append({
+                'connector': bank.connector,
+                'name': bank.name,
+                'balances': balances,
+            })
 
-        if len(final) == 0 and error_msg != '':
+        if len(connections) == 0 and error_msg != '':
             return {'result': None, 'message': error_msg, 'status_code': HTTPStatus.CONFLICT}
-        result: Any = final[str(location)] if location is not None else final
-        return {'result': result, 'message': error_msg, 'status_code': HTTPStatus.OK}
+        return {
+            'result': {'aggregate': aggregate, 'connections': connections},
+            'message': error_msg,
+            'status_code': HTTPStatus.OK,
+        }

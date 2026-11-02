@@ -7,12 +7,9 @@ secrets it stores in which credential slot, and the user-facing setup notes.
 """
 from dataclasses import dataclass, field
 from enum import auto
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
-
-if TYPE_CHECKING:
-    from rotkehlchen.locations.types import LocationIdentifier
 
 
 class BankAccessTier(SerializableEnumNameMixin):
@@ -22,6 +19,12 @@ class BankAccessTier(SerializableEnumNameMixin):
     UNOFFICIAL_API = 2  # reverse-engineered app/web API
     SCRAPING = 3
     FILE_ONLY = 4
+
+
+class BankConnectorType(SerializableEnumNameMixin):
+    """The implementation used to talk to a bank, independent of accounting location."""
+    FINTS = auto()
+    QONTO = auto()
 
 
 class BankCapability(SerializableEnumNameMixin):
@@ -79,7 +82,7 @@ class SecretField:
 
 @dataclass(frozen=True)
 class BankManifest:
-    location: LocationIdentifier
+    connector: BankConnectorType
     display_name: str
     access_tier: BankAccessTier
     capabilities: frozenset[BankCapability]
@@ -114,7 +117,7 @@ class BankManifest:
 
     def serialize(self) -> dict[str, Any]:
         return {
-            'location': self.location,
+            'connector': self.connector.serialize(),
             'display_name': self.display_name,
             'access_tier': self.access_tier.serialize(),
             'capabilities': sorted(c.serialize() for c in self.capabilities),

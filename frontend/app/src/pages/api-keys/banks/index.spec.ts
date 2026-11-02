@@ -39,7 +39,7 @@ const manifest: BankManifest = {
   capabilities: ['balances'],
   displayName: 'Qonto',
   docsUrl: 'https://docs.qonto.com',
-  location: 'qonto',
+  connector: 'qonto',
   maintainer: 'rotki',
   secrets: [{ description: '', label: 'Login', secret: false, slot: 'api_key' }, { description: '', label: 'Secret', secret: true, slot: 'api_secret' }],
   setupNotes: [],
@@ -48,7 +48,7 @@ const manifest: BankManifest = {
 
 const connection: BankConnection = {
   displayName: 'Qonto',
-  location: 'qonto',
+  connector: 'qonto',
   name: 'Qonto main',
   syncStatus: { authChallenge: null, authExpired: false, lastError: 'boom', lastSyncTs: 1757595000, running: false },
 };
@@ -178,7 +178,7 @@ describe('banks page', () => {
     await nextTick();
     expect(wrapper.findComponent(BankConnectionFormDialog).props('modelValue')).toEqual({
       credentials: { api_key: '', api_secret: '' },
-      location: 'qonto',
+      connector: 'qonto',
       mode: 'add',
       name: '',
       newName: '',
@@ -198,7 +198,7 @@ describe('banks page', () => {
     expect(wrapper.find('[data-testid=bank-sync-error]').exists()).toBe(true);
     wrapper.findComponent(BankConnectionActions).vm.$emit('sync');
     await flushPromises();
-    expect(syncBanks).toHaveBeenCalledWith({ location: 'qonto', name: 'Qonto main' });
+    expect(syncBanks).toHaveBeenCalledWith({ connector: 'qonto', name: 'Qonto main' });
   });
 
   describe('a connection with a pending challenge', () => {
@@ -221,11 +221,11 @@ describe('banks page', () => {
       expect(wrapper.findComponent(BankConnectionActions).props('authenticationRequired')).toBe(true);
       wrapper.findComponent(BankConnectionActions).vm.$emit('authenticate');
       await nextTick();
-      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({ challenge, location: 'qonto', name: 'Qonto main' });
+      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({ challenge, connector: 'qonto', name: 'Qonto main' });
     });
 
     it('should open the authentication a link asks for once the connection is listed', async () => {
-      routeQuery.value = { authenticate: 'Qonto main', location: 'qonto' };
+      routeQuery.value = { authenticate: 'Qonto main', connector: 'qonto' };
       useBankConnectionsStore().setConnections([]);
       wrapper = createWrapper();
       await flushPromises();
@@ -233,11 +233,11 @@ describe('banks page', () => {
 
       useBankConnectionsStore().setConnections([waiting]);
       await flushPromises();
-      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({ challenge, location: 'qonto', name: 'Qonto main' });
+      expect(wrapper.findComponent(BankAuthenticationDialog).props('modelValue')).toEqual({ challenge, connector: 'qonto', name: 'Qonto main' });
     });
 
     it('should open nothing when the linked connection has no challenge left', async () => {
-      routeQuery.value = { authenticate: 'Qonto main', location: 'qonto' };
+      routeQuery.value = { authenticate: 'Qonto main', connector: 'qonto' };
       wrapper = createWrapper();
       await flushPromises();
 
@@ -254,7 +254,7 @@ describe('banks page', () => {
     await nextTick();
     expect(wrapper.findComponent(BankConnectionFormDialog).props('modelValue')).toEqual({
       credentials: { api_key: '', api_secret: '' },
-      location: 'qonto',
+      connector: 'qonto',
       mode: 'edit',
       name: 'Qonto main',
       newName: 'Qonto main',

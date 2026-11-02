@@ -23,7 +23,8 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.banks.constants import SUPPORTED_BANKS
+from rotkehlchen.banks.constants import SUPPORTED_BANK_CONNECTORS
+from rotkehlchen.banks.manifest import BankConnectorType
 from rotkehlchen.chain.accounts import (
     BlockchainAccountData,
     BlockchainAccounts,
@@ -145,6 +146,7 @@ from rotkehlchen.locations.chains import (
     location_from_chain_id,
 )
 from rotkehlchen.locations.constants import (
+    LOCATION_BANKS,
     LOCATION_BINANCE,
     LOCATION_BINANCEUS,
     LOCATION_EXTERNAL,
@@ -3212,21 +3214,26 @@ class DBHandler:
             ),
         )
 
-    def add_bank_credentials(self, credentials: ExchangeApiCredentials) -> None:
-        """Persist a bank connection's credentials. Banks share the user_credentials
-        table with exchanges; the location column tells them apart."""
-        if credentials.location not in SUPPORTED_BANKS:
-            raise InputError(f'Unsupported bank {credentials.location!s}')
+    def add_bank_credentials(
+            self,
+            connector: BankConnectorType,
+            credentials: ExchangeApiCredentials,
+    ) -> None:
+        """Persist a bank connection under the shared banks accounting location."""
+        if connector not in SUPPORTED_BANK_CONNECTORS or credentials.location != LOCATION_BANKS:
+            raise InputError(f'Unsupported bank connector {connector!s}')
         with self.user_write() as write_cursor:
             write_cursor.execute(
                 'INSERT INTO user_credentials '
-                '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
+                '(name, location, api_key, api_secret, passphrase, connector) '
+                'VALUES (?, ?, ?, ?, ?, ?)',
                 (
                     credentials.name,
                     credentials.location,
                     credentials.api_key,
                     credentials.api_secret.decode() if credentials.api_secret is not None else None,  # noqa: E501
                     credentials.passphrase,
+                    connector.serialize(),
                 ),
             )
 
@@ -3234,7 +3241,7 @@ class DBHandler:
             self,
             write_cursor: DBCursor,
             name: str,
-            location: LocationIdentifier,
+            connector: BankConnectorType,
             new_name: str | None,
             credentials: ExchangeAuthCredentials,
     ) -> None:
@@ -3256,23 +3263,24 @@ class DBHandler:
             return
         try:
             write_cursor.execute(
-                f'UPDATE user_credentials SET {", ".join(assignments)} WHERE name=? AND location=?',  # noqa: E501
-                (*bindings, name, location),
+                f'UPDATE user_credentials SET {", ".join(assignments)} '
+                'WHERE name=? AND location=? AND connector=?',
+                (*bindings, name, LOCATION_BANKS, connector.serialize()),
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            raise InputError(f'A {location!s} bank connection named {new_name} already exists') from e  # noqa: E501
+            raise InputError(f'A bank connection named {new_name} already exists') from e
         if new_name is not None:
             write_cursor.execute(  # keep the exchange-style range bookkeeping in sync
                 'UPDATE used_query_ranges SET name=? WHERE name=?',
-                (f'{location!s}_history_events_{new_name}', f'{location!s}_history_events_{name}'),
+                (f'banks_history_events_{new_name}', f'banks_history_events_{name}'),
             )
             # and the per-connection caches (cursors, session)
-            old_prefix = f'{location!s}_{name.encode().hex()}_'
+            old_prefix = f'banks_{name.encode().hex()}_'
             write_cursor.execute(
                 'UPDATE key_value_cache SET name=? || substr(name, ?) '
                 'WHERE substr(name, 1, ?) = ?',
                 (
-                    f'{location!s}_{new_name.encode().hex()}_',
+                    f'banks_{new_name.encode().hex()}_',
                     len(old_prefix) + 1,
                     len(old_prefix),
                     old_prefix,
@@ -3281,7 +3289,7 @@ class DBHandler:
             DBHistoryEvents(database=self).update_events_and_track(
                 write_cursor=write_cursor,
                 where_clause='WHERE location=? AND location_label=?',
-                where_bindings=(location, name),
+                where_bindings=(LOCATION_BANKS, name),
                 set_clause='SET location_label=?',
                 set_bindings=(new_name,),
             )
@@ -3320,8 +3328,8 @@ class DBHandler:
                 )
                 continue
 
-            if location not in SUPPORTED_EXCHANGES and location not in SUPPORTED_BANKS:
-                continue  # each manager keeps only its own locations
+            if location not in SUPPORTED_EXCHANGES:
+                continue
 
             credentials[location].append(ExchangeApiCredentials(
                 name=entry[0],
@@ -3329,6 +3337,47 @@ class DBHandler:
                 api_key=ApiKey(entry[2]),
                 api_secret=ApiSecret(str.encode(entry[3])) if entry[3] is not None else None,
                 passphrase=passphrase,
+            ))
+
+        return credentials
+
+    def get_bank_credentials(
+            self,
+            cursor: DBCursor,
+            connector: BankConnectorType | None = None,
+            name: str | None = None,
+    ) -> dict[BankConnectorType, list[ExchangeApiCredentials]]:
+        """Get credentials for bank connections, optionally filtered by connector and name."""
+        query = (
+            'SELECT name, api_key, api_secret, passphrase, connector FROM user_credentials '
+            'WHERE location=? AND connector IS NOT NULL'
+        )
+        bindings: list[str] = [LOCATION_BANKS]
+        if connector is not None:
+            query += ' AND connector=?'
+            bindings.append(connector.serialize())
+        if name is not None:
+            query += ' AND name=?'
+            bindings.append(name)
+
+        credentials: dict[BankConnectorType, list[ExchangeApiCredentials]] = defaultdict(list)
+        for entry in cursor.execute(query, bindings):
+            try:
+                entry_connector = BankConnectorType.deserialize(entry[4])
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Found unknown bank connector {entry[4]} for connection {entry[0]}: {e!s}',
+                    classification=LocalDbProblem(entry=UserMessageEntry.EXCHANGE_CREDENTIALS),
+                )
+                continue
+            if entry_connector not in SUPPORTED_BANK_CONNECTORS:
+                continue
+            credentials[entry_connector].append(ExchangeApiCredentials(
+                name=entry[0],
+                location=LOCATION_BANKS,
+                api_key=ApiKey(entry[1]),
+                api_secret=ApiSecret(entry[2].encode()) if entry[2] is not None else None,
+                passphrase=entry[3],
             ))
 
         return credentials

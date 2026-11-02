@@ -44,7 +44,7 @@ const action = computed<EmptyAction>(() => {
       description: t('locations.empty.bank', { name }),
       icon: 'lu-landmark',
       label: t('locations.empty.connect', { name }),
-      to: { path: '/api-keys/banks', query: { add: 'true', location: identifier } },
+      to: { path: '/api-keys/banks', query: { add: 'true' } },
     };
   }
 

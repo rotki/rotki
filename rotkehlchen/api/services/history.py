@@ -20,7 +20,6 @@ from rotkehlchen.api.rest_helpers.downloads import (
     make_download_response,
     register_post_download_cleanup,
 )
-from rotkehlchen.banks.constants import SUPPORTED_BANKS
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -48,6 +47,7 @@ from rotkehlchen.history.events.utils import (
 )
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.locations.constants import (
+    LOCATION_BANKS,
     LOCATION_KRAKEN,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -277,7 +277,7 @@ class HistoryService:
             f'{blockchain.to_range_prefix("txs")}_%'
             for blockchain in EVM_CHAINS_WITH_TRANSACTIONS
         ]
-        synced_locations = SUPPORTED_EXCHANGES + SUPPORTED_BANKS
+        synced_locations = SUPPORTED_EXCHANGES + (LOCATION_BANKS,)
         exchanges_where_str = ' OR '.join(['name LIKE ?'] * len(synced_locations))
         exchanges_bindings = [
             f'{location!s}_history_events_%'

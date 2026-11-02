@@ -48,8 +48,8 @@ const route = useRoute('/api-keys/banks/');
 
 const cols = computed<DataTableColumn<BankConnection>[]>(() => [{
   cellClass: 'w-48',
-  key: 'location',
-  label: t('common.location'),
+  key: 'connector',
+  label: t('bank_settings.form.bank'),
   sortable: true,
 }, {
   key: 'name',
@@ -67,12 +67,12 @@ const cols = computed<DataTableColumn<BankConnection>[]>(() => [{
 
 useRememberTableSorting<BankConnection>(TableId.BANKS, sort, cols);
 
-const { highlight, rowClass } = useRowHighlight<{ location: string; name: string }>(
-  ({ location, name }) => `${location}#${name}`,
+const { highlight, rowClass } = useRowHighlight<{ connector: string; name: string }>(
+  ({ connector, name }) => `${connector}#${name}`,
 );
 
 function rowKey(row: BankConnection): string {
-  return `${row.location}#${row.name}`;
+  return `${row.connector}#${row.name}`;
 }
 
 function isSyncing(row: BankConnection): boolean {
@@ -80,24 +80,24 @@ function isSyncing(row: BankConnection): boolean {
 }
 
 function createNewBank(requested?: string): BankFormData {
-  const location = (requested && manifestFor(requested)) ? requested : get(manifests)[0]?.location ?? '';
+  const connector = (requested && manifestFor(requested)) ? requested : get(manifests)[0]?.connector ?? '';
   return {
-    credentials: emptyCredentials(manifestFor(location)),
-    location,
+    connector,
+    credentials: emptyCredentials(manifestFor(connector)),
     mode: 'add',
     name: '',
     newName: '',
   };
 }
 
-function addBank(location?: string): void {
-  set(bank, createNewBank(location));
+function addBank(connector?: string): void {
+  set(bank, createNewBank(connector));
 }
 
 function editBank(row: BankConnection): void {
   set(bank, {
-    credentials: emptyCredentials(manifestFor(row.location)),
-    location: row.location,
+    connector: row.connector,
+    credentials: emptyCredentials(manifestFor(row.connector)),
     mode: 'edit',
     name: row.name,
     newName: row.name,
@@ -108,7 +108,7 @@ function authenticate(row: BankConnection): void {
   if (row.syncStatus.authChallenge) {
     set(authentication, {
       challenge: row.syncStatus.authChallenge,
-      location: row.location,
+      connector: row.connector,
       name: row.name,
     });
   }
@@ -124,7 +124,7 @@ function authenticate(row: BankConnection): void {
 function openRequestedAuthentication([requested, connections]: [BankConnectionIdentity | undefined, BankConnection[]]): void {
   if (!requested)
     return;
-  const row = connections.find(connection => connection.location === requested.location && connection.name === requested.name);
+  const row = connections.find(connection => connection.connector === requested.connector && connection.name === requested.name);
   if (!row)
     return;
   authenticate(row);
@@ -134,7 +134,7 @@ function openRequestedAuthentication([requested, connections]: [BankConnectionId
 async function sync(row: BankConnection): Promise<void> {
   set(syncing, [...get(syncing), rowKey(row)]);
   try {
-    await syncBanks({ location: row.location, name: row.name });
+    await syncBanks({ connector: row.connector, name: row.name });
   }
   finally {
     set(syncing, get(syncing).filter(key => key !== rowKey(row)));
@@ -158,11 +158,11 @@ watch(route, async (route) => {
     // a link can land before the supported banks have loaded; the form needs them to preselect a bank
     if (get(manifests).length === 0)
       await refreshSupportedBanks();
-    addBank(typeof query.location === 'string' ? query.location : undefined);
+    addBank(typeof query.connector === 'string' ? query.connector : undefined);
     await router.replace({ query: {} });
   }
-  else if (typeof query.authenticate === 'string' && typeof query.location === 'string') {
-    set(requestedAuthentication, { location: query.location, name: query.authenticate });
+  else if (typeof query.authenticate === 'string' && typeof query.connector === 'string') {
+    set(requestedAuthentication, { connector: query.connector, name: query.authenticate });
     await router.replace({ query: {} });
   }
 }, { immediate: true });
@@ -241,10 +241,10 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
             </td>
           </tr>
         </template>
-        <template #item.location="{ row }">
+        <template #item.connector="{ row }">
           <div class="flex items-center gap-2">
             <LocationIcon
-              :item="row.location"
+              item="banks"
               icon
               size="20px"
             />

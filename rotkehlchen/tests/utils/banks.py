@@ -16,14 +16,12 @@ from urllib.parse import urlparse
 from fints.exceptions import FinTSClientPINError, FinTSConnectionError
 from fints.models import SEPAAccount
 
-from rotkehlchen.banks.constants import FINTS_CONNECTOR
 from rotkehlchen.banks.fints import Fints
+from rotkehlchen.banks.manifest import BankConnectorType
 from rotkehlchen.banks.qonto import Qonto
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.fval import FVal
-from rotkehlchen.locations.constants import (
-    LOCATION_QONTO,
-)
+from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.tests.utils.mock import MockResponse
 
 if TYPE_CHECKING:
@@ -31,7 +29,6 @@ if TYPE_CHECKING:
 
     from rotkehlchen.banks.connector import BankConnector
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 BANK_FIXTURES_DIR = Path(__file__).resolve().parent.parent / 'data' / 'banks'
@@ -189,7 +186,7 @@ class FinTSFixtureTransport(FixtureTransport):
 
 @dataclass
 class BankConnectorKit:
-    location: LocationIdentifier
+    connector: BankConnectorType
     connector_class: type[BankConnector]
     create_transport: Callable[[], FixtureTransport]
     expected_balances: dict[Any, FVal]  # asset -> amount the fixtures add up to
@@ -206,8 +203,8 @@ class BankConnectorKit:
 
     def create(self, database: DBHandler, msg_aggregator: MessagesAggregator) -> BankConnector:
         credentials = self.connector_class.api_credentials_from_values(
-            name=f'{self.location!s}1',
-            location=self.location,
+            name=f'{self.connector!s}1',
+            location=LOCATION_BANKS,
             values=self.credential_values,
         )
         assert credentials.api_secret is not None
@@ -231,7 +228,7 @@ def _qonto_expected_balance() -> FVal:
 
 BANK_KITS: list[BankConnectorKit] = [
     BankConnectorKit(
-        location=LOCATION_QONTO,
+        connector=BankConnectorType.QONTO,
         connector_class=Qonto,
         create_transport=QontoFixtureTransport,
         expected_balances={A_EUR: _qonto_expected_balance()},
@@ -239,7 +236,7 @@ BANK_KITS: list[BankConnectorKit] = [
         cursor_param='updated_at_from',
     ),
     BankConnectorKit(
-        location=FINTS_CONNECTOR,
+        connector=BankConnectorType.FINTS,
         connector_class=Fints,
         create_transport=FinTSFixtureTransport,
         expected_balances={A_EUR: FVal('1250')},

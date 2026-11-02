@@ -7,8 +7,8 @@ import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-st
 import HistoryRefreshBanks from '@/modules/history/refresh/HistoryRefreshBanks.vue';
 import '@test/i18n';
 
-const main: BankConnectionIdentity = { location: 'qonto', name: 'rotki Solutions GmbH' };
-const side: BankConnectionIdentity = { location: 'qonto', name: 'Side organization' };
+const main: BankConnectionIdentity = { connector: 'qonto', name: 'rotki Solutions GmbH' };
+const side: BankConnectionIdentity = { connector: 'qonto', name: 'Side organization' };
 
 function connection(identity: BankConnectionIdentity): BankConnection {
   return { ...identity, displayName: 'Qonto', syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false } };

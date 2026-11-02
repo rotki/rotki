@@ -28,7 +28,7 @@ from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.nft_handling import NftHandling
 from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.banks.constants import SUPPORTED_BANKS
+from rotkehlchen.banks.manifest import BankConnectorType
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount
 from rotkehlchen.chain.bitcoin.bch.utils import (
     is_valid_bitcoin_cash_address,
@@ -2239,9 +2239,9 @@ class ExchangeLocationWithNameSchema(Schema):
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
 
 
-class BankLocationWithNameSchema(Schema):
+class BankConnectorWithNameSchema(Schema):
     name = NonEmptyStringField(required=True)
-    location = LocationField(limit_to=SUPPORTED_BANKS, required=True)
+    connector = SerializableEnumField(enum_class=BankConnectorType, required=True)
 
 
 class BankCredentialsField(fields.Dict):
@@ -2252,31 +2252,31 @@ class BankCredentialsField(fields.Dict):
         super().__init__(keys=fields.String(), values=fields.String(), **kwargs)
 
 
-class BanksResourceAddSchema(BankLocationWithNameSchema):
+class BanksResourceAddSchema(BankConnectorWithNameSchema):
     credentials = BankCredentialsField(required=True)
 
 
-class BanksResourceEditSchema(BankLocationWithNameSchema):
+class BanksResourceEditSchema(BankConnectorWithNameSchema):
     new_name = EmptyAsNoneStringField(load_default=None)
     credentials = BankCredentialsField(load_default=dict)
 
 
-class BankAuthenticationSchema(BankLocationWithNameSchema):
+class BankAuthenticationSchema(BankConnectorWithNameSchema):
     response = EmptyAsNoneStringField(load_default=None)
 
 
 class BankSyncSchema(AsyncQueryArgumentSchema):
-    location = LocationField(limit_to=SUPPORTED_BANKS, load_default=None)
+    connector = SerializableEnumField(enum_class=BankConnectorType, load_default=None)
     name = EmptyAsNoneStringField(load_default=None)
 
     @validates_schema
     def validate_schema(self, data: dict[str, Any], **_kwargs: Any) -> None:
-        if data['name'] is not None and data['location'] is None:
-            raise ValidationError('A bank connection name needs its location')
+        if data['name'] is not None and data['connector'] is None:
+            raise ValidationError('A bank connection name needs its connector')
 
 
 class BankBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchema):
-    location = LocationField(limit_to=SUPPORTED_BANKS, load_default=None)
+    connector = SerializableEnumField(enum_class=BankConnectorType, load_default=None)
     ignore_cache = fields.Boolean(load_default=False)
 
 

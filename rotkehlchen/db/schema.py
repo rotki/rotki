@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS user_credentials (
     api_key TEXT,
     api_secret TEXT,
     passphrase TEXT,
+    connector TEXT,
     PRIMARY KEY (name, location)
 );
 """

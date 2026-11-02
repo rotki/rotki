@@ -19,24 +19,24 @@ const { t } = useI18n({ useScope: 'global' });
 const { connections } = storeToRefs(useBankConnectionsStore());
 
 const banks = computed<BankConnectionIdentity[]>(() =>
-  get(connections).map(({ location, name }) => ({ location, name })),
+  get(connections).map(({ connector, name }) => ({ connector, name })),
 );
 
 const filteredBanks = computed<BankConnectionIdentity[]>(() => {
   const query = getTextToken(get(search));
   return get(banks).filter(bank =>
-    getTextToken(bank.name).includes(query) || getTextToken(bank.location).includes(query),
+    getTextToken(bank.name).includes(query) || getTextToken(bank.connector).includes(query),
   );
 });
 
 function isSelected(bank: BankConnectionIdentity): boolean {
-  return get(modelValue).some(item => item.location === bank.location && item.name === bank.name);
+  return get(modelValue).some(item => item.connector === bank.connector && item.name === bank.name);
 }
 
 function toggleSelect(bank: BankConnectionIdentity): void {
   const model = get(modelValue);
   if (isSelected(bank))
-    updateSelection(model.filter(item => !(item.location === bank.location && item.name === bank.name)));
+    updateSelection(model.filter(item => !(item.connector === bank.connector && item.name === bank.name)));
   else
     updateSelection([...model, bank]);
 }
@@ -48,8 +48,8 @@ function toggleSelectAll(): void {
 function updateSelection(selection: BankConnectionIdentity[]): void {
   set(modelValue, selection);
   emit('update:all-selected', isEqual(
-    sortBy(selection, ['location', 'name']),
-    sortBy(get(banks), ['location', 'name']),
+    sortBy(selection, ['connector', 'name']),
+    sortBy(get(banks), ['connector', 'name']),
   ));
 }
 
@@ -61,7 +61,7 @@ defineExpose({
 <template>
   <div
     v-for="bank in filteredBanks"
-    :key="`${bank.location}#${bank.name}`"
+    :key="`${bank.connector}#${bank.name}`"
     class="flex items-center px-4 py-1 pr-2 cursor-pointer hover:bg-rui-grey-100 dark:hover:bg-rui-grey-900 transition"
     data-testid="refresh-bank-row"
     @click="toggleSelect(bank)"
@@ -76,7 +76,7 @@ defineExpose({
     />
 
     <LocationDisplay
-      :identifier="bank.location"
+      identifier="banks"
       icon
       :open-details="false"
       size="20px"

@@ -1,58 +1,46 @@
 import type { ComputedRef } from 'vue';
-import type { ExchangeData, ExchangeInfo } from '@/modules/balances/types/exchanges';
 import { type AssetBalanceWithPriceAndChains, type BigNumber, Zero } from '@rotki/common';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { fromExchanges } from '@/modules/balances/aggregation/core/sources';
 import { summarizeBalances } from '@/modules/balances/aggregation/core/summarize';
 import { useAggregationContext } from '@/modules/balances/aggregation/use-aggregation-context';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { exchangeAssetSum } from '@/modules/core/common/data/calculation';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
 
-interface UseBankDataReturn {
-  /** The connected banks with balances, richest first. */
-  banks: ComputedRef<ExchangeInfo[]>;
-  /** Every bank's holdings in one list, an asset held at several banks broken down by bank. */
-  balances: ComputedRef<AssetBalanceWithPriceAndChains[]>;
-  /** What all banks hold together, ignored assets left out. */
-  total: ComputedRef<BigNumber>;
-  isBankLocation: (location: string) => boolean;
+export interface BankBalanceData {
+  readonly connector: string;
+  readonly name: string;
+  readonly balances: AssetBalanceWithPriceAndChains[];
+  readonly total: BigNumber;
 }
 
-/**
- * Bank balances live in the same per-location map as exchange balances, so the net worth, the
- * location breakdown and every asset view already count them. This is the bank-only view of that
- * map, for the surfaces that show banks apart from exchanges.
- */
+interface UseBankDataReturn {
+  /** Connected banks with their own holdings, richest first. */
+  banks: ComputedRef<BankBalanceData[]>;
+  /** What all banks hold together, ignored assets left out. */
+  total: ComputedRef<BigNumber>;
+}
+
+/** Builds the bank page from connection-level balances rather than the aggregate location. */
 export function useBankData(): UseBankDataReturn {
-  const { exchangeBalances } = storeToRefs(useBalancesStore());
-  const { banks: bankLocations } = storeToRefs(useLocationStore());
+  const { connectionBalances } = storeToRefs(useBankConnectionsStore());
   const { isAssetIgnored } = useAssetsStore();
   const context = useAggregationContext();
 
-  const isBankLocation = (location: string): boolean => get(bankLocations).includes(location);
-
-  const bankBalances = computed<ExchangeData>(() => Object.fromEntries(
-    Object.entries(get(exchangeBalances)).filter(([location]) => isBankLocation(location)),
-  ));
-
-  const banks = computed<ExchangeInfo[]>(() => Object.entries(get(bankBalances))
-    .map(([location, balances]) => ({
-      balances,
-      location,
+  const banks = computed<BankBalanceData[]>(() => get(connectionBalances)
+    .map(({ balances, connector, name }) => ({
+      balances: summarizeBalances([fromExchanges({ [name]: balances })], context),
+      connector,
+      name,
       total: exchangeAssetSum(balances, isAssetIgnored),
     }))
     .sort((a, b) => sortDesc(a.total, b.total)));
 
-  const balances = computed<AssetBalanceWithPriceAndChains[]>(() => summarizeBalances([fromExchanges(get(bankBalances))], context));
-
   const total = computed<BigNumber>(() => get(banks).reduce((sum, bank) => sum.plus(bank.total), Zero));
 
   return {
-    balances,
     banks,
-    isBankLocation,
     total,
   };
 }

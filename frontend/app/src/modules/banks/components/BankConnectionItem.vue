@@ -75,12 +75,12 @@ const statusText = computed<string>(() => {
 
 /** A pending TAN opens its answer, an expired one syncs again for a fresh TAN, a failure leads to the connection. */
 async function act(): Promise<void> {
-  const { location, name } = connection;
+  const { connector, name } = connection;
   if (get(state) === 'expired') {
-    emit('sync', { location, name });
+    emit('sync', { connector, name });
     return;
   }
-  const query: Record<string, string> = get(state) === 'authentication' ? { authenticate: name, location } : {};
+  const query: Record<string, string> = get(state) === 'authentication' ? { authenticate: name, connector } : {};
   await router.push({ name: '/api-keys/banks/', query });
 }
 </script>
@@ -93,7 +93,7 @@ async function act(): Promise<void> {
     :data-state="state"
   >
     <LocationIcon
-      :item="connection.location"
+      item="banks"
       icon
       size="20px"
     />

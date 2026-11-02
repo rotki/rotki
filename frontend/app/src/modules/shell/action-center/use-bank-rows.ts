@@ -14,9 +14,9 @@ import { createShortHash } from '@/modules/user-data/utils/hash';
  * The slug keeps it readable and the hash keeps it unique: "Main Account" and "main-account" share a
  * slug, and a name with no Latin letters has none at all. Seen and snooze state are kept by this id.
  */
-function connectionRowId(prefix: string, { location, name }: BankConnection): string {
+function connectionRowId(prefix: string, { connector, name }: BankConnection): string {
   const slug = name.toLowerCase().replaceAll(/[^\da-z]+/g, '-').replaceAll(/^-|-$/g, '');
-  return [prefix, location, slug, createShortHash(name)].filter(part => part !== '').join('-');
+  return [prefix, connector, slug, createShortHash(name)].filter(part => part !== '').join('-');
 }
 
 /**
@@ -35,8 +35,8 @@ export function useBankRows(): ComputedRef<ActionItem[]> {
   const { connections } = storeToRefs(store);
   const { startOverAuthentication, syncBanks } = useBanks();
 
-  function params({ location, name }: BankConnection): Record<string, string> {
-    return { location: store.bankNameFor(location), name };
+  function params({ connector, name }: BankConnection): Record<string, string> {
+    return { location: store.bankNameFor(connector), name };
   }
 
   /**
@@ -47,7 +47,7 @@ export function useBankRows(): ComputedRef<ActionItem[]> {
    * drops it and syncs again, which is the way out of a TAN the user will not answer.
    */
   function authenticationRow(connection: BankConnection): ActionItem {
-    const { location, name } = connection;
+    const { connector, name } = connection;
     return createActionItem<ActionTarget, string>({
       actionLabel: t('action_center.rows.integrations.bank_authentication.action'),
       count: 1,
@@ -58,9 +58,9 @@ export function useBankRows(): ComputedRef<ActionItem[]> {
         icon: 'lu-rotate-ccw',
         id: 'start-over',
         label: t('action_center.rows.integrations.bank_authentication.start_over'),
-        target: { kind: 'run', run: () => startPromise(startOverAuthentication({ location, name })) },
+        target: { kind: 'run', run: () => startPromise(startOverAuthentication({ connector, name })) },
       }],
-      target: { kind: 'route', to: { name: '/api-keys/banks/', query: { authenticate: name, location } } },
+      target: { kind: 'route', to: { name: '/api-keys/banks/', query: { authenticate: name, connector } } },
       title: t('action_center.rows.integrations.bank_authentication.title'),
       urgency: ActionUrgency.BLOCKING,
     });
@@ -74,7 +74,7 @@ export function useBankRows(): ComputedRef<ActionItem[]> {
    * not tell the next one from this one and would hide it.
    */
   function expiredRow(connection: BankConnection): ActionItem {
-    const { location, name } = connection;
+    const { connector, name } = connection;
     return createActionItem<ActionTarget, string>({
       actionLabel: t('action_center.rows.integrations.bank_authentication_expired.action'),
       count: 1,
@@ -82,7 +82,7 @@ export function useBankRows(): ComputedRef<ActionItem[]> {
       icon: 'lu-shield-x',
       id: connectionRowId('bank-authentication-expired', connection),
       snoozable: false,
-      target: { kind: 'run', run: () => startPromise(syncBanks({ location, name })) },
+      target: { kind: 'run', run: () => startPromise(syncBanks({ connector, name })) },
       title: t('action_center.rows.integrations.bank_authentication_expired.title'),
       urgency: ActionUrgency.DECISION,
     });

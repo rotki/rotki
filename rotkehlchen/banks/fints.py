@@ -47,9 +47,6 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.locations.constants import (
-    LOCATION_BANKS,
-)
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
@@ -161,12 +158,6 @@ class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
 
 class Fints(BankConnector):
     manifest = FINTS_MANIFEST
-
-    @property
-    def data_location(self) -> LocationIdentifier:
-        """FinTS is a multi-bank protocol, not an institution. Until connections point at
-        their institution location its data belongs to the broad Banks location."""
-        return LOCATION_BANKS
 
     def __init__(
             self,

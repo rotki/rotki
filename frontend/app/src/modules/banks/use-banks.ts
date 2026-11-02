@@ -1,4 +1,5 @@
 import type { ResultAsync } from 'plainfp/result-async';
+import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import { startPromise } from '@shared/utils';
 import { isOk, map as mapResult, type Result } from 'plainfp/result';
@@ -6,7 +7,7 @@ import { msg } from '@/message-key';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { bankBalancesActivity } from '@/modules/banks/banks.activity';
 import {
-  BankBalancesByLocation,
+  BankBalancesResponse,
   type BankConnectionIdentity,
   type BankFormData,
   type BankSetupError,
@@ -19,7 +20,6 @@ import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useBankEventsRefresh } from '@/modules/history/events/tx/use-bank-events-refresh';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
@@ -65,7 +65,7 @@ interface UseBanksReturn {
   cancelBankSetup: (connection: BankConnectionIdentity) => Promise<void>;
   /** Pulls new transactions of one connection, of one bank, or of every connection. */
   syncBanks: (payload?: BankSyncPayload) => Promise<boolean>;
-  /** Queries every connected bank's balances into the per-location balance map. */
+  /** Queries every bank, preserving per-connection balances and updating the banks aggregate. */
   fetchBankBalances: (ignoreCache?: boolean) => Promise<void>;
 }
 
@@ -78,7 +78,6 @@ export function useBanks(): UseBanksReturn {
   const api = useBanksApi();
   const store = useBankConnectionsStore();
   const { exchangeBalances } = storeToRefs(useBalancesStore());
-  const { banks: bankLocations } = storeToRefs(useLocationStore());
   const { notifyError } = useNotifications();
   const { submitTask } = useNativeTask();
   const { queryAllBankEvents } = useBankEventsRefresh();
@@ -103,14 +102,15 @@ export function useBanks(): UseBanksReturn {
     }
   };
 
-  /** The per-location map minus every bank, ready to receive a fresh bank result. */
-  const withoutBanks = (): Record<string, BankBalancesByLocation[string]> => Object.fromEntries(
-    Object.entries(get(exchangeBalances)).filter(([location]) => !get(bankLocations).includes(location)),
+  /** The exchange map without the aggregate banks entry, ready to receive a fresh result. */
+  const withoutBanks = (): ExchangeData => Object.fromEntries(
+    Object.entries(get(exchangeBalances)).filter(([location]) => location !== 'banks'),
   );
 
   const fetchBankBalances = async (ignoreCache = false): Promise<void> => {
     if (get(store.connections).length === 0) {
       set(exchangeBalances, withoutBanks());
+      store.setConnectionBalances([]);
       return;
     }
 
@@ -120,9 +120,11 @@ export function useBanks(): UseBanksReturn {
       lane: bankBalancesActivity.laneOf?.(),
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<BankBalancesByLocation>(async () => api.queryBankBalances(ignoreCache)),
+        await runTask<BankBalancesResponse>(async () => api.queryBankBalances(ignoreCache)),
         (result) => {
-          set(exchangeBalances, { ...withoutBanks(), ...BankBalancesByLocation.parse(result) });
+          const balances = BankBalancesResponse.parse(result);
+          set(exchangeBalances, { ...withoutBanks(), banks: balances.aggregate });
+          store.setConnectionBalances(balances.connections);
         },
       ),
       subtitle: activityLabelFor(msg.$t('task_center.activity.bank_balances.query')),
@@ -131,11 +133,11 @@ export function useBanks(): UseBanksReturn {
     await refreshBankConnections();
   };
 
-  const resolveSyncTargets = ({ location, name }: BankSyncPayload): BankConnectionIdentity[] =>
+  const resolveSyncTargets = ({ connector, name }: BankSyncPayload): BankConnectionIdentity[] =>
     get(store.connections)
-      .filter(connection => location === undefined || connection.location === location)
+      .filter(connection => connector === undefined || connection.connector === connector)
       .filter(connection => name === undefined || connection.name === name)
-      .map(connection => ({ location: connection.location, name: connection.name }));
+      .map(connection => ({ connector: connection.connector, name: connection.name }));
 
   /**
    * The bank events activity re-reads the connections after it ran. With nothing to sync it never
@@ -156,28 +158,28 @@ export function useBanks(): UseBanksReturn {
     Object.fromEntries(Object.entries(credentials).filter(([, value]) => value.trim() !== ''));
 
   const setupBank = async (form: BankFormData): ResultAsync<BankSetupResult, BankSetupError> => {
-    const { credentials, location, mode, name, newName } = form;
+    const { connector, credentials, mode, name, newName } = form;
     const outcome = mode === 'edit'
       ? mapResult(
-          await api.editBank({ credentials: filledCredentials(credentials), location, name, newName: newName === name ? undefined : newName }),
+          await api.editBank({ connector, credentials: filledCredentials(credentials), name, newName: newName === name ? undefined : newName }),
           (): true => true,
         )
-      : await api.addBank({ credentials, location, name });
+      : await api.addBank({ connector, credentials, name });
     if (outcome.ok && isBankSetupComplete(outcome.value)) {
       await refreshBankConnections();
       startPromise(fetchBankBalances());
       if (mode === 'add') {
-        startPromise(syncBanks({ location, name }));
+        startPromise(syncBanks({ connector, name }));
       }
     }
     return outcome;
   };
 
   const answerBankAuthentication = async (
-    { location, name }: BankConnectionIdentity,
+    { connector, name }: BankConnectionIdentity,
     response?: string,
   ): ResultAsync<BankSetupResult, BankSetupError> => {
-    const connection = { location, name };
+    const connection = { connector, name };
     const outcome = await api.answerAuthentication({ ...connection, response });
     await refreshBankConnections();
     if (outcome.ok && isBankSetupComplete(outcome.value)) {

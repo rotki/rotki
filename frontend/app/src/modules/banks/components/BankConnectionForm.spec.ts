@@ -16,7 +16,7 @@ const manifest: BankManifest = {
   capabilities: ['balances', 'transactions'],
   displayName: 'Qonto',
   docsUrl: 'https://docs.qonto.com',
-  location: 'qonto',
+  connector: 'qonto',
   maintainer: 'rotki',
   secrets: [
     { description: 'The organization login', label: 'Login', secret: false, slot: 'api_key' },
@@ -30,7 +30,7 @@ const fintsManifest: BankManifest = {
   ...manifest,
   accessTier: 'fints',
   displayName: 'FinTS/HBCI',
-  location: 'fints',
+  connector: 'fints',
   secrets: [
     { description: '', label: 'Bank code (BLZ)', secret: false, slot: 'bank_code' },
     { description: '', label: 'FinTS endpoint', secret: false, slot: 'endpoint' },
@@ -42,7 +42,7 @@ const fintsManifest: BankManifest = {
 function createForm(mode: BankFormData['mode']): BankFormData {
   return {
     credentials: { api_key: '', api_secret: '' },
-    location: 'qonto',
+    connector: 'qonto',
     mode,
     name: mode === 'edit' ? 'Qonto main' : '',
     newName: mode === 'edit' ? 'Qonto main' : '',
@@ -122,7 +122,7 @@ describe('bankConnectionForm', () => {
   it('should resolve a selected FinTS bank into the existing payload before validation', async () => {
     const model = ref<BankFormData>({
       credentials: { bank_code: '', endpoint: '', pin: '', username: '' },
-      location: 'fints',
+      connector: 'fints',
       mode: 'add',
       name: '',
       newName: '',
@@ -132,7 +132,7 @@ describe('bankConnectionForm', () => {
       bank: fintsBanks[0],
       id: `fints:${fintsBanks[0].id}`,
       kind: 'fints',
-      location: 'fints',
+      connector: 'fints',
       name: fintsBanks[0].name,
       searchText: fintsBanks[0].name,
     });
@@ -154,7 +154,7 @@ describe('bankConnectionForm', () => {
   it('should preserve the manifest-driven FinTS edit flow without selecting from the catalog', () => {
     const model = ref<BankFormData>({
       credentials: { bank_code: '', endpoint: '', pin: '', username: '' },
-      location: 'fints',
+      connector: 'fints',
       mode: 'edit',
       name: 'Existing bank',
       newName: 'Existing bank',

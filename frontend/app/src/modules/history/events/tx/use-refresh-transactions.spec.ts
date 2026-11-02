@@ -363,7 +363,7 @@ describe('useRefreshTransactions', () => {
   });
 
   describe('bank refresh', () => {
-    const bank = { location: 'qonto', name: 'rotki Solutions GmbH' };
+    const bank = { connector: 'qonto', name: 'rotki Solutions GmbH' };
 
     function connectBank(): void {
       useBankConnectionsStore().setConnections([

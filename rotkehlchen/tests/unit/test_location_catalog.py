@@ -36,7 +36,8 @@ def test_catalog_shape():
         current = catalog[current.parent_identifier]
     assert [current.name, *reversed(path)] == ['Total', 'Blockchains', 'EVM Chains', 'Ethereum Mainnet']  # noqa: E501
     assert all(x.is_builtin for x in catalog.values())
-    assert 'fints' not in catalog
+    assert catalog['banks'].parent_identifier == 'total'
+    assert 'fints' not in catalog and 'qonto' not in catalog
     assert not any(x.startswith('legacy') for x in catalog)
 
 
@@ -55,7 +56,7 @@ def test_every_old_location_has_one_migration_rule():
             assert V53_LOCATION_CHAR_TO_IDENTIFIER[char] == serialization
     assert len(V53_LOCATION_CHAR_TO_IDENTIFIER) + len(V53_LEGACY_LOCATION_CHARS) == len(V53_ENUM_CHAR_TO_SERIALIZATION)  # noqa: E501
     # added by the unreleased v54 itself and never stored as a character
-    assert {'sonic', 'robinhood', 'ink', 'qonto'} <= catalog_ids
+    assert {'sonic', 'robinhood', 'ink'} <= catalog_ids
 
 
 def test_every_supported_blockchain_has_a_node():

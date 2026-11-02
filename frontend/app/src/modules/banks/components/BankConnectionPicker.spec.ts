@@ -12,7 +12,7 @@ const manifest: BankManifest = {
   capabilities: [],
   displayName: 'Qonto',
   docsUrl: '',
-  location: 'qonto',
+  connector: 'qonto',
   maintainer: 'rotki',
   secrets: [],
   setupNotes: [],
@@ -47,7 +47,7 @@ describe('bankConnectionPicker', () => {
     expect(Reflect.get(new Object(options.at(-1)), 'kind')).toBe('fints-manual');
   });
 
-  it('should prioritize bank-name matches over partial name and location matches', async () => {
+  it('should prioritize bank-name matches over partial name and connector matches', async () => {
     const wrapper = mount(BankConnectionPicker, {
       global: { stubs: { BankLabel: true, RuiAutoComplete: AutoCompleteStub } },
       props: { errorMessages: [], manifests: [manifest] },
@@ -62,7 +62,7 @@ describe('bankConnectionPicker', () => {
     expect(options.some(option => Reflect.get(new Object(option), 'bank')?.city === 'Göttingen')).toBe(true);
   });
 
-  it('should retain location and exact BLZ searches', async () => {
+  it('should retain connector and exact BLZ searches', async () => {
     const wrapper = mount(BankConnectionPicker, {
       global: { stubs: { BankLabel: true, RuiAutoComplete: AutoCompleteStub } },
       props: { errorMessages: [], manifests: [manifest] },

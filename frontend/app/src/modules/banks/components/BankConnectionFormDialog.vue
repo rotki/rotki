@@ -87,7 +87,7 @@ function showSetupError(error: BankSetupError, payload: BankFormData): void {
     set(errorMessages, toFieldErrors(error.errors, payload));
     return;
   }
-  set(setupError, t('bank_settings.errors.setup_message', { bank: bankNameFor(payload.location), error: error.message }));
+  set(setupError, t('bank_settings.errors.setup_message', { bank: bankNameFor(payload.connector), error: error.message }));
   if (error.type === 'expired') {
     set(authChallenge, undefined);
     set(authResponse, '');
@@ -105,7 +105,7 @@ async function save(): Promise<void> {
   const payload = get(modelValue);
   const outcome = isDefined(get(authChallenge))
     ? await answerBankAuthentication(
-        { location: payload.location, name: payload.name },
+        { connector: payload.connector, name: payload.name },
         get(authResponse).trim() || undefined,
       )
     : await setupBank(payload);
@@ -129,7 +129,7 @@ function completeSetup(payload: BankFormData, result: true | BankSetupSuccess): 
     set(modelValue, undefined);
     return;
   }
-  emit('added', { location: payload.location, name: payload.name });
+  emit('added', { connector: payload.connector, name: payload.name });
   if (result !== true && result.historyStartTs !== null) {
     set(setupSuccess, result);
     set(stateUpdated, false);
@@ -152,7 +152,7 @@ async function confirm(): Promise<void> {
 function cancel(): void {
   const payload = get(modelValue);
   if (payload && payload.mode !== 'edit' && isDefined(authChallenge))
-    startPromise(cancelBankSetup({ location: payload.location, name: payload.name }));
+    startPromise(cancelBankSetup({ connector: payload.connector, name: payload.name }));
   set(modelValue, undefined);
 }
 

@@ -19,7 +19,7 @@ interface UseBankEventsRefreshReturn {
  * Pulls new transactions of bank connections into the history.
  *
  * @remarks
- * Each `{ location, name }` connection runs as its own native BANK_EVENTS activity, the way exchange
+ * Each `{ connector, name }` connection runs as its own native BANK_EVENTS activity, the way exchange
  * accounts do, so the orchestrator owns liveness, cancellation and re-run, and the same status
  * frames the backend streams for exchanges drive its detail.
  */
@@ -47,17 +47,17 @@ export function useBankEventsRefresh(): UseBankEventsRefreshReturn {
   };
 
   const queryBank = async (bank: BankConnectionIdentity, parent?: ActivityId): Promise<Result<void, TaskError>> => {
-    const { location, name } = bank;
-    const bankName = store.bankNameFor(location);
-    logger.debug(`querying bank events for ${location} (${name})`);
+    const { connector, name } = bank;
+    const bankName = store.bankNameFor(connector);
+    logger.debug(`querying bank events for ${connector} (${name})`);
     const outcome = await submitTask({
-      id: bankEventsActivity.id(bank),
+      id: bankEventsActivity.id({ location: connector, name }),
       kind: bankEventsActivity.kind,
-      lane: bankEventsActivity.laneOf?.(bank),
+      lane: bankEventsActivity.laneOf?.({ location: connector, name }),
       parent,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<boolean>(async () => syncBanks({ location, name })),
+        await runTask<boolean>(async () => syncBanks({ connector, name })),
         () => {},
       ),
       subtitle: activityLabelFor(msg.$t('task_center.activity.history_events.bank'), { account: name, bank: bankName }),

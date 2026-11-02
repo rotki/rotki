@@ -54,7 +54,7 @@ const BigDialogStub = defineComponent({
 function createForm(): BankFormData {
   return {
     credentials: { api_key: 'login', api_secret: 'secret' },
-    location: 'qonto',
+    connector: 'qonto',
     mode: 'add',
     name: 'Qonto main',
     newName: '',
@@ -97,7 +97,7 @@ describe('bankConnectionFormDialog', () => {
     wrapper = createWrapper(createForm());
     await confirm();
     expect(setupBank).toHaveBeenCalledWith(createForm());
-    expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
+    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', name: 'Qonto main' }]]);
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
 
@@ -115,7 +115,7 @@ describe('bankConnectionFormDialog', () => {
       promptOnClose: false,
       title: 'bank_settings.dialog.added.title',
     });
-    expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
+    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', name: 'Qonto main' }]]);
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
 
     await confirm();
@@ -137,7 +137,7 @@ describe('bankConnectionFormDialog', () => {
 
       await cancel();
 
-      expect(cancelBankSetup).toHaveBeenCalledExactlyOnceWith({ location: 'qonto', name: 'Qonto main' });
+      expect(cancelBankSetup).toHaveBeenCalledExactlyOnceWith({ connector: 'qonto', name: 'Qonto main' });
       expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
     });
 
@@ -224,7 +224,7 @@ describe('bankConnectionFormDialog', () => {
   });
 
   it('should name the bank by its display name once its manifest is loaded', async () => {
-    useBankConnectionsStore().setManifests([createMock<BankManifest>({ displayName: 'Qonto Business', location: 'qonto' })]);
+    useBankConnectionsStore().setManifests([createMock<BankManifest>({ displayName: 'Qonto Business', connector: 'qonto' })]);
     setupBank.mockResolvedValue(err<BankSetupError>({ message: 'Qonto rejected the credentials', type: 'rejected' }));
     wrapper = createWrapper(createForm());
     await confirm();
@@ -250,10 +250,10 @@ describe('bankConnectionFormDialog', () => {
 
     expect(setupBank).toHaveBeenCalledOnce();
     expect(answerBankAuthentication).toHaveBeenCalledWith(
-      { location: 'qonto', name: 'Qonto main' },
+      { connector: 'qonto', name: 'Qonto main' },
       '123456',
     );
-    expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
+    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', name: 'Qonto main' }]]);
   });
 
   it('should show the final history step when authentication completes setup', async () => {
@@ -288,10 +288,10 @@ describe('bankConnectionFormDialog', () => {
     await flushPromises();
 
     expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith(
-      { location: 'qonto', name: 'Qonto main' },
+      { connector: 'qonto', name: 'Qonto main' },
       undefined,
     );
-    expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
+    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', name: 'Qonto main' }]]);
   });
 
   it('should switch Save to Continue for a TAN and not answer until one is typed', async () => {

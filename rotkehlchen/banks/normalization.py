@@ -85,10 +85,11 @@ def bank_transaction_to_event(
         transaction: BankTransaction,
         location: LocationIdentifier,
         location_label: str,
+        source_label: str,
 ) -> BankTransactionEvent:
     """Map a normalized bank transaction onto rotki history events.
 
-    The group identifier is derived from the location and the source id so that
+    The group identifier is derived from the banks location, connector and source id so that
     re-ingesting the same transaction (a re-sync, a file import overlapping a sync) is a
     no-op at the DB's UNIQUE(group_identifier, sequence_index) constraint.
     """
@@ -101,7 +102,7 @@ def bank_transaction_to_event(
         notes = f'Receive {transaction.amount} {symbol} from {counterparty}{reference}'
     elif transaction.kind == BankTransactionKind.FEE:
         event_type, event_subtype = HistoryEventType.SPEND, HistoryEventSubType.FEE
-        notes = f'Pay {transaction.amount} {symbol} as {location!s} fee{reference}'
+        notes = f'Pay {transaction.amount} {symbol} as {source_label} fee{reference}'
     else:
         event_type, event_subtype = HistoryEventType.SPEND, HistoryEventSubType.NONE
         notes = f'Send {transaction.amount} {symbol} to {counterparty}{reference}'
@@ -120,7 +121,7 @@ def bank_transaction_to_event(
     return BankTransactionEvent(
         group_identifier=create_group_identifier_from_unique_id(
             location=location,
-            unique_id=transaction.source_id,
+            unique_id=f'{source_label}:{transaction.source_id}',
         ),
         sequence_index=0,
         timestamp=transaction.timestamp,

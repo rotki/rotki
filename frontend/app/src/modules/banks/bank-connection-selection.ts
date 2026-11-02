@@ -5,7 +5,7 @@ export interface BankSelectionOption {
   bank?: FintsBank;
   id: string;
   kind: 'connector' | 'fints' | 'fints-manual';
-  location: string;
+  connector: string;
   name: string;
   searchText: string;
 }
@@ -93,33 +93,33 @@ export function toManualFintsSelection(manualName: string): BankSelectionOption 
   return {
     id: 'fints:manual',
     kind: 'fints-manual',
-    location: 'fints',
+    connector: 'fints',
     name: manualName,
     searchText: `${manualName} fints hbci manual`.toLocaleLowerCase(),
   };
 }
 
 export function toManifestSelection(manifest: BankManifest, manualName: string): BankSelectionOption {
-  if (manifest.location === 'fints')
+  if (manifest.connector === 'fints')
     return toManualFintsSelection(manualName);
   return {
-    id: `connector:${manifest.location}`,
+    id: `connector:${manifest.connector}`,
     kind: 'connector',
-    location: manifest.location,
+    connector: manifest.connector,
     name: manifest.displayName,
-    searchText: `${manifest.displayName} ${manifest.location}`.toLocaleLowerCase(),
+    searchText: `${manifest.displayName} ${manifest.connector}`.toLocaleLowerCase(),
   };
 }
 
 export function toBankSelectionOptions(manifests: readonly BankManifest[], manualName: string): BankSelectionOption[] {
   const connectors: BankSelectionOption[] = manifests
-    .filter(({ location }) => location !== 'fints')
+    .filter(({ connector }) => connector !== 'fints')
     .map(manifest => toManifestSelection(manifest, manualName));
   const banks: BankSelectionOption[] = toFintsBankOptions().map(bank => ({
     bank,
     id: `fints:${bank.id}`,
     kind: 'fints',
-    location: 'fints',
+    connector: 'fints',
     name: bank.name,
     searchText: bank.searchText,
   }));

@@ -12,7 +12,7 @@ const manifest: BankManifest = {
   capabilities: ['balances', 'transactions'],
   displayName: 'Qonto',
   docsUrl: 'https://docs.qonto.com',
-  location: 'qonto',
+  connector: 'qonto',
   maintainer: 'rotki',
   secrets: [
     { description: 'login', label: 'Login', secret: false, slot: 'api_key' },
@@ -31,7 +31,7 @@ describe('bankConnectionSchema', () => {
   it('should demand a name and every manifest credential when adding', () => {
     expect(issuesOf('add', {
       credentials: { api_key: '', api_secret: ' ' },
-      location: 'qonto',
+      connector: 'qonto',
       name: '',
       newName: '',
     })).toEqual(['name', 'credentials.api_key', 'credentials.api_secret']);
@@ -40,7 +40,7 @@ describe('bankConnectionSchema', () => {
   it('should accept a complete add form', () => {
     expect(issuesOf('add', {
       credentials: { api_key: 'login', api_secret: 'secret' },
-      location: 'qonto',
+      connector: 'qonto',
       name: 'Qonto main',
       newName: '',
     })).toEqual([]);
@@ -49,13 +49,13 @@ describe('bankConnectionSchema', () => {
   it('should only demand the new name when editing, credentials stay optional', () => {
     expect(issuesOf('edit', {
       credentials: { api_key: '', api_secret: '' },
-      location: 'qonto',
+      connector: 'qonto',
       name: 'Qonto main',
       newName: '',
     })).toEqual(['newName']);
     expect(issuesOf('edit', {
       credentials: { api_key: '', api_secret: '' },
-      location: 'qonto',
+      connector: 'qonto',
       name: 'Qonto main',
       newName: 'Qonto renamed',
     })).toEqual([]);
@@ -64,10 +64,10 @@ describe('bankConnectionSchema', () => {
   it('should demand a bank when adding without one', () => {
     expect(issuesOf('add', {
       credentials: {},
-      location: '',
+      connector: '',
       name: 'x',
       newName: '',
-    })).toContain('location');
+    })).toContain('connector');
   });
 });
 
@@ -82,7 +82,7 @@ describe('toBankConnectionFormState', () => {
   it('should copy the credentials so edits do not leak into the model before save', () => {
     const data: BankFormData = {
       credentials: { api_key: 'a', api_secret: 'b' },
-      location: 'qonto',
+      connector: 'qonto',
       mode: 'add',
       name: 'n',
       newName: '',

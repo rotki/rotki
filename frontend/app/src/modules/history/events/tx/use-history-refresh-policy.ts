@@ -100,13 +100,15 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
   }
 
   const connectedBanks = (): BankConnectionIdentity[] =>
-    get(bankConnections).map(({ location, name }) => ({ location, name }));
+    get(bankConnections).map(({ connector, name }) => ({ connector, name }));
 
   /** Every bank connection syncs; there is no per-connection opt-out as there is for exchanges. */
   function filterSyncingBanks(banks: BankConnectionIdentity[] | undefined): BankConnectionIdentity[] {
     const connected = connectedBanks();
     return banks
-      ? banks.filter(bank => connected.some(candidate => isSameExchange(candidate, bank)))
+      ? banks.filter(bank => connected.some(candidate => (
+          candidate.connector === bank.connector && candidate.name === bank.name
+        )))
       : connected;
   }
 
@@ -133,7 +135,10 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
       newAccounts: allAccounts.filter(account =>
         neverAttempted(accountSyncActivity.kind, ...accountSyncActivity.partsOf(account))),
       newBanks: usedBanks.filter(bank =>
-        neverAttempted(bankEventsActivity.kind, ...bankEventsActivity.partsOf(bank))),
+        neverAttempted(bankEventsActivity.kind, ...bankEventsActivity.partsOf({
+          location: bank.connector,
+          name: bank.name,
+        }))),
       newExchanges: usedExchanges.filter(exchange =>
         neverAttempted(exchangeEventsActivity.kind, ...exchangeEventsActivity.partsOf(exchange))),
     };

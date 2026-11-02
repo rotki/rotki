@@ -48,7 +48,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.locations.constants import LOCATION_QONTO
+from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, ts_sec_to_ms
@@ -181,7 +181,7 @@ class Qonto(BankConnector):
                 record=UserMessageRecord.TRANSACTION,
                 error=f'Unknown transaction {field}',
             ),
-            subject=LOCATION_QONTO,
+            subject=LOCATION_BANKS,
         )
 
     # ---- deserialization ----

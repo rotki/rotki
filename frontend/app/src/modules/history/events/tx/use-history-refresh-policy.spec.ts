@@ -40,8 +40,8 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
   useNativeTask: (): Record<string, unknown> => ({ statusOf: mocks.statusOf }),
 }));
 
-const main: BankConnectionIdentity = { location: 'qonto', name: 'rotki Solutions GmbH' };
-const side: BankConnectionIdentity = { location: 'qonto', name: 'Side organization' };
+const main: BankConnectionIdentity = { connector: 'qonto', name: 'rotki Solutions GmbH' };
+const side: BankConnectionIdentity = { connector: 'qonto', name: 'Side organization' };
 
 function connection(identity: BankConnectionIdentity): BankConnection {
   return { ...identity, displayName: 'Qonto', syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false } };
@@ -72,14 +72,14 @@ describe('useHistoryRefreshPolicy', () => {
     });
 
     it('should drop picked banks that are not connected', () => {
-      const unknown = { location: 'qonto', name: 'Removed organization' };
+      const unknown = { connector: 'qonto', name: 'Removed organization' };
       expect(useHistoryRefreshPolicy().filterSyncingBanks([side, unknown])).toEqual([side]);
     });
   });
 
   describe('detectNovelty', () => {
     it('should report only the bank connections that never finished a sync attempt', () => {
-      mocks.attempted.add(`bank-events:${main.location}:${main.name}`);
+      mocks.attempted.add(`bank-events:${main.connector}:${main.name}`);
       const { newBanks } = useHistoryRefreshPolicy().detectNovelty([], [], [main, side]);
       expect(newBanks).toEqual([side]);
     });

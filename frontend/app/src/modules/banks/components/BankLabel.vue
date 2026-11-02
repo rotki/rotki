@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 
-/** A bank as one line: its icon, then the name its manifest gives it rather than the bare location. */
-const { location, name } = defineProps<{
-  location: string;
+/** A bank as one line: the shared bank icon and its connector or institute name. */
+const { connector, name } = defineProps<{
+  connector: string;
   name: string;
 }>();
 </script>
 
 <template>
-  <span class="flex items-center gap-2 min-w-0">
+  <span
+    class="flex items-center gap-2 min-w-0"
+    :title="connector"
+  >
     <LocationIcon
-      :item="location"
+      item="banks"
       icon
       size="20px"
     />

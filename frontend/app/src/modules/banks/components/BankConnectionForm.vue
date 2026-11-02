@@ -25,8 +25,8 @@ const { bankNameFor, manifestFor } = useBankConnectionsStore();
 const { t } = useI18n({ useScope: 'global' });
 
 const editMode = computed<boolean>(() => isEditing(get(modelValue).mode));
-const manifest = computed<BankManifest | undefined>(() => manifestFor(get(modelValue).location));
-const fintsAddMode = computed<boolean>(() => !get(editMode) && get(modelValue).location === 'fints');
+const manifest = computed<BankManifest | undefined>(() => manifestFor(get(modelValue).connector));
+const fintsAddMode = computed<boolean>(() => !get(editMode) && get(modelValue).connector === 'fints');
 const selectedOption = ref<BankSelectionOption>();
 
 const form = useMappedModelForm<BankFormData, BankConnectionFormState>({
@@ -53,14 +53,14 @@ const nameErrors = computed<string[]>(() => form.errors(get(editMode) ? 'newName
 /** Switching the bank starts the credentials over: another bank has other slots. */
 function selectBank(option: BankSelectionOption | undefined): void {
   set(selectedOption, option);
-  form.state.location = option?.location ?? '';
-  form.state.credentials = emptyCredentials(option === undefined ? undefined : manifestFor(option.location));
+  form.state.connector = option?.connector ?? '';
+  form.state.credentials = emptyCredentials(option === undefined ? undefined : manifestFor(option.connector));
 }
 
 watch(manifests, (available) => {
-  if (get(selectedOption) || !form.state.location)
+  if (get(selectedOption) || !form.state.connector)
     return;
-  const selectedManifest = available.find(item => item.location === form.state.location);
+  const selectedManifest = available.find(item => item.connector === form.state.connector);
   if (selectedManifest)
     set(selectedOption, toManifestSelection(selectedManifest, t('bank_settings.form.bank_other_fints')));
 }, { immediate: true });
@@ -79,13 +79,13 @@ defineExpose({
       v-if="!editMode"
       v-model="selectedOption"
       :manifests="manifests"
-      :error-messages="form.errors('location')"
+      :error-messages="form.errors('connector')"
       @update:model-value="selectBank($event)"
     />
     <BankLabel
       v-else
-      :location="form.state.location"
-      :name="bankNameFor(form.state.location)"
+      :connector="form.state.connector"
+      :name="bankNameFor(form.state.connector)"
       data-testid="bank-connection-bank"
     />
 

@@ -265,6 +265,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.assets.nft_handling import NftHandling
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
+    from rotkehlchen.banks.manifest import BankConnectorType
     from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
     from rotkehlchen.chain.balances import BlockchainBalancesUpdate
     from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -854,10 +855,15 @@ class RestAPI:
     def get_banks(self) -> Response:
         return api_response(_wrap_in_ok_result(self.banks_service.get_banks()), status_code=HTTPStatus.OK)  # noqa: E501
 
-    def setup_bank(self, name: str, location: LocationIdentifier, credentials: dict[str, str]) -> Response:  # noqa: E501
+    def setup_bank(
+            self,
+            name: str,
+            connector: BankConnectorType,
+            credentials: dict[str, str],
+    ) -> Response:
         result, msg, status_code = self.banks_service.setup_bank(
             name=name,
-            location=location,
+            connector=connector,
             credentials=credentials,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
@@ -865,55 +871,59 @@ class RestAPI:
     def edit_bank(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: BankConnectorType,
             new_name: str | None,
             credentials: dict[str, str],
     ) -> Response:
         result, msg, status_code = self.banks_service.edit_bank(
             name=name,
-            location=location,
+            connector=connector,
             new_name=new_name,
             credentials=credentials,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def remove_bank(self, name: str, location: LocationIdentifier) -> Response:
-        result, msg, status_code = self.banks_service.remove_bank(name=name, location=location)
+    def remove_bank(self, name: str, connector: BankConnectorType) -> Response:
+        result, msg, status_code = self.banks_service.remove_bank(name=name, connector=connector)
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
     def answer_bank_authentication(
             self,
             name: str,
-            location: LocationIdentifier,
+            connector: BankConnectorType,
             response: str | None,
     ) -> Response:
         result, msg, status_code = self.banks_service.answer_authentication(
             name=name,
-            location=location,
+            connector=connector,
             response=response,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    def cancel_bank_authentication(self, name: str, location: LocationIdentifier) -> Response:
+    def cancel_bank_authentication(self, name: str, connector: BankConnectorType) -> Response:
         result, msg, status_code = self.banks_service.cancel_authentication(
             name=name,
-            location=location,
+            connector=connector,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
     @async_api_call()
-    def sync_banks(self, location: LocationIdentifier | None, name: str | None) -> dict[str, Any]:
-        return self.banks_service.sync_banks(location=location, name=name)
+    def sync_banks(
+            self,
+            connector: BankConnectorType | None,
+            name: str | None,
+    ) -> dict[str, Any]:
+        return self.banks_service.sync_banks(connector=connector, name=name)
 
     @async_api_call()
     def query_bank_balances(
             self,
-            location: LocationIdentifier | None,
+            connector: BankConnectorType | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
         return self.banks_service.query_bank_balances(
-            location=location,
+            connector=connector,
             ignore_cache=ignore_cache,
             value_threshold=value_threshold,
         )

@@ -70,7 +70,7 @@ export const historySyncFlow: HistoryFlow<RefreshScope, RefreshWork> = {
       payload: { exchange, type: 'exchange' } as const,
     })),
     ...scope.banks.map(bank => ({
-      id: bankEventsActivityId(bank.location, bank.name),
+      id: bankEventsActivityId(bank.connector, bank.name),
       kind: bankEventsActivity.kind,
       payload: { bank, type: 'bank' } as const,
     })),

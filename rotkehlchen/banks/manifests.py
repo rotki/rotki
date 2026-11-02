@@ -5,21 +5,18 @@ Kept apart from the connector modules so that anything needing only the declarat
 """
 from typing import Final
 
-from rotkehlchen.banks.constants import FINTS_CONNECTOR
 from rotkehlchen.banks.manifest import (
     AuthPrimitive,
     AuthStep,
     BankAccessTier,
     BankCapability,
+    BankConnectorType,
     BankManifest,
     SecretField,
 )
-from rotkehlchen.locations.constants import (
-    LOCATION_QONTO,
-)
 
 QONTO_MANIFEST: Final = BankManifest(
-    location=LOCATION_QONTO,
+    connector=BankConnectorType.QONTO,
     display_name='Qonto',
     access_tier=BankAccessTier.OFFICIAL_API,
     capabilities=frozenset({BankCapability.BALANCES, BankCapability.TRANSACTIONS}),
@@ -62,7 +59,7 @@ QONTO_MANIFEST: Final = BankManifest(
 )
 
 FINTS_MANIFEST: Final = BankManifest(
-    location=FINTS_CONNECTOR,
+    connector=BankConnectorType.FINTS,
     display_name='FinTS/HBCI',
     access_tier=BankAccessTier.FINTS,
     capabilities=frozenset({BankCapability.BALANCES, BankCapability.TRANSACTIONS}),
@@ -89,6 +86,6 @@ FINTS_MANIFEST: Final = BankManifest(
 )
 
 BANK_MANIFESTS: Final = {
-    LOCATION_QONTO: QONTO_MANIFEST,
-    FINTS_CONNECTOR: FINTS_MANIFEST,
+    BankConnectorType.QONTO: QONTO_MANIFEST,
+    BankConnectorType.FINTS: FINTS_MANIFEST,
 }

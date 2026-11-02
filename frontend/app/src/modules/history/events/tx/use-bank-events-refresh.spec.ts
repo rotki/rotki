@@ -38,8 +38,8 @@ const tanChallenge = { challenge: 'Enter the TAN', challengeData: null, challeng
 
 describe('useBankEventsRefresh', () => {
   const banks: BankConnectionIdentity[] = [
-    { location: 'qonto', name: 'Qonto main' },
-    { location: 'qonto', name: 'Qonto side' },
+    { connector: 'qonto', name: 'Qonto main' },
+    { connector: 'qonto', name: 'Qonto side' },
   ];
 
   beforeEach(() => {
