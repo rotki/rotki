@@ -21,7 +21,8 @@ from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -96,7 +97,10 @@ def request_available_nodes(func: Callable) -> Callable:
 
         manager = args[0]
         if len(manager.available_nodes_call_order) == 0:
-            raise RemoteError(f'{manager.chain} has no nodes available')
+            raise RemoteError(
+                f'{manager.chain} has no nodes available',
+                cause=FailureCause.NETWORK,
+            )
 
         args_ = args[1:]
         kwargs_ = kwargs.copy()
@@ -121,6 +125,7 @@ def request_available_nodes(func: Callable) -> Callable:
         raise RemoteError(
             f'{manager.chain} request failed after trying the following nodes: '
             f'{", ".join(requested_nodes)}',
+            cause=FailureCause.NETWORK,
         )
     return wrapper
 
@@ -192,7 +197,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                 f'to connect to node at endpoint: {node_interface.url}, '
             )
             log.error(message)
-            raise RemoteError(message)
+            raise RemoteError(message, cause=FailureCause.BAD_DATA)
 
     def _check_node_synchronization(self, node_interface: SubstrateInterface) -> BlockNumber:
         """Check the node synchronization comparing the last block obtained via
@@ -227,7 +232,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         except (KeyError, DeserializationError) as e:
             message = f'{self.chain} failed to deserialize the chain metadata response: {e!s}.'
             log.error(message, chain_metadata=chain_metadata)
-            raise RemoteError(message) from e
+            raise RemoteError(message, cause=FailureCause.BAD_DATA) from e
 
         log.debug(
             f'{self.chain} subscan API metadata last block',
@@ -329,7 +334,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                 f'balance at endpoint {node_interface.url} due to: {e!s}'
             )
             log.error(message, account=account)
-            raise RemoteError(message) from e
+            raise RemoteError(message, cause=FailureCause.NETWORK) from e
 
         log.debug(
             f'{self.chain} account balance',
@@ -358,7 +363,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                 f'at endpoint: {node_interface.url} due to: {e!s}.'
             )
             log.error(message)
-            raise RemoteError(message) from e
+            raise RemoteError(message, cause=FailureCause.NETWORK) from e
 
         log.debug(f'{self.chain} chain ID', chain_id=chain_id)
         return chain_id
@@ -381,7 +386,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                 f'at endpoint: {node_interface.url} due to: {e!s}.'
             )
             log.error(message)
-            raise RemoteError(message) from e
+            raise RemoteError(message, cause=FailureCause.NETWORK) from e
 
         log.debug(f'{self.chain} chain properties', properties=properties)
         try:
@@ -393,7 +398,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         except (KeyError, UnknownAsset) as e:
             message = f'{self.chain} failed to deserialize properties due to: {e!s}.'
             log.error(message, properties=properties)
-            raise RemoteError(message) from e
+            raise RemoteError(message, cause=FailureCause.BAD_DATA) from e
 
         return chain_properties
 
@@ -424,7 +429,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                 f'at endpoint: {node_interface.url} due to: {e!s}.'
             )
             log.error(message)
-            raise RemoteError(message) from e
+            raise RemoteError(message, cause=FailureCause.NETWORK) from e
 
         log.debug(f'{self.chain} last block', last_block=last_block)
         return BlockNumber(last_block)
@@ -466,14 +471,17 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                 f'Connection error: {e!s}.'
             )
             log.error(message)
-            raise RemoteError(message) from e
+            raise RemoteError(message, cause=FailureCause.NETWORK) from e
         except (FileNotFoundError, ValueError, TypeError) as e:
             message = (
                 f'{self.chain} could not connect to node at endpoint: {endpoint}. '
                 f'Unexpected error during SubstrateInterface instantiation: {e!s}.'
             )
             log.error(message)
-            raise RemoteError('Invalid SubstrateInterface instantiation') from e
+            raise RemoteError(
+                'Invalid SubstrateInterface instantiation',
+                cause=FailureCause.INTERNAL,
+            ) from e
 
         return node_interface
 
@@ -491,7 +499,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         except requests.exceptions.RequestException as e:
             message = f'{self.chain} failed to post request at {url}. Connection error: {e!s}.'
             log.error(message)
-            raise RemoteError(message) from e
+            raise RemoteError(message, cause=FailureCause.NETWORK) from e
 
         if response.status_code != HTTPStatus.OK:
             message = (
@@ -500,7 +508,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                 f'Response text: {response.text}.'
             )
             log.error(message)
-            raise RemoteError(message)
+            raise RemoteError(message, cause=cause_for_status(response.status_code))
         try:
             result = jsonloads_dict(response.text)
         except JSONDecodeError as e:
@@ -509,7 +517,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                 f'response: {response.text}.'
             )
             log.error(message)
-            raise RemoteError(message) from e
+            raise RemoteError(message, cause=FailureCause.BAD_DATA) from e
 
         log.debug(f'{self.chain} subscan API metadata', result=result)
         return result
@@ -703,5 +711,6 @@ def wait_until_a_node_is_available(
             raise RemoteError(
                 f'{chain} manager does not have nodes availables after waiting '
                 f"{seconds} seconds. {chain} balances won't be queried.",
+                cause=FailureCause.NETWORK,
             )
         cancellable_sleep(0.1)

@@ -11,6 +11,7 @@ from rotkehlchen.errors.misc import (
     ChainNotSupported,
     IncompleteTransactionsQuery,
     IndexerRangeNotCovered,
+    NoAvailableIndexers,
     RecoverableRemoteError,
     RemoteError,
     RequestTooLargeError,
@@ -67,6 +68,7 @@ def test_remote_error_for_status(
 @pytest.mark.parametrize(('error', 'expected_cause'), [
     (APIKeyNotAvailable('no key'), FailureCause.AUTH),
     (ChainNotSupported('no chain'), FailureCause.UNSUPPORTED),
+    (NoAvailableIndexers('no indexers'), FailureCause.UNSUPPORTED),
     (IndexerRangeNotCovered('no range'), FailureCause.UNSUPPORTED),
     (BlockscoutIncompleteResponse('not indexed'), FailureCause.NETWORK),
     (IncompleteTransactionsQuery('some failed'), FailureCause.NETWORK),

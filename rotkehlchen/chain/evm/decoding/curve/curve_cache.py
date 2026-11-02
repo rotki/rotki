@@ -17,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import maybe_notify_cache_query_status
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     RemoteError,
     UnableToDecryptRemoteData,
@@ -186,12 +187,18 @@ def _query_curve_data_from_api(
     log.debug(f'Querying curve api {api_url}')
     response_json = request_get_dict(api_url)
     if response_json['success'] is False:
-        raise RemoteError(f'Curve api endpoint {api_url} returned failure. Response: {response_json}')  # noqa: E501
+        raise RemoteError(
+            f'Curve api endpoint {api_url} returned failure. Response: {response_json}',
+            cause=FailureCause.REMOTE_REJECTED,
+        )
 
     try:
         all_api_pools.extend(response_json['data']['poolData'])
     except KeyError as e:
-        raise RemoteError(f'Curve api endpoint {api_url} response is missing {e} key') from e
+        raise RemoteError(
+            f'Curve api endpoint {api_url} response is missing {e} key',
+            cause=FailureCause.BAD_DATA,
+        ) from e
 
     processed_new_pools = []
     for api_pool_data in all_api_pools:
@@ -220,7 +227,10 @@ def _query_curve_data_from_api(
                 underlying_coins=underlying_coins,
             ))
         except KeyError as e:
-            raise RemoteError(f'Curve pool data {api_pool_data} are missing key {e}') from e
+            raise RemoteError(
+                f'Curve pool data {api_pool_data} are missing key {e}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
         except DeserializationError as e:
             log.error(
                 f'Could not deserialize evm address while decoding curve pool '

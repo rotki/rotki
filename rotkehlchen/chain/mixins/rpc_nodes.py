@@ -30,6 +30,7 @@ from rotkehlchen.chain.solana.rpc import (
     SolanaRpcException,
 )
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -508,7 +509,10 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
                     try:
                         current_block = web3.eth.block_number  # pylint: disable=no-member
                         if isinstance(current_block, int) is False:  # Check for https://github.com/rotki/rotki/issues/6350  # TODO: Check if web3.py v6 has a check for this # noqa: E501
-                            raise RemoteError(f'Found non-int current block:{current_block}')
+                            raise RemoteError(
+                                f'Found non-int current block:{current_block}',
+                                cause=FailureCause.BAD_DATA,
+                            )
                     except (requests.RequestException, RemoteError) as e:
                         msg = f'Could not query latest block due to {e!s}'
                         log.warning(msg)

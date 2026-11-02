@@ -16,6 +16,7 @@ from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import NotFoundError, RemoteError, RequestTooLargeError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -763,6 +764,7 @@ class EvmTokens(ABC):  # noqa: B024
             raise RemoteError(
                 f'Could not check the ownership of {len(unknown)} erc721 tokens '
                 f'in {self.evm_inquirer.chain_name}',
+                cause=FailureCause.NETWORK,
             )
 
         # (address, collection address) -> number of the collection's token ids it owns

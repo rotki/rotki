@@ -152,6 +152,9 @@ class APIKeyNotAvailable(RemoteError):
 class NoAvailableIndexers(RemoteError):
     """Raised when there are no available indexers for a given chain."""
 
+    def __init__(self, message: str) -> None:
+        super().__init__(message, cause=FailureCause.UNSUPPORTED)
+
 
 class IndexerRangeNotCovered(RemoteError):
     """Raised when an indexer cannot serve the requested chain history range."""

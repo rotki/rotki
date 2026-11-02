@@ -7,6 +7,7 @@ from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.concurrency import result_of, spawn, wait
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_DOGE
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.dogechain import Dogechain
 from rotkehlchen.externalapis.sochain import SoChain
@@ -96,6 +97,7 @@ class DogecoinManager(ChainManager[BTCAddress]):
         raise RemoteError(
             f'External {SupportedBlockchain.DOGECOIN!s} request failed for all available '
             f'APIs. {serialized_errors}',
+            cause=FailureCause.NETWORK,
         )
 
     def query_balances(self, addresses: Sequence[BTCAddress]) -> dict[BTCAddress, BalanceSheet]:
