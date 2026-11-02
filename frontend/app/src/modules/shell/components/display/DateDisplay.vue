@@ -4,8 +4,10 @@ import { useScramble } from '@/modules/settings/use-scramble';
 import { useSetting } from '@/modules/settings/use-setting';
 import CopyTooltip from '@/modules/shell/components/CopyTooltip.vue';
 
-const { hideTooltip = false, milliseconds = false, noTime = false, showTimezone = false, timestamp } = defineProps<{
+const { calendarDate, hideTooltip = false, milliseconds = false, noTime = false, showTimezone = false, timestamp } = defineProps<{
   timestamp: number | string;
+  /** YYYY-MM-DD source date to display without applying the viewer's timezone. */
+  calendarDate?: string;
   showTimezone?: boolean;
   noTime?: boolean;
   milliseconds?: boolean;
@@ -27,13 +29,16 @@ const dateFormat = computed<string>(() => {
   return display;
 });
 
-const { scrambleTimestamp, shouldShowAmount } = useScramble();
+const { scrambleData, scrambleTimestamp, shouldShowAmount } = useScramble();
 
 const numericTimestamp = useToNumber(() => timestamp);
 const reactiveScramble = reactify(scrambleTimestamp);
 const displayTimestamp = reactiveScramble(numericTimestamp, () => milliseconds);
 
 const date = computed<Date>(() => {
+  if (calendarDate && !get(scrambleData))
+    return new Date(`${calendarDate}T00:00:00`);
+
   const display = get(displayTimestamp);
   return new Date(milliseconds ? display : display * 1000);
 });

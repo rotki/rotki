@@ -6,6 +6,7 @@ import { startPromise } from '@shared/utils';
 import BankAuthChallengeFields from '@/modules/banks/components/BankAuthChallengeFields.vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
 import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
+import { useBankAuthenticationPolling } from '@/modules/banks/use-bank-authentication-polling';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
 import BigDialog, { type BigDialogAction } from '@/modules/shell/components/dialogs/BigDialog.vue';
@@ -28,6 +29,7 @@ const form = useTemplateRef<ComponentExposed<typeof BankConnectionForm>>('form')
 const { answerBankAuthentication, cancelBankSetup, setupBank } = useBanks();
 const { bankNameFor } = useBankConnectionsStore();
 const { t } = useI18n({ useScope: 'global' });
+const polling = useBankAuthenticationPolling(authChallenge, save);
 
 const title = computed<string>(() => {
   if (!isDefined(modelValue))
@@ -43,7 +45,7 @@ const missingResponse = computed<boolean>(() => {
 });
 
 const action = computed<BigDialogAction>(() => isDefined(authChallenge)
-  ? { disabled: get(missingResponse), primary: t('bank_settings.authentication.continue') }
+  ? { disabled: get(missingResponse) || get(polling), primary: t('bank_settings.authentication.continue') }
   : { primary: t('common.actions.save') });
 
 /** The api keys credential errors by slot; the form binds them at `credentials.<slot>`. */

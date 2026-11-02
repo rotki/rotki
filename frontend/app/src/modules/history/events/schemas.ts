@@ -45,6 +45,7 @@ export const BankTransactionEvent = CommonHistoryEvent.extend({
   entryType: z.literal(HistoryEventEntryType.BANK_TRANSACTION_EVENT),
   extraData: z.object({
     bankAccountId: z.string(),
+    calendarDate: z.string().optional(),
     counterpartyAccount: z.string().nullish(),
     kind: z.string(),
     reference: z.string().nullish(),

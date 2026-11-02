@@ -5,7 +5,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
@@ -82,6 +82,10 @@ describe('bankConnectionFormDialog', () => {
     vi.clearAllMocks();
     validate.mockReturnValue(true);
     cancelBankSetup.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('should save the entry and emit added with the connection identity', async () => {
@@ -221,6 +225,31 @@ describe('bankConnectionFormDialog', () => {
     expect(answerBankAuthentication).toHaveBeenCalledWith(
       { location: 'qonto', name: 'Qonto main' },
       '123456',
+    );
+    expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
+  });
+
+  it('should automatically finish setup after an app approval', async () => {
+    vi.useFakeTimers();
+    setupBank.mockResolvedValue(ok({
+      ...otp,
+      pollDelaySeconds: 2,
+      primitive: 'app approval poll',
+    }));
+    answerBankAuthentication.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+    wrapper = createWrapper(createForm());
+
+    await confirm();
+    expect(wrapper.findComponent(BigDialogStub).props('action')).toEqual({
+      disabled: true,
+      primary: 'bank_settings.authentication.continue',
+    });
+    await vi.advanceTimersByTimeAsync(2000);
+    await flushPromises();
+
+    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith(
+      { location: 'qonto', name: 'Qonto main' },
+      undefined,
     );
     expect(wrapper.emitted('added')).toEqual([[{ location: 'qonto', name: 'Qonto main' }]]);
   });

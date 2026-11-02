@@ -15,6 +15,7 @@ class BankTransactionExtraData(TypedDict):
     kind: str  # the serialized BankTransactionKind
     counterparty_account: NotRequired[str]  # IBAN or whatever the bank shows
     reference: NotRequired[str]  # the payment reference
+    calendar_date: NotRequired[str]  # YYYY-MM-DD when the source has no time of day
 
 
 class BankTransactionEvent(HistoryEvent):

@@ -43,6 +43,7 @@ from rotkehlchen.banks.normalization import (
     BankTransactionSide,
     content_hash_id,
 )
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -99,6 +100,16 @@ class HIKAZS7(HIKAZS5):
 
 class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
     last_response_code: str | None = None
+    decoupled_response_seen: bool = False
+
+    def __enter__(self) -> None:
+        self.decoupled_response_seen = False
+        super().__enter__()
+        if (
+                isinstance(self.init_tan_response, NeedTANResponse) and
+                self.decoupled_response_seen
+        ):
+            self.init_tan_response.decoupled = True
 
     def _is_ing(self) -> bool:
         return self.bank_identifier.bank_code == ING_BANK_CODE
@@ -108,6 +119,17 @@ class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
             return False
         return super().is_tan_media_required()
 
+    def get_tan_poll_delay(self, repeated_poll: bool) -> int | None:
+        mechanism = self.get_tan_mechanisms().get(self.get_current_tan_mechanism())
+        if mechanism is None:
+            return None
+        delay = getattr(
+            mechanism,
+            'wait_before_next_poll' if repeated_poll else 'wait_before_first_poll',
+            None,
+        )
+        return delay if isinstance(delay, int) and delay > 0 else None
+
     def _process_response(self, dialog: Any, segment: Any, response: Any) -> None:
         if (
             isinstance(response.code, str) and
@@ -115,6 +137,8 @@ class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
             response.code.isdecimal()
         ):
             self.last_response_code = response.code
+        if response.code == '3955':
+            self.decoupled_response_seen = True
         if response.code == '9078':
             dialog.open = False
             raise FinTSProductRegistrationError(
@@ -305,7 +329,10 @@ class Fints(BankConnector):
         return f' (response code {code})' if isinstance(code, str) and len(code) == 4 and code.isdecimal() else ''  # noqa: E501
 
     @staticmethod
-    def _challenge(response: NeedTANResponse) -> BankAuthChallenge:
+    def _challenge(
+            response: NeedTANResponse,
+            poll_delay_seconds: int | None = None,
+    ) -> BankAuthChallenge:
         matrix = response.challenge_matrix
         if response.decoupled:
             primitive = AuthPrimitive.APP_APPROVAL_POLL
@@ -323,6 +350,7 @@ class Fints(BankConnector):
             challenge_html=response.challenge_html,
             challenge_data=base64.b64encode(matrix[1]).decode() if matrix is not None else response.challenge_hhduc,  # noqa: E501
             challenge_mime_type=matrix[0] if matrix is not None else None,
+            poll_delay_seconds=poll_delay_seconds,
         )
 
     def _pause_for_auth(
@@ -333,7 +361,12 @@ class Fints(BankConnector):
             request: dict[str, Any],
             during_initialization: bool,
             resume_history: bool | None = None,
+            repeated_poll: bool = False,
     ) -> None:
+        poll_delay_seconds = (
+            client.get_tan_poll_delay(repeated_poll=repeated_poll)
+            if response.decoupled and isinstance(client, RotkiFinTS3PinTanClient) else None
+        )
         self._pending = {
             'operation': operation,
             'dialog': base64.b64encode(client.pause_dialog()).decode(),
@@ -341,12 +374,16 @@ class Fints(BankConnector):
             'decoupled': bool(response.decoupled),
             'during_initialization': during_initialization,
             'request': request,
+            'poll_delay_seconds': poll_delay_seconds,
             'resume_history': (
                 self._history_sync_active.get() if resume_history is None else resume_history
             ),
         }
         self._save_state(client)
-        raise BankMFARequired(self._challenge(response))
+        raise BankMFARequired(self._challenge(
+            response=response,
+            poll_delay_seconds=poll_delay_seconds,
+        ))
 
     def _pending_response(self) -> NeedTANResponse:
         if self._pending is None:
@@ -364,7 +401,10 @@ class Fints(BankConnector):
         return retry
 
     def pending_authentication(self) -> BankAuthChallenge | None:
-        return self._challenge(self._pending_response()) if self._pending is not None else None
+        return self._challenge(
+            response=self._pending_response(),
+            poll_delay_seconds=self._pending.get('poll_delay_seconds'),
+        ) if self._pending is not None else None
 
     def has_pending_authentication(self) -> bool:
         return self._pending is not None
@@ -421,7 +461,10 @@ class Fints(BankConnector):
         if operation in self._completed:
             return self._completed.pop(operation)
         if self._pending is not None:
-            raise BankMFARequired(self._challenge(self._pending_response()))
+            raise BankMFARequired(self._challenge(
+                response=self._pending_response(),
+                poll_delay_seconds=self._pending.get('poll_delay_seconds'),
+            ))
 
         client = self._new_client()
         operation_request = request or {}
@@ -505,6 +548,7 @@ class Fints(BankConnector):
                         request=pending['request'],
                         during_initialization=pending['during_initialization'],
                         resume_history=pending.get('resume_history') is True,
+                        repeated_poll=True,
                     )
                 if pending['during_initialization']:
                     result = self._run_operation(
@@ -611,6 +655,7 @@ class Fints(BankConnector):
             transaction: MT940Transaction | Any,
             account: BankAccount,
             duplicate_index: int,
+            same_day_index: int = 0,
     ) -> BankTransaction:
         data = transaction.data
         try:
@@ -639,7 +684,7 @@ class Fints(BankConnector):
             return BankTransaction(
                 source_id=identity,
                 account_id=account.identifier,
-                timestamp=TimestampMS(timestamp * 1000),
+                timestamp=TimestampMS(timestamp * 1000 + same_day_index),
                 asset=self._resolve_fiat(amount.currency),
                 amount=abs(signed_amount),
                 side=(
@@ -651,6 +696,7 @@ class Fints(BankConnector):
                 counterparty_account=counterparty_account,
                 reference=reference,
                 updated_at=timestamp,
+                calendar_date=booking_date.isoformat(),
             )
         except (KeyError, TypeError, ValueError) as e:
             raise BankSchemaDrift(
@@ -681,13 +727,18 @@ class Fints(BankConnector):
             'end_date': end_date.isoformat(),
         })
         occurrences: defaultdict[str, int] = defaultdict(int)
+        daily_occurrences: defaultdict[str, int] = defaultdict(int)
         result = []
         for transaction in transactions:
             raw_identity = content_hash_id(account.identifier, sorted(transaction.data.items()))
-            result.append(self._deserialize_transaction(
+            booking_date = str(transaction.data.get('date') or transaction.data.get('entry_date'))
+            if (normalized := self._deserialize_transaction(
                 transaction=transaction,
                 account=account,
                 duplicate_index=occurrences[raw_identity],
-            ))
+                same_day_index=daily_occurrences[booking_date],
+            )).amount != ZERO:
+                result.append(normalized)
             occurrences[raw_identity] += 1
+            daily_occurrences[booking_date] += 1
         return result

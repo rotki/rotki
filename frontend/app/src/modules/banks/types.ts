@@ -43,6 +43,7 @@ export const BankAuthChallenge = z.object({
   challengeHtml: z.string().nullable(),
   challengeData: z.string().nullable(),
   challengeMimeType: z.string().nullable(),
+  pollDelaySeconds: z.number().nullable().optional(),
 });
 
 export type BankAuthChallenge = z.infer<typeof BankAuthChallenge>;
