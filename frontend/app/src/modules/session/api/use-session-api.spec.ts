@@ -105,8 +105,11 @@ describe('composables/api/session/index', () => {
               last_balance_save: 1700000000,
               last_data_upload_ts: 1700100000,
               running_tasks: [{
+                id: 3,
+                kind: 'evm_transactions',
                 name: 'Query ethereum transactions for 0xdead',
                 started_at: 1700000100,
+                subject: { address: '0xdead', chain: 'eth' },
               }],
             },
             message: '',
@@ -123,8 +126,11 @@ describe('composables/api/session/index', () => {
       expect(result.lastBalanceSave).toBe(1700000000);
       expect(result.lastDataUploadTs).toBe(1700100000);
       expect(result.runningTasks).toEqual([{
+        id: 3,
+        kind: 'evm_transactions',
         name: 'Query ethereum transactions for 0xdead',
         startedAt: 1700000100,
+        subject: { address: '0xdead', chain: 'eth' },
       }]);
     });
 
