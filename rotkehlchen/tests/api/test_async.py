@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.api.result import OkResult
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.exchanges.binance import Binance
 from rotkehlchen.locations.constants import (
@@ -39,10 +40,10 @@ def test_query_async_tasks(
     write_task_result = rest_api._write_task_result
     request.addfinalizer(release.set)  # never leave the task blocked if an assertion fails
 
-    def blocked_query(**_kwargs: Any) -> dict[str, Any]:
+    def blocked_query(**_kwargs: Any) -> OkResult:
         entered.set()
         assert release.wait(timeout=10)
-        return {'result': {}, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult({})
 
     def signal_result_written(task_id: int, result: Any) -> None:
         write_task_result(task_id, result)

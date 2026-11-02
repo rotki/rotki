@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, cast
 from flask import Response, jsonify, make_response, send_file
 from werkzeug.wsgi import ClosingIterator
 
+from rotkehlchen.api.result import FailResult, serialize_result
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -80,7 +82,11 @@ def make_download_response(file_path: str, mimetype: str) -> Response:
     if not _is_within_temp_dir(path := Path(file_path)):
         return make_response(
             (
-                jsonify({'result': None, 'message': f'Invalid file path: {file_path}'}),
+                jsonify(serialize_result(FailResult(
+                    f'Invalid file path: {file_path}',
+                    HTTPStatus.BAD_REQUEST,
+                    FailureCause.INVALID_INPUT,
+                ))),
                 HTTPStatus.BAD_REQUEST,
             ),
         )

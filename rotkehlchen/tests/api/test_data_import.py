@@ -144,6 +144,7 @@ def test_data_import_rejects_foreign_origin(
     assert response.status_code == HTTPStatus.FORBIDDEN
     assert response.json() == {
         'result': None,
+        'cause': 'forbidden',
         'message': 'Cross-origin requests are not allowed',
     }
 
@@ -156,6 +157,7 @@ def test_data_import_rejects_foreign_origin(
     assert response.status_code == HTTPStatus.FORBIDDEN
     assert response.json() == {
         'result': None,
+        'cause': 'forbidden',
         'message': 'Cross-origin requests are not allowed',
     }
 

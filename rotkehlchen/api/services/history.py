@@ -20,6 +20,7 @@ from rotkehlchen.api.rest_helpers.downloads import (
     make_download_response,
     register_post_download_cleanup,
 )
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -36,6 +37,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.utils import get_query_chunks
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import AccountingError, APIKeyNotAvailable, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
@@ -144,38 +146,35 @@ class HistoryService:
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             report_id, error_or_empty = self.rotkehlchen.process_history(
                 start_ts=from_timestamp,
                 end_ts=to_timestamp,
             )
         except AccountingError as e:
-            return {
-                'result': e.report_id,
-                'message': str(e),
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                FailureCause.CONFLICT,
+                result=e.report_id,
+            )
 
-        return {'result': report_id, 'message': error_or_empty}
+        return OkResult(report_id, message=error_or_empty)
 
     def get_history_debug(
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             directory_path: Path | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         error_or_empty, events = self.rotkehlchen.history_querying_manager.get_history(
             start_ts=from_timestamp,
             end_ts=to_timestamp,
             has_premium=has_premium_check(self.rotkehlchen.premium),
         )
         if error_or_empty != '':
-            return {
-                'result': None,
-                'message': error_or_empty,
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(error_or_empty, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             settings = self.rotkehlchen.get_settings(cursor)
@@ -193,28 +192,24 @@ class HistoryService:
         if directory_path is not None:
             with open(f'{directory_path}/pnl_debug.json', mode='w', encoding='utf-8') as f:
                 json.dump(debug_info, f, indent=2)
-            return {'result': True, 'message': ''}
-        return {'result': debug_info, 'message': '', 'status_code': HTTPStatus.OK}
+            return OkResult(True)
+        return OkResult(debug_info)
 
-    def import_history_debug(self, filepath: Path) -> dict[str, Any]:
+    def import_history_debug(self, filepath: Path) -> ApiResult:
         json_importer = DebugHistoryImporter(self.rotkehlchen.data.db)
         success, msg, data = json_importer.import_history_debug(filepath=filepath)
 
         if success is False:
-            return {
-                'result': None,
-                'message': msg,
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
         log.debug('extracted %s events from %s', len(data['events']), filepath)
         self.rotkehlchen.accountant.process_history(
             start_ts=Timestamp(data['pnl_settings']['from_timestamp']),
             end_ts=Timestamp(data['pnl_settings']['to_timestamp']),
             events=data['events'],
         )
-        return {'result': True, 'message': ''}
+        return OkResult(True)
 
-    def get_history_actionable_items(self) -> dict[str, Any]:
+    def get_history_actionable_items(self) -> ApiResult:
         pot = self.rotkehlchen.accountant.pots[0]
         missing_acquisitions: list[MissingAcquisition] = pot.cost_basis.missing_acquisitions
         missing_prices: list[MissingPrice] = list(pot.cost_basis.missing_prices)
@@ -227,31 +222,29 @@ class HistoryService:
             'missing_prices': processed_missing_prices,
             'events_skipped_no_rule': pot.events_skipped_no_rule,
         }
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(result)
 
     def export_pnl_report_csv(
             self,
             report_id: int,
             directory_path: Path | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         export_result, message = export_pnl_report_csv_from_db(
             database=self.rotkehlchen.data.db,
             premium=self.rotkehlchen.premium,
             report_id=report_id,
             directory_path=directory_path,
         )
-        return {
-            'result': export_result,
-            'message': message,
-            'status_code': HTTPStatus.CONFLICT if export_result is None else HTTPStatus.OK,
-        }
+        if export_result is None:
+            return FailResult(message, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+        return OkResult(export_result, message=message)
 
-    def download_pnl_report_csv(self, report_id: int) -> dict[str, Any] | Response:
+    def download_pnl_report_csv(self, report_id: int) -> ApiResult | Response:
         response = self.export_pnl_report_csv(report_id=report_id, directory_path=None)
-        if response.get('status_code') != HTTPStatus.OK:
+        if isinstance(response, FailResult):
             return response
 
-        file_path = response['result']['file_path']
+        file_path = response.result['file_path']
         try:
             download_response = send_file(
                 path_or_file=file_path,
@@ -261,17 +254,13 @@ class HistoryService:
             )
             return register_post_download_cleanup(download_response, Path(file_path))
         except FileNotFoundError:
-            return {
-                'result': None,
-                'message': 'No file was found',
-                'status_code': HTTPStatus.NOT_FOUND,
-            }
+            return FailResult('No file was found', HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND)
 
-    def get_history_status(self) -> dict[str, Any]:
+    def get_history_status(self) -> ApiResult:
         result = self.rotkehlchen.get_history_query_status()
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(result)
 
-    def get_history_status_summary(self) -> dict[str, Any]:
+    def get_history_status_summary(self) -> ApiResult:
         evm_where_str = ' OR '.join(['name LIKE ?'] * len(EVM_CHAINS_WITH_TRANSACTIONS))
         evm_bindings = [
             f'{blockchain.to_range_prefix("txs")}_%'
@@ -301,36 +290,32 @@ class HistoryService:
         undecoded_count = DBEvmTx(self.rotkehlchen.data.db).count_hashes_not_decoded(
             filter_query=EvmTransactionsNotDecodedFilterQuery.make(),
         )
-        return {
-            'result': {
-                'evm_last_queried_ts': evm_last_queried_ts,
-                'exchanges_last_queried_ts': exchanges_last_queried_ts,
-                'undecoded_tx_count': undecoded_count,
-                'has_evm_accounts': has_evm_accounts,
-                'has_exchanges_accounts': has_exchanges_accounts,
-            },
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult({
+            'evm_last_queried_ts': evm_last_queried_ts,
+            'exchanges_last_queried_ts': exchanges_last_queried_ts,
+            'undecoded_tx_count': undecoded_count,
+            'has_evm_accounts': has_evm_accounts,
+            'has_exchanges_accounts': has_exchanges_accounts,
+        })
 
-    def query_online_events(self, query_type: HistoryEventQueryType) -> dict[str, Any]:
+    def query_online_events(self, query_type: HistoryEventQueryType) -> ApiResult:
         try:
             if query_type in (HistoryEventQueryType.GNOSIS_PAY, HistoryEventQueryType.MONERIUM):
                 pretty_name = query_type.name.replace('_', ' ').title()
                 capability_name = GNOSIS_PAY_CAPABILITY if query_type == HistoryEventQueryType.GNOSIS_PAY else MONERIUM_CAPABILITY  # noqa: E501
                 if has_premium_capability(self.rotkehlchen.premium, capability_name) is False:
-                    return {
-                        'result': None,
-                        'message': f'{pretty_name} is not available for your current subscription tier',  # noqa: E501
-                        'status_code': HTTPStatus.FORBIDDEN,
-                    }
+                    return FailResult(
+                        f'{pretty_name} is not available for your current subscription tier',
+                        HTTPStatus.FORBIDDEN,
+                        FailureCause.FORBIDDEN,
+                    )
 
                 if (
                     query_type == HistoryEventQueryType.GNOSIS_PAY and
                     (gnosis_pay := init_gnosis_pay(self.rotkehlchen.data.db)) is not None
                 ):
                     gnosis_pay.get_and_process_transactions(after_ts=Timestamp(0))
-                    return {'result': True, 'message': ''}
+                    return OkResult(True)
                 elif (
                     query_type == HistoryEventQueryType.MONERIUM and
                     self.rotkehlchen.monerium is not None and
@@ -344,20 +329,20 @@ class HistoryService:
                                 capability_name=ASSET_MOVEMENT_MATCHING_CAPABILITY,
                             ),
                         )
-                    return {'result': True, 'message': ''}
-                return {
-                    'result': None,
-                    'message': f'Unable to refresh {pretty_name} data due to missing credentials',
-                    'status_code': HTTPStatus.CONFLICT,
-                }
+                    return OkResult(True)
+                return FailResult(
+                    f'Unable to refresh {pretty_name} data due to missing credentials',
+                    HTTPStatus.CONFLICT,
+                    FailureCause.AUTH,
+                )
 
             eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')
             if eth2 is None:
-                return {
-                    'result': None,
-                    'message': 'eth2 module is not active',
-                    'status_code': HTTPStatus.CONFLICT,
-                }
+                return FailResult(
+                    'eth2 module is not active',
+                    HTTPStatus.CONFLICT,
+                    FailureCause.CONFLICT,
+                )
 
             if query_type == HistoryEventQueryType.ETH_WITHDRAWALS:
                 eth2.query_services_for_validator_withdrawals(
@@ -371,25 +356,17 @@ class HistoryService:
             else:
                 log.debug('No active or un-queried validators found. Skipping query of block production information.')  # noqa: E501
         except APIKeyNotAvailable as e:
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.FAILED_DEPENDENCY,
-            }
+            return FailResult(str(e), HTTPStatus.FAILED_DEPENDENCY, FailureCause.AUTH)
         except RemoteError as e:
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.BAD_GATEWAY,
-            }
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
-        return {'result': True, 'message': ''}
+        return OkResult(True)
 
     def get_history_events(
             self,
             filter_query: HistoryBaseEntryFilterQuery,
             aggregate_by_group_ids: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         entries_limit, has_premium = get_user_limit(
             premium=self.rotkehlchen.premium,
@@ -488,14 +465,14 @@ class HistoryService:
         if has_premium is False:
             result['entries_found_total'] = entries_found
 
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(result)
 
     def query_kraken_staking_events(
             self,
             only_cache: bool,
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self._get_exchange_staking_or_savings_history(
             only_cache=only_cache,
             location=LOCATION_KRAKEN,
@@ -515,7 +492,7 @@ class HistoryService:
             location: LocationIdentifier,
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self._get_exchange_staking_or_savings_history(
             only_cache=only_cache,
             location=location,
@@ -530,7 +507,7 @@ class HistoryService:
             filter_query: HistoryBaseEntryFilterQuery,
             directory_path: Path | None,
             match_exact_events: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         entries_limit, _ = get_user_limit(
             premium=self.rotkehlchen.premium,
@@ -550,11 +527,11 @@ class HistoryService:
             )
             processed_events_result = history_query_result[1]  # type: ignore[assignment]
         if len(processed_events_result) == 0:
-            return {
-                'result': None,
-                'message': 'No history processed in order to perform an export',
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                'No history processed in order to perform an export',
+                HTTPStatus.CONFLICT,
+                FailureCause.CONFLICT,
+            )
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             settings = self.rotkehlchen.get_settings(cursor)
@@ -610,11 +587,7 @@ class HistoryService:
                     csv_delimiter=settings.csv_export_delimiter,
                     headers=headers.keys(),
                 )
-                return {
-                    'result': {'file_path': str(file_path)},
-                    'message': '',
-                    'status_code': HTTPStatus.OK,
-                }
+                return OkResult({'file_path': str(file_path)})
 
             directory_path.mkdir(parents=True, exist_ok=True)
             file_path = directory_path / filename
@@ -625,9 +598,9 @@ class HistoryService:
                 headers=headers.keys(),
             )
         except (CSVWriteError, PermissionError) as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.LOCAL_DB)
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
     def download_history_events_csv(self, file_path: str) -> Response:
         return make_download_response(file_path=file_path, mimetype='text/csv')
@@ -641,7 +614,7 @@ class HistoryService:
             value_filter: HistoryEventFilterQuery,
             event_subtypes: list[HistoryEventSubType] | None = None,
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         history_events_db = DBHistoryEvents(self.rotkehlchen.data.db)
         table_filter = HistoryEventFilterQuery.make(
             location=location,
@@ -660,11 +633,11 @@ class HistoryService:
             location,
         )
         if exchanges_list is None:
-            return {
-                'result': None,
-                'message': f'There is no {location} account added.',
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                f'There is no {location} account added.',
+                HTTPStatus.CONFLICT,
+                FailureCause.NOT_FOUND,
+            )
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             try:
@@ -675,11 +648,11 @@ class HistoryService:
                     only_cache=only_cache,
                 )
             except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-                return {
-                    'result': None,
-                    'message': f'Database query error retrieving missing prices {e!s}',
-                    'status_code': HTTPStatus.CONFLICT,
-                }
+                return FailResult(
+                    f'Database query error retrieving missing prices {e!s}',
+                    HTTPStatus.CONFLICT,
+                    FailureCause.LOCAL_DB,
+                )
 
             events = []
             for event in events_raw:
@@ -724,7 +697,7 @@ class HistoryService:
                 ],
             }
 
-        return {'result': result, 'message': message, 'status_code': HTTPStatus.OK}
+        return OkResult(result, message=message)
 
     @staticmethod
     def _query_history_events_with_matched_processing(
@@ -956,7 +929,7 @@ class HistoryService:
             to_timestamp: Timestamp,
             validator_indices: list[int],
             addresses: list[ChecksumEvmAddress],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Refetch ETH staking events by re-querying external data sources.
         Duplicates are handled by INSERT OR IGNORE.
 
@@ -969,11 +942,11 @@ class HistoryService:
         and per-address breakdowns.
         """
         if (eth2 := self.rotkehlchen.chains_aggregator.get_module('eth2')) is None:
-            return {
-                'result': None,
-                'message': 'eth2 module is not active',
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                'eth2 module is not active',
+                HTTPStatus.CONFLICT,
+                FailureCause.CONFLICT,
+            )
 
         db = self.rotkehlchen.data.db
         serialized_entry_type = entry_type.serialize_for_db()
@@ -1018,22 +991,18 @@ class HistoryService:
 
             after_total, after_validators, after_addresses = _count_staking_events()
         except RemoteError as e:
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.BAD_GATEWAY,
-            }
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
         new_validators = Counter(after_validators)
         new_validators.subtract(before_validators)
         new_addresses = Counter(after_addresses)
         new_addresses.subtract(before_addresses)
 
-        return {'result': {
+        return OkResult({
             'total': after_total - before_total,
             'per_validator': dict(+new_validators),
             'per_address': dict(+new_addresses),
-        }, 'message': ''}
+        })
 
     @staticmethod
     def _refetch_withdrawal_events(

@@ -39,6 +39,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
+    assert_proper_response,
     assert_proper_response_with_result,
     assert_proper_sync_response_with_result,
     wait_for_async_task,
@@ -208,12 +209,10 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges: APIS
             api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
         )
 
-    assert_error_response(
-        response=response,
-        status_code=HTTPStatus.OK,
-        contained_in_msg=[
-            'invalid JSON', 'binance', 'Bittrex', 'Kraken', 'Poloniex',
-        ],
+    assert_proper_response(response)  # the remote errors are notes on a finished report
+    assert 'cause' not in (data := response.json())
+    assert any(
+        x in data['message'] for x in ('invalid JSON', 'binance', 'Bittrex', 'Kraken', 'Poloniex')
     )
     warnings = consume_warnings(rotki.msg_aggregator)
     assert len(warnings) == 0
@@ -252,6 +251,7 @@ def test_fatal_error_during_query_history(rotkehlchen_api_server: APIServer) -> 
         assert outcome == {
             'result': 1,
             'message': 'mocked error',
+            'cause': 'conflict',
             'status_code': HTTPStatus.CONFLICT,
         }
 

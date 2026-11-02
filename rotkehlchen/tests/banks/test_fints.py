@@ -17,6 +17,7 @@ from fints.parser import FinTS3Parser
 from fints.segments.base import FinTS3Segment
 from fints.utils import Password, mt940_to_array
 
+from rotkehlchen.api.result import FailResult, OkResult
 from rotkehlchen.api.services.banks import BanksService
 from rotkehlchen.banks.errors import (
     BankAuthChallenge,
@@ -808,7 +809,7 @@ def test_starting_over_drops_the_pending_challenge_so_the_bank_is_asked_again(
     rotki.bank_manager = manager
     assert BanksService(rotki).cancel_authentication(
         connector.connection_identifier,
-    ) == (True, '', HTTPStatus.OK)
+    ) == OkResult(True)
 
     assert connector.has_pending_authentication() is False
     assert '"pending":null' in (connector.load_session() or '')
@@ -940,13 +941,14 @@ def test_answer_endpoint_reports_a_dropped_challenge_as_gone(
         )
 
     with patch.object(NeedRetryResponse, 'from_data', return_value=challenge):
-        result, message, status = BanksService(rotki).answer_authentication(
+        result = BanksService(rotki).answer_authentication(
             identifier=connector.connection_identifier,
             response='000000',
         )
 
-    assert (result, status) == (None, HTTPStatus.GONE)
-    assert 'rejected' in message
+    assert isinstance(result, FailResult)
+    assert (result.status, result.cause) == (HTTPStatus.GONE, FailureCause.AUTH)
+    assert 'rejected' in result.message
 
 
 def test_accepted_tan_stays_accepted_when_the_resumed_sync_fails(
@@ -1052,12 +1054,12 @@ def test_setup_refused_after_its_answer_drops_the_setup_as_gone(
         patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
         patch.object(connector, 'validate_api_key', return_value=(False, refusal := 'No login')),
     ):
-        result, message, status = BanksService(rotki).answer_authentication(
+        result = BanksService(rotki).answer_authentication(
             identifier=connector.connection_identifier,
             response='123456',
         )
 
-    assert (result, message, status) == (None, refusal, HTTPStatus.GONE)
+    assert result == FailResult(refusal, HTTPStatus.GONE, FailureCause.AUTH)
     assert location_id not in manager.pending_setups
     assert location_id not in manager.sync_status
     assert connector.load_session() is None, 'a new setup under this name would restore it'
@@ -1082,5 +1084,4 @@ def test_sync_requiring_authentication_has_no_success_result(
         identifier=connector.connection_identifier,
     )
 
-    assert result['result'] is None
-    assert result['status_code'] == HTTPStatus.ACCEPTED
+    assert result == OkResult(None, status=HTTPStatus.ACCEPTED)

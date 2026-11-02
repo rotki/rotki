@@ -12,6 +12,7 @@ import requests
 from flask import url_for
 
 from rotkehlchen.api.server import APIServer, RestAPI
+from rotkehlchen.errors.cause import FailureCause
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -123,6 +124,9 @@ def _check_error_response_properties(
         status_code: HTTPStatus | None,
         result_exists: bool,
 ):
+    """Every failure the API sends carries a valid cause, so a path that drops it fails
+    whichever test happens to hit it."""
+    assert FailureCause(response_data['cause']), 'a failure response must carry a cause'
     if status_code != HTTPStatus.INTERNAL_SERVER_ERROR:
         if result_exists:
             assert response_data['result'] is not None

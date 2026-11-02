@@ -306,20 +306,11 @@ log = RotkehlchenLogsAdapter(logger)
 # that ignore their cancellation)
 LOGOUT_DRAIN_TIMEOUT_SECONDS: Final = 10
 
-OK_RESULT = {'result': True, 'message': ''}
-
-
-def _wrap_in_ok_result(result: Any, status_code: HTTPStatus | None = None) -> dict[str, Any]:
-    result = {'result': result, 'message': ''}
-    if status_code:
-        result['status_code'] = status_code
-    return result
-
 
 def _wrap_remote_query[T](
         query: Callable[[], T],
         serialize: Callable[[T], Any],
-) -> dict[str, Any]:
+) -> ApiResult:
     """Run a query against an external service and wrap its serialized result.
 
     A RemoteError is returned as a bad gateway failure result.
@@ -327,44 +318,16 @@ def _wrap_remote_query[T](
     try:
         result = query()
     except RemoteError as e:
-        return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+        return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
-    return _wrap_in_ok_result(serialize(result))
-
-
-def _wrap_in_result(result: Any, message: str) -> dict[str, Any]:
-    return {'result': result, 'message': message}
+    return OkResult(serialize(result))
 
 
-def wrap_in_fail_result(message: str, status_code: HTTPStatus | None = None) -> dict[str, Any]:
-    result: dict[str, Any] = {'result': None, 'message': message}
-    if status_code:
-        result['status_code'] = status_code
-
-    return result
-
-
-def api_response(
-        result: ApiResult | dict[str, Any],
-        status_code: HTTPStatus | None = None,
-        log_result: bool = True,
-) -> Response:
-    if isinstance(result, OkResult | FailResult):
-        assert status_code is None, 'An ApiResult carries its own status'
-        status_code, result = result.status, serialize_result(result)
-    elif status_code is None:
-        status_code = HTTPStatus.OK
-
-    if status_code == HTTPStatus.NO_CONTENT:
-        assert not result, 'Provided 204 response with non-zero length response'
-        data = ''
-    else:
-        data = json.dumps(result)
-
+def api_response(result: ApiResult, log_result: bool = True) -> Response:
     return make_response(
         (
-            data,
-            status_code,
+            json.dumps(serialize_result(result)),
+            result.status,
             {
                 'mimetype': 'application/json',
                 'Content-Type': 'application/json',
@@ -373,39 +336,14 @@ def api_response(
     )
 
 
-def _serialize_task_outcome(task_result: ApiResult | dict[str, Any]) -> dict[str, Any]:
+def _serialize_task_outcome(task_result: ApiResult) -> dict[str, Any]:
     """The `completed` entry of a finished task, with the status the request would have
     answered with had it run synchronously."""
-    if isinstance(task_result, OkResult | FailResult):
-        return {
-            'status': 'completed',
-            'outcome': serialize_result(task_result),
-            'status_code': task_result.status,
-        }
-
-    serialized: dict[str, Any] = {
+    return {
         'status': 'completed',
-        'outcome': process_result({
-            'result': task_result['result'],
-            'message': task_result['message'],
-        }),
+        'outcome': serialize_result(task_result),
+        'status_code': task_result.status,
     }
-    if status_code := task_result.get('status_code'):
-        serialized['status_code'] = status_code
-    return serialized
-
-
-def make_response_from_dict(response_data: ApiResult | dict[str, Any]) -> Response:
-    if isinstance(response_data, OkResult | FailResult):
-        return api_response(response_data)
-
-    result = response_data.get('result')
-    message = response_data.get('message', '')
-    status_code = response_data.get('status_code', HTTPStatus.OK)
-    return api_response(
-        result=process_result(_wrap_in_result(result=result, message=message)),
-        status_code=status_code,
-    )
 
 
 def async_api_call(session_token: bool = False) -> Callable:
@@ -433,7 +371,7 @@ def async_api_call(session_token: bool = False) -> Callable:
     afterwards (bad premium key, unlock error) the just-minted session is revoked so a
     failed create leaves no live session behind for a user that was never created.
     """
-    def wrapper(func: Callable[..., dict[str, Any]]) -> Callable[..., Response]:
+    def wrapper(func: Callable[..., ApiResult | Response]) -> Callable[..., Response]:
         def inner(rest_api: RestAPI, async_query: bool = False, **kwargs: Any) -> Response:
             token: str | None = None
             # only mint for account creation, and only when it can actually proceed
@@ -455,9 +393,9 @@ def async_api_call(session_token: bool = False) -> Callable:
                 result = command(rest_api, **kwargs)
                 if isinstance(result, Response):  # returning a file in an async response
                     return result
-                if mint_session and _is_failure(result):
+                if mint_session and isinstance(result, FailResult):
                     token = None  # revoke ran inside command; don't ship a dead cookie
-                response = make_response_from_dict(result)
+                response = api_response(result)
 
             if token is not None:
                 set_session_cookie(
@@ -471,22 +409,16 @@ def async_api_call(session_token: bool = False) -> Callable:
     return wrapper
 
 
-def _is_failure(result: ApiResult | dict[str, Any]) -> bool:
-    if isinstance(result, OkResult | FailResult):
-        return isinstance(result, FailResult)
-    return result.get('result') is None
-
-
 def _revoke_session_on_failed_create(
-        func: Callable[..., ApiResult | dict[str, Any]],
+        func: Callable[..., ApiResult | Response],
         name: str,
-) -> Callable[..., ApiResult | dict[str, Any]]:
+) -> Callable[..., ApiResult | Response]:
     """Wrap an account-creation command so the session minted for `name` on the ack is
-    revoked when the create itself fails (every failure path returns `result=None`).
+    revoked when the create itself fails, which every failure path reports as a FailResult.
     Runs in the async task worker, so revocation happens once the outcome is known."""
-    def wrapped(rest_api: RestAPI, **kwargs: Any) -> ApiResult | dict[str, Any]:
+    def wrapped(rest_api: RestAPI, **kwargs: Any) -> ApiResult | Response:
         result = func(rest_api, **kwargs)
-        if _is_failure(result) and rest_api.session_store is not None:
+        if isinstance(result, FailResult) and rest_api.session_store is not None:
             rest_api.session_store.revoke(name)
         return result
     return wrapped
@@ -512,11 +444,11 @@ def accounting_update_required(message: str, response: bool = False) -> Callable
     """Require the accounting update feature flag for an API endpoint."""
     def wrapper(func: Callable) -> Callable:
         @wraps(func)
-        def inner(*args: Any, **kwargs: Any) -> dict[str, Any] | Response:
+        def inner(*args: Any, **kwargs: Any) -> ApiResult | Response:
             if is_accounting_update_enabled() is False:
-                fail_result = wrap_in_fail_result(message, status_code=HTTPStatus.NOT_FOUND)
+                fail_result = FailResult(message, HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND)
                 if response is True:
-                    return api_response(fail_result, status_code=HTTPStatus.NOT_FOUND)
+                    return api_response(fail_result)
                 return fail_result
 
             return func(*args, **kwargs)
@@ -549,7 +481,7 @@ class RestAPI:
         self.login_lock = threading.Lock()  # a Lock and not a Semaphore since .locked() is needed
         self.migration_lock = threading.Semaphore()
         self.task_id = 0
-        self.task_results: dict[int, ApiResult | dict[str, Any]] = {}
+        self.task_results: dict[int, ApiResult] = {}
         # Guarded by task_lock. Non-None while api tasks are being cancelled at
         # logout/shutdown and until the teardown finishes: a task spawned in that
         # window is cancelled on the spot, so it dies at its first checkpoint as an
@@ -649,7 +581,7 @@ class RestAPI:
             self.task_id += 1
         return task_id
 
-    def _write_task_result(self, task_id: int, result: ApiResult | dict[str, Any]) -> None:
+    def _write_task_result(self, task_id: int, result: ApiResult) -> None:
         with self.task_lock:
             if not any(x.task_id == task_id for x in self.rotkehlchen.api_tasks):
                 # An abandoned task of a torn-down session finishing late: its entry
@@ -724,7 +656,7 @@ class RestAPI:
                 # checkpoint (before the command runs) as an expected death
                 task.request_cancellation(self.api_tasks_stop_reason)
         task.start()
-        return api_response(_wrap_in_ok_result({'task_id': task_id}), status_code=HTTPStatus.OK)
+        return api_response(OkResult({'task_id': task_id}))
 
     def _cancel_api_tasks(self, reason: str) -> None:
         """Cancel all api tasks and give them a short grace period to exit at
@@ -771,25 +703,22 @@ class RestAPI:
     def set_settings(self, settings: ModifiableDBSettings) -> Response:
         success, message, new_settings = self.settings_service.set_settings(settings)
         if not success:
-            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(message, HTTPStatus.CONFLICT, FailureCause.CONFLICT))
 
-        result_dict = _wrap_in_ok_result(new_settings)
-        return api_response(result=result_dict, status_code=HTTPStatus.OK)
+        result_dict = OkResult(new_settings)
+        return api_response(result_dict)
 
     def get_frontend_settings(self) -> Response:
-        return api_response(
-            result=_wrap_in_ok_result(self.settings_service.get_frontend_settings()),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult(self.settings_service.get_frontend_settings()))
 
     def patch_frontend_settings(self, patch: dict[str, Any], remove: list[str]) -> Response:
         self.settings_service.patch_frontend_settings(patch=patch, remove=remove)
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(OkResult(True))
 
     def get_settings(self) -> Response:
         settings = self.settings_service.get_settings()
-        result_dict = _wrap_in_ok_result(settings)
-        return api_response(result=result_dict, status_code=HTTPStatus.OK)
+        result_dict = OkResult(settings)
+        return api_response(result_dict)
 
     def query_tasks_outcome(self, task_id: int | None) -> Response:
         if task_id is None:
@@ -804,8 +733,8 @@ class RestAPI:
                     else:
                         pending.append(task_id)
 
-            result = _wrap_in_ok_result({'pending': pending, 'completed': completed})
-            return api_response(result=result, status_code=HTTPStatus.OK)
+            result = OkResult({'pending': pending, 'completed': completed})
+            return api_response(result)
 
         with self.task_lock:
             for idx, task in enumerate(self.rotkehlchen.api_tasks):
@@ -814,27 +743,25 @@ class RestAPI:
                         # Task has completed and we just got the outcome
                         task_result = self.task_results.pop(int(task_id))
                         returned_task_result = _serialize_task_outcome(task_result)
-                        result_dict = {
-                            'result': returned_task_result,
-                            'message': '',
-                        }
+                        result_dict = OkResult(returned_task_result)
                         # Also remove the task from the api tasks
                         self.rotkehlchen.api_tasks.pop(idx)
-                        return api_response(result=result_dict, status_code=HTTPStatus.OK)
+                        return api_response(result_dict)
 
                     # else task is still pending and running
-                    result_dict = {
-                        'result': {'status': 'pending', 'outcome': None},
-                        'message': f'The task with id {task_id} is still pending',
-                    }
-                    return api_response(result=result_dict, status_code=HTTPStatus.OK)
+                    result_dict = OkResult(
+                        {'status': 'pending', 'outcome': None},
+                        message=f'The task with id {task_id} is still pending',
+                    )
+                    return api_response(result_dict)
 
         # The task has not been found
-        result_dict = {
-            'result': {'status': 'not-found', 'outcome': None},
-            'message': f'No task with id {task_id} found',
-        }
-        return api_response(result=result_dict, status_code=HTTPStatus.NOT_FOUND)
+        return api_response(FailResult(
+            f'No task with id {task_id} found',
+            HTTPStatus.NOT_FOUND,
+            FailureCause.NOT_FOUND,
+            result={'status': 'not-found', 'outcome': None},
+        ))
 
     def delete_async_task(self, task_id: int) -> Response:
         """Tries to find and cancel the async task with the given task id"""
@@ -845,17 +772,21 @@ class RestAPI:
                     task.request_cancellation('Cancelled due to api request')
                     break
             else:  # task not found
-                return api_response(wrap_in_fail_result(f'Did not cancel task with id {task_id} because it could not be found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+                return api_response(FailResult(
+                    f'Did not cancel task with id {task_id} because it could not be found',
+                    HTTPStatus.NOT_FOUND,
+                    FailureCause.NOT_FOUND,
+                ))
 
             # pop while still holding the lock: a concurrent pop would shift the index
             self.rotkehlchen.api_tasks.pop(idx)  # also pop from the api tasks
 
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(OkResult(True))
 
     @async_api_call()
-    def get_exchange_rates(self, given_currencies: list[AssetWithOracles]) -> dict[str, Any]:
+    def get_exchange_rates(self, given_currencies: list[AssetWithOracles]) -> ApiResult:
         result = self.balances_service.get_exchange_rates(given_currencies)
-        return _wrap_in_ok_result(result)
+        return OkResult(result)
 
     @async_api_call()
     def query_all_balances(
@@ -863,7 +794,7 @@ class RestAPI:
             save_data: bool,
             ignore_errors: bool,
             ignore_cache: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.balances_service.query_all_balances(
             save_data=save_data,
             ignore_errors=ignore_errors,
@@ -872,28 +803,20 @@ class RestAPI:
 
     def get_external_services(self) -> Response:
         response_dict = self.external_services_service.get_services()
-        return api_response(_wrap_in_ok_result(response_dict), status_code=HTTPStatus.OK)
+        return api_response(OkResult(response_dict))
 
     def add_external_services(self, services: list[ExternalServiceApiCredentials]) -> Response:
-        success, message, response_dict, status_code = (
-            self.external_services_service.add_services(services)
-        )
-        if not success:
-            return api_response(wrap_in_fail_result(message), status_code=status_code)
-        return api_response(_wrap_in_ok_result(response_dict), status_code=status_code)
+        return api_response(self.external_services_service.add_services(services))
 
     def delete_external_services(self, services: list[ExternalService]) -> Response:
         response_dict = self.external_services_service.delete_services(services)
-        return api_response(_wrap_in_ok_result(response_dict), status_code=HTTPStatus.OK)
+        return api_response(OkResult(response_dict))
 
     def get_supported_banks(self) -> Response:
-        return api_response(
-            _wrap_in_ok_result(self.banks_service.get_supported_banks()),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult(self.banks_service.get_supported_banks()))
 
     def get_banks(self) -> Response:
-        return api_response(_wrap_in_ok_result(self.banks_service.get_banks()), status_code=HTTPStatus.OK)  # noqa: E501
+        return api_response(OkResult(self.banks_service.get_banks()))
 
     def setup_bank(
             self,
@@ -901,12 +824,11 @@ class RestAPI:
             connector: BankConnectorType,
             credentials: dict[str, str],
     ) -> Response:
-        result, msg, status_code = self.banks_service.setup_bank(
+        return api_response(self.banks_service.setup_bank(
             name=name,
             connector=connector,
             credentials=credentials,
-        )
-        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+        ))
 
     def edit_bank(
             self,
@@ -914,36 +836,32 @@ class RestAPI:
             new_name: str | None,
             credentials: dict[str, str],
     ) -> Response:
-        result, msg, status_code = self.banks_service.edit_bank(
+        return api_response(self.banks_service.edit_bank(
             identifier=ConnectionIdentifier(identifier),
             new_name=new_name,
             credentials=credentials,
-        )
-        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+        ))
 
     def remove_bank(self, identifier: str) -> Response:
-        result, msg, status_code = self.banks_service.remove_bank(ConnectionIdentifier(identifier))
-        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+        return api_response(self.banks_service.remove_bank(ConnectionIdentifier(identifier)))
 
     def answer_bank_authentication(self, identifier: str, response: str | None) -> Response:
-        result, msg, status_code = self.banks_service.answer_authentication(
+        return api_response(self.banks_service.answer_authentication(
             identifier=ConnectionIdentifier(identifier),
             response=response,
-        )
-        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+        ))
 
     def cancel_bank_authentication(self, identifier: str) -> Response:
-        result, msg, status_code = self.banks_service.cancel_authentication(
+        return api_response(self.banks_service.cancel_authentication(
             ConnectionIdentifier(identifier),
-        )
-        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+        ))
 
     @async_api_call()
     def sync_banks(
             self,
             connector: BankConnectorType | None,
             identifier: str | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.banks_service.sync_banks(connector=connector, identifier=identifier)
 
     @async_api_call()
@@ -953,7 +871,7 @@ class RestAPI:
             identifier: str | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.banks_service.query_bank_balances(
             connector=connector,
             identifier=identifier,
@@ -963,17 +881,11 @@ class RestAPI:
 
     @staticmethod
     def get_supported_exchanges() -> Response:
-        return api_response(
-            _wrap_in_ok_result(serialize_exchange_connectors()),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult(serialize_exchange_connectors()))
 
     def get_exchanges(self) -> Response:
         exchanges = self.exchanges_service.get_exchanges()
-        return api_response(
-            _wrap_in_ok_result(exchanges),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult(exchanges))
 
     def setup_exchange(
             self,
@@ -990,7 +902,7 @@ class RestAPI:
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
     ) -> Response:
-        result, msg, status_code = self.exchanges_service.setup_exchange(
+        return api_response(self.exchanges_service.setup_exchange(
             name=name,
             connector=connector,
             api_key=api_key,
@@ -1003,14 +915,10 @@ class RestAPI:
             binance_history_start_ts=binance_history_start_ts,
             okx_location=okx_location,
             gate_location=gate_location,
-        )
-        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+        ))
 
     def get_binance_history_start_timestamp(self) -> Response:
-        return api_response(
-            _wrap_in_ok_result(self.exchanges_service.get_binance_history_start_timestamp()),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult(self.exchanges_service.get_binance_history_start_timestamp()))
 
     def edit_exchange(
             self,
@@ -1026,7 +934,7 @@ class RestAPI:
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
     ) -> Response:
-        result, msg, status_code = self.exchanges_service.edit_exchange(
+        return api_response(self.exchanges_service.edit_exchange(
             identifier=identifier,
             new_name=new_name,
             api_key=api_key,
@@ -1038,19 +946,17 @@ class RestAPI:
             binance_markets=binance_markets,
             okx_location=okx_location,
             gate_location=gate_location,
-        )
-        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+        ))
 
     def remove_exchange(self, identifier: str) -> Response:
-        result, message, status_code = self.exchanges_service.remove_exchange(identifier)
-        return api_response(_wrap_in_result(result, message), status_code=status_code)
+        return api_response(self.exchanges_service.remove_exchange(identifier))
 
     @async_api_call()
     def query_exchange_history_events(
             self,
             location: LocationIdentifier | None,
             identifier: str | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Queries new history events of one exchange connection, or of every connection of
         an exchange, and saves them in the database."""
         return self.exchanges_service.query_exchange_history_events(
@@ -1064,15 +970,15 @@ class RestAPI:
             identifier: str,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         response = self.exchanges_service.query_exchange_history_events_in_range(
             identifier=identifier,
             start_ts=start_ts,
             end_ts=end_ts,
         )
-        if response.get('result') is None:
+        if isinstance(response, FailResult):
             return response
-        return _wrap_in_ok_result(response['result'])
+        return OkResult(response.result)
 
     @async_api_call()
     def query_exchange_balances(
@@ -1080,7 +986,7 @@ class RestAPI:
             location: LocationIdentifier | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.exchanges_service.query_exchange_balances(
             location=location,
             ignore_cache=ignore_cache,
@@ -1101,7 +1007,7 @@ class RestAPI:
                 data['evm_chain_name'] = blockchain.to_chain_id().to_name()
             result.append(data)
 
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        return api_response(OkResult(result))
 
     @async_api_call()
     def query_blockchain_balances(
@@ -1110,10 +1016,8 @@ class RestAPI:
             only_cache: bool = False,
             value_threshold: FVal | None = None,
             addresses: ListOfBlockchainAddresses | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         msg = ''
-        status_code = HTTPStatus.OK
-        result = None
         try:
             balances = self.rotkehlchen.chains_aggregator.get_balances_update(
                 chain=blockchain,
@@ -1138,23 +1042,19 @@ class RestAPI:
                 blockchain=blockchain,
                 value_threshold=value_threshold,
             )
-
         except EthSyncError as e:
-            msg = str(e)
-            status_code = HTTPStatus.CONFLICT
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.NETWORK)
         except RemoteError as e:
-            msg = str(e)
-            status_code = HTTPStatus.BAD_GATEWAY
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
-        return {'result': result, 'message': msg, 'status_code': status_code}
+        return OkResult(result, message=msg)
 
     @async_api_call()
     def refresh_blockchain_balances(
             self,
             blockchain: SupportedBlockchain | None,
             addresses: ListOfBlockchainAddresses | None = None,
-    ) -> dict[str, Any]:
-        msg, status_code, result = '', HTTPStatus.OK, None
+    ) -> ApiResult:
         try:
             balances = self.rotkehlchen.chains_aggregator.query_balances(
                 blockchain=blockchain,
@@ -1168,13 +1068,11 @@ class RestAPI:
                 value_threshold=None,
             )
         except EthSyncError as e:
-            msg = str(e)
-            status_code = HTTPStatus.CONFLICT
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.NETWORK)
         except RemoteError as e:
-            msg = str(e)
-            status_code = HTTPStatus.BAD_GATEWAY
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
-        return {'result': result, 'message': msg, 'status_code': status_code}
+        return OkResult(result, message=msg)
 
     def _should_refresh_blockchain_balances(
             self,
@@ -1253,7 +1151,7 @@ class RestAPI:
             self,
             xpub_data: XpubData,
             ignore_cache: bool = False,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.get_xpub_balances(
             xpub_data=xpub_data,
             ignore_cache=ignore_cache,
@@ -1264,7 +1162,7 @@ class RestAPI:
         The first event is the main event, subsequent events are related (e.g. fees).
         """
         response_data = self.history_events_service.add_history_events(events)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def edit_history_events(
             self,
@@ -1275,7 +1173,7 @@ class RestAPI:
             events=events,
             identifiers=identifiers,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_history_events(
             self,
@@ -1288,26 +1186,23 @@ class RestAPI:
             force_delete=force_delete,
             requested_identifiers=requested_identifiers,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_csv_imported_events_summary(
             self,
             location: LocationIdentifier | None,
     ) -> Response:
-        return api_response(
-            result=_wrap_in_ok_result(DBHistoryEvents(
-                self.rotkehlchen.data.db,
-            ).get_csv_imported_events_summary(location=location)),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult(DBHistoryEvents(
+            self.rotkehlchen.data.db,
+        ).get_csv_imported_events_summary(location=location)))
 
     def purge_csv_imported_events(self, location: LocationIdentifier | None) -> Response:
         DBHistoryEvents(self.rotkehlchen.data.db).purge_csv_imported_events(location=location)
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(OkResult(True))
 
     def get_tags(self) -> Response:
         response_data = self.user_data_service.get_tags()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_tag(
             self,
@@ -1322,7 +1217,7 @@ class RestAPI:
             background_color=background_color,
             foreground_color=foreground_color,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def edit_tag(
             self,
@@ -1339,16 +1234,16 @@ class RestAPI:
             background_color=background_color,
             foreground_color=foreground_color,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_tag(self, name: str) -> Response:
         response_data = self.user_data_service.delete_tag(name)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_users(self) -> Response:
         result = self.rotkehlchen.data.get_users()
-        result_dict = _wrap_in_ok_result(result)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        result_dict = OkResult(result)
+        return api_response(result_dict)
 
     def authenticate_user(self, name: str, password: str) -> Response:
         """Authenticate-first (Docker cookie): prove the password and ship the
@@ -1373,7 +1268,7 @@ class RestAPI:
         behave exactly as before — the call is a no-op.
         """
         if self.session_key is None:
-            return api_response(_wrap_in_ok_result({}), status_code=HTTPStatus.OK)
+            return api_response(OkResult({}))
         assert self.session_store is not None  # built together with session_key
 
         claims = read_session_token(
@@ -1388,25 +1283,28 @@ class RestAPI:
 
         if self.rotkehlchen.user_is_logged_in:
             if name != self.rotkehlchen.data.username:
-                return api_response(
-                    wrap_in_fail_result(f'User {self.rotkehlchen.data.username} is already logged in. Log out first.'),  # noqa: E501
-                    status_code=HTTPStatus.CONFLICT,
-                )
+                return api_response(FailResult(
+                    f'User {self.rotkehlchen.data.username} is already logged in. Log out first.',
+                    HTTPStatus.CONFLICT,
+                    FailureCause.CONFLICT,
+                ))
             # already unlocked: verify against the in-memory password (as
             # user_change_password does), never a second sqlcipher connection.
             if not cookie_active and not hmac.compare_digest(
                 password,
                 self.rotkehlchen.data.db.password,
             ):
-                return api_response(
-                    wrap_in_fail_result('Wrong username/password combination'),
-                    status_code=HTTPStatus.UNAUTHORIZED,
-                )
+                return api_response(FailResult(
+                    'Wrong username/password combination',
+                    HTTPStatus.UNAUTHORIZED,
+                    FailureCause.AUTH,
+                ))
         elif not self.rotkehlchen.data.check_password(name, password):
-            return api_response(
-                wrap_in_fail_result('Wrong username/password combination'),
-                status_code=HTTPStatus.UNAUTHORIZED,
-            )
+            return api_response(FailResult(
+                'Wrong username/password combination',
+                HTTPStatus.UNAUTHORIZED,
+                FailureCause.AUTH,
+            ))
 
         if cookie_active:  # same-browser reload/tab: keep the session, re-issue
             assert claims is not None  # cookie_active ⇒ claims present
@@ -1426,7 +1324,7 @@ class RestAPI:
                     # pass the gate and spawn new api tasks.
                     self.api_tasks_stop_reason = None
 
-        response = api_response(_wrap_in_ok_result({}), status_code=HTTPStatus.OK)
+        response = api_response(OkResult({}))
         set_session_cookie(
             response=response,
             token=token,
@@ -1443,23 +1341,20 @@ class RestAPI:
             (sid := getattr(g, 'rotki_session_sid', None)) is None or
             (token := self.session_store.issue_mcp_token(username=username, sid=sid)) is None
         ):
-            return api_response(
-                wrap_in_fail_result('Authentication required'),
-                status_code=HTTPStatus.UNAUTHORIZED,
-            )
+            return api_response(FailResult(
+                'Authentication required',
+                HTTPStatus.UNAUTHORIZED,
+                FailureCause.AUTH,
+            ))
 
         assert self.session_key is not None  # built together with session_store
         claims = read_mcp_token(self.session_key, token)
         assert claims is not None  # the SessionStore minted it with the same key
-        response = api_response(
-            _wrap_in_ok_result({
-                'access_token': token,
-                'expires_at': claims.exp,
-                'token_type': 'Bearer',
-            }),
-            status_code=HTTPStatus.OK,
-            log_result=False,
-        )
+        response = api_response(OkResult({
+            'access_token': token,
+            'expires_at': claims.exp,
+            'token_type': 'Bearer',
+        }), log_result=False)
         response.headers['Cache-Control'] = 'no-store'
         response.headers['Pragma'] = 'no-cache'
         return response
@@ -1482,12 +1377,13 @@ class RestAPI:
         backend just because it may read data.
         """
         if getattr(g, 'rotki_session_exp', None) is None:
-            return api_response(
-                wrap_in_fail_result('Authentication required'),
-                status_code=HTTPStatus.UNAUTHORIZED,
-            )
+            return api_response(FailResult(
+                'Authentication required',
+                HTTPStatus.UNAUTHORIZED,
+                FailureCause.AUTH,
+            ))
 
-        response = api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+        response = api_response(OkResult(True))
         response.headers['Cache-Control'] = 'no-store'
         return response
 
@@ -1501,28 +1397,24 @@ class RestAPI:
             premium_api_secret: str,
             sync_database: bool,
             initial_settings: ModifiableDBSettings | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         if self.rotkehlchen.user_is_logged_in:
             message = (
                 f'Can not create a new user because user '
                 f'{self.rotkehlchen.data.username} is already logged in. '
                 f'Log out of that user first'
             )
-            return {
-                'result': None,
-                'message': message,
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(message, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
 
         if (
                 (premium_api_key != '' and premium_api_secret == '') or
                 (premium_api_secret != '' and premium_api_key == '')
         ):
-            return {
-                'result': None,
-                'message': 'Must provide both or neither of api key/secret',
-                'status_code': HTTPStatus.BAD_REQUEST,
-            }
+            return FailResult(
+                'Must provide both or neither of api key/secret',
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.INVALID_INPUT,
+            )
 
         premium_credentials = None
         if premium_api_key != '' and premium_api_secret != '':
@@ -1532,11 +1424,11 @@ class RestAPI:
                     given_api_secret=premium_api_secret,
                 )
             except IncorrectApiKeyFormat:
-                return {
-                    'result': None,
-                    'message': 'Provided API/Key secret format is invalid',
-                    'status_code': HTTPStatus.BAD_REQUEST,
-                }
+                return FailResult(
+                    'Provided API/Key secret format is invalid',
+                    HTTPStatus.BAD_REQUEST,
+                    FailureCause.INVALID_INPUT,
+                )
 
         try:
             self.rotkehlchen.unlock_user(
@@ -1560,7 +1452,14 @@ class RestAPI:
             DBSchemaError,
         ) as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                (
+                    FailureCause.LOCAL_DB if isinstance(e, (SystemPermissionError, DBSchemaError))
+                    else FailureCause.AUTH
+                ),
+            )
 
         # Success!
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -1569,11 +1468,7 @@ class RestAPI:
                 'settings': serialize_settings(self.rotkehlchen.get_settings(cursor)) |
                 self.rotkehlchen.data.db.get_cache_for_api(cursor),
             }
-        return {
-            'result': result,
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(result)
 
     @async_api_call()
     @login_lock()
@@ -1583,15 +1478,14 @@ class RestAPI:
             password: str,
             sync_approval: Literal['yes', 'no', 'unknown'],
             resume_from_backup: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         if self.rotkehlchen.user_is_logged_in:
-            return wrap_in_fail_result(
-                message=(
-                    f'Can not login to user {name} because user '
+            return FailResult(
+                f'Can not login to user {name} because user '
                     f'{self.rotkehlchen.data.username} is already logged in. '
-                    f'Log out of that user first'
-                ),
-                status_code=HTTPStatus.CONFLICT,
+                    f'Log out of that user first',
+                HTTPStatus.CONFLICT,
+                FailureCause.CONFLICT,
             )
 
         try:
@@ -1607,28 +1501,24 @@ class RestAPI:
         # up until here. Even with non valid keys in the DB login should work fine
         except AuthenticationError as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
-            return wrap_in_fail_result(
-                message=str(e),
-                status_code=HTTPStatus.UNAUTHORIZED,
-            )
+            return FailResult(str(e), HTTPStatus.UNAUTHORIZED, FailureCause.AUTH)
         except RotkehlchenPermissionError as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
-            return {
-                'result': e.message_payload,
-                'message': e.error_message,
-                'status_code': HTTPStatus.MULTIPLE_CHOICES,
-            }
+            return FailResult(
+                e.error_message,
+                HTTPStatus.MULTIPLE_CHOICES,
+                FailureCause.CONFLICT,
+                result=e.message_payload,
+            )
         except (DBUpgradeError, SystemPermissionError, DBSchemaError) as e:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
-            return wrap_in_fail_result(
-                message=str(e),
-                status_code=HTTPStatus.CONFLICT,
-            )
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.LOCAL_DB)
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
-            return wrap_in_fail_result(
-                message=f'Unexpected database error: {e!s}',
-                status_code=HTTP_STATUS_INTERNAL_DB_ERROR,  # type: ignore  # Is a custom status code, not a member of HTTPStatus
+            return FailResult(
+                f'Unexpected database error: {e!s}',
+                HTTP_STATUS_INTERNAL_DB_ERROR,  # type: ignore  # Is a custom status code, not a member of HTTPStatus
+                FailureCause.LOCAL_DB,
             )
 
         # Success!
@@ -1637,17 +1527,18 @@ class RestAPI:
             settings = serialize_settings(self.rotkehlchen.get_settings(cursor))
             settings |= self.rotkehlchen.data.db.get_cache_for_api(cursor)
 
-        return _wrap_in_ok_result({
+        return OkResult({
             'exchanges': exchanges,
             'settings': settings,
         })
 
     def user_logout(self, name: str) -> Response:
-        result_dict: dict[str, Any] = {'result': None, 'message': ''}
-
         if name != self.rotkehlchen.data.username:
-            result_dict['message'] = f'Provided user {name} is not the logged in user'
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(
+                f'Provided user {name} is not the logged in user',
+                HTTPStatus.CONFLICT,
+                FailureCause.CONFLICT,
+            ))
 
         # Serialize with in-flight login/create tasks, which hold login_lock for their
         # whole task body. Without it a logout arriving mid-login reported success
@@ -1673,8 +1564,7 @@ class RestAPI:
                 with self._session_usage_cond:
                     self._session_teardown = False
 
-        result_dict['result'] = True
-        response = api_response(result_dict, status_code=HTTPStatus.OK)
+        response = api_response(OkResult(True))
         # In cookie mode, end the session: revoke this user's active session so its
         # cookie now fails the gate/WS (revocation) and clear the cookie so the browser
         # stops sending it. Inert when the feature is off (no spurious Set-Cookie on the
@@ -1693,11 +1583,12 @@ class RestAPI:
             api_key: str,
             api_secret: str,
     ) -> Response:
-        result_dict: dict[str, Any] = {'result': None, 'message': ''}
-
         if name != self.rotkehlchen.data.username:
-            result_dict['message'] = f'Provided user {name} is not the logged in user'
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(
+                f'Provided user {name} is not the logged in user',
+                HTTPStatus.CONFLICT,
+                FailureCause.CONFLICT,
+            ))
 
         try:
             credentials = PremiumCredentials(
@@ -1705,17 +1596,18 @@ class RestAPI:
                 given_api_secret=api_secret,
             )
         except IncorrectApiKeyFormat:
-            result_dict['message'] = 'Given API Key/Secret pair format is invalid'
-            return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
+            return api_response(FailResult(
+                'Given API Key/Secret pair format is invalid',
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.INVALID_INPUT,
+            ))
 
         try:
             self.rotkehlchen.set_premium_credentials(credentials)
         except PremiumAuthenticationError as e:
-            result_dict['message'] = str(e)
-            return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
+            return api_response(FailResult(str(e), HTTPStatus.FORBIDDEN, FailureCause.AUTH))
 
-        result_dict['result'] = True
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(OkResult(True))
 
     def user_change_password(
             self,
@@ -1723,57 +1615,62 @@ class RestAPI:
             current_password: str,
             new_password: str,
     ) -> Response:
-        result_dict: dict[str, Any] = {'result': None, 'message': ''}
-
         if name != self.rotkehlchen.data.username:
-            result_dict['message'] = f'Provided user "{name}" is not the logged in user'
-            return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
+            return api_response(FailResult(
+                f'Provided user "{name}" is not the logged in user',
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.INVALID_INPUT,
+            ))
 
         if current_password != self.rotkehlchen.data.db.password:
-            result_dict['message'] = 'Provided current password is not correct'
-            return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+            return api_response(FailResult(
+                'Provided current password is not correct',
+                HTTPStatus.UNAUTHORIZED,
+                FailureCause.AUTH,
+            ))
 
         success: bool
         try:
             success = self.rotkehlchen.data.db.change_password(new_password=new_password)
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.INVALID_INPUT,
+            ))
 
         if success is False:
-            msg = 'The database rejected the password change for unknown reasons'
-            result_dict['message'] = msg
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(
+                'The database rejected the password change for unknown reasons',
+                HTTPStatus.CONFLICT,
+                FailureCause.LOCAL_DB,
+            ))
         # else
         # the backup on the server can only be opened with the old password, so replace it
         # at the next scheduled upload instead of waiting for the hour since the last attempt
         self.rotkehlchen.premium_sync_manager.last_upload_attempt_ts = Timestamp(0)
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(OkResult(True))
 
     def user_premium_key_remove(self) -> Response:
         """Returns successful result if API keys are successfully removed"""
-        result_dict: dict[str, Any] = {'result': None, 'message': ''}
-        success: bool
-
         success, msg = self.rotkehlchen.delete_premium_credentials()
-
         if success is False:
-            result_dict['message'] = msg
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT))
         # else
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(OkResult(True))
 
     def query_list_of_all_assets(self, filter_query: AssetsFilterQuery) -> Response:
         """Query assets using the provided filter_query and return them in a paginated format"""
         response_data = self.assets_service.query_list_of_all_assets(filter_query)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_assets_mappings(self, identifiers: list[str]) -> Response:
         response_data = self.assets_service.get_assets_mappings(identifiers)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def search_assets(self, filter_query: AssetsFilterQuery) -> Response:
         response_data = self.assets_service.search_assets(filter_query)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def search_assets_levenshtein(
             self,
@@ -1786,48 +1683,44 @@ class RestAPI:
             limit=limit,
             nft_handling=nft_handling,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @staticmethod
     def supported_modules() -> Response:
         """Returns all supported modules"""
         data = [{'id': x, 'name': y} for x, y in AVAILABLE_MODULES_MAP.items()]
-        return api_response(
-            _wrap_in_ok_result(data),
-            status_code=HTTPStatus.OK,
-            log_result=False,
-        )
+        return api_response(OkResult(data), log_result=False)
 
     def query_owned_assets(self) -> Response:
         response_data = self.assets_service.query_owned_assets()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_asset_types(self) -> Response:
         response_data = self.assets_service.get_asset_types()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_user_asset(self, asset: AssetWithOracles, is_rebasing: bool | None) -> Response:
         response_data = self.assets_service.add_user_asset(asset, is_rebasing)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def edit_user_asset(self, asset: AssetWithOracles, is_rebasing: bool | None) -> Response:
         response_data = self.assets_service.edit_user_asset(asset, is_rebasing)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_asset(self, identifier: str) -> Response:
         response_data = self.assets_service.delete_asset(identifier)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def replace_asset(self, source_identifier: str, target_asset: Asset) -> Response:
         response_data = self.assets_service.replace_asset(source_identifier, target_asset)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
     def rebuild_assets_information(
             self,
             reset: Literal['soft', 'hard'],
             ignore_warnings: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         msg = 'Invalid value for reset'
         if reset == 'soft':
             success, msg = GlobalDBHandler().soft_reset_assets_list()
@@ -1839,16 +1732,13 @@ class RestAPI:
 
         if success:
             AssetResolver.clean_memory_cache()  # clean the cache after deleting any possible asset
-            return OK_RESULT
-        return wrap_in_fail_result(msg, status_code=HTTPStatus.CONFLICT)
+            return OkResult(True)
+        return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
 
     def query_address_interactions(self) -> Response:
-        return api_response(
-            result=_wrap_in_ok_result(
-                DBHistoryEvents(self.rotkehlchen.data.db).get_address_interactions(),
-            ),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult(
+            DBHistoryEvents(self.rotkehlchen.data.db).get_address_interactions(),
+        ))
 
     def query_netvalue_data(self, include_nfts: bool) -> Response:
         from_ts = Timestamp(0)
@@ -1861,11 +1751,7 @@ class RestAPI:
 
         data = self.rotkehlchen.data.db.get_netvalue_data(from_ts, include_nfts)
         result = process_result({'times': data[0], 'data': data[1]})
-        return api_response(
-            result=_wrap_in_ok_result(result),
-            status_code=HTTPStatus.OK,
-            log_result=False,
-        )
+        return api_response(OkResult(result), log_result=False)
 
     def query_timed_balances_data(
             self,
@@ -1902,11 +1788,7 @@ class RestAPI:
                 )
 
         result = process_result_list(data)
-        return api_response(
-            result=_wrap_in_ok_result(result),
-            status_code=HTTPStatus.OK,
-            log_result=False,
-        )
+        return api_response(OkResult(result), log_result=False)
 
     def query_value_distribution_data(self, distribution_by: str) -> Response:
         data: list[DBAssetBalance] | list[LocationData]
@@ -1917,40 +1799,30 @@ class RestAPI:
             data = self.rotkehlchen.data.db.get_latest_asset_value_distribution()
 
         result = process_result_list(data)
-        return api_response(
-            result=_wrap_in_ok_result(result),
-            status_code=HTTPStatus.OK,
-            log_result=False,
-        )
+        return api_response(OkResult(result), log_result=False)
 
     def query_premium_components(self) -> Response:
         assert self.rotkehlchen.premium is not None, 'Should not be None since we use @require_premium_user() decorator'  # noqa: E501
-        result_dict = {'result': None, 'message': ''}
         try:
-            result = self.rotkehlchen.premium.query_premium_components()
-            result_dict['result'] = result
-            status_code = HTTPStatus.OK
-        except (RemoteError, PremiumAuthenticationError) as e:
-            result_dict['message'] = str(e)
-            status_code = HTTPStatus.CONFLICT
+            result: ApiResult = OkResult(self.rotkehlchen.premium.query_premium_components())
+        except RemoteError as e:
+            result = FailResult(str(e), HTTPStatus.CONFLICT, e.cause)
+        except PremiumAuthenticationError as e:
+            result = FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.AUTH)
 
-        return api_response(
-            result=process_result(result_dict),
-            status_code=status_code,
-            log_result=False,
-        )
+        return api_response(result, log_result=False)
 
     def get_messages(self) -> Response:
         messages, dropped = self.rotkehlchen.msg_aggregator.consume_held()
         result = {'messages': messages, 'dropped': dropped}
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        return api_response(OkResult(result))
 
     @async_api_call()
     def process_history(
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.history_service.process_history(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
@@ -1962,7 +1834,7 @@ class RestAPI:
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             directory_path: Path | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """This method exports all history events for a timestamp range.
         It also exports the user settings & ignored action identifiers for PnL debugging.
         """
@@ -1974,51 +1846,51 @@ class RestAPI:
 
     if getattr(sys, 'frozen', False) is False:
         @async_api_call()
-        def import_history_debug(self, filepath: Path) -> dict[str, Any]:
+        def import_history_debug(self, filepath: Path) -> ApiResult:
             """Imports the PnL debug data for processing and report generation"""
             return self.history_service.import_history_debug(filepath=filepath)
 
     @async_api_call()
-    def export_accounting_rules(self, directory_path: Path | None) -> dict[str, Any]:
+    def export_accounting_rules(self, directory_path: Path | None) -> ApiResult:
         """Exports all the accounting rules and linked properties into a json file
         in the given directory."""
         return self.accounting_service.export_accounting_rules(directory_path)
 
     @async_api_call()
-    def import_accounting_rules(self, filepath: Path) -> dict[str, Any]:
+    def import_accounting_rules(self, filepath: Path) -> ApiResult:
         """Imports the accounting rules from the given json file and stores them in the DB."""
         return self.accounting_service.import_accounting_rules(filepath)
 
     @async_api_call()
-    def reset_accounting_rules(self) -> dict[str, Any]:
+    def reset_accounting_rules(self) -> ApiResult:
         """Resets all accounting rules to rotki's current defaults from the data repo."""
         return self.accounting_service.reset_accounting_rules()
 
     def get_history_actionable_items(self) -> Response:
         response_data = self.history_service.get_history_actionable_items()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_history_status(self) -> Response:
         response_data = self.history_service.get_history_status()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def query_periodic_data(self) -> Response:
         data = self.rotkehlchen.query_periodic_data()
         result = process_result(data)
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        return api_response(OkResult(result))
 
     @async_api_call()
     def add_xpub(
             self,
             xpub_data: XpubData,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.add_xpub(xpub_data)
 
     @async_api_call()
     def delete_xpub(
             self,
             xpub_data: XpubData,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.delete_xpub(xpub_data)
 
     def edit_xpub(
@@ -2026,28 +1898,28 @@ class RestAPI:
             xpub_data: XpubData,
     ) -> Response:
         response_data = self.accounts_service.edit_xpub(xpub_data)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_evm_accounts(
             self,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.add_evm_accounts(account_data)
 
     @async_api_call()
-    def refresh_evm_accounts(self) -> dict[str, Any]:
+    def refresh_evm_accounts(self) -> ApiResult:
         return self.accounts_service.refresh_evm_accounts()
 
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:
         response_data = self.accounts_service.get_blockchain_accounts(blockchain)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @overload
     def add_single_blockchain_accounts(
             self,
             chain: SUPPORTED_EVM_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         ...
 
     @overload
@@ -2055,7 +1927,7 @@ class RestAPI:
             self,
             chain: SUPPORTED_SUBSTRATE_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[SubstrateAddress]],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         ...
 
     @overload
@@ -2063,7 +1935,7 @@ class RestAPI:
             self,
             chain: SUPPORTED_BITCOIN_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[BTCAddress]],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         ...
 
     @overload
@@ -2071,14 +1943,14 @@ class RestAPI:
             self,
             chain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         ...
 
     def add_single_blockchain_accounts(
             self,
             chain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.add_single_blockchain_accounts(
             chain=chain,
             account_data=account_data,
@@ -2088,7 +1960,7 @@ class RestAPI:
             self,
             blockchain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.edit_single_blockchain_accounts(
             blockchain=blockchain,
             account_data=account_data,
@@ -2098,14 +1970,14 @@ class RestAPI:
     def edit_chain_type_accounts_labels(
             self,
             accounts: list[SingleBlockchainAccountData],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.edit_chain_type_accounts_labels(accounts)
 
     def remove_single_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.remove_single_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
@@ -2116,63 +1988,63 @@ class RestAPI:
             self,
             chain_type: ChainType,
             accounts: ListOfBlockchainAddresses,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.remove_chain_type_accounts(
             chain_type=chain_type,
             accounts=accounts,
         )
 
     @async_api_call()
-    def get_manually_tracked_balances(self, value_threshold: FVal | None) -> dict[str, Any]:
+    def get_manually_tracked_balances(self, value_threshold: FVal | None) -> ApiResult:
         return self.accounts_service.get_manually_tracked_balances(value_threshold=value_threshold)
 
     @async_api_call()
     def add_manually_tracked_balances(
             self,
             data: list[ManuallyTrackedBalance],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.add_manually_tracked_balances(data=data)
 
     @async_api_call()
     def edit_manually_tracked_balances(
             self,
             data: list[ManuallyTrackedBalance],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.edit_manually_tracked_balances(data=data)
 
     @async_api_call()
     def remove_manually_tracked_balances(
             self,
             ids: list[int],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.accounts_service.remove_manually_tracked_balances(ids=ids)
 
     def get_ignored_assets(self) -> Response:
         response_data = self.accounts_service.get_ignored_assets()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_ignored_assets(self, assets_to_ignore: list[Asset]) -> Response:
         response_data = self.accounts_service.add_ignored_assets(assets_to_ignore)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def remove_ignored_assets(self, assets: list[Asset]) -> Response:
         response_data = self.accounts_service.remove_ignored_assets(assets)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_ignored_action_ids(self, action_ids: list[str]) -> Response:
         response_data = self.user_data_service.add_ignored_action_ids(action_ids)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def remove_ignored_action_ids(
             self,
             action_ids: list[str],
     ) -> Response:
         response_data = self.user_data_service.remove_ignored_action_ids(action_ids)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_queried_addresses_per_module(self) -> Response:
         response_data = self.user_data_service.get_queried_addresses_per_module()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_queried_address_per_module(
             self,
@@ -2183,7 +2055,7 @@ class RestAPI:
             module=module,
             address=address,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def remove_queried_address_per_module(
             self,
@@ -2194,13 +2066,10 @@ class RestAPI:
             module=module,
             address=address,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_lido_csm_node_operators(self) -> Response:
-        return api_response(
-            _wrap_in_ok_result(self._serialize_lido_csm_node_operators()),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult(self._serialize_lido_csm_node_operators()))
 
     def _serialize_lido_csm_node_operators(self) -> list[dict[str, Any]]:
         """Serialize the tracked Lido node operators as returned by the API."""
@@ -2228,12 +2097,17 @@ class RestAPI:
                 staking_module=staking_module,
             )
         except (InputError, NotFoundError) as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                (
+                    FailureCause.NOT_FOUND if isinstance(e, NotFoundError)
+                    else FailureCause.INVALID_INPUT
+                ),
+            ))
 
         # Compute and persist metrics for the newly added operator. If it fails
         # we still return the list but metrics will be empty until refreshed.
-        status_code = HTTPStatus.OK
-        message = ''
         try:
             metrics = LidoCsmMetricsFetcher(
                 evm_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
@@ -2248,16 +2122,15 @@ class RestAPI:
             log.error(
                 f'Failed to fetch Lido CSM metrics for new operator {node_operator_id}: {e}',
             )
-            status_code = HTTPStatus.BAD_GATEWAY
-            message = (
+            return api_response(FailResult(
                 f'Failed to fetch metrics for node operator '
-                f'{staking_module.name} #{node_operator_id}'
-            )
+                f'{staking_module.name} #{node_operator_id}',
+                HTTPStatus.BAD_GATEWAY,
+                e.cause,
+                result=self._serialize_lido_csm_node_operators(),
+            ))
 
-        payload = _wrap_in_ok_result(self._serialize_lido_csm_node_operators())
-        if message:
-            payload['message'] = message
-        return api_response(payload, status_code=status_code)
+        return api_response(OkResult(self._serialize_lido_csm_node_operators()))
 
     def remove_lido_csm_node_operator(
             self,
@@ -2272,12 +2145,13 @@ class RestAPI:
                 staking_module=staking_module,
             )
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                FailureCause.INVALID_INPUT,
+            ))
 
-        return api_response(
-            _wrap_in_ok_result(self._serialize_lido_csm_node_operators()),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult(self._serialize_lido_csm_node_operators()))
 
     def refresh_lido_csm_metrics(self) -> Response:
         """Recompute metrics for a given node operator id,
@@ -2313,14 +2187,15 @@ class RestAPI:
                 'staking_module_id': entry.staking_module.value,
                 'metrics': metrics_payload,
             })
-        payload = _wrap_in_ok_result(result)
         if failed_ids:
-            payload['message'] = (
+            return api_response(FailResult(
                 'Failed to refresh metrics for node operators: '
-                f"{', '.join(failed_ids)}"
-            )
-            return api_response(payload, status_code=HTTPStatus.BAD_GATEWAY)
-        return api_response(payload, status_code=HTTPStatus.OK)
+                f"{', '.join(failed_ids)}",
+                HTTPStatus.BAD_GATEWAY,
+                FailureCause.NETWORK,
+                result=result,
+            ))
+        return api_response(OkResult(result))
 
     def get_info(self, check_for_updates: bool) -> Response:
         github = None
@@ -2346,18 +2221,18 @@ class RestAPI:
                 'sqlite_instructions': DEFAULT_SQL_VM_INSTRUCTIONS_CB,
             },
         }
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        return api_response(OkResult(result))
 
     @staticmethod
     def ping() -> Response:
-        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+        return api_response(OkResult(True))
 
     def _unresolved_import_locations(
             self,
             source: DataImportSource,
             filepath: Path,
             location_mappings: dict[str, LocationIdentifier] | None,
-    ) -> dict[str, Any] | None:
+    ) -> FailResult | None:
         """The failure response of an import whose location values are not all resolved"""
         try:
             resolutions = self.rotkehlchen.data_importer.resolve_locations(
@@ -2366,14 +2241,15 @@ class RestAPI:
                 location_mappings=location_mappings,
             )
         except InputError as e:
-            return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.BAD_REQUEST)
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
         if all(x.status == LocationResolutionStatus.RESOLVED for x in resolutions):
             return None
-        return {
-            'result': {'locations': [x.serialize() for x in resolutions]},
-            'message': 'Some locations of the file are unknown or ambiguous. Map them first',
-            'status_code': HTTPStatus.CONFLICT,
-        }
+        return FailResult(
+            'Some locations of the file are unknown or ambiguous. Map them first',
+            HTTPStatus.CONFLICT,
+            FailureCause.CONFLICT,
+            result={'locations': [x.serialize() for x in resolutions]},
+        )
 
     def import_preflight(
             self,
@@ -2393,11 +2269,13 @@ class RestAPI:
                     location_mappings=location_mappings,
                 )
             except InputError as e:
-                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
+                return api_response(FailResult(
+                    str(e),
+                    HTTPStatus.BAD_REQUEST,
+                    FailureCause.INVALID_INPUT,
+                ))
 
-        return api_response(_wrap_in_ok_result({
-            'locations': [x.serialize() for x in resolutions],
-        }), status_code=HTTPStatus.OK)
+        return api_response(OkResult({'locations': [x.serialize() for x in resolutions]}))
 
     @async_api_call()
     def _import_data(
@@ -2405,7 +2283,7 @@ class RestAPI:
             source: DataImportSource,
             filepath: Path,
             **kwargs: Any,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         if (unresolved := self._unresolved_import_locations(
             source=source,
             filepath=filepath,
@@ -2419,12 +2297,13 @@ class RestAPI:
             **kwargs,
         )
         if success is False:
-            return wrap_in_fail_result(
-                message=f'Invalid CSV format: {msg}',
-                status_code=HTTPStatus.BAD_REQUEST,
+            return FailResult(
+                f'Invalid CSV format: {msg}',
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.INVALID_INPUT,
             )
 
-        return OK_RESULT
+        return OkResult(True)
 
     def import_data(
             self,
@@ -2456,10 +2335,14 @@ class RestAPI:
             addresses: list[ChecksumEvmAddress] | None,
             validator_indices: list[int] | None,
             status: PerformanceStatusFilter,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')
         if eth2 is None:
-            return {'result': None, 'message': 'Cant query eth2 staking performance since eth2 module is not active', 'status_code': HTTPStatus.CONFLICT}  # noqa: E501
+            return FailResult(
+                'Cant query eth2 staking performance since eth2 module is not active',
+                HTTPStatus.CONFLICT,
+                FailureCause.CONFLICT,
+            )
 
         try:
             result = eth2.get_performance(
@@ -2473,21 +2356,14 @@ class RestAPI:
                 status=status,
             )
         except PremiumPermissionError as e:
-            response_data = {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.FORBIDDEN,
-            }
-            if e.extra_dict:  # include any extra information for the error
-                response_data.update(e.extra_dict)
-            return response_data
+            return FailResult(str(e), HTTPStatus.FORBIDDEN, FailureCause.FORBIDDEN)
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
-        return {'result': process_result(result), 'message': ''}
+        return OkResult(process_result(result))
 
     @async_api_call()
-    def get_solana_stake_accounts(self) -> dict[str, Any]:
+    def get_solana_stake_accounts(self) -> ApiResult:
         """Return the stake accounts of every tracked solana address, grouped by owner."""
         return _wrap_remote_query(
             query=lambda: self.rotkehlchen.chains_aggregator.solana.get_stake_accounts_by_owner(
@@ -2507,7 +2383,7 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_hyperliquid_staking_summaries(self) -> dict[str, Any]:
+    def get_hyperliquid_staking_summaries(self) -> ApiResult:
         """Return the core staking account of every tracked hyperliquid address by state."""
         return _wrap_remote_query(
             query=lambda: self.rotkehlchen.chains_aggregator.hyperliquid.query_staking_summaries(
@@ -2530,24 +2406,24 @@ class RestAPI:
             self,
             ignore_cache: bool,
             validator_indices: set[int] | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             validators = self.rotkehlchen.chains_aggregator.get_eth2_validators(
                 ignore_cache=ignore_cache,
                 validator_indices=validator_indices,
             )
         except ModuleInactive as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.CONFLICT)
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
         entries_found = len(validators)
 
-        return _wrap_in_ok_result(result={
+        return OkResult({
             'entries': [x.serialize() for x in validators],
             'entries_found': entries_found,
             'entries_limit': -1,
-        }, status_code=HTTPStatus.OK)
+        })
 
     @async_api_call()
     def add_eth2_validator(
@@ -2555,7 +2431,7 @@ class RestAPI:
             validator_index: int | None,
             public_key: Eth2PubKey | None,
             ownership_proportion: FVal,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             self.rotkehlchen.chains_aggregator.add_eth2_validator(
                 validator_index=validator_index,
@@ -2563,20 +2439,20 @@ class RestAPI:
                 ownership_proportion=ownership_proportion,
             )
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
         except PremiumPermissionError as e:
-            response_data = {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.FORBIDDEN,
-            }
-            if e.extra_dict:  # include any extra information for the error
-                response_data.update(e.extra_dict)
-            return response_data
+            return FailResult(str(e), HTTPStatus.FORBIDDEN, FailureCause.FORBIDDEN)
         except (InputError, ModuleInactive) as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                (
+                    FailureCause.CONFLICT if isinstance(e, ModuleInactive)
+                    else FailureCause.INVALID_INPUT
+                ),
+            )
 
-        return {'result': True, 'message': ''}
+        return OkResult(True)
 
     def edit_eth2_validator(self, validator_index: int, ownership_proportion: FVal) -> Response:
         try:
@@ -2585,14 +2461,18 @@ class RestAPI:
                 ownership_proportion=ownership_proportion,
             )
         except PremiumPermissionError as e:
-            response_data = wrap_in_fail_result(str(e))
-            if e.extra_dict:  # include any extra information for the error
-                response_data.update(e.extra_dict)
-            return api_response(response_data, status_code=HTTPStatus.FORBIDDEN)
+            return api_response(FailResult(str(e), HTTPStatus.FORBIDDEN, FailureCause.FORBIDDEN))
         except (InputError, ModuleInactive) as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                (
+                    FailureCause.CONFLICT if isinstance(e, ModuleInactive)
+                    else FailureCause.INVALID_INPUT
+                ),
+            ))
         else:
-            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+            return api_response(OkResult(True))
 
     def delete_eth2_validator(
             self,
@@ -2600,27 +2480,27 @@ class RestAPI:
     ) -> Response:
         try:
             self.rotkehlchen.chains_aggregator.delete_eth2_validators(validators)
-            result = OK_RESULT
-            status_code = HTTPStatus.OK
         except InputError as e:
-            result = {'result': None, 'message': str(e)}
-            status_code = HTTPStatus.CONFLICT
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                FailureCause.INVALID_INPUT,
+            ))
         except ModuleInactive as e:
-            result = {'result': None, 'message': str(e)}
-            status_code = HTTPStatus.CONFLICT
+            return api_response(FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.CONFLICT))
 
-        return api_response(result, status_code=status_code)
+        return api_response(OkResult(True))
 
     @async_api_call()
     def redecode_eth2_block_events(
             self,
             block_numbers: list[int] | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         DBEth2(self.rotkehlchen.data.db).redecode_block_production_events(block_numbers)
-        return OK_RESULT
+        return OkResult(True)
 
     @async_api_call()
-    def get_airdrops(self) -> dict[str, Any]:
+    def get_airdrops(self) -> ApiResult:
         try:
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                 data = check_airdrops(
@@ -2629,37 +2509,37 @@ class RestAPI:
                     tolerance_for_amount_check=AIRDROPS_TOLERANCE,
                 )
         except RemoteError as e:
-            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
         except OSError as e:
-            return wrap_in_fail_result(str(e), status_code=HTTPStatus.INSUFFICIENT_STORAGE)
+            return FailResult(str(e), HTTPStatus.INSUFFICIENT_STORAGE, FailureCause.LOCAL_DB)
 
-        return _wrap_in_ok_result(process_result(data))
+        return OkResult(process_result(data))
 
     def get_rpc_nodes(self, blockchain: SupportedBlockchain) -> Response:
         response_data = self.transactions_service.get_rpc_nodes(blockchain)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_rpc_node(self, node: WeightedNode) -> Response:
         response_data = self.transactions_service.add_rpc_node(node)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def update_and_connect_rpc_node(self, node: WeightedNode) -> Response:
         response_data = self.transactions_service.update_and_connect_rpc_node(node)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_rpc_node(self, identifier: int, blockchain: SupportedBlockchain) -> Response:
         response_data = self.transactions_service.delete_rpc_node(
             identifier=identifier,
             blockchain=blockchain,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
     def connect_rpc_node(
             self,
             identifier: int | None,
             blockchain: SupportedBlockchain,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.connect_rpc_node(
             identifier=identifier,
             blockchain=blockchain,
@@ -2667,7 +2547,7 @@ class RestAPI:
 
     def purge_module_data(self, module_name: PurgeableModuleName | None) -> Response:
         self.rotkehlchen.data.db.purge_module_data(module_name)
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(OkResult(True))
 
     def _eth_module_query(
             self,
@@ -2675,16 +2555,12 @@ class RestAPI:
             method: str,
             query_specific_balances_before: list[str] | None,
             **kwargs: Any,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """A function abstracting away calls to ethereum modules
 
         Can optionally specify if eth balances should be queried before the
         actual intended eth module query.
         """
-        result = None
-        msg = ''
-        status_code = HTTPStatus.OK
-
         if query_specific_balances_before and 'defi' in query_specific_balances_before:
 
             # Make sure ethereum balances are queried (this is protected by lock and by time cache)
@@ -2694,33 +2570,35 @@ class RestAPI:
                     blockchain=SupportedBlockchain.ETHEREUM,
                 )
             except (RemoteError, EthSyncError) as e:
-                return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+                return FailResult(
+                    str(e),
+                    HTTPStatus.BAD_GATEWAY,
+                    e.cause if isinstance(e, RemoteError) else FailureCause.NETWORK,
+                )
 
         module_obj = self.rotkehlchen.chains_aggregator.get_module(module_name)
         if module_obj is None:
-            return {
-                'result': None,
-                'status_code': HTTPStatus.CONFLICT,
-                'message': f'{module_name} module is not activated',
-            }
+            return FailResult(
+                f'{module_name} module is not activated',
+                HTTPStatus.CONFLICT,
+                FailureCause.CONFLICT,
+            )
 
         try:
             result = getattr(module_obj, method)(**kwargs)
         except RemoteError as e:
-            msg = str(e)
-            status_code = HTTPStatus.BAD_GATEWAY
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
         except InputError as e:
-            msg = str(e)
-            status_code = HTTPStatus.CONFLICT
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
-        return {'result': result, 'message': msg, 'status_code': status_code}
+        return OkResult(result)
 
     @async_api_call()
     def get_amm_platform_balances(
             self,
             module: Literal['uniswap', 'sushiswap'],
             method: str = 'get_balances',
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self._eth_module_query(
             module_name=module,
             method=method,
@@ -2729,7 +2607,7 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_liquity_troves(self) -> dict[str, Any]:
+    def get_liquity_troves(self) -> ApiResult:
         return self._eth_module_query(
             module_name='liquity',
             method='get_positions',
@@ -2738,7 +2616,7 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_liquity_staked(self) -> dict[str, Any]:
+    def get_liquity_staked(self) -> ApiResult:
         return self._eth_module_query(
             module_name='liquity',
             method='liquity_staking_balances',
@@ -2747,7 +2625,7 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_liquity_stability_pool_positions(self) -> dict[str, Any]:
+    def get_liquity_stability_pool_positions(self) -> ApiResult:
         return self._eth_module_query(
             module_name='liquity',
             method='get_stability_pool_balances',
@@ -2756,30 +2634,30 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_liquity_stats(self) -> dict[str, Any]:
+    def get_liquity_stats(self) -> ApiResult:
         liquity_addresses = self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity')  # noqa: E501
         # make sure that all the entries that need it have the usd value queried
         stats = get_liquity_stats(
             database=self.rotkehlchen.data.db,
             addresses=liquity_addresses,
         )
-        return _wrap_in_ok_result(stats)
+        return OkResult(stats)
 
     def get_watchers(self) -> Response:
         response_data = self.transactions_service.get_watchers()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_watchers(self, watchers: list[dict[str, Any]]) -> Response:
         response_data = self.transactions_service.add_watchers(watchers)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def edit_watchers(self, watchers: list[dict[str, Any]]) -> Response:
         response_data = self.transactions_service.edit_watchers(watchers)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_watchers(self, watchers: list[str]) -> Response:
         response_data = self.transactions_service.delete_watchers(watchers)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def purge_exchange_data(
             self,
@@ -2801,14 +2679,14 @@ class RestAPI:
                         data_type=data_type,
                     )
 
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(OkResult(True))
 
     def reset_eth_staking_data(
             self,
             entry_type: Literal[HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT],  # noqa: E501
     ) -> Response:
         DBHistoryEvents(self.rotkehlchen.data.db).reset_eth_staking_data(entry_type=entry_type)
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(OkResult(True))
 
     @async_api_call()
     def refetch_staking_events(
@@ -2818,7 +2696,7 @@ class RestAPI:
             to_timestamp: Timestamp,
             validator_indices: list[int],
             addresses: list[ChecksumEvmAddress],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.history_service.refetch_staking_events(
             entry_type=entry_type,
             from_timestamp=from_timestamp,
@@ -2868,7 +2746,7 @@ class RestAPI:
             chain=chain,
             tx_ref=tx_ref,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
     def refresh_transactions(
@@ -2876,7 +2754,7 @@ class RestAPI:
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             accounts: list[OptionalBlockchainAccount] | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.refresh_transactions(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
@@ -2890,7 +2768,7 @@ class RestAPI:
             tx_refs: list[EVMTxHash | Signature],
             delete_custom: bool,
             custom_indexers_order: list[EvmIndexer] | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.decode_given_transactions(
             chain=chain,
             tx_refs=tx_refs,
@@ -2903,25 +2781,25 @@ class RestAPI:
             self,
             chain: CHAINS_WITH_PENDING_TX_DECODING_TYPE,
             force_redecode: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.decode_transactions(
             chain=chain,
             force_redecode=force_redecode,
         )
 
     @async_api_call()
-    def get_history_status_summary(self) -> dict[str, Any]:
+    def get_history_status_summary(self) -> ApiResult:
         """Get the last timestamp when evm transactions and exchanges were queried and how many
         transactions are waiting to be decoded.
         """
         return self.history_service.get_history_status_summary()
 
     @async_api_call()
-    def get_evm_transactions_status(self) -> dict[str, Any]:
+    def get_evm_transactions_status(self) -> ApiResult:
         return self.transactions_service.get_evm_transactions_status()
 
     @async_api_call()
-    def get_latest_transaction_timestamps(self) -> dict[str, Any]:
+    def get_latest_transaction_timestamps(self) -> ApiResult:
         return self.transactions_service.get_latest_transaction_timestamps()
 
     @async_api_call()
@@ -2930,7 +2808,7 @@ class RestAPI:
             tx_hash: EVMTxHash,
             evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
             related_address: ChecksumEvmAddress,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.lookup_evm_transaction(
             tx_hash=tx_hash,
             evm_chain=evm_chain,
@@ -2938,16 +2816,16 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_count_transactions_not_decoded(self) -> dict[str, Any]:
+    def get_count_transactions_not_decoded(self) -> ApiResult:
         return self.transactions_service.get_count_transactions_not_decoded()
 
     def upload_asset_icon(self, asset: Asset, filepath: Path) -> Response:
         response_data = self.assets_service.upload_asset_icon(asset=asset, filepath=filepath)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def refresh_asset_icon(self, asset: AssetWithOracles) -> Response:
         response_data = self.assets_service.refresh_asset_icon(asset)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
     def get_current_assets_price(
@@ -2955,7 +2833,7 @@ class RestAPI:
             assets: list[AssetWithNameAndType],
             target_asset: Asset,
             ignore_cache: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.assets_service.get_current_assets_price(
             assets=assets,
             target_asset=target_asset,
@@ -2977,7 +2855,7 @@ class RestAPI:
             filter_query=filter_query,
             query_columns=query_columns,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def perform_asset_mapping_operation(
             self,
@@ -2988,7 +2866,7 @@ class RestAPI:
             mapping_fn=mapping_fn,
             entries=entries,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
     def get_historical_assets_price(
@@ -2996,7 +2874,7 @@ class RestAPI:
             assets_timestamp: list[tuple[Asset, Timestamp]],
             target_asset: Asset,
             only_cache_period: int | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.assets_service.get_historical_assets_price(
             assets_timestamp=assets_timestamp,
             target_asset=target_asset,
@@ -3004,31 +2882,37 @@ class RestAPI:
         )
 
     @async_api_call()
-    def sync_data(self, action: Literal['upload', 'download']) -> dict[str, Any]:
+    def sync_data(self, action: Literal['upload', 'download']) -> ApiResult:
         try:
             success, msg, restored_backup_ts = self.rotkehlchen.premium_sync_manager.sync_data(
                 action=action,
                 perform_migrations=True,  # we can do it now since all is initialized
             )
         except RemoteError as e:
-            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
         except PremiumApiError as e:
-            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, FailureCause.REMOTE_REJECTED)
         except PremiumAuthenticationError as e:
-            return wrap_in_fail_result(str(e), status_code=HTTPStatus.UNAUTHORIZED)
+            return FailResult(str(e), HTTPStatus.UNAUTHORIZED, FailureCause.AUTH)
         except (RemoteBackupError, BackupTooLargeError) as e:
-            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+            return FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                (
+                    FailureCause.FORBIDDEN if isinstance(e, BackupTooLargeError)
+                    else FailureCause.REMOTE_REJECTED
+                ),
+            )
         else:
             if not success:  # every failed sync carries its reason in msg
-                return wrap_in_fail_result(
-                    msg,
-                    status_code=HTTPStatus.NOT_FOUND if msg == NO_REMOTE_BACKUP_MSG else HTTPStatus.BAD_GATEWAY,  # noqa: E501
-                )
+                if msg == NO_REMOTE_BACKUP_MSG:
+                    return FailResult(msg, HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND)
+                return FailResult(msg, HTTPStatus.BAD_GATEWAY, FailureCause.REMOTE_REJECTED)
             if action == 'download':
                 # A forced pull skips the "remote is newer" check, so the authenticated
                 # timestamp is the only way the user can tell which backup they restored
-                return _wrap_in_result({'last_modify_ts': restored_backup_ts}, message=msg)
-            return _wrap_in_result(True, message=msg)
+                return OkResult({'last_modify_ts': restored_backup_ts}, message=msg)
+            return OkResult(True, message=msg)
 
     @async_api_call()
     def create_oracle_cache(
@@ -3037,7 +2921,7 @@ class RestAPI:
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
             purge_old: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.assets_service.create_oracle_cache(
             oracle=oracle,
             from_asset=from_asset,
@@ -3056,22 +2940,22 @@ class RestAPI:
             from_asset=from_asset,
             to_asset=to_asset,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
-    def get_oracle_cache(self, oracle: HistoricalPriceOracle) -> dict[str, Any]:
+    def get_oracle_cache(self, oracle: HistoricalPriceOracle) -> ApiResult:
         return self.assets_service.get_oracle_cache(oracle)
 
     def get_supported_oracles(self) -> Response:
         response_data = self.assets_service.get_supported_oracles()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
-    def get_token_info(self, address: ChecksumEvmAddress, chain_id: SUPPORTED_CHAIN_IDS) -> dict[str, Any]:  # noqa: E501
+    def get_token_info(self, address: ChecksumEvmAddress, chain_id: SUPPORTED_CHAIN_IDS) -> ApiResult:  # noqa: E501
         return self.assets_service.get_token_info(address=address, chain_id=chain_id)
 
     @async_api_call()
-    def get_assets_updates(self) -> dict[str, Any]:
+    def get_assets_updates(self) -> ApiResult:
         return self.assets_service.get_assets_updates()
 
     @async_api_call()
@@ -3079,7 +2963,7 @@ class RestAPI:
             self,
             up_to_version: int | None,
             conflicts: dict[Asset, Literal['remote', 'local']] | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.assets_service.perform_assets_updates(
             up_to_version=up_to_version,
             conflicts=conflicts,
@@ -3089,28 +2973,23 @@ class RestAPI:
         try:
             pairs = list(query_binance_exchange_pairs(location=location).keys())
         except InputError as e:
-            return api_response(
-                wrap_in_fail_result(
-                    f'Failed to handle binance markets internally. {e!s}',
-                    status_code=HTTPStatus.BAD_GATEWAY,
-                ),
-            )
+            return api_response(FailResult(
+                f'Failed to handle binance markets internally. {e!s}',
+                HTTPStatus.BAD_GATEWAY,
+                FailureCause.INVALID_INPUT,
+            ))
         if len(pairs) == 0:
-            return api_response(
-                wrap_in_fail_result(
-                    'Failed to query binance pairs both from database and the binance API.',
-                    status_code=HTTPStatus.BAD_GATEWAY,
-                ),
-            )
-        return api_response(_wrap_in_ok_result(list(pairs)), status_code=HTTPStatus.OK)
+            return api_response(FailResult(
+                'Failed to query binance pairs both from database and the binance API.',
+                HTTPStatus.BAD_GATEWAY,
+                FailureCause.NETWORK,
+            ))
+        return api_response(OkResult(list(pairs)))
 
     def get_user_binance_pairs(self, identifier: str) -> Response:
-        return api_response(
-            _wrap_in_ok_result(
-                self.rotkehlchen.exchange_manager.get_user_binance_pairs(identifier),
-            ),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult(
+            self.rotkehlchen.exchange_manager.get_user_binance_pairs(identifier),
+        ))
 
     def add_historical_price(
             self,
@@ -3127,7 +3006,7 @@ class RestAPI:
             timestamp=timestamp,
             source_type=source_type,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def edit_historical_price(
             self,
@@ -3144,7 +3023,7 @@ class RestAPI:
             timestamp=timestamp,
             source_type=source_type,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_manual_prices(
             self,
@@ -3155,7 +3034,7 @@ class RestAPI:
             from_asset=from_asset,
             to_asset=to_asset,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_historical_price(
             self,
@@ -3170,10 +3049,10 @@ class RestAPI:
             timestamp=timestamp,
             source_type=source_type,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
-    def get_nfts(self, ignore_cache: bool) -> dict[str, Any]:
+    def get_nfts(self, ignore_cache: bool) -> ApiResult:
         return self.assets_service.get_nfts(ignore_cache=ignore_cache)
 
     @async_api_call()
@@ -3181,7 +3060,7 @@ class RestAPI:
             self,
             filter_query: NFTFilterQuery,
             ignore_cache: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.assets_service.get_nfts_balances(
             filter_query=filter_query,
             ignore_cache=ignore_cache,
@@ -3196,10 +3075,10 @@ class RestAPI:
             from_asset=from_asset,
             to_asset=to_asset,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
-    def get_nfts_with_price(self, lps_handling: NftLpHandling) -> dict[str, Any]:
+    def get_nfts_with_price(self, lps_handling: NftLpHandling) -> ApiResult:
         return self.assets_service.get_nfts_with_price(lps_handling=lps_handling)
 
     def add_manual_latest_price(
@@ -3213,14 +3092,14 @@ class RestAPI:
             to_asset=to_asset,
             price=price,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_manual_latest_price(
             self,
             asset: Asset,
     ) -> Response:
         response_data = self.assets_service.delete_manual_latest_price(asset=asset)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_database_info(self) -> Response:
         globaldb_schema_version = GlobalDBHandler.get_schema_version()
@@ -3237,21 +3116,21 @@ class RestAPI:
                 result_dict['userdb']['info'] = self.rotkehlchen.data.db.get_db_info(cursor)  # type: ignore
             result_dict['userdb']['backups'] = self.rotkehlchen.data.db.get_backups()  # type: ignore
 
-        return api_response(_wrap_in_ok_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(OkResult(result_dict))
 
     def create_database_backup(self) -> Response:
         try:
             db_backup_path = self.rotkehlchen.data.db.create_db_backup()
         except OSError as e:
             error_msg = f'Failed to create a DB backup due to {e!s}'
-            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(error_msg, HTTPStatus.CONFLICT, FailureCause.LOCAL_DB))
 
-        return api_response(_wrap_in_ok_result(str(db_backup_path)), status_code=HTTPStatus.OK)
+        return api_response(OkResult(str(db_backup_path)))
 
     def download_database_backup(self, filepath: Path) -> Response:
         if filepath.parent != self.rotkehlchen.data.db.user_data_dir:
             error_msg = f'DB backup file {filepath} is not in the user directory'
-            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(error_msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT))
 
         response = send_file(
             path_or_file=filepath,
@@ -3265,28 +3144,34 @@ class RestAPI:
         for filepath in files:
             if filepath.parent != self.rotkehlchen.data.db.user_data_dir:
                 error_msg = f'DB backup file {filepath} is not in the user directory'
-                return api_response(
-                    result=wrap_in_fail_result(error_msg),
-                    status_code=HTTPStatus.CONFLICT,
-                )
+                return api_response(FailResult(
+                    error_msg,
+                    HTTPStatus.CONFLICT,
+                    FailureCause.CONFLICT,
+                ))
         for filepath in files:
             try:
                 filepath.unlink()
             except OSError as e:
-                return api_response(
-                    wrap_in_fail_result(f'Could not delete DB backup {filepath}: {e!s}'),
-                    status_code=HTTPStatus.CONFLICT,
-                )
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+                return api_response(FailResult(
+                    f'Could not delete DB backup {filepath}: {e!s}',
+                    HTTPStatus.CONFLICT,
+                    FailureCause.LOCAL_DB,
+                ))
+        return api_response(OkResult(True))
 
     def purge_pnl_report_data(self, report_id: int) -> Response:
         dbreports = DBAccountingReports(self.rotkehlchen.data.db)
         try:
             dbreports.purge_report_data(report_id=report_id)
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.INVALID_INPUT,
+            ))
 
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(OkResult(True))
 
     def get_pnl_reports(
             self,
@@ -3304,12 +3189,11 @@ class RestAPI:
         )
 
         # success
-        result_dict = _wrap_in_ok_result({
+        return api_response(OkResult({
             'entries': reports,
             'entries_found': entries_found,
             'entries_limit': entries_limit,
-        })
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        }))
 
     def get_report_data(self, filter_query: ReportDataFilterQuery) -> Response:
         entries_limit, _ = get_user_limit(
@@ -3324,7 +3208,11 @@ class RestAPI:
                 limit=entries_limit,
             )
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.INVALID_INPUT,
+            ))
 
         result = {
             'entries': [x.to_exported_dict(
@@ -3335,32 +3223,28 @@ class RestAPI:
             'entries_total': entries_total,
             'entries_limit': entries_limit,
         }
-        result_dict = _wrap_in_result(result, '')
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(OkResult(result))
 
     def get_associated_locations(self) -> Response:
         locations = self.rotkehlchen.data.db.get_associated_locations()
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             ancestors = DBLocations.ancestor_identifiers(cursor, locations)
-        return api_response(
-            result=_wrap_in_ok_result({
-                'locations': sorted(locations),
-                'ancestors': sorted(ancestors - locations),
-            }),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult({
+            'locations': sorted(locations),
+            'ancestors': sorted(ancestors - locations),
+        }))
 
     def get_locations(self) -> Response:
-        return make_response_from_dict(self.locations_service.get_locations())
+        return api_response(self.locations_service.get_locations())
 
     def get_location_aliases(self) -> Response:
-        return make_response_from_dict(self.locations_service.get_location_aliases())
+        return api_response(self.locations_service.get_location_aliases())
 
     def set_location_alias(self, alias: str, identifier: LocationIdentifier) -> Response:
-        return make_response_from_dict(self.locations_service.set_location_alias(alias, identifier))  # noqa: E501
+        return api_response(self.locations_service.set_location_alias(alias, identifier))
 
     def delete_location_alias(self, alias: str) -> Response:
-        return make_response_from_dict(self.locations_service.delete_location_alias(alias))
+        return api_response(self.locations_service.delete_location_alias(alias))
 
     def add_location(
             self,
@@ -3368,7 +3252,7 @@ class RestAPI:
             parent_identifier: LocationIdentifier,
             icon: str | None,
     ) -> Response:
-        return make_response_from_dict(self.locations_service.add_location(
+        return api_response(self.locations_service.add_location(
             name=name,
             parent_identifier=parent_identifier,
             icon=icon,
@@ -3383,7 +3267,7 @@ class RestAPI:
             is_active: bool | None,
             dry_run: bool,
     ) -> Response:
-        return make_response_from_dict(self.locations_service.edit_location(
+        return api_response(self.locations_service.edit_location(
             identifier=identifier,
             name=name,
             parent_identifier=parent_identifier,
@@ -3393,21 +3277,21 @@ class RestAPI:
         ))
 
     def delete_location(self, identifier: LocationIdentifier) -> Response:
-        return make_response_from_dict(self.locations_service.delete_location(identifier))
+        return api_response(self.locations_service.delete_location(identifier))
 
     def get_location_usage(self, identifier: LocationIdentifier) -> Response:
-        return make_response_from_dict(self.locations_service.get_location_usage(identifier))
+        return api_response(self.locations_service.get_location_usage(identifier))
 
     def get_location_image(self, identifier: LocationIdentifier, match_header: str | None) -> Response:  # noqa: E501
         return self.locations_service.get_location_image(identifier, match_header)
 
     def upload_location_image(self, identifier: LocationIdentifier, filepath: Path) -> Response:
-        return make_response_from_dict(
+        return api_response(
             self.locations_service.upload_location_image(identifier, filepath),
         )
 
     def delete_location_image(self, identifier: LocationIdentifier) -> Response:
-        return make_response_from_dict(self.locations_service.delete_location_image(identifier))
+        return api_response(self.locations_service.delete_location_image(identifier))
 
     def get_location_labels(self) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -3432,13 +3316,10 @@ class RestAPI:
                 exchange_locations,
             )]
 
-        return api_response(
-            result=_wrap_in_ok_result(labels),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult(labels))
 
     @async_api_call()
-    def query_online_events(self, query_type: HistoryEventQueryType) -> dict[str, Any]:
+    def query_online_events(self, query_type: HistoryEventQueryType) -> ApiResult:
         """Query the specified event type for data and add/update the events in the DB."""
         return self.history_service.query_online_events(query_type=query_type)
 
@@ -3451,7 +3332,7 @@ class RestAPI:
             filter_query=filter_query,
             aggregate_by_group_ids=aggregate_by_group_ids,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
     def query_kraken_staking_events(
@@ -3459,7 +3340,7 @@ class RestAPI:
             only_cache: bool,
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.history_service.query_kraken_staking_events(
             only_cache=only_cache,
             query_filter=query_filter,
@@ -3467,11 +3348,11 @@ class RestAPI:
         )
 
     @async_api_call()
-    def export_user_assets(self, path: Path | None) -> dict[str, Any]:
+    def export_user_assets(self, path: Path | None) -> ApiResult:
         return self.assets_service.export_user_assets(path)
 
     @async_api_call()
-    def import_user_assets(self, path: Path) -> dict[str, Any]:
+    def import_user_assets(self, path: Path) -> ApiResult:
         return self.assets_service.import_user_assets(path)
 
     def download_user_assets(self, file_path: str) -> Response:
@@ -3479,7 +3360,7 @@ class RestAPI:
 
     def get_user_db_snapshot(self, timestamp: Timestamp) -> Response:
         response_data = self.user_data_service.get_user_db_snapshot(timestamp)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def edit_user_db_snapshot(
             self,
@@ -3492,31 +3373,31 @@ class RestAPI:
             location_data_snapshot=location_data_snapshot,
             balances_snapshot=balances_snapshot,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def export_user_db_snapshot(self, timestamp: Timestamp, path: Path) -> Response:
         response_data = self.user_data_service.export_user_db_snapshot(
             timestamp=timestamp,
             path=path,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def download_user_db_snapshot(self, timestamp: Timestamp) -> Response:
         response = self.user_data_service.download_user_db_snapshot(timestamp)
         if isinstance(response, Response):
             return response
-        return make_response_from_dict(response)
+        return api_response(response)
 
     def delete_user_db_snapshot(self, timestamp: Timestamp) -> Response:
         response_data = self.user_data_service.delete_user_db_snapshot(timestamp)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
     def get_ens_mappings(
             self,
             addresses: list[ChecksumEvmAddress],
             ignore_cache: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.user_data_service.get_ens_mappings(
             addresses=addresses,
             ignore_cache=ignore_cache,
@@ -3527,7 +3408,7 @@ class RestAPI:
             self,
             name: str,
             ignore_cache: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.user_data_service.resolve_ens_name(
             name=name,
             ignore_cache=ignore_cache,
@@ -3542,7 +3423,7 @@ class RestAPI:
             balances_snapshot_file=balances_snapshot_file,
             location_data_snapshot_file=location_data_snapshot_file,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_addressbook_entries(
             self,
@@ -3553,7 +3434,7 @@ class RestAPI:
             book_type=book_type,
             filter_query=filter_query,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_addressbook_entries(
             self,
@@ -3566,7 +3447,7 @@ class RestAPI:
             entries=entries,
             update_existing=update_existing,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def update_addressbook_entries(
             self,
@@ -3577,7 +3458,7 @@ class RestAPI:
             book_type=book_type,
             entries=entries,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_addressbook_entries(
             self,
@@ -3588,14 +3469,14 @@ class RestAPI:
             book_type=book_type,
             chain_addresses=chain_addresses,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def search_for_names_everywhere(
             self,
             chain_addresses: list[OptionalChainAddress],
     ) -> Response:
         response_data = self.user_data_service.search_for_names_everywhere(chain_addresses)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
     def detect_evm_tokens(
@@ -3603,7 +3484,7 @@ class RestAPI:
             only_cache: bool,
             addresses: Sequence[ChecksumEvmAddress] | None,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)
         if addresses is None:
             addresses = self.rotkehlchen.chains_aggregator.get_active_addresses(blockchain)
@@ -3614,7 +3495,11 @@ class RestAPI:
                 addresses=addresses,
             )
         except (RemoteError, BadFunctionCallOutput) as e:
-            return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.CONFLICT)
+            return FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                e.cause if isinstance(e, RemoteError) else FailureCause.INVALID_INPUT,
+            )
 
         result = {}
         for account, (tokens, last_update_ts) in account_tokens_info.items():
@@ -3622,11 +3507,7 @@ class RestAPI:
                 'tokens': [token.identifier for token in tokens] if tokens is not None else None,
                 'last_update_timestamp': last_update_ts,
             }
-        return {
-            'result': result,
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(result)
 
     def get_config_arguments(self) -> Response:
         config = {
@@ -3647,7 +3528,7 @@ class RestAPI:
                 'is_default': current_level == DEFAULT_LOGLEVEL,
             },
         }
-        return api_response(_wrap_in_ok_result(config), status_code=HTTPStatus.OK)
+        return api_response(OkResult(config))
 
     def update_log_level(self, loglevel: str) -> Response:
         """Update the current log level"""
@@ -3659,7 +3540,7 @@ class RestAPI:
 
     def get_user_notes(self, filter_query: UserNotesFilterQuery) -> Response:
         response_data = self.user_data_service.get_user_notes(filter_query)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_user_note(
             self,
@@ -3674,44 +3555,52 @@ class RestAPI:
             location=location,
             is_pinned=is_pinned,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def edit_user_note(self, user_note: UserNote) -> Response:
         response_data = self.user_data_service.edit_user_note(user_note)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_user_note(self, identifier: int) -> Response:
         response_data = self.user_data_service.delete_user_note(identifier)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_custom_assets(self, filter_query: CustomAssetsFilterQuery) -> Response:
         response_data = self.assets_service.get_custom_assets(filter_query)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_custom_asset(self, custom_asset: CustomAsset) -> Response:
         response_data = self.assets_service.add_custom_asset(custom_asset)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def edit_custom_asset(self, custom_asset: CustomAsset) -> Response:
         response_data = self.assets_service.edit_custom_asset(custom_asset)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_custom_asset_types(self) -> Response:
         response_data = self.assets_service.get_custom_asset_types()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_event_details(self, identifier: int) -> Response:
         """Gets an evm event details"""
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         event = dbevents.get_evm_event_by_identifier(identifier=identifier)
         if event is None:
-            return api_response(wrap_in_fail_result('No event found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+            return api_response(FailResult(
+                'No event found',
+                HTTPStatus.NOT_FOUND,
+                FailureCause.NOT_FOUND,
+            ))
 
         details = event.get_details()
         if details is None:
-            return api_response(wrap_in_fail_result('No details found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+            return api_response(FailResult(
+                'No details found',
+                HTTPStatus.NOT_FOUND,
+                FailureCause.NOT_FOUND,
+            ))
 
-        return api_response(_wrap_in_ok_result(details), status_code=HTTPStatus.OK)
+        return api_response(OkResult(details))
 
     def get_history_event_group_position(
             self,
@@ -3724,7 +3613,9 @@ class RestAPI:
             group_identifier=group_identifier,
             filter_query=filter_query,
         )
-        return api_response(_wrap_in_ok_result({'position': position if position is not None else -1}), status_code=HTTPStatus.OK)  # noqa: E501
+        return api_response(OkResult(
+            {'position': position if position is not None else -1},
+        ))
 
     @async_api_call()
     def add_transaction_by_reference(
@@ -3732,7 +3623,7 @@ class RestAPI:
             blockchain: CHAINS_WITH_TRANSACTIONS_TYPE,
             tx_ref: EVMTxHash | Signature,
             associated_address: ChecksumEvmAddress | SolanaAddress,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.add_transaction_by_reference(
             blockchain=blockchain,
             tx_ref=tx_ref,
@@ -3746,7 +3637,7 @@ class RestAPI:
             location: LocationIdentifier,
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Returns a summary of Binance savings events that match the filter provided."""
         return self.history_service.get_binance_savings_history(
             only_cache=only_cache,
@@ -3761,42 +3652,42 @@ class RestAPI:
         for chain in ChainID:
             name, label = chain.name_and_label()
             result.append({'id': chain.value, 'name': name, 'label': label})
-        return api_response(result=_wrap_in_ok_result(result=result))
+        return api_response(OkResult(result))
 
     def get_ens_avatar(self, ens_name: str, match_header: str | None) -> Response:
         return self.assets_service.get_ens_avatar(ens_name=ens_name, match_header=match_header)
 
     def clear_icons_cache(self, icons: list[AssetWithNameAndType] | None) -> Response:
         response_data = self.assets_service.clear_icons_cache(icons)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def clear_avatars_cache(self, avatars: list[str] | None) -> Response:
         response_data = self.assets_service.clear_avatars_cache(avatars)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_types_mappings(self) -> Response:
         response_data = self.assets_service.get_types_mappings()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_counterparties_details(self) -> Response:
         response_data = self.assets_service.get_counterparties_details()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
-    def refresh_protocol_data(self, cache_protocol: ProtocolsWithCache) -> dict[str, Any]:
+    def refresh_protocol_data(self, cache_protocol: ProtocolsWithCache) -> ApiResult:
         return self.assets_service.refresh_protocol_data(cache_protocol)
 
     def get_airdrops_metadata(self) -> Response:
         response_data = self.assets_service.get_airdrops_metadata()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_defi_metadata(self) -> Response:
         response_data = self.assets_service.get_defi_metadata()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_skipped_external_events_summary(self) -> Response:
         summary = get_skipped_external_events_summary(self.rotkehlchen)
-        return api_response(result=_wrap_in_ok_result(summary), status_code=HTTPStatus.OK)
+        return api_response(OkResult(summary))
 
     def export_skipped_external_events(self, directory_path: Path | None) -> Response:
         try:
@@ -3805,7 +3696,7 @@ class RestAPI:
                 directory=directory_path,
             )
         except CSVWriteError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.LOCAL_DB))
 
         if directory_path is None:
             try:
@@ -3817,19 +3708,17 @@ class RestAPI:
                 )
                 return register_post_download_cleanup(response, exportpath)
             except FileNotFoundError:
-                return api_response(
-                    wrap_in_fail_result('No file was found'),
-                    status_code=HTTPStatus.NOT_FOUND,
-                )
+                return api_response(FailResult(
+                    'No file was found',
+                    HTTPStatus.NOT_FOUND,
+                    FailureCause.NOT_FOUND,
+                ))
         else:
-            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+            return api_response(OkResult(True))
 
     def reprocess_skipped_external_events(self) -> Response:
         total, successful = reprocess_skipped_external_events(self.rotkehlchen)
-        return api_response(
-            result=_wrap_in_ok_result({'total': total, 'successful': successful}),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult({'total': total, 'successful': successful}))
 
     @async_api_call()
     def export_history_events(
@@ -3837,7 +3726,7 @@ class RestAPI:
             filter_query: HistoryBaseEntryFilterQuery,
             directory_path: Path | None,
             match_exact_events: bool,
-    ) -> dict[str, Any] | Response:
+    ) -> ApiResult | Response:
         """Export history events data to a CSV file."""
         return self.history_service.export_history_events(
             filter_query=filter_query,
@@ -3866,7 +3755,7 @@ class RestAPI:
             rule=rule,
             links=links,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def update_accounting_rule(
             self,
@@ -3887,19 +3776,19 @@ class RestAPI:
             links=links,
             identifier=identifier,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_accounting_rule(self, rule_id: int) -> Response:
         response_data = self.accounting_service.delete_accounting_rule(rule_id)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def query_accounting_rules(self, filter_query: AccountingRulesFilterQuery) -> Response:
         response_data = self.accounting_service.query_accounting_rules(filter_query)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def linkable_accounting_properties(self) -> Response:
         response_data = self.accounting_service.linkable_accounting_properties()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def solve_multiple_accounting_rule_conflicts(
             self,
@@ -3910,86 +3799,86 @@ class RestAPI:
             conflicts=conflicts,
             solve_all_using=solve_all_using,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def list_accounting_rules_conflicts(self, filter_query: DBFilterQuery) -> Response:
         response_data = self.accounting_service.list_accounting_rules_conflicts(filter_query)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_to_spam_assets_false_positive(self, token: EvmToken | SolanaToken) -> Response:
         response_data = self.assets_service.add_to_spam_assets_false_positive(token)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def remove_from_spam_assets_false_positives(self, token: EvmToken | SolanaToken) -> Response:
         response_data = self.assets_service.remove_from_spam_assets_false_positives(token)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_spam_assets_false_positives(self) -> Response:
         response_data = self.assets_service.get_spam_assets_false_positives()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def add_tokens_to_spam(self, tokens: list[EvmToken | SolanaToken]) -> Response:
         response_data = self.assets_service.add_tokens_to_spam(tokens)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def remove_token_from_spam(self, token: EvmToken | SolanaToken) -> Response:
         response_data = self.assets_service.remove_token_from_spam(token)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def create_calendar_entry(self, calendar: CalendarEntry) -> Response:
         response_data = self.integrations_service.create_calendar_entry(calendar)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_calendar_entry(self, identifier: int) -> Response:
         response_data = self.integrations_service.delete_calendar_entry(identifier)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def query_calendar(self, filter_query: CalendarFilterQuery) -> Response:
         response_data = self.integrations_service.query_calendar(filter_query)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def update_calendar_entry(self, calendar: CalendarEntry) -> Response:
         response_data = self.integrations_service.update_calendar_entry(calendar)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def create_calendar_reminder(self, reminders: list[ReminderEntry]) -> Response:
         response_data = self.integrations_service.create_calendar_reminder(reminders)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def delete_reminder_entry(self, identifier: int) -> Response:
         response_data = self.integrations_service.delete_reminder_entry(identifier)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def update_reminder_entry(self, reminder: ReminderEntry) -> Response:
         response_data = self.integrations_service.update_reminder_entry(reminder)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def query_reminders(self, event_id: int) -> Response:
         response_data = self.integrations_service.query_reminders(event_id)
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_google_calendar_status(self) -> Response:
         response_data = self.integrations_service.get_google_calendar_status()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def sync_google_calendar(self) -> Response:
         response_data = self.integrations_service.sync_google_calendar()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def disconnect_google_calendar(self) -> Response:
         response_data = self.integrations_service.disconnect_google_calendar()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def complete_google_calendar_oauth(self, access_token: str, refresh_token: str) -> Response:
         response_data = self.integrations_service.complete_google_calendar_oauth(
             access_token=access_token,
             refresh_token=refresh_token,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def get_monerium_status(self) -> Response:
         response_data = self.integrations_service.get_monerium_status()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def complete_monerium_oauth(self, access_token: str, refresh_token: str, expires_in: int) -> Response:  # noqa: E501
         response_data = self.integrations_service.complete_monerium_oauth(
@@ -3997,11 +3886,11 @@ class RestAPI:
             refresh_token=refresh_token,
             expires_in=expires_in,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def disconnect_monerium(self) -> Response:
         response_data = self.integrations_service.disconnect_monerium()
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     def query_wrap_stats(self, from_ts: Timestamp, to_ts: Timestamp) -> Response:
         """Query starts in the time range selected.
@@ -4017,7 +3906,7 @@ class RestAPI:
             gnosis_user=len(stats['gnosis_max_payments_by_currency']) > 0,
         )
         stats['score'] = score
-        return api_response(_wrap_in_ok_result(result=stats, status_code=HTTPStatus.OK))
+        return api_response(OkResult(stats))
 
     @staticmethod
     def _serialize_data_issue(issue: DataIssue) -> dict[str, Any]:
@@ -4043,11 +3932,11 @@ class RestAPI:
     def get_data_issues(self, filter_query: DataIssuesFilterQuery) -> Response:
         manager = DataIssuesManager(self.rotkehlchen.data.db)
         entries = manager.list_issues(filter_query)
-        return api_response(_wrap_in_ok_result(result={
+        return api_response(OkResult({
             'entries': [self._serialize_data_issue(issue) for issue in entries],
             'entries_found': manager.count_issues(filter_query),
             'entries_limit': -1,
-        }, status_code=HTTPStatus.OK))
+        }))
 
     @accounting_update_required('Data issues are disabled', response=True)
     def get_data_issue(self, issue_id: int) -> Response:
@@ -4056,9 +3945,9 @@ class RestAPI:
                 self.rotkehlchen.data.db,
             ).get_issue(issue_id))
         except NotFoundError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
+            return api_response(FailResult(str(e), HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND))
 
-        return api_response(_wrap_in_ok_result(result=result, status_code=HTTPStatus.OK))
+        return api_response(OkResult(result))
 
     @accounting_update_required('Data issues are disabled', response=True)
     def dismiss_data_issue(self, issue_id: int) -> Response:
@@ -4067,9 +3956,9 @@ class RestAPI:
                 self.rotkehlchen.data.db,
             ).dismiss(issue_id))
         except NotFoundError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
+            return api_response(FailResult(str(e), HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND))
 
-        return api_response(_wrap_in_ok_result(result=result, status_code=HTTPStatus.OK))
+        return api_response(OkResult(result))
 
     @accounting_update_required('Data issues are disabled', response=True)
     def resolve_data_issue_manually(self, issue_id: int, note: str | None = None) -> Response:
@@ -4078,27 +3967,36 @@ class RestAPI:
                 self.rotkehlchen.data.db,
             ).resolve_manually(issue_id=issue_id, note=note))
         except NotFoundError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
+            return api_response(FailResult(str(e), HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND))
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                FailureCause.INVALID_INPUT,
+            ))
 
-        return api_response(_wrap_in_ok_result(result=result, status_code=HTTPStatus.OK))
+        return api_response(OkResult(result))
 
     @accounting_update_required('Data issues are disabled', response=True)
     def retry_data_issue_auto_remediation(self, issue_id: int) -> Response:
         if (task_manager := self.rotkehlchen.task_manager) is None:
-            return api_response(
-                wrap_in_fail_result('Cannot retry auto-remediation while logging out'),
-                status_code=HTTPStatus.CONFLICT,
-            )
+            return api_response(FailResult(
+                'Cannot retry auto-remediation while logging out',
+                HTTPStatus.CONFLICT,
+                FailureCause.CONFLICT,
+            ))
 
         issues_manager = DataIssuesManager(self.rotkehlchen.data.db)
         try:
             issue, should_schedule = issues_manager.retry_auto_remediation(issue_id)
         except NotFoundError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
+            return api_response(FailResult(str(e), HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND))
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                FailureCause.INVALID_INPUT,
+            ))
 
         if should_schedule and task_manager.retry_data_issue_auto_remediation(
             issue_id=issue.id,
@@ -4112,15 +4010,13 @@ class RestAPI:
                     reason='processing_already_running',
                 ),
             )
-            return api_response(
-                wrap_in_fail_result('Historical balance processing is already running'),
-                status_code=HTTPStatus.CONFLICT,
-            )
+            return api_response(FailResult(
+                'Historical balance processing is already running',
+                HTTPStatus.CONFLICT,
+                FailureCause.CONFLICT,
+            ))
 
-        return api_response(_wrap_in_ok_result(
-            result=self._serialize_data_issue(issue),
-            status_code=HTTPStatus.OK,
-        ))
+        return api_response(OkResult(self._serialize_data_issue(issue)))
 
     @async_api_call()
     @accounting_update_required('Historical balances are disabled')
@@ -4128,7 +4024,7 @@ class RestAPI:
             self,
             filter_query: HistoricalBalancesFilterQuery,
             group_by_account: bool = False,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Query historical balances for all assets at a given timestamp
         by processing historical events
         """
@@ -4139,9 +4035,10 @@ class RestAPI:
         result: dict[str, Any] = {'processing_required': processing_required}
         if balances is None:
             if group_by_account is True and processing_required is False:
-                return wrap_in_fail_result(
+                return FailResult(
                     'No historical data found',
-                    status_code=HTTPStatus.NOT_FOUND,
+                    HTTPStatus.NOT_FOUND,
+                    FailureCause.NOT_FOUND,
                 )
         elif group_by_account is True:
             result['entries'] = [
@@ -4161,14 +4058,14 @@ class RestAPI:
                 for asset, amount in balances.items()
             }
 
-        return _wrap_in_ok_result(result=result, status_code=HTTPStatus.OK)
+        return OkResult(result)
 
     @async_api_call()
     @accounting_update_required('Historical balance series is disabled')
     def get_historical_balance_series(
             self,
             filter_query: HistoricalBalancesFilterQuery,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         processing_required, entries = HistoricalBalancesManager(
             self.rotkehlchen.data.db,
         ).get_balance_series(filter_query=filter_query)
@@ -4176,9 +4073,10 @@ class RestAPI:
         result: dict[str, Any] = {'processing_required': processing_required}
         if entries is None:
             if processing_required is False:
-                return wrap_in_fail_result(
+                return FailResult(
                     'No historical data found',
-                    status_code=HTTPStatus.NOT_FOUND,
+                    HTTPStatus.NOT_FOUND,
+                    FailureCause.NOT_FOUND,
                 )
         else:
             result['entries'] = [
@@ -4193,19 +4091,19 @@ class RestAPI:
                 for entry in entries
             ]
 
-        return _wrap_in_ok_result(result=result, status_code=HTTPStatus.OK)
+        return OkResult(result)
 
     @async_api_call()
     @accounting_update_required('Historical balances at events is disabled')
-    def get_historical_balances_at_events(self, event_identifiers: list[int]) -> dict[str, Any]:
+    def get_historical_balances_at_events(self, event_identifiers: list[int]) -> ApiResult:
         try:
             processing, balances = HistoricalBalancesManager(
                 self.rotkehlchen.data.db,
             ).get_balances_at_events(event_identifiers)
         except NotFoundError as e:
-            return wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND)
+            return FailResult(str(e), HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND)
 
-        return _wrap_in_ok_result(result={
+        return OkResult({
             'entries': {
                 str(identifier): {
                     'processing_required': identifier in processing,
@@ -4216,7 +4114,7 @@ class RestAPI:
                     } for bucket in buckets],
                 } for identifier, buckets in balances.items()
             },
-        }, status_code=HTTPStatus.OK)
+        })
 
     def get_historical_asset_amounts(
             self,
@@ -4251,9 +4149,13 @@ class RestAPI:
                 to_ts=to_timestamp,
             )
         except DeserializationError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.INTERNAL_SERVER_ERROR)  # noqa: E501
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                FailureCause.LOCAL_DB,
+            ))
         except NotFoundError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
+            return api_response(FailResult(str(e), HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND))
 
         result: dict[str, Any] = {
             'times': list(balances),
@@ -4262,71 +4164,78 @@ class RestAPI:
         if last_group_identifier is not None:
             result['last_group_identifier'] = last_group_identifier
 
-        return api_response(_wrap_in_ok_result(result=result))
+        return api_response(OkResult(result))
 
     @accounting_update_required('Historical balance processing is disabled')
-    def _trigger_historical_balance_processing(self) -> dict[str, Any]:
-        return _wrap_in_ok_result(result=(
+    def _trigger_historical_balance_processing(self) -> ApiResult:
+        return OkResult(
             # task_manager is None if logout races us
             (task_manager := self.rotkehlchen.task_manager) is not None and
-            task_manager.trigger_historical_balance_processing()
-        ))
+            task_manager.trigger_historical_balance_processing(),
+        )
 
     @async_api_call()
-    def trigger_task(self, task: TaskName) -> dict[str, Any]:
+    def trigger_task(self, task: TaskName) -> ApiResult:
         """Trigger the specified async task."""
         if task == TaskName.HISTORICAL_BALANCE_PROCESSING:
             return self._trigger_historical_balance_processing()
         elif task == TaskName.DATA_ISSUE_REMEDIATION:
             if not __debug__ or is_accounting_update_enabled() is False:
-                return wrap_in_fail_result(
-                    message='Data issue remediation is disabled',
-                    status_code=HTTPStatus.NOT_FOUND,
+                return FailResult(
+                    'Data issue remediation is disabled',
+                    HTTPStatus.NOT_FOUND,
+                    FailureCause.CONFLICT,
                 )
             if (
                 (task_manager := self.rotkehlchen.task_manager) is None or
                 task_manager.trigger_data_issue_remediation() is False
             ):
-                return wrap_in_fail_result(
-                    message='Data issue remediation cannot start before historical balance '
+                return FailResult(
+                    'Data issue remediation cannot start before historical balance '
                     'processing completes or while history work is running.',
-                    status_code=HTTPStatus.CONFLICT,
+                    HTTPStatus.CONFLICT,
+                    FailureCause.CONFLICT,
                 )
         elif task == TaskName.CURRENT_BALANCE_DETECTION:
             if is_accounting_update_enabled() is False:
-                return wrap_in_fail_result(
-                    message='Current balance detection is disabled',
-                    status_code=HTTPStatus.NOT_FOUND,
+                return FailResult(
+                    'Current balance detection is disabled',
+                    HTTPStatus.NOT_FOUND,
+                    FailureCause.CONFLICT,
                 )
             if (
                 (task_manager := self.rotkehlchen.task_manager) is None or
                 (tasks := task_manager.trigger_current_balance_detection()) is None
             ):
-                return wrap_in_fail_result(
-                    message='Current balance detection cannot start before historical balance '
+                return FailResult(
+                    'Current balance detection cannot start before historical balance '
                     'processing completes or while history work is running.',
-                    status_code=HTTPStatus.CONFLICT,
+                    HTTPStatus.CONFLICT,
+                    FailureCause.CONFLICT,
                 )
             for detection_task in tasks:  # finish before answering so the caller sees its issues
                 join_forwarding_cancellation(detection_task)
                 if isinstance(exception := exception_of(detection_task), TaskCancelledError):
-                    return wrap_in_fail_result(  # e.g. preempted by a processing run
-                        message='Current balance detection was cancelled',
-                        status_code=HTTPStatus.CONFLICT,
+                    return FailResult(  # e.g. preempted by a processing run
+                        'Current balance detection was cancelled',
+                        HTTPStatus.CONFLICT,
+                        FailureCause.CANCELLED,
                     )
                 if exception is not None:
-                    return wrap_in_fail_result(
-                        message=f'Current balance detection failed: {exception!s}',
-                        status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    return FailResult(
+                        f'Current balance detection failed: {exception!s}',
+                        HTTPStatus.INTERNAL_SERVER_ERROR,
+                        FailureCause.INTERNAL,
                     )
         else:  # task in (TaskName.ASSET_MOVEMENT_MATCHING, TaskName.BRIDGE_MATCHING)
             if has_premium_capability(
                     premium=self.rotkehlchen.premium,
                     capability_name=ASSET_MOVEMENT_MATCHING_CAPABILITY,
             ) is False:
-                return wrap_in_fail_result(
-                    message='Automatic matching is not available for your current premium tier.',
-                    status_code=HTTPStatus.FORBIDDEN,
+                return FailResult(
+                    'Automatic matching is not available for your current premium tier.',
+                    HTTPStatus.FORBIDDEN,
+                    FailureCause.FORBIDDEN,
                 )
 
             if task == TaskName.ASSET_MOVEMENT_MATCHING:
@@ -4340,7 +4249,7 @@ class RestAPI:
                     should_auto_match=True,
                 )
 
-        return OK_RESULT
+        return OkResult(True)
 
     def set_scheduler_state(self, enabled: bool) -> Response:
         """Enable or disable the periodic task scheduler.
@@ -4353,7 +4262,7 @@ class RestAPI:
         """
         if (task_manager := self.rotkehlchen.task_manager) is not None:  # None if logout races us
             task_manager.should_schedule = enabled
-        return api_response(_wrap_in_ok_result(result={'enabled': enabled}))
+        return api_response(OkResult({'enabled': enabled}))
 
     def get_historical_netvalue(
             self,
@@ -4381,7 +4290,7 @@ class RestAPI:
                 for day_balances in balances
             ]
 
-        return api_response(_wrap_in_ok_result(result=result))
+        return api_response(OkResult(result))
 
     @async_api_call()
     def get_onchain_historical_balance(
@@ -4390,20 +4299,22 @@ class RestAPI:
             address: ChecksumEvmAddress,
             asset: Asset,
             timestamp: Timestamp,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id=evm_chain)
         if not evm_manager.node_inquirer.has_archive_node():
-            return wrap_in_fail_result(
-                message=f'No archive node available for {evm_chain.to_name()} to query historical balance',  # noqa: E501
-                status_code=HTTPStatus.CONFLICT,
+            return FailResult(
+                f'No archive node available for {evm_chain.to_name()} to query historical balance',
+                HTTPStatus.CONFLICT,
+                FailureCause.UNSUPPORTED,
             )
 
         try:
             block_number = evm_manager.node_inquirer.get_blocknumber_by_time(ts=timestamp)
         except RemoteError as e:
-            return wrap_in_fail_result(
-                message=f'Failed to get block number for timestamp {timestamp}: {e!s}',
-                status_code=HTTPStatus.BAD_GATEWAY,
+            return FailResult(
+                f'Failed to get block number for timestamp {timestamp}: {e!s}',
+                HTTPStatus.BAD_GATEWAY,
+                e.cause,
             )
 
         if asset == evm_manager.node_inquirer.native_token:
@@ -4421,15 +4332,14 @@ class RestAPI:
             )
 
         if balance is None:
-            return wrap_in_fail_result(
-                message=(
-                    f'Failed to query historical balance for {asset.identifier} at block {block_number}. '  # noqa: E501
-                    f'The token may not have been deployed at this block or may not be ERC20 compatible.'  # noqa: E501
-                ),
-                status_code=HTTPStatus.CONFLICT,
+            return FailResult(
+                f'Failed to query historical balance for {asset.identifier} at block {block_number}. '  # noqa: E501
+                f'The token may not have been deployed at this block or may not be ERC20 compatible.',  # noqa: E501
+                HTTPStatus.CONFLICT,
+                FailureCause.NETWORK,
             )
 
-        return _wrap_in_ok_result(result={asset.identifier: str(balance)})
+        return OkResult({asset.identifier: str(balance)})
 
     @staticmethod
     def _serialize_historical_balance_divergence_event(
@@ -4493,12 +4403,13 @@ class RestAPI:
             asset: Asset,
             tolerance: FVal,
             to_timestamp: Timestamp | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id=evm_chain)
         if not evm_manager.node_inquirer.has_archive_node():
-            return wrap_in_fail_result(
-                message=f'No archive node available for {evm_chain.to_name()} to query historical balance divergence',  # noqa: E501
-                status_code=HTTPStatus.CONFLICT,
+            return FailResult(
+                f'No archive node available for {evm_chain.to_name()} to query historical balance divergence',  # noqa: E501
+                HTTPStatus.CONFLICT,
+                FailureCause.UNSUPPORTED,
             )
 
         try:
@@ -4512,13 +4423,16 @@ class RestAPI:
                 tolerance=tolerance,
                 to_timestamp=to_timestamp,
             )
-        except (RemoteError, DeserializationError, UnknownAsset, WrongAssetType) as e:
-            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+        except RemoteError as e:
+            return FailResult(str(e), HTTPStatus.CONFLICT, e.cause)
+        except DeserializationError as e:
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.BAD_DATA)
+        except UnknownAsset as e:
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.NOT_FOUND)
+        except WrongAssetType as e:
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
-        return _wrap_in_ok_result(
-            result=self._serialize_historical_balance_divergence_result(result),
-            status_code=HTTPStatus.OK,
-        )
+        return OkResult(self._serialize_historical_balance_divergence_result(result))
 
     @async_api_call()
     def get_historical_prices_per_asset(
@@ -4529,7 +4443,7 @@ class RestAPI:
             from_timestamp: Timestamp,
             exclude_timestamps: set[Timestamp],
             only_cache_period: int | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         prices = {}
         no_prices_ts: list[Timestamp] = []
         rate_limited_prices_ts: list[Timestamp] = []
@@ -4562,7 +4476,7 @@ class RestAPI:
                     if price_result is not None:
                         prices[price_result.timestamp] = str(price_result.price)
 
-            return _wrap_in_ok_result(result={
+            return OkResult({
                 'prices': prices,
                 'no_prices_timestamps': [ts for ts in missing_timestamps if ts not in prices],
                 'rate_limited_prices_timestamps': rate_limited_prices_ts,
@@ -4594,7 +4508,7 @@ class RestAPI:
                     },
                 )
 
-        return _wrap_in_ok_result(result={
+        return OkResult({
             'prices': prices,
             'no_prices_timestamps': no_prices_ts,
             'rate_limited_prices_timestamps': rate_limited_prices_ts,
@@ -4607,7 +4521,7 @@ class RestAPI:
             to_timestamp: Timestamp,
             chain: CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
             address: ChecksumEvmAddress | SolanaAddress | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.force_refetch_transactions(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
@@ -4619,7 +4533,7 @@ class RestAPI:
     def get_pending_internal_tx_repull_conflicts(
             self,
             filter_query: InternalTxConflictsFilterQuery,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.get_pending_internal_tx_repull_conflicts(
             filter_query=filter_query,
         )
@@ -4627,7 +4541,7 @@ class RestAPI:
     @async_api_call()
     def get_pending_internal_tx_repull_conflicts_count(
             self,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.get_pending_internal_tx_repull_conflicts_count()
 
     def addresses_interacted_before(
@@ -4639,7 +4553,7 @@ class RestAPI:
             from_address=from_address,
             to_address=to_address,
         )
-        return make_response_from_dict(response_data)
+        return api_response(response_data)
 
     @async_api_call()
     def prepare_token_transfer(
@@ -4649,7 +4563,7 @@ class RestAPI:
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             token: EvmToken,
             amount: FVal,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.prepare_token_transfer(
             from_address=from_address,
             to_address=to_address,
@@ -4659,19 +4573,19 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_gnosis_pay_safe_admin_addresses(self) -> dict[str, Any]:
+    def get_gnosis_pay_safe_admin_addresses(self) -> ApiResult:
         return self.integrations_service.get_gnosis_pay_safe_admin_addresses()
 
     @async_api_call()
-    def get_gnosis_pay_safe_migration(self) -> dict[str, Any]:
+    def get_gnosis_pay_safe_migration(self) -> ApiResult:
         return self.integrations_service.get_gnosis_pay_safe_migration()
 
     @async_api_call()
-    def fetch_gnosis_pay_nonce(self) -> dict[str, Any]:
+    def fetch_gnosis_pay_nonce(self) -> ApiResult:
         return self.integrations_service.fetch_gnosis_pay_nonce()
 
     @async_api_call()
-    def verify_gnosis_pay_siwe_signature(self, message: str, signature: str) -> dict[str, Any]:
+    def verify_gnosis_pay_siwe_signature(self, message: str, signature: str) -> ApiResult:
         return self.integrations_service.verify_gnosis_pay_siwe_signature(
             message=message,
             signature=signature,
@@ -4684,7 +4598,7 @@ class RestAPI:
             to_address: ChecksumEvmAddress,
             chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
             amount: FVal,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.prepare_native_transfer(
             from_address=from_address,
             to_address=to_address,
@@ -4698,7 +4612,7 @@ class RestAPI:
             address: ChecksumEvmAddress,
             evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
             asset: CryptoAsset,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.transactions_service.fetch_token_balance_for_address(
             address=address,
             evm_chain=evm_chain,
@@ -4712,7 +4626,7 @@ class RestAPI:
             address: SolanaAddress,
             decimals: int,
             token_kind: SOLANA_TOKEN_KINDS_TYPE,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """This is a temporary endpoint to correct custom user input
         solana tokens input before release 1.40.
 
@@ -4724,9 +4638,10 @@ class RestAPI:
                 'SELECT COUNT(*) FROM user_added_solana_tokens WHERE identifier = ?',
                 (old_asset.identifier,),
             ).fetchone()[0] == 0:
-                return wrap_in_fail_result(
-                    message='Token does not exist in user_added_solana_tokens table',
-                    status_code=HTTPStatus.CONFLICT,
+                return FailResult(
+                    'Token does not exist in user_added_solana_tokens table',
+                    HTTPStatus.CONFLICT,
+                    FailureCause.CONFLICT,
                 )
         with self.migration_lock:  # prevent race conditions when migrating last few tokens simultaneously  # noqa: E501
             try:
@@ -4743,7 +4658,7 @@ class RestAPI:
                     cryptocompare=old_asset.cryptocompare,
                 ))
             except InputError as e:
-                return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+                return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
             try:
                 with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
@@ -4765,13 +4680,20 @@ class RestAPI:
                         write_cursor=write_cursor,
                         asset_id=solana_token.identifier,
                     )
-                return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+                return FailResult(
+                    str(e),
+                    HTTPStatus.CONFLICT,
+                    (
+                        FailureCause.NOT_FOUND if isinstance(e, UnknownAsset)
+                        else FailureCause.INVALID_INPUT
+                    ),
+                )
 
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 if write_cursor.execute('SELECT COUNT(*) FROM user_added_solana_tokens').fetchone()[0] == 0:  # noqa: E501
                     write_cursor.execute('DROP TABLE user_added_solana_tokens')
 
-        return OK_RESULT
+        return OkResult(True)
 
     def get_premium_registered_devices(self) -> Response:
         """Get list of devices registered to the premium account."""
@@ -4779,9 +4701,9 @@ class RestAPI:
         try:
             result = self.rotkehlchen.premium.get_remote_devices_information()
         except RemoteError as e:
-            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
+            return api_response(FailResult(str(e), HTTPStatus.CONFLICT, e.cause))
 
-        return api_response(_wrap_in_ok_result(result))
+        return api_response(OkResult(result))
 
     def get_premium_capabilities(self) -> Response:
         """Get capabilities for the logged-in account."""
@@ -4792,9 +4714,13 @@ class RestAPI:
                 else get_free_capabilities()
             )
         except (PremiumAuthenticationError, RemoteError) as e:
-            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                e.cause if isinstance(e, RemoteError) else FailureCause.AUTH,
+            ))
 
-        return api_response(_wrap_in_ok_result(capabilities))
+        return api_response(OkResult(capabilities))
 
     def delete_premium_registered_device(self, device_identifier: str) -> Response:
         """Delete a device from the premium account by identifier."""
@@ -4802,11 +4728,15 @@ class RestAPI:
         try:
             self.rotkehlchen.premium.delete_device(device_identifier)
         except InputError as e:
-            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                FailureCause.INVALID_INPUT,
+            ))
         except RemoteError as e:
-            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.BAD_GATEWAY)
+            return api_response(FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause))
 
-        return api_response(OK_RESULT)
+        return api_response(OkResult(True))
 
     def edit_premium_registered_device(self, device_identifier: str, device_name: str) -> Response:
         """Edit a device's name in the premium account by identifier."""
@@ -4814,9 +4744,9 @@ class RestAPI:
         try:
             self.rotkehlchen.premium.edit_device(device_identifier, device_name)
         except RemoteError as e:
-            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
+            return api_response(FailResult(str(e), HTTPStatus.CONFLICT, e.cause))
 
-        return api_response(OK_RESULT)
+        return api_response(OkResult(True))
 
     def match_asset_movements(
             self,
@@ -4843,16 +4773,20 @@ class RestAPI:
                     )
 
                 if len(events) != 1:
-                    return api_response(wrap_in_fail_result(
-                        message=f'No event found in the DB for identifier {asset_movement_identifier}',  # noqa: E501
-                    ), HTTPStatus.BAD_REQUEST)
+                    return api_response(FailResult(
+                        f'No event found in the DB for identifier {asset_movement_identifier}',
+                        HTTPStatus.BAD_REQUEST,
+                        FailureCause.NOT_FOUND,
+                    ))
 
                 if not resolve_asset_movement_external(events_db=events_db, event=events[0]):
-                    return api_response(wrap_in_fail_result(
-                        message=f'Event with identifier {asset_movement_identifier} is not an asset movement deposit or withdrawal',  # noqa: E501
-                    ), HTTPStatus.BAD_REQUEST)
+                    return api_response(FailResult(
+                        f'Event with identifier {asset_movement_identifier} is not an asset movement deposit or withdrawal',  # noqa: E501
+                        HTTPStatus.BAD_REQUEST,
+                        FailureCause.INVALID_INPUT,
+                    ))
 
-                return api_response(OK_RESULT)
+                return api_response(OkResult(True))
 
             # No matched event specified. Mark as having no match so this movement will be ignored.
             with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
@@ -4861,7 +4795,7 @@ class RestAPI:
                     'VALUES(?, ?)',
                     (asset_movement_identifier, HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()),  # noqa: E501
                 )
-            return api_response(OK_RESULT)
+            return api_response(OkResult(True))
 
         asset_movement, matched_events, fee_event = None, [], None
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -4910,9 +4844,13 @@ class RestAPI:
                     is_deposit=asset_movement.event_subtype == HistoryEventSubType.RECEIVE,
                     allow_adding_adjustments=allow_adding_adjustments,
                 )
-            return api_response(OK_RESULT)
+            return api_response(OkResult(True))
 
-        return api_response(wrap_in_fail_result(message=error_msg), HTTPStatus.BAD_REQUEST)
+        return api_response(FailResult(
+            error_msg,
+            HTTPStatus.BAD_REQUEST,
+            FailureCause.INVALID_INPUT,
+        ))
 
     def get_unmatched_asset_movements(self, only_ignored: bool) -> Response:
         """Get the group identifiers of unmatched asset movements.
@@ -4934,7 +4872,7 @@ class RestAPI:
             # convert to id list using dict.fromkeys to remove duplicates but retain original order
             movement_group_ids = list(dict.fromkeys(event.group_identifier for event in asset_movements))  # noqa: E501
 
-        return api_response(_wrap_in_ok_result(result=movement_group_ids))
+        return api_response(OkResult(movement_group_ids))
 
     def _get_ignored_ced_group_ids(self) -> list[str]:
         """Return group identifiers that have been marked as ignored false positives."""
@@ -4948,12 +4886,12 @@ class RestAPI:
             ]
 
     @async_api_call()
-    def get_customized_event_duplicates(self) -> dict[str, Any]:
+    def get_customized_event_duplicates(self) -> ApiResult:
         """Get customized event duplicate candidates grouped by fixability."""
         auto_fix_group_ids, manual_review_group_ids, _ = find_customized_event_duplicate_groups(
             database=self.rotkehlchen.data.db,
         )
-        return _wrap_in_ok_result(result={
+        return OkResult({
             'auto_fix_group_ids': auto_fix_group_ids,
             'manual_review_group_ids': manual_review_group_ids,
             'ignored_group_ids': self._get_ignored_ced_group_ids(),
@@ -4963,7 +4901,7 @@ class RestAPI:
     def fix_customized_event_duplicates(
             self,
             group_identifiers: list[str] | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Remove exact duplicate non-customized events that only differ by sequence index.
 
         When group_identifiers is provided, only those groups are processed.
@@ -4974,7 +4912,7 @@ class RestAPI:
             group_identifiers=group_identifiers,
         )
         if not duplicate_ids:
-            return _wrap_in_ok_result(result={
+            return OkResult({
                 'removed_event_identifiers': [],
                 'auto_fix_group_ids': auto_fix_group_ids,
                 'manual_review_group_ids': manual_review_group_ids,
@@ -4984,12 +4922,12 @@ class RestAPI:
             identifiers=duplicate_ids,
             force_delete=False,
         )) is not None:
-            return wrap_in_fail_result(message=error, status_code=HTTPStatus.CONFLICT)
+            return FailResult(error, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
 
         auto_fix_group_ids, manual_review_group_ids, _ = find_customized_event_duplicate_groups(
             database=self.rotkehlchen.data.db,
         )
-        return _wrap_in_ok_result(result={
+        return OkResult({
             'removed_event_identifiers': duplicate_ids,
             'auto_fix_group_ids': auto_fix_group_ids,
             'manual_review_group_ids': manual_review_group_ids,
@@ -4999,7 +4937,7 @@ class RestAPI:
     def ignore_customized_event_duplicates(
             self,
             group_identifiers: list[str],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Mark the given group identifiers as ignored false positives."""
         with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
             write_cursor.executemany(
@@ -5009,13 +4947,13 @@ class RestAPI:
                     for gid in group_identifiers
                 ],
             )
-        return _wrap_in_ok_result(result=self._get_ignored_ced_group_ids())
+        return OkResult(self._get_ignored_ced_group_ids())
 
     @async_api_call()
     def unignore_customized_event_duplicates(
             self,
             group_identifiers: list[str],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Remove the ignored false positive markers for the given group identifiers."""
         with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
             placeholders = ','.join('?' for _ in group_identifiers)
@@ -5026,7 +4964,7 @@ class RestAPI:
                     for gid in group_identifiers
                 ],
             )
-        return _wrap_in_ok_result(result=self._get_ignored_ced_group_ids())
+        return OkResult(self._get_ignored_ced_group_ids())
 
     def unlink_matched_asset_movements(
             self,
@@ -5055,10 +4993,12 @@ class RestAPI:
                     'DELETE FROM history_event_link_ignores WHERE event_id=? AND link_type=?',
                     (identifier, HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()),
                 ).rowcount == 0:
-                    return api_response(wrap_in_fail_result(message=(
+                    return api_response(FailResult(
                         f'The specified identifier {identifier} does not correspond to either the '
-                        'asset movement or its match for any matched pairs in the DB.'
-                    )), HTTPStatus.BAD_REQUEST)
+                        'asset movement or its match for any matched pairs in the DB.',
+                        HTTPStatus.BAD_REQUEST,
+                        FailureCause.INVALID_INPUT,
+                    ))
 
                 # Restore the original movement if it was resolved as external. The whole
                 # group is restored since resolving rewrites the movement's fee alongside
@@ -5082,7 +5022,7 @@ class RestAPI:
                         HistoryMappingState.MATCHED.serialize_for_db(),
                     ) for event_id in group_event_ids],
                 )
-                return api_response(OK_RESULT)
+                return api_response(OkResult(True))
 
         with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
             for asset_movement_identifier, matched_event_identifiers in linked_ids.items():
@@ -5131,7 +5071,7 @@ class RestAPI:
                     ),
                 )
 
-        return api_response(OK_RESULT)
+        return api_response(OkResult(True))
 
     def get_matches_for_asset_movement(
             self,
@@ -5158,9 +5098,11 @@ class RestAPI:
                     asset_movement = event
 
         if asset_movement is None:
-            return api_response(wrap_in_fail_result(
-                message=f'No asset movement event found in the DB for group identifier {asset_movement_group_identifier}',  # noqa: E501
-            ), HTTPStatus.BAD_REQUEST)
+            return api_response(FailResult(
+                f'No asset movement event found in the DB for group identifier {asset_movement_group_identifier}',  # noqa: E501
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.NOT_FOUND,
+            ))
 
         asset_movement_timestamp = ts_ms_to_sec(asset_movement.timestamp)
         assets_in_collection = GlobalDBHandler.get_assets_in_same_collection(
@@ -5199,7 +5141,7 @@ class RestAPI:
             )
 
         # Return the close_matches and filtered other_events.
-        return api_response(_wrap_in_ok_result(result={
+        return api_response(OkResult({
             'close_matches': close_match_identifiers,
             'other_events': [
                 event.identifier for event in other_events
@@ -5238,7 +5180,7 @@ class RestAPI:
                 for event in deposits + withdrawals
             ]
 
-        return api_response(_wrap_in_ok_result(result=legs))
+        return api_response(OkResult(legs))
 
     def match_bridge_transactions(
             self,
@@ -5272,9 +5214,11 @@ class RestAPI:
                     bridge_event = events[0] if len(events) == 1 else None
 
                 if bridge_event is None:
-                    return api_response(wrap_in_fail_result(
-                        message=f'No event found in the DB for identifier {bridge_event_identifier}',  # noqa: E501
-                    ), HTTPStatus.BAD_REQUEST)
+                    return api_response(FailResult(
+                        f'No event found in the DB for identifier {bridge_event_identifier}',
+                        HTTPStatus.BAD_REQUEST,
+                        FailureCause.NOT_FOUND,
+                    ))
 
                 if create_counterpart:
                     try:
@@ -5283,16 +5227,19 @@ class RestAPI:
                             bridge_event=bridge_event,
                         )
                     except InputError as e:
-                        return api_response(
-                            wrap_in_fail_result(message=str(e)),
+                        return api_response(FailResult(
+                            str(e),
                             HTTPStatus.BAD_REQUEST,
-                        )
+                            FailureCause.INVALID_INPUT,
+                        ))
                 elif not resolve_bridge_event_external(events_db=events_db, event=bridge_event):
-                    return api_response(wrap_in_fail_result(
-                        message=f'Event with identifier {bridge_event_identifier} is not a bridge deposit or withdrawal',  # noqa: E501
-                    ), HTTPStatus.BAD_REQUEST)
+                    return api_response(FailResult(
+                        f'Event with identifier {bridge_event_identifier} is not a bridge deposit or withdrawal',  # noqa: E501
+                        HTTPStatus.BAD_REQUEST,
+                        FailureCause.INVALID_INPUT,
+                    ))
 
-                return api_response(OK_RESULT)
+                return api_response(OkResult(True))
 
             with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
                 write_cursor.execute(
@@ -5300,7 +5247,7 @@ class RestAPI:
                     'VALUES(?, ?)',
                     (bridge_event_identifier, HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db()),  # noqa: E501
                 )
-            return api_response(OK_RESULT)
+            return api_response(OkResult(True))
 
         bridge_event, matched_events = None, []
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -5326,9 +5273,13 @@ class RestAPI:
                     bridge_event=bridge_event,
                     matched_event=matched_event,
                 )
-            return api_response(OK_RESULT)
+            return api_response(OkResult(True))
 
-        return api_response(wrap_in_fail_result(message=error_msg), HTTPStatus.BAD_REQUEST)
+        return api_response(FailResult(
+            error_msg,
+            HTTPStatus.BAD_REQUEST,
+            FailureCause.INVALID_INPUT,
+        ))
 
     def get_matches_for_bridge_transaction(
             self,
@@ -5354,9 +5305,11 @@ class RestAPI:
             )
 
         if len(events) != 1:
-            return api_response(wrap_in_fail_result(
-                message=f'No bridge event found in the DB for identifier {bridge_event_identifier}',  # noqa: E501
-            ), HTTPStatus.BAD_REQUEST)
+            return api_response(FailResult(
+                f'No bridge event found in the DB for identifier {bridge_event_identifier}',
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.NOT_FOUND,
+            ))
 
         bridge_event = events[0]
 
@@ -5405,7 +5358,7 @@ class RestAPI:
                 ),
             )
 
-        return api_response(_wrap_in_ok_result(result={
+        return api_response(OkResult({
             'close_matches': close_match_identifiers,
             'other_events': [
                 event.identifier for event in other_events
@@ -5436,10 +5389,12 @@ class RestAPI:
                     'DELETE FROM history_event_link_ignores WHERE event_id=? AND link_type=?',
                     (identifier, HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db()),
                 ).rowcount == 0:
-                    return api_response(wrap_in_fail_result(message=(
+                    return api_response(FailResult(
                         f'The specified identifier {identifier} does not correspond to either '
-                        'side of any matched bridge transaction in the DB.'
-                    )), HTTPStatus.BAD_REQUEST)
+                        'side of any matched bridge transaction in the DB.',
+                        HTTPStatus.BAD_REQUEST,
+                        FailureCause.INVALID_INPUT,
+                    ))
 
                 # restore the original bridge event if it was resolved as external
                 DBHistoryEvents.maybe_restore_history_events_from_backup(
@@ -5455,7 +5410,7 @@ class RestAPI:
                         HistoryMappingState.MATCHED.serialize_for_db(),
                     ),
                 )
-                return api_response(OK_RESULT)
+                return api_response(OkResult(True))
 
         events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
@@ -5506,4 +5461,4 @@ class RestAPI:
                     ),
                 )
 
-        return api_response(OK_RESULT)
+        return api_response(OkResult(True))

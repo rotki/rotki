@@ -3,11 +3,13 @@ from __future__ import annotations
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.banks.connector import sum_account_balances
 from rotkehlchen.banks.errors import BankAuthExpired, BankMFARequired
 from rotkehlchen.banks.manager import BankCredentialInput
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.utils.misc import combine_dicts, ts_now
 
@@ -49,7 +51,7 @@ class BanksService:
             name: str,
             connector: BankConnectorType,
             credentials: dict[str, str],
-    ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
+    ) -> ApiResult:
         """Returns the new connection's identifier, or when the bank asks for an
         authentication its challenge together with the identifier to answer it under"""
         try:
@@ -60,14 +62,14 @@ class BanksService:
                 database=self.rotkehlchen.data.db,
             )
         except BankMFARequired as e:
-            return self._challenge(e), '', HTTPStatus.ACCEPTED
+            return OkResult(self._challenge(e), status=HTTPStatus.ACCEPTED)
         except InputError as e:
-            return None, str(e), HTTPStatus.BAD_REQUEST
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
         if identifier is None:
-            return None, msg, HTTPStatus.CONFLICT
+            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
         if (bank := self.rotkehlchen.bank_manager.get_bank(identifier)) is None:
             raise AssertionError('successful bank setup did not register the connection')
-        return self._setup_success(bank), msg, HTTPStatus.OK
+        return OkResult(self._setup_success(bank), message=msg)
 
     @staticmethod
     def _challenge(error: BankMFARequired) -> dict[str, Any]:
@@ -77,7 +79,7 @@ class BanksService:
             self,
             identifier: ConnectionIdentifier,
             response: str | None,
-    ) -> tuple[bool | dict[str, Any] | None, str, HTTPStatus]:
+    ) -> ApiResult:
         manager = self.rotkehlchen.bank_manager
         completes_setup = manager.get_bank(identifier) is None
         try:
@@ -86,25 +88,25 @@ class BanksService:
                 response=response,
             )
         except BankMFARequired as e:
-            return self._challenge(e), '', HTTPStatus.ACCEPTED
+            return OkResult(self._challenge(e), status=HTTPStatus.ACCEPTED)
         except BankAuthExpired as e:  # dropped by the bank: only a new sync or setup helps
-            return None, str(e), HTTPStatus.GONE
+            return FailResult(str(e), HTTPStatus.GONE, FailureCause.AUTH)
         except RemoteError as e:
-            return None, str(e), HTTPStatus.CONFLICT
+            return FailResult(str(e), HTTPStatus.CONFLICT, e.cause)
         if result is False:
-            return None, message, HTTPStatus.CONFLICT
+            return FailResult(message, HTTPStatus.CONFLICT, FailureCause.REMOTE_REJECTED)
         if completes_setup:
             if (bank := manager.get_bank(identifier)) is None:
                 raise AssertionError('successful bank setup authentication did not register it')
-            return self._setup_success(bank), '', HTTPStatus.OK
-        return True, '', HTTPStatus.OK
+            return OkResult(self._setup_success(bank))
+        return OkResult(True)
 
     def edit_bank(
             self,
             identifier: ConnectionIdentifier,
             new_name: str | None,
             credentials: dict[str, str],
-    ) -> tuple[bool | None, str, HTTPStatus]:
+    ) -> ApiResult:
         try:
             result, msg = self.rotkehlchen.bank_manager.edit_bank(
                 identifier=identifier,
@@ -112,42 +114,46 @@ class BanksService:
                 credentials=BankCredentialInput(values=credentials),
             )
         except InputError as e:
-            return None, str(e), HTTPStatus.BAD_REQUEST
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
         if not result:
-            return None, msg, HTTPStatus.CONFLICT
-        return True, msg, HTTPStatus.OK
+            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+        return OkResult(True, message=msg)
 
-    def remove_bank(self, identifier: ConnectionIdentifier) -> tuple[bool | None, str, HTTPStatus]:
+    def remove_bank(self, identifier: ConnectionIdentifier) -> ApiResult:
         result, msg = self.rotkehlchen.bank_manager.delete_bank(identifier)
         if not result:
-            return None, msg, HTTPStatus.CONFLICT
-        return True, msg, HTTPStatus.OK
+            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+        return OkResult(True, message=msg)
 
     def cancel_authentication(
             self,
             identifier: ConnectionIdentifier,
-    ) -> tuple[bool | None, str, HTTPStatus]:
+    ) -> ApiResult:
         if not self.rotkehlchen.bank_manager.cancel_bank_authentication(identifier):
-            return None, f'Bank connection {identifier} does not exist', HTTPStatus.CONFLICT
-        return True, '', HTTPStatus.OK
+            return FailResult(
+                f'Bank connection {identifier} does not exist',
+                HTTPStatus.CONFLICT,
+                FailureCause.NOT_FOUND,
+            )
+        return OkResult(True)
 
     def sync_banks(
             self,
             connector: BankConnectorType | None,
             identifier: str | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             self.rotkehlchen.bank_manager.query_bank_history_events(
                 connector=connector,
                 identifier=identifier,
             )
         except BankMFARequired:
-            return {'result': None, 'message': '', 'status_code': HTTPStatus.ACCEPTED}
+            return OkResult(None, status=HTTPStatus.ACCEPTED)
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
-        return {'result': True, 'message': ''}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
+        return OkResult(True)
 
     def query_bank_balances(
             self,
@@ -155,18 +161,18 @@ class BanksService:
             identifier: str | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Return aggregate balances and the balances of each individual bank connection.
 
         Limited to one connector's connections, or to one connection by its identifier.
         """
         manager = self.rotkehlchen.bank_manager
         if connector is not None and connector not in manager.connected_banks:
-            return {
-                'result': None,
-                'message': f'No {connector!s} bank connection exists',
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                f'No {connector!s} bank connection exists',
+                HTTPStatus.CONFLICT,
+                FailureCause.NOT_FOUND,
+            )
 
         aggregate: dict[AssetWithOracles, Balance] = {}
         connections: list[dict[str, Any]] = []
@@ -176,11 +182,11 @@ class BanksService:
                 (bank := manager.get_bank(identifier)) is None or
                 (connector is not None and bank.manifest.connector != connector)
             ):
-                return {
-                    'result': None,
-                    'message': f'No matching bank connection with identifier {identifier} exists',
-                    'status_code': HTTPStatus.CONFLICT,
-                }
+                return FailResult(
+                    f'No matching bank connection with identifier {identifier} exists',
+                    HTTPStatus.CONFLICT,
+                    FailureCause.NOT_FOUND,
+                )
             banks = [bank]
         elif connector is None:
             banks = list(manager.iterate_banks())
@@ -213,9 +219,5 @@ class BanksService:
             })
 
         if len(connections) == 0 and error_msg != '':
-            return {'result': None, 'message': error_msg, 'status_code': HTTPStatus.CONFLICT}
-        return {
-            'result': {'aggregate': aggregate, 'connections': connections},
-            'message': error_msg,
-            'status_code': HTTPStatus.OK,
-        }
+            return FailResult(error_msg, HTTPStatus.CONFLICT, FailureCause.NETWORK)
+        return OkResult({'aggregate': aggregate, 'connections': connections}, message=error_msg)

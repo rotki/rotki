@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from collections import defaultdict
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, overload
 
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
     add_manually_tracked_balances,
@@ -12,6 +13,7 @@ from rotkehlchen.balances.manual import (
     remove_manually_tracked_balances,
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError, TagConstraintError
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
@@ -42,21 +44,21 @@ class AccountsService:
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
 
-    def add_xpub(self, xpub_data: XpubData) -> dict[str, Any]:
+    def add_xpub(self, xpub_data: XpubData) -> ApiResult:
         try:
             XpubManager(self.rotkehlchen.chains_aggregator).add_bitcoin_xpub(
                 xpub_data=xpub_data,
             )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
         except TagConstraintError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.CONFLICT)
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def delete_xpub(self, xpub_data: XpubData) -> dict[str, Any]:
+    def delete_xpub(self, xpub_data: XpubData) -> ApiResult:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
                 XpubManager(self.rotkehlchen.chains_aggregator).delete_bitcoin_xpub(
@@ -64,11 +66,11 @@ class AccountsService:
                     xpub_data=xpub_data,
                 )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def edit_xpub(self, xpub_data: XpubData) -> dict[str, Any]:
+    def edit_xpub(self, xpub_data: XpubData) -> ApiResult:
         try:
             with self.rotkehlchen.data.db.user_write() as write_cursor:
                 XpubManager(self.rotkehlchen.chains_aggregator).edit_bitcoin_xpub(
@@ -81,14 +83,14 @@ class AccountsService:
                     xpub_data.blockchain,
                 )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return {'result': data, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(data)
 
     def add_evm_accounts(
             self,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             (
                 added_accounts,
@@ -97,9 +99,13 @@ class AccountsService:
                 no_activity_accounts,
             ) = self.rotkehlchen.add_evm_accounts(account_data=account_data)
         except (EthSyncError, TagConstraintError) as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                FailureCause.NETWORK if isinstance(e, EthSyncError) else FailureCause.CONFLICT,
+            )
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
         result_dicts: dict[str, dict[ChecksumEvmAddress, list[str]]] = defaultdict(
             lambda: defaultdict(list),
@@ -116,30 +122,30 @@ class AccountsService:
                 if len(result_dicts[response_key][address]) == len(SUPPORTED_EVM_EVMLIKE_CHAINS):
                     result_dicts[response_key][address] = [all_key]
 
-        return {'result': result_dicts, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(result_dicts)
 
-    def refresh_evm_accounts(self) -> dict[str, Any]:
+    def refresh_evm_accounts(self) -> ApiResult:
         chains = self.rotkehlchen.data.db.get_chains_to_detect_evm_accounts()
         try:
             self.rotkehlchen.chains_aggregator.detect_evm_accounts(chains=chains)
         except EthSyncError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.NETWORK)
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> dict[str, Any]:
+    def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> ApiResult:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)
-        return {'result': data, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(data)
 
     @overload
     def add_single_blockchain_accounts(
             self,
             chain: SUPPORTED_EVM_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         ...
 
     @overload
@@ -147,7 +153,7 @@ class AccountsService:
             self,
             chain: SUPPORTED_SUBSTRATE_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[SubstrateAddress]],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         ...
 
     @overload
@@ -155,7 +161,7 @@ class AccountsService:
             self,
             chain: SUPPORTED_BITCOIN_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[BTCAddress]],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         ...
 
     @overload
@@ -163,31 +169,35 @@ class AccountsService:
             self,
             chain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         ...
 
     def add_single_blockchain_accounts(
             self,
             chain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             self.rotkehlchen.add_single_blockchain_accounts(chain=chain, account_data=account_data)
         except (EthSyncError, TagConstraintError) as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                FailureCause.NETWORK if isinstance(e, EthSyncError) else FailureCause.CONFLICT,
+            )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
         added_addresses = [x.address for x in account_data]
-        return {'result': added_addresses, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(added_addresses)
 
     def edit_single_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             with self.rotkehlchen.data.db.user_write() as write_cursor:
                 self.rotkehlchen.edit_single_blockchain_accounts(
@@ -198,16 +208,16 @@ class AccountsService:
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                 data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)
         except TagConstraintError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.CONFLICT)
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return {'result': data, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(data)
 
     def edit_chain_type_accounts_labels(
             self,
             accounts: list[SingleBlockchainAccountData],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                 self.rotkehlchen.edit_chain_type_accounts_labels(
@@ -215,17 +225,17 @@ class AccountsService:
                     account_data=accounts,
                 )
         except TagConstraintError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.CONFLICT)
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
     def remove_single_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             self.rotkehlchen.remove_single_blockchain_accounts(
                 blockchain=blockchain,
@@ -235,34 +245,30 @@ class AccountsService:
                 chain=None,
             )
         except EthSyncError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.NETWORK)
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
-        return {
-            'result': balances_update.serialize(),
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(balances_update.serialize())
 
     def remove_chain_type_accounts(
             self,
             chain_type: ChainType,
             accounts: ListOfBlockchainAddresses,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             self.rotkehlchen.remove_chain_type_accounts(
                 chain_type=chain_type,
                 accounts=accounts,
             )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def _get_manually_tracked_balances(self, value_threshold: FVal | None) -> dict[str, Any]:
+    def _get_manually_tracked_balances(self, value_threshold: FVal | None) -> ApiResult:
         db_entries = get_manually_tracked_balances(
             db=self.rotkehlchen.data.db,
             balance_type=None,
@@ -275,9 +281,9 @@ class AccountsService:
             ]
 
         balances = process_result({'balances': db_entries})
-        return {'result': balances, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(balances)
 
-    def get_manually_tracked_balances(self, value_threshold: FVal | None) -> dict[str, Any]:
+    def get_manually_tracked_balances(self, value_threshold: FVal | None) -> ApiResult:
         return self._get_manually_tracked_balances(value_threshold=value_threshold)
 
     @overload
@@ -285,7 +291,7 @@ class AccountsService:
             self,
             function: Callable[[DBHandler, list[ManuallyTrackedBalance]], None],
             data_or_ids: list[ManuallyTrackedBalance],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         ...
 
     @overload
@@ -293,7 +299,7 @@ class AccountsService:
             self,
             function: Callable[[DBHandler, list[int]], None],
             data_or_ids: list[int],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         ...
 
     def _modify_manually_tracked_balances(
@@ -303,20 +309,20 @@ class AccountsService:
                 Callable[[DBHandler, list[int]], None]
             ),
             data_or_ids: list[ManuallyTrackedBalance] | list[int],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             function(self.rotkehlchen.data.db, data_or_ids)  # type: ignore[arg-type]
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
         except TagConstraintError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.CONFLICT)
 
         return self._get_manually_tracked_balances(value_threshold=None)
 
     def add_manually_tracked_balances(
             self,
             data: list[ManuallyTrackedBalance],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self._modify_manually_tracked_balances(
             function=add_manually_tracked_balances,
             data_or_ids=data,
@@ -325,47 +331,36 @@ class AccountsService:
     def edit_manually_tracked_balances(
             self,
             data: list[ManuallyTrackedBalance],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self._modify_manually_tracked_balances(
             function=edit_manually_tracked_balances,
             data_or_ids=data,
         )
 
-    def remove_manually_tracked_balances(self, ids: list[int]) -> dict[str, Any]:
+    def remove_manually_tracked_balances(self, ids: list[int]) -> ApiResult:
         return self._modify_manually_tracked_balances(
             function=remove_manually_tracked_balances,
             data_or_ids=ids,
         )
 
-    def get_ignored_assets(self) -> dict[str, Any]:
+    def get_ignored_assets(self) -> ApiResult:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             result = self.rotkehlchen.data.db.get_ignored_asset_ids(cursor)
-        return {'result': list(result), 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(list(result))
 
-    def add_ignored_assets(self, assets_to_ignore: list[Asset]) -> dict[str, Any]:
+    def add_ignored_assets(self, assets_to_ignore: list[Asset]) -> ApiResult:
         newly_ignored, already_ignored = self.rotkehlchen.data.add_ignored_assets(
             assets=assets_to_ignore,
         )
         result = {'successful': list(newly_ignored), 'no_action': list(already_ignored)}
-        return {
-            'result': process_result(result),
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(process_result(result))
 
-    def remove_ignored_assets(self, assets: list[Asset]) -> dict[str, Any]:
+    def remove_ignored_assets(self, assets: list[Asset]) -> ApiResult:
         succeeded, no_action = self.rotkehlchen.data.remove_ignored_assets(assets=assets)
         result = {'successful': list(succeeded), 'no_action': list(no_action)}
-        return {
-            'result': process_result(result),
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(process_result(result))
 
-    def get_xpub_balances(self, xpub_data: XpubData, ignore_cache: bool) -> dict[str, Any]:
-        msg = ''
-        status_code = HTTPStatus.OK
-        result = None
+    def get_xpub_balances(self, xpub_data: XpubData, ignore_cache: bool) -> ApiResult:
         try:
             if ignore_cache:
                 with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -395,7 +390,6 @@ class AccountsService:
                 addresses=addresses,
             ).serialize()
         except RemoteError as e:
-            msg = str(e)
-            status_code = HTTPStatus.BAD_GATEWAY
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
-        return {'result': result, 'message': msg, 'status_code': status_code}
+        return OkResult(result)

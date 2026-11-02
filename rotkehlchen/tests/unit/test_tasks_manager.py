@@ -785,7 +785,7 @@ def test_premium_device_limit_error(
     task_manager.database.set_rotkehlchen_premium(rotki_premium_credentials)
     task_manager.potential_tasks = [task_manager._maybe_check_premium_status]
 
-    device_limit_error = PremiumPermissionError('Device limit of 4 exceeded', {'limit_type': 'device'})  # noqa: E501
+    device_limit_error = PremiumPermissionError('Device limit of 4 exceeded')
     with patch('rotkehlchen.premium.premium.Premium.authenticate_device', side_effect=device_limit_error):  # noqa: E501
         task_manager.last_premium_status_check = Timestamp(ts_now() - Timestamp(PREMIUM_STATUS_CHECK))  # noqa: E501
         task_manager.schedule()
