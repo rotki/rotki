@@ -20,6 +20,7 @@ import pytest
 import requests
 from websocket import WebSocket, WebSocketConnectionClosedException, create_connection
 
+from rotkehlchen.api.result import OkResult
 from rotkehlchen.api.session_store import (
     SESSION_DB_NAME,
     SessionStore,
@@ -666,10 +667,10 @@ def test_reload_with_cookie_keeps_sid_and_pending_tasks(
         sid = store.active_sid(username)
 
         # reload: the cookie rides the request ⇒ same sid, tasks untouched
-        rest_api.task_results = {42: 'pending'}
+        rest_api.task_results = {42: (pending := OkResult('pending'))}
         session.post(auth_url, json={'password': '123'})
         assert store.active_sid(username) == sid
-        assert rest_api.task_results == {42: 'pending'}
+        assert rest_api.task_results == {42: pending}
 
         # takeover from a fresh jar ⇒ rotate sid and clear the previous tasks
         other = requests.Session()
