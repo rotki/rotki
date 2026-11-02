@@ -10,6 +10,7 @@ import requests
 
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.constants import HOUR_IN_SECONDS
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import (
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_QUERY_RETRY_LIMIT,
@@ -923,3 +924,45 @@ def test_suppress_missing_key_msg_services_not_overwritten(
     assert result['ui_floating_precision'] == 4
     assert result['suppress_missing_key_msg_services'] == ['etherscan']
     assert CachedSettings().get_settings().suppress_missing_key_msg_services == [ExternalService.ETHERSCAN]  # noqa: E501
+
+
+def test_disabling_chain_queries_removes_balances_query_ts(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """A chain left with no active address loses its last balances query timestamp, whether
+    it is disabled entirely or all its tracked addresses are. A chain with an enabled address
+    keeps it since those addresses are still refreshed."""
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    fully_disabled, all_addresses_disabled, partially_disabled, enabled = (
+        SupportedBlockchain.ETHEREUM,
+        SupportedBlockchain.GNOSIS,
+        SupportedBlockchain.OPTIMISM,
+        SupportedBlockchain.BITCOIN,
+    )
+    keys = {chain: DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS.get_db_key(
+        blockchain=chain.serialize(),
+    ) for chain in (fully_disabled, all_addresses_disabled, partially_disabled, enabled)}
+    addresses = ('0x9531C059098e3d194fF87FebB587aB07B30B1306', '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c')  # noqa: E501
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO blockchain_accounts(blockchain, account) VALUES(?, ?)',
+            [(chain.value, address) for chain in (all_addresses_disabled, partially_disabled) for address in addresses],  # noqa: E501
+        )
+        write_cursor.executemany(
+            'INSERT INTO key_value_cache(name, value) VALUES(?, ?)',
+            [(key, 1) for key in keys.values()],
+        )
+
+    assert_proper_response(requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'disabled_chain_queries': {
+            fully_disabled.serialize(): [],
+            all_addresses_disabled.serialize(): list(addresses),
+            partially_disabled.serialize(): [addresses[0]],
+        }}},
+    ))
+
+    with database.conn.read_ctx() as cursor:
+        assert {row[0] for row in cursor.execute(
+            "SELECT name FROM key_value_cache WHERE name LIKE '%_last_balances_query_ts'",
+        )} == {keys[partially_disabled], keys[enabled]}

@@ -1,4 +1,6 @@
-"""Test data migration 30, which schedules recovery of skipped Solana v1 transactions."""
+"""Test data migration 30, which schedules recovery of skipped Solana v1 transactions and
+removes stale balance refresh times of disabled chains."""
+import json
 from typing import TYPE_CHECKING
 
 import pytest
@@ -76,3 +78,43 @@ def test_migration_30_schedules_only_accounts_past_v1_activation(database: DBHan
                 str(SOLANA_V1_ACTIVATION_SLOT),
             ) for account in (direct_account, ata_account)
         ])
+
+
+@pytest.mark.parametrize('data_migration_version', [29])
+def test_migration_30_removes_query_ts_of_fully_disabled_chains(database: DBHandler) -> None:
+    """Chains with no active address lose their timestamp, whether disabled entirely or with
+    all their tracked addresses disabled. Chains with an enabled address keep it."""
+    fully_disabled, all_addresses_disabled, partially_disabled, enabled = (
+        SupportedBlockchain.ETHEREUM,
+        SupportedBlockchain.GNOSIS,
+        SupportedBlockchain.OPTIMISM,
+        SupportedBlockchain.BITCOIN,
+    )
+    keys = {chain: DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS.get_db_key(
+        blockchain=chain.serialize(),
+    ) for chain in (fully_disabled, all_addresses_disabled, partially_disabled, enabled)}
+    addresses = ('0x9531C059098e3d194fF87FebB587aB07B30B1306', '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c')  # noqa: E501
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('disabled_chain_queries', json.dumps({
+                fully_disabled.serialize(): [],
+                all_addresses_disabled.serialize(): list(addresses),
+                partially_disabled.serialize(): [addresses[0]],
+            })),
+        )
+        write_cursor.executemany(
+            'INSERT INTO blockchain_accounts(blockchain, account) VALUES(?, ?)',
+            [(chain.value, address) for chain in (all_addresses_disabled, partially_disabled) for address in addresses],  # noqa: E501
+        )
+        write_cursor.executemany(
+            'INSERT INTO key_value_cache(name, value) VALUES(?, ?)',
+            [(key, 1) for key in keys.values()],
+        )
+
+    run_single_migration(database=database, migration=30)
+
+    with database.conn.read_ctx() as cursor:
+        assert {row[0] for row in cursor.execute(
+            "SELECT name FROM key_value_cache WHERE name LIKE '%_last_balances_query_ts'",
+        )} == {keys[partially_disabled], keys[enabled]}
