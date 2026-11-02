@@ -243,7 +243,7 @@ test.describe.serial('history events', () => {
     const before = await page.rows.idsOf(EVENT_ROW);
 
     await page.openAddDialog();
-    await page.selectEntryType('solana event');
+    await page.selectEntryType('history event');
     await page.fillSolanaEventForm(solanaEventFixture);
     await page.saveForm();
 
@@ -400,7 +400,7 @@ test.describe.serial('evm history events', () => {
     const before = await page.rows.idsOf(EVENT_ROW);
 
     await page.openAddDialog();
-    await page.selectEntryType('evm event');
+    await page.selectEntryType('history event');
     await page.fillEvmEventForm(evmEventFixture);
     await page.saveForm();
 

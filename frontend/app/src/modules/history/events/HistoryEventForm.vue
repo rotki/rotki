@@ -4,13 +4,10 @@ import { HistoryEventEntryType } from '@rotki/common';
 import { kebabCase } from 'es-toolkit';
 import { useTemplateRef } from 'vue';
 import AssetMovementEventForm from '@/modules/history/management/forms/AssetMovementEventForm.vue';
-import BitcoinEventForm from '@/modules/history/management/forms/BitcoinEventForm.vue';
 import EthBlockEventForm from '@/modules/history/management/forms/EthBlockEventForm.vue';
 import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEventForm.vue';
 import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
-import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
-import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
-import SolanaEventForm from '@/modules/history/management/forms/SolanaEventForm.vue';
+import HistoryEventEntryForm from '@/modules/history/management/forms/HistoryEventEntryForm.vue';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
 
 /** The seam every entry-type form is driven through. */
@@ -33,25 +30,26 @@ const form = useTemplateRef<ComponentPublicInstance<FormComponent>>('form');
 
 const formComponents: Record<HistoryEventEntryType, Component> = {
   [HistoryEventEntryType.ASSET_MOVEMENT_EVENT]: AssetMovementEventForm,
-  [HistoryEventEntryType.BANK_TRANSACTION_EVENT]: OnlineHistoryEventForm,
-  [HistoryEventEntryType.BITCOIN_EVENT]: BitcoinEventForm,
+  [HistoryEventEntryType.BANK_TRANSACTION_EVENT]: HistoryEventEntryForm,
+  [HistoryEventEntryType.BITCOIN_EVENT]: HistoryEventEntryForm,
   [HistoryEventEntryType.ETH_BLOCK_EVENT]: EthBlockEventForm,
   [HistoryEventEntryType.ETH_DEPOSIT_EVENT]: EthDepositEventForm,
   [HistoryEventEntryType.ETH_WITHDRAWAL_EVENT]: EthWithdrawalEventForm,
-  [HistoryEventEntryType.EVM_EVENT]: EvmEventForm,
+  [HistoryEventEntryType.EVM_EVENT]: HistoryEventEntryForm,
   [HistoryEventEntryType.EVM_SWAP_EVENT]: SwapEventForm,
-  [HistoryEventEntryType.HISTORY_EVENT]: OnlineHistoryEventForm,
-  [HistoryEventEntryType.SOLANA_EVENT]: SolanaEventForm,
+  [HistoryEventEntryType.HISTORY_EVENT]: HistoryEventEntryForm,
+  [HistoryEventEntryType.SOLANA_EVENT]: HistoryEventEntryForm,
   [HistoryEventEntryType.SOLANA_SWAP_EVENT]: SwapEventForm,
   [HistoryEventEntryType.SWAP_EVENT]: SwapEventForm,
 };
 
 /**
- * The entry type for the one form that serves several and is told which is picked. The swap form
- * serves several too, but takes its kind from the swap's location or events.
+ * The entry type for the event form, which a new bank transaction keeps. The event and swap forms
+ * both serve several types, but otherwise take their kind from the location, the event or the
+ * transaction.
  */
 const formEntryType = computed<HistoryEventEntryType | undefined>(() =>
-  (formComponents[entryType] === OnlineHistoryEventForm ? entryType : undefined));
+  (formComponents[entryType] === HistoryEventEntryForm ? entryType : undefined));
 
 const errorCount = computed<number>(() => {
   const formRef = get(form);
