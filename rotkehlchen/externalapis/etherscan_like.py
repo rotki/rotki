@@ -410,7 +410,8 @@ class EtherscanLikeApi(ABC):
             elif response.status_code == HTTPStatus.REQUEST_URI_TOO_LONG:
                 raise RequestTooLargeError(f'Failed to query {chain_id} due to: request URI too long')  # noqa: E501
             elif response.status_code != 200:
-                raise remote_error_for_status(response.status_code)(
+                raise remote_error_for_status(
+                    response.status_code,
                     f'{self.name} API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',

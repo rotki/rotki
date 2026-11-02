@@ -358,7 +358,8 @@ class HyperliquidAPI:
                 continue
 
             if response.status_code != HTTPStatus.OK:
-                raise remote_error_for_status(response.status_code)(
+                raise remote_error_for_status(
+                    response.status_code,
                     f'Failed to query hyperliquid info with status code '
                     f'{response.status_code} and text {response.text}',
                 )

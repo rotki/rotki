@@ -1,5 +1,7 @@
 from http import HTTPStatus
 
+from rotkehlchen.errors.cause import FailureCause
+
 
 class SystemPermissionError(Exception):
     pass
@@ -86,14 +88,21 @@ class NotFoundError(Exception):
 
 
 class RemoteError(Exception):
-    """Thrown when a remote API can't be reached or throws unexpected error"""
+    """Thrown when a remote API can't be reached or throws unexpected error.
 
-    def __init__(self, message: str = '', error_code: int = 0):
-        """
-        Set error code with default 0 to not make it optional and always have an integer value.
-        message: Error message for the error
-        error_code: The error code of the http response if relevant
-        """
+    `cause` says which of the two it was, since only the raise site knows: an unreachable
+    remote is worth retrying, a remote that rejected the key or the request is not.
+    `error_code` is the HTTP status of the response, or 0 when there was none.
+    """
+
+    def __init__(
+            self,
+            message: str = '',
+            *,
+            cause: FailureCause | None = None,
+            error_code: int = 0,
+    ) -> None:
+        self.cause = cause
         self.error_code = error_code
         super().__init__(message)
 
@@ -103,19 +112,41 @@ class RecoverableRemoteError(RemoteError):
     shortly, such as rate limiting, a timeout, a connection problem or a 408/5xx response."""
 
 
-def remote_error_for_status(status_code: int) -> type[RemoteError]:
-    """Return the error class for a failed HTTP response. Server errors and request
-    timeouts (408) are expected to clear up by themselves, so they are recoverable."""
+def cause_for_status(status_code: int) -> FailureCause:
+    """The cause of a failed HTTP response, read from its status.
+
+    A 429 asks us to slow down, and server errors and request timeouts (408) are the remote
+    failing to answer. A 401 rejects our credentials. Any other status rejects the request
+    itself, including a 403, which services also send for rate and plan limits, and a 2xx
+    whose body reports a failure. A site that knows its 403 means a rejected key says so.
+    """
+    if status_code == HTTPStatus.TOO_MANY_REQUESTS:
+        return FailureCause.RATE_LIMITED
     if (
             status_code == HTTPStatus.REQUEST_TIMEOUT or
             status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
     ):
-        return RecoverableRemoteError
-    return RemoteError
+        return FailureCause.NETWORK
+    if status_code == HTTPStatus.UNAUTHORIZED:
+        return FailureCause.AUTH
+    return FailureCause.REMOTE_REJECTED
+
+
+def remote_error_for_status(status_code: int, message: str) -> RemoteError:
+    """Build the error for a failed HTTP response. Server errors and request timeouts
+    (408) are expected to clear up by themselves, so they are recoverable."""
+    error_class = RecoverableRemoteError if (
+        status_code == HTTPStatus.REQUEST_TIMEOUT or
+        status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
+    ) else RemoteError
+    return error_class(message, cause=cause_for_status(status_code), error_code=status_code)
 
 
 class APIKeyNotAvailable(RemoteError):
     """Raised when an API key required for a query is not available."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, cause=FailureCause.AUTH)
 
 
 class NoAvailableIndexers(RemoteError):
@@ -125,21 +156,34 @@ class NoAvailableIndexers(RemoteError):
 class IndexerRangeNotCovered(RemoteError):
     """Raised when an indexer cannot serve the requested chain history range."""
 
+    def __init__(self, message: str) -> None:
+        super().__init__(message, cause=FailureCause.UNSUPPORTED)
+
 
 class BlockscoutIncompleteResponse(RemoteError):
-    """Raised when Blockscout reports that the requested data is not fully indexed."""
+    """Raised when Blockscout reports that the requested data is not fully indexed yet."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, cause=FailureCause.NETWORK)
 
 
 class IncompleteTransactionsQuery(RemoteError):
     """Raised when the transactions of some addresses could not be fully queried.
 
     Its message is shown to the user, so it must not carry the underlying indexer error,
-    which can include request URLs with API keys and raw response bodies.
+    which can include request URLs with API keys and raw response bodies. The failed
+    addresses are retried by the next sync, so it is a transient failure.
     """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, cause=FailureCause.NETWORK)
 
 
 class RequestTooLargeError(RemoteError):
     """Raised when a request fails due to size limits (gas limit, URL too long)."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, cause=FailureCause.REMOTE_REJECTED)
 
 
 class XPUBError(Exception):
@@ -222,6 +266,9 @@ class AddressNotSupported(Exception):
 
 class ChainNotSupported(RemoteError):
     """Raised when a chain is not supported by a service/api/etc"""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, cause=FailureCause.UNSUPPORTED)
 
 
 class MissingAPIKey(Exception):
