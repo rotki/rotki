@@ -14,7 +14,8 @@ from rotkehlchen.chain.bitcoin.segwit import encode_segwit_address
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp, ensure_type
@@ -278,7 +279,9 @@ def query_blockstream_like_blockheight(base_url: str) -> int:
         timeout=GLOBAL_REQUESTS_TIMEOUT,
     )).status_code != HTTPStatus.OK:
         raise RemoteError(
-            f'{url} returned status: {response.status_code} with message: {response.text}')
+            f'{url} returned status: {response.status_code} with message: {response.text}',
+            cause=cause_for_status(response.status_code),
+        )
 
     log.debug(f'Got response: {response.text} from {base_url}/blocks/tip/height')
     return int(response.text)
@@ -383,7 +386,10 @@ def query_mempool_address_transactions(
             if len(txs) == 1:  # the electrum backend quirk above, the history is complete
                 return txs
             if use_chain_pages:
-                raise RemoteError(f'{url} served an already seen page. The address history can not be paged')  # noqa: E501
+                raise RemoteError(
+                    f'{url} served an already seen page. The address history can not be paged',
+                    cause=FailureCause.BAD_DATA,
+                )
 
             use_chain_pages = True
             url = _mempool_chain_page_url(history_url, cursor=_last_confirmed_txid(txs))
@@ -414,7 +420,10 @@ def _request_mempool_page(url: str, timeout: tuple[int, int]) -> list[dict[str, 
         handle_429=True,
         backoff_in_seconds=4,
     ), list):
-        raise RemoteError(f'{url} returned unexpected data. Response is not a list: {page}')
+        raise RemoteError(
+            f'{url} returned unexpected data. Response is not a list: {page}',
+            cause=FailureCause.BAD_DATA,
+        )
 
     return page
 

@@ -18,7 +18,8 @@ from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH, HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_last_queried_ts_by_key,
     globaldb_get_unique_cache_last_queried_ts_by_key,
@@ -122,13 +123,19 @@ def _get_response_image(response: requests.adapters.Response) -> bytes:
     If not raises a RemoteError. If yes it returns the image bytes
     """
     if response.status_code != HTTPStatus.OK:
-        raise RemoteError(f'{response.url} failed with {response.status_code}')
+        raise RemoteError(
+            f'{response.url} failed with {response.status_code}',
+            cause=cause_for_status(response.status_code),
+        )
     content_type = response.headers.get('Content-Type')
     if (
         content_type is None or
         (content_type != 'null' and content_type.startswith('image') is False)  # cloudflare removes the content type and sets it to null  # noqa: E501
     ):
-        raise RemoteError(f'{response.url} return non-image content type {content_type}')
+        raise RemoteError(
+            f'{response.url} return non-image content type {content_type}',
+            cause=FailureCause.BAD_DATA,
+        )
 
     return response.content
 

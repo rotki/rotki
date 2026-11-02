@@ -15,7 +15,8 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
 )
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError, TokenQueryFailed
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, TokenQueryFailed, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
@@ -90,19 +91,31 @@ def _query_yearn_vaults(chain_id: ChainID) -> list[dict[str, Any]]:
         response = requests.get(url, timeout=CachedSettings().get_timeout_tuple())
     except requests.exceptions.RequestException as e:
         log.error(f'Request to {url} failed due to {e!s}')
-        raise RemoteError('Failed to obtain yearn vault information') from e
+        raise RemoteError(
+            'Failed to obtain yearn vault information',
+            cause=FailureCause.NETWORK,
+        ) from e
 
     if response.status_code != HTTPStatus.OK:
-        raise RemoteError(f'Failed to query Kong vaults: HTTP {response.status_code}')
+        raise RemoteError(
+            f'Failed to query Kong vaults: HTTP {response.status_code}',
+            cause=cause_for_status(response.status_code),
+        )
 
     try:
         data = response.json()
     except (DeserializationError, JSONDecodeError) as e:
         log.error('Failed to deserialize Kong response as JSON due to %s', e)
-        raise RemoteError('Failed to deserialize data from Kong') from e
+        raise RemoteError(
+            'Failed to deserialize data from Kong',
+            cause=FailureCause.BAD_DATA,
+        ) from e
 
     if not isinstance(data, list) or any(not isinstance(vault, dict) for vault in data):
-        raise RemoteError('Unexpected format from Kong vault list response')
+        raise RemoteError(
+            'Unexpected format from Kong vault list response',
+            cause=FailureCause.BAD_DATA,
+        )
 
     return data
 

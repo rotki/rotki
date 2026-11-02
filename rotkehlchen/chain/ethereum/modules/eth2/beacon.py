@@ -11,7 +11,8 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -81,7 +82,10 @@ class BeaconNode:
         try:
             version = result['version']
         except (KeyError, TypeError) as e:  # TypeError if the response data is not a mapping
-            raise RemoteError(f'Failed to parse the node version response from {rpc_endpoint}') from e  # noqa: E501
+            raise RemoteError(
+                f'Failed to parse the node version response from {rpc_endpoint}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         log.info(f'Connected to {rpc_endpoint} with beacon node {version}')
 
@@ -155,13 +159,17 @@ class BeaconNode:
                 timeout=timeout if timeout is not None else CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Querying beacon node {url} failed due to {e!s}') from e
+            raise RemoteError(
+                f'Querying beacon node {url} failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
                 f'Beaconchain node request {response.url} failed '
                 f'with HTTP status code {response.status_code} and text '
                 f'{response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
@@ -169,10 +177,14 @@ class BeaconNode:
         except json.JSONDecodeError as e:
             raise RemoteError(
                 f'Beaconchain node query {url} returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         if (data := json_ret.get('data')) is None:
-            raise RemoteError(f'Beaconchain node query {url} did not contain a data key. Response: {json_ret}')  # noqa: E501
+            raise RemoteError(
+                f'Beaconchain node query {url} did not contain a data key. Response: {json_ret}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return data
 

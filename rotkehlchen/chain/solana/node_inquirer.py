@@ -36,6 +36,7 @@ from rotkehlchen.chain.solana.utils import (
     get_metadata_account,
 )
 from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.helius import HELIUS_RPC_NODE_NAME, HELIUS_RPC_URL
@@ -255,7 +256,10 @@ class SolanaInquirer(SolanaRPCMixin):
                     log.error(f'Failed to call solana node {node_info.name} due to {e}')
 
         log.error(f'Tried all solana nodes in {call_order} for {method} but did not get any response')  # noqa: E501
-        raise RemoteError('Could not get a response from any connected solana node')
+        raise RemoteError(
+            'Could not get a response from any connected solana node',
+            cause=FailureCause.NETWORK,
+        )
 
     def get_raw_account_info(self, pubkey: Pubkey) -> bytes:
         """Query the raw account info for the given pubkey.
@@ -264,7 +268,10 @@ class SolanaInquirer(SolanaRPCMixin):
         if (response := self.query(
             method=lambda client: client.get_account_info(pubkey),
         ).value) is None:
-            raise RemoteError(f'Got empty response for raw solana account info for {pubkey!s}')
+            raise RemoteError(
+                f'Got empty response for raw solana account info for {pubkey!s}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return response.data
 
@@ -277,7 +284,10 @@ class SolanaInquirer(SolanaRPCMixin):
             if (response := self.query(
                 method=partial(lambda client, keys: client.get_multiple_accounts(keys), keys=list(chunk)),  # noqa: E501
             ).value) is None:
-                raise RemoteError(f'Got empty response for raw solana accounts info for {chunk!s}')
+                raise RemoteError(
+                    f'Got empty response for raw solana accounts info for {chunk!s}',
+                    cause=FailureCause.BAD_DATA,
+                )
 
             if len(response) != len(chunk):
                 # shouldn't happen, rpc is expected to return one entry per input key
@@ -286,6 +296,7 @@ class SolanaInquirer(SolanaRPCMixin):
                 raise RemoteError(
                     f'Unexpected length mismatch from getMultipleAccounts, expected {len(chunk)} '
                     f'items but got {len(response)}',
+                    cause=FailureCause.BAD_DATA,
                 )
 
             aggregated_response.update({pubkey_to_solana_address(addr): info for addr, info in zip(chunk, response, strict=False) if info is not None})  # noqa: E501
@@ -440,6 +451,7 @@ class SolanaInquirer(SolanaRPCMixin):
             raise RemoteError(
                 'Could not query the solana stake accounts. This requires a connected RPC '
                 'node that supports getProgramAccounts, such as one using a Helius API key.',
+                cause=FailureCause.UNSUPPORTED,
             ) from e
         stake_accounts = []
         for keyed_account in response.value:
@@ -507,7 +519,10 @@ class SolanaInquirer(SolanaRPCMixin):
             ),
             only_archive_nodes=True,
         ).value) is None:
-            raise RemoteError(f'Empty response from the RPC for solana tx {signature!s}')
+            raise RemoteError(
+                f'Empty response from the RPC for solana tx {signature!s}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return self.deserialize_solana_tx_from_rpc(raw_tx=response)
 

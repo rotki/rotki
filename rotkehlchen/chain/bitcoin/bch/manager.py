@@ -24,6 +24,7 @@ from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BCH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -146,7 +147,10 @@ class BitcoinCashManager(BitcoinCommonManager):
         if healthy:
             return
 
-        raise RemoteError(f'Haskoin-store API {base_url} health check failed.')
+        raise RemoteError(
+            f'Haskoin-store API {base_url} health check failed.',
+            cause=FailureCause.NETWORK,
+        )
 
     def _query_haskoin_balances(
             self,
@@ -229,6 +233,7 @@ class BitcoinCashManager(BitcoinCommonManager):
                 raise RemoteError(
                     'Unexpected data from haskoin while querying transactions. '
                     f'Response is not a list: {response}',
+                    cause=FailureCause.BAD_DATA,
                 )
 
             raw_txs.append(response)

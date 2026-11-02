@@ -18,7 +18,8 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import (
 )
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -37,7 +38,10 @@ log = RotkehlchenLogsAdapter(logger)
 def _get_balancer_api_chain(chain: ChainID) -> str:
     """Get Balancer API chain name or raise for unsupported chains."""
     if (balancer_chain := CHAIN_ID_TO_BALANCER_API_MAPPINGS.get(chain)) is None:
-        raise RemoteError(f'Balancer API does not support chain {chain}')
+        raise RemoteError(
+            f'Balancer API does not support chain {chain}',
+            cause=FailureCause.UNSUPPORTED,
+        )
 
     return balancer_chain
 
@@ -57,15 +61,24 @@ def query_balancer_api(query: str, variables: dict[str, Any]) -> dict[str, Any]:
             timeout=CachedSettings().get_timeout_tuple(),
         )
         if response.status_code != 200:
-            raise RemoteError(f'Balancer API request failed with status {response.status_code}')
+            raise RemoteError(
+                f'Balancer API request failed with status {response.status_code}',
+                cause=cause_for_status(response.status_code),
+            )
 
         if 'errors' in (data := response.json()):
-            raise RemoteError(f"Balancer API query failed: {data['errors']}")
+            raise RemoteError(
+                f"Balancer API query failed: {data['errors']}",
+                cause=FailureCause.REMOTE_REJECTED,
+            )
 
         return data['data']
     except (requests.exceptions.RequestException, KeyError) as e:
         msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
-        raise RemoteError(f'Balancer API request with query={query} and vars={variables} failed due to {msg}') from e  # noqa: E501
+        raise RemoteError(
+            f'Balancer API request with query={query} and vars={variables} failed due to {msg}',
+            cause=FailureCause.BAD_DATA if isinstance(e, KeyError) else FailureCause.NETWORK,
+        ) from e
 
 
 def query_balancer_pools_count(chain: ChainID, version: Literal[1, 2, 3]) -> int:
@@ -84,7 +97,10 @@ def query_balancer_pools_count(chain: ChainID, version: Literal[1, 2, 3]) -> int
         return deserialize_int(value=data['poolGetPoolsCount'], location='balancer pool count')
     except (DeserializationError, KeyError) as e:
         msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
-        raise RemoteError(f'Balancer v{version} pools count query for {chain} failed due to {msg}') from e  # noqa: E501
+        raise RemoteError(
+            f'Balancer v{version} pools count query for {chain} failed due to {msg}',
+            cause=FailureCause.BAD_DATA,
+        ) from e
 
 
 def query_balancer_pools(chain: ChainID, version: Literal[1, 2, 3]) -> list[dict[str, Any]]:
@@ -106,7 +122,10 @@ def query_balancer_pools(chain: ChainID, version: Literal[1, 2, 3]) -> list[dict
         try:
             all_pools.extend(pools_chunk := data['poolGetPools'])
         except KeyError as e:
-            raise RemoteError(f'Balancer v{version} pools query for {chain} failed due to missing key {e!s}') from e  # noqa: E501
+            raise RemoteError(
+                f'Balancer v{version} pools query for {chain} failed due to missing key {e!s}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         if len(pools_chunk) < BALANCER_API_CHUNK_SIZE:
             break

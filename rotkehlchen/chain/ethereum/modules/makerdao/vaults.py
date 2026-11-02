@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -252,6 +253,7 @@ class MakerdaoVaults(EthereumModule):
                 raise RemoteError(
                     f'Failed to deserialize address {result[1][idx]} '
                     f'when processing vaults of {user_address}',
+                    cause=FailureCause.BAD_DATA,
                 ) from e
             vault = self._query_vault_data(
                 identifier=identifier,
