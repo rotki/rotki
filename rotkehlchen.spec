@@ -130,6 +130,7 @@ a = Entrypoint(
         ('rotkehlchen/data/eth_contracts.json', 'rotkehlchen/data'),
         (f'rotkehlchen/data/{GLOBALDB_NAME}', 'rotkehlchen/data'),
         ('rotkehlchen/data/globaldb_v2_v3_assets.sql', 'rotkehlchen/data'),
+        ('rotkehlchen/data/locations.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/nodes.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/nodes_as_of_1-26-1.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/populate_asset_collections.sql', 'rotkehlchen/data'),
