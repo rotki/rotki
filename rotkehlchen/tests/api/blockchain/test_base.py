@@ -436,7 +436,7 @@ def _add_blockchain_accounts_test_start(
     with rotki.data.db.user_write() as write_cursor:  # add block production with new account as recipient  # noqa: E501
         write_cursor.execute(
             'INSERT INTO history_events(identifier, entry_type, group_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype) '  # noqa: E501
-            "VALUES(1, 4, 'BP1_17153311', 0, 1682911787000, 'f', ?, 'ETH', '0.1', ?, ?, 'block production')",  # noqa: E501
+            "VALUES(1, 4, 'BP1_17153311', 0, 1682911787000, 'ethereum', ?, 'ETH', '0.1', ?, ?, 'block production')",  # noqa: E501
             (
                 new_eth_accounts[0],
                 f'Validator 4242 produced block 17153311 with 0.1 ETH going to {new_eth_accounts[0]} as the block reward',  # noqa: E501
@@ -1573,7 +1573,7 @@ def _remove_blockchain_accounts_test_start(
     with rotki.data.db.user_write() as write_cursor:  # add block production with removed account as recipient  # noqa: E501
         write_cursor.execute(
             'INSERT INTO history_events(identifier, entry_type, group_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype) '  # noqa: E501
-            "VALUES(1, 4, 'BP1_17153311', 0, 1682911787000, 'f', ?, 'ETH', '0.1', ?, ?, 'block production')",  # noqa: E501
+            "VALUES(1, 4, 'BP1_17153311', 0, 1682911787000, 'ethereum', ?, 'ETH', '0.1', ?, ?, 'block production')",  # noqa: E501
             (
                 removed_eth_accounts[0],
                 f'Validator 4242 produced block 17153311 with 0.1 ETH going to {removed_eth_accounts[0]} as the block reward',  # noqa: E501

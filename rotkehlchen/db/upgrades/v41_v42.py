@@ -7,7 +7,7 @@ from rotkehlchen.db.constants import (
     HistoryMappingState,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import ChainID, Location
+from rotkehlchen.types import ChainID
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -93,7 +93,7 @@ def upgrade_v41_to_v42(db: DBHandler, progress_handler: DBUpgradeProgressHandler
     def _add_new_supported_locations(write_cursor: DBCursor) -> None:
         write_cursor.executemany(
             'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
-            [('n', Location.SCROLL.value), ('o', Location.ZKSYNC_LITE.value)],
+            [('n', 46), ('o', 47)],
         )
 
     @progress_step(description='Upgrading evmchains to skip detection.')

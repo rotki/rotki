@@ -15,7 +15,6 @@ from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -146,9 +145,9 @@ def upgrade_v39_to_v40(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         """
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            (f'{Location.KRAKEN!s}\\_%', '\\'),
+            ('kraken\\_%', '\\'),
         )
-        location = Location.KRAKEN.serialize_for_db()
+        location = 'B'
         for table in ('trades', 'asset_movements', 'history_events'):
             write_cursor.execute(f'DELETE FROM {table} WHERE location = ?;', (location,))
 

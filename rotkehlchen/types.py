@@ -799,6 +799,9 @@ CHAINS_WITH_NODES: tuple[CHAINS_WITH_NODES_TYPE, ...] = CHAINS_WITH_TRANSACTION_
 CHAINS_WITH_CHAIN_MANAGER = SUPPORTED_EVM_CHAINS_TYPE | SUPPORTED_EVMLIKE_CHAINS_TYPE | SUPPORTED_BITCOIN_CHAINS_TYPE | SUPPORTED_SUBSTRATE_CHAINS_TYPE | Literal[SupportedBlockchain.SOLANA, SupportedBlockchain.DOGECOIN]  # noqa: E501
 
 
+LEGACY_LOCATION_PREFIX: Final = 'legacy:'
+
+
 class Location(DBCharEnumMixIn):
     """Supported Locations"""
     EXTERNAL = 1
@@ -870,6 +873,25 @@ class Location(DBCharEnumMixIn):
     INK = 67  # on-chain Ink chain events
     QONTO = 68  # bank connector
     FINTS = 69  # German FinTS/HBCI bank connector
+
+    # Transitional until LocationIdentifier replaces this enum: the DB stores the location
+    # tree identifier, which equals the API serialization of every enum member except the
+    # protocol-labelled ones, which live in the tree as inactive `legacy:` nodes.
+    def serialize_for_db(self) -> str:
+        if self in LEGACY_PROTOCOL_LOCATIONS:
+            return f'{LEGACY_LOCATION_PREFIX}{self}'
+
+        return str(self)
+
+    @classmethod
+    def deserialize_from_db(cls, value: str) -> Location:
+        """May raise a DeserializationError if something is wrong with the DB data"""
+        if value.startswith(LEGACY_LOCATION_PREFIX) and (
+            location := cls.deserialize(value.removeprefix(LEGACY_LOCATION_PREFIX))
+        ) in LEGACY_PROTOCOL_LOCATIONS:
+            return location
+
+        return cls.deserialize(value)
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> EVM_LOCATIONS_TYPE:
@@ -999,6 +1021,9 @@ class Location(DBCharEnumMixIn):
         return self in BITCOIN_LOCATIONS
 
 
+LEGACY_PROTOCOL_LOCATIONS: Final = frozenset({
+    Location.UNISWAP, Location.BALANCER, Location.GITCOIN, Location.SUSHISWAP,
+})
 EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.HYPERLIQUID, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC, Location.MONAD, Location.SONIC, Location.ROBINHOOD, Location.INK]  # noqa: E501
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE, ...] = typing.get_args(EVM_LOCATIONS_TYPE)
 EVMLIKE_LOCATIONS_TYPE = Literal[Location.ZKSYNC_LITE]

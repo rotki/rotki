@@ -15,6 +15,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier
+from rotkehlchen.locations.legacy_chars import location_from_v53_char, location_to_v53_char
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import AssetAmount, Location, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
@@ -169,13 +170,13 @@ def upgrade_v45_to_v46(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         write_cursor.execute(
             'SELECT event_identifier, location_label FROM history_events WHERE event_identifier '
             'IN (SELECT link FROM asset_movements WHERE location=?)',
-            (Location.KRAKEN.serialize_for_db(),),
+            ('B',),
         )
         event_identifier_to_label = dict(write_cursor)
         write_cursor.execute(
             'DELETE FROM history_events WHERE event_identifier '
             'IN (SELECT link FROM asset_movements WHERE location=?)',
-            (Location.KRAKEN.serialize_for_db(),),
+            ('B',),
         )
 
         write_cursor.execute(
@@ -185,7 +186,7 @@ def upgrade_v45_to_v46(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         for row in write_cursor:
             location_label = None
             if (
-                (location := Location.deserialize_from_db(row[1])) == Location.KRAKEN and
+                (location := location_from_v53_char(row[1])) == Location.KRAKEN and
                 (label := event_identifier_to_label.get(row[10])) is not None
             ):
                 location_label = label
@@ -216,7 +217,7 @@ def upgrade_v45_to_v46(db: DBHandler, progress_handler: DBUpgradeProgressHandler
             event.group_identifier,
             event.sequence_index,
             event.timestamp,
-            event.location.serialize_for_db(),
+            location_to_v53_char(event.location),
             event.location_label,
             event.asset.identifier,
             str(event.amount),

@@ -13,6 +13,7 @@ from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.legacy_chars import location_from_v53_char
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import EVM_LOCATIONS, Location, deserialize_evm_tx_hash
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
@@ -153,7 +154,7 @@ def upgrade_v36_to_v37(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         with db.conn.read_ctx() as read_cursor:
             read_cursor.execute('SELECT * from history_events')
             for entry in read_cursor:
-                location = Location.deserialize_from_db(entry[4])
+                location = location_from_v53_char(entry[4])
                 db_event_identifier = entry[1]
                 if location in EVM_LOCATIONS:
                     event_identifier = f'{location.to_chain_id()}{deserialize_evm_tx_hash(db_event_identifier)!s}'  # noqa: E501
@@ -356,26 +357,26 @@ def upgrade_v36_to_v37(db: DBHandler, progress_handler: DBUpgradeProgressHandler
         """Removes FTX-related settings from the DB"""
         write_cursor.execute(
             'DELETE FROM user_credentials WHERE location IN (?, ?)',
-            (Location.FTX.serialize_for_db(), Location.FTXUS.serialize_for_db()),
+            ('Z', 'd'),
         )
         write_cursor.execute(
             'DELETE FROM user_credentials_mappings WHERE credential_location IN (?, ?)',
-            (Location.FTX.serialize_for_db(), Location.FTXUS.serialize_for_db()),
+            ('Z', 'd'),
         )
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            (f'{Location.FTX!s}\\_%', '\\'),
+            ('ftx\\_%', '\\'),
         )
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            (f'{Location.FTXUS!s}\\_%', '\\'),
+            ('ftxus\\_%', '\\'),
         )
         non_syncing_exchanges_in_db = write_cursor.execute(
             "SELECT value FROM settings WHERE name='non_syncing_exchanges'",
         ).fetchone()
         if non_syncing_exchanges_in_db is not None:
             non_syncing_exchanges = json.loads(non_syncing_exchanges_in_db[0])
-            new_values = [x for x in non_syncing_exchanges if x['location'] not in (Location.FTX.serialize(), Location.FTXUS.serialize())]  # noqa: E501
+            new_values = [x for x in non_syncing_exchanges if x['location'] not in ('ftx', 'ftxus')]  # noqa: E501
             write_cursor.execute(
                 "UPDATE settings SET value=? WHERE name='non_syncing_exchanges'",
                 (json.dumps(new_values),),

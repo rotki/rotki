@@ -447,25 +447,111 @@ def test_migration_20_recover_lost_trades(database: DBHandler) -> None:
         )
         expected_events = [
             # First trade(same timestamp and location)
-            (1749566127000, 'A', 'USD', '27323.6750009618', 'trade', 'spend', None, (event_id_1 := '770f7468bc82e01badc0fa3a1f14e942596b4e5005136043fa365d5147d50e9f')),  # noqa: E501
-            (1749566127000, 'A', 'ETH', '10', 'trade', 'receive', None, event_id_1),
-            (1749566127000, 'A', 'USD', '12', 'trade', 'fee', None, event_id_1),
+            (1749566127000, 'external', 'USD', '27323.6750009618', 'trade', 'spend', None, (event_id_1 := '770f7468bc82e01badc0fa3a1f14e942596b4e5005136043fa365d5147d50e9f')),  # noqa: E501
+            (1749566127000, 'external', 'ETH', '10', 'trade', 'receive', None, event_id_1),
+            (1749566127000, 'external', 'USD', '12', 'trade', 'fee', None, event_id_1),
 
             # Third trade(different timestamp but same location)
-            (1749566160000, 'A', 'USD', '217318.633043406', 'trade', 'spend', '', (event_id_3 := '858c767c41df3e1a8d4a29bb9e9a8303f0e06efde643bb677f493ea4f1aa4f95')),  # noqa: E501
-            (1749566160000, 'A', 'BTC', '2', 'trade', 'receive', None, event_id_3),
+            (1749566160000, 'external', 'USD', '217318.633043406', 'trade', 'spend', '', (event_id_3 := '858c767c41df3e1a8d4a29bb9e9a8303f0e06efde643bb677f493ea4f1aa4f95')),  # noqa: E501
+            (1749566160000, 'external', 'BTC', '2', 'trade', 'receive', None, event_id_3),
 
             # Second trade(same timestamp and location)
-            (1749566127000, 'A', 'USD', '13661.8375004809', 'trade', 'spend', '', (event_id_2 := 'a7ea7e46207b89e3d6b0067fa764de13a94203ec73cac18882bbf2de426cfecd')),  # noqa: E501
-            (1749566127000, 'A', 'ETH', '5', 'trade', 'receive', None, event_id_2),
+            (1749566127000, 'external', 'USD', '13661.8375004809', 'trade', 'spend', '', (event_id_2 := 'a7ea7e46207b89e3d6b0067fa764de13a94203ec73cac18882bbf2de426cfecd')),  # noqa: E501
+            (1749566127000, 'external', 'ETH', '5', 'trade', 'receive', None, event_id_2),
 
             # Fourth trade(different timestamp but same location)
-            (1749566154000, 'A', 'USD', '108659.316521703', 'trade', 'spend', '', (event_id_4 := 'effef56a55330e3f4bf893757ea7c71d06078303ae09bcb93950a33a09f4aaac')),  # noqa: E501
-            (1749566154000, 'A', 'BTC', '1', 'trade', 'receive', None, event_id_4),
+            (1749566154000, 'external', 'USD', '108659.316521703', 'trade', 'spend', '', (event_id_4 := 'effef56a55330e3f4bf893757ea7c71d06078303ae09bcb93950a33a09f4aaac')),  # noqa: E501
+            (1749566154000, 'external', 'BTC', '1', 'trade', 'receive', None, event_id_4),
         ]
         assert all(expected_events[i] == row for i, row in enumerate(cursor))
 
     assert len(list(database.user_data_dir.glob('*_pre_recovery_v48.backup'))) == 1  # verify the safety backup was created  # noqa: E501
+
+
+def _copy_v47_backup(database: DBHandler, tmp_path: Path, location_char: str) -> None:
+    """Put a v47 backup whose trades all sit at the given location next to the database"""
+    shutil.copy(
+        src=Path(__file__).resolve().parent.parent / 'data' / 'v47_rotkehlchen.db',
+        dst=(backup_path := tmp_path / 'backup.db'),
+    )
+    unlock_database(
+        db_connection=(backup_conn := DBConnection(
+            path=str(backup_path),
+            connection_type=DBConnectionType.USER,
+            sql_vm_instructions_cb=database.sql_vm_instructions_cb,
+        )),
+        password=database.password,
+        sqlcipher_version=database.sqlcipher_version,
+    )
+    with backup_conn.write_ctx() as write_cursor:
+        write_cursor.execute('UPDATE trades SET location=?', (location_char,))
+    backup_conn.close()
+    shutil.copy(src=backup_path, dst=database.user_data_dir / f'{ts_now()}_rotkehlchen_db_v47.backup')  # noqa: E501
+
+
+@pytest.mark.parametrize('use_custom_database', ['botched_v47_rotkehlchen.db'])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
+@pytest.mark.parametrize('data_migration_version', [19])
+def test_migration_20_recover_lost_trades_of_legacy_location(
+        database: DBHandler,
+        tmp_path: Path,
+) -> None:
+    """Recovered trades of a protocol-labelled location need the legacy node that the
+    upgrade only created for locations the data used, which the backup alone did.
+    """
+    _copy_v47_backup(database, tmp_path, location_char='Q')
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM locations WHERE identifier='legacy:uniswap'",
+        ).fetchone()[0] == 0
+
+    with patch('rotkehlchen.data_migrations.manager.MIGRATION_LIST', new=[MIGRATION_LIST[10]]):  # Migration 20 is at index 10  # noqa: E501
+        DataMigrationManager(MockRotkiForMigrations(database)).maybe_migrate_data()
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM history_events WHERE location='legacy:uniswap'",
+        ).fetchone()[0] == 9
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+            (hash_id(str(Location.KRAKEN)),),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            "SELECT is_active FROM locations WHERE identifier='legacy:uniswap'",
+        ).fetchone() == (0,)
+
+
+@pytest.mark.parametrize('use_custom_database', ['botched_v47_rotkehlchen.db'])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
+@pytest.mark.parametrize('data_migration_version', [19])
+def test_migration_20_failed_recovery_keeps_affected_events(
+        database: DBHandler,
+        tmp_path: Path,
+) -> None:
+    """A recovered event that can't be inserted rolls back the removal of the affected events"""
+    _copy_v47_backup(database, tmp_path, location_char='A')
+    with database.conn.write_ctx() as write_cursor:  # takes the place of a recovered event
+        write_cursor.execute(
+            'INSERT INTO history_events(entry_type, group_identifier, sequence_index, timestamp, '
+            'location, asset, amount, type, subtype) VALUES (?, ?, 0, 1749566127000, ?, ?, ?, ?, ?)',  # noqa: E501
+            (
+                HistoryBaseEntryType.SWAP_EVENT.value,
+                '770f7468bc82e01badc0fa3a1f14e942596b4e5005136043fa365d5147d50e9f',
+                'external', 'ETH', '1', 'trade', 'spend',
+            ),
+        )
+    with database.conn.read_ctx() as cursor:
+        before_events = cursor.execute('SELECT * FROM history_events').fetchall()
+
+    with patch('rotkehlchen.data_migrations.manager.MIGRATION_LIST', new=[MIGRATION_LIST[10]]):  # Migration 20 is at index 10  # noqa: E501
+        DataMigrationManager(MockRotkiForMigrations(database)).maybe_migrate_data()
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT * FROM history_events').fetchall() == before_events
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+            (hash_id(str(Location.KRAKEN)),),
+        ).fetchone()[0] != 0
 
 
 @pytest.mark.parametrize('use_custom_database', ['botched_v47_rotkehlchen.db'])

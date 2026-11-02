@@ -38,8 +38,8 @@ def test_migration_26_orphaned_manual_balance_tags(database: DBHandler) -> None:
             'INSERT INTO manually_tracked_balances(id, asset, label, amount, location, category) '
             'VALUES(?, ?, ?, ?, ?, ?)',
             [
-                (3, 'BTC', 'kept wallet', '1', 'A', 'A'),
-                (5, 'ETH', 'tagged wallet', '2', 'A', 'A'),
+                (3, 'BTC', 'kept wallet', '1', 'external', 'A'),
+                (5, 'ETH', 'tagged wallet', '2', 'external', 'A'),
             ],
         )
         write_cursor.execute(

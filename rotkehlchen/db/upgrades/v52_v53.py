@@ -11,7 +11,6 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingSt
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.oracles.structures import CurrentPriceOracle
-from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -185,38 +184,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_bucket_scope ON data_issues
         intentionally left untouched since assigning old NULL events to a specific key would be
         ambiguous.
         """
-        exchange_locations = tuple(location.serialize_for_db() for location in (
-            Location.BINANCE,
-            Location.BINANCEUS,
-            Location.BISQ,
-            Location.BITCOINDE,
-            Location.BITFINEX,
-            Location.BITMEX,
-            Location.BITPANDA,
-            Location.BITSTAMP,
-            Location.BITTREX,
-            Location.BLOCKFI,
-            Location.BYBIT,
-            Location.COINBASE,
-            Location.COINBASEPRIME,
-            Location.COINBASEPRO,
-            Location.CRYPTOCOM,
-            Location.FTX,
-            Location.FTXUS,
-            Location.GEMINI,
-            # GATE is omitted because it is first added in this upgrade/release.
-            Location.HTX,
-            Location.ICONOMI,
-            Location.INDEPENDENTRESERVE,
-            Location.KRAKEN,
-            Location.KUCOIN,
-            Location.NEXO,
-            Location.OKX,
-            Location.POLONIEX,
-            Location.SHAPESHIFT,
-            Location.UPHOLD,
-            Location.WOO,
-        ))
+        exchange_locations = (  # binance, binanceus, bisq, bitcoinde, bitfinex, bitmex, bitpanda,
+            # bitstamp, bittrex, blockfi, bybit, coinbase, coinbaseprime, coinbasepro, cryptocom,
+            # ftx, ftxus, gemini, htx, iconomi, independentreserve, kraken, kucoin, nexo, okx,
+            # poloniex, shapeshift, uphold, woo. GATE is omitted because it is first added in
+            # this upgrade/release.
+            'E', 'S', 'c', 'U', 'T', 'F', 'b', 'R', 'D', '\\', 'm', 'G', 'u', 'K', 'P', 'Z', 'd',
+            'L', 'p', 'V', ']', 'B', 'W', '[', 'e', 'C', '`', 'a', 'l',
+        )
         placeholders = ','.join('?' * len(exchange_locations))
         write_cursor.execute(
             'CREATE TEMP TABLE IF NOT EXISTS _exchange_label_fill AS SELECT '
