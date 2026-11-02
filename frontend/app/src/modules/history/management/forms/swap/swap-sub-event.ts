@@ -3,6 +3,7 @@ import type { EvmSwapEvent, SolanaSwapEvent } from '@/modules/history/events/sch
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { z, type ZodType } from 'zod';
 import { msg } from '@/message-key';
+import { ChainFamily, type SwapChainFamily } from '@/modules/history/management/forms/common/chain-location';
 import {
   optionalEthAddress,
   optionalSolanaAddress,
@@ -96,18 +97,18 @@ export function toSubEventPayload(state: SwapSubEventState): SwapSubEventModel {
  * @param chain - which address format `locationLabel` accepts; the only difference between the EVM
  * and Solana swap forms at the row level.
  */
-export function swapSubEventSchema(chain: 'evm' | 'solana'): ZodType {
+export function swapSubEventSchema(chain: SwapChainFamily): ZodType {
   return z.object({
     amount: requiredAmount(),
     asset: requiredAsset(),
     identifier: z.number().optional(),
-    locationLabel: chain === 'solana' ? optionalSolanaAddress() : optionalEthAddress(),
+    locationLabel: chain === ChainFamily.SOLANA ? optionalSolanaAddress() : optionalEthAddress(),
     priceIntent: z.unknown().optional(),
     userNotes: serverValidatedOnly(),
   });
 }
 
 /** A spend / receive list, which the backend requires to hold at least one asset. */
-export function swapSubEventListSchema(chain: 'evm' | 'solana'): ZodType {
+export function swapSubEventListSchema(chain: SwapChainFamily): ZodType {
   return z.array(swapSubEventSchema(chain)).min(1, msg.$t('swap_event_form.validation.at_least_one'));
 }
