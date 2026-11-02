@@ -3,7 +3,8 @@ from json.decoder import JSONDecodeError
 import requests
 
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 
@@ -20,19 +21,23 @@ class Github:
         try:
             response = requests.get(url=f'{self.prefix}{path}', timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to query Github: {e!s}') from e
+            raise RemoteError(f'Failed to query Github: {e!s}', cause=FailureCause.NETWORK) from e
 
         if response.status_code != 200:
             raise RemoteError(
                 f'Github API request {response.url} for {path} failed '
                 f'with HTTP status code {response.status_code} and text '
                 f'{response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
             json_ret = jsonloads_dict(response.text)
         except JSONDecodeError as e:
-            raise RemoteError(f'Github returned invalid JSON response: {response.text}') from e
+            raise RemoteError(
+                f'Github returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
         return json_ret
 
     def get_latest_release(self) -> tuple[str, str]:
@@ -45,9 +50,11 @@ class Github:
         if 'tag_name' not in response:
             raise RemoteError(
                 'Github latest release did not contain a "tag_name" entry in the response',
+                cause=FailureCause.BAD_DATA,
             )
         if 'html_url' not in response:
             raise RemoteError(
                 'Github latest release did not contain a "html_url" entry in the response',
+                cause=FailureCause.BAD_DATA,
             )
         return response['tag_name'], response['html_url']

@@ -8,7 +8,8 @@ import requests
 
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval_force_positive
@@ -93,6 +94,7 @@ class SoChainLikeApi:
                     f'be queried for another {int(wait) + 1} seconds'
                 ),
                 error_code=HTTPStatus.TOO_MANY_REQUESTS,
+                cause=FailureCause.RATE_LIMITED,
             )
 
         retries_left = RATE_LIMIT_RETRIES
@@ -107,7 +109,10 @@ class SoChainLikeApi:
                     timeout=CachedSettings().get_timeout_tuple(),
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'{self.name} API request {url} failed due to {e!s}') from e
+                raise RemoteError(
+                    f'{self.name} API request {url} failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code != HTTPStatus.TOO_MANY_REQUESTS:
                 self._recover_rate()
@@ -128,6 +133,7 @@ class SoChainLikeApi:
                         f'asked to retry after {retry_after} seconds'
                     ),
                     error_code=HTTPStatus.TOO_MANY_REQUESTS,
+                    cause=FailureCause.RATE_LIMITED,
                 )
 
             retries_left -= 1
@@ -140,6 +146,7 @@ class SoChainLikeApi:
             raise RemoteError(
                 message=f'{self.name} API request {url} returned invalid JSON: {response.text}',
                 error_code=response.status_code,
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         data = result.get('data')
@@ -156,6 +163,11 @@ class SoChainLikeApi:
                     f'{response.status_code}: {reason or response.text}'
                 ),
                 error_code=response.status_code,
+                cause=(  # a 200 that still failed is SoChain refusing the query
+                    cause_for_status(response.status_code)
+                    if response.status_code != HTTPStatus.OK
+                    else FailureCause.REMOTE_REJECTED
+                ),
             )
 
         return data
@@ -175,6 +187,7 @@ class SoChainLikeApi:
         except DeserializationError as e:
             raise RemoteError(
                 f'Unexpected {self.name} balance {value} for {address}: {e!s}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
 
@@ -200,6 +213,7 @@ class SoChain(SoChainLikeApi):
             raise RemoteError(
                 f'Unexpected SoChain {self.network} balance response for {address}: '
                 f"missing key 'confirmed'. Response data: {data}",
+                cause=FailureCause.BAD_DATA,
             )
 
         return self._deserialize_balance(value=confirmed, address=address)

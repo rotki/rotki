@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Any, Final, NamedTuple
 import requests
 
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
 from rotkehlchen.fval import FVal
@@ -57,15 +58,22 @@ class Jupiter(ExternalServiceWithRecommendedApiKey):
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Jupiter API request failed due to {e!s}') from e
+            raise RemoteError(
+                f'Jupiter API request failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code == HTTPStatus.UNAUTHORIZED:
-            raise RemoteError('Jupiter API request failed with 401 Unauthorized')
+            raise RemoteError(
+                'Jupiter API request failed with 401 Unauthorized',
+                cause=FailureCause.AUTH,
+            )
 
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
                 f'Jupiter API request {response.url} failed with HTTP status code '
                 f'{response.status_code} and text {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
@@ -74,6 +82,7 @@ class Jupiter(ExternalServiceWithRecommendedApiKey):
             raise RemoteError(
                 f'Jupiter API request {response.url} returned invalid JSON response: '
                 f'{response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return self._deserialize_positions(raw_data=raw_data)
@@ -92,7 +101,10 @@ class Jupiter(ExternalServiceWithRecommendedApiKey):
             owner = deserialize_solana_address(raw_data['owner'])
             raw_elements = raw_data['elements']
         except (DeserializationError, KeyError, TypeError) as e:
-            raise RemoteError(f'Failed to deserialize Jupiter positions due to {e!s}') from e
+            raise RemoteError(
+                f'Failed to deserialize Jupiter positions due to {e!s}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         positions: list[JupiterPosition] = []
         for raw_element in raw_elements:

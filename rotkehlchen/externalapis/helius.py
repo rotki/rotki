@@ -12,7 +12,8 @@ from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
-from rotkehlchen.errors.misc import MissingAPIKey, RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import MissingAPIKey, RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import (
     ExternalService,
@@ -80,11 +81,17 @@ class Helius(ExternalServiceWithRecommendedApiKey):
                     timeout=timeout,
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Helius API request failed due to {e!s}') from e
+                raise RemoteError(
+                    f'Helius API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 if retry_count >= RETRY_LIMIT:
-                    raise RemoteError('Getting Helius too many requests error even after retrying.')  # noqa: E501
+                    raise RemoteError(
+                        'Getting Helius too many requests error even after retrying.',
+                        cause=FailureCause.RATE_LIMITED,
+                    )
 
                 log.debug(f'Got too many requests error from Helius. Will backoff for {BACKOFF_SECONDS} second.')  # noqa: E501
                 cancellable_sleep(BACKOFF_SECONDS)
@@ -96,6 +103,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
                     f'Helius API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
+                    cause=cause_for_status(response.status_code),
                 )
 
             # else status is 200 OK
@@ -107,6 +115,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
             raise RemoteError(
                 f'Helius API request {response.url} returned invalid '
                 f'JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return json_ret

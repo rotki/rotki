@@ -41,6 +41,7 @@ from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -207,6 +208,7 @@ def _check_hourly_data_sanity(
                 'Unexpected data format in cryptocompare query_endpoint_histohour. '
                 f'Problem at indices {index} and {index + 1} of '
                 f'{from_asset.symbol}_to_{to_asset.symbol} prices. Time difference is: {diff}',
+                cause=FailureCause.BAD_DATA,
             )
 
 
@@ -364,7 +366,10 @@ class Cryptocompare(
         """
         params = params if params is not None else {}
         if (api_key := self._get_api_key()) is None:
-            raise RemoteError('Cryptocompare can not be queried without an API key')
+            raise RemoteError(
+                'Cryptocompare can not be queried without an API key',
+                cause=FailureCause.AUTH,
+            )
 
         params |= {'api_key': api_key}
 
@@ -378,13 +383,17 @@ class Cryptocompare(
                 response = self.session.get(url, timeout=timeout, params=params)
             except requests.exceptions.RequestException as e:
                 self.note_request_failure(e)
-                raise RemoteError(f'Cryptocompare API request failed due to {e!s}') from e
+                raise RemoteError(
+                    f'Cryptocompare API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             try:
                 json_ret = jsonloads_dict(response.text)
             except JSONDecodeError as e:
                 raise RemoteError(
                     f'Cryptocompare returned invalid JSON response: {response.text}',
+                    cause=FailureCause.BAD_DATA,
                 ) from e
 
             try:
@@ -422,13 +431,14 @@ class Cryptocompare(
                         error=error_message,
                         status_code=response.status_code,
                     )
-                    raise RemoteError(error_message)
+                    raise RemoteError(error_message, cause=FailureCause.REMOTE_REJECTED)
 
                 return json_ret.get('Data', json_ret)
             except KeyError as e:
                 raise RemoteError(
                     f'Unexpected format of Cryptocompare json_response. '
                     f'Missing key entry for {e!s}',
+                    cause=FailureCause.BAD_DATA,
                 ) from e
 
         raise AssertionError('We should never get here')
@@ -723,6 +733,7 @@ class Cryptocompare(
             raise RemoteError(
                 f'Failed to deserialize {cc_from_asset_symbol}-{cc_to_asset_symbol} '
                 f'historical price data from Cryptocompare',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
     def _get_histohour_data_for_range(

@@ -13,6 +13,7 @@ from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     BlockscoutIncompleteResponse,
     ChainNotSupported,
@@ -247,6 +248,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             raise RemoteError(
                 f'Blockscout has no API key configured, which its endpoint for '
                 f'{chain_id.name} requires. Skipping it.',
+                cause=FailureCause.AUTH,
             )
 
         if (
@@ -256,6 +258,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             raise RemoteError(
                 f'Blockscout recently rejected the configured API key for {chain_id.name}. '
                 f'Skipping it.',
+                cause=FailureCause.AUTH,
             )
 
         return url
@@ -352,7 +355,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                     **request_kwargs,
                 )
             except requests.exceptions.RequestException as e:
-                raise RecoverableRemoteError(f'Querying {query_str} failed due to {e!s}') from e
+                raise RecoverableRemoteError(
+                    f'Querying {query_str} failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code == 429:
                 self._rate_limiter.shrink_after_429()
@@ -363,7 +369,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                         f'{response.text} after {retries_num} retries'
                     )
                     log.debug(msg)
-                    raise RecoverableRemoteError(msg)
+                    raise RecoverableRemoteError(msg, cause=FailureCause.RATE_LIMITED)
 
                 # Rate limited. Try incremental backoff
                 sleep_seconds = backoff_in_seconds * (retries_num - times + 1)
@@ -397,6 +403,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                     f'Blockscout API request {response.url} could not authorize the configured '
                     f'API key for {chain_id.label()}. It failed with HTTP status code '
                     f'{response.status_code} and text {response.text}',
+                    cause=FailureCause.AUTH,
                 )
 
             if response.status_code != 200:
@@ -414,6 +421,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         except JSONDecodeError as e:
             raise RemoteError(
                 f'Blockscout API returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return json_ret  # 'txlistinternal', 'txlist', 'tokentx
@@ -509,25 +517,43 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         elif message == 'Contract source code not verified':
             return None
         elif message != 'OK':
-            raise RemoteError(f'Non ok response from blockscout v1 with {query_args}: {response}')
+            raise RemoteError(
+                f'Non ok response from blockscout v1 with {query_args}: {response}',
+                cause=FailureCause.REMOTE_REJECTED,
+            )
 
         if (result := response.get('result')) is None:
-            raise RemoteError(f'Missing result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
+            raise RemoteError(
+                f'Missing result from blockscout v1 response with {query_args}: {response}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         if module == 'account':
             if action in ('txlistinternal', 'txlist', 'tokentx', 'getminedblocks'):
                 if not isinstance(result, list):
-                    raise RemoteError(f'Expected a list result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
+                    raise RemoteError(
+                        f'Expected a list result from blockscout v1 response with {query_args}: {response}',  # noqa: E501
+                        cause=FailureCause.BAD_DATA,
+                    )
             elif not isinstance(result, str):
-                raise RemoteError(f'Expected a str result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
+                raise RemoteError(
+                    f'Expected a str result from blockscout v1 response with {query_args}: {response}',  # noqa: E501
+                    cause=FailureCause.BAD_DATA,
+                )
             else:  # can only be 'str'` for balance
                 try:
                     result = int(result)
                 except ValueError as e:
-                    raise RemoteError(f'Expected a stringified int result from blockscout v1 response with {query_args}: {response}') from e  # noqa: E501
+                    raise RemoteError(
+                        f'Expected a stringified int result from blockscout v1 response with {query_args}: {response}',  # noqa: E501
+                        cause=FailureCause.BAD_DATA,
+                    ) from e
 
         elif module == 'block' and not isinstance(result, (dict, int)):
-            raise RemoteError(f'Expected a dict or int result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
+            raise RemoteError(
+                f'Expected a dict or int result from blockscout v1 response with {query_args}: {response}',  # noqa: E501
+                cause=FailureCause.BAD_DATA,
+            )
 
         return result
 
@@ -653,7 +679,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             },
             http_method='post',
         )):
-            raise RemoteError(f'Blockscout eth-rpc response contains no result: {response}')
+            raise RemoteError(
+                f'Blockscout eth-rpc response contains no result: {response}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return response['result']
 
@@ -678,7 +707,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 'blockReward': result['priority_fee'],
             }
         except KeyError as e:
-            raise RemoteError(f'Malformed Blockscout block reward response for block {block_number}: missing {e!s}') from e  # noqa: E501
+            raise RemoteError(
+                f'Malformed Blockscout block reward response for block {block_number}: missing {e!s}',  # noqa: E501
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
     def get_validated_blocks(
             self,
@@ -712,11 +744,17 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             try:
                 new_options = self._maybe_paginate(result=result, options=options)
             except KeyError as e:
-                raise RemoteError(f'Malformed Blockscout validated blocks response for {address}: missing {e!s}') from e  # noqa: E501
+                raise RemoteError(
+                    f'Malformed Blockscout validated blocks response for {address}: missing {e!s}',
+                    cause=FailureCause.BAD_DATA,
+                ) from e
             if new_options is None:
                 break
             if (new_options.get('startblock'), new_options.get('page')) == previous_page_state:
-                raise RemoteError(f'Blockscout validated blocks pagination made no progress for {address}')  # noqa: E501
+                raise RemoteError(
+                    f'Blockscout validated blocks pagination made no progress for {address}',
+                    cause=FailureCause.BAD_DATA,
+                )
             options = new_options
 
         return blocks
@@ -905,6 +943,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         elif (blocknumber := response.get('blockNumber')) is None:
             raise RemoteError(
                 f'Invalid block number response from blockscout for {ts}: {response}',
+                cause=FailureCause.BAD_DATA,
             )
 
         try:
@@ -915,6 +954,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         except DeserializationError as e:
             raise RemoteError(
                 f'Failed to deserialize blocknumber from blockscout response {response}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
     def has_activity(
@@ -1025,4 +1065,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 api=self.name,
             )
         except (KeyError, TypeError, DeserializationError) as e:
-            raise RemoteError(f'Failed to get L1 fee for tx {tx_hash!s} from {self.name} due to {e!r}') from e  # noqa: E501
+            raise RemoteError(
+                f'Failed to get L1 fee for tx {tx_hash!s} from {self.name} due to {e!r}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
