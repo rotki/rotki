@@ -22,6 +22,10 @@ def data_migration_30(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
     Solana v1 transactions were skipped while querying transaction details. Mark accounts whose
     stored history has already advanced past v1 activation so their affected interval is backfilled
     during the next normal transaction sync. The migration itself performs no network requests.
+
+    It also removes the last balances query timestamp of chains that are fully disabled in
+    disabled_chain_queries. Nothing refreshes it while the chain is disabled, so the one it had
+    when it was disabled was still reported as its last refresh.
     """
     @progress_step(description='Scheduling missing Solana v1 transaction recovery')
     def _schedule_solana_transaction_backfill(rotki: Rotkehlchen) -> None:
@@ -43,6 +47,17 @@ def data_migration_30(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                     DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT.get_db_key(address=account),
                     SOLANA_V1_ACTIVATION_SLOT,
                 ) for account in accounts],
+            )
+
+    @progress_step(description='Removing stale balance refresh times of disabled chains')
+    def _delete_stale_balances_query_timestamps(rotki: Rotkehlchen) -> None:
+        with rotki.data.db.conn.read_ctx() as cursor:
+            disabled_chain_queries = rotki.data.db.get_settings(cursor).disabled_chain_queries
+
+        with rotki.data.db.user_write() as write_cursor:
+            rotki.data.db.delete_balances_query_ts_for_disabled_chains(
+                write_cursor=write_cursor,
+                disabled_chain_queries=disabled_chain_queries,
             )
 
     perform_userdb_migration_steps(rotki, progress_handler, should_vacuum=False)
