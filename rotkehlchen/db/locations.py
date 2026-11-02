@@ -33,6 +33,8 @@ LOCATION_REFERENCES: Final = (
     ('bitcoin_transactions', 'location'),
     ('event_metrics', 'location'),
     ('data_issues', 'location'),
+    ('bucket_processing_stops', 'location'),
+    ('bucket_balance_checks', 'location'),
 )
 _NODE_COLUMNS: Final = 'identifier, name, parent_identifier, is_builtin, is_active, icon, image'
 
