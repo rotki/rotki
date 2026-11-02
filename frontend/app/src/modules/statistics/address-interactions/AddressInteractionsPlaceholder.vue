@@ -78,6 +78,7 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
     <template #header>
       <AddressInteractionToolbar
         address=""
+        :bridges-only="false"
         chain=""
         :min-transactions="1"
         :address-options="[]"

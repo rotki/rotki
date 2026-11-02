@@ -6,8 +6,8 @@ function node(id: string): InteractionNode {
   return { address: id, chains: ['eth'], id };
 }
 
-function connection(id: string, activity: ChainActivity[], source = node('a'), target = node('b')): InteractionConnection {
-  return { activity, id, source, target, txCount: activity.reduce((sum, entry) => sum + entry.txHashes.length, 0) };
+function connection(id: string, activity: Omit<ChainActivity, 'bridgeTxHashes'>[], source = node('a'), target = node('b')): InteractionConnection {
+  return { activity: activity.map(entry => ({ ...entry, bridgeTxHashes: [] })), id, isBridge: false, source, target, txCount: activity.reduce((sum, entry) => sum + entry.txHashes.length, 0) };
 }
 
 describe('address interaction panel helpers', () => {

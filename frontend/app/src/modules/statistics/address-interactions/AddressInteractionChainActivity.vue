@@ -15,6 +15,7 @@ const { getChainName } = useSupportedChains();
 const chainLocation = useChainLocation();
 
 const { nextCount, showMore, shown } = usePagedList(() => activity.txHashes);
+const bridgeTxHashes = computed<Set<string>>(() => new Set(activity.bridgeTxHashes));
 
 function openInHistory(txHashes: readonly string[]): void {
   startPromise(router.push(historyEventsRoute(chainLocation(activity.chain), txHashes)));
@@ -59,7 +60,7 @@ function openInHistory(txHashes: readonly string[]): void {
         @click="openInHistory(activity.txHashes)"
       >
         <RuiIcon
-          name="lu-history"
+          name="lu-arrow-up-right"
           size="16"
         />
       </RuiButton>
@@ -78,6 +79,15 @@ function openInHistory(txHashes: readonly string[]): void {
           type="transaction"
           reveal-actions
         />
+        <RuiChip
+          v-if="bridgeTxHashes.has(hash)"
+          size="sm"
+          color="primary"
+          class="ml-auto shrink-0"
+          data-testid="interaction-tx-bridge"
+        >
+          {{ t('address_interactions.bridge') }}
+        </RuiChip>
         <RuiButton
           variant="text"
           icon
@@ -89,7 +99,7 @@ function openInHistory(txHashes: readonly string[]): void {
           @click="openInHistory([hash])"
         >
           <RuiIcon
-            name="lu-history"
+            name="lu-arrow-up-right"
             size="16"
           />
         </RuiButton>

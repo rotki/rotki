@@ -33,4 +33,17 @@ describe('use address interactions', () => {
       { address: '0xc', blockchain: null },
     ]);
   });
+
+  it('should retain both bridge legs alongside ordinary transfers', async () => {
+    const rows = [
+      { chain: 'eth', source: '0xa', target: '0xb', txHash: '0xordinary' },
+      { chain: 'eth', source: '0xb', target: '0xa', targetChain: 'optimism', targetTxHash: '0xwithdrawal', txHash: '0xdeposit' },
+    ];
+    apiGet.mockResolvedValue(rows);
+    const { interactions, refresh } = useAddressInteractions();
+
+    await refresh();
+
+    expect(get(interactions)).toEqual(rows);
+  });
 });

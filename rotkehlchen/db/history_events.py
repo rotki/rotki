@@ -3,7 +3,6 @@ import logging
 import re
 from collections import defaultdict
 from dataclasses import dataclass
-from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from sqlcipher3 import dbapi2 as sqlcipher
@@ -216,12 +215,15 @@ class DBHistoryEvents:
         self.db = database
 
     def get_address_interactions(self) -> list[dict[str, str]]:
-        """Return unordered pairs of currently tracked accounts sharing a decoded event.
+        """Return tracked-account interactions, including directed matched bridge legs.
 
-        The event label identifies an account, not a transfer direction. Join against
-        accounts on the event's chain before deduplicating pairs and transactions.
+        Ordinary event pairs are unordered and chain-local. Bridge links retain their
+        deposit-to-withdrawal direction and require a transaction reference on both legs;
+        synthetic plain history counterparts cannot provide a transaction interaction.
         """
         interactions: list[dict[str, str]] = []
+        chain_data = {}
+        bridge_chain_bindings: list[str | int] = []
         with self.db.conn.read_ctx() as cursor:
             for chain in CHAINS_WITH_TRANSACTIONS:
                 location = Location.from_chain(chain)
@@ -250,6 +252,10 @@ class DBHistoryEvents:
                     BitcoinEvent if location.is_bitcoin() else
                     SolanaEvent if location == Location.SOLANA else EvmEvent
                 )
+                chain_data[location.serialize_for_db()] = (chain.serialize(), event_class)
+                bridge_chain_bindings.extend((
+                    location.serialize_for_db(), chain.value, int(location.is_evm_or_evmlike()),
+                ))
                 interactions.extend({
                     'chain': chain.serialize(),
                     'source': source,
@@ -257,9 +263,50 @@ class DBHistoryEvents:
                     'tx_hash': str(event_class._deserialize_tx_ref(tx_ref)),
                 } for source, target, tx_ref in rows)
 
+            # Resolve each leg against accounts on its own chain in one query. The
+            # link, not event metadata or a shared transaction hash, establishes the pair.
+            rows = cursor.execute(
+                'WITH chains(location, blockchain, is_evm) AS (VALUES '
+                f'{",".join("(?, ?, ?)" for _ in CHAINS_WITH_TRANSACTIONS)}) '
+                'SELECT DISTINCT deposit.location, source.account, deposit_tx.tx_ref, '
+                'withdrawal.location, target.account, withdrawal_tx.tx_ref '
+                'FROM history_event_links link '
+                'JOIN history_events deposit ON deposit.identifier=link.left_event_id '
+                'JOIN history_events withdrawal ON withdrawal.identifier=link.right_event_id '
+                'JOIN chain_events_info deposit_tx ON deposit_tx.identifier=deposit.identifier '
+                'JOIN chain_events_info withdrawal_tx ON withdrawal_tx.identifier=withdrawal.identifier '  # noqa: E501
+                'JOIN chains source_chain ON source_chain.location=deposit.location '
+                'JOIN chains target_chain ON target_chain.location=withdrawal.location '
+                'JOIN blockchain_accounts source ON source.blockchain=source_chain.blockchain '
+                'AND ((source_chain.is_evm=1 AND source.account=deposit.location_label COLLATE NOCASE) '  # noqa: E501
+                'OR (source_chain.is_evm=0 AND source.account=deposit.location_label COLLATE BINARY)) '  # noqa: E501
+                'JOIN blockchain_accounts target ON target.blockchain=target_chain.blockchain '
+                'AND ((target_chain.is_evm=1 AND target.account=withdrawal.location_label COLLATE NOCASE) '  # noqa: E501
+                'OR (target_chain.is_evm=0 AND target.account=withdrawal.location_label COLLATE BINARY)) '  # noqa: E501
+                'WHERE link.link_type=? AND deposit.location!=withdrawal.location '
+                'AND source.account!=target.account COLLATE BINARY '
+                'AND (source_chain.is_evm=0 OR target_chain.is_evm=0 '
+                'OR source.account!=target.account COLLATE NOCASE)',
+                [*bridge_chain_bindings, HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db()],
+            )
+            for source_location, source, source_tx, target_location, target, target_tx in rows:
+                source_chain, source_event_class = chain_data[source_location]
+                target_chain, target_event_class = chain_data[target_location]
+                interactions.append({
+                    'chain': source_chain,
+                    'source': source,
+                    'target': target,
+                    'tx_hash': str(source_event_class._deserialize_tx_ref(source_tx)),
+                    'target_chain': target_chain,
+                    'target_tx_hash': str(target_event_class._deserialize_tx_ref(target_tx)),
+                })
+
         return sorted(
             interactions,
-            key=itemgetter('chain', 'source', 'target', 'tx_hash'),
+            key=lambda row: (
+                row['chain'], row['source'], row['target'], row['tx_hash'],
+                row.get('target_chain', ''), row.get('target_tx_hash', ''),
+            ),
         )
 
     def _mark_events_modified(

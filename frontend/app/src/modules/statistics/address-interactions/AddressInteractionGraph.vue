@@ -25,9 +25,11 @@ const {
   clearSelection,
   focus,
   graph,
+  hasBridges,
   hasFilters,
   maxTransactions,
   modelAddress,
+  modelBridgesOnly,
   modelChain,
   modelMinTransactions,
   pickingPath,
@@ -55,11 +57,13 @@ const {
       />
       <AddressInteractionToolbar
         v-model:address="modelAddress"
+        v-model:bridges-only="modelBridgesOnly"
         v-model:chain="modelChain"
         v-model:min-transactions="modelMinTransactions"
         :address-options="addressOptions"
         :chains="chains"
         :max-transactions="maxTransactions"
+        :has-bridges="hasBridges"
         :has-filters="hasFilters"
         @reset="resetFilters()"
       />

@@ -1090,6 +1090,9 @@
   },
   "address_interactions": {
     "all_chains": "All chains",
+    "bridge": "Bridge",
+    "bridge_count": "1 bridge tx | {count} bridge txs",
+    "bridges_only": "Bridges only",
     "canvas_hint": "Scroll to zoom, drag to pan. Select an address or connection to explore.",
     "clear_selection": "Clear selection",
     "cluster": {

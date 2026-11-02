@@ -2,8 +2,15 @@ import type { InteractionPath } from './interaction-clusters';
 import { type InteractionConnection, type InteractionGraph, type InteractionNode, touches, transactionsOn } from './address-interaction-graph';
 
 export interface InteractionFilters {
+  /** Keeps only the pairs linked by a matched bridge. */
+  bridgesOnly?: boolean;
   chain?: string;
   minTransactions: number;
+}
+
+/** Whether the pair has a bridge leg, on `chain` when one is picked. */
+function hasBridgeLegOn(connection: InteractionConnection, chain?: string): boolean {
+  return connection.activity.some(entry => (!chain || entry.chain === chain) && entry.bridgeTxHashes.length > 0);
 }
 
 /** The addresses and connections the graph draws: everything but hidden addresses. */
@@ -46,20 +53,20 @@ export function drawGraph(graph: InteractionGraph, hiddenIds: ReadonlySet<string
 }
 
 /**
- * Marks which drawn connections and addresses pass the chain and minimum-transactions filters.
+ * Marks which drawn connections and addresses pass the chain, bridge and minimum-transactions filters.
  *
  * @remarks
  * A connection on another chain, or with fewer transactions than the minimum, stays drawn but
  * inactive, so changing a filter never moves the layout. The drawn arrays are passed through
  * unchanged, so anything derived from them alone survives a filter change.
  */
-export function activateScene(drawn: DrawnGraph, { chain, minTransactions }: InteractionFilters): InteractionScene {
+export function activateScene(drawn: DrawnGraph, { bridgesOnly = false, chain, minTransactions }: InteractionFilters): InteractionScene {
   const { connections, nodes } = drawn;
   const activeConnectionIds = new Set<string>();
   const activeNodeIds = new Set<string>();
   for (const connection of connections) {
     const transactions = transactionsOn(connection, chain);
-    if (transactions > 0 && transactions >= minTransactions) {
+    if (transactions > 0 && transactions >= minTransactions && (!bridgesOnly || hasBridgeLegOn(connection, chain))) {
       activeConnectionIds.add(connection.id);
       activeNodeIds.add(connection.source.id);
       activeNodeIds.add(connection.target.id);

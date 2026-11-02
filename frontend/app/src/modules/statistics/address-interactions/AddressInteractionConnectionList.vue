@@ -42,12 +42,15 @@ interface ConnectionRow {
   nodes: InteractionNode[];
   chains: string[];
   count: number;
+  /** Transactions of the pair that are a leg of a matched bridge, on the shown chain or on all of them. */
+  bridgeCount: number;
 }
 
 const rows = computed<ConnectionRow[]>(() => get(shown).map((connection) => {
   const counterpart = counterpartOf(connection, focusNodeId);
   return {
     nodes: counterpart ? [counterpart] : [connection.source, connection.target],
+    bridgeCount: connection.activity.filter(entry => !chain || entry.chain === chain).reduce((sum, entry) => sum + entry.bridgeTxHashes.length, 0),
     chains: chain ? [chain] : connection.activity.map(entry => entry.chain),
     connection,
     count: transactionsOn(connection, chain),
@@ -114,6 +117,17 @@ const rows = computed<ConnectionRow[]>(() => get(shown).map((connection) => {
             />
             <span data-testid="interaction-connection-count">
               {{ t('address_interactions.tx_count', { count: row.count }, row.count) }}
+            </span>
+            <span
+              v-if="row.bridgeCount > 0"
+              class="ml-1 inline-flex items-center gap-1 rounded-full bg-rui-primary/10 px-1.5 py-0.5 font-medium text-rui-primary"
+              data-testid="interaction-connection-bridge"
+            >
+              <RuiIcon
+                name="lu-arrow-left-right"
+                size="12"
+              />
+              {{ t('address_interactions.bridge_count', { count: row.bridgeCount }, row.bridgeCount) }}
             </span>
           </span>
         </span>

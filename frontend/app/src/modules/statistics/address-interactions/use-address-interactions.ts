@@ -12,6 +12,8 @@ const AddressInteractions = z.array(z.object({
   chain: z.string(),
   source: z.string(),
   target: z.string(),
+  targetChain: z.string().optional(),
+  targetTxHash: z.string().optional(),
   txHash: z.string(),
 }));
 

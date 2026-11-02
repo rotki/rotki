@@ -9,6 +9,8 @@ export interface InteractionNode {
 export interface ChainActivity {
   chain: string;
   txHashes: string[];
+  /** The transactions among `txHashes` that are a leg of a matched bridge. */
+  bridgeTxHashes: string[];
 }
 
 /** Every transaction two addresses share, on any chain. */
@@ -19,6 +21,8 @@ export interface InteractionConnection {
   /** One entry per chain the pair shares a transaction on, ordered by chain id. */
   activity: ChainActivity[];
   txCount: number;
+  /** Whether a matched bridge links the pair, as opposed to a transaction both addresses appear in. */
+  isBridge: boolean;
 }
 
 export interface InteractionGraph {
@@ -54,12 +58,15 @@ export function degreesOf(connections: Iterable<InteractionConnection>): Map<str
  * @remarks
  * The API reports one row per chain, pair and transaction. Folding the chains into one connection
  * keeps a pair active on five chains as one relation, while `activity` keeps the per-chain detail.
+ * A matched bridge puts each address on its own chain and records each leg's transaction under the
+ * chain it happened on.
  * Nodes and connections come back sorted, so the same input always gives the same order.
  */
 export function createAddressInteractionGraph(interactions: readonly AddressInteraction[]): InteractionGraph {
   const nodes = new Map<string, InteractionNode>();
   const connections = new Map<string, InteractionConnection>();
   const txHashes = new Map<string, Map<string, Set<string>>>();
+  const bridgeHashes = new Set<string>();
 
   function node(chain: string, address: string): InteractionNode {
     let result = nodes.get(address);
@@ -72,27 +79,43 @@ export function createAddressInteractionGraph(interactions: readonly AddressInte
     return result;
   }
 
-  for (const { chain, source: from, target: to, txHash } of interactions) {
-    if (from === to)
-      continue;
-
-    const [source, target] = from < to ? [node(chain, from), node(chain, to)] : [node(chain, to), node(chain, from)];
-    const id = JSON.stringify([source.id, target.id]);
-    if (!connections.has(id)) {
-      connections.set(id, { activity: [], id, source, target, txCount: 0 });
-      txHashes.set(id, new Map());
-    }
+  function record(id: string, chain: string, txHash: string, bridge = false): void {
     const byChain = txHashes.get(id)!;
     const hashes = byChain.get(chain) ?? new Set<string>();
     hashes.add(txHash);
     byChain.set(chain, hashes);
+    if (bridge)
+      bridgeHashes.add(JSON.stringify([id, chain, txHash]));
+  }
+
+  for (const { chain, source: from, target: to, targetChain, targetTxHash, txHash } of interactions) {
+    if (from === to)
+      continue;
+
+    const fromNode = node(chain, from);
+    const toNode = node(targetChain ?? chain, to);
+    const [source, target] = from < to ? [fromNode, toNode] : [toNode, fromNode];
+    const id = JSON.stringify([source.id, target.id]);
+    if (!connections.has(id)) {
+      connections.set(id, { activity: [], id, isBridge: false, source, target, txCount: 0 });
+      txHashes.set(id, new Map());
+    }
+    const isBridge = targetChain !== undefined && targetTxHash !== undefined;
+    record(id, chain, txHash, isBridge);
+    if (isBridge) {
+      record(id, targetChain, targetTxHash, true);
+      connections.get(id)!.isBridge = true;
+    }
   }
 
   for (const [id, byChain] of txHashes) {
     const connection = connections.get(id)!;
     connection.activity = [...byChain]
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([chain, hashes]) => ({ chain, txHashes: [...hashes].sort() }));
+      .map(([chain, hashes]) => {
+        const sorted = [...hashes].sort();
+        return { bridgeTxHashes: sorted.filter(hash => bridgeHashes.has(JSON.stringify([id, chain, hash]))), chain, txHashes: sorted };
+      });
     connection.txCount = connection.activity.reduce((sum, entry) => sum + entry.txHashes.length, 0);
   }
 

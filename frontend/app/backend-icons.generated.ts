@@ -6,6 +6,7 @@
 // To regenerate, run: pnpm run generate:backend-icons
 
 export const backendIcons: string[] = [
+  'lu-archive',
   'lu-arrow-down',
   'lu-arrow-left-right',
   'lu-arrow-right',

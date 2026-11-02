@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :feature:`-` Statistics now has an address interactions graph showing which of your tracked addresses have transacted with each other.
+* :feature:`-` Statistics now has an address interactions graph showing which of your tracked addresses have transacted with each other, including matched bridge transfers between different addresses on different chains. Bridge connections show both chains and link to each leg's transaction.
 * :feature:`-` Venice unstaking requests on Base are now decoded in transaction history.
 * :feature:`-` Lido withdrawal requests and ETH claims are now decoded in transaction history.
 * :feature:`-` Lido withdrawals and Venice staking withdrawals that are waiting for a claim now count towards balances. A chip next to the protocol opens each withdrawal request with its status and date, the accounts that need to claim and a link to the claim page, and turns green once a request can be claimed.
