@@ -9,6 +9,7 @@ from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_XDAI
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -117,7 +118,10 @@ class GnosisInquirer(EvmNodeInquirer):
                 len(admins_result) != len(chunk_list)
             ):
                 log.error(f'GnosisPay helper returned an unexpected result format {admins_result} for {chunk_list}')  # noqa: E501
-                raise RemoteError('Failed to query on chain data for GnosisPay admins. Check logs for more details')  # noqa: E501
+                raise RemoteError(
+                    'Failed to query on chain data for GnosisPay admins. Check logs for more details',  # noqa: E501
+                    cause=FailureCause.BAD_DATA,
+                )
 
             for address, admins in zip(chunk_list, admins_result, strict=True):
                 if not admins:
@@ -129,7 +133,10 @@ class GnosisInquirer(EvmNodeInquirer):
 
                 if not isinstance(admins, (tuple, list)):
                     log.error(f'Unexpected format in the list of admins. {admins}')
-                    raise RemoteError('Failed to query on chain data for GnosisPay admins. Check logs for more details')  # noqa: E501
+                    raise RemoteError(
+                        'Failed to query on chain data for GnosisPay admins. Check logs for more details',  # noqa: E501
+                        cause=FailureCause.BAD_DATA,
+                    )
 
                 result[address] = [deserialize_evm_address(admin) for admin in admins]
 

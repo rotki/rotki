@@ -26,6 +26,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.bitcointx import DBBitcoinTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
@@ -184,7 +185,10 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 errors[callback.name] = msg
 
         serialized_errors = ', '.join(f'{source} error is: "{error}"' for (source, error) in errors.items())  # noqa: E501
-        raise RemoteError(f'External {self.blockchain!s} request failed for all available APIs. {serialized_errors}')  # noqa: E501
+        raise RemoteError(
+            f'External {self.blockchain!s} request failed for all available APIs. {serialized_errors}',  # noqa: E501
+            cause=FailureCause.NETWORK,
+        )
 
     def query_balances(self, addresses: Sequence[BTCAddress]) -> dict[BTCAddress, Balance]:
         """Queries bitcoin balances for the specified accounts.

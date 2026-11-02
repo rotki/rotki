@@ -94,6 +94,7 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     EthSyncError,
     InputError,
@@ -1514,7 +1515,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     self._activity_check_failed(
                         address=address,
                         chain=chain,
-                        error=RecoverableRemoteError(f'Avalanche node query failed due to {e!s}'),
+                        error=RecoverableRemoteError(
+                            f'Avalanche node query failed due to {e!s}',
+                            cause=FailureCause.NETWORK,
+                        ),
                         submission=submission,
                         started_at=started_at,
                     )
