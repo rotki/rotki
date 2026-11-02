@@ -5,7 +5,7 @@ import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick, ref } from 'vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
-import FinTsBankPicker from '@/modules/banks/components/FinTsBankPicker.vue';
+import BankConnectionPicker from '@/modules/banks/components/BankConnectionPicker.vue';
 import { fintsBanks } from '@/modules/banks/fints-bank-directory';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import '@test/i18n';
@@ -60,6 +60,7 @@ describe('bankConnectionForm', () => {
         stubs: {
           ExternalLink: true,
           LocationIcon: true,
+          RuiAutoComplete: true,
           RuiMenuSelect: true,
         },
       },
@@ -112,7 +113,7 @@ describe('bankConnectionForm', () => {
 
   it('should pass validation with empty credentials when editing, hiding the bank picker', () => {
     wrapper = createWrapper(ref(createForm('edit')));
-    expect(wrapper.find('[data-testid=bank-connection-location]').exists()).toBe(false);
+    expect(wrapper.findComponent(BankConnectionPicker).exists()).toBe(false);
     expect(wrapper.find('[data-testid=bank-connection-bank]').text()).toBe('Qonto');
     expect(wrapper.vm.validate()).toBe(true);
     expect(wrapper.find('[data-testid=bank-connection-secret-api_key]').text()).toContain('bank_settings.form.credential_keep_hint');
@@ -127,19 +128,27 @@ describe('bankConnectionForm', () => {
       newName: '',
     });
     wrapper = createWrapper(model);
-    wrapper.findComponent(FinTsBankPicker).vm.$emit('update:modelValue', fintsBanks[0]);
+    wrapper.findComponent(BankConnectionPicker).vm.$emit('update:modelValue', {
+      bank: fintsBanks[0],
+      id: `fints:${fintsBanks[0].id}`,
+      kind: 'fints',
+      location: 'fints',
+      name: fintsBanks[0].name,
+      searchText: fintsBanks[0].name,
+    });
+    await nextTick();
     await wrapper.find('[data-testid=bank-connection-secret-username] input').setValue('online-id');
     await wrapper.find('[data-testid=bank-connection-secret-pin] input').setValue('secret-pin');
     await nextTick();
 
-    expect(wrapper.vm.validate()).toBe(true);
     expect(model.value.name).toBe(fintsBanks[0].name);
     expect(model.value.credentials).toEqual({
-      bank_code: fintsBanks[0].blz,
+      bank_code: fintsBanks[0].bankCodes[0],
       endpoint: fintsBanks[0].endpoint,
       pin: 'secret-pin',
       username: 'online-id',
     });
+    expect(wrapper.vm.validate()).toBe(true);
   });
 
   it('should preserve the manifest-driven FinTS edit flow without selecting from the catalog', () => {
@@ -151,7 +160,7 @@ describe('bankConnectionForm', () => {
       newName: 'Existing bank',
     });
     wrapper = createWrapper(model);
-    expect(wrapper.findComponent(FinTsBankPicker).exists()).toBe(false);
+    expect(wrapper.findComponent(BankConnectionPicker).exists()).toBe(false);
     expect(wrapper.find('[data-testid=bank-connection-secret-endpoint]').text()).toContain('bank_settings.form.credential_keep_hint');
     expect(wrapper.vm.validate()).toBe(true);
   });
