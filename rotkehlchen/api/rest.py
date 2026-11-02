@@ -1571,6 +1571,9 @@ class RestAPI:
             result_dict['message'] = msg
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
         # else
+        # the backup on the server can only be opened with the old password, so replace it
+        # at the next scheduled upload instead of waiting for the hour since the last attempt
+        self.rotkehlchen.premium_sync_manager.last_upload_attempt_ts = Timestamp(0)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def user_premium_key_remove(self) -> Response:
