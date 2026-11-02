@@ -18,7 +18,7 @@ const { lastRefreshed, lastRefreshTimestamp } = useBlockchainBalanceStaleness();
         class="text-xs text-rui-text-secondary whitespace-nowrap"
         data-testid="dashboard-chains-updated"
       >
-        {{ t('dashboard.refresh.chains_updated', { time: lastRefreshed }) }}
+        {{ t('dashboard.refresh.balances_updated', { time: lastRefreshed }) }}
       </span>
     </template>
     {{ t('blockchain_balances.last_refresh_tooltip') }}
