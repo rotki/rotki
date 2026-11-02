@@ -12,7 +12,6 @@ import type { EvmHistoryEvent, EvmSwapEvent, SolanaEvent, SolanaSwapEvent, SwapE
 import type { SWAP_EVENTS } from '@/modules/history/management/forms/form-guards';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
-import { omit } from 'es-toolkit';
 import { z, type ZodType } from 'zod';
 import { msg } from '@/message-key';
 import { isEvmSwapEvent, isSolanaSwapEvent } from '@/modules/history/event-utils';
@@ -48,7 +47,9 @@ type EditPayload = EditSwapEventPayload | EditEvmSwapEventPayload | EditSolanaSw
  * @remarks
  * Each kind reads only its own fields: a plain swap has a `uniqueId` and no transaction, the chain
  * kinds a `txRef`, `address`, `counterparty` and `sequenceIndex`. A plain swap holds one spend and
- * one receive row; its payload is flattened back from them.
+ * one receive row; its payload is flattened back from them. An edited plain swap also holds the
+ * `groupIdentifier` it was loaded with, since nothing else ties the edit to its group; it is blank
+ * while adding.
  *
  * `hasFee` lives here because it is a validation input (it decides whether the fee list may be
  * empty) and because toggling it has to count as an edit.
@@ -58,6 +59,7 @@ export interface SwapFormState {
   location: string;
   txRef: string;
   uniqueId: string;
+  groupIdentifier: string;
   timestamp: number;
   spend: SwapSubEventState[];
   receive: SwapSubEventState[];
@@ -96,6 +98,7 @@ export function emptySwapForm(kind: SwapKind): SwapFormState {
     address: '',
     counterparty: '',
     fee: [],
+    groupIdentifier: '',
     hasFee: false,
     kind,
     location: defaultLocation(kind),
@@ -182,6 +185,14 @@ function isPlainSwapEvent(event: SwapGroupEvent): event is SwapEvent {
   return event.entryType === HistoryEventEntryType.SWAP_EVENT;
 }
 
+const SwapReference = z.object({ reference: z.string() });
+
+/** The unique id a plain swap was created with, which the backend stores as its `reference`. */
+function referenceOf(event: SwapEvent): string {
+  const parsed = SwapReference.safeParse(event.extraData);
+  return parsed.success ? parsed.data.reference : '';
+}
+
 function plainRow(event: SwapEvent): SwapSubEventState {
   return { ...emptySubEvent(), amount: event.amount.toString(), asset: event.asset, userNotes: event.userNotes ?? '' };
 }
@@ -197,11 +208,13 @@ function plainSwapStateFromEvents(events: SwapEvent[]): SwapFormState {
   return {
     ...emptySwapForm(HistoryEventEntryType.SWAP_EVENT),
     fee: fee.map(plainRow),
+    groupIdentifier: spend.groupIdentifier,
     hasFee: fee.length > 0,
     location: spend.location,
     receive: [plainRow(receive)],
     spend: [plainRow(spend)],
     timestamp: spend.timestamp,
+    uniqueId: referenceOf(spend),
   };
 }
 
@@ -263,6 +276,7 @@ function toPlainSwapPayload(state: SwapFormState, uniqueId: string): AddSwapEven
     timestamp: state.timestamp,
     uniqueId,
     userNotes,
+    ...(state.groupIdentifier ? { groupIdentifier: state.groupIdentifier } : {}),
   };
 }
 
@@ -271,18 +285,18 @@ function toPlainSwapPayload(state: SwapFormState, uniqueId: string): AddSwapEven
  *
  * @param state - the validated form state
  * @param generateUniqueId - a new plain swap needs a unique id: the one typed in, else a generated
- * one, which a pure transform cannot produce
+ * one, which a pure transform cannot produce. An edited swap keeps the one it was loaded with,
+ * blank included, so saving it does not give it a reference it never had.
  */
 export function toSwapPayload(state: SwapFormState, generateUniqueId: () => string): AddPayload {
   if (isChainSwapKind(state.kind))
     return toChainSwapPayload(state.kind, state);
-  return toPlainSwapPayload(state, state.uniqueId || generateUniqueId());
+  const editing = !!state.groupIdentifier;
+  return toPlainSwapPayload(state, state.uniqueId || (editing ? '' : generateUniqueId()));
 }
 
-/** The edit endpoint addresses the group by identifier; the plain one rejects the creation-only `uniqueId`. */
+/** The edit endpoint addresses the group's events by their identifiers. */
 export function toSwapEditPayload(payload: AddPayload, identifiers: number[]): EditPayload {
-  if (payload.entryType === HistoryEventEntryType.SWAP_EVENT)
-    return { ...omit(payload, ['uniqueId']), identifiers };
   return { ...payload, identifiers };
 }
 

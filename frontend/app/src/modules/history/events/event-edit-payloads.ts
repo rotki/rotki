@@ -37,9 +37,11 @@ export interface AddSwapEventPayload {
   spendAsset: string;
   timestamp: number;
   uniqueId: string;
+  /** Set on an edit, so the swap keeps its group instead of getting one derived from the edited values. */
+  groupIdentifier?: string;
 }
 
-export interface EditSwapEventPayload extends Omit<AddSwapEventPayload, 'uniqueId'> {
+export interface EditSwapEventPayload extends AddSwapEventPayload {
   identifiers: number[];
 }
 
