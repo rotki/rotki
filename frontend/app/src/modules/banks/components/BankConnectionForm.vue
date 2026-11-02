@@ -9,6 +9,7 @@ import {
   toBankConnectionFormState,
 } from '@/modules/banks/bank-connection-form';
 import BankLabel from '@/modules/banks/components/BankLabel.vue';
+import FinTsConnectionFields from '@/modules/banks/components/FinTsConnectionFields.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useMappedModelForm } from '@/modules/core/form/use-model-form';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
@@ -23,6 +24,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const editMode = computed<boolean>(() => isEditing(get(modelValue).mode));
 const manifest = computed<BankManifest | undefined>(() => manifestFor(get(modelValue).location));
+const fintsAddMode = computed<boolean>(() => !get(editMode) && get(modelValue).location === 'fints');
 
 const form = useMappedModelForm<BankFormData, BankConnectionFormState>({
   model: modelValue,
@@ -65,7 +67,7 @@ defineExpose({
       v-if="!editMode"
       :model-value="form.state.location"
       :options="manifests"
-      :label="t('bank_settings.form.bank')"
+      :label="t('bank_settings.form.connection_type')"
       :error-messages="form.errors('location')"
       key-attr="location"
       text-attr="displayName"
@@ -92,7 +94,16 @@ defineExpose({
       data-testid="bank-connection-bank"
     />
 
+    <FinTsConnectionFields
+      v-if="fintsAddMode && manifest"
+      v-model:credentials="form.state.credentials"
+      v-model:name="form.state.name"
+      :manifest="manifest"
+      :errors="form.errors"
+    />
+
     <RuiTextField
+      v-else
       v-model="name"
       color="primary"
       :label="t('bank_settings.form.name')"
@@ -101,28 +112,30 @@ defineExpose({
       data-testid="bank-connection-name"
     />
 
-    <template
-      v-for="secret in manifest?.secrets ?? []"
-      :key="secret.slot"
-    >
-      <RuiRevealableTextField
-        v-if="secret.secret"
-        v-model="form.state.credentials[secret.slot]"
-        color="primary"
-        :label="secret.label"
-        :hint="editMode ? t('bank_settings.form.credential_keep_hint') : secret.description"
-        :error-messages="form.errors(`credentials.${secret.slot}`)"
-        :data-testid="`bank-connection-secret-${secret.slot}`"
-      />
-      <RuiTextField
-        v-else
-        v-model="form.state.credentials[secret.slot]"
-        color="primary"
-        :label="secret.label"
-        :hint="editMode ? t('bank_settings.form.credential_keep_hint') : secret.description"
-        :error-messages="form.errors(`credentials.${secret.slot}`)"
-        :data-testid="`bank-connection-secret-${secret.slot}`"
-      />
+    <template v-if="!fintsAddMode">
+      <template
+        v-for="secret in manifest?.secrets ?? []"
+        :key="secret.slot"
+      >
+        <RuiRevealableTextField
+          v-if="secret.secret"
+          v-model="form.state.credentials[secret.slot]"
+          color="primary"
+          :label="secret.label"
+          :hint="editMode ? t('bank_settings.form.credential_keep_hint') : secret.description"
+          :error-messages="form.errors(`credentials.${secret.slot}`)"
+          :data-testid="`bank-connection-secret-${secret.slot}`"
+        />
+        <RuiTextField
+          v-else
+          v-model="form.state.credentials[secret.slot]"
+          color="primary"
+          :label="secret.label"
+          :hint="editMode ? t('bank_settings.form.credential_keep_hint') : secret.description"
+          :error-messages="form.errors(`credentials.${secret.slot}`)"
+          :data-testid="`bank-connection-secret-${secret.slot}`"
+        />
+      </template>
     </template>
 
     <RuiAlert

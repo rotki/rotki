@@ -1,0 +1,54 @@
+{
+  "version": "2026.11.02",
+  "provenance": "Manually vetted from bank-published pages. This catalog does not redistribute the restricted official FinTS Bankenliste or AqBanking's derived institute data.",
+  "banks": [
+    {
+      "name": "BBBank eG",
+      "blz": "66090800",
+      "endpoint": "https://fints2.atruvia.de/cgi-bin/hbciservlet",
+      "aliases": ["BBBank"],
+      "city": "Karlsruhe",
+      "source": "https://www.bbbank.de/privatkunden/girokonto/banking/hbci.html"
+    },
+    {
+      "name": "comdirect",
+      "blz": "20041111",
+      "endpoint": "https://fints.comdirect.de/fints",
+      "aliases": ["comdirect bank"],
+      "city": "Quickborn",
+      "source": "https://www.comdirect.de/cms/sicherheit-software-banking-fints.html"
+    },
+    {
+      "name": "comdirect",
+      "blz": "20041133",
+      "endpoint": "https://fints.comdirect.de/fints",
+      "aliases": ["comdirect bank"],
+      "city": "Quickborn",
+      "source": "https://www.comdirect.de/cms/sicherheit-software-banking-fints.html"
+    },
+    {
+      "name": "comdirect",
+      "blz": "20041144",
+      "endpoint": "https://fints.comdirect.de/fints",
+      "aliases": ["comdirect bank"],
+      "city": "Quickborn",
+      "source": "https://www.comdirect.de/cms/sicherheit-software-banking-fints.html"
+    },
+    {
+      "name": "comdirect",
+      "blz": "20041155",
+      "endpoint": "https://fints.comdirect.de/fints",
+      "aliases": ["comdirect bank"],
+      "city": "Quickborn",
+      "source": "https://www.comdirect.de/cms/sicherheit-software-banking-fints.html"
+    },
+    {
+      "name": "GLS Gemeinschaftsbank eG",
+      "blz": "43060967",
+      "endpoint": "https://fints1.atruvia.de/cgi-bin/hbciservlet",
+      "aliases": ["GLS Bank"],
+      "city": "Bochum",
+      "source": "https://www.gls.de/konten-karten/zahlungsverkehr/sepa-zahlungsverkehr/daten-zum-onlinebanking/"
+    }
+  ]
+}

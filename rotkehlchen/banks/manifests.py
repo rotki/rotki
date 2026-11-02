@@ -82,7 +82,7 @@ FINTS_MANIFEST: Final = BankManifest(
     version='1.0.0',
     docs_url='https://python-fints.readthedocs.io/en/latest/quickstart.html',
     setup_notes=(
-        'Enter the eight-digit BLZ and the HTTPS FinTS PIN/TAN endpoint published by your bank.',
+        'Choose a bank from the bundled directory, or enter the BLZ and HTTPS PIN/TAN endpoint published by your bank.',  # noqa: E501
         'rotki connects directly from this machine. The PIN and reusable FinTS state stay in the encrypted user database.',  # noqa: E501
         'Only settled balances and booked transactions are read; rotki never initiates payments.',
     ),
