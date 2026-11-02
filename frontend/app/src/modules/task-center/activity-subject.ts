@@ -8,6 +8,7 @@ import {
   eventsConnectionOf,
   exchangeEventsActivity,
 } from '@/modules/history/events/tx/sync.activity';
+import { backgroundTaskSubject } from '@/modules/task-center/background/background-task.activity';
 import { type Activity, ActivityKind, ActivityPart, activityParts } from '@/modules/task-center/core/types';
 
 /** What an activity acts on, in the raw spelling its id carries, for the icons and links a row shows. */
@@ -84,6 +85,7 @@ function exchangeBalancesSubject(activity: Activity, [location]: string[]): Acti
 /** The kinds whose ids name a chain, an account or a location, each read the way its producer builds it. */
 const READERS: Partial<Record<ActivityKind, SubjectReader>> = {
   [ActivityKind.ACCOUNTS]: additionSubject,
+  [ActivityKind.BACKGROUND_TASK]: (_activity, parts) => backgroundTaskSubject(parts),
   [ActivityKind.BANK_EVENTS]: eventsSubject,
   [ActivityKind.BLOCKCHAIN_BALANCES]: chainBalancesSubject,
   [ActivityKind.EXCHANGE_BALANCES]: exchangeBalancesSubject,

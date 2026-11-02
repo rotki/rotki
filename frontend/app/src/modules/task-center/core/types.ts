@@ -98,6 +98,8 @@ export const ActivityKind = {
   ACCOUNTING_RULES: 'accounting-rules',
   AIRDROPS: 'airdrops',
   CSV_IMPORT: 'csv-import',
+  /** Work the backend's task manager started on its own schedule; the frontend only mirrors it. */
+  BACKGROUND_TASK: 'background-task',
   DB_UPGRADE: 'db-upgrade',
   DATA_MIGRATION: 'data-migration',
   /**
