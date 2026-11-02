@@ -1130,6 +1130,10 @@
       "not_linked_help": "No transaction ties {from} to {to}.",
       "picking": "Select another address to see how it is linked to {address}."
     },
+    "premium": {
+      "description": "Upgrade to premium to see which of your addresses transacted with each other, the clusters they form, and the transactions that link them.",
+      "title": "See how your addresses interact"
+    },
     "reset_filters": "Reset filters",
     "search": "Find an address or name",
     "select_connection": "Select connection between {source} and {target}",
