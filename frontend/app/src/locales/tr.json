@@ -2385,8 +2385,8 @@
     "refresh": {
       "balances": "Bakiyeleri yenile",
       "balances_hint": "Hesaplarınızı, borsalarınızı ve bankalarınızı sorgular, manuel bakiyeleri yeniden yükler, ardından fiyatları yeniler",
+      "balances_updated": "Bakiyeler {time} güncellendi",
       "button": "Yenile",
-      "chains_updated": "Zincirler {time} güncellendi",
       "menu_tooltip": "Diğer yenileme seçenekleri",
       "prices_only": "Yalnızca fiyatları yenile",
       "prices_only_hint": "Hesaplarınızı sorgulamadan elinizdeki varlıkları yeniden değerler",

@@ -2366,8 +2366,8 @@
     "refresh": {
       "balances": "刷新余额",
       "balances_hint": "查询你的账户、交易所和银行，重新加载手动余额，然后刷新价格",
+      "balances_updated": "余额更新于 {time}",
       "button": "刷新",
-      "chains_updated": "链数据更新于 {time}",
       "menu_tooltip": "更多刷新选项",
       "prices_only": "仅刷新价格",
       "prices_only_hint": "不查询账户，仅重新估值持仓",

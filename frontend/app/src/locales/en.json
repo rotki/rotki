@@ -2694,8 +2694,8 @@
     "refresh": {
       "balances": "Refresh balances",
       "balances_hint": "Query your accounts, exchanges and banks, reload manual balances, then refresh prices",
+      "balances_updated": "Balances updated {time}",
       "button": "Refresh",
-      "chains_updated": "Chains updated {time}",
       "menu_tooltip": "More refresh options",
       "prices_only": "Refresh prices only",
       "prices_only_hint": "Revalue what you hold without querying your accounts",
