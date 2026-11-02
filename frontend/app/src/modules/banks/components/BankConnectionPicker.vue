@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { BankManifest } from '@/modules/banks/types';
-import { type BankSelectionOption, toBankSelectionOptions } from '@/modules/banks/bank-connection-selection';
+import {
+  type BankSelectionOption,
+  searchBankSelectionOptions,
+  toBankSelectionOptions,
+} from '@/modules/banks/bank-connection-selection';
 import BankLabel from '@/modules/banks/components/BankLabel.vue';
 
 const modelValue = defineModel<BankSelectionOption>();
@@ -11,23 +15,29 @@ const { errorMessages, manifests } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const modelSearch = ref<string>('');
 
 const options = computed<BankSelectionOption[]>(() =>
-  toBankSelectionOptions(manifests, t('bank_settings.form.bank_other_fints')),
+  searchBankSelectionOptions(
+    toBankSelectionOptions(manifests, t('bank_settings.form.bank_other_fints')),
+    get(modelSearch),
+  ),
 );
 </script>
 
 <template>
   <RuiAutoComplete
     v-model="modelValue"
+    v-model:search-input="modelSearch"
     :options="options"
     :label="t('bank_settings.form.bank')"
     :placeholder="t('bank_settings.form.bank_picker_hint')"
     :error-messages="errorMessages"
     key-attr="id"
-    text-attr="searchText"
+    text-attr="name"
     return-object
     auto-select-first
+    no-filter
     data-testid="bank-connection-picker"
   >
     <template #selection="{ item }">
