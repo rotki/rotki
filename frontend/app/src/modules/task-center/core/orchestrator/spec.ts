@@ -17,7 +17,8 @@ type StaticLane =
   | typeof UMBRELLA_LANE
   | typeof CHAIN_SYNC_LANE
   | typeof DECODE_LANE
-  | typeof PRICE_REFRESH_LANE;
+  | typeof PRICE_REFRESH_LANE
+  | typeof BACKGROUND_LANE;
 
 /**
  * Prefixes for lanes minted per entity, where the full name is only known at runtime
@@ -96,6 +97,13 @@ export const CHAIN_SYNC_LANE = 'chain-sync';
  * redecode throughput was once halved without anything reporting a change.
  */
 export const DECODE_LANE = 'decode';
+
+/**
+ * Mirrors of the backend task manager's own tasks run here. The backend runs them whatever the
+ * frontend does, so the lane's cap must never queue one: a mirror held back would show a task as
+ * waiting while it already runs. The cap is set far above what the task manager runs at once.
+ */
+export const BACKGROUND_LANE = 'background';
 
 /**
  * Family prefix for the per-chain account lanes (`tx-sync:<chain>`). Capped per chain, so two

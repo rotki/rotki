@@ -6920,6 +6920,20 @@
         "update": "Applying asset database update v{version}",
         "versions": "Checking for asset database updates"
       },
+      "background_task": {
+        "calendar_sync": "Syncing the calendar with Google Calendar",
+        "data_updates": "Checking for data updates",
+        "db_upload": "Backing up the database to the rotki server",
+        "eth_staking": "Updating Ethereum staking data",
+        "evm_accounts_detection": "Detecting your EVM accounts on other chains",
+        "evm_receipts": "Fetching {count} transaction receipt on {chain} | Fetching {count} transaction receipts on {chain}",
+        "evm_transactions": "Querying the transactions of {address}",
+        "exchange_history": "Querying the history of {name}",
+        "historical_balances": "Processing historical balances",
+        "snapshot_balances": "Saving a balance snapshot",
+        "transaction_decoding": "Decoding {count} {chain} transaction | Decoding {count} {chain} transactions",
+        "xpub_derivation": "Deriving new {chain} xpub addresses"
+      },
       "bank_balances": {
         "query": "Reading bank balances"
       },
@@ -7028,6 +7042,7 @@
       "airdrops": "Airdrops",
       "all_balances": "All balances",
       "assets": "Assets",
+      "background_task": "Background tasks",
       "bank_balances": "Bank balances",
       "bank_events": "Bank transactions",
       "blockchain_balances": "Blockchain balances",

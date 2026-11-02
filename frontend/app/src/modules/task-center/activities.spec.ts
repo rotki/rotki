@@ -56,6 +56,12 @@ const samples = new Map<string, readonly unknown[]>([
     { chain: 'btc', target: { derivationPath: 'm/0\'/0', kind: 'xpub', xpub: 'xpub6CUGRUonZSQ4TWtTMmzXdrXDtypWKiKrhko4egpiMZbpiaQL2jkwSB1icqYh2cfDfVxdx4df189oLKnC5fSwqPfgyP3hooxujYzAu3fDVmz' } },
   ]],
   ['accountAgnosticRemoveActivity', [{ address, category: 'evm' }]],
+  ['backgroundTaskActivity', [
+    { id: 1, kind: 'evm_transactions', name: 'Query ethereum transactions', startedAt: 1, subject: { address, chain: 'eth' } },
+    { id: 2, kind: 'exchange_history', name: 'Query history of kraken', startedAt: 1, subject: { location: 'kraken', name: 'kraken' } },
+    { id: 3, kind: 'db_upload', name: 'Upload data to server', startedAt: 1, subject: {} },
+    { id: 4, kind: 'something_new', name: 'A task this build does not know', startedAt: 1, subject: { chain: 'eth' } },
+  ]],
   ['accountImportActivity', [{ source: 'csv' }]],
   ['accountRemoveActivity', [
     { chain: 'eth', target: { address, kind: 'address' } },

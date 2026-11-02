@@ -48,6 +48,7 @@ const KINDS: readonly KindDescriptor[] = [
   { groupTitle: t => t('task_center.group.accounting_rules'), kind: Kind.ACCOUNTING_RULES },
   { groupTitle: t => t('task_center.group.airdrops'), kind: Kind.AIRDROPS },
   { groupTitle: t => t('task_center.group.csv_import'), kind: Kind.CSV_IMPORT },
+  { groupTitle: t => t('task_center.group.background_task'), kind: Kind.BACKGROUND_TASK },
   { groupTitle: t => t('task_center.group.other'), kind: Kind.OTHER },
 ];
 

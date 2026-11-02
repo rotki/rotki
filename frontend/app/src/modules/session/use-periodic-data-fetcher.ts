@@ -4,6 +4,7 @@ import { getErrorMessage, useNotifications } from '@/modules/core/notifications/
 import { sessionWorkSignal } from '@/modules/core/session/session-lifecycle';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
+import { useBackgroundTasks } from '@/modules/task-center/background/use-background-tasks';
 
 interface UsePeriodicDataFetcherReturn {
   check: () => Promise<void>;
@@ -19,6 +20,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
 
   const { notifyFailure } = useNotifications();
   const { fetchPeriodicData } = useSessionApi();
+  const { resync } = useBackgroundTasks();
 
   const check = async (): Promise<void> => {
     if (get(periodicRunning))
@@ -26,6 +28,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
 
     set(periodicRunning, true);
     try {
+      const requestedAt = Date.now();
       const result = await backoff(3, async () => fetchPeriodicData(), 10000, sessionWorkSignal());
       if (Object.keys(result).length === 0) {
         // an empty object means user is not logged in yet
@@ -38,7 +41,10 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
         failedToConnect: failed,
         lastBalanceSave: balance,
         lastDataUploadTs: upload,
+        runningTasks,
       } = result;
+
+      resync(runningTasks, requestedAt);
 
       if (get(lastBalanceSave) !== balance)
         set(lastBalanceSave, balance);

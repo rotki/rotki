@@ -20,6 +20,14 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   })),
 }));
 
+const mockResync = vi.fn();
+
+vi.mock('@/modules/task-center/background/use-background-tasks', () => ({
+  useBackgroundTasks: vi.fn(() => ({
+    resync: mockResync,
+  })),
+}));
+
 vi.mock('@shared/utils', () => ({
   backoff: vi.fn(async (_retries: number, fn: () => Promise<unknown>): Promise<unknown> => fn()),
 }));
@@ -45,7 +53,7 @@ describe('usePeriodicDataFetcher', () => {
       failedToConnect: { bsc: ['node2'] },
       lastBalanceSave: 1234,
       lastDataUploadTs: 5678,
-      runningTasks: [],
+      runningTasks: [{ id: 1, kind: 'db_upload', name: 'Upload data to server', startedAt: 1200, subject: {} }],
     };
     mockFetchPeriodicData.mockResolvedValue(result);
 
@@ -59,6 +67,18 @@ describe('usePeriodicDataFetcher', () => {
     expect(get(store.connectedNodes)).toEqual({ eth: ['node1'] });
     expect(get(store.coolingDownNodes)).toEqual({ eth: ['node3'] });
     expect(get(store.failedToConnect)).toEqual({ bsc: ['node2'] });
+  });
+
+  it('should resync the background tasks with the running list and when it was requested', async () => {
+    vi.useFakeTimers({ now: 5_000 });
+    const runningTasks = [{ id: 1, kind: 'db_upload', name: 'Upload data to server', startedAt: 1, subject: {} }];
+    mockFetchPeriodicData.mockResolvedValue({ connectedNodes: {}, lastBalanceSave: 0, lastDataUploadTs: 0, runningTasks });
+
+    const { usePeriodicDataFetcher } = await importModule();
+    await usePeriodicDataFetcher().check();
+    vi.useRealTimers();
+
+    expect(mockResync).toHaveBeenCalledWith(runningTasks, 5_000);
   });
 
   it('should skip update when result is empty (user not logged in)', async () => {
