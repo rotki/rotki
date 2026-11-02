@@ -82,7 +82,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
   counterparty: get(counterparty),
 }));
 
-/** Neutral for a bridge, whose row stands for both legs rather than the out leg's direction. */
+/** A bridge row stands for both legs, so it is labelled "Bridge" instead of the out leg's type. */
 const typeLabel = computed<string | undefined>(() =>
   get(isBridge) ? t('history_events_list_swap.bridge_label') : undefined,
 );
@@ -118,6 +118,7 @@ function unlink(): void {
 
         <HistoryEventType
           :event="primaryEvent"
+          neutral
           :group-location-label="groupLocationLabel"
           :highlight="highlight"
           :label="typeLabel"
@@ -230,6 +231,7 @@ function unlink(): void {
 
     <HistoryEventType
       :event="primaryEvent"
+      neutral
       :group-location-label="groupLocationLabel"
       :highlight="highlight"
       :label="typeLabel"

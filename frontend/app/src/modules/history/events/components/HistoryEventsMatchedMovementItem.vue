@@ -106,6 +106,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
 
       <HistoryEventType
         :event="primaryEvent"
+        neutral
         :group-location-label="groupLocationLabel"
         :highlight="highlight"
         class="min-w-0 flex-1"
@@ -177,6 +178,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
 
     <HistoryEventType
       :event="primaryEvent"
+      neutral
       :highlight="highlight"
       hide-state-chips
       :group-location-label="groupLocationLabel"
