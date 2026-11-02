@@ -5,6 +5,8 @@ import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick, ref } from 'vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
+import FinTsBankPicker from '@/modules/banks/components/FinTsBankPicker.vue';
+import { fintsBanks } from '@/modules/banks/fints-bank-directory';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import '@test/i18n';
 
@@ -22,6 +24,19 @@ const manifest: BankManifest = {
   ],
   setupNotes: ['Only one key per organization'],
   version: '1.0.0',
+};
+
+const fintsManifest: BankManifest = {
+  ...manifest,
+  accessTier: 'fints',
+  displayName: 'FinTS/HBCI',
+  location: 'fints',
+  secrets: [
+    { description: '', label: 'Bank code (BLZ)', secret: false, slot: 'bank_code' },
+    { description: '', label: 'FinTS endpoint', secret: false, slot: 'endpoint' },
+    { description: '', label: 'Online banking username', secret: false, slot: 'username' },
+    { description: '', label: 'Online banking PIN', secret: true, slot: 'pin' },
+  ],
 };
 
 function createForm(mode: BankFormData['mode']): BankFormData {
@@ -62,7 +77,7 @@ describe('bankConnectionForm', () => {
   beforeEach(() => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
-    useBankConnectionsStore().setManifests([manifest]);
+    useBankConnectionsStore().setManifests([manifest, fintsManifest]);
   });
 
   it('should render one revealable field per manifest secret with its label and description', () => {
@@ -101,5 +116,43 @@ describe('bankConnectionForm', () => {
     expect(wrapper.find('[data-testid=bank-connection-bank]').text()).toBe('Qonto');
     expect(wrapper.vm.validate()).toBe(true);
     expect(wrapper.find('[data-testid=bank-connection-secret-api_key]').text()).toContain('bank_settings.form.credential_keep_hint');
+  });
+
+  it('should resolve a selected FinTS bank into the existing payload before validation', async () => {
+    const model = ref<BankFormData>({
+      credentials: { bank_code: '', endpoint: '', pin: '', username: '' },
+      location: 'fints',
+      mode: 'add',
+      name: '',
+      newName: '',
+    });
+    wrapper = createWrapper(model);
+    wrapper.findComponent(FinTsBankPicker).vm.$emit('update:modelValue', fintsBanks[0]);
+    await wrapper.find('[data-testid=bank-connection-secret-username] input').setValue('online-id');
+    await wrapper.find('[data-testid=bank-connection-secret-pin] input').setValue('secret-pin');
+    await nextTick();
+
+    expect(wrapper.vm.validate()).toBe(true);
+    expect(model.value.name).toBe(fintsBanks[0].name);
+    expect(model.value.credentials).toEqual({
+      bank_code: fintsBanks[0].blz,
+      endpoint: fintsBanks[0].endpoint,
+      pin: 'secret-pin',
+      username: 'online-id',
+    });
+  });
+
+  it('should preserve the manifest-driven FinTS edit flow without selecting from the catalog', () => {
+    const model = ref<BankFormData>({
+      credentials: { bank_code: '', endpoint: '', pin: '', username: '' },
+      location: 'fints',
+      mode: 'edit',
+      name: 'Existing bank',
+      newName: 'Existing bank',
+    });
+    wrapper = createWrapper(model);
+    expect(wrapper.findComponent(FinTsBankPicker).exists()).toBe(false);
+    expect(wrapper.find('[data-testid=bank-connection-secret-endpoint]').text()).toContain('bank_settings.form.credential_keep_hint');
+    expect(wrapper.vm.validate()).toBe(true);
   });
 });

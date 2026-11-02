@@ -2068,7 +2068,14 @@
       "start_over_title": "Bank authentication"
     },
     "form": {
+      "advanced": "Advanced settings",
       "bank": "Bank",
+      "bank_blz": "BLZ {blz}",
+      "bank_manual": "Enter bank details manually",
+      "bank_manual_required": "Manual details required",
+      "bank_missing_endpoint": "This bank has no verified PIN/TAN endpoint in the bundled directory. Enter the endpoint published by your bank below.",
+      "bank_picker_hint": "Search by bank name or BLZ",
+      "connection_type": "Connection type",
       "credential_keep_hint": "Leave empty to keep the stored value",
       "docs": "Bank API documentation",
       "name": "Connection name",
