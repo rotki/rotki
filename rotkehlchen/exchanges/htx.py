@@ -13,6 +13,7 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
@@ -149,15 +150,27 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             res_body = response.json()
         except requests.RequestException as e:
             log.error(f'Failed to query HTX api. Exception: {e} {options}, URL: {url}')
-            raise RemoteError(f'Failed to query HTX for {url}. Check log for more details') from e
+            raise RemoteError(
+                f'Failed to query HTX for {url}. Check log for more details',
+                cause=(
+                    FailureCause.BAD_DATA if isinstance(e, requests.exceptions.JSONDecodeError)
+                    else FailureCause.NETWORK
+                ),
+            ) from e
 
         if res_body.get('status') != 'ok':
             log.error(f'Error response from HTX. URL: {url} {options}, Response: {response.text}')
-            raise RemoteError(f'Failed to query HTX for {url}. Check log for more details')
+            raise RemoteError(
+                f'Failed to query HTX for {url}. Check log for more details',
+                cause=FailureCause.REMOTE_REJECTED,
+            )
 
         if (body := res_body.get('data')) is None:
             log.error(f'HTX endpoint missing data attribute. URL: {url} {options}, Response: {response.text}')  # noqa: E501
-            raise RemoteError(f'Failed to query HTX for {url}. Check log for more details')
+            raise RemoteError(
+                f'Failed to query HTX for {url}. Check log for more details',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return body
 

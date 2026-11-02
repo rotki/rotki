@@ -26,7 +26,7 @@ from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -395,6 +395,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'{self.name} API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
                 ) from e
 
             if response.status_code not in {200, 418, 429}:
@@ -415,16 +416,15 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     log.debug(f'Couldnt query {self.name} trades for {symbol} since its delisted')
                     return []
 
-                exception_class: type[RemoteError | BinancePermissionError]
+                error_msg = (
+                    f'{self.name} API request {response.url} for {method} failed with HTTP status '
+                    f'code: {response.status_code}, error code: {code} and error message: {msg}'
+                )
                 if response.status_code == 401 and code == REJECTED_MBX_KEY:
                     # Either API key permission error or if futures/dapi then not enabled yet
-                    exception_class = BinancePermissionError
-                else:
-                    exception_class = RemoteError
+                    raise BinancePermissionError(error_msg)
 
-                raise exception_class(
-                    f'{self.name} API request {response.url} for {method} failed with HTTP status '
-                    f'code: {response.status_code}, error code: {code} and error message: {msg}')
+                raise RemoteError(error_msg, cause=cause_for_status(response.status_code))
 
             if response.status_code in {418, 429}:
                 # Binance has limits and if we hit them we should backoff.
@@ -449,6 +449,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 raise RemoteError(
                     f'{self.name} API request {response.url} for {method} failed with '
                     f'HTTP status code: {response.status_code} after exhausting the retries.',
+                    cause=FailureCause.RATE_LIMITED,
                 )
 
             # else success
@@ -459,6 +460,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         except JSONDecodeError as e:
             raise RemoteError(
                 f'{self.name} returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
         return json_ret
 
@@ -473,7 +475,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         if not isinstance(result, dict):
             error_msg = f'Expected dict but did not get it in {self.name} api response.'
             log.error(f'{error_msg}. Got: {result}')
-            raise RemoteError(error_msg)
+            raise RemoteError(error_msg, cause=FailureCause.BAD_DATA)
 
         return result
 
@@ -511,7 +513,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         if not isinstance(result, list):
             error_msg = f'Expected list but did not get it in {self.name} api response.'
             log.error(f'{error_msg}. Got: {result}')
-            raise RemoteError(error_msg)
+            raise RemoteError(error_msg, cause=FailureCause.BAD_DATA)
 
         return result
 
@@ -579,7 +581,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             return balances
 
         if (binance_balances := account_data.get('balances', None)) is None:
-            raise RemoteError('Binance spot balances response did not contain the balances key')
+            raise RemoteError(
+                'Binance spot balances response did not contain the balances key',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return self._add_balances(balances=balances, new_balances=binance_balances)
 
@@ -654,6 +659,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         except RemoteError as e:
             raise RemoteError(
                 f'Could not query simple earn account balances at {timestamp}. {e!s}',
+                cause=e.cause,
             ) from e
 
         for amount_key, positions in all_positions:
@@ -1238,6 +1244,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     except (ValueError, KeyError, IndexError) as e:
                         raise RemoteError(
                             f'Could not parse id from Binance myTrades api query result: {result}',
+                            cause=FailureCause.BAD_DATA,
                         ) from e
 
                 log.debug('%s myTrades query result', self.name, results_num=len(result))

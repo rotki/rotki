@@ -13,7 +13,8 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -186,27 +187,38 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'CoinEx request at {request_url} connection error: {e!s}.') from e
+            raise RemoteError(
+                f'CoinEx request at {request_url} connection error: {e!s}.',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
                 f'CoinEx request at {request_url} responded with HTTP status '
                 f'{response.status_code}: {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
             response_data = response.json()
         except JSONDecodeError as e:
-            raise RemoteError(f'CoinEx request at {request_url} returned invalid JSON.') from e
+            raise RemoteError(
+                f'CoinEx request at {request_url} returned invalid JSON.',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         if response_data.get('code') != API_SUCCESS_CODE:
             raise RemoteError(
                 f'CoinEx request at {request_url} failed with code '
                 f'{response_data.get("code")}: {response_data.get("message")}',
+                cause=FailureCause.REMOTE_REJECTED,
             )
 
         if 'data' not in response_data:
-            raise RemoteError(f'CoinEx request at {request_url} is missing data in response.')
+            raise RemoteError(
+                f'CoinEx request at {request_url} is missing data in response.',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return response_data
 
@@ -436,7 +448,7 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
                     f'{msg}. Check logs for details.',
                     BadData(record=record, error=msg),
                 )
-                raise RemoteError(msg)
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA)
 
             page_results: list[T] = []
             for entry in data:

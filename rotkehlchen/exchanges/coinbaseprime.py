@@ -14,6 +14,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
@@ -371,12 +372,18 @@ class Coinbaseprime(ExchangeInterface):
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.RequestException as e:
-            raise RemoteError(f'Coinbase Prime API request failed due to {e}') from e
+            raise RemoteError(
+                f'Coinbase Prime API request failed due to {e}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         try:
             data = response.json()
         except requests.JSONDecodeError as e:
-            raise RemoteError(f'Coinbase Prime returned invalid json {response.text}') from e
+            raise RemoteError(
+                f'Coinbase Prime returned invalid json {response.text}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         return data
 
@@ -471,6 +478,7 @@ class Coinbaseprime(ExchangeInterface):
             )
             raise RemoteError(
                 'Malformed porfolios ids response in coinbase prime. Check logs for more details',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return ids

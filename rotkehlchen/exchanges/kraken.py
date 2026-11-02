@@ -36,7 +36,8 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -224,12 +225,17 @@ def _check_and_get_response(
     if response.status_code != 200:
         raise RemoteError(
             f'Kraken API request {response.url} for {method} failed with HTTP status '
-            f'code: {response.status_code}')
+            f'code: {response.status_code}',
+            cause=cause_for_status(response.status_code),
+        )
 
     try:
         decoded_json = jsonloads_dict(response.text)
     except json.decoder.JSONDecodeError as e:
-        raise RemoteError(f'Invalid JSON in Kraken response. {e}') from e
+        raise RemoteError(
+            f'Invalid JSON in Kraken response. {e}',
+            cause=FailureCause.BAD_DATA,
+        ) from e
 
     error = decoded_json.get('error', None)
     if error:
@@ -241,7 +247,7 @@ def _check_and_get_response(
             return 'Rate limited exceeded'
 
         # else
-        raise RemoteError(error)
+        raise RemoteError(error, cause=FailureCause.REMOTE_REJECTED)
 
     return decoded_json
 
@@ -463,6 +469,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         raise RemoteError(
             f'After {KRAKEN_QUERY_TRIES} kraken queries for {method} could still not be completed',
+            cause=FailureCause.NETWORK,
         )
 
     def _query_public(
@@ -482,13 +489,19 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Kraken API request failed due to {e!s}') from e
+            raise RemoteError(
+                f'Kraken API request failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if isinstance(decoded_json := _check_and_get_response(response, method), str):
             return decoded_json
 
         if (result := decoded_json.get('result')) is None:
-            raise RemoteError(f'Missing result in kraken response for {method}')
+            raise RemoteError(
+                f'Missing result in kraken response for {method}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return result
 
@@ -526,7 +539,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     headers={'APIKey': self.api_key, 'API-Sign': signature},
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Kraken API request failed due to {e!s}') from e
+                raise RemoteError(
+                    f'Kraken API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
         self._manage_call_counter(method)
 
         decoded_json = _check_and_get_response(response, method)
@@ -539,7 +555,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             if method == 'Balance':
                 return {}
 
-            raise RemoteError(f'Missing result in kraken response for {method}')
+            raise RemoteError(
+                f'Missing result in kraken response for {method}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return result
 
@@ -1275,16 +1294,25 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             response = self.api_query('account-log', params.copy())
             logs = response.get('logs', [])
             if not isinstance(logs, list):
-                raise RemoteError('Kraken Futures account-log response contains invalid logs')
+                raise RemoteError(
+                    'Kraken Futures account-log response contains invalid logs',
+                    cause=FailureCause.BAD_DATA,
+                )
             if (
                     not isinstance(page_account_uid := response.get('accountUid'), str) or
                     page_account_uid == ''
             ):
-                raise RemoteError('Kraken Futures account-log response is missing accountUid')
+                raise RemoteError(
+                    'Kraken Futures account-log response is missing accountUid',
+                    cause=FailureCause.BAD_DATA,
+                )
             if account_uid is None:
                 account_uid = page_account_uid
             elif account_uid != page_account_uid:
-                raise RemoteError('Kraken Futures account-log accountUid changed while paginating')
+                raise RemoteError(
+                    'Kraken Futures account-log accountUid changed while paginating',
+                    cause=FailureCause.BAD_DATA,
+                )
 
             log.debug('Got %s logs from account-log', len(logs))
             if not logs:
@@ -1294,12 +1322,16 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 if not isinstance(raw_log, dict):
                     raise RemoteError(
                         'Kraken Futures account-log response contains an invalid row',
+                        cause=FailureCause.BAD_DATA,
                     )
                 if (
                         not isinstance(booking_uid := raw_log.get('booking_uid'), str) or
                         booking_uid == ''
                 ):
-                    raise RemoteError('Kraken Futures account-log row is missing booking_uid')
+                    raise RemoteError(
+                        'Kraken Futures account-log row is missing booking_uid',
+                        cause=FailureCause.BAD_DATA,
+                    )
                 if booking_uid not in seen_booking_uids:
                     seen_booking_uids.add(booking_uid)
                     all_logs.append(raw_log)
@@ -1310,19 +1342,28 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             try:
                 earliest_log_id = min(raw_log['id'] for raw_log in logs)
             except (KeyError, TypeError) as e:
-                raise RemoteError('Kraken Futures account-log row is missing a valid id') from e
+                raise RemoteError(
+                    'Kraken Futures account-log row is missing a valid id',
+                    cause=FailureCause.BAD_DATA,
+                ) from e
             if (
                     not isinstance(earliest_log_id, int) or
                     isinstance(earliest_log_id, bool) or
                     earliest_log_id < 1
             ):
-                raise RemoteError('Kraken Futures account-log row contains an invalid id')
+                raise RemoteError(
+                    'Kraken Futures account-log row contains an invalid id',
+                    cause=FailureCause.BAD_DATA,
+                )
             if earliest_log_id == 1:
                 break
 
             next_to = earliest_log_id - 1
             if (previous_to := params.get('to')) is not None and next_to >= previous_to:
-                raise RemoteError('Kraken Futures account-log pagination did not advance')
+                raise RemoteError(
+                    'Kraken Futures account-log pagination did not advance',
+                    cause=FailureCause.BAD_DATA,
+                )
             params['to'] = next_to
 
         return all_logs, account_uid
@@ -1639,7 +1680,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
                 log.debug('Raw response from Kraken for API method %s = %s', method, response)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Kraken API request failed due to {e!s}') from e
+                raise RemoteError(
+                    f'Kraken API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
         self._manage_call_counter(method)
         return _check_and_get_response(response, method)

@@ -17,7 +17,8 @@ from rotkehlchen.constants.assets import A_LEND
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -180,6 +181,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
         if not isinstance(result, dict):
             raise RemoteError(
                 f'Poloniex query for {command} did not return a dict result. Result: {result}',
+                cause=FailureCause.BAD_DATA,
             )
         return result
 
@@ -188,6 +190,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
         if not isinstance(result, list):
             raise RemoteError(
                 f'Poloniex query for {command} did not return a list result. Result: {result}',
+                cause=FailureCause.BAD_DATA,
             )
         return result
 
@@ -254,6 +257,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(
                 f'Poloniex query responded with error status code: {response.status_code}'
                 f' and text: {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         # else all is good
@@ -278,7 +282,10 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             try:
                 response = self._single_query(command, req)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Poloniex API request failed due to {e!s}') from e
+                raise RemoteError(
+                    f'Poloniex API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response is None and tries >= 1:
                 backoff_seconds = 20 / tries
@@ -296,20 +303,23 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 f'Got a recoverable poloniex error and did not manage to get a '
                 f'request through even after {CachedSettings().get_query_retry_limit()} '
                 f'incremental backoff retries',
+                cause=FailureCause.NETWORK,
             )
 
         result: dict | list
         try:
             result = response.json()
         except JSONDecodeError as e:
-            raise RemoteError(f'Poloniex returned invalid JSON response: {response.text}') from e
+            raise RemoteError(
+                f'Poloniex returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         if isinstance(result, dict) and 'error' in result:
             raise RemoteError(
-                'Poloniex query for "{}" returned error: {}'.format(
-                    command,
-                    result['error'],
-                ))
+                f'Poloniex query for "{command}" returned error: {result["error"]}',
+                cause=FailureCause.REMOTE_REJECTED,
+            )
 
         return result
 
