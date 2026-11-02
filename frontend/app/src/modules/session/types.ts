@@ -3,6 +3,7 @@ import type { Module } from '@/modules/core/common/modules';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { Report } from '@/modules/reports/report-types';
 import { z } from 'zod';
+import { BackgroundTask } from '@/modules/task-center/background/background-task-types';
 
 export const PeriodicClientQueryResultSchema = z.object({
   connectedNodes: z.record(z.string(), z.array(z.string())),
@@ -10,6 +11,7 @@ export const PeriodicClientQueryResultSchema = z.object({
   failedToConnect: z.record(z.string(), z.array(z.string())).optional(),
   lastBalanceSave: z.number(),
   lastDataUploadTs: z.number(),
+  runningTasks: z.array(BackgroundTask),
 });
 
 export type PeriodicClientQueryResult = z.infer<typeof PeriodicClientQueryResultSchema>;

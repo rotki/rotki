@@ -78,6 +78,7 @@ export type UserMessageData = z.infer<typeof UserMessageData>;
 
 export const SocketMessageType = {
   ACCOUNTING_RULE_CONFLICT: 'accounting_rule_conflict',
+  BACKGROUND_TASK_STATUS: 'background_task_status',
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
   BINANCE_PAIRS_MISSING: 'binance_pairs_missing',
   CALENDAR_REMINDER: 'calendar_reminder',

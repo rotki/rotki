@@ -45,6 +45,7 @@ describe('usePeriodicDataFetcher', () => {
       failedToConnect: { bsc: ['node2'] },
       lastBalanceSave: 1234,
       lastDataUploadTs: 5678,
+      runningTasks: [],
     };
     mockFetchPeriodicData.mockResolvedValue(result);
 
@@ -82,6 +83,7 @@ describe('usePeriodicDataFetcher', () => {
       connectedNodes: {},
       lastBalanceSave: 1234,
       lastDataUploadTs: 9999,
+      runningTasks: [],
     };
     mockFetchPeriodicData.mockResolvedValue(result);
 
@@ -120,6 +122,7 @@ describe('usePeriodicDataFetcher', () => {
       connectedNodes: {},
       lastBalanceSave: 100,
       lastDataUploadTs: 200,
+      runningTasks: [],
     });
 
     await Promise.all([call1, call2]);
