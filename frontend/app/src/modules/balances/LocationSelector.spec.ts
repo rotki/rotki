@@ -22,6 +22,7 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 /** Renders the selection slot for the chosen option, which the shared stub leaves out, as the real one does: only once an option matches. */
 const AutoCompleteStub = defineComponent({
   props: {
+    itemHeight: { default: undefined, type: Number },
     modelValue: { default: '', type: String },
     options: { default: (): unknown[] => [], type: Array },
   },
@@ -87,6 +88,39 @@ describe('locationSelector', () => {
   function offered(wrapper: ReturnType<typeof mount>): unknown[] {
     return wrapper.findComponent(AutoCompleteStub).props('options') ?? [];
   }
+
+  describe('item height', () => {
+    function itemHeight(props: { dense?: boolean } = {}): unknown {
+      const wrapper = mount(LocationSelector, {
+        global: { plugins: [pinia], stubs: { LocationIcon: true, RuiAutoComplete: AutoCompleteStub } },
+        props: { modelValue: '', ...props },
+      });
+      return wrapper.findComponent(AutoCompleteStub).props('itemHeight');
+    }
+
+    function useFlatTree(): void {
+      useLocationStore().allLocations = { kraken: { isExchange: true, label: 'Kraken' } };
+      useLocationTreeStore().setNodes(flatLocationTree({ kraken: {} }));
+    }
+
+    it('should use the single-line height when no option has a path', () => {
+      useFlatTree();
+      expect(itemHeight()).toBe(52);
+    });
+
+    it('should use the dense single-line height when no option has a path', () => {
+      useFlatTree();
+      expect(itemHeight({ dense: true })).toBe(36);
+    });
+
+    it('should make every row tall enough for a path line when one option has a path', () => {
+      expect(itemHeight()).toBe(64);
+    });
+
+    it('should make every dense row tall enough for a path line when one option has a path', () => {
+      expect(itemHeight({ dense: true })).toBe(48);
+    });
+  });
 
   it('should keep the same options when picking between assignable locations', async () => {
     const wrapper = mountSelector('custom:luno');

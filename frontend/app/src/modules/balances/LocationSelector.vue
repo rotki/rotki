@@ -18,15 +18,22 @@ const { dense, excludes = [], items = [] } = defineProps<{
 }>();
 
 /**
- * The height of an option: its fixed 40px content plus the vertical padding of the menu's list
- * button, 12px a side or 4px when dense.
+ * The height of an option when at least one option in the list shows a path line: its fixed 40px
+ * content plus the vertical padding of the menu's list button, 12px a side or 4px when dense.
  *
  * @remarks
  * The menu is a virtual list that places every option at a multiple of this height, so each
- * option has to render exactly this tall, with or without a path line.
+ * option has to render exactly this tall, with or without a path line of its own.
  */
-const ITEM_HEIGHT = 64;
-const DENSE_ITEM_HEIGHT = 48;
+const PATH_ITEM_HEIGHT = 64;
+const DENSE_PATH_ITEM_HEIGHT = 48;
+
+/**
+ * The height of an option when no option in the list has a path: its fixed 28px content, a
+ * single line, plus the same padding.
+ */
+const ITEM_HEIGHT = 52;
+const DENSE_ITEM_HEIGHT = 36;
 
 const { getLocationData, tradeLocations } = useLocations();
 const treeStore = useLocationTreeStore();
@@ -64,6 +71,15 @@ const locations = computed<LocationOption[]>(() => locationOptions({
   pathOf: treeStore.pathOf,
 }));
 
+/** Whether any option shows a path line, which makes every row tall enough to hold one. */
+const hasPaths = computed<boolean>(() => get(locations).some(location => location.parentPath !== ''));
+
+const itemHeight = computed<number>(() => {
+  if (get(hasPaths))
+    return dense ? DENSE_PATH_ITEM_HEIGHT : PATH_ITEM_HEIGHT;
+  return dense ? DENSE_ITEM_HEIGHT : ITEM_HEIGHT;
+});
+
 /**
  * Clears a value the selector does not offer, such as one its `items` or `excludes` leave out.
  *
@@ -89,7 +105,7 @@ watch([locations, model], ([locations, value]) => clearUnoffered(locations, valu
     :options="locations"
     key-attr="identifier"
     text-attr="label"
-    :item-height="dense ? DENSE_ITEM_HEIGHT : ITEM_HEIGHT"
+    :item-height="itemHeight"
     :dense="dense"
     auto-select-first
     v-bind="$attrs"
@@ -97,8 +113,8 @@ watch([locations, model], ([locations, value]) => clearUnoffered(locations, valu
     <template #item="{ disabled, item }">
       <div
         :id="`balance-location__${item.identifier}`"
-        class="flex items-center gap-2 h-10 min-w-0"
-        :class="{ 'opacity-40': disabled }"
+        class="flex items-center gap-2 min-w-0"
+        :class="[hasPaths ? 'h-10' : 'h-7', { 'opacity-40': disabled }]"
       >
         <LocationIcon
           class="shrink-0"
