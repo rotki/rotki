@@ -397,18 +397,48 @@ def test_upload_aborts_on_local_db_integrity_failure(rotkehlchen_instance: Rotke
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize(('failing_function', 'error'), [
-    ('rotkehlchen.db.dbhandler.DBHandler.export_unencrypted', sqlcipher.OperationalError('database or disk is full')),  # pylint: disable=no-member  # noqa: E501
-    ('rotkehlchen.data_handler.encrypt_backup', MemoryError()),
-])
-def test_upload_removes_exported_db_on_error(
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
+def test_upload_handles_export_error(rotkehlchen_instance: Rotkehlchen, tmp_path: Path) -> None:
+    """A failed export of the DB for an upload is reported like the other upload failures,
+    counts as an attempt so the automatic upload is not retried right away, and the
+    plaintext copy of the DB is removed"""
+    assert rotkehlchen_instance.premium is not None
+    sync_manager = rotkehlchen_instance.premium_sync_manager
+    message = 'Could not export the database: database or disk is full'
+    (tempdir := tmp_path / 'tempdir').mkdir()
+    with (
+        create_patched_requests_get_for_premium(
+            session=rotkehlchen_instance.premium.session,
+            metadata_last_modify_ts=0,
+            metadata_data_hash='somehash',
+            metadata_data_size=2,
+            saved_data=b'foo',
+        ),
+        patch.object(tempfile, 'tempdir', str(tempdir)),
+        patch(
+            'rotkehlchen.db.dbhandler.DBHandler.export_unencrypted',
+            side_effect=sqlcipher.OperationalError('database or disk is full'),  # pylint: disable=no-member
+        ),
+        patch.object(rotkehlchen_instance.msg_aggregator, 'add_message') as ws_mock,
+    ):
+        assert sync_manager.check_if_should_sync(force_upload=False) == (True, None)
+        assert sync_manager.maybe_upload_data_to_server(force_upload=True) == (False, message)
+
+    assert ws_mock.call_args_list == [call(
+        message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+        data={'uploaded': False, 'actionable': True, 'message': message},
+    )]
+    assert sync_manager.check_if_should_sync(force_upload=False) == (False, None)
+    assert list(tempdir.iterdir()) == []
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_upload_removes_exported_db_on_encryption_error(
         rotkehlchen_instance: Rotkehlchen,
         tmp_path: Path,
-        failing_function: str,
-        error: BaseException,
 ) -> None:
     """The plaintext copy of the DB exported for an upload is removed when the upload fails
-    with an error that is not handled, while exporting it or while compressing/encrypting it"""
+    with an error that is not handled while compressing/encrypting it"""
     assert rotkehlchen_instance.premium is not None
     (tempdir := tmp_path / 'tempdir').mkdir()
     with (
@@ -420,8 +450,8 @@ def test_upload_removes_exported_db_on_error(
             saved_data=b'foo',
         ),
         patch.object(tempfile, 'tempdir', str(tempdir)),
-        patch(failing_function, side_effect=error),
-        pytest.raises(type(error)),
+        patch('rotkehlchen.data_handler.encrypt_backup', side_effect=MemoryError()),
+        pytest.raises(MemoryError),
     ):
         rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server(force_upload=True)
 

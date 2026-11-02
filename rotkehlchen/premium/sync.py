@@ -4,6 +4,8 @@ import tempfile
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
+from sqlcipher3 import dbapi2 as sqlcipher
+
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.misc import AUTO_BACKUP_DIR_PREFIX, USERSDIR_NAME
 from rotkehlchen.crypto import is_backup_format
@@ -325,7 +327,17 @@ class PremiumSyncManager(LockableQueryMixIn):
         # It is still deleted on every way out of this block, including errors while
         # exporting, compressing or encrypting.
         with tempfile.NamedTemporaryFile(suffix='.db', delete_on_close=False) as tempdbfile:
-            tempdbpath = self.data.db.export_unencrypted(tempdbfile)
+            try:
+                tempdbpath = self.data.db.export_unencrypted(tempdbfile)
+            except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+                message = f'Could not export the database: {e!s}'
+                log.error('upload to server aborted -- %s', message)
+                self.data.msg_aggregator.add_message(
+                    message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+                    data={'uploaded': False, 'actionable': True, 'message': message},
+                )
+                self.last_upload_attempt_ts = ts_now()
+                return False, message
             exported_ok, exported_error = plaintext_db_integrity_check(tempdbpath)
             if not exported_ok:
                 message = f'Exported database failed the integrity check: {exported_error}'
