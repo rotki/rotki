@@ -641,8 +641,14 @@ class DBHandler:
                 self.password = new_password
                 # Backups made before are encrypted with the old password, so the rekey counts
                 # as a write. The DB is then newer than them and a premium backup is due.
+                now = ts_now()
                 with self.conn.write_ctx() as write_cursor:
-                    self.set_setting(write_cursor, name='last_write_ts', value=ts_now())
+                    self.set_setting(write_cursor, name='last_write_ts', value=now)
+                    self.set_static_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheStatic.LAST_PASSWORD_CHANGE_TS,
+                        value=now,
+                    )
         finally:  # re-enable even if the rekey raised, else all reads stay serialized
             try:
                 self.conn.enable_read_pool(reader_setup=self._setup_read_pool_connection)
@@ -856,6 +862,7 @@ class DBHandler:
                 DBCacheStatic.LAST_BALANCE_SAVE,
                 DBCacheStatic.LAST_DATA_UPLOAD_TS,
                 DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
+                DBCacheStatic.LAST_PASSWORD_CHANGE_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
                 DBCacheStatic.LAST_OWNED_ASSETS_UPDATE,
