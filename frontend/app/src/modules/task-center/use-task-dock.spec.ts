@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { type ActivityModel, assembleActivityModel } from '@/modules/task-center/core/model';
 import {
@@ -477,6 +477,81 @@ describe('useTaskDock', () => {
       await vi.advanceTimersByTimeAsync(1000);
 
       expect(get(modelExpanded)).toBe(true);
+    });
+  });
+
+  describe('background tasks', () => {
+    const backgroundTask = (status: ActivityStatus): Activity => activity(ActivityKind.BACKGROUND_TASK, 'db_upload:3', status);
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      set(showSummary, true);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should show the dock working while one runs', () => {
+      set(activities, [backgroundTask(ActivityStatus.RUNNING)]);
+
+      expect(get(dock().state)).toBe(DockState.WORKING);
+    });
+
+    it('should go away once it finishes cleanly, without reporting it', async () => {
+      set(activities, [backgroundTask(ActivityStatus.RUNNING)]);
+      const { finished, visible } = dock();
+
+      await transition([backgroundTask(ActivityStatus.COMPLETE)]);
+      await endBatch();
+
+      expect(get(finished)).toEqual([]);
+      expect(get(visible)).toBe(false);
+    });
+
+    it('should report its failure without opening the panel, even when it fails during a batch', async () => {
+      set(activities, [...refresh(ActivityStatus.RUNNING), backgroundTask(ActivityStatus.RUNNING)]);
+      const { failed, modelExpanded, state } = dock();
+
+      await transition([...refresh(ActivityStatus.RUNNING), backgroundTask(ActivityStatus.FAILED)]);
+      await transition([...refresh(ActivityStatus.COMPLETE), backgroundTask(ActivityStatus.FAILED)]);
+      await endBatch();
+
+      expect(get(state)).toBe(DockState.FAILED);
+      expect(get(failed).map(root => root.kind)).toEqual([ActivityKind.BACKGROUND_TASK]);
+      expect(get(modelExpanded)).toBe(false);
+    });
+
+    it('should report a failure that arrives already settled, as a held one does', async () => {
+      const { failed } = dock();
+
+      await transition([backgroundTask(ActivityStatus.FAILED)]);
+
+      expect(get(failed).map(root => root.kind)).toEqual([ActivityKind.BACKGROUND_TASK]);
+    });
+
+    it('should not report a dismissed failure again', async () => {
+      const { acknowledge, failed } = dock();
+      await transition([backgroundTask(ActivityStatus.FAILED)]);
+      const [root] = get(failed);
+      assert(root);
+
+      acknowledge(root.id);
+      await transition([backgroundTask(ActivityStatus.FAILED), activity(ActivityKind.PRICES, 'latest', ActivityStatus.RUNNING)]);
+
+      expect(get(failed)).toEqual([]);
+    });
+
+    it('should not hold a user\'s batch open while it runs', async () => {
+      set(activities, refresh(ActivityStatus.RUNNING));
+      const { finished } = dock();
+
+      await transition([...refresh(ActivityStatus.COMPLETE), backgroundTask(ActivityStatus.RUNNING)]);
+      await endBatch();
+      await transition([...refresh(ActivityStatus.COMPLETE), backgroundTask(ActivityStatus.COMPLETE)]);
+      await transition([...refresh(ActivityStatus.COMPLETE), activity(ActivityKind.PRICES, 'latest', ActivityStatus.RUNNING)]);
+
+      expect(get(finished).map(root => root.id)).not.toContain(refreshId);
     });
   });
 });
