@@ -21,11 +21,13 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_sync_response_with_result,
+    assert_simple_ok_response,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import create_patched_requests_get_for_premium
 from rotkehlchen.types import Timestamp
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -169,6 +171,50 @@ def test_upload_db_plan_without_backups(rotkehlchen_api_server: APIServer) -> No
             status_code=HTTPStatus.BAD_GATEWAY,
         )
     upload_mock.assert_not_called()
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
+def test_password_change_makes_backup_upload_due(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+        db_password: str,
+) -> None:
+    """The backup on the server is encrypted with the password it was made with. After a
+    password change it is replaced at the next scheduled upload, even though it holds the
+    latest data and an upload was attempted less than an hour ago."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    db, sync_manager = rotki.data.db, rotki.premium_sync_manager
+    with db.conn.read_ctx() as cursor:
+        backup_ts = db.get_setting(cursor, name='last_write_ts')
+    sync_manager.last_upload_attempt_ts = ts_now()
+    with (
+        patch.object(rotki.premium, 'get_capabilities', return_value={'max_backup_size_mb': 100}),
+        create_patched_requests_get_for_premium(
+            session=rotki.premium.session,
+            metadata_last_modify_ts=backup_ts,
+            metadata_data_hash='remote_hash',
+            metadata_data_size=2,
+            saved_data=b'foo',
+        ),
+        patch.object(
+            rotki.premium.session,
+            'post',
+            return_value=MockResponse(HTTPStatus.OK, '{"success": true}'),
+        ) as post_mock,
+    ):
+        assert sync_manager.check_if_should_sync(force_upload=False) == (False, None)
+        with patch('rotkehlchen.db.dbhandler.ts_now', return_value=backup_ts + 100):
+            assert_simple_ok_response(requests.patch(
+                api_url_for(rotkehlchen_api_server, 'userpasswordchangeresource', name=username),
+                json={'name': username, 'current_password': db_password, 'new_password': 'foo'},
+            ))
+
+        assert sync_manager.check_if_should_sync(force_upload=False) == (True, None)
+        assert sync_manager.maybe_upload_data_to_server() == (True, None)
+
+    assert post_mock.call_count == 1
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
