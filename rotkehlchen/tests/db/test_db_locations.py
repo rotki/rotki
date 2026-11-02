@@ -121,7 +121,7 @@ def test_location_foreign_keys(database: DBHandler) -> None:
     with database.user_write() as write_cursor:
         with pytest.raises(sqlcipher.IntegrityError, match='FOREIGN KEY'):  # pylint: disable=no-member
             write_cursor.execute(
-                "INSERT INTO manually_tracked_balances(asset, label, amount, location, category) VALUES ('ETH', 'x', '1', 'fints', 'A')",  # noqa: E501
+                "INSERT INTO manually_tracked_balances(asset, label, amount, location, category) VALUES ('ETH', 'x', '1', 'nonexistent', 'A')",  # noqa: E501
             )
         write_cursor.execute(
             "INSERT INTO manually_tracked_balances(asset, label, amount, location, category) VALUES ('ETH', 'y', '1', 'kraken', 'A')",  # noqa: E501

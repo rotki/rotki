@@ -34,7 +34,7 @@ def test_catalog_shape():
         current = catalog[current.parent_identifier]
     assert [current.name, *reversed(path)] == ['Total', 'Blockchains', 'EVM Chains', 'Ethereum Mainnet']  # noqa: E501
     assert all(x.is_builtin for x in catalog.values())
-    assert 'fints' not in catalog
+    assert catalog['fints'].parent_identifier == 'banks'
     assert not any(x.startswith('legacy') for x in catalog)
 
 

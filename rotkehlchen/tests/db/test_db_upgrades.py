@@ -5093,7 +5093,7 @@ def test_upgrade_db_53_to_54(
         assert cursor.execute(
             "SELECT name, parent_identifier FROM locations WHERE identifier IN ('sonic', 'qonto', 'robinhood', 'ink') ORDER BY identifier",  # noqa: E501
         ).fetchall() == [('Ink', 'evm chains'), ('Qonto', 'banks'), ('Robinhood Chain', 'evm chains'), ('Sonic', 'evm chains')]  # noqa: E501
-        assert cursor.execute("SELECT COUNT(*) FROM locations WHERE identifier='fints'").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT parent_identifier FROM locations WHERE identifier='fints'").fetchone() == ('banks',)  # noqa: E501
         # and the obsolete setting was removed
         assert cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
