@@ -1,3 +1,4 @@
+import type { AnyMatchingKind } from '@test/utils/unmatched-panel-kinds';
 import type { MatchingFlow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { UsePinnedMatchPanelOptions } from '@/modules/history/events/use-pinned-match-panel';
 import { createMock } from '@test/utils/create-mock';
@@ -6,6 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Component, defineComponent, h } from 'vue';
 import MatchAssetMovementsPinned from '@/modules/history/events/MatchAssetMovementsPinned.vue';
 import MatchBridgeTransactionsPinned from '@/modules/history/events/MatchBridgeTransactionsPinned.vue';
+import { assetMovementMatchingKind } from '@/modules/history/events/matching/asset-movement-matching-kind';
+import { bridgeMatchingKind } from '@/modules/history/events/matching/bridge-matching-kind';
 import { type PinnedName, PinnedNames } from '@/modules/session/types';
 
 const panel = {
@@ -72,7 +75,7 @@ vi.mock('@/modules/history/events/use-untracked-bridge-counterpart', () => ({ us
 interface PinnedKind {
   name: string;
   pinned: Component;
-  contentName: string;
+  kind: AnyMatchingKind;
   pinnedName: PinnedName;
   /** An item, and the identifier the matching endpoints know it by. */
   identified: { item: UnmatchedEventGroup; identifier: number };
@@ -82,21 +85,21 @@ interface PinnedKind {
 
 const PINNED_KINDS: PinnedKind[] = [
   {
-    contentName: 'MatchBridgeTransactionsContent',
     drawer: { entryLabels: get(bridgeEntryLabels), flow: bridgeFlow },
     identified: { identifier: 11, item: { asset: 'ETH', events: [], groupIdentifier: 'group-a', identifier: 11 } },
     name: 'bridge',
+    kind: bridgeMatchingKind,
     pinned: MatchBridgeTransactionsPinned,
     pinnedName: PinnedNames.MATCH_BRIDGE_TRANSACTIONS,
   },
   {
-    contentName: 'MatchAssetMovementsContent',
     drawer: {},
     identified: {
       identifier: 77,
       item: createMock<UnmatchedEventGroup>({ events: [{ entry: { identifier: 77 } }], groupIdentifier: 'group-a' }),
     },
     name: 'asset movement',
+    kind: assetMovementMatchingKind,
     pinned: MatchAssetMovementsPinned,
     pinnedName: PinnedNames.MATCH_ASSET_MOVEMENTS,
   },
@@ -130,25 +133,26 @@ const SheetStub = defineComponent({
 
 const selected: UnmatchedEventGroup = { asset: 'ETH', events: [], groupIdentifier: 'group-a', identifier: 11 };
 
-describe.each(PINNED_KINDS)('unmatched matching pinned panel ($name)', (kind) => {
-  const ContentStub = defineComponent({
-    emits: ['pin', 'select', 'show-in-events'],
-    name: kind.contentName,
-    props: {
-      highlightedGroupIdentifier: { default: undefined, type: String },
-      isPinned: { default: false, type: Boolean },
-      onActionComplete: { default: undefined, type: Function },
-    },
-    setup: () => (): unknown => h('div', { 'data-testid': 'content' }),
-  });
+const ContentStub = defineComponent({
+  emits: ['pin', 'select', 'show-in-events'],
+  name: 'UnmatchedMatchingContent',
+  props: {
+    highlightedGroupIdentifier: { default: undefined, type: String },
+    isPinned: { default: false, type: Boolean },
+    kind: { default: undefined, type: Object },
+    onActionComplete: { default: undefined, type: Function },
+  },
+  setup: () => (): unknown => h('div', { 'data-testid': 'content' }),
+});
 
+describe.each(PINNED_KINDS)('unmatched matching pinned panel ($name)', (kind) => {
   function mountPanel(props: Record<string, unknown> = {}): VueWrapper {
     return mount(kind.pinned, {
       global: {
         stubs: {
           PinnedDetailSheet: SheetStub,
           PotentialMatchesContent: PotentialStub,
-          [kind.contentName]: ContentStub,
+          UnmatchedMatchingContent: ContentStub,
         },
       },
       props,
@@ -198,10 +202,11 @@ describe.each(PINNED_KINDS)('unmatched matching pinned panel ($name)', (kind) =>
 
   it('should derive what the drawer explains from the selected item', () => {
     mountPanel();
+    set(panel.subject, selected);
 
     expect(derivedFrom.length).toBeGreaterThan(0);
     for (const subject of derivedFrom)
-      expect(subject).toBe(panel.subject);
+      expect(toRaw(toValue(subject))).toBe(selected);
   });
 
   it('should hand the content the highlighted group and the teardown', () => {
@@ -211,6 +216,7 @@ describe.each(PINNED_KINDS)('unmatched matching pinned panel ($name)', (kind) =>
     const content = view.findComponent(ContentStub);
     expect(content.props('highlightedGroupIdentifier')).toBe('group-a');
     expect(content.props('isPinned')).toBe(true);
+    expect(toRaw(content.props('kind'))).toBe(kind.kind);
     expect(content.props('onActionComplete')).toBe(panel.clearHighlight);
   });
 

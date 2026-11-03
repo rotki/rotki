@@ -1,14 +1,16 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="TItem extends UnmatchedEventGroup, TRow extends UnmatchedRow<TItem>">
+import type { MatchingKind } from '@/modules/history/events/matching/matching-kind';
+import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import { startPromise } from '@shared/utils';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
-import { UNMATCHED_ACTIONS, type UnmatchedActionPayload, type UnmatchedMatchAccess } from '@/modules/history/events/unmatched-actions';
-import UnmatchedMovementsList from '@/modules/history/events/UnmatchedMovementsList.vue';
+import { UNMATCHED_ACTIONS, type UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
+import UnmatchedList from '@/modules/history/events/UnmatchedList.vue';
 import UnmatchedResolutionStrip from '@/modules/history/events/UnmatchedResolutionStrip.vue';
-import { useAssetMovementActions } from '@/modules/history/events/use-asset-movement-actions';
-import { type UnmatchedAssetMovement, useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
-const { isPinned, onActionComplete } = defineProps<{
+const { highlightedGroupIdentifier, isPinned, kind, onActionComplete } = defineProps<{
+  kind: MatchingKind<TItem, TRow>;
   highlightedGroupIdentifier?: string;
   isPinned?: boolean;
   onActionComplete?: () => Promise<void>;
@@ -17,8 +19,8 @@ const { isPinned, onActionComplete } = defineProps<{
 const emit = defineEmits<{
   'close': [];
   'pin': [];
-  'select': [movement: UnmatchedAssetMovement];
-  'show-in-events': [movement: UnmatchedAssetMovement];
+  'select': [item: TItem];
+  'show-in-events': [item: TItem];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -26,64 +28,107 @@ const { t } = useI18n({ useScope: 'global' });
 const activeTab = ref<number>(0);
 
 const {
+  autoMatch,
   autoMatchLoading,
-  autoMatchMinimumTier,
-  isAutoMatchAllowed,
+  ignored,
   ignoredError,
   ignoredLoading,
-  ignoredMovements,
+  isAutoMatchAllowed,
   loading,
+  refresh,
+  unmatched,
   unmatchedError,
-  unmatchedMovements,
-  refreshUnmatchedAssetMovements,
-  triggerAssetMovementAutoMatching,
-} = useUnmatchedAssetMovements();
-
-const matchAccess = computed<UnmatchedMatchAccess>(() => ({ allowed: get(isAutoMatchAllowed), minimumTier: get(autoMatchMinimumTier) }));
+} = kind.useSource();
 
 const {
   actionFailure,
-  confirmIgnoreAllFiat,
+  confirmCreateCounterpart,
   confirmIgnoreSelected,
   confirmRestoreSelected,
   dismissResolution,
-  fiatMovements,
+  fiat,
+  ignore,
   ignoreLoading,
-  ignoreMovement,
   markExternal,
-  restoreMovement,
   modelSelectedIgnored,
   modelSelectedUnmatched,
   resolutionNotice,
+  restore,
   undoResolution,
-} = useAssetMovementActions({ onActionComplete });
+} = kind.useActions({ onActionComplete });
 
 const buttonSize = computed<'sm' | 'lg'>(() => isPinned ? 'sm' : 'lg');
 
-function handleAction({ action, item }: UnmatchedActionPayload<UnmatchedAssetMovement>): void {
+const bulkGated = computed<boolean>(() => kind.bulkSelection.needsTier && !get(isAutoMatchAllowed));
+
+const showIgnoreSelected = computed<boolean>(() => !kind.bulkSelection.hideWhenEmpty || get(modelSelectedUnmatched).length > 0);
+
+const showRestoreSelected = computed<boolean>(() => !kind.bulkSelection.hideWhenEmpty || get(modelSelectedIgnored).length > 0);
+
+const fiatCount = computed<number>(() => (fiat ? get(fiat.items).length : 0));
+
+const autoMatchGroupClass = computed<string>(() => {
+  if (fiat)
+    return isPinned ? 'pl-2!' : 'pl-3';
+  return isPinned && get(modelSelectedUnmatched).length > 0 ? 'grow justify-end pl-2!' : 'grow justify-end';
+});
+
+function handleAction({ action, item }: UnmatchedActionPayload<TItem>): void {
   switch (action) {
+    case UNMATCHED_ACTIONS.CREATE_COUNTERPART:
+      confirmCreateCounterpart?.(item);
+      break;
     case UNMATCHED_ACTIONS.FIND_MATCH:
       emit('select', item);
       break;
     case UNMATCHED_ACTIONS.IGNORE:
-      startPromise(ignoreMovement(item));
-      break;
-    case UNMATCHED_ACTIONS.RESTORE:
-      startPromise(restoreMovement(item));
-      break;
-    case UNMATCHED_ACTIONS.SHOW_IN_EVENTS:
-      emit('show-in-events', item);
+      startPromise(ignore(item));
       break;
     case UNMATCHED_ACTIONS.MARK_EXTERNAL:
       startPromise(markExternal(item));
       break;
-    case UNMATCHED_ACTIONS.CREATE_COUNTERPART:
+    case UNMATCHED_ACTIONS.RESTORE:
+      startPromise(restore(item));
+      break;
+    case UNMATCHED_ACTIONS.SHOW_IN_EVENTS:
+      emit('show-in-events', item);
       break;
   }
 }
 
+/** Everything a tab's list is given; the unmatched and ignored tabs differ only in their items and fetch state. */
+interface ListBindings {
+  kind: MatchingKind<TItem, TRow>;
+  items: TItem[];
+  error: unknown;
+  loading: boolean;
+  showRestore: boolean;
+  highlightedGroupIdentifier?: string;
+  ignoreLoading: boolean;
+  isPinned: boolean;
+}
+
+function listBindings(showRestore: boolean): ListBindings {
+  return {
+    error: get(showRestore ? ignoredError : unmatchedError),
+    highlightedGroupIdentifier,
+    ignoreLoading: get(ignoreLoading),
+    isPinned,
+    items: get(showRestore ? ignored : unmatched),
+    kind,
+    loading: get(showRestore ? ignoredLoading : loading),
+    showRestore,
+  };
+}
+
+const listListeners = {
+  action: handleAction,
+  pin: (): void => emit('pin'),
+  retry: refresh,
+};
+
 onBeforeMount(async () => {
-  await refreshUnmatchedAssetMovements();
+  await refresh();
 });
 </script>
 
@@ -96,23 +141,23 @@ onBeforeMount(async () => {
     <RuiTab>
       {{ t('asset_movement_matching.tabs.unmatched') }}
       <RuiChip
-        v-if="unmatchedMovements.length > 0"
+        v-if="unmatched.length > 0"
         color="primary"
         size="sm"
         class="ml-2 px-0.5! py-0!"
       >
-        {{ unmatchedMovements.length }}
+        {{ unmatched.length }}
       </RuiChip>
     </RuiTab>
     <RuiTab>
       {{ t('asset_movement_matching.tabs.ignored') }}
       <RuiChip
-        v-if="ignoredMovements.length > 0"
+        v-if="ignored.length > 0"
         color="secondary"
         size="sm"
         class="ml-2 px-0.5! py-0!"
       >
-        {{ ignoredMovements.length }}
+        {{ ignored.length }}
       </RuiChip>
     </RuiTab>
   </RuiTabs>
@@ -130,45 +175,28 @@ onBeforeMount(async () => {
   <FailureStrip
     v-if="actionFailure"
     :retryable="false"
-    :title="t('asset_movement_matching.action_failed')"
+    :title="t(kind.messages.actionFailed)"
     :failure="actionFailure"
     class="shrink-0"
     :class="isPinned ? 'mx-3 mt-3' : 'mt-4'"
-    data-testid="unmatched-movement-action-error"
+    data-testid="unmatched-action-error"
   />
 
   <div
     v-if="isPinned"
     class="flex-1 min-h-0 flex flex-col px-3 my-4"
   >
-    <UnmatchedMovementsList
+    <UnmatchedList
       v-if="activeTab === 0"
       v-model:selected="modelSelectedUnmatched"
-      :movements="unmatchedMovements"
-      :error="unmatchedError"
-      :highlighted-group-identifier="highlightedGroupIdentifier"
-      :ignore-loading="ignoreLoading"
-      is-pinned
-      :loading="loading"
-      :match-access="matchAccess"
-      @action="handleAction($event)"
-      @pin="emit('pin')"
-      @retry="refreshUnmatchedAssetMovements()"
+      v-bind="listBindings(false)"
+      v-on="listListeners"
     />
-    <UnmatchedMovementsList
+    <UnmatchedList
       v-else
       v-model:selected="modelSelectedIgnored"
-      :movements="ignoredMovements"
-      :error="ignoredError"
-      :highlighted-group-identifier="highlightedGroupIdentifier"
-      :loading="ignoredLoading"
-      :ignore-loading="ignoreLoading"
-      is-pinned
-      :match-access="matchAccess"
-      show-restore
-      @action="handleAction($event)"
-      @pin="emit('pin')"
-      @retry="refreshUnmatchedAssetMovements()"
+      v-bind="listBindings(true)"
+      v-on="listListeners"
     />
   </div>
 
@@ -178,32 +206,17 @@ onBeforeMount(async () => {
     class="my-4"
   >
     <RuiTabItem>
-      <UnmatchedMovementsList
+      <UnmatchedList
         v-model:selected="modelSelectedUnmatched"
-        :movements="unmatchedMovements"
-        :error="unmatchedError"
-        :highlighted-group-identifier="highlightedGroupIdentifier"
-        :ignore-loading="ignoreLoading"
-        :loading="loading"
-        :match-access="matchAccess"
-        @action="handleAction($event)"
-        @pin="emit('pin')"
-        @retry="refreshUnmatchedAssetMovements()"
+        v-bind="listBindings(false)"
+        v-on="listListeners"
       />
     </RuiTabItem>
     <RuiTabItem>
-      <UnmatchedMovementsList
+      <UnmatchedList
         v-model:selected="modelSelectedIgnored"
-        :movements="ignoredMovements"
-        :error="ignoredError"
-        :highlighted-group-identifier="highlightedGroupIdentifier"
-        :loading="ignoredLoading"
-        :ignore-loading="ignoreLoading"
-        :match-access="matchAccess"
-        show-restore
-        @action="handleAction($event)"
-        @pin="emit('pin')"
-        @retry="refreshUnmatchedAssetMovements()"
+        v-bind="listBindings(true)"
+        v-on="listListeners"
       />
     </RuiTabItem>
   </RuiTabItems>
@@ -215,14 +228,15 @@ onBeforeMount(async () => {
     <div
       v-if="activeTab === 0"
       class="flex"
+      :class="{ grow: !fiat }"
     >
       <RuiButton
+        v-if="showIgnoreSelected"
         variant="outlined"
         color="primary"
         :size="buttonSize"
-        class="rounded-r-none"
-        :class="{ 'h-7.5': isPinned }"
-        :disabled="!isAutoMatchAllowed || modelSelectedUnmatched.length === 0 || ignoreLoading"
+        :class="{ 'h-7.5': isPinned, 'rounded-r-none': fiat }"
+        :disabled="bulkGated || modelSelectedUnmatched.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
         data-testid="ignore-selected"
         @click="confirmIgnoreSelected()"
@@ -238,6 +252,7 @@ onBeforeMount(async () => {
         </RuiChip>
       </RuiButton>
       <RuiTooltip
+        v-if="fiat"
         :open-delay="400"
         :options="{ placement: 'top' }"
         :class-names="{ tooltip: 'max-w-80' }"
@@ -249,10 +264,10 @@ onBeforeMount(async () => {
             :size="buttonSize"
             class="rounded-l-none -ml-px"
             :class="{ 'h-7.5': isPinned }"
-            :disabled="!isAutoMatchAllowed || fiatMovements.length === 0 || ignoreLoading"
+            :disabled="bulkGated || fiatCount === 0 || ignoreLoading"
             :loading="ignoreLoading"
             data-testid="ignore-fiat"
-            @click="confirmIgnoreAllFiat()"
+            @click="fiat.confirmIgnoreAll()"
           >
             {{ t('asset_movement_matching.actions.ignore_fiat') }}
           </RuiButton>
@@ -261,7 +276,7 @@ onBeforeMount(async () => {
       </RuiTooltip>
       <RuiButtonGroup
         color="primary"
-        :class="isPinned ? 'pl-2!' : 'pl-3' "
+        :class="autoMatchGroupClass"
         :disabled="!isAutoMatchAllowed || autoMatchLoading"
       >
         <RuiTooltip
@@ -274,15 +289,15 @@ onBeforeMount(async () => {
               color="primary"
               :size="buttonSize"
               :class="{ 'h-7.5 px-3!': isPinned }"
-              :disabled="!isAutoMatchAllowed || unmatchedMovements.length === 0 || autoMatchLoading"
+              :disabled="!isAutoMatchAllowed || unmatched.length === 0 || autoMatchLoading"
               :loading="autoMatchLoading"
               data-testid="auto-match"
-              @click="triggerAssetMovementAutoMatching()"
+              @click="autoMatch()"
             >
               {{ t('asset_movement_matching.actions.auto_match') }}
             </RuiButton>
           </template>
-          {{ t('asset_movement_matching.actions.auto_match_tooltip') }}
+          {{ t(kind.messages.autoMatchTooltip) }}
         </RuiTooltip>
 
         <AssetMovementMatchingSettingsMenu
@@ -296,10 +311,11 @@ onBeforeMount(async () => {
       class="flex gap-2"
     >
       <RuiButton
+        v-if="showRestoreSelected"
         variant="outlined"
         color="primary"
         :size="buttonSize"
-        :disabled="!isAutoMatchAllowed || modelSelectedIgnored.length === 0 || ignoreLoading"
+        :disabled="bulkGated || modelSelectedIgnored.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
         data-testid="restore-selected"
         @click="confirmRestoreSelected()"

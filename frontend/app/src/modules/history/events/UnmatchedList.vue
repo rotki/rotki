@@ -1,30 +1,29 @@
-<script setup lang="ts">
-import type { UnmatchedActionPayload, UnmatchedMatchAccess } from '@/modules/history/events/unmatched-actions';
-import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
-import { UnmatchedVariant } from '@/modules/history/events/unmatched-row';
+<script setup lang="ts" generic="TItem extends UnmatchedEventGroup, TRow extends UnmatchedRow<TItem>">
+import type { MatchingKind } from '@/modules/history/events/matching/matching-kind';
+import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import type { UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
+import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import UnmatchedCards from '@/modules/history/events/UnmatchedCards.vue';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
 import UnmatchedTable from '@/modules/history/events/UnmatchedTable.vue';
-import { useUnmatchedMovementRows } from '@/modules/history/events/use-unmatched-movement-rows';
 
 const selected = defineModel<string[]>('selected', { required: true });
 
 const {
   error,
-  movements,
   highlightedGroupIdentifier,
   ignoreLoading,
   isPinned,
-  showRestore,
+  items,
+  kind,
   loading,
-  matchAccess,
+  showRestore,
 } = defineProps<{
-  movements: UnmatchedAssetMovement[];
+  kind: MatchingKind<TItem, TRow>;
+  items: TItem[];
   highlightedGroupIdentifier?: string;
   ignoreLoading?: boolean;
   isPinned?: boolean;
-  /** absent when matching is not gated at all */
-  matchAccess?: UnmatchedMatchAccess;
   showRestore?: boolean;
   loading?: boolean;
   /** why the last load failed, shown in place of the empty text or above the rows it left */
@@ -32,19 +31,21 @@ const {
 }>();
 
 const emit = defineEmits<{
-  action: [payload: UnmatchedActionPayload<UnmatchedAssetMovement>];
+  action: [payload: UnmatchedActionPayload<TItem>];
   pin: [];
   retry: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const matchDisabled = computed<boolean>(() => matchAccess !== undefined && !matchAccess.allowed);
+const { autoMatchMinimumTier, isAutoMatchAllowed } = kind.useSource();
 
-const { description, emptyDescription, failure, rows, specFor } = useUnmatchedMovementRows({
+const matchDisabled = computed<boolean>(() => !get(isAutoMatchAllowed));
+
+const { description, emptyDescription, failure, rows, specFor } = kind.useRows({
   error: () => error,
+  items: () => items,
   matchDisabled,
-  movements: () => movements,
   showRestore: () => showRestore,
 });
 </script>
@@ -75,7 +76,7 @@ const { description, emptyDescription, failure, rows, specFor } = useUnmatchedMo
     <Component
       :is="isPinned ? UnmatchedCards : UnmatchedTable"
       v-model:selected="selected"
-      :variant="isPinned ? undefined : UnmatchedVariant.ASSET_MOVEMENT"
+      :variant="isPinned ? undefined : kind.variant"
       :rows="rows"
       :spec-for="specFor"
       :empty-description="emptyDescription"
@@ -91,9 +92,9 @@ const { description, emptyDescription, failure, rows, specFor } = useUnmatchedMo
         #alert
       >
         <UnmatchedMatchDisabledAlert
-          :variant="UnmatchedVariant.ASSET_MOVEMENT"
-          :count="showRestore ? 0 : movements.length"
-          :match-minimum-tier="matchAccess?.minimumTier"
+          :variant="kind.variant"
+          :count="showRestore ? 0 : items.length"
+          :match-minimum-tier="autoMatchMinimumTier"
         />
       </template>
     </Component>

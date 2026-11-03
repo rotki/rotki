@@ -1,10 +1,13 @@
+import type { AnyMatchingKind } from '@test/utils/unmatched-panel-kinds';
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { mountGeneric } from '@test/utils/mount-generic';
+import { flushPromises, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type Component, defineComponent, h, type VNode } from 'vue';
-import MatchAssetMovementsContent from '@/modules/history/events/MatchAssetMovementsContent.vue';
-import MatchBridgeTransactionsContent from '@/modules/history/events/MatchBridgeTransactionsContent.vue';
+import { defineComponent, h, type VNode } from 'vue';
+import { assetMovementMatchingKind } from '@/modules/history/events/matching/asset-movement-matching-kind';
+import { bridgeMatchingKind } from '@/modules/history/events/matching/bridge-matching-kind';
 import { UNMATCHED_ACTIONS } from '@/modules/history/events/unmatched-actions';
+import UnmatchedMatchingContent from '@/modules/history/events/UnmatchedMatchingContent.vue';
 
 /** One set of fakes in words both kinds share; each kind's mocked composables rename them. */
 const { actions, source } = await vi.hoisted(async () => {
@@ -73,7 +76,8 @@ vi.mock('@/modules/history/events/use-asset-movement-actions', () => ({
   }),
 }));
 
-vi.mock('@/modules/history/events/use-unmatched-bridge-transactions', () => ({
+vi.mock('@/modules/history/events/use-unmatched-bridge-transactions', async importOriginal => ({
+  ...await importOriginal<Record<string, unknown>>(),
   useUnmatchedBridgeTransactions: (): Record<string, unknown> => ({
     ...sharedSource(),
     ignoredTransactions: source.ignored,
@@ -97,11 +101,7 @@ type ButtonState = 'hidden' | 'disabled' | 'enabled';
 /** The kind-specific parts of a matching panel's content that a spec over both kinds has to know. */
 interface ContentKind {
   name: string;
-  content: Component;
-  listName: string;
-  /** The list prop that carries the unmatched or ignored items. */
-  itemsProp: string;
-  actionErrorTestId: string;
+  kind: AnyMatchingKind;
   actionFailedTitle: string;
   autoMatchTooltip: string;
   /** Whether a row can create its missing counterpart from this panel. */
@@ -114,31 +114,52 @@ interface ContentKind {
   ignoresFiat: boolean;
 }
 
+const ListStub = defineComponent({
+  emits: ['action', 'pin', 'retry'],
+  name: 'UnmatchedList',
+  props: {
+    error: { default: undefined, type: null },
+    items: { default: () => [], type: Array },
+    kind: { default: undefined, type: Object },
+  },
+  setup(_, { emit }): () => VNode {
+    return (): VNode => h('div', { 'data-testid': 'unmatched-list', 'onClick': () => emit('pin') });
+  },
+});
+
+const TooltipStub = defineComponent({
+  name: 'RuiTooltip',
+  setup: (_, { slots }) => (): VNode[] => [...(slots.activator?.() ?? []), h('span', { 'data-testid': 'tooltip' }, slots.default?.())],
+});
+
+const contentGlobal = {
+  stubs: {
+    AssetMovementMatchingSettingsMenu: true,
+    RuiTooltip: TooltipStub,
+    UnmatchedList: ListStub,
+    UnmatchedResolutionStrip: true,
+  },
+};
+
 const CONTENT_KINDS: ContentKind[] = [
   {
-    actionErrorTestId: 'unmatched-bridge-action-error',
     actionFailedTitle: 'bridge_matching.action_failed',
     autoMatchTooltip: 'bridge_matching.actions.auto_match_tooltip',
-    content: MatchBridgeTransactionsContent,
     createsCounterpart: true,
     gatesBulkOnTier: false,
     emptySelection: 'hidden',
     ignoresFiat: false,
-    itemsProp: 'transactions',
-    listName: 'UnmatchedBridgesList',
+    kind: bridgeMatchingKind,
     name: 'bridge',
   },
   {
-    actionErrorTestId: 'unmatched-movement-action-error',
     actionFailedTitle: 'asset_movement_matching.action_failed',
     autoMatchTooltip: 'asset_movement_matching.actions.auto_match_tooltip',
-    content: MatchAssetMovementsContent,
     createsCounterpart: false,
     gatesBulkOnTier: true,
     emptySelection: 'disabled',
     ignoresFiat: true,
-    itemsProp: 'movements',
-    listName: 'UnmatchedMovementsList',
+    kind: assetMovementMatchingKind,
     name: 'asset movement',
   },
 ];
@@ -163,34 +184,10 @@ function item(identifier: number): UnmatchedEventGroup {
 }
 
 describe.each(CONTENT_KINDS)('unmatched matching content ($name)', (kind) => {
-  const ListStub = defineComponent({
-    emits: ['action', 'pin', 'retry'],
-    name: kind.listName,
-    props: { error: { default: undefined, type: null }, [kind.itemsProp]: { default: () => [], type: Array } },
-    setup(_, { emit }): () => VNode {
-      return (): VNode => h('div', { 'data-testid': 'unmatched-list', 'onClick': () => emit('pin') });
-    },
-  });
-
-  const TooltipStub = defineComponent({
-    name: 'RuiTooltip',
-    setup: (_, { slots }) => (): VNode[] => [...(slots.activator?.() ?? []), h('span', { 'data-testid': 'tooltip' }, slots.default?.())],
-  });
-
   const counterpartCalls: unknown[][] = kind.createsCounterpart ? [[item(6)]] : [];
 
   async function mountContent(props: Record<string, unknown> = {}): Promise<VueWrapper> {
-    const wrapper = mount(kind.content, {
-      global: {
-        stubs: {
-          AssetMovementMatchingSettingsMenu: true,
-          RuiTooltip: TooltipStub,
-          UnmatchedResolutionStrip: true,
-          [kind.listName]: ListStub,
-        },
-      },
-      props,
-    });
+    const wrapper = mountGeneric(UnmatchedMatchingContent, { ...props, kind: kind.kind }, contentGlobal);
     await flushPromises();
     return wrapper;
   }
@@ -236,8 +233,9 @@ describe.each(CONTENT_KINDS)('unmatched matching content ($name)', (kind) => {
     const lists = wrapper.findAllComponents(ListStub);
     expect(lists.length).toBeGreaterThan(0);
     for (const list of lists) {
-      const shown: unknown[] = list.props(kind.itemsProp) ?? [];
+      const shown: unknown[] = list.props('items') ?? [];
       expect(list.props('error')).toBe(shown.includes(item(1)) ? unmatchedFailure : ignoredFailure);
+      expect(toRaw(list.props('kind'))).toBe(kind.kind);
     }
   });
 
@@ -438,7 +436,7 @@ describe.each(CONTENT_KINDS)('unmatched matching content ($name)', (kind) => {
 
       const wrapper = await mountContent();
 
-      const strip = wrapper.find(`[data-testid=${kind.actionErrorTestId}]`);
+      const strip = wrapper.find(`[data-testid=unmatched-action-error]`);
       expect(strip.text()).toContain('backend down');
       expect(strip.text()).toContain(kind.actionFailedTitle);
       expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
@@ -447,7 +445,7 @@ describe.each(CONTENT_KINDS)('unmatched matching content ($name)', (kind) => {
     it('should show nothing while no action failed', async () => {
       const wrapper = await mountContent();
 
-      expect(wrapper.find(`[data-testid=${kind.actionErrorTestId}]`).exists()).toBe(false);
+      expect(wrapper.find(`[data-testid=unmatched-action-error]`).exists()).toBe(false);
     });
   });
 });

@@ -17,6 +17,13 @@ export interface UnmatchedEventGroup {
   identifier?: number;
 }
 
+/** How the potential matches summary names the item being matched; absent fields fall back to the asset movement wording. */
+export interface PotentialMatchEntryLabels {
+  type: string;
+  locationHeader: string;
+  matchingFor?: string;
+}
+
 /** Suggested counterpart events for an unmatched group, best matches first. */
 export interface MatchSuggestions {
   closeMatches: number[];

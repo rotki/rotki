@@ -2,7 +2,7 @@
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { canWidenSearch, type SearchCriteria, widenedSearch } from '@/modules/history/events/matching/search-widening';
-import { type MatchingFailure, MatchingFailureKind, type PotentialMatchRow, type UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import { type MatchingFailure, MatchingFailureKind, type PotentialMatchEntryLabels, type PotentialMatchRow, type UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import PotentialMatchesCards from '@/modules/history/events/PotentialMatchesCards.vue';
 import PotentialMatchesEmpty from '@/modules/history/events/PotentialMatchesEmpty.vue';
 import PotentialMatchesTable from '@/modules/history/events/PotentialMatchesTable.vue';
@@ -31,7 +31,7 @@ const { movement, matches, loading, isPinned, highlightedIdentifier, entryLabels
    * relabel the type badge and the location column together, so the two travel as one unit; omitting
    * it falls back to the asset-movement type and the exchange header.
    */
-  entryLabels?: { type: string; locationHeader: string; matchingFor?: string };
+  entryLabels?: PotentialMatchEntryLabels;
   /** Why the last search or match failed, named above the results. */
   failure?: MatchingFailure;
   /** Shown when a search returns no matches, explaining why none can be found. */

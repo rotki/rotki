@@ -15,12 +15,6 @@ export const UNMATCHED_ACTIONS = {
 export type UnmatchedAction = typeof UNMATCHED_ACTIONS[keyof typeof UNMATCHED_ACTIONS];
 
 /** What a list reports upwards: the action, and the row it was triggered on. */
-/** Whether matching is open to the user's premium tier, and which tier opens it when it is not. */
-export interface UnmatchedMatchAccess {
-  allowed: boolean;
-  minimumTier: string | null;
-}
-
 export interface UnmatchedActionPayload<T> {
   action: UnmatchedAction;
   item: T;
