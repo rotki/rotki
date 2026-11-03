@@ -50,7 +50,7 @@ def test_failure_cause_shares_user_message_key_spelling() -> None:
     (HTTPStatus.REQUEST_TIMEOUT, FailureCause.NETWORK, RecoverableRemoteError),
     (HTTPStatus.BAD_GATEWAY, FailureCause.NETWORK, RecoverableRemoteError),
     (HTTPStatus.UNAUTHORIZED, FailureCause.AUTH, RemoteError),
-    (HTTPStatus.FORBIDDEN, FailureCause.AUTH, RemoteError),
+    (HTTPStatus.FORBIDDEN, FailureCause.REMOTE_REJECTED, RemoteError),
     (HTTPStatus.NOT_FOUND, FailureCause.REMOTE_REJECTED, RemoteError),
 ])
 def test_remote_error_for_status(

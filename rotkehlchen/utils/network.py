@@ -133,7 +133,6 @@ def request_get(
         raise RemoteError(
             f'{url} returned status: {response.status_code}',
             cause=cause_for_status(response.status_code),
-            error_code=response.status_code,
         )
 
     try:
@@ -189,7 +188,6 @@ def retry_calls(
                     raise RemoteError(
                         f'{location} query for {method_name} failed after {times} tries',
                         cause=FailureCause.RATE_LIMITED,
-                        error_code=HTTPStatus.TOO_MANY_REQUESTS,
                     )
 
                 log.debug(

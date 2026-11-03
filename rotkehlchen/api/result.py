@@ -64,8 +64,8 @@ AUTH_REQUIRED: Final = FailResult(
     HTTPStatus.UNAUTHORIZED,
     FailureCause.AUTH,
 )
-NOT_LOGGED_IN: Final = FailResult(
+NOT_LOGGED_IN: Final = FailResult(  # a session state, not rejected credentials
     'No user is currently logged in',
     HTTPStatus.UNAUTHORIZED,
-    FailureCause.AUTH,
+    FailureCause.CONFLICT,
 )

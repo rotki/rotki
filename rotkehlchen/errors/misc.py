@@ -120,8 +120,9 @@ def cause_for_status(status_code: int) -> FailureCause:
     """The cause of a failed HTTP response, read from its status.
 
     A 429 asks us to slow down, and server errors and request timeouts (408) are the remote
-    failing to answer. A 401 or 403 rejects our credentials; any other status, including a
-    2xx whose body reports a failure, rejects the request itself.
+    failing to answer. A 401 rejects our credentials. Any other status rejects the request
+    itself, including a 403, which services also send for rate and plan limits, and a 2xx
+    whose body reports a failure. A site that knows its 403 means a rejected key says so.
     """
     if status_code == HTTPStatus.TOO_MANY_REQUESTS:
         return FailureCause.RATE_LIMITED
@@ -130,7 +131,7 @@ def cause_for_status(status_code: int) -> FailureCause:
             status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
     ):
         return FailureCause.NETWORK
-    if status_code in {HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN}:
+    if status_code == HTTPStatus.UNAUTHORIZED:
         return FailureCause.AUTH
     return FailureCause.REMOTE_REJECTED
 

@@ -24,6 +24,16 @@ if TYPE_CHECKING:
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
+def cause_of_event_write_error(error: Exception) -> FailureCause:
+    """A unique constraint rejecting an event that already exists is a conflict, any other
+    database error is our own data, and an overflow is a value out of range."""
+    if isinstance(error, sqlcipher.IntegrityError):  # pylint: disable=no-member
+        return FailureCause.CONFLICT
+    if isinstance(error, sqlcipher.DatabaseError):  # pylint: disable=no-member
+        return FailureCause.LOCAL_DB
+    return FailureCause.INVALID_INPUT
+
+
 class HistoryEventsService:
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
@@ -51,10 +61,7 @@ class HistoryEventsService:
             return FailResult(
                 error_msg,
                 HTTPStatus.CONFLICT,
-                (
-                    FailureCause.LOCAL_DB if isinstance(e, sqlcipher.DatabaseError)
-                    else FailureCause.INVALID_INPUT
-                ),
+                cause_of_event_write_error(e),
             )
 
         if main_identifier is None:

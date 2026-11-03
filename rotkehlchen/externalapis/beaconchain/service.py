@@ -213,10 +213,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                 f'Beaconchain API request {response.url} failed '
                 f'with HTTP status code {response.status_code} and text '
                 f'{response.text}',
-                cause=(  # a 403 is the plan's validator query limit, not a rejected key
-                    FailureCause.REMOTE_REJECTED if response.status_code == 403
-                    else cause_for_status(response.status_code)
-                ),
+                cause=cause_for_status(response.status_code),
             )
 
         try:
