@@ -1,3 +1,5 @@
+import type { FormatOptions } from '@/modules/assets/amount-display/types';
+import type { TableColumn } from '@/modules/core/table/table-column';
 import { Balance, type BigNumber } from '@rotki/common';
 import { z } from 'zod';
 
@@ -59,4 +61,16 @@ export interface AssetBreakdownOptions {
   all?: boolean;
   /** Suppress the native-token breakdown entirely. */
   hide?: boolean;
+}
+
+/** How an `AssetBalances` table lays itself out and shows its cells, as one prop. */
+export interface AssetBalancesDisplay {
+  /** Keep the header in view while the page scrolls. */
+  stickyHeader?: boolean;
+  /** Optional columns to add, such as the share of the net value. */
+  visibleColumns?: TableColumn[];
+  /** Add a column naming where each asset is held. */
+  showPerProtocol?: boolean;
+  /** The format of an asset's amount, for a source whose amounts have a known precision such as a bank's. */
+  amountFormat?: (asset: string) => FormatOptions;
 }

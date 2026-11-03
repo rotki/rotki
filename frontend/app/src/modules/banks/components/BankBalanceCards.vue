@@ -3,7 +3,7 @@ import type { BigNumber } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
 import type { BankBalanceData } from '@/modules/banks/use-bank-data';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { bankConnectionStatus, type BankConnectionStatusDisplay } from '@/modules/banks/bank-connection-state';
+import { type BankConnectionState, bankConnectionState, bankConnectionStatus, type BankConnectionStatusDisplay } from '@/modules/banks/bank-connection-state';
 import BankConnectorIcon from '@/modules/banks/components/BankConnectorIcon.vue';
 import { calculatePercentage } from '@/modules/core/common/data/calculation';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
@@ -23,11 +23,15 @@ const { t } = useI18n({ useScope: 'global' });
 
 interface BankTile {
   readonly bank: BankBalanceData;
+  readonly state: BankConnectionState;
   /** What needs the user, or nothing for a bank that synced fine. */
   readonly status?: BankConnectionStatusDisplay;
 }
 
-const tiles = computed<BankTile[]>(() => banks.map(bank => ({ bank, status: bankConnectionStatus(bank) })));
+const tiles = computed<BankTile[]>(() => banks.map((bank) => {
+  const state = bankConnectionState(bank);
+  return { bank, state, status: bankConnectionStatus(state) };
+}));
 
 function linkTo(bank?: string): RouteLocationRaw {
   return { name: '/balances/banks/', query: bank ? { bank } : {} };
@@ -74,7 +78,7 @@ function stateClass(active: boolean): string {
     </RouterLink>
 
     <RouterLink
-      v-for="{ bank, status } in tiles"
+      v-for="{ bank, state, status } in tiles"
       :key="`${bank.connector}#${bank.name}`"
       :to="linkTo(bank.name)"
       :class="[tileClass, stateClass(selected === bank.name)]"
@@ -113,7 +117,7 @@ function stateClass(active: boolean): string {
         class="flex items-center gap-1 text-xs min-w-0"
         :class="status.textClass"
         data-testid="bank-balance-card-status"
-        :data-state="status.short"
+        :data-state="state"
       >
         <RuiIcon
           :name="status.icon"

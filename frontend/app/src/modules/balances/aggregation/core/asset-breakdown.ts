@@ -13,6 +13,7 @@ import { groupAssetBreakdown } from '@/modules/core/common/display/balances';
 export interface BreakdownInputs {
   readonly accounts: Accounts;
   readonly balances: Balances;
+  /** The exchanges and the `banks` location, each keyed by its location. */
   readonly exchanges: ExchangeData;
   /** Manual assets, or manual liabilities for a liability breakdown. */
   readonly manual: readonly ManualBalanceWithValue[];
@@ -114,11 +115,11 @@ function exchangeRows(asset: string, exchanges: ExchangeData, ports: BreakdownPo
 }
 
 /**
- * Where `asset` is held: one row per account, exchange and manual location, highest value first.
+ * Where `asset` is held: one row per account, exchange, bank and manual location, highest value first.
  *
  * @remarks
- * A chain, account or `blockchainOnly` filter narrows the rows to on-chain accounts. Exchanges never
- * hold liabilities, so a liability breakdown reads only accounts and manual liabilities.
+ * A chain, account or `blockchainOnly` filter narrows the rows to on-chain accounts. Exchanges and banks
+ * never hold liabilities, so a liability breakdown reads only accounts and manual liabilities.
  */
 export function assetBreakdown(
   asset: string,

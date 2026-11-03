@@ -833,19 +833,11 @@ describe('useAggregatedBalances', () => {
     });
   });
 
-  describe('getExchangeBalances', () => {
+  describe('bank balances', () => {
     beforeEach(() => {
-      useLocationStore().$patch({
-        allLocations: {
-          kraken: { image: 'kraken.svg' },
-          qonto: { image: 'qonto.svg', isBank: true },
-        },
-      });
-      const { exchangeBalances } = storeToRefs(useBalancesStore());
-      set(exchangeBalances, {
-        kraken: { BTC: createTestBalance(1, 40000) },
-        qonto: { EUR: createTestBalance(500, 500) },
-      });
+      const { bankBalances, exchangeBalances } = storeToRefs(useBalancesStore());
+      set(exchangeBalances, { kraken: { BTC: createTestBalance(1, 40000) } });
+      set(bankBalances, [{ accounts: [], balances: { EUR: createTestBalance(500, 500) }, connector: 'qonto', name: 'Main' }]);
     });
 
     it('should leave bank balances out of every exchange together', () => {
@@ -853,10 +845,22 @@ describe('useAggregatedBalances', () => {
       expect(getExchangeBalances().map(row => row.asset)).toEqual(['BTC']);
     });
 
-    it('should still read a single location as asked', () => {
-      const { getExchangeBalances } = useAggregatedBalances();
-      expect(getExchangeBalances('kraken').map(row => row.asset)).toEqual(['BTC']);
-      expect(getExchangeBalances('qonto').map(row => row.asset)).toEqual(['EUR']);
+    it('should count the banks with the exchanges, so excluding exchanges leaves them out too', () => {
+      const { getBalances } = useAggregatedBalances();
+      const held = (exclude: ('blockchain' | 'exchange' | 'manual')[]): string[] =>
+        getBalances(true, true, exclude).map(row => row.asset).filter(asset => ['BTC', 'EUR'].includes(asset)).sort();
+      expect(held(['blockchain', 'manual'])).toEqual(['BTC', 'EUR']);
+      expect(held(['blockchain', 'exchange', 'manual'])).toEqual([]);
+    });
+
+    it('should break the banks location down from the bank balances', () => {
+      const { useLocationBreakdown } = useAggregatedBalances();
+      expect(get(useLocationBreakdown(TRADE_LOCATION_BANKS)).map(row => [row.asset, row.amount.toFixed()])).toContainEqual(['EUR', '500']);
+    });
+
+    it('should total the banks as one location', () => {
+      const { balancesByLocation } = useAggregatedBalances();
+      expect(get(balancesByLocation)[TRADE_LOCATION_BANKS]?.toFixed()).toBe('500');
     });
   });
 });

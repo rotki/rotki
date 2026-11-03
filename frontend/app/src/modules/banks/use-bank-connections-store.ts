@@ -1,10 +1,9 @@
-import type { BankConnection, BankConnectionBalances, BankManifest } from '@/modules/banks/types';
+import type { BankConnection, BankManifest } from '@/modules/banks/types';
 import { toSentenceCase } from '@rotki/common';
 
 export const useBankConnectionsStore = defineStore('banks/connections', () => {
   const manifests = ref<BankManifest[]>([]);
   const connections = ref<BankConnection[]>([]);
-  const connectionBalances = ref<BankConnectionBalances[]>([]);
   /** Why the supported banks could not be loaded, until a later load succeeds. */
   const manifestsError = shallowRef<unknown>();
   /** Why the connections could not be loaded, until a later load succeeds. */
@@ -35,20 +34,14 @@ export const useBankConnectionsStore = defineStore('banks/connections', () => {
     set(connectionsError, error);
   };
 
-  const setConnectionBalances = (value: BankConnectionBalances[]): void => {
-    set(connectionBalances, value);
-  };
-
   return {
     bankNameFor,
-    connectionBalances,
     connections,
     connectionsError,
     manifestFor,
     manifests,
     manifestsError,
     setConnections,
-    setConnectionBalances,
     setConnectionsError,
     setManifests,
     setManifestsError,

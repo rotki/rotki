@@ -1,10 +1,11 @@
+import type { BigNumber } from '@rotki/common';
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import type { AssetBalances } from '@/modules/balances/types/balances';
 import type {
   AssetProtocolBalances,
   BlockchainAssetBalances,
 } from '@/modules/balances/types/blockchain-balances';
-import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
+import type { BankConnectionBalances } from '@/modules/banks/types';
 
 export function updateBalancesPrices(
   balances: AssetProtocolBalances,
@@ -105,7 +106,8 @@ export function updateBlockchainAssetBalances(
   return result;
 }
 
-export function updateManualBalancePrices(data: ManualBalanceWithValue[], prices: AssetPrices): ManualBalanceWithValue[] {
+/** Each item, such as a manual balance or a bank account, valued at the given prices; one whose asset has no positive price keeps its value. */
+export function updateAssetValuePrices<T extends { asset: string; amount: BigNumber; value: BigNumber }>(data: readonly T[], prices: AssetPrices): T[] {
   return data.map((item) => {
     const assetPrice = prices[item.asset];
     if (!assetPrice)
@@ -116,4 +118,13 @@ export function updateManualBalancePrices(data: ManualBalanceWithValue[], prices
       value: assetPrice.value?.gt(0) ? item.amount.times(assetPrice.value) : item.value,
     };
   });
+}
+
+/** Each connection's balances and accounts valued at the given prices. */
+export function updateBankBalancesPrices(connections: readonly BankConnectionBalances[], prices: AssetPrices): BankConnectionBalances[] {
+  return connections.map(connection => ({
+    ...connection,
+    accounts: updateAssetValuePrices(connection.accounts, prices),
+    balances: updateExchangeBalancesPrices(connection.balances, prices),
+  }));
 }

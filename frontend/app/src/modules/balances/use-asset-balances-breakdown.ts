@@ -4,6 +4,7 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
 import { assetBreakdown, type BreakdownFilters, type BreakdownPorts } from '@/modules/balances/aggregation/core/asset-breakdown';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { bankLocationBalances } from '@/modules/banks/bank-balances';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 interface UseAssetBalancesBreakdownReturn {
@@ -12,7 +13,7 @@ interface UseAssetBalancesBreakdownReturn {
 }
 
 export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
-  const { balances, exchangeBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
+  const { balances, bankBalances, exchangeBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { getEvmChainName } = useSupportedChains();
 
@@ -25,7 +26,7 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
     const inputs = {
       accounts: get(accounts),
       balances: get(balances),
-      exchanges: get(exchangeBalances),
+      exchanges: { ...get(exchangeBalances), ...bankLocationBalances(get(bankBalances)) },
       manual: liabilities ? get(manualLiabilities) : get(manualBalances),
     };
     return assetBreakdown(asset, inputs, liabilities, filters, ports);

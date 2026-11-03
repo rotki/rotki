@@ -3,9 +3,9 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it } from 'vitest';
-import { ref, type Ref } from 'vue';
+import { reactive, ref, type Ref } from 'vue';
 import FinTsConnectionFields from '@/modules/banks/components/FinTsConnectionFields.vue';
-import { type FintsBank, fintsBanks, searchFintsBanks } from '@/modules/banks/fints-bank-directory';
+import { type FintsBank, fintsBanks } from '@/modules/banks/fints-bank-directory';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import '@test/i18n';
 
@@ -45,7 +45,7 @@ describe('finTSConnectionFields', () => {
   let wrapper: VueWrapper<InstanceType<typeof FinTsConnectionFields>>;
 
   function createWrapper(bank?: FintsBank, initialName = '', manual = false): VueWrapper<InstanceType<typeof FinTsConnectionFields>> {
-    credentials = { bank_code: '', endpoint: '', pin: '', username: '' };
+    credentials = reactive<Record<string, string>>({ bank_code: '', endpoint: '', pin: '', username: '' });
     name = ref<string>(initialName);
     return mount(FinTsConnectionFields, {
       global: { plugins: [pinia] },
@@ -56,6 +56,7 @@ describe('finTSConnectionFields', () => {
         'manifest': manifest,
         'manual': manual,
         'name': initialName,
+        'onUpdate:credentials': (value: Record<string, string>) => Object.assign(credentials, value),
         'onUpdate:name': (value: string) => set(name, value),
       },
     });
@@ -74,7 +75,7 @@ describe('finTSConnectionFields', () => {
   });
 
   it('should require a BLZ choice for an institution with several bank codes', () => {
-    const comdirect = searchFintsBanks('comdirect')[0];
+    const comdirect = fintsBanks.find(bank => bank.name.toLowerCase().includes('comdirect'));
     assert(comdirect);
     wrapper = createWrapper(comdirect);
     expect(credentials.bank_code).toBe('');
@@ -95,11 +96,32 @@ describe('finTSConnectionFields', () => {
   });
 
   it('should choose a unique suggested name without replacing an existing connection', () => {
-    const bbbank = searchFintsBanks('66090800')[0];
+    const bbbank = fintsBanks.find(bank => bank.bankCodes.includes('66090800'));
     assert(bbbank);
     useBankConnectionsStore().setConnections([connection('BBBank eG'), connection('BBBank eG (2)')]);
     wrapper = createWrapper(bbbank);
     expect(get(name)).toBe('BBBank eG (3)');
+  });
+
+  it('should number a suggested name another bank\'s connection already holds, since names are unique across banks', () => {
+    const bbbank = fintsBanks.find(bank => bank.bankCodes.includes('66090800'));
+    assert(bbbank);
+    useBankConnectionsStore().setConnections([{ ...connection('BBBank eG'), connector: 'qonto', displayName: 'Qonto' }]);
+    wrapper = createWrapper(bbbank);
+    expect(get(name)).toBe('BBBank eG (2)');
+  });
+
+  it('should clear the suggested name on switching to the manual option, but keep one the user typed', async () => {
+    wrapper = createWrapper(fintsBanks[0]);
+    expect(get(name)).toBe(fintsBanks[0].name);
+    await wrapper.setProps({ name: get(name) });
+
+    await wrapper.setProps({ bank: undefined, manual: true });
+    expect(get(name)).toBe('');
+
+    wrapper = createWrapper(fintsBanks[0], 'Household account');
+    await wrapper.setProps({ bank: undefined, manual: true });
+    expect(get(name)).toBe('Household account');
   });
 
   it('should expose the advanced fields for the generic FinTS fallback', () => {

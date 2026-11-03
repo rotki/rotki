@@ -35,8 +35,9 @@ function secret(slot: string): BankSecretField | undefined {
   return manifest.secrets.find(field => field.slot === slot);
 }
 
+/** `base`, numbered when a connection already has it: names are unique across every bank, not per connector. */
 function uniqueName(base: string, existing: readonly BankConnection[]): string {
-  const names = new Set(existing.filter(connection => connection.connector === 'fints').map(connection => connection.name));
+  const names = new Set(existing.map(connection => connection.name));
   if (!names.has(base))
     return base;
   let suffix = 2;
@@ -45,13 +46,30 @@ function uniqueName(base: string, existing: readonly BankConnection[]): string {
   return `${base} (${suffix})`;
 }
 
+/**
+ * Fills in what the directory knows about the picked bank, and names the connection after it
+ * unless the user named it.
+ *
+ * @remarks
+ * Without a bank, as for the manual option, a name that is still the last suggestion is cleared,
+ * so the manual connection is not saved under the bank picked before it.
+ */
 function selectBank(bank: FintsBank | undefined): void {
-  if (!bank)
+  const suggested = !get(nameCustomized) || get(name) === get(suggestedName);
+  if (!bank) {
+    if (suggested && get(suggestedName) !== undefined) {
+      set(name, '');
+      set(suggestedName, undefined);
+    }
     return;
+  }
 
-  get(credentials).bank_code = bank.bankCodes.length === 1 ? bank.bankCodes[0] ?? '' : '';
-  get(credentials).endpoint = bank.endpoint;
-  if (!get(nameCustomized) || get(name) === get(suggestedName)) {
+  set(credentials, {
+    ...get(credentials),
+    bank_code: bank.bankCodes.length === 1 ? bank.bankCodes[0] ?? '' : '',
+    endpoint: bank.endpoint,
+  });
+  if (suggested) {
     const nextName = uniqueName(bank.name, get(connections));
     set(suggestedName, nextName);
     set(name, nextName);

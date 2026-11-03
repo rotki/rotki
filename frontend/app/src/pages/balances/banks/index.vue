@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
-import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
-import { BANK_AMOUNT_FORMAT } from '@/modules/banks/bank-balances';
+import { bankAmountFormat } from '@/modules/banks/bank-balances';
 import BankAccountsTable from '@/modules/banks/components/BankAccountsTable.vue';
 import BankBalanceCards from '@/modules/banks/components/BankBalanceCards.vue';
 import BankBalancesEmpty from '@/modules/banks/components/BankBalancesEmpty.vue';
@@ -78,6 +77,7 @@ onBeforeMount(() => {
         :banks="banks"
         :selected="selectedBank?.name"
         :loading="loading"
+        :is-bank-loading="isBankLoading"
         @refresh="startPromise(refreshInView())"
         @refresh-all="startPromise(refreshAll())"
         @refresh-bank="startPromise(refreshBank($event))"
@@ -155,10 +155,10 @@ onBeforeMount(() => {
         </template>
 
         <BankAccountsTable
-          v-if="selectedBank && (selectedBank.accounts.length > 0 || loading)"
+          v-if="selectedBank && (selectedBank.accounts.length > 0 || isBankLoading(selectedBank.name))"
           :accounts="selectedBank.accounts"
           :search="search"
-          :loading="loading && selectedBank.accounts.length === 0"
+          :loading="isBankLoading(selectedBank.name) && selectedBank.accounts.length === 0"
         />
         <AssetBalances
           v-else-if="!selectedBank && (balances.length > 0 || loading)"
@@ -167,15 +167,8 @@ onBeforeMount(() => {
           :breakdown="{ hide: true }"
           :loading="loading && balances.length === 0"
           :balances="balances"
-          sticky-header
-        >
-          <template #amount="{ row }">
-            <ValueDisplay
-              :value="row.amount"
-              :format="BANK_AMOUNT_FORMAT"
-            />
-          </template>
-        </AssetBalances>
+          :display="{ amountFormat: bankAmountFormat, stickyHeader: true }"
+        />
         <TableEmptyNotice
           v-else
           icon="lu-landmark"

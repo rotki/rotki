@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { bankBalancesActivity } from '@/modules/banks/banks.activity';
-import { EXCHANGE_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { BANK_BALANCES_LANE } from '@/modules/task-center/core/orchestrator/spec';
 
 describe('bank activity ids', () => {
-  it('should give the bank balances the bare kind, on the exchange lane', () => {
+  it('should give the bank balances the bare kind, on a lane of their own apart from the exchanges', () => {
     expect(bankBalancesActivity.id()).toBe('bank-balances');
-    expect(bankBalancesActivity.laneOf?.()).toBe(EXCHANGE_LANE);
+    expect(bankBalancesActivity.laneOf?.()).toBe(BANK_BALANCES_LANE);
   });
 });

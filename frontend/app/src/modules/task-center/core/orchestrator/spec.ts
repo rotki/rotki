@@ -11,6 +11,7 @@ import type { TaskError } from '@/modules/core/tasks/task-result';
 type StaticLane =
   | typeof DEFAULT_LANE
   | typeof BALANCES_LANE
+  | typeof BANK_BALANCES_LANE
   | typeof EXCHANGE_LANE
   | typeof SESSION_LANE
   | typeof UMBRELLA_LANE
@@ -57,6 +58,12 @@ export const BALANCES_LANE = 'balances';
 
 /** Exchange balance + savings queries run here; capped at 2, a pool separate from {@link BALANCES_LANE}. */
 export const EXCHANGE_LANE = 'exchange';
+
+/**
+ * Bank balance queries run here; capped at 2, a pool of their own. A bank can hold its query open
+ * on a slow round trip or a TAN, which must not keep an exchange from refreshing.
+ */
+export const BANK_BALANCES_LANE = 'bank-balances';
 
 /**
  * Price refreshes run here, capped at 1: each one ends by writing the prices it fetched into the

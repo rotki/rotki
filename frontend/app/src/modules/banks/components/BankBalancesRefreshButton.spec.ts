@@ -24,10 +24,17 @@ const stubs = {
 const dkb: BankConnectionIdentity = { connector: 'fints', name: 'DKB' };
 const ing: BankConnectionIdentity = { connector: 'fints', name: 'ING' };
 
-function createWrapper(props: { banks?: BankConnectionIdentity[]; selected?: string; loading?: boolean } = {}): VueWrapper<InstanceType<typeof BankBalancesRefreshButton>> {
+interface WrapperProps {
+  banks?: BankConnectionIdentity[];
+  selected?: string;
+  loading?: boolean;
+  isBankLoading?: (name: string) => boolean;
+}
+
+function createWrapper(props: WrapperProps = {}): VueWrapper<InstanceType<typeof BankBalancesRefreshButton>> {
   return mount(BankBalancesRefreshButton, {
     global: { stubs },
-    props: { banks: [dkb, ing], ...props },
+    props: { banks: [dkb, ing], isBankLoading: (): boolean => props.loading ?? false, ...props },
   });
 }
 
@@ -78,5 +85,20 @@ describe('modules/banks/components/BankBalancesRefreshButton', () => {
     expect(wrapper.find('[data-testid=refresh-bank-balances]').attributes('data-loading')).toBe('true');
     expect(wrapper.find('[data-testid=refresh-bank-menu-all]').attributes('disabled')).toBeDefined();
     expect(wrapper.findAll('[data-testid=refresh-bank-menu-item]').every(item => item.attributes('disabled') !== undefined)).toBe(true);
+  });
+
+  it('should keep the other banks and every bank refreshable while one bank refreshes on its own', async () => {
+    const wrapper = createWrapper({ isBankLoading: name => name === 'DKB' });
+    await openMenu(wrapper);
+    const items = wrapper.findAll('[data-testid=refresh-bank-menu-item]');
+
+    expect(wrapper.find('[data-testid=refresh-bank-balances]').attributes('data-loading')).toBe('false');
+    expect(wrapper.find('[data-testid=refresh-bank-menu-all]').attributes('disabled')).toBeUndefined();
+    expect(items.map(item => [item.attributes('data-bank'), item.attributes('disabled') !== undefined])).toEqual([['DKB', true], ['ING', false]]);
+  });
+
+  it('should show the main button busy while the selected bank refreshes', () => {
+    const wrapper = createWrapper({ isBankLoading: name => name === 'DKB', selected: 'DKB' });
+    expect(wrapper.find('[data-testid=refresh-bank-balances]').attributes('data-loading')).toBe('true');
   });
 });

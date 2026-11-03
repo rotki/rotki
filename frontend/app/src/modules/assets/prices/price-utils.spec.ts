@@ -5,7 +5,7 @@ import {
   createTestPriceInfo,
 } from '@test/utils/create-data';
 import { describe, expect, it } from 'vitest';
-import { updateBalancesPrices, updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/modules/assets/prices/price-utils';
+import { updateBalancesPrices, updateBankBalancesPrices, updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/modules/assets/prices/price-utils';
 
 describe('utils/prices', () => {
   /** ETH carries a different `usdPrice`, so every ETH value below shows `price.value` is the one used. */
@@ -124,6 +124,26 @@ describe('utils/prices', () => {
 
       const result = updateExchangeBalancesPrices(balances, mockPrices);
       expect(result.UNKNOWN).toEqual(balances.UNKNOWN);
+    });
+  });
+
+  describe('updateBankBalancesPrices', () => {
+    it('should revalue both the balances and the accounts of each connection', () => {
+      const [connection] = updateBankBalancesPrices([{
+        accounts: [{ amount: bigNumberify(10), asset: 'ETH', iban: null, identifier: 'a', name: 'Main', value: bigNumberify(1) }],
+        balances: { ETH: createTestBalance(10, 1) },
+        connector: 'fints',
+        name: 'DKB',
+      }], mockPrices);
+
+      expect(connection.balances.ETH.value).toEqual(bigNumberify(10 * ETH_PRICE));
+      expect(connection.accounts[0].value).toEqual(bigNumberify(10 * ETH_PRICE));
+    });
+
+    it('should keep the value of an account whose asset has no price', () => {
+      const account = { amount: bigNumberify(3), asset: 'UNKNOWN', iban: null, identifier: 'a', name: 'Main', value: bigNumberify(7) };
+      const [connection] = updateBankBalancesPrices([{ accounts: [account], balances: {}, connector: 'fints', name: 'DKB' }], mockPrices);
+      expect(connection.accounts[0]).toBe(account);
     });
   });
 

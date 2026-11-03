@@ -116,8 +116,7 @@ const binance = computed<'binance' | 'binanceus' | undefined>(() => (isBinance(e
           :breakdown="{ hide: true }"
           :loading="isExchangeLoading && balances.length === 0"
           :balances="balances"
-          :show-per-protocol="!exchange"
-          sticky-header
+          :display="{ showPerProtocol: !exchange, stickyHeader: true }"
         >
           <template #empty>
             <TableEmptyNotice

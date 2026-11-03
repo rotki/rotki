@@ -1,6 +1,7 @@
 import type { AssetPriceInfo } from '@/modules/assets/prices/price-types';
 import type { AssetBalanceEntries } from '@/modules/balances/aggregation/core/aggregation-types';
 import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
+import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type BigNumber, type ExclusionSource, Zero } from '@rotki/common';
 import { storeToRefs } from 'pinia';
 import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
@@ -8,14 +9,13 @@ import { groupAddresses } from '@/modules/accounts/core/account-groups';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { heldAssets } from '@/modules/balances/aggregation/core/held-assets';
 import { type BalanceInputs, locationSources } from '@/modules/balances/aggregation/core/location-sources';
-import { blockchainValue, totalsByChainLocation, totalsByLocation } from '@/modules/balances/aggregation/core/location-totals';
+import { blockchainValue, locationMapTotals, totalsByChainLocation, totalsByLocation } from '@/modules/balances/aggregation/core/location-totals';
 import { fromBlockchain, fromExchanges, fromManual } from '@/modules/balances/aggregation/core/sources';
 import { summarizeBalances } from '@/modules/balances/aggregation/core/summarize';
 import { useAggregationContext } from '@/modules/balances/aggregation/use-aggregation-context';
-import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
+import { bankLocationBalances } from '@/modules/banks/bank-balances';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
@@ -38,12 +38,10 @@ interface UseAggregatedBalancesReturn {
 const EXCLUDABLE_SOURCES = ['blockchain', 'exchange', 'manual'] as const satisfies readonly ExclusionSource[];
 
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
-  const { exchanges } = useExchangeData();
-  const { balances: blockchainBalances, exchangeBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
+  const { balances: blockchainBalances, bankBalances, exchangeBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { manualBalanceByLocation } = useManualBalanceData();
   const { tradeLocations } = useLocations();
-  const { banks: bankLocations } = storeToRefs(useLocationStore());
   const { matchChain } = useSupportedChains();
 
   const context = useAggregationContext();
@@ -51,7 +49,16 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
 
   const blockchainAssets = computed<AssetBalanceEntries>(() => fromBlockchain(get(blockchainBalances)));
   const blockchainLiabilities = computed<AssetBalanceEntries>(() => fromBlockchain(get(blockchainBalances), { key: 'liabilities' }));
-  const exchangeAssets = computed<AssetBalanceEntries>(() => fromExchanges(get(exchangeBalances)));
+  /**
+   * Every non-chain location's balances: each exchange, and every bank connection as `banks`.
+   *
+   * @remarks
+   * Banks are kept apart from the exchanges in the store, and join them here only as one more
+   * location. They count with the `exchange` source, so excluding exchanges leaves them out too,
+   * as the premium `balances` contract expects until a bank exclusion source exists.
+   */
+  const locationBalances = computed<ExchangeData>(() => ({ ...get(exchangeBalances), ...bankLocationBalances(get(bankBalances)) }));
+  const exchangeAssets = computed<AssetBalanceEntries>(() => fromExchanges(get(locationBalances)));
   const manualAssets = computed<AssetBalanceEntries>(() => fromManual(get(manualBalances)));
   const manualLiabilityEntries = computed<AssetBalanceEntries>(() => fromManual(get(manualLiabilities)));
 
@@ -113,18 +120,9 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     return summarizeBalances([source], context);
   });
 
-  /**
-   * One exchange's balances, or every exchange's together.
-   *
-   * @remarks
-   * Bank balances share the exchange balance map, so "every exchange" leaves the bank locations out;
-   * otherwise a bank account would show up, and count, as an exchange.
-   */
+  /** One exchange's balances, or every exchange's together. */
   function getExchangeBalances(exchange?: string): AssetBalanceWithPriceAndChains[] {
-    const balances = exchange
-      ? get(exchangeBalances)
-      : Object.fromEntries(Object.entries(get(exchangeBalances)).filter(([location]) => !get(bankLocations).includes(location)));
-    return summarizeBalances([fromExchanges(balances, exchange)], context);
+    return summarizeBalances([fromExchanges(get(exchangeBalances), exchange)], context);
   }
 
   const useLocationBreakdown = (location: MaybeRefOrGetter<string>): ComputedRef<AssetBalanceWithPriceAndChains[]> =>
@@ -132,7 +130,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       const selected = toValue(location);
       const inputs: BalanceInputs = {
         blockchain: get(blockchainBalances),
-        exchanges: get(exchangeBalances),
+        exchanges: get(locationBalances),
         manual: get(manualBalances),
       };
       return summarizeBalances(locationSources(selected, inputs, matchChain(selected)), context);
@@ -154,7 +152,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
 
   const balancesByLocation = computed<Record<string, BigNumber>>(() => totalsByLocation(
     blockchainValue(get(blockchainBalances), isAssetIgnored),
-    get(exchanges),
+    locationMapTotals(get(locationBalances), isAssetIgnored),
     get(manualBalanceByLocation),
   ));
 

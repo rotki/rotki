@@ -1,7 +1,8 @@
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
 import type { LocationBalance } from '@/modules/balances/types/balances';
+import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import { type BigNumber, Zero } from '@rotki/common';
-import { assetSum } from '@/modules/core/common/data/calculation';
+import { assetSum, exchangeAssetSum } from '@/modules/core/common/data/calculation';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
 
 /**
@@ -19,6 +20,14 @@ export function blockchainValue(balances: Balances, isAssetIgnored: (identifier:
     }
   }
   return total;
+}
+
+/** Each location's total in a location map such as the exchanges', ignored assets left out. */
+export function locationMapTotals(
+  balances: ExchangeData,
+  isAssetIgnored: (identifier: string) => boolean,
+): { location: string; total: BigNumber }[] {
+  return Object.entries(balances).map(([location, assets]) => ({ location, total: exchangeAssetSum(assets, isAssetIgnored) }));
 }
 
 function addTo(totals: Record<string, BigNumber>, location: string, value: BigNumber): void {

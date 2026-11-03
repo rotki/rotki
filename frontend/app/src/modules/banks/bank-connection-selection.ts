@@ -1,5 +1,5 @@
 import type { BankManifest } from '@/modules/banks/types';
-import { type FintsBank, toFintsBankOptions } from '@/modules/banks/fints-bank-directory';
+import { type FintsBank, normalizeSearch, toFintsBankOptions } from '@/modules/banks/fints-bank-directory';
 
 export interface BankSelectionOption {
   bank?: FintsBank;
@@ -8,13 +8,6 @@ export interface BankSelectionOption {
   connector: string;
   name: string;
   searchText: string;
-}
-
-function normalizeSearch(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLocaleLowerCase();
 }
 
 function primaryMatchRank(value: string, term: string): number | undefined {
@@ -37,9 +30,7 @@ interface SearchFields {
 }
 
 function termMatchRank({ bankCodes, city, fallback, names }: SearchFields, term: string): number | undefined {
-  const nameRanks = names
-    .map(name => primaryMatchRank(name, term))
-    .filter((rank): rank is number => rank !== undefined);
+  const nameRanks = names.flatMap(name => primaryMatchRank(name, term) ?? []);
   if (nameRanks.length > 0)
     return Math.min(...nameRanks);
   if (bankCodes.includes(term))
@@ -78,11 +69,10 @@ export function searchBankSelectionOptions(
   if (normalizeSearch(query).trim() === '')
     return [...options];
   return options
-    .map((option): { option: BankSelectionOption; rank: number } | undefined => {
+    .flatMap((option) => {
       const rank = optionMatchRank(option, query);
-      return rank === undefined ? undefined : { option, rank };
+      return rank === undefined ? [] : [{ option, rank }];
     })
-    .filter((entry): entry is { option: BankSelectionOption; rank: number } => entry !== undefined)
     .sort((left, right) => left.rank - right.rank
       || left.option.name.localeCompare(right.option.name, 'de')
       || (left.option.bank?.city ?? '').localeCompare(right.option.bank?.city ?? '', 'de'))

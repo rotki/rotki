@@ -61,8 +61,7 @@ const AssetBalancesStub = defineComponent({
     breakdown: { default: undefined, type: Object },
     loading: { default: false, type: Boolean },
     search: { default: '', type: String },
-    showPerProtocol: { default: false, type: Boolean },
-    stickyHeader: { default: false, type: Boolean },
+    display: { default: undefined, type: Object },
   },
   template: '<div data-testid="asset-balances" />',
 });
@@ -163,7 +162,7 @@ describe('pages/balances/exchange/[[exchange]]', () => {
     it('should list every exchange balances with their locations on the all view', () => {
       wrapper = mountPage();
 
-      expect(wrapper.findComponent(AssetBalancesStub).props('showPerProtocol')).toBe(true);
+      expect(wrapper.findComponent(AssetBalancesStub).props('display')).toMatchObject({ showPerProtocol: true });
     });
 
     it('should show the exchange in the route without a location column', () => {
@@ -179,7 +178,7 @@ describe('pages/balances/exchange/[[exchange]]', () => {
       const table = wrapper.findComponent(AssetBalancesStub);
       expect(wrapper.findComponent(CardsStub).props('selected')).toBe('kraken');
       expect(table.props('balances')).toHaveLength(1);
-      expect(table.props('showPerProtocol')).toBe(false);
+      expect(table.props('display')).toMatchObject({ showPerProtocol: false });
     });
 
     it('should wire the refresh button to the page, every exchange and a single one', () => {

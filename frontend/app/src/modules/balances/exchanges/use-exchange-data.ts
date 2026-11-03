@@ -5,7 +5,6 @@ import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-con
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { exchangeAssetSum } from '@/modules/core/common/data/calculation';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseExchangeDataReturn {
@@ -19,13 +18,10 @@ export function useExchangeData(): UseExchangeDataReturn {
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const nonSyncingExchanges = useSetting('nonSyncingExchanges');
   const { isAssetIgnored } = useAssetsStore();
-  const { banks } = storeToRefs(useLocationStore());
 
-  /** Bank balances share the map but are not exchanges; they get their own card and page. */
   const exchanges = computed<ExchangeInfo[]>(() => {
     const balances = get(exchangeBalances);
     return Object.keys(balances)
-      .filter(location => !get(banks).includes(location))
       .map(value => ({
         balances: balances[value],
         location: value,
