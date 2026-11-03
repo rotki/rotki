@@ -84,6 +84,39 @@ export class AccountingSettingsPage {
     expect(response.request().postDataJSON()).toMatchObject({ custom_rule_handling: expected });
   }
 
+  private get ruleDialog(): Locator {
+    return this.page.locator('[data-testid=bottom-dialog]');
+  }
+
+  /** The event type picker inside the rule dialog, which renders the type and subtype errors. */
+  get ruleActionPicker(): Locator {
+    return this.ruleDialog.locator('[data-testid=event-action-picker]');
+  }
+
+  async openAddRuleDialog(): Promise<void> {
+    await this.page.locator('[data-testid=accounting-rule-add]').click();
+    await this.ruleDialog.waitFor({ state: 'visible' });
+  }
+
+  /** Presses save; a rule that fails validation leaves the dialog open with its errors. */
+  async saveRule(): Promise<void> {
+    await this.ruleDialog.locator('[data-testid=confirm]').click();
+  }
+
+  /** Picks whichever action the picker's menu renders first, for a test that only needs one picked. */
+  async pickFirstRuleAction(): Promise<void> {
+    await this.ruleActionPicker.locator('[data-id=activator]').click();
+    const menu = this.page.locator('[role=listbox]').last();
+    await menu.waitFor({ state: 'visible' });
+    await menu.locator('[data-testid=event-action-picker-row]').first().click();
+    await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
+  }
+
+  async cancelRuleDialog(): Promise<void> {
+    await this.ruleDialog.locator('[data-testid=cancel]').click();
+    await this.ruleDialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+  }
+
   async visit(): Promise<void> {
     await this.page.locator('[data-testid=user-menu-button]').click();
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });

@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
 import { apiAddAccountingRules, type SeedAccountingRule } from '../../helpers/accounting';
 import { AccountingSettingsPage } from '../../pages/accounting-settings-page';
@@ -62,6 +63,18 @@ test.describe.serial('settings::accounting-rules', () => {
     await filter.expectNoPill('eventTypes');
     // The deposit rules are back, which the previous test's withdrawal-only table would not show.
     await page.expectEventTypePresent('Deposit');
+  });
+
+  test('shows the missing event type on the type picker of a new rule, and clears it once an action is picked', async () => {
+    await page.openAddRuleDialog();
+    await page.saveRule();
+
+    await expect(page.ruleActionPicker).toContainText('The event type field cannot be empty.');
+
+    await page.pickFirstRuleAction();
+    await expect(page.ruleActionPicker).not.toContainText('cannot be empty');
+
+    await page.cancelRuleDialog();
   });
 
   // The tabs are one request parameter, and no seeded or default rule is written for one event.
