@@ -38,6 +38,16 @@ vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({
   useUnmatchedAssetMovements: (): Record<string, unknown> => ({ ignoredMovements, unmatchedMovements }),
 }));
 
+const unmatchableExplanation = ref<string | undefined>('The destination is not tracked.');
+const explanationSubjects: unknown[] = [];
+
+vi.mock('@/modules/history/events/use-untracked-movement-destination', () => ({
+  useMovementUnmatchableExplanation: (subject: unknown): Record<string, unknown> => {
+    explanationSubjects.push(subject);
+    return { unmatchableExplanation };
+  },
+}));
+
 const ContentStub = defineComponent({
   emits: ['pin', 'select', 'show-in-events'],
   name: 'MatchAssetMovementsContent',
@@ -53,6 +63,7 @@ const PotentialStub = defineComponent({
   emits: ['close', 'matched', 'show-in-events', 'show-unmatched-in-events'],
   name: 'PotentialMatchesContent',
   props: {
+    emptyExplanation: { default: undefined, type: String },
     highlightedIdentifier: { default: undefined, type: Number },
     isPinned: { default: false, type: Boolean },
     movement: { default: undefined, type: Object },
@@ -167,6 +178,13 @@ describe('modules/history/events/MatchAssetMovementsPinned', () => {
     expect(panel.unpin).toHaveBeenCalledTimes(1);
   });
 
+  it('should explain an unmatchable search from the selected movement', () => {
+    explanationSubjects.length = 0;
+    mountPanel();
+
+    expect(explanationSubjects).toStrictEqual([panel.subject]);
+  });
+
   it('should keep the sheet closed while no movement is selected', () => {
     const view = mountPanel();
 
@@ -184,6 +202,7 @@ describe('modules/history/events/MatchAssetMovementsPinned', () => {
 
     const potential = view.findComponent(PotentialStub);
     expect(toRaw(potential.props('movement'))).toBe(movement);
+    expect(potential.props('emptyExplanation')).toBe('The destination is not tracked.');
     expect(potential.props('highlightedIdentifier')).toBe(99);
     expect(potential.props('isPinned')).toBe(true);
   });
