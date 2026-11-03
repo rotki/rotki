@@ -229,6 +229,18 @@ function plainSwapStateFromEvents(events: SwapEvent[]): SwapFormState {
   };
 }
 
+/**
+ * Whether a swap group holds both sides of the swap.
+ *
+ * @remarks
+ * The backend can hand over half a swap: its grouping walks events in time order, so another
+ * group's event at the same timestamp can split one swap into a spend-only and a receive-only
+ * entry. Such a half cannot be seeded or saved as a swap.
+ */
+export function isCompleteSwapGroup(events: SwapGroupEvent[]): boolean {
+  return events.some(item => item.eventSubtype === 'spend') && events.some(item => item.eventSubtype === 'receive');
+}
+
 /** Seeds the form from the events of an existing swap group, i.e. edit mode. */
 export function swapStateFromEvents(events: SwapGroupEvent[]): SwapFormState {
   const evm = events.filter(isEvmSwapEvent);
