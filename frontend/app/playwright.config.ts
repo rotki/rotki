@@ -184,6 +184,13 @@ function resolveChromium(): string | undefined {
 const systemChromium = resolveChromium();
 
 /**
+ * Playwright launches Chromium with `--no-sandbox` unless told otherwise, so a page under test that
+ * exploits the renderer runs as the developer's user. Local runs keep the sandbox; CI turns it off,
+ * since the runner image restricts the unprivileged user namespaces it depends on.
+ */
+const chromiumSandbox = !process.env.CI;
+
+/**
  * Interactive runs (`--ui`, `--headed`, `--debug`) keep the Vite dev server so HMR and
  * un-minified sources are available while poking at a failing spec. Every other local
  * run builds once and serves the output with `vite preview`: the dev server holds the
@@ -276,6 +283,7 @@ export default defineConfig({
         viewport: { width: 1280, height: 720 },
         launchOptions: {
           executablePath: systemChromium,
+          chromiumSandbox,
           args: [
             '--disable-gpu',
             '--disable-dev-shm-usage',
