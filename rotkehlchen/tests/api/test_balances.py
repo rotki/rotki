@@ -16,6 +16,7 @@ from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.concurrency import result_of, spawn
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_AVAX,
@@ -83,7 +84,9 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.balances import BlockchainBalancesUpdate
+    from rotkehlchen.chain.evm.tokens import DetectedTokenBalancesType
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
     from rotkehlchen.types import BTCAddress, ChecksumEvmAddress
@@ -1013,6 +1016,106 @@ def test_blockchain_balances_cache_skips_disabled_entries(
             cached_balances = db.get_blockchain_balances_cache(cursor=cursor)
         assert set(cached_balances.eth) == {active_address, disabled_address}
         assert set(cached_balances.optimism) == {optimism_address}
+    finally:
+        CachedSettings().update_entry('disabled_chain_queries', {})
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('disable_during_detection', [False, True])
+def test_token_detection_finishing_after_chain_disabled(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        disable_during_detection: bool,
+) -> None:
+    """Token detection completing after its chain got disabled must not recreate the cache.
+
+    Otherwise the detected balances outlive the timestamp the settings cleanup deleted, and
+    once the chain is enabled again a cache-only read reports them with a zero value.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    tokens = rotki.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM).tokens
+    dai_balance = BalanceSheet()
+    dai_balance.assets[A_DAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(5))
+    with database.user_write() as write_cursor:
+        database.set_blockchain_balances_cache(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            balances={(address := ethereum_accounts[0]): dai_balance},
+        )
+        database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+            value=Timestamp(1),
+            blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+        )
+
+    started, release = threading.Event(), threading.Event()
+
+    def detect_tokens(*args: Any, **kwargs: Any) -> tuple[
+            dict[ChecksumEvmAddress, list[Asset]],
+            set[ChecksumEvmAddress],
+            DetectedTokenBalancesType,
+    ]:
+        started.set()
+        assert release.wait(10)
+        return {address: [A_DAI]}, set(), {address: {A_DAI: FVal(5)}}
+
+    try:
+        with (
+            patch.object(GlobalDBHandler, 'get_token_detection_data', return_value=([], [])),
+            patch.object(tokens, '_detect_tokens', side_effect=detect_tokens),
+            patch.object(tokens, 'maybe_detect_proxies_tokens', return_value=None),
+        ):
+            detection_task = spawn(tokens._query_new_tokens, addresses=[address])
+            try:
+                assert started.wait(10)
+                assert_proper_response(requests.put(
+                    api_url_for(rotkehlchen_api_server, 'settingsresource'),
+                    json={'settings': {'disabled_chain_queries': (
+                        {SupportedBlockchain.ETHEREUM.serialize(): []}
+                        if disable_during_detection else {}
+                    )}},
+                ))
+            finally:
+                release.set()
+                detection_task.join(10)
+
+            assert detection_task.dead
+            result_of(detection_task)
+
+        with database.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM blockchain_balances_cache WHERE blockchain=?',
+                (SupportedBlockchain.ETHEREUM.serialize(),),
+            ).fetchone()[0] == (0 if disable_during_detection else 1)
+            assert database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+                blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+            ) == (None if disable_during_detection else Timestamp(1))
+
+        assert_proper_response(requests.put(
+            api_url_for(rotkehlchen_api_server, 'settingsresource'),
+            json={'settings': {'disabled_chain_queries': {}}},
+        ))
+        with patch.object(
+            rotki.chains_aggregator,
+            'get_price_for_cached_balances',
+            return_value=Price(FVal(2)),
+        ):
+            result = assert_proper_sync_response_with_result(requests.get(
+                api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+                params={'only_cache': True},
+            ))
+
+        if disable_during_detection:
+            assert SupportedBlockchain.ETHEREUM.serialize() not in result['per_account']
+        else:
+            assert result['per_account']['eth'][address]['assets'][A_DAI.identifier][DEFAULT_BALANCE_LABEL] == {  # noqa: E501
+                'amount': '5',
+                'value': '10',
+            }
     finally:
         CachedSettings().update_entry('disabled_chain_queries', {})
 

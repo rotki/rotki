@@ -1582,6 +1582,23 @@ class DBHandler:
             )
             self.delete_blockchain_balances_cache(write_cursor=write_cursor, blockchain=chain)
 
+    def delete_balances_cache_if_chain_disabled(
+            self,
+            write_cursor: DBCursor,
+            blockchain: SupportedBlockchain,
+    ) -> None:
+        """Undo a balances cache write for a chain that is now fully disabled.
+
+        Settings can disable a chain while a remote balance or token detection query is in
+        flight. The persisted settings are read in the writer's transaction so that a late write
+        cannot recreate a fully disabled chain's cache after the settings cleanup has committed.
+        """
+        if (disabled_addresses := self.get_settings(write_cursor).disabled_chain_queries.get(blockchain)) is not None:  # noqa: E501
+            self.delete_balances_query_ts_for_disabled_chains(
+                write_cursor=write_cursor,
+                disabled_chain_queries={blockchain: disabled_addresses},
+            )
+
     def get_historical_balance_cache(
             self,
             cursor: DBCursor,
