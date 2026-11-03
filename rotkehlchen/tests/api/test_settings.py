@@ -8,8 +8,10 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.constants import HOUR_IN_SECONDS
+from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import (
     DEFAULT_CONNECT_TIMEOUT,
@@ -955,7 +957,7 @@ def test_disabling_chain_queries_removes_balances_query_ts(
         write_cursor.executemany(
             'INSERT INTO blockchain_balances_cache(blockchain, address, asset, label, category, amount) '  # noqa: E501
             'VALUES(?, ?, ?, ?, ?, ?)',
-            [(chain.serialize(), addresses[0], chain.get_native_token_id(), '', 'asset', '1') for chain in keys],  # noqa: E501
+            [(chain.serialize(), addresses[0], chain.get_native_token_id(), '', BalanceType.ASSET.serialize_for_db(), '1') for chain in keys],  # noqa: E501
         )
 
     assert_proper_response(requests.put(
@@ -984,3 +986,57 @@ def test_disabling_chain_queries_removes_balances_query_ts(
         assert {row[0] for row in cursor.execute(
             'SELECT DISTINCT blockchain FROM blockchain_balances_cache',
         )} == {partially_disabled.serialize(), enabled.serialize()}
+
+
+@pytest.mark.parametrize('disabled_validator_indices', [[], [0], [0, 1], [2]])
+def test_disabling_eth2_queries_preserves_enabled_validators(
+        rotkehlchen_api_server: APIServer,
+        disabled_validator_indices: list[int],
+) -> None:
+    """Validator exclusions must not clear the cache while any tracked validator is enabled."""
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    chain = SupportedBlockchain.ETHEREUM_BEACONCHAIN
+    pubkeys = [f'0x{index:096x}' for index in range(3)]
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO eth2_validators(public_key, validator_type, ownership_proportion) '
+            'VALUES(?, 0, ?)',
+            [(pubkey, '1') for pubkey in pubkeys[:2]],
+        )
+        database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+            blockchain=chain.serialize(),
+            value=1,
+        )
+        write_cursor.executemany(
+            'INSERT INTO blockchain_balances_cache(blockchain, address, asset, label, category, amount) '  # noqa: E501
+            'VALUES(?, ?, ?, ?, ?, ?)',
+            [(chain.serialize(), pubkey, A_ETH2.identifier, '', BalanceType.ASSET.serialize_for_db(), '32') for pubkey in pubkeys[:2]],  # noqa: E501
+        )
+
+    assert_proper_response(requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'disabled_chain_queries': {
+            chain.serialize(): [pubkeys[index] for index in disabled_validator_indices],
+        }}},
+    ))
+    result = assert_proper_sync_response_with_result(requests.get(
+        api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+        params={'only_cache': True},
+    ))
+    expected_pubkeys = (
+        {pubkeys[index] for index in (0, 1) if index not in disabled_validator_indices}
+        if disabled_validator_indices else set()
+    )
+    assert {
+        pubkey: balances['assets'][A_ETH2.identifier]['']['amount']
+        for pubkey, balances in result['per_account'].get(chain.serialize(), {}).items()
+    } == dict.fromkeys(expected_pubkeys, '32')
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?',
+            (DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS.get_db_key(
+                blockchain=chain.serialize(),
+            ),),
+        ).fetchone() == (('1',) if expected_pubkeys else None)

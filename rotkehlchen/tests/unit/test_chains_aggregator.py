@@ -10,7 +10,7 @@ import pytest
 import requests
 from web3.exceptions import Web3Exception
 
-from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
@@ -24,10 +24,11 @@ from rotkehlchen.chain.evm.types import (
 )
 from rotkehlchen.concurrency import TaskCancelledError, result_of, spawn
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_XDAI
 from rotkehlchen.constants.timing import EVMLIKE_ACCOUNTS_DETECTION_RETRY
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
+from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.errors.misc import NoAvailableIndexers, RecoverableRemoteError, RemoteError
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
@@ -55,6 +56,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.base.manager import BaseManager
     from rotkehlchen.chain.gnosis.manager import GnosisManager
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
+    from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.tasks.manager import TaskManager
 
 
@@ -384,7 +386,6 @@ def test_get_active_addresses(blockchain: ChainsAggregator) -> None:
     - empty frozen  => returns ()
     - subset frozen => returns the complement
     """
-    from rotkehlchen.db.settings import CachedSettings
     addr_a, addr_b = blockchain.accounts.eth
 
     # 1. Missing key => all tracked addresses returned
@@ -510,6 +511,106 @@ def test_query_balances_partial_chain_failure(blockchain: ChainsAggregator) -> N
         failing_chains.update({SupportedBlockchain.ETHEREUM, SupportedBlockchain.ETHEREUM_BEACONCHAIN})  # noqa: E501
         with pytest.raises(RemoteError):  # so does all queried chains failing
             chains_aggregator.query_balances(ignore_cache=True)
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('gnosis_accounts', [[make_evm_address(), make_evm_address()]])
+@pytest.mark.parametrize('disabled_count', [None, 0, 1, 2], ids=[
+    'enabled', 'whole-chain', 'partial-addresses', 'all-addresses',
+])
+@pytest.mark.parametrize('stale_cached_settings', [False, True])
+def test_settings_change_during_balance_refresh(
+        rotkehlchen_instance: Rotkehlchen,
+        gnosis_accounts: list[ChecksumEvmAddress],
+        disabled_count: int | None,
+        stale_cached_settings: bool,
+) -> None:
+    """Settings saved during a remote query must win over the late cache write."""
+    blockchain = rotkehlchen_instance.chains_aggregator
+    database = blockchain.database
+    chain = SupportedBlockchain.GNOSIS
+    fully_disabled = disabled_count in (0, len(gnosis_accounts))
+    disabled_chain_queries = (
+        {} if disabled_count is None
+        else {chain: frozenset(gnosis_accounts[:disabled_count])}
+    )
+    for address in gnosis_accounts:
+        blockchain.balances.gnosis[address].assets[A_XDAI][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE)  # noqa: E501
+    blockchain._update_blockchain_balances_cache(blockchain=chain)
+    with database.user_write() as write_cursor:
+        database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+            value=Timestamp(1),
+            blockchain=chain.serialize(),
+        )
+
+    refreshed_balances = {address: BalanceSheet() for address in gnosis_accounts}
+    for balances in refreshed_balances.values():
+        balances.assets[A_XDAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(2))
+    started, release = Event(), Event()
+
+    def query_gnosis_balances(
+            accounts: tuple[ChecksumEvmAddress, ...],
+    ) -> dict[ChecksumEvmAddress, BalanceSheet]:
+        assert accounts == tuple(gnosis_accounts)
+        started.set()
+        assert release.wait(10)
+        return refreshed_balances
+
+    settings_task = None
+    with (
+        patch.object(blockchain.gnosis, 'query_balances', side_effect=query_gnosis_balances) as query_mock,  # noqa: E501
+        patch('rotkehlchen.chain.aggregator.ts_now', return_value=Timestamp(2)),
+    ):
+        refresh_task = spawn(blockchain.query_balances, blockchain=chain, ignore_cache=True)
+        try:
+            assert started.wait(10)
+            settings_task = spawn(
+                rotkehlchen_instance.set_settings,
+                ModifiableDBSettings(disabled_chain_queries=disabled_chain_queries),
+            )
+            settings_task.join(10)
+            assert settings_task.dead, 'Saving settings must not wait for the remote balance query'
+            assert result_of(settings_task) == (True, '')
+            with database.conn.read_ctx() as cursor:
+                assert cursor.execute(
+                    'SELECT COUNT(*) FROM blockchain_balances_cache WHERE blockchain=?',
+                    (chain.serialize(),),
+                ).fetchone()[0] == (0 if fully_disabled else len(gnosis_accounts))
+                assert database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+                    blockchain=chain.serialize(),
+                ) == (None if fully_disabled else Timestamp(1))
+
+            if stale_cached_settings:
+                # Persistence must use the saved settings, not this disagreeing memory cache.
+                CachedSettings().update_entry(
+                    'disabled_chain_queries',
+                    {} if fully_disabled else {chain: frozenset()},
+                )
+        finally:
+            release.set()
+            refresh_task.join(10)
+            if settings_task is not None:
+                settings_task.join(10)
+            CachedSettings().update_entry('disabled_chain_queries', disabled_chain_queries)
+
+        assert refresh_task.dead
+        result_of(refresh_task)
+        query_mock.assert_called_once_with(tuple(gnosis_accounts))
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_blockchain_balances_cache(
+            cursor=cursor,
+            blockchain=chain,
+        ).gnosis == ({} if fully_disabled else refreshed_balances)
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+            blockchain=chain.serialize(),
+        ) == (None if fully_disabled else Timestamp(2))
 
 
 @pytest.mark.parametrize(('evm_result', 'core_result', 'expected'), [
