@@ -2011,6 +2011,11 @@
   },
   "bank_balances": {
     "add_bank": "Add a bank connection",
+    "cards": {
+      "all": "All banks",
+      "label": "Banks",
+      "synced": "{connector} · {time}"
+    },
     "connections": "Bank connections",
     "connections_failed": "Could not load the bank connections",
     "empty": {
@@ -2022,13 +2027,23 @@
       "description": "Your banks have not reported any balance yet. Refresh to ask them again.",
       "title": "No balances yet"
     },
-    "refresh_tooltip": "Query the current balances of every connected bank",
+    "refresh_menu": {
+      "all": "Refresh all banks",
+      "bank": "Refresh {bank}",
+      "section": "One bank",
+      "title": "More refresh options"
+    },
     "status": {
       "authenticate": "Authenticate",
       "authentication": "Waiting for a TAN, balances may be out of date",
       "expired": "The last TAN expired, sync again to get a new one",
       "failed": "Could not sync: {error}",
       "review": "Review",
+      "short": {
+        "authentication": "TAN required",
+        "expired": "TAN expired",
+        "failed": "Sync failed"
+      },
       "synced": "Synced {time}"
     }
   },

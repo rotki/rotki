@@ -155,10 +155,14 @@ class BanksService:
     def query_bank_balances(
             self,
             connector: BankConnectorType | None,
+            name: str | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
-        """Return aggregate balances and the balances of each individual bank connection."""
+        """Return aggregate balances and the balances of each individual bank connection.
+
+        Limited to one connector's connections, or to one connection when its name is given.
+        """
         manager = self.rotkehlchen.bank_manager
         if connector is not None and connector not in manager.connected_banks:
             return {
@@ -170,7 +174,18 @@ class BanksService:
         aggregate: dict[AssetWithOracles, Balance] = {}
         connections: list[dict[str, Any]] = []
         error_msg = ''
-        banks = manager.connected_banks.get(connector, []) if connector is not None else list(manager.iterate_banks())  # noqa: E501
+        if connector is None:
+            banks = list(manager.iterate_banks())
+        elif name is None:
+            banks = manager.connected_banks[connector]
+        elif (bank := manager.get_bank(name=name, connector=connector)) is not None:
+            banks = [bank]
+        else:
+            return {
+                'result': None,
+                'message': f'No {connector!s} bank connection named {name} exists',
+                'status_code': HTTPStatus.CONFLICT,
+            }
         for bank in banks:
             status = manager.sync_status[bank.location_id()]
             try:

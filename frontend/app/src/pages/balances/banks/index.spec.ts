@@ -1,4 +1,5 @@
 import type { BankConnection } from '@/modules/banks/types';
+import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
@@ -15,7 +16,13 @@ const { fetchBankBalances, refreshBankConnections, refreshSupportedBanks, syncBa
   syncBanks: vi.fn(),
 }));
 
+const route = vi.hoisted(() => {
+  const value: { query: Record<string, string> } = { query: {} };
+  return value;
+});
+
 vi.mock('vue-router', () => ({
+  useRoute: (): Record<string, unknown> => route,
   useRouter: (): Record<string, unknown> => ({ push: vi.fn() }),
 }));
 
@@ -23,12 +30,11 @@ vi.mock('@/modules/banks/use-banks', () => ({
   useBanks: (): Record<string, unknown> => ({ fetchBankBalances, refreshBankConnections, refreshSupportedBanks, syncBanks }),
 }));
 
-vi.mock('@/modules/banks/use-bank-data', () => ({
-  useBankData: (): Record<string, unknown> => ({ balances: ref([]), banks: ref([]) }),
-}));
-
 vi.mock('@/modules/task-center/use-task-center', () => ({
-  useTaskCenter: (): Record<string, unknown> => ({ useIsActive: (): unknown => ref<boolean>(false) }),
+  useTaskCenter: (): Record<string, unknown> => ({
+    useIsActive: (): unknown => ref<boolean>(false),
+    useIsActivePrefix: (): unknown => ref<boolean>(false),
+  }),
 }));
 
 const connection: BankConnection = {
@@ -47,9 +53,12 @@ describe('bank balances page', () => {
       global: {
         plugins: [pinia],
         stubs: {
-          AssetBalances: true,
+          AssetBalances: { props: ['balances'], template: '<div data-testid="bank-asset-balances" :data-rows="balances.length"><template v-for="row in balances" :key="row.asset"><slot name="amount" :row="row" /></template></div>' },
+          BankBalanceCards: { props: ['selected'], template: '<div data-testid="bank-balance-cards" :data-selected="selected" />' },
           BankBalancesEmpty: { template: '<div data-testid="bank-balances-empty" />' },
-          BankConnectionItem: true,
+          BankBalancesRefreshButton: true,
+          BankConnectionItem: { props: ['connection'], template: '<li data-testid="bank-balances-connection" :data-connection="connection.name" />' },
+          ValueDisplay: { props: ['value', 'format'], template: '<span data-testid="bank-amount" :data-format="JSON.stringify(format)">{{ value.toFixed() }}</span>' },
           TablePageLayout: { template: '<div><slot name="buttons" /><slot /></div>' },
         },
       },
@@ -60,6 +69,7 @@ describe('bank balances page', () => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
     vi.clearAllMocks();
+    route.query = {};
     fetchBankBalances.mockResolvedValue(undefined);
     refreshBankConnections.mockResolvedValue(undefined);
     refreshSupportedBanks.mockResolvedValue(undefined);
@@ -98,5 +108,28 @@ describe('bank balances page', () => {
 
     expect(wrapper.find('[data-testid=bank-connections-error]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=bank-balances]').exists()).toBe(true);
+  });
+
+  it('should list every bank together, amounts to the cent, and only the connections that need the user', async () => {
+    const store = useBankConnectionsStore();
+    store.setConnections([connection, { ...connection, name: 'Broken', syncStatus: { ...connection.syncStatus, lastError: 'boom' } }]);
+    store.setConnectionBalances([{ balances: { EUR: { amount: bigNumberify(1), value: bigNumberify(1) } }, connector: 'qonto', name: 'Qonto main' }]);
+    wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=bank-balance-cards]').attributes('data-selected')).toBeUndefined();
+    const table = wrapper.find('[data-testid=bank-asset-balances]');
+    expect(table.attributes('data-rows')).toBe('1');
+    expect(JSON.parse(table.find('[data-testid=bank-amount]').attributes('data-format') ?? '')).toEqual({ decimals: 2 });
+    expect(wrapper.findAll('[data-testid=bank-balances-connection]').map(item => item.attributes('data-connection'))).toEqual(['Broken']);
+  });
+
+  it('should show the bank the route names', async () => {
+    route.query = { bank: 'Qonto main' };
+    useBankConnectionsStore().setConnections([connection]);
+    wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=bank-balance-cards]').attributes('data-selected')).toBe('Qonto main');
   });
 });

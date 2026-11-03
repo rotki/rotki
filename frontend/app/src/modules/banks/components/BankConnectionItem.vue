@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
 import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
-import { type MessageKey, msg } from '@/message-key';
+import {
+  type BankConnectionState,
+  bankConnectionState,
+  bankConnectionStatus,
+  type BankConnectionStatusDisplay,
+} from '@/modules/banks/bank-connection-state';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
@@ -15,55 +19,9 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
-type ConnectionState = 'authentication' | 'expired' | 'failed' | 'ok';
+const state = computed<BankConnectionState>(() => bankConnectionState(connection));
 
-interface StatusDisplay {
-  icon: RuiIcons;
-  textClass: string;
-  text: MessageKey;
-  action: MessageKey;
-}
-
-/**
- * How each state shows, in the colour and icon every bank surface uses for it: a pending TAN cannot
- * wait, an expired one can.
- */
-const STATUSES: Record<Exclude<ConnectionState, 'ok'>, StatusDisplay> = {
-  authentication: {
-    action: msg.$t('bank_balances.status.authenticate'),
-    icon: 'lu-shield-alert',
-    text: msg.$t('bank_balances.status.authentication'),
-    textClass: 'text-rui-error',
-  },
-  expired: {
-    action: msg.$t('bank_settings.authentication.sync_again'),
-    icon: 'lu-shield-x',
-    text: msg.$t('bank_balances.status.expired'),
-    textClass: 'text-rui-warning',
-  },
-  failed: {
-    action: msg.$t('bank_balances.status.review'),
-    icon: 'lu-circle-alert',
-    text: msg.$t('bank_balances.status.failed'),
-    textClass: 'text-rui-error',
-  },
-};
-
-/** A pending TAN outranks an older failure: answering it is what unblocks the connection. */
-const state = computed<ConnectionState>(() => {
-  if (connection.syncStatus.authChallenge)
-    return 'authentication';
-  if (connection.syncStatus.authExpired)
-    return 'expired';
-  if (connection.syncStatus.lastError)
-    return 'failed';
-  return 'ok';
-});
-
-const status = computed<StatusDisplay | undefined>(() => {
-  const current = get(state);
-  return current === 'ok' ? undefined : STATUSES[current];
-});
+const status = computed<BankConnectionStatusDisplay | undefined>(() => bankConnectionStatus(connection));
 
 /** Only a failure names a reason. */
 const statusText = computed<string>(() => {

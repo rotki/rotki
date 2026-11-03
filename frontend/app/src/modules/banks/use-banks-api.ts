@@ -65,8 +65,13 @@ interface UseBanksApiReturn {
   cancelAuthentication: (payload: BankConnectionIdentity) => Promise<boolean>;
   /** Starts a backend task that pulls new transactions; the caller awaits it through the task center. */
   syncBanks: (payload: BankSyncPayload) => Promise<PendingTask>;
-  /** Starts a backend task that queries aggregate and per-connection bank balances. */
-  queryBankBalances: (ignoreCache?: boolean) => Promise<PendingTask>;
+  /**
+   * Starts a backend task that queries aggregate and per-connection bank balances.
+   *
+   * @remarks
+   * Given a connection, only that connection is queried, and the aggregate covers it alone.
+   */
+  queryBankBalances: (ignoreCache?: boolean, connection?: BankConnectionIdentity) => Promise<PendingTask>;
 }
 
 /**
@@ -127,9 +132,14 @@ export function useBanksApi(): UseBanksApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
-  const queryBankBalances = async (ignoreCache = false): Promise<PendingTask> => {
+  const queryBankBalances = async (ignoreCache = false, connection?: BankConnectionIdentity): Promise<PendingTask> => {
     const response = await api.get<PendingTask>('/banks/balances', {
-      query: { asyncQuery: true, ignoreCache: ignoreCache ? true : undefined },
+      query: {
+        asyncQuery: true,
+        connector: connection?.connector,
+        ignoreCache: ignoreCache ? true : undefined,
+        name: connection?.name,
+      },
     });
     return PendingTaskSchema.parse(response);
   };

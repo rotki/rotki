@@ -919,11 +919,13 @@ class RestAPI:
     def query_bank_balances(
             self,
             connector: BankConnectorType | None,
+            name: str | None,
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
         return self.banks_service.query_bank_balances(
             connector=connector,
+            name=name,
             ignore_cache=ignore_cache,
             value_threshold=value_threshold,
         )

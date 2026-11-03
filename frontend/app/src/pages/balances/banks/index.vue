@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import type { FormatOptions } from '@/modules/assets/amount-display/types';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
+import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
+import BankBalanceCards from '@/modules/banks/components/BankBalanceCards.vue';
 import BankBalancesEmpty from '@/modules/banks/components/BankBalancesEmpty.vue';
+import BankBalancesRefreshButton from '@/modules/banks/components/BankBalancesRefreshButton.vue';
 import BankConnectionItem from '@/modules/banks/components/BankConnectionItem.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
-import { useBankData } from '@/modules/banks/use-bank-data';
 import { useBanks } from '@/modules/banks/use-banks';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
@@ -14,8 +17,7 @@ import TableFrame from '@/modules/core/table/TableFrame.vue';
 import TableSearchField from '@/modules/core/table/TableSearchField.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useBankBalancesPage } from '@/pages/balances/banks/use-bank-balances-page';
 
 definePage({
   meta: {
@@ -23,21 +25,41 @@ definePage({
   },
 });
 
+/** Bank balances are kept in cents, so every amount shows exactly two decimals. */
+const BANK_AMOUNT_FORMAT: FormatOptions = { decimals: 2 };
+
+const { t } = useI18n({ useScope: 'global' });
+const route = useRoute();
+const router = useRouter();
+
 const search = ref<string>('');
 
 const { connections, connectionsError } = storeToRefs(useBankConnectionsStore());
-const { banks } = useBankData();
-const { fetchBankBalances, refreshBankConnections, refreshSupportedBanks, syncBanks } = useBanks();
-const { useIsActive } = useTaskCenter();
+const { refreshBankConnections, refreshSupportedBanks, syncBanks, fetchBankBalances } = useBanks();
 const failureMessage = useFailureMessage();
-const { t } = useI18n({ useScope: 'global' });
-const router = useRouter();
 
-const loading = useIsActive(ActivityKind.BANK_BALANCES);
+/** The connection named in the route; names are unique across banks. */
+const selected = computed<string | undefined>(() => {
+  const bank = route.query.bank;
+  return typeof bank === 'string' && bank !== '' ? bank : undefined;
+});
 
-async function refresh(ignoreCache = false): Promise<void> {
+const {
+  balances,
+  banks,
+  isBankLoading,
+  issues,
+  loading,
+  refreshAll,
+  refreshBank,
+  refreshInView,
+  selectedBank,
+  total,
+} = useBankBalancesPage(selected);
+
+async function load(): Promise<void> {
   await refreshBankConnections();
-  await fetchBankBalances(ignoreCache);
+  await fetchBankBalances();
 }
 
 async function connect(connector?: string): Promise<void> {
@@ -46,33 +68,22 @@ async function connect(connector?: string): Promise<void> {
 
 onBeforeMount(() => {
   startPromise(refreshSupportedBanks());
-  startPromise(refresh());
+  startPromise(load());
 });
 </script>
 
 <template>
   <TablePageLayout :title="[t('navigation_menu.balances'), t('navigation_menu.balances_sub.bank_balances')]">
     <template #buttons>
-      <RuiTooltip
+      <BankBalancesRefreshButton
         v-if="connections.length > 0"
-        :open-delay="400"
-      >
-        <template #activator>
-          <RuiButton
-            variant="outlined"
-            color="primary"
-            :loading="loading"
-            data-testid="refresh-bank-balances"
-            @click="refresh(true)"
-          >
-            <template #prepend>
-              <RuiIcon name="lu-refresh-cw" />
-            </template>
-            {{ t('common.refresh') }}
-          </RuiButton>
-        </template>
-        {{ t('bank_balances.refresh_tooltip') }}
-      </RuiTooltip>
+        :banks="banks"
+        :selected="selectedBank?.name"
+        :loading="loading"
+        @refresh="startPromise(refreshInView())"
+        @refresh-all="startPromise(refreshAll())"
+        @refresh-bank="startPromise(refreshBank($event))"
+      />
       <RuiButton
         color="primary"
         data-testid="add-bank-connection"
@@ -96,7 +107,7 @@ onBeforeMount(() => {
       >
         <TableFailureDescription
           :message="failureMessage(connectionsError)"
-          @retry="refresh()"
+          @retry="load()"
         />
       </TableEmptyNotice>
     </div>
@@ -106,7 +117,7 @@ onBeforeMount(() => {
       :title="t('bank_balances.connections_failed')"
       :failure="connectionsError"
       data-testid="bank-connections-error"
-      @retry="refresh()"
+      @retry="load()"
     />
 
     <BankBalancesEmpty
@@ -114,55 +125,60 @@ onBeforeMount(() => {
       @connect="connect($event)"
     />
 
-    <TableFrame
-      v-else-if="connections.length > 0"
-      data-testid="bank-balances"
-    >
-      <template #toolbar>
-        <ul
-          class="flex flex-col gap-1 min-w-0 p-0 m-0 list-none"
-          :aria-label="t('bank_balances.connections')"
-        >
-          <BankConnectionItem
-            v-for="connection in connections"
-            :key="`${connection.connector}#${connection.name}`"
-            :connection="connection"
-            @sync="startPromise(syncBanks($event))"
-          />
-        </ul>
-        <TableSearchField
-          v-model="search"
-          data-testid="bank-balances-search"
-        />
-      </template>
-
-      <div
-        v-if="banks.length > 0"
-        class="flex flex-col gap-6 p-4"
-      >
-        <section
-          v-for="bank in banks"
-          :key="`${bank.connector}#${bank.name}`"
-          :data-testid="`bank-balance-${bank.name}`"
-        >
-          <h2 class="text-h6 font-medium mb-2">
-            {{ bank.name }}
-          </h2>
-          <AssetBalances
-            v-model:search="search"
-            :breakdown="{ hide: true }"
-            :loading="loading && bank.balances.length === 0"
-            :balances="bank.balances"
-            sticky-header
-          />
-        </section>
-      </div>
-      <TableEmptyNotice
-        v-else
-        icon="lu-landmark"
-        :title="t('bank_balances.empty_table.title')"
-        :description="t('bank_balances.empty_table.description')"
+    <template v-else-if="connections.length > 0">
+      <BankBalanceCards
+        :banks="banks"
+        :selected="selectedBank?.name"
+        :total="total"
+        :loading="loading"
+        :is-bank-loading="isBankLoading"
       />
-    </TableFrame>
+
+      <TableFrame data-testid="bank-balances">
+        <template #toolbar>
+          <ul
+            v-if="issues.length > 0"
+            class="flex flex-col gap-1 min-w-0 p-0 m-0 list-none"
+            :aria-label="t('bank_balances.connections')"
+            data-testid="bank-balances-issues"
+          >
+            <BankConnectionItem
+              v-for="connection in issues"
+              :key="`${connection.connector}#${connection.name}`"
+              :connection="connection"
+              @sync="startPromise(syncBanks($event))"
+            />
+          </ul>
+          <TableSearchField
+            v-model="search"
+            class="ml-auto"
+            data-testid="bank-balances-search"
+          />
+        </template>
+
+        <AssetBalances
+          v-if="balances.length > 0 || loading"
+          v-model:search="search"
+          data-testid="bank-asset-balances"
+          :breakdown="{ hide: true }"
+          :loading="loading && balances.length === 0"
+          :balances="balances"
+          sticky-header
+        >
+          <template #amount="{ row }">
+            <ValueDisplay
+              :value="row.amount"
+              :format="BANK_AMOUNT_FORMAT"
+            />
+          </template>
+        </AssetBalances>
+        <TableEmptyNotice
+          v-else
+          icon="lu-landmark"
+          :title="t('bank_balances.empty_table.title')"
+          :description="t('bank_balances.empty_table.description')"
+        />
+      </TableFrame>
+    </template>
   </TablePageLayout>
 </template>
