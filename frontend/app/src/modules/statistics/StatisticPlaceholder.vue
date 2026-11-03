@@ -17,19 +17,19 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
     >
       <AppImage
         class="lg:col-span-2 -m-4"
-        :src="isMdAndDown ? getFullPath('net_value_graph_placeholder_small.png') : getFullPath('net_value_graph_placeholder.png')"
+        :src="isMdAndDown ? getFullPath('net_value_graph_placeholder_small.webp') : getFullPath('net_value_graph_placeholder.webp')"
       />
       <AppImage
         class="lg:col-span-2 -m-4"
-        :src="isMdAndDown ? getFullPath('asset_amount_and_value_graph_small.png') : getFullPath('asset_amount_and_value_graph.png')"
+        :src="isMdAndDown ? getFullPath('asset_amount_and_value_graph_small.webp') : getFullPath('asset_amount_and_value_graph.webp')"
       />
       <AppImage
         class="-m-4"
-        :src="getFullPath('asset_distribution_by_location.png')"
+        :src="getFullPath('asset_distribution_by_location.webp')"
       />
       <AppImage
         class="-m-4"
-        :src="getFullPath('asset_distribution_by_asset.png')"
+        :src="getFullPath('asset_distribution_by_asset.webp')"
       />
     </div>
 

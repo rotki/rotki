@@ -21,8 +21,8 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
     </template>
     <div class="relative">
       <AppImage
-        class="dark:invert-[0.88] dark:hue-rotate-180 -m-2"
-        :src="getPublicPlaceholderImagePath('asset_amount_and_value_partial.png')"
+        class="dark:invert-[0.88] dark:hue-rotate-180 -m-4"
+        :src="getPublicPlaceholderImagePath('asset_amount_and_value_partial.webp')"
       />
 
       <GetPremiumPlaceholder

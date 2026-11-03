@@ -70,7 +70,7 @@ describe('modules/staking/liquity/LiquityStakingPagePlaceholder', () => {
     wrapper = mountComponent();
 
     const sources = wrapper.findAllComponents(AppImageStub).map(item => item.props('src') ?? '');
-    expect(sources.some(src => src.includes('liquity_staking_statistics.png'))).toBe(true);
+    expect(sources.some(src => src.includes('liquity_staking_statistics.webp'))).toBe(true);
     expect(sources.some(src => src.includes('_mobile'))).toBe(false);
   });
 
@@ -80,6 +80,6 @@ describe('modules/staking/liquity/LiquityStakingPagePlaceholder', () => {
     wrapper = mountComponent();
 
     const sources = wrapper.findAllComponents(AppImageStub).map(item => item.props('src') ?? '');
-    expect(sources.some(src => src.includes('liquity_staking_statistics_mobile.png'))).toBe(true);
+    expect(sources.some(src => src.includes('liquity_staking_statistics_mobile.webp'))).toBe(true);
   });
 });

@@ -17,11 +17,11 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.ETH_STAKING_VIEW);
     >
       <AppImage
         class="lg:col-span-2 -m-4"
-        :src="getFullPath('eth_staking_overview.png')"
+        :src="getFullPath('eth_staking_overview.webp')"
       />
       <AppImage
         class="lg:col-span-3 -m-4"
-        :src="isMdAndDown ? getFullPath('eth_staking_per_validator_small.png') : getFullPath('eth_staking_per_validator.png')"
+        :src="isMdAndDown ? getFullPath('eth_staking_per_validator_small.webp') : getFullPath('eth_staking_per_validator.webp')"
       />
     </div>
 
