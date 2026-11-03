@@ -15,8 +15,8 @@ function manifest(connector: string, displayName: string, image: string | null):
   return { accessTier: '', authFlow: [], capabilities: [], connector, displayName, docsUrl: '', image, maintainer: '', secrets: [], setupNotes: [], version: '' };
 }
 
-function createWrapper(connector: string): VueWrapper<InstanceType<typeof BankConnectorIcon>> {
-  return mount(BankConnectorIcon, { global: { stubs }, props: { connector } });
+function createWrapper(connector: string, bankCode?: string | null): VueWrapper<InstanceType<typeof BankConnectorIcon>> {
+  return mount(BankConnectorIcon, { global: { stubs }, props: { bankCode, connector } });
 }
 
 describe('modules/banks/components/BankConnectorIcon', () => {
@@ -35,5 +35,14 @@ describe('modules/banks/components/BankConnectorIcon', () => {
   it('should show the bank icon for a connector without a logo, or one not loaded yet', () => {
     expect(createWrapper('fints').find('span').attributes('data-item')).toBe('banks');
     expect(createWrapper('unknown').find('img').exists()).toBe(false);
+  });
+
+  it('should show the logo of the bank its bank code names in the FinTS directory', () => {
+    expect(createWrapper('fints', '12030000').find('img').attributes('src')).toMatch(/\/protocols\/bank_dkb\.svg$/);
+  });
+
+  it('should fall back to the connector for a bank code the directory has no logo for', () => {
+    expect(createWrapper('fints', '10030400').find('span').attributes('data-item')).toBe('banks');
+    expect(createWrapper('qonto', null).find('img').attributes('src')).toMatch(/\/protocols\/qonto\.svg$/);
   });
 });

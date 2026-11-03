@@ -7,7 +7,7 @@ import BankBalanceCards from '@/modules/banks/components/BankBalanceCards.vue';
 const stubs = {
   I18nT: { props: ['keypath'], template: '<div :data-keypath="keypath"><slot name="connector" /> <slot name="time" /></div>' },
   FiatDisplay: { props: ['value', 'loading'], template: '<span data-testid="fiat" :data-loading="loading">{{ value.toFixed() }}</span>' },
-  BankConnectorIcon: true,
+  BankConnectorIcon: { props: ['connector', 'bankCode'], template: '<i class="bank-icon" :data-connector="connector" :data-bank-code="bankCode" />' },
   PercentageDisplay: { props: ['value'], template: '<span data-testid="percentage">{{ value }}</span>' },
   RouterLink: { props: ['to'], template: '<a :data-to="JSON.stringify(to)"><slot /></a>' },
   RuiIcon: true,
@@ -19,6 +19,7 @@ function bank(name: string, total: number, syncStatus: Partial<BankBalanceData['
     accounts: [],
     balances: [],
     connector: 'fints',
+    bankCode: null,
     displayName: 'FinTS/HBCI',
     name,
     syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: 100, running: false, ...syncStatus },
@@ -45,6 +46,12 @@ describe('modules/banks/components/BankBalanceCards', () => {
     expect(cards.map(item => item.attributes('data-bank'))).toEqual(['all', 'DKB', 'ING']);
     expect(JSON.parse(cards[0].attributes('data-to') ?? '')).toEqual({ name: '/balances/banks/', query: {} });
     expect(JSON.parse(cards[1].attributes('data-to') ?? '')).toEqual({ name: '/balances/banks/', query: { bank: 'DKB' } });
+  });
+
+  it('should show each bank with the logo of its bank code', () => {
+    const wrapper = createWrapper({ banks: [{ ...bank('DKB', 200), bankCode: '12030000' }] });
+
+    expect(card(wrapper, 'DKB').find('.bank-icon').attributes('data-bank-code')).toBe('12030000');
   });
 
   it('should mark the card of what the page shows as current', () => {

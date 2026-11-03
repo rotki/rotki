@@ -118,6 +118,7 @@ def test_bank_lifecycle(rotkehlchen_api_server: APIServer) -> None:
             'connector': 'qonto',
             'location': 'banks',
             'display_name': 'Qonto',
+            'bank_code': None,
             'sync_status': {
                 'running': False,
                 'last_sync_ts': None,

@@ -86,6 +86,7 @@ function stateClass(active: boolean): string {
       <div class="row-span-3">
         <BankConnectorIcon
           :connector="bank.connector"
+          :bank-code="bank.bankCode"
           size="28px"
         />
       </div>

@@ -48,6 +48,7 @@ const manifest: BankManifest = {
 };
 
 const connection: BankConnection = {
+  bankCode: null,
   displayName: 'Qonto',
   connector: 'qonto',
   name: 'Qonto main',

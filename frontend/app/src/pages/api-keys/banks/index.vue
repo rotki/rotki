@@ -243,7 +243,10 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
         </template>
         <template #item.connector="{ row }">
           <div class="flex items-center gap-2">
-            <BankConnectorIcon :connector="row.connector" />
+            <BankConnectorIcon
+              :connector="row.connector"
+              :bank-code="row.bankCode"
+            />
             <span>{{ row.displayName }}</span>
           </div>
         </template>

@@ -50,7 +50,10 @@ async function act(): Promise<void> {
     :data-connection="connection.name"
     :data-state="state"
   >
-    <BankConnectorIcon :connector="connection.connector" />
+    <BankConnectorIcon
+      :connector="connection.connector"
+      :bank-code="connection.bankCode"
+    />
     <span class="text-body-2 font-medium truncate">{{ connection.name }}</span>
     <span class="text-caption text-rui-text-secondary shrink-0">{{ connection.displayName }}</span>
 

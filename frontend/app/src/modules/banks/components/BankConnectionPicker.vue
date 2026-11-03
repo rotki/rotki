@@ -44,6 +44,7 @@ const options = computed<BankSelectionOption[]>(() =>
       <BankLabel
         :connector="item.connector"
         :name="item.name"
+        :bank-code="item.bank?.bankCodes[0]"
       />
     </template>
     <template #item="{ item }">
@@ -51,6 +52,7 @@ const options = computed<BankSelectionOption[]>(() =>
         <BankLabel
           :connector="item.connector"
           :name="item.name"
+          :bank-code="item.bank?.bankCodes[0]"
         />
         <span
           v-if="item.bank"

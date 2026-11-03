@@ -27,6 +27,7 @@ const stubs = {
 
 function connection(syncStatus: Partial<BankConnection['syncStatus']> = {}): BankConnection {
   return {
+    bankCode: null,
     displayName: 'Sparkasse',
     connector: 'fints',
     name: 'main',

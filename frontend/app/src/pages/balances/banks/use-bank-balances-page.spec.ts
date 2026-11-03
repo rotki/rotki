@@ -26,6 +26,7 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
 function connection(name: string, syncStatus: Partial<BankConnection['syncStatus']> = {}): BankConnection {
   return {
     connector: 'fints',
+    bankCode: null,
     displayName: 'FinTS/HBCI',
     name,
     syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false, ...syncStatus },

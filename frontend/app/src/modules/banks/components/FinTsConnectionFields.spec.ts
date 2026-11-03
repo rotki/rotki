@@ -30,6 +30,7 @@ const manifest: BankManifest = {
 
 function connection(name: string): BankConnection {
   return {
+    bankCode: null,
     displayName: 'FinTS/HBCI',
     connector: 'fints',
     name,

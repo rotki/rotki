@@ -82,6 +82,8 @@ export const BankConnection = z.object({
   name: z.string(),
   connector: z.string(),
   displayName: z.string(),
+  /** The bank code (BLZ) of the institution, for a connector such as FinTS that reaches many banks. */
+  bankCode: z.string().nullable(),
   syncStatus: BankSyncStatus,
 });
 

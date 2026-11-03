@@ -19,12 +19,16 @@ const CompactFintsBank = z.tuple([
   z.array(z.string().min(1)).optional(),
 ]);
 
+/** A packaged logo file in the protocol images. */
+const LogoFile = z.string().regex(/^bank_[\da-z_]+\.(?:png|svg)$/u);
+
 export const FintsBankDirectory = z.object({
   b: z.array(CompactFintsBank),
   e: z.array(z.url().refine(isSafeEndpoint)),
+  g: z.record(LogoFile, z.array(z.number().int().nonnegative())),
   h: z.string().regex(/^[a-f\d]{64}$/u),
   v: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),
-}).superRefine(({ b: banks, e: endpoints }, ctx) => {
+}).superRefine(({ b: banks, e: endpoints, g: logos }, ctx) => {
   const bankCodes = new Set<string>();
   banks.forEach(([, , endpointIndex, codes], index) => {
     if (endpoints[endpointIndex] === undefined)
@@ -36,6 +40,15 @@ export const FintsBankDirectory = z.object({
       bankCodes.add(bankCode);
     }
   });
+
+  const withLogo = new Set<number>();
+  for (const [logo, indices] of Object.entries(logos)) {
+    for (const index of indices) {
+      if (banks[index] === undefined || withLogo.has(index))
+        ctx.addIssue({ code: 'custom', message: `Logo ${logo} names institution ${index} that is missing or has a logo`, path: ['g', logo] });
+      withLogo.add(index);
+    }
+  }
 });
 
 export type FintsBankDirectory = z.infer<typeof FintsBankDirectory>;
@@ -46,6 +59,8 @@ export interface FintsBank {
   city?: string;
   endpoint: string;
   id: string;
+  /** The bank's logo in the protocol images; a bank without one shows the generic bank icon. */
+  logo?: string;
   name: string;
 }
 
@@ -55,7 +70,10 @@ export interface FintsBankOption extends FintsBank {
 
 export const fintsBankDirectory: FintsBankDirectory = FintsBankDirectory.parse(catalog);
 
-function expandBank([name, city, endpointIndex, codes, aliases = []]: FintsBankDirectory['b'][number]): FintsBank {
+const logoByBank = new Map<number, string>(Object.entries(fintsBankDirectory.g)
+  .flatMap(([logo, indices]) => indices.map(index => [index, logo] as const)));
+
+function expandBank([name, city, endpointIndex, codes, aliases = []]: FintsBankDirectory['b'][number], index: number): FintsBank {
   const bankCodes = Array.isArray(codes) ? codes : [codes];
   const endpoint = fintsBankDirectory.e[endpointIndex];
   if (endpoint === undefined)
@@ -67,11 +85,20 @@ function expandBank([name, city, endpointIndex, codes, aliases = []]: FintsBankD
     city: city || undefined,
     endpoint,
     id: bankCodes.join('-'),
+    logo: logoByBank.get(index),
     name,
   };
 }
 
 export const fintsBanks: FintsBank[] = fintsBankDirectory.b.map(expandBank);
+
+const logoByBankCode = new Map<string, string>(fintsBanks
+  .flatMap(({ bankCodes, logo }) => (logo ? bankCodes.map(bankCode => [bankCode, logo] as const) : [])));
+
+/** The logo of the bank with this code (BLZ), if the directory has one. */
+export function fintsBankLogo(bankCode: string): string | undefined {
+  return logoByBankCode.get(bankCode);
+}
 
 function normalizeSearch(value: string): string {
   return value

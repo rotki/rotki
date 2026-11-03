@@ -83,6 +83,8 @@ class BankConnector(ExchangeInterface, ABC):
     # Re-fetch this much before the persisted cursor on every sync. Covers clock skew and
     # late edits at the bank. Overlap is harmless: events dedup on their source id.
     cursor_safety_window: ClassVar[int] = DAY_IN_SECONDS
+    # The German bank code (BLZ) of the institution, for a connector that reaches many banks
+    bank_code: str | None = None
 
     def __init__(
             self,

@@ -549,6 +549,23 @@ def test_fints_endpoint_whitespace_is_removed() -> None:
     assert ' https://bank.example/fints ' not in credentials.api_key
 
 
+def test_connection_list_names_the_bank_by_its_code(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    """The frontend picks a FinTS connection's logo by the bank code it reports."""
+    manager = BankManager(function_scope_messages_aggregator)
+    manager.connected_banks[BankConnectorType.FINTS].append(create_fints(
+        database,
+        function_scope_messages_aggregator,
+        FinTSFixtureTransport(),
+    ))
+
+    assert [
+        (info['name'], info['bank_code']) for info in manager.get_connected_banks_info()
+    ] == [('FinTS 1', FINTS_VALUES['bank_code'])]
+
+
 def test_zero_value_mt940_transactions_are_ignored(
         database,
         function_scope_messages_aggregator,
