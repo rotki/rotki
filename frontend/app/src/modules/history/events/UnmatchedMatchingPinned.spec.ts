@@ -1,13 +1,12 @@
-import type { MatchingFlow } from '@/modules/history/events/matching/types';
-import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
+import type { MatchingFlow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { UsePinnedMatchPanelOptions } from '@/modules/history/events/use-pinned-match-panel';
-import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Component, defineComponent, h } from 'vue';
+import MatchAssetMovementsPinned from '@/modules/history/events/MatchAssetMovementsPinned.vue';
 import MatchBridgeTransactionsPinned from '@/modules/history/events/MatchBridgeTransactionsPinned.vue';
-import { PinnedNames } from '@/modules/session/types';
+import { type PinnedName, PinnedNames } from '@/modules/session/types';
 
 const panel = {
   activeGroupIdentifier: ref<string | undefined>(),
@@ -19,21 +18,21 @@ const panel = {
   select: vi.fn(),
   showInHistoryEvents: vi.fn(),
   showPotentialMatchInHistoryEvents: vi.fn(),
-  subject: ref<UnmatchedBridgeTransaction | undefined>(),
+  subject: ref<UnmatchedEventGroup | undefined>(),
   unpin: vi.fn().mockResolvedValue(undefined),
 };
 
-let options: UsePinnedMatchPanelOptions<UnmatchedBridgeTransaction>;
+let options: UsePinnedMatchPanelOptions<UnmatchedEventGroup>;
 
 vi.mock('@/modules/history/events/use-pinned-match-panel', () => ({
-  usePinnedMatchPanel: (opts: UsePinnedMatchPanelOptions<UnmatchedBridgeTransaction>): unknown => {
+  usePinnedMatchPanel: (opts: UsePinnedMatchPanelOptions<UnmatchedEventGroup>): unknown => {
     options = opts;
     return panel;
   },
 }));
 
-const unmatchedTransactions = ref<UnmatchedBridgeTransaction[]>([]);
-const ignoredTransactions = ref<UnmatchedBridgeTransaction[]>([]);
+const unmatchedItems = ref<UnmatchedEventGroup[]>([]);
+const ignoredItems = ref<UnmatchedEventGroup[]>([]);
 /* Real objects, not `createMock`: the proxy is function-backed, so Vue's `type: Object` prop
    check rejects it on both `flow` and `movement`. */
 const bridgeFlow: MatchingFlow = {
@@ -41,37 +40,67 @@ const bridgeFlow: MatchingFlow = {
   match: vi.fn().mockResolvedValue({ success: true }),
   refresh: vi.fn().mockResolvedValue(undefined),
 };
-const entryLabels = ref({ locationHeader: 'Chain', type: 'Bridge transaction' });
+const bridgeEntryLabels = ref({ locationHeader: 'Chain', type: 'Bridge transaction' });
 const unmatchableExplanation = ref<string | undefined>('No counterpart is tracked.');
 
-const flowSubjects: unknown[] = [];
+/** Every subject a label or explanation composable was handed, which must all be the panel's selection. */
+const derivedFrom: unknown[] = [];
+
+function explain(subject: unknown): Record<string, unknown> {
+  derivedFrom.push(subject);
+  return { unmatchableExplanation };
+}
+
+vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({
+  useUnmatchedAssetMovements: (): Record<string, unknown> => ({ ignoredMovements: ignoredItems, unmatchedMovements: unmatchedItems }),
+}));
 
 vi.mock('@/modules/history/events/use-unmatched-bridge-transactions', () => ({
   useBridgeEntryLabels: (subject: unknown): unknown => {
-    flowSubjects.push(subject);
-    return entryLabels;
+    derivedFrom.push(subject);
+    return bridgeEntryLabels;
   },
   useBridgeMatchingFlow: (): MatchingFlow => bridgeFlow,
-  useUnmatchedBridgeTransactions: (): Record<string, unknown> => ({ ignoredTransactions, unmatchedTransactions }),
+  useUnmatchedBridgeTransactions: (): Record<string, unknown> => ({ ignoredTransactions: ignoredItems, unmatchedTransactions: unmatchedItems }),
 }));
 
-vi.mock('@/modules/history/events/use-untracked-bridge-counterpart', () => ({
-  useBridgeUnmatchableExplanation: (subject: unknown): Record<string, unknown> => {
-    flowSubjects.push(subject);
-    return { unmatchableExplanation };
-  },
-}));
+vi.mock('@/modules/history/events/use-untracked-movement-destination', () => ({ useMovementUnmatchableExplanation: explain }));
 
-const ContentStub = defineComponent({
-  emits: ['pin', 'select', 'show-in-events'],
-  name: 'MatchBridgeTransactionsContent',
-  props: {
-    highlightedGroupIdentifier: { default: undefined, type: String },
-    isPinned: { default: false, type: Boolean },
-    onActionComplete: { default: undefined, type: Function },
+vi.mock('@/modules/history/events/use-untracked-bridge-counterpart', () => ({ useBridgeUnmatchableExplanation: explain }));
+
+/** The kind-specific parts of a pinned matching panel that a spec over both kinds has to know. */
+interface PinnedKind {
+  name: string;
+  pinned: Component;
+  contentName: string;
+  pinnedName: PinnedName;
+  /** An item, and the identifier the matching endpoints know it by. */
+  identified: { item: UnmatchedEventGroup; identifier: number };
+  /** What the drawer hands the shared potential matches content, beyond the item itself. */
+  drawer: { flow?: MatchingFlow; entryLabels?: Record<string, string> };
+}
+
+const PINNED_KINDS: PinnedKind[] = [
+  {
+    contentName: 'MatchBridgeTransactionsContent',
+    drawer: { entryLabels: get(bridgeEntryLabels), flow: bridgeFlow },
+    identified: { identifier: 11, item: { asset: 'ETH', events: [], groupIdentifier: 'group-a', identifier: 11 } },
+    name: 'bridge',
+    pinned: MatchBridgeTransactionsPinned,
+    pinnedName: PinnedNames.MATCH_BRIDGE_TRANSACTIONS,
   },
-  setup: () => (): unknown => h('div', { 'data-testid': 'content' }),
-});
+  {
+    contentName: 'MatchAssetMovementsContent',
+    drawer: {},
+    identified: {
+      identifier: 77,
+      item: createMock<UnmatchedEventGroup>({ events: [{ entry: { identifier: 77 } }], groupIdentifier: 'group-a' }),
+    },
+    name: 'asset movement',
+    pinned: MatchAssetMovementsPinned,
+    pinnedName: PinnedNames.MATCH_ASSET_MOVEMENTS,
+  },
+];
 
 const PotentialStub = defineComponent({
   emits: ['close', 'matched', 'show-in-events', 'show-unmatched-in-events'],
@@ -99,51 +128,54 @@ const SheetStub = defineComponent({
     : null),
 });
 
-const transaction: UnmatchedBridgeTransaction = {
-  asset: 'ETH',
-  direction: 'deposit',
-  events: createMock<HistoryEventCollectionRow>(),
-  groupIdentifier: 'group-a',
-  identifier: 11,
-};
+const selected: UnmatchedEventGroup = { asset: 'ETH', events: [], groupIdentifier: 'group-a', identifier: 11 };
 
-describe('modules/history/events/MatchBridgeTransactionsPinned', () => {
-  let wrapper: VueWrapper | undefined;
+describe.each(PINNED_KINDS)('unmatched matching pinned panel ($name)', (kind) => {
+  const ContentStub = defineComponent({
+    emits: ['pin', 'select', 'show-in-events'],
+    name: kind.contentName,
+    props: {
+      highlightedGroupIdentifier: { default: undefined, type: String },
+      isPinned: { default: false, type: Boolean },
+      onActionComplete: { default: undefined, type: Function },
+    },
+    setup: () => (): unknown => h('div', { 'data-testid': 'content' }),
+  });
 
   function mountPanel(props: Record<string, unknown> = {}): VueWrapper {
-    wrapper = mount(MatchBridgeTransactionsPinned, {
+    return mount(kind.pinned, {
       global: {
         stubs: {
-          MatchBridgeTransactionsContent: ContentStub,
           PinnedDetailSheet: SheetStub,
           PotentialMatchesContent: PotentialStub,
+          [kind.contentName]: ContentStub,
         },
       },
       props,
     });
-    return wrapper;
+  }
+
+  async function openSheet(view: VueWrapper): Promise<void> {
+    set(panel.modelSheetOpen, true);
+    set(panel.subject, selected);
+    await nextTick();
+    expect(view.find('[data-testid="sheet"]').exists()).toBe(true);
   }
 
   beforeEach(() => {
     vi.clearAllMocks();
-    flowSubjects.length = 0;
+    derivedFrom.length = 0;
     set(panel.activeGroupIdentifier, undefined);
     set(panel.activePotentialMatchIdentifier, undefined);
     set(panel.modelSheetOpen, false);
     set(panel.subject, undefined);
   });
 
-  afterEach(() => {
-    wrapper?.unmount();
-    wrapper = undefined;
-  });
-
-  it('should drive the panel from the bridge transaction collections', () => {
-    set(unmatchedTransactions, [transaction]);
+  it('should drive the panel from its own unmatched and ignored collections', () => {
     mountPanel();
 
-    expect(options.pinnedName).toBe(PinnedNames.MATCH_BRIDGE_TRANSACTIONS);
-    expect(options.sources).toStrictEqual([unmatchedTransactions, ignoredTransactions]);
+    expect(options.pinnedName).toBe(kind.pinnedName);
+    expect(options.sources).toStrictEqual([unmatchedItems, ignoredItems]);
   });
 
   it('should forward its highlight props to the panel', () => {
@@ -158,17 +190,17 @@ describe('modules/history/events/MatchBridgeTransactionsPinned', () => {
     expect(options.potentialMatchGroupIdentifier()).toBe('group-c');
   });
 
-  it('should name a transaction by its own identifier', () => {
+  it('should name an item by the identifier the matching endpoints know it by', () => {
     mountPanel();
 
-    expect(options.getIdentifier(transaction)).toBe(11);
+    expect(options.getIdentifier(kind.identified.item)).toBe(kind.identified.identifier);
   });
 
-  it('should derive the labels and the explanation from the selected transaction', () => {
+  it('should derive what the drawer explains from the selected item', () => {
     mountPanel();
 
-    expect(flowSubjects).toHaveLength(2);
-    for (const subject of flowSubjects)
+    expect(derivedFrom.length).toBeGreaterThan(0);
+    for (const subject of derivedFrom)
       expect(subject).toBe(panel.subject);
   });
 
@@ -186,35 +218,32 @@ describe('modules/history/events/MatchBridgeTransactionsPinned', () => {
     const view = mountPanel();
     const content = view.findComponent(ContentStub);
 
-    content.vm.$emit('select', transaction);
-    content.vm.$emit('show-in-events', transaction);
+    content.vm.$emit('select', selected);
+    content.vm.$emit('show-in-events', selected);
     content.vm.$emit('pin');
     await nextTick();
 
-    expect(panel.select).toHaveBeenCalledWith(transaction);
-    expect(panel.showInHistoryEvents).toHaveBeenCalledWith(transaction);
+    expect(panel.select).toHaveBeenCalledWith(selected);
+    expect(panel.showInHistoryEvents).toHaveBeenCalledWith(selected);
     expect(panel.unpin).toHaveBeenCalledTimes(1);
   });
 
-  it('should keep the sheet closed while no transaction is selected', () => {
+  it('should keep the sheet closed while nothing is selected', () => {
     const view = mountPanel();
 
     expect(view.find('[data-testid="sheet"]').exists()).toBe(false);
     expect(view.findComponent(PotentialStub).exists()).toBe(false);
   });
 
-  it('should give the drawer the bridge flow, labels and explanation', async () => {
+  it('should give the drawer the selected item, its flow, labels and explanation', async () => {
     const view = mountPanel();
-
-    set(panel.modelSheetOpen, true);
-    set(panel.subject, transaction);
     set(panel.activePotentialMatchIdentifier, 99);
-    await nextTick();
+    await openSheet(view);
 
     const potential = view.findComponent(PotentialStub);
-    expect(toRaw(potential.props('movement'))).toBe(transaction);
-    expect(potential.props('flow')).toBe(bridgeFlow);
-    expect(potential.props('entryLabels')).toStrictEqual(get(entryLabels));
+    expect(toRaw(potential.props('movement'))).toBe(selected);
+    expect(potential.props('flow')).toBe(kind.drawer.flow);
+    expect(potential.props('entryLabels')).toStrictEqual(kind.drawer.entryLabels);
     expect(potential.props('emptyExplanation')).toBe('No counterpart is tracked.');
     expect(potential.props('highlightedIdentifier')).toBe(99);
     expect(potential.props('isPinned')).toBe(true);
@@ -222,9 +251,7 @@ describe('modules/history/events/MatchBridgeTransactionsPinned', () => {
 
   it('should report the sheet events to the panel', async () => {
     const view = mountPanel();
-    set(panel.modelSheetOpen, true);
-    set(panel.subject, transaction);
-    await nextTick();
+    await openSheet(view);
     const potential = view.findComponent(PotentialStub);
 
     potential.vm.$emit('close');
@@ -237,14 +264,12 @@ describe('modules/history/events/MatchBridgeTransactionsPinned', () => {
     expect(panel.onMatched).toHaveBeenCalledTimes(1);
     expect(panel.showPotentialMatchInHistoryEvents)
       .toHaveBeenCalledWith({ groupIdentifier: 'group-c', identifier: 99 });
-    expect(panel.showInHistoryEvents).toHaveBeenCalledWith(transaction);
+    expect(panel.showInHistoryEvents).toHaveBeenCalledWith(selected);
   });
 
   it('should close the drawer from the sheet header', async () => {
     const view = mountPanel();
-    set(panel.modelSheetOpen, true);
-    set(panel.subject, transaction);
-    await nextTick();
+    await openSheet(view);
 
     await view.find('[data-testid="sheet"] button').trigger('click');
 
