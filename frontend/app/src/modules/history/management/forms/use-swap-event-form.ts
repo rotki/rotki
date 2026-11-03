@@ -5,7 +5,7 @@ import { HistoryEventEntryType, toSnakeCase } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
-import { type AddPayload, emptySwapForm, relocateSwap, type SwapFormState, swapIdentifiers, swapSchema, swapServerErrorPaths, swapStateForGroupAdd, swapStateFromEvents, toSwapEditPayload, toSwapPayload } from '@/modules/history/management/forms/swap-event-form';
+import { type AddPayload, emptySwapForm, isCompleteSwapGroup, relocateSwap, type SwapFormState, swapIdentifiers, swapSchema, swapServerErrorPaths, swapStateForGroupAdd, swapStateFromEvents, toSwapEditPayload, toSwapPayload } from '@/modules/history/management/forms/swap-event-form';
 import { emptySubEvent, SUB_EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/swap/swap-sub-event';
 import { useFeeRows } from '@/modules/history/management/forms/swap/use-fee-rows';
 import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
@@ -28,6 +28,8 @@ interface UseSwapEventFormReturn {
   readonly save: () => Promise<boolean>;
   readonly isEvm: ComputedRef<boolean>;
   readonly isPlain: ComputedRef<boolean>;
+  /** Whether the group being edited is half a swap, which the form shows an error for instead of fields. */
+  readonly incomplete: Readonly<Ref<boolean>>;
   readonly lookupLoading: Readonly<Ref<boolean>>;
   readonly lookupCanRetry: Readonly<Ref<boolean>>;
   readonly lookupHint: ComputedRef<string>;
@@ -51,7 +53,9 @@ export function useSwapEventForm({ data, stateUpdated }: UseSwapEventFormOptions
   /** Shared with the transaction lookup, which reports its failures as field errors too. */
   const errorMessages = ref<Record<string, string[]>>({});
 
-  const { form, save, seed } = useHistoryEventForm({
+  const incomplete = shallowRef<boolean>(false);
+
+  const { form, save: saveForm, seed } = useHistoryEventForm({
     errorMessages,
     initial: emptySwapForm,
     priceIntentKeys: SUB_EVENT_PRICE_INTENT_KEYS,
@@ -96,10 +100,20 @@ export function useSwapEventForm({ data, stateUpdated }: UseSwapEventFormOptions
 
   function seedFrom(current: SwapFormData): void {
     resetLookup();
+    set(incomplete, current.type === 'edit-group' && !isCompleteSwapGroup(current.eventsInGroup));
+    if (get(incomplete))
+      return;
     if (current.type === 'group-add')
       seed(swapStateForGroupAdd(current.group, current.nextSequenceId.toString()));
     else if (current.type === 'edit-group')
       seed(swapStateFromEvents(current.eventsInGroup), swapIdentifiers(current.eventsInGroup));
+  }
+
+  /** Saves the swap, unless it is half a swap, which has nothing complete to save. */
+  async function save(): Promise<boolean> {
+    if (get(incomplete))
+      return false;
+    return saveForm();
   }
 
   /**
@@ -127,6 +141,7 @@ export function useSwapEventForm({ data, stateUpdated }: UseSwapEventFormOptions
 
   return {
     form,
+    incomplete: readonly(incomplete),
     isEvm,
     isPlain,
     lookupCanRetry,

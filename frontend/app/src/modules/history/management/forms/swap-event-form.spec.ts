@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { SOLANA_CHAIN } from '@/modules/assets/types';
 import {
   emptySwapForm,
+  isCompleteSwapGroup,
   relocateSwap,
   type SwapFormState,
   swapIdentifiers,
@@ -380,6 +381,22 @@ describe('plain swap state from events', () => {
 
   it('should refuse a group that is missing a side of the swap', () => {
     expect(() => swapStateFromEvents([plainEvent({})])).toThrow();
+  });
+});
+
+describe('a complete swap group', () => {
+  const receive = plainEvent({ eventSubtype: 'receive', identifier: 2738 });
+  const fee = plainEvent({ eventSubtype: 'fee', identifier: 2739 });
+
+  it('should hold a spend and a receive', () => {
+    expect(isCompleteSwapGroup([plainEvent({}), receive, fee])).toBe(true);
+  });
+
+  it.each([
+    { events: [plainEvent({}), fee], missing: 'receive' },
+    { events: [receive, fee], missing: 'spend' },
+  ])('should not count a group without its $missing as complete', ({ events }) => {
+    expect(isCompleteSwapGroup(events)).toBe(false);
   });
 });
 

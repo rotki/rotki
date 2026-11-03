@@ -6596,6 +6596,7 @@
   "swap_event_form": {
     "add_asset": "Add asset",
     "fee_notes": "Fee notes",
+    "incomplete": "Only part of this swap was loaded. Filter the history to its location or transaction to edit the whole swap.",
     "receive_notes": "Receive notes",
     "spend_notes": "Spend notes",
     "unique_id": "Unique Identifier",

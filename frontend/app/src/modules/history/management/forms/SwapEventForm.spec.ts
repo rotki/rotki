@@ -328,6 +328,48 @@ describe('forms/SwapEventForm', () => {
     });
   });
 
+  describe('half a swap', () => {
+    const halfSwap: SwapGroupData = { eventsInGroup: [evmEvent('spend', 1, '0.1', 'ETH')], type: 'edit-group' };
+
+    it('should show that only part of the swap was loaded instead of the fields, and refuse to save it', async () => {
+      await createWrapper(halfSwap);
+
+      expect(wrapper.find('[data-testid=swap-event-form-incomplete]').text()).toBe('swap_event_form.incomplete');
+      expect(has('[data-testid=location]')).toBe(false);
+      await expect(wrapper.vm.save()).resolves.toBe(false);
+      expect(editHistoryEvent).not.toHaveBeenCalled();
+    });
+
+    it('should not save the swap it showed before when it is pointed at half a swap', async () => {
+      await createWrapper({
+        eventsInGroup: [evmEvent('spend', 1, '0.1', 'ETH'), evmEvent('receive', 2, '300', 'USDC')],
+        type: 'edit-group',
+      });
+      await wrapper.find('[data-testid=sub-event-amount][data-key=spend] input').setValue('0.2');
+
+      await wrapper.setProps({ data: halfSwap });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await expect(wrapper.vm.save()).resolves.toBe(false);
+      expect(editHistoryEvent).not.toHaveBeenCalled();
+    });
+
+    it('should edit the next complete swap it is pointed at', async () => {
+      await createWrapper(halfSwap);
+
+      await wrapper.setProps({ data: {
+        eventsInGroup: [evmEvent('spend', 1, '0.1', 'ETH'), evmEvent('receive', 2, '300', 'USDC')],
+        type: 'edit-group',
+      } });
+      await vi.advanceTimersToNextTimerAsync();
+      await wrapper.find('[data-testid=sub-event-amount][data-key=spend] input').setValue('0.2');
+
+      expect(has('[data-testid=swap-event-form-incomplete]')).toBe(false);
+      await expect(wrapper.vm.save()).resolves.toBe(true);
+      expect(editHistoryEvent).toHaveBeenCalledOnce();
+    });
+  });
+
   describe('a chain swap', () => {
     it('should send an edit with the group\'s identifiers in the group\'s own order', async () => {
       await createWrapper({
