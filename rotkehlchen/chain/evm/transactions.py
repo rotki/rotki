@@ -33,6 +33,7 @@ from rotkehlchen.errors.misc import (
     AlreadyExists,
     DataIntegrityError,
     IncompleteTransactionsQuery,
+    IndexerHistoryStartsAt,
     IndexerRangeNotCovered,
     InputError,
     NoAvailableIndexers,
@@ -564,7 +565,7 @@ class EvmTransactions(ABC):  # noqa: B024
             query: Callable[[Timestamp, Timestamp, Timestamp], Any],
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> None:
+    ) -> Timestamp | None:
         """Run query over the range, halving it whenever an indexer says it is too large.
 
         Etherscan answers a range whose result set it cannot assemble with a request for a
@@ -579,15 +580,24 @@ class EvmTransactions(ABC):  # noqa: B024
         only records progress up to its last returned item, not its end, so starting the next
         chunk's progress at its own start would leave a gap the saved query range rejects.
 
+        A chunk an indexer's history starts inside is queried in two: the blocks before the
+        start, of whichever indexer covers them, and the rest. If none covers the blocks before,
+        the rest is still queried, and the timestamp it starts from is returned so the caller
+        records only that.
+
         May raise:
         - RemoteError if a chunk too small to split further still cannot be served
         - NoAvailableIndexers if no indexer is available for the chain
         """
-        pending = [(start_ts, end_ts)]
+        pending: list[tuple[Timestamp, Timestamp, tuple[int | None, int | None]]] = [
+            (start_ts, end_ts, (None, None)),
+        ]
+        progress_start, covered_from = start_ts, None
         while len(pending) != 0:
-            chunk_start, chunk_end = pending.pop()
+            chunk_start, chunk_end, (lowest, highest) = pending.pop()
             try:
-                query(chunk_start, chunk_end, start_ts)
+                with self.evm_inquirer.blocks_within(lowest=lowest, highest=highest):
+                    query(chunk_start, chunk_end, progress_start)
             except RequestTooLargeError as e:
                 if chunk_end - chunk_start <= MIN_SPLITTABLE_QUERY_RANGE:
                     raise
@@ -597,7 +607,33 @@ class EvmTransactions(ABC):  # noqa: B024
                     'retrying.', self.evm_inquirer.chain_name, chunk_start, chunk_end, e,
                 )  # push the later half first so the earlier one is popped next
                 mid = Timestamp((chunk_start + chunk_end) // 2)
-                pending.extend(((Timestamp(mid + 1), chunk_end), (chunk_start, mid)))
+                pending.extend((
+                    (Timestamp(mid + 1), chunk_end, (lowest, highest)),
+                    (chunk_start, mid, (lowest, highest)),
+                ))
+            except IndexerHistoryStartsAt as e:
+                log.debug(
+                    "An indexer's %s history starts at block %s, inside the range %s - %s. "
+                    'Querying the blocks before it separately.',
+                    self.evm_inquirer.chain_name, e.start_block, chunk_start, chunk_end,
+                )
+                pending.extend((
+                    (chunk_start, chunk_end, (e.start_block, highest)),
+                    (chunk_start, chunk_end, (lowest, e.start_block - 1)),
+                ))
+            except IndexerRangeNotCovered:
+                if highest is None:
+                    raise
+
+                # No indexer covers the blocks before the history start, so what is served is
+                # recorded from just past the last of them.
+                covered_from = progress_start = Timestamp(max(chunk_start, self.evm_inquirer.get_block_timestamp(  # noqa: E501
+                    block_number=highest,
+                    full_transactions=False,
+                ) + 1))
+                pending = [entry for entry in pending if entry[2][1] is None]
+
+        return covered_from
 
     def _mark_range_as_queried(
             self,
@@ -727,7 +763,7 @@ class EvmTransactions(ABC):  # noqa: B024
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                self._query_range_in_splittable_chunks(
+                covered_from = self._query_range_in_splittable_chunks(
                     query=lambda chunk_start, chunk_end, progress_start: self._query_and_save_transactions_for_range(  # noqa: E501
                         address=address,
                         period=TimestampOrBlockRange(
@@ -765,6 +801,16 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'to_ts: {query_end_ts} ',
                 )
                 return RangeQueryOutcome.FAILED
+
+            if covered_from is not None:
+                log.warning(
+                    'No configured indexer covers %s transactions for %s from %s to %s. '
+                    'Recording only the rest of the range.',
+                    self.evm_inquirer.chain_name, address, query_start_ts, covered_from - 1,
+                )
+                not_covered = True
+                covered_ranges.append((covered_from, query_end_ts))
+                continue
 
             covered_ranges.append((query_start_ts, query_end_ts))
 
@@ -1215,7 +1261,7 @@ class EvmTransactions(ABC):  # noqa: B024
             query_end_ts = min(range_end_ts, end_ts) if not record_range else range_end_ts
             log.debug(f'Querying {self.evm_inquirer.chain_name} internal transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                self._query_range_in_splittable_chunks(
+                covered_from = self._query_range_in_splittable_chunks(
                     query=lambda chunk_start, chunk_end, progress_start: self._query_and_save_internal_transactions_for_range(  # noqa: E501
                         address=address,
                         period=TimestampOrBlockRange(
@@ -1255,6 +1301,13 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
                 return RangeQueryOutcome.FAILED
 
+            if covered_from is not None:
+                log.warning(
+                    'No configured indexer covers %s internal transactions for %s from %s to %s',
+                    self.evm_inquirer.chain_name, address, query_start_ts, covered_from - 1,
+                )
+                not_covered = True
+
         if not_covered:  # the uncovered ranges are not recorded, so a covering query fills them
             return RangeQueryOutcome.NOT_COVERED
 
@@ -1293,7 +1346,7 @@ class EvmTransactions(ABC):  # noqa: B024
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                self._query_range_in_splittable_chunks(
+                covered_from = self._query_range_in_splittable_chunks(
                     query=lambda chunk_start, chunk_end, progress_start: self._query_and_save_erc20_transfers_for_range(  # noqa: E501
                         address=address,
                         period=TimestampOrBlockRange(
@@ -1331,6 +1384,16 @@ class EvmTransactions(ABC):  # noqa: B024
                     f'to_ts: {query_end_ts} ',
                 )
                 return RangeQueryOutcome.FAILED
+
+            if covered_from is not None:
+                log.warning(
+                    'No configured indexer covers %s token transactions for %s from %s to %s. '
+                    'Recording only the rest of the range.',
+                    self.evm_inquirer.chain_name, address, query_start_ts, covered_from - 1,
+                )
+                not_covered = True
+                covered_ranges.append((covered_from, query_end_ts))
+                continue
 
             covered_ranges.append((query_start_ts, query_end_ts))
 

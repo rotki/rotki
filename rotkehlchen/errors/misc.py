@@ -126,6 +126,15 @@ class IndexerRangeNotCovered(RemoteError):
     """Raised when an indexer cannot serve the requested chain history range."""
 
 
+class IndexerHistoryStartsAt(IndexerRangeNotCovered):
+    """Raised when an indexer's history of the chain starts inside the requested range. It
+    serves the range from start_block on, and only the blocks before it are left to others."""
+
+    def __init__(self, message: str, start_block: int) -> None:
+        super().__init__(message)
+        self.start_block = start_block
+
+
 class TimestampLookupUnsupported(RemoteError):
     """Raised when an indexer never answers a block by timestamp on a chain. That says nothing
     about how far its history reaches, so it does not make the indexer stale for a range."""

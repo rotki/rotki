@@ -63,6 +63,7 @@ from rotkehlchen.errors.misc import (
     BlockscoutIncompleteResponse,
     ChainNotSupported,
     EventNotInABI,
+    IndexerHistoryStartsAt,
     IndexerRangeNotCovered,
     InputError,
     NoAvailableIndexers,
@@ -123,6 +124,12 @@ log = RotkehlchenLogsAdapter(logger)
 DEGRADED_INDEXERS: Final[ContextVar[frozenset[EvmIndexer]]] = ContextVar(
     'evm_degraded_indexers',
     default=frozenset(),
+)
+# The lowest and highest block the ranges being queried may reach, None for no limit. Scoped to
+# the body of blocks_within, to keep each side of an indexer's history start to its own indexers.
+BLOCK_BOUNDS: Final[ContextVar[tuple[int | None, int | None]]] = ContextVar(
+    'evm_block_bounds',
+    default=(None, None),
 )
 
 
@@ -1803,6 +1810,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 period.from_value, period.to_value,
             )
 
+        lowest, highest = BLOCK_BOUNDS.get()
+        if lowest is not None:
+            from_block = max(from_block, lowest)
+        if highest is not None:
+            to_block = min(to_block, highest)
         token = DEGRADED_INDEXERS.set(DEGRADED_INDEXERS.get() | failed)
         try:
             yield TimestampOrBlockRange(
@@ -1812,6 +1824,17 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             )
         finally:
             DEGRADED_INDEXERS.reset(token)
+
+    @staticmethod
+    @contextmanager
+    def blocks_within(lowest: int | None, highest: int | None) -> Iterator[None]:
+        """Keep the block ranges block_range_skipping_stale_indexers resolves in the body
+        between lowest and highest."""
+        token = BLOCK_BOUNDS.set((lowest, highest))
+        try:
+            yield
+        finally:
+            BLOCK_BOUNDS.reset(token)
 
     def maybe_timestamp_to_block_range(
             self,
@@ -2205,6 +2228,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     def _try_indexers(self, func: Callable[[EtherscanLikeApi], T]) -> T:
         """Tries to call the given function on the indexers in order until one succeeds.
         May raise:
+        - IndexerHistoryStartsAt if an indexer's history starts inside the range
         - IndexerRangeNotCovered if every indexer that serves the chain cannot serve the range
         - RemoteError if all indexers fail
         - NoAvailableIndexers if there are no indexers available
@@ -2252,6 +2276,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     failed.add(indexer_name)
             except RequestTooLargeError:
                 raise  # Let RequestTooLargeError bubble up for retry logic in callers
+            except IndexerHistoryStartsAt:
+                # The indexer serves the range from its history start. Asking the next one for
+                # all of it would hand that part to a third party, so the caller splits it.
+                raise
             except (RemoteError, DeserializationError) as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 if isinstance(e, BlockscoutIncompleteResponse):
