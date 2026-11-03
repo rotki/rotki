@@ -1555,9 +1555,12 @@ class Rotkehlchen:
             try:
                 eth2.beacon_inquirer.set_rpc_endpoint(settings.beacon_rpc_endpoint)
             except RemoteError as e:
-                msg = str(e)
-                log.error(f'Failed to connect to given beacon node {settings.beacon_rpc_endpoint} due to {msg}')  # noqa: E501
-                return False, msg
+                log.error(
+                    'Failed to connect to given beacon node %s due to %s',
+                    settings.beacon_rpc_endpoint,
+                    e,
+                )
+                raise
 
         if settings.btc_derivation_gap_limit is not None:
             self.chains_aggregator.btc_derivation_gap_limit = settings.btc_derivation_gap_limit

@@ -240,7 +240,7 @@ def test_yearn_refresh_continues_after_a_chain_fails(rotkehlchen_api_server: API
     """A failing chain is reported, and the yearn vaults of the other chains are still refreshed"""
     def query_yearn_vaults(db: DBHandler, node_inquirer: EvmNodeInquirer) -> None:  # pylint: disable=unused-argument
         if node_inquirer.chain_id == ChainID.OPTIMISM:
-            raise RemoteError('Kong is down', cause=FailureCause.NETWORK)
+            raise RemoteError('Kong is down', cause=FailureCause.REMOTE_REJECTED)
 
     with patch(
         'rotkehlchen.api.services.assets.query_yearn_vaults',
@@ -256,6 +256,7 @@ def test_yearn_refresh_continues_after_a_chain_fails(rotkehlchen_api_server: API
         contained_in_msg='Failed to refresh yearn vaults cache for optimism: Kong is down',
         status_code=HTTPStatus.CONFLICT,
     )
+    assert response.json()['cause'] == FailureCause.REMOTE_REJECTED
     assert [
         call.kwargs['node_inquirer'].chain_id
         for call in patched_query_yearn_vaults.call_args_list

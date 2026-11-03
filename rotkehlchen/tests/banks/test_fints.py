@@ -1065,6 +1065,39 @@ def test_setup_refused_after_its_answer_drops_the_setup_as_gone(
     assert connector.load_session() is None, 'a new setup under this name would restore it'
 
 
+def test_setup_whose_name_got_taken_is_gone_as_a_conflict(
+        database,
+        function_scope_messages_aggregator,
+) -> None:
+    """The answer is used up either way, but only a new name helps, not new credentials"""
+    challenge = FixtureTANResponse()
+    connector = create_fints(
+        database,
+        function_scope_messages_aggregator,
+        AuthenticationTransport(challenge),
+    )
+    manager = BankManager(function_scope_messages_aggregator)
+    with pytest.raises(BankMFARequired):
+        connector.query_accounts()
+    manager.database = database
+    manager.pending_setups[connector.connection_identifier] = connector
+    rotki = MagicMock()
+    rotki.bank_manager = manager
+
+    with (
+        patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
+        patch.object(connector, 'validate_api_key', return_value=(True, '')),
+        patch.object(manager, 'get_bank_by_name', return_value=MagicMock()),
+    ):
+        result = BanksService(rotki).answer_authentication(
+            identifier=connector.connection_identifier,
+            response='123456',
+        )
+
+    assert isinstance(result, FailResult)
+    assert (result.status, result.cause) == (HTTPStatus.GONE, FailureCause.CONFLICT)
+
+
 def test_sync_requiring_authentication_has_no_success_result(
         database,
         function_scope_messages_aggregator,

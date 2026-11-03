@@ -1,9 +1,23 @@
 from http import HTTPStatus
+from unittest.mock import MagicMock, patch
 
+import machineid
 import pytest
+import requests
+from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.api.rest import _premium_failure_cause
+from rotkehlchen.api.result import FailResult
+from rotkehlchen.api.services.exchanges import ExchangesService
 from rotkehlchen.api.websockets.typedefs import UserMessageKey
-from rotkehlchen.banks.errors import BankAuthExpired, BankRateLimited, BankSchemaDrift
+from rotkehlchen.banks.errors import (
+    BankAuthExpired,
+    BankNameTaken,
+    BankRateLimited,
+    BankSchemaDrift,
+)
+from rotkehlchen.chain.evm.decoding.balancer.utils import query_balancer_api
+from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     APIKeyNotAvailable,
@@ -12,13 +26,19 @@ from rotkehlchen.errors.misc import (
     ContractReverted,
     IncompleteTransactionsQuery,
     IndexerRangeNotCovered,
+    InputError,
     NoAvailableIndexers,
     RecoverableRemoteError,
     RemoteError,
     RequestTooLargeError,
+    alternatives_cause,
+    cause_for_credential_check,
+    cause_for_undecodable_body,
     remote_error_for_status,
 )
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.binance import BinancePermissionError
+from rotkehlchen.types import Timestamp
 
 
 def test_failure_cause_wire_values() -> None:
@@ -77,6 +97,7 @@ def test_remote_error_for_status(
     (ContractReverted('reverted'), FailureCause.REMOTE_REJECTED),
     (BinancePermissionError('rejected key'), FailureCause.AUTH),
     (BankAuthExpired('expired'), FailureCause.AUTH),
+    (BankNameTaken('already exists'), FailureCause.CONFLICT),
     (BankRateLimited('slow down'), FailureCause.RATE_LIMITED),
     (BankSchemaDrift('changed'), FailureCause.BAD_DATA),
 ])
@@ -85,3 +106,100 @@ def test_remote_error_subclasses_fix_their_cause(
         expected_cause: FailureCause,
 ) -> None:
     assert error.cause == expected_cause
+
+
+@pytest.mark.parametrize(('causes', 'expected_cause'), [
+    ({FailureCause.AUTH}, FailureCause.AUTH),
+    ({FailureCause.AUTH, FailureCause.NETWORK}, FailureCause.NETWORK),
+    ({FailureCause.NETWORK, FailureCause.RATE_LIMITED}, FailureCause.RATE_LIMITED),
+    ({FailureCause.AUTH, FailureCause.BAD_DATA}, FailureCause.REMOTE_REJECTED),
+    ({FailureCause.UNSUPPORTED, FailureCause.AUTH}, FailureCause.AUTH),
+    ({FailureCause.UNSUPPORTED}, FailureCause.UNSUPPORTED),
+])
+def test_alternatives_cause_prefers_what_a_retry_can_heal(
+        causes: set[FailureCause],
+        expected_cause: FailureCause,
+) -> None:
+    assert alternatives_cause(causes) == expected_cause
+
+
+@pytest.mark.parametrize(('error', 'expected_cause'), [
+    (InputError('not registered'), FailureCause.INVALID_INPUT),
+    (DeserializationError('garbled'), FailureCause.BAD_DATA),
+    (sqlcipher.IntegrityError('duplicate'), FailureCause.CONFLICT),  # pylint: disable=no-member
+])
+def test_exchange_requery_failure_cause(error: Exception, expected_cause: FailureCause) -> None:
+    rotkehlchen = MagicMock()
+    rotkehlchen.exchange_manager.requery_exchange_history_events.side_effect = error
+    assert ExchangesService(rotkehlchen).query_exchange_history_events_in_range(
+        identifier='kraken',
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1),
+    ) == FailResult(str(error), HTTPStatus.CONFLICT, expected_cause)
+
+
+@pytest.mark.parametrize(('status_code', 'expected_cause'), [
+    (HTTPStatus.OK, FailureCause.BAD_DATA),
+    (HTTPStatus.CREATED, FailureCause.BAD_DATA),
+    (HTTPStatus.TOO_MANY_REQUESTS, FailureCause.RATE_LIMITED),
+    (HTTPStatus.BAD_GATEWAY, FailureCause.NETWORK),
+    (HTTPStatus.SERVICE_UNAVAILABLE, FailureCause.NETWORK),
+    (HTTPStatus.UNAUTHORIZED, FailureCause.AUTH),
+])
+def test_cause_for_undecodable_body(status_code: HTTPStatus, expected_cause: FailureCause) -> None:
+    assert cause_for_undecodable_body(status_code) == expected_cause
+
+
+def _wrapped_premium_error(*origins: Exception) -> PremiumAuthenticationError:
+    """A PremiumAuthenticationError wrapping the given chain, outermost origin first"""
+    error = PremiumAuthenticationError('failed')
+    current: Exception = error
+    for origin in origins:
+        current.__cause__ = origin
+        current = origin
+    return error
+
+
+@pytest.mark.parametrize(('origins', 'expected_cause'), [
+    ((), FailureCause.AUTH),
+    ((PremiumAuthenticationError('rejected'),), FailureCause.AUTH),
+    ((RemoteError('down', cause=FailureCause.NETWORK),), FailureCause.NETWORK),
+    ((PremiumPermissionError('device limit'),), FailureCause.FORBIDDEN),
+    ((machineid.MachineIdNotFound(),), FailureCause.INTERNAL),
+    (
+        (PremiumAuthenticationError('no device'), machineid.MachineIdNotFound()),
+        FailureCause.INTERNAL,
+    ),
+])
+def test_premium_failure_cause_follows_what_was_wrapped(
+        origins: tuple[Exception, ...],
+        expected_cause: FailureCause,
+) -> None:
+    assert _premium_failure_cause(_wrapped_premium_error(*origins)) == expected_cause
+
+
+@pytest.mark.parametrize(('status_code', 'expected_cause'), [
+    (HTTPStatus.UNAUTHORIZED, FailureCause.AUTH),
+    (HTTPStatus.FORBIDDEN, FailureCause.AUTH),
+    (HTTPStatus.BAD_REQUEST, FailureCause.AUTH),
+    (HTTPStatus.TOO_MANY_REQUESTS, FailureCause.RATE_LIMITED),
+    (HTTPStatus.BAD_GATEWAY, FailureCause.NETWORK),
+])
+def test_cause_for_credential_check(status_code: HTTPStatus, expected_cause: FailureCause) -> None:
+    assert cause_for_credential_check(status_code) == expected_cause
+
+
+def test_balancer_malformed_json_is_bad_data() -> None:
+    response = requests.Response()
+    response.status_code = HTTPStatus.OK
+    response._content = b'not json'
+    with (
+        patch(
+            'rotkehlchen.chain.evm.decoding.balancer.utils.requests.post',
+            return_value=response,
+        ),
+        pytest.raises(RemoteError) as excinfo,
+    ):
+        query_balancer_api(query='query', variables={})
+
+    assert excinfo.value.cause == FailureCause.BAD_DATA

@@ -24,6 +24,15 @@ class BankAuthExpired(BankError):
         super().__init__(message, cause=FailureCause.AUTH)
 
 
+class BankNameTaken(BankAuthExpired):
+    """Another connection took the name while an authentication was open. The challenge is
+    used up like an expired one, but it takes a new name and not new credentials."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.cause = FailureCause.CONFLICT
+
+
 @dataclass(frozen=True)
 class BankAuthChallenge:
     """A connector-independent interactive authentication prompt."""

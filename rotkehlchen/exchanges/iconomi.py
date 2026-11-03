@@ -16,7 +16,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AUST
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_status, cause_for_undecodable_body
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -143,7 +143,7 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
         except JSONDecodeError as exc:
             raise RemoteError(
                 'ICONOMI returned invalid JSON response',
-                cause=FailureCause.BAD_DATA,
+                cause=cause_for_undecodable_body(response.status_code),
             ) from exc
 
         if response.status_code not in {200, 201}:

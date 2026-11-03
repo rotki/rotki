@@ -25,21 +25,23 @@ from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 
-def _malformed_json_response() -> requests.Response:
+@pytest.mark.parametrize(('status_code', 'expected_cause'), [
+    (200, FailureCause.BAD_DATA),
+    (429, FailureCause.RATE_LIMITED),
+    (502, FailureCause.NETWORK),
+    (503, FailureCause.NETWORK),
+])
+def test_undecodable_body_cause_follows_the_status(mock_woo, status_code, expected_cause):
     response = requests.Response()
-    response.status_code = 200
-    response._content = b'not json'
-    return response
-
-
-def test_malformed_json_is_bad_data(mock_woo):
+    response.status_code = status_code
+    response._content = b'<html>not json</html>'
     with (
-        patch.object(mock_woo.session, 'request', return_value=_malformed_json_response()),
+        patch.object(mock_woo.session, 'request', return_value=response),
         pytest.raises(RemoteError, match='failed to decode JSON') as excinfo,
     ):
         mock_woo._api_query('v3/balances')
 
-    assert excinfo.value.cause == FailureCause.BAD_DATA
+    assert excinfo.value.cause == expected_cause
 
 
 def test_connection_failure_is_network(mock_woo):

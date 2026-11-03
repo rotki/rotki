@@ -240,31 +240,53 @@ class BankConnector(ExchangeInterface, ABC):
     def first_connection(self) -> None:
         self.first_connection_made = True
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def verify_credentials(self) -> None:
+        """Query the bank with the current credentials.
+
+        May raise BankMFARequired if the bank asks for authentication, and otherwise a
+        RemoteError whose message is the reason to show and whose cause is why it failed.
+        """
         try:
             self.query_accounts()
         except BankMFARequired:
             raise
         except BankAuthExpired as e:
-            return False, f'{self.manifest.display_name} rejected the credentials: {e!s}'
+            raise RemoteError(
+                f'{self.manifest.display_name} rejected the credentials: {e!s}',
+                cause=e.cause,
+            ) from e
         except RemoteError as e:
-            return False, f'Could not reach {self.manifest.display_name}: {e!s}'
+            raise RemoteError(
+                f'Could not reach {self.manifest.display_name}: {e!s}',
+                cause=e.cause,
+            ) from e
+
+    def validate_api_key(self) -> tuple[bool, str]:
+        try:
+            self.verify_credentials()
+        except BankMFARequired:
+            raise
+        except RemoteError as e:
+            return False, str(e)
         return True, ''
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_account_balances(self, **kwargs: Any) -> tuple[list[BankAccountBalance] | None, str]:
+    def query_account_balances(self, **kwargs: Any) -> list[BankAccountBalance] | RemoteError:
         """Return each active account with a balance, priced in the main currency.
 
-        Returns None and an error message if the bank could not be queried.
-        May raise BankMFARequired if the bank asks for a TAN.
+        Returns the error if the bank could not be queried, so that the failure is cached
+        like a success. May raise BankMFARequired if the bank asks for a TAN.
         """
         try:
             accounts = self.query_accounts()
         except BankMFARequired:
             raise
         except RemoteError as e:
-            return None, f'Failed to query {self.manifest.display_name} balances. {e!s}'
+            return RemoteError(
+                f'Failed to query {self.manifest.display_name} balances. {e!s}',
+                cause=e.cause,
+            )
 
         held = [x for x in accounts if x.is_active and x.balance != ZERO]
         prices = Inquirer.find_main_currency_prices(list({x.asset for x in held}))
@@ -274,13 +296,12 @@ class BankConnector(ExchangeInterface, ABC):
                 amount=account.balance,
                 value=account.balance * prices.get(account.asset, ZERO_PRICE),
             ),
-        ) for account in held], ''
+        ) for account in held]
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """The balances of all accounts together, per asset. Cached with the accounts."""
-        accounts, msg = self.query_account_balances(**kwargs)
-        if accounts is None:
-            return None, msg
+        if isinstance(accounts := self.query_account_balances(**kwargs), RemoteError):
+            return None, str(accounts)
         return sum_account_balances(accounts), ''
 
     def _sync_account(

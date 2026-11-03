@@ -344,13 +344,13 @@ def test_user_creation_with_invalid_premium_credentials(
         'premium_api_key': VALID_PREMIUM_KEY,
         'premium_api_secret': VALID_PREMIUM_SECRET,
     }
-    for side_effect, expected_msg in (
-        (PremiumAuthenticationError('Wrong key or secret'), 'Could not verify keys for the new account. Wrong key or secret.'),  # noqa: E501
-        (PremiumPermissionError('Device limit of 4 exceeded'), 'Could not activate premium on this device. Device limit of 4 exceeded. _DEVICE_LIMIT_LINK_'),  # noqa: E501
+    for side_effect, expected_msg, expected_cause in (
+        (PremiumAuthenticationError('Wrong key or secret'), 'Could not verify keys for the new account. Wrong key or secret.', FailureCause.AUTH),  # noqa: E501
+        (PremiumPermissionError('Device limit of 4 exceeded'), 'Could not activate premium on this device. Device limit of 4 exceeded. _DEVICE_LIMIT_LINK_', FailureCause.FORBIDDEN),  # noqa: E501
         (RemoteError(
             'Rotki server unavailable',
             cause=FailureCause.NETWORK,
-        ), 'Could not reach the rotki server to verify premium keys. Rotki server unavailable.'),
+        ), 'Could not reach the rotki server to verify premium keys. Rotki server unavailable.', FailureCause.NETWORK),  # noqa: E501
     ):
         with (
             ExitStack() as stack,
@@ -364,6 +364,7 @@ def test_user_creation_with_invalid_premium_credentials(
             contained_in_msg=expected_msg,
             status_code=HTTPStatus.CONFLICT,
         )
+        assert response.json()['cause'] == expected_cause
 
         # ensure the timestamp used in the autobackup name is different in the next iteration of
         # the loop, since the second backup was overwriting the first one sometimes otherwise.

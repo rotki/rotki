@@ -5,7 +5,7 @@ from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from flask import Blueprint, Request, Response, request as flask_request
 from marshmallow import Schema, ValidationError, fields
@@ -13,11 +13,14 @@ from marshmallow.utils import missing
 from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 
-from rotkehlchen.api.rest import (
-    RestAPI,
+from rotkehlchen.api.result import (
+    NOT_LOGGED_IN,
+    ApiResult,
+    FailResult,
+    OkResult,
     api_response,
+    request_field_failure,
 )
-from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.api.v1.common_resources import BaseMethodView
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
@@ -233,6 +236,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RequestFieldRemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.premium.premium import (
     GNOSIS_PAY_CAPABILITY,
@@ -244,7 +248,6 @@ from rotkehlchen.serialization.schemas import (
     BaseCustomAssetSchema,
     CustomAssetWithIdentifierSchema,
 )
-from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     CHAINS_WITH_PENDING_TX_DECODING_TYPE,
     CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
@@ -292,6 +295,7 @@ if TYPE_CHECKING:
 
     from werkzeug.datastructures import FileStorage
 
+    from rotkehlchen.api.rest import RestAPI
     from rotkehlchen.assets.asset import (
         Asset,
         AssetWithNameAndType,
@@ -363,7 +367,7 @@ def _combine_parser_data(
 
 
 @parser.location_loader('json_and_view_args')
-def load_json_viewargs_data(request: Request, schema: Schema) -> ApiResult:
+def load_json_viewargs_data(request: Request, schema: Schema) -> dict[str, Any]:
     """Load data from a request accepting either json or view_args encoded data"""
     view_args = parser.load_view_args(request, schema)
     data = parser.load_json(request, schema)
@@ -374,7 +378,7 @@ def load_json_viewargs_data(request: Request, schema: Schema) -> ApiResult:
 
 
 @parser.location_loader('json_and_query')
-def load_json_query_data(request: Request, schema: Schema) -> ApiResult:
+def load_json_query_data(request: Request, schema: Schema) -> dict[str, Any]:
     """Load data from a request accepting either json or query encoded data"""
     data = parser.load_json(request, schema)
     if data is not missing:
@@ -383,7 +387,7 @@ def load_json_query_data(request: Request, schema: Schema) -> ApiResult:
 
 
 @parser.location_loader('json_and_query_and_view_args')
-def load_json_query_viewargs_data(request: Request, schema: Schema) -> ApiResult:
+def load_json_query_viewargs_data(request: Request, schema: Schema) -> dict[str, Any]:
     """Load data from a request accepting either json or querystring or view_args encoded data"""
     view_args = parser.load_view_args(request, schema)
     # Get data either from json or from querystring
@@ -439,6 +443,8 @@ def allow_async_validation() -> Callable:
                 HTTPStatus.BAD_REQUEST,
                 FailureCause.INVALID_INPUT,
             )
+        except RequestFieldRemoteError as e:
+            return request_field_failure(e)
         except Exception as e:  # pylint: disable=broad-exception-caught
             return FailResult(str(e), HTTPStatus.INTERNAL_SERVER_ERROR, FailureCause.INTERNAL)
         kwargs.pop('async_query')  # async query has already been handled so it can be removed
@@ -466,13 +472,6 @@ def allow_async_validation() -> Callable:
 
         return wrapper
     return _allow_async_validation
-
-
-NOT_LOGGED_IN: Final = FailResult(
-    'No user is currently logged in',
-    HTTPStatus.UNAUTHORIZED,
-    FailureCause.AUTH,
-)
 
 
 def require_loggedin_user() -> Callable:
@@ -520,12 +519,9 @@ def require_premium_user(active_check: bool) -> Callable:
                     f'Currently logged in user {rest_api.rotkehlchen.data.username} '
                     f'does not have a premium subscription'
                 )
-                if rest_api.rotkehlchen.premium is None:
-                    return api_response(
-                        FailResult(msg, HTTPStatus.FORBIDDEN, FailureCause.FORBIDDEN),
-                    )
-
-                if active_check and rest_api.rotkehlchen.premium.is_active() is False:
+                if (premium := rest_api.rotkehlchen.premium) is None or (
+                    active_check and premium.is_active() is False
+                ):
                     return api_response(
                         FailResult(msg, HTTPStatus.FORBIDDEN, FailureCause.FORBIDDEN),
                     )
@@ -3653,8 +3649,7 @@ class CounterpartiesResource(BaseMethodView):
 class LocationResource(BaseMethodView):
 
     def get(self) -> Response:
-        result = process_result({'locations': LOCATION_DETAILS})
-        return api_response(OkResult(result))
+        return api_response(OkResult({'locations': LOCATION_DETAILS}))
 
 
 class ProtocolDataRefreshResource(BaseMethodView):

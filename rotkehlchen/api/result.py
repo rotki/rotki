@@ -1,9 +1,15 @@
+import json
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.errors.cause import FailureCause  # noqa: TC001  # dataclass field type
+from flask import Response, make_response
+
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.serialization.serialize import process_result
+
+if TYPE_CHECKING:
+    from rotkehlchen.errors.misc import RequestFieldRemoteError
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,3 +47,37 @@ def serialize_result(result: ApiResult) -> dict[str, Any]:
     if isinstance(result, FailResult):
         serialized['cause'] = result.cause
     return process_result(serialized)
+
+
+def api_response(result: ApiResult, log_result: bool = True) -> Response:
+    return make_response(
+        (
+            json.dumps(serialize_result(result)),
+            result.status,
+            {
+                'mimetype': 'application/json',
+                'Content-Type': 'application/json',
+                'rotki-log-result': log_result,  # popped by after request callback
+            }),
+    )
+
+
+def request_field_failure(error: RequestFieldRemoteError) -> FailResult:
+    """Answers like a validation error for that field, but with the remote's cause"""
+    return FailResult(
+        json.dumps({error.field_name: [str(error)]}),
+        HTTPStatus.BAD_REQUEST,
+        error.cause,
+    )
+
+
+AUTH_REQUIRED: Final = FailResult(
+    'Authentication required',
+    HTTPStatus.UNAUTHORIZED,
+    FailureCause.AUTH,
+)
+NOT_LOGGED_IN: Final = FailResult(  # a session state, not rejected credentials
+    'No user is currently logged in',
+    HTTPStatus.UNAUTHORIZED,
+    FailureCause.CONFLICT,
+)

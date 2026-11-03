@@ -5,7 +5,12 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.banks.errors import BankAuthChallenge
+from rotkehlchen.banks.errors import (
+    BankAuthChallenge,
+    BankAuthExpired,
+    BankMFARequired,
+    BankRateLimited,
+)
 from rotkehlchen.banks.manager import BankCredentialInput
 from rotkehlchen.banks.manifest import AuthPrimitive
 from rotkehlchen.connections.types import connection_range_name
@@ -13,7 +18,8 @@ from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.exchanges.exchange import RecoveringExchangeSession
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -99,6 +105,7 @@ def test_bank_lifecycle(rotkehlchen_api_server: APIServer) -> None:
             'credentials': {'api_key': 'login', 'api_secret': 'wrong'},
         })
         assert_error_response(response, 'rejected the credentials', HTTPStatus.CONFLICT)
+        assert response.json()['cause'] == FailureCause.AUTH
         assert assert_proper_sync_response_with_result(
             requests.get(api_url_for(rotkehlchen_api_server, 'banksresource')),
         ) == []
@@ -365,6 +372,62 @@ def test_balance_success_keeps_a_challenge_the_connector_still_waits_on(
         status.expire_challenge()
         assert_proper_sync_response_with_result(requests.get(url, json={'ignore_cache': True}))
         assert status.serialize()['auth_expired'] is True
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize(('error', 'expected_cause'), [
+    (
+        BankMFARequired(BankAuthChallenge(
+            primitive=AuthPrimitive.OTP_INPUT,
+            prompt='Enter the TAN',
+        )),
+        FailureCause.AUTH,
+    ),
+    (BankAuthExpired('expired'), FailureCause.AUTH),
+    (BankRateLimited('slow down'), FailureCause.RATE_LIMITED),
+    (RemoteError('unreachable', cause=FailureCause.NETWORK), FailureCause.NETWORK),
+])
+def test_failed_balance_query_keeps_why_it_failed(
+        rotkehlchen_api_server: APIServer,
+        error: RemoteError,
+        expected_cause: FailureCause,
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with _patch_bank_http(QontoFixtureTransport()):
+        bank = rotki.bank_manager.get_bank(_add_qonto(rotkehlchen_api_server))
+        assert bank is not None
+        with patch.object(type(bank), 'query_accounts', side_effect=error):
+            response = requests.get(api_url_for(rotkehlchen_api_server, 'bankbalancesresource'))
+
+    assert_error_response(response=response, status_code=HTTPStatus.CONFLICT)
+    assert response.json()['cause'] == expected_cause
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_unreachable_bank_at_setup_and_edit_is_network(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    url = api_url_for(rotkehlchen_api_server, 'banksresource')
+    unreachable = RemoteError('timed out', cause=FailureCause.NETWORK)
+    with _patch_bank_http(QontoFixtureTransport()):
+        identifier = _add_qonto(rotkehlchen_api_server)
+        bank = rotkehlchen_api_server.rest_api.rotkehlchen.bank_manager.get_bank(identifier)
+        assert bank is not None
+        with patch.object(type(bank), 'query_accounts', side_effect=unreachable):
+            setup = requests.put(url, json={
+                'connector': 'qonto',
+                'name': 'Qonto 2',
+                'credentials': {'api_key': 'login', 'api_secret': 'secret'},
+            })
+            edit = requests.patch(url, json={
+                'identifier': identifier,
+                'credentials': {'api_secret': 'newsecret'},
+            })
+
+    for response in (setup, edit):
+        assert_error_response(response, 'Could not reach', HTTPStatus.CONFLICT)
+        assert response.json()['cause'] == FailureCause.NETWORK
+    assert bank.session.headers['Authorization'] == 'login:secret'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

@@ -8,10 +8,10 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from flask import Response, jsonify, make_response, send_file
+from flask import Response, send_file
 from werkzeug.wsgi import ClosingIterator
 
-from rotkehlchen.api.result import FailResult, serialize_result
+from rotkehlchen.api.result import FailResult, api_response
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -80,16 +80,11 @@ def make_download_response(file_path: str, mimetype: str) -> Response:
     other path is rejected as invalid input.
     """
     if not _is_within_temp_dir(path := Path(file_path)):
-        return make_response(
-            (
-                jsonify(serialize_result(FailResult(
-                    f'Invalid file path: {file_path}',
-                    HTTPStatus.BAD_REQUEST,
-                    FailureCause.INVALID_INPUT,
-                ))),
-                HTTPStatus.BAD_REQUEST,
-            ),
-        )
+        return api_response(FailResult(
+            f'Invalid file path: {file_path}',
+            HTTPStatus.BAD_REQUEST,
+            FailureCause.INVALID_INPUT,
+        ))
 
     response = send_file(
         path_or_file=file_path,

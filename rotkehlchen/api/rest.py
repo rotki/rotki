@@ -1,6 +1,5 @@
 import datetime
 import hmac
-import json
 import logging
 import os
 import sys
@@ -15,7 +14,8 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
-from flask import Response, g, make_response, request, send_file
+import machineid
+from flask import Response, g, request, send_file
 from sqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
 from werkzeug.datastructures import FileStorage
@@ -31,7 +31,14 @@ from rotkehlchen.api.rest_helpers.downloads import (
     register_post_download_cleanup,
 )
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
-from rotkehlchen.api.result import ApiResult, FailResult, OkResult, serialize_result
+from rotkehlchen.api.result import (
+    AUTH_REQUIRED,
+    ApiResult,
+    FailResult,
+    OkResult,
+    api_response,
+    serialize_result,
+)
 from rotkehlchen.api.services.accounting import AccountingService
 from rotkehlchen.api.services.accounts import AccountsService
 from rotkehlchen.api.services.assets import AssetsService
@@ -156,6 +163,8 @@ from rotkehlchen.errors.misc import (
     RemoteBackupError,
     RemoteError,
     SystemPermissionError,
+    cause_of,
+    combined_cause,
 )
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
@@ -197,7 +206,11 @@ from rotkehlchen.premium.premium import (
     has_premium_capability,
 )
 from rotkehlchen.premium.sync import NO_REMOTE_BACKUP_MSG
-from rotkehlchen.serialization.serialize import process_result, process_result_list
+from rotkehlchen.serialization.serialize import (
+    PreSerializedDict,
+    PreSerializedList,
+    process_result,
+)
 from rotkehlchen.tasks.bridges import (
     ENTRY_TYPES_TO_EXCLUDE_FROM_BRIDGE_MATCHING,
     create_bridge_counterpart_event,
@@ -323,27 +336,32 @@ def _wrap_remote_query[T](
     return OkResult(serialize(result))
 
 
-def api_response(result: ApiResult, log_result: bool = True) -> Response:
-    return make_response(
-        (
-            json.dumps(serialize_result(result)),
-            result.status,
-            {
-                'mimetype': 'application/json',
-                'Content-Type': 'application/json',
-                'rotki-log-result': log_result,  # popped by after request callback
-            }),
-    )
+def _premium_failure_cause(error: Exception) -> FailureCause:
+    """The cause of a failed premium verification. PremiumAuthenticationErrors wrap what
+    stopped the verification, so only one with no such original rejected the credentials."""
+    original = error.__cause__
+    while isinstance(original, PremiumAuthenticationError):
+        original = original.__cause__
+    if isinstance(original, RemoteError):
+        return original.cause
+    if isinstance(original, PremiumPermissionError):
+        return FailureCause.FORBIDDEN
+    if isinstance(original, RemoteBackupError):
+        return FailureCause.REMOTE_REJECTED
+    if isinstance(original, machineid.MachineIdNotFound):
+        return FailureCause.INTERNAL  # no other key would work
+    return FailureCause.AUTH
 
 
-def _serialize_task_outcome(task_result: ApiResult) -> dict[str, Any]:
+def _serialize_task_outcome(task_result: ApiResult) -> PreSerializedDict:
     """The `completed` entry of a finished task, with the status the request would have
-    answered with had it run synchronously."""
-    return {
+    answered with had it run synchronously. Already serialized, so the task status
+    response that carries it does not walk it again."""
+    return PreSerializedDict({
         'status': 'completed',
         'outcome': serialize_result(task_result),
         'status_code': task_result.status,
-    }
+    })
 
 
 def async_api_call(session_token: bool = False) -> Callable:
@@ -352,8 +370,7 @@ def async_api_call(session_token: bool = False) -> Callable:
     It reads `async_query` argument from the wrapped function to determine whether to call
     asynchronously or not. Defaults to synchronous mode.
 
-    Endpoints that it wraps must return a dictionary with result, message and optionally a
-    status code.
+    Endpoints that it wraps must return an ApiResult, or a Response for a file download.
     This decorator reads the dictionary and transforms it to a Response object.
 
     `session_token=True` (account creation) opens a new session for the `name` kwarg
@@ -701,12 +718,14 @@ class RestAPI:
 
     # - Public functions exposed via the rest api
     def set_settings(self, settings: ModifiableDBSettings) -> Response:
-        success, message, new_settings = self.settings_service.set_settings(settings)
+        try:
+            success, message, new_settings = self.settings_service.set_settings(settings)
+        except RemoteError as e:
+            return api_response(FailResult(str(e), HTTPStatus.CONFLICT, e.cause))
         if not success:
             return api_response(FailResult(message, HTTPStatus.CONFLICT, FailureCause.CONFLICT))
 
-        result_dict = OkResult(new_settings)
-        return api_response(result_dict)
+        return api_response(OkResult(new_settings))
 
     def get_frontend_settings(self) -> Response:
         return api_response(OkResult(self.settings_service.get_frontend_settings()))
@@ -717,8 +736,7 @@ class RestAPI:
 
     def get_settings(self) -> Response:
         settings = self.settings_service.get_settings()
-        result_dict = OkResult(settings)
-        return api_response(result_dict)
+        return api_response(OkResult(settings))
 
     def query_tasks_outcome(self, task_id: int | None) -> Response:
         if task_id is None:
@@ -733,27 +751,24 @@ class RestAPI:
                     else:
                         pending.append(task_id)
 
-            result = OkResult({'pending': pending, 'completed': completed})
-            return api_response(result)
+            return api_response(OkResult({'pending': pending, 'completed': completed}))
 
+        task_result: ApiResult | None = None
         with self.task_lock:
             for idx, task in enumerate(self.rotkehlchen.api_tasks):
                 if task.task_id == task_id:
-                    if task_id in self.task_results:
-                        # Task has completed and we just got the outcome
-                        task_result = self.task_results.pop(int(task_id))
-                        returned_task_result = _serialize_task_outcome(task_result)
-                        result_dict = OkResult(returned_task_result)
-                        # Also remove the task from the api tasks
-                        self.rotkehlchen.api_tasks.pop(idx)
-                        return api_response(result_dict)
+                    if task_id not in self.task_results:
+                        return api_response(OkResult(
+                            {'status': 'pending', 'outcome': None},
+                            message=f'The task with id {task_id} is still pending',
+                        ))
 
-                    # else task is still pending and running
-                    result_dict = OkResult(
-                        {'status': 'pending', 'outcome': None},
-                        message=f'The task with id {task_id} is still pending',
-                    )
-                    return api_response(result_dict)
+                    task_result = self.task_results.pop(int(task_id))
+                    self.rotkehlchen.api_tasks.pop(idx)
+                    break
+
+        if task_result is not None:  # serialized outside the lock that every task waits on
+            return api_response(OkResult(_serialize_task_outcome(task_result)))
 
         # The task has not been found
         return api_response(FailResult(
@@ -971,14 +986,11 @@ class RestAPI:
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> ApiResult:
-        response = self.exchanges_service.query_exchange_history_events_in_range(
+        return self.exchanges_service.query_exchange_history_events_in_range(
             identifier=identifier,
             start_ts=start_ts,
             end_ts=end_ts,
         )
-        if isinstance(response, FailResult):
-            return response
-        return OkResult(response.result)
 
     @async_api_call()
     def query_exchange_balances(
@@ -1242,8 +1254,7 @@ class RestAPI:
 
     def get_users(self) -> Response:
         result = self.rotkehlchen.data.get_users()
-        result_dict = OkResult(result)
-        return api_response(result_dict)
+        return api_response(OkResult(result))
 
     def authenticate_user(self, name: str, password: str) -> Response:
         """Authenticate-first (Docker cookie): prove the password and ship the
@@ -1341,11 +1352,7 @@ class RestAPI:
             (sid := getattr(g, 'rotki_session_sid', None)) is None or
             (token := self.session_store.issue_mcp_token(username=username, sid=sid)) is None
         ):
-            return api_response(FailResult(
-                'Authentication required',
-                HTTPStatus.UNAUTHORIZED,
-                FailureCause.AUTH,
-            ))
+            return api_response(AUTH_REQUIRED)
 
         assert self.session_key is not None  # built together with session_store
         claims = read_mcp_token(self.session_key, token)
@@ -1377,11 +1384,7 @@ class RestAPI:
         backend just because it may read data.
         """
         if getattr(g, 'rotki_session_exp', None) is None:
-            return api_response(FailResult(
-                'Authentication required',
-                HTTPStatus.UNAUTHORIZED,
-                FailureCause.AUTH,
-            ))
+            return api_response(AUTH_REQUIRED)
 
         response = api_response(OkResult(True))
         response.headers['Cache-Control'] = 'no-store'
@@ -1457,7 +1460,7 @@ class RestAPI:
                 HTTPStatus.CONFLICT,
                 (
                     FailureCause.LOCAL_DB if isinstance(e, (SystemPermissionError, DBSchemaError))
-                    else FailureCause.AUTH
+                    else _premium_failure_cause(e)
                 ),
             )
 
@@ -1605,7 +1608,11 @@ class RestAPI:
         try:
             self.rotkehlchen.set_premium_credentials(credentials)
         except PremiumAuthenticationError as e:
-            return api_response(FailResult(str(e), HTTPStatus.FORBIDDEN, FailureCause.AUTH))
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.FORBIDDEN,
+                _premium_failure_cause(e),
+            ))
 
         return api_response(OkResult(True))
 
@@ -1750,8 +1757,7 @@ class RestAPI:
             from_ts = Timestamp(int((start_of_day_today - datetime.timedelta(days=14)).timestamp()))  # noqa: E501
 
         data = self.rotkehlchen.data.db.get_netvalue_data(from_ts, include_nfts)
-        result = process_result({'times': data[0], 'data': data[1]})
-        return api_response(OkResult(result), log_result=False)
+        return api_response(OkResult({'times': data[0], 'data': data[1]}), log_result=False)
 
     def query_timed_balances_data(
             self,
@@ -1787,8 +1793,7 @@ class RestAPI:
                     to_ts=to_timestamp,
                 )
 
-        result = process_result_list(data)
-        return api_response(OkResult(result), log_result=False)
+        return api_response(OkResult(data), log_result=False)
 
     def query_value_distribution_data(self, distribution_by: str) -> Response:
         data: list[DBAssetBalance] | list[LocationData]
@@ -1798,8 +1803,7 @@ class RestAPI:
             # Can only be 'asset'. Checked by the marshmallow encoding
             data = self.rotkehlchen.data.db.get_latest_asset_value_distribution()
 
-        result = process_result_list(data)
-        return api_response(OkResult(result), log_result=False)
+        return api_response(OkResult(data), log_result=False)
 
     def query_premium_components(self) -> Response:
         assert self.rotkehlchen.premium is not None, 'Should not be None since we use @require_premium_user() decorator'  # noqa: E501
@@ -1876,8 +1880,7 @@ class RestAPI:
 
     def query_periodic_data(self) -> Response:
         data = self.rotkehlchen.query_periodic_data()
-        result = process_result(data)
-        return api_response(OkResult(result))
+        return api_response(OkResult(data))
 
     @async_api_call()
     def add_xpub(
@@ -2165,6 +2168,7 @@ class RestAPI:
 
         result = []
         failed_ids: list[str] = []
+        failure_causes: set[FailureCause] = set()
         for entry in DBLidoCsm(self.rotkehlchen.data.db).get_node_operators():
             try:
                 metrics = metrics_fetchers[entry.staking_module].get_operator_stats(
@@ -2180,6 +2184,7 @@ class RestAPI:
                 log.error(f'Failed to refresh Lido CSM metrics for {entry}: {e}')
                 metrics_payload = None
                 failed_ids.append(f'{entry.staking_module.name} #{entry.node_operator_id}')
+                failure_causes.add(e.cause)
 
             result.append({
                 'address': entry.address,
@@ -2192,7 +2197,7 @@ class RestAPI:
                 'Failed to refresh metrics for node operators: '
                 f"{', '.join(failed_ids)}",
                 HTTPStatus.BAD_GATEWAY,
-                FailureCause.NETWORK,
+                combined_cause(failure_causes),
                 result=result,
             ))
         return api_response(OkResult(result))
@@ -2360,7 +2365,7 @@ class RestAPI:
         except RemoteError as e:
             return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
 
-        return OkResult(process_result(result))
+        return OkResult(result)
 
     @async_api_call()
     def get_solana_stake_accounts(self) -> ApiResult:
@@ -2513,7 +2518,7 @@ class RestAPI:
         except OSError as e:
             return FailResult(str(e), HTTPStatus.INSUFFICIENT_STORAGE, FailureCause.LOCAL_DB)
 
-        return OkResult(process_result(data))
+        return OkResult(data)
 
     def get_rpc_nodes(self, blockchain: SupportedBlockchain) -> Response:
         response_data = self.transactions_service.get_rpc_nodes(blockchain)
@@ -2573,7 +2578,7 @@ class RestAPI:
                 return FailResult(
                     str(e),
                     HTTPStatus.BAD_GATEWAY,
-                    e.cause if isinstance(e, RemoteError) else FailureCause.NETWORK,
+                    cause_of(e, FailureCause.NETWORK),
                 )
 
         module_obj = self.rotkehlchen.chains_aggregator.get_module(module_name)
@@ -3215,10 +3220,10 @@ class RestAPI:
             ))
 
         result = {
-            'entries': [x.to_exported_dict(
+            'entries': PreSerializedList(x.to_exported_dict(
                 ts_converter=self.rotkehlchen.accountant.pots[0].timestamp_to_date,
                 export_type=AccountingEventExportType.API,
-            ) for x in report_data],
+            ) for x in report_data),
             'entries_found': entries_found,
             'entries_total': entries_total,
             'entries_limit': entries_limit,
@@ -3498,7 +3503,7 @@ class RestAPI:
             return FailResult(
                 str(e),
                 HTTPStatus.CONFLICT,
-                e.cause if isinstance(e, RemoteError) else FailureCause.INVALID_INPUT,
+                cause_of(e, FailureCause.INVALID_INPUT),
             )
 
         result = {}
@@ -4717,7 +4722,7 @@ class RestAPI:
             return api_response(FailResult(
                 str(e),
                 HTTPStatus.CONFLICT,
-                e.cause if isinstance(e, RemoteError) else FailureCause.AUTH,
+                cause_of(e, FailureCause.AUTH),
             ))
 
         return api_response(OkResult(capabilities))

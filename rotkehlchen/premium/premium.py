@@ -40,7 +40,13 @@ from rotkehlchen.errors.api import (
     PremiumPermissionError,
 )
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import BackupTooLargeError, InputError, RemoteError, cause_for_status
+from rotkehlchen.errors.misc import (
+    BackupTooLargeError,
+    InputError,
+    RemoteError,
+    cause_for_status,
+    cause_for_undecodable_body,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import BadData
@@ -504,7 +510,7 @@ def _decode_response_json(response: requests.Response) -> Any:
         raise RemoteError(
             f'Could not decode json from {response.text} to {response.request.method} '
             f'query {response.url}',
-            cause=FailureCause.BAD_DATA,
+            cause=cause_for_undecodable_body(response.status_code),
         ) from e
 
     return json_response

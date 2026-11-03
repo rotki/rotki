@@ -1606,6 +1606,7 @@ def test_repulling_transaction_fetch_error_does_not_drop_existing_data(
         contained_in_msg='does not correspond to a transaction',
         status_code=HTTPStatus.CONFLICT,
     )
+    assert response.json()['cause'] == FailureCause.NETWORK
 
     with rotki.data.db.conn.read_ctx() as cursor:
         tx_count_after = len(dbevmtx.get_transactions(cursor=cursor, filter_=tx_filter))

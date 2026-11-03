@@ -82,6 +82,8 @@ from rotkehlchen.errors.misc import (
     RemoteError,
     RequestTooLargeError,
     TokenQueryFailed,
+    alternatives_cause,
+    cause_of,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import read_integer
@@ -1159,7 +1161,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             raise RemoteError(
                 f'{self.chain_name} transaction {tx_hash!s} receipt_data is expected to exist',
                 cause=FailureCause.BAD_DATA,
-            )
+            )  # as etherscan getTransactionByHash does not contains gasUsed
         return transaction, receipt_data
 
     def maybe_get_transaction_by_hash(
@@ -2363,12 +2365,13 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         ):
             raise IndexerRangeNotCovered(message)
 
+        cause = alternatives_cause({cause_of(e, FailureCause.BAD_DATA) for _, e in errors})
         # If any indexer failed with an error that may heal by itself (rate limit, timeout,
         # 5xx) let callers know that trying again later can help.
         if any(isinstance(e, RecoverableRemoteError) for _, e in errors):
-            raise RecoverableRemoteError(message, cause=FailureCause.NETWORK)
+            raise RecoverableRemoteError(message, cause=cause)
 
-        raise RemoteError(message, cause=FailureCause.REMOTE_REJECTED)
+        raise RemoteError(message, cause=cause)
 
     def _maybe_notify_no_indexers(self, blockscout_incomplete_response: bool = False) -> None:
         """Tell the user once per reason that no indexer can serve this chain.

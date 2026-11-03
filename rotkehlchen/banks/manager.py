@@ -21,6 +21,7 @@ from rotkehlchen.banks.errors import (
     BankAuthExpired,
     BankError,
     BankMFARequired,
+    BankNameTaken,
 )
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.connections.types import (
@@ -30,8 +31,7 @@ from rotkehlchen.connections.types import (
     new_connection_identifier,
 )
 from rotkehlchen.db.connections import DBConnections
-from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError, combined_cause
 from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExchangeAuthCredentials
@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     from rotkehlchen.banks.connector import BankConnector
     from rotkehlchen.banks.manifest import BankConnectorType, BankManifest
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.errors.cause import FailureCause
     from rotkehlchen.types import Timestamp
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -197,9 +198,10 @@ class BankManager:
         """Validate the credentials against the bank and persist the connection. Returns the
         new connection's identifier, or None and the reason the setup failed.
 
-        May raise InputError when the credentials do not fit the bank's manifest, and
+        May raise InputError when the credentials do not fit the bank's manifest,
         BankMFARequired when the bank asks for authentication, which then continues under
-        the identifier the exception carries.
+        the identifier the exception carries, and RemoteError when the bank refuses them or
+        can not be reached.
         """
         if connector not in SUPPORTED_BANK_CONNECTORS:
             return None, f'{connector!s} is not a supported bank connector'
@@ -208,10 +210,7 @@ class BankManager:
             return None, f'Bank connection {name} already exists'
 
         connector_class = self._connector_class(connector)
-        try:
-            api_credentials = connector_class.api_credentials_from_values(values=credentials.values)  # noqa: E501
-        except BankError as e:
-            return None, str(e)
+        api_credentials = connector_class.api_credentials_from_values(values=credentials.values)
         self._discard_setups_named(name=name)
         bank = self._instantiate(
             connector=connector,
@@ -221,16 +220,14 @@ class BankManager:
             connection_identifier=new_connection_identifier(),
         )
         try:
-            valid, message = bank.validate_api_key()
+            bank.verify_credentials()
         except BankMFARequired as e:
             self.pending_setups[bank.connection_identifier] = bank
             e.connection_identifier = bank.connection_identifier
             raise
         except RemoteError as e:
-            valid, message = False, str(e)
-        if not valid:
-            log.error('Failed to validate %s bank credentials for %s: %s', connector, name, message)  # noqa: E501
-            return None, message
+            log.error('Failed to validate %s bank credentials for %s: %s', connector, name, e)
+            raise
 
         with self.registry_lock:
             if self.get_bank_by_name(name) is not None:
@@ -309,7 +306,7 @@ class BankManager:
         with self.registry_lock:
             if self.get_bank_by_name(bank.name) is not None:
                 self._discard_setup(identifier)
-                raise BankAuthExpired(f'Bank connection {bank.name} already exists')
+                raise BankNameTaken(f'Bank connection {bank.name} already exists')
             self._persist(self.database, bank)
             self.connected_banks[bank.manifest.connector].append(bank)
             self.pending_setups.pop(identifier, None)
@@ -356,7 +353,8 @@ class BankManager:
         """Rename a connection and/or replace some of its credentials.
 
         New credentials are validated against the bank before anything is persisted.
-        May raise InputError when they do not fit the manifest.
+        May raise InputError when they do not fit the manifest, and RemoteError when the bank
+        refuses them or can not be reached.
         """
         assert self.database is not None, 'edit_bank called before login'
         if (bank := self.get_bank(identifier)) is None:
@@ -368,22 +366,17 @@ class BankManager:
         ):
             return False, f'Bank connection {new_name} already exists'
 
-        try:
-            auth = type(bank).api_credentials_from_values(
-                values=credentials.values,
-                current=ExchangeAuthCredentials(bank.api_key, bank.secret, None),
-            )
-        except BankError as e:
-            return False, str(e)
+        auth = type(bank).api_credentials_from_values(
+            values=credentials.values,
+            current=ExchangeAuthCredentials(bank.api_key, bank.secret, None),
+        )
         credentials_changed = bank.edit_exchange_credentials(auth)
         if credentials_changed:
             try:
-                valid, message = bank.validate_api_key()
-            except RemoteError as e:
-                valid, message = False, str(e)
-            if not valid:
+                bank.verify_credentials()
+            except RemoteError:
                 bank.reset_to_db_credentials()
-                return False, message
+                raise
 
         with self.registry_lock:
             persisted = False
@@ -501,7 +494,7 @@ class BankManager:
         if len(errors) != 0:
             raise RemoteError(
                 '; '.join(errors),
-                cause=causes.pop() if len(causes) == 1 else FailureCause.REMOTE_REJECTED,
+                cause=combined_cause(causes),
             )
 
     def sync_one(self, bank: BankConnector) -> None:

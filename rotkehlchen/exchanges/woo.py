@@ -14,7 +14,7 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_status, cause_for_undecodable_body
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -298,16 +298,18 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                 headers=headers,
                 timeout=CachedSettings().get_timeout_tuple(),
             )
-            response_dict: dict = response.json()
-        except JSONDecodeError as e:
-            raise RemoteError(
-                f'{error_prefix} failed to decode JSON response.',
-                cause=FailureCause.BAD_DATA,
-            ) from e
         except requests.exceptions.RequestException as e:
             raise RemoteError(
                 f'{error_prefix} connection error: {e}.',
                 cause=FailureCause.NETWORK,
+            ) from e
+
+        try:
+            response_dict: dict = response.json()
+        except JSONDecodeError as e:
+            raise RemoteError(
+                f'{error_prefix} failed to decode JSON response.',
+                cause=cause_for_undecodable_body(response.status_code),
             ) from e
 
         if response.status_code != HTTPStatus.OK:

@@ -77,7 +77,11 @@ def query_balancer_api(query: str, variables: dict[str, Any]) -> dict[str, Any]:
         msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
         raise RemoteError(
             f'Balancer API request with query={query} and vars={variables} failed due to {msg}',
-            cause=FailureCause.BAD_DATA if isinstance(e, KeyError) else FailureCause.NETWORK,
+            cause=(
+                FailureCause.BAD_DATA
+                if isinstance(e, KeyError | requests.exceptions.JSONDecodeError)
+                else FailureCause.NETWORK
+            ),
         ) from e
 
 

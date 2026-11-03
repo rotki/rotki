@@ -6,6 +6,7 @@ from eth_abi import decode as decode_abi
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -83,6 +84,8 @@ def gns_resolve(inquirer: EthereumInquirer, name: str) -> ChecksumEvmAddress | N
             arguments=[node],
         )
     except RemoteError as e:
+        if e.cause in {FailureCause.NETWORK, FailureCause.RATE_LIMITED}:
+            raise  # an unregistered name reverts, this says nothing about the name
         log.error('Failed to resolve gwei name %s due to %s', name, e)
         return None
 

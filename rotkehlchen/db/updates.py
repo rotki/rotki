@@ -24,7 +24,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.unresolved_conflicts import ConflictType, DBRemoteConflicts
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError, cause_for_undecodable_body
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -248,7 +248,7 @@ class RotkiDataUpdater:
         except json.decoder.JSONDecodeError as e:
             raise RemoteError(
                 f'Could not parse update info from {url} as json: {response.text}',
-                cause=FailureCause.BAD_DATA,
+                cause=cause_for_undecodable_body(response.status_code),
             ) from e
 
         return json_data
