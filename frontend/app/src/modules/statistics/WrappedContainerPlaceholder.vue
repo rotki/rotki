@@ -28,7 +28,7 @@ const { minimumTier } = useFeatureAccess(PremiumFeature.EVENT_ANALYSIS_VIEW);
     <div class="relative">
       <AppImage
         class="dark:invert-[0.89] dark:hue-rotate-180 -m-4"
-        :src="getPublicPlaceholderImagePath('history_events_wrapped.png')"
+        :src="getPublicPlaceholderImagePath('history_events_wrapped.webp')"
       />
 
       <GetPremiumPlaceholder

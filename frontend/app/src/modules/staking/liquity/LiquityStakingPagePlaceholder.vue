@@ -19,15 +19,15 @@ const getFullPath = getPublicPlaceholderImagePath;
     >
       <AppImage
         class="-m-4"
-        :src="getFullPath('liquity_staking_deposits.png')"
+        :src="getFullPath('liquity_staking_deposits.webp')"
       />
       <AppImage
         class="-m-4"
-        :src="getFullPath('liquity_staking_stake.png')"
+        :src="getFullPath('liquity_staking_stake.webp')"
       />
       <AppImage
         class="lg:col-span-2 -m-4"
-        :src="isMdAndDown ? getFullPath('liquity_staking_statistics_mobile.png') : getFullPath('liquity_staking_statistics.png')"
+        :src="isMdAndDown ? getFullPath('liquity_staking_statistics_mobile.webp') : getFullPath('liquity_staking_statistics.webp')"
       />
     </div>
 

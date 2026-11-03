@@ -10,12 +10,12 @@ const { t } = useI18n({ useScope: 'global' });
   <div class="relative">
     <div class="grid lg:grid-cols-2 gap-4 dark:invert-[0.95] dark:hue-rotate-180">
       <AppImage
-        :src="getPublicPlaceholderImagePath('theme_manager.png')"
-        class="-m-2"
+        :src="getPublicPlaceholderImagePath('theme_manager.webp')"
+        class="-m-4"
       />
       <AppImage
-        :src="getPublicPlaceholderImagePath('theme_manager.png')"
-        class="-m-2"
+        :src="getPublicPlaceholderImagePath('theme_manager.webp')"
+        class="-m-4"
       />
     </div>
 
