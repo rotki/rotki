@@ -23,6 +23,7 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
 from rotkehlchen.db.constants import HistoryEventLinkType
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -409,7 +410,7 @@ def test_airdrop_claim_calendar_reminders_remote_error(database: DBHandler, capl
     with (
         patch(
             'rotkehlchen.tasks.calendar.check_airdrops',
-            side_effect=RemoteError('GitHub request timed out'),
+            side_effect=RemoteError('GitHub request timed out', cause=FailureCause.NETWORK),
         ),
         caplog.at_level(logging.ERROR),
     ):

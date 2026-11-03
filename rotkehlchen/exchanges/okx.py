@@ -15,6 +15,7 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.constants import OKX_LOCATION_KEY
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
@@ -197,12 +198,16 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'{self.name} API request failed due to {e!s}') from e
+            raise RemoteError(
+                f'{self.name} API request failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
         try:
             json_response = response.json()
         except requests.exceptions.JSONDecodeError as e:
             raise RemoteError(
                 f'{self.name} returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return json_response
@@ -223,6 +228,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         if data is None or not isinstance(data, list):
             raise RemoteError(
                 f'{self.name} json response does not contain list `data`: {response}',
+                cause=FailureCause.BAD_DATA,
             )
         return data
 

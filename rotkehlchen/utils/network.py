@@ -10,7 +10,12 @@ from urllib3.util import Retry
 from rotkehlchen.concurrency import cancellable_sleep, checkpoint
 from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    UnableToDecryptRemoteData,
+    cause_for_status,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -125,7 +130,10 @@ def request_get(
     )
 
     if response.status_code != HTTPStatus.OK:
-        raise RemoteError(f'{url} returned status: {response.status_code}')
+        raise RemoteError(
+            f'{url} returned status: {response.status_code}',
+            cause=cause_for_status(response.status_code),
+        )
 
     try:
         result = json.loads(response.text)
@@ -179,6 +187,7 @@ def retry_calls(
                 if tries == 0:
                     raise RemoteError(
                         f'{location} query for {method_name} failed after {times} tries',
+                        cause=FailureCause.RATE_LIMITED,
                     )
 
                 log.debug(
@@ -199,7 +208,9 @@ def retry_calls(
             )
             if tries == 0:
                 raise RemoteError(
-                    f'{location} query for {method_name} failed after {times} tries. Reason: {e}') from e  # noqa: E501
+                    f'{location} query for {method_name} failed after {times} tries. Reason: {e}',
+                    cause=FailureCause.NETWORK,
+                ) from e
             checkpoint()  # a cancelled task should not retry: each retry can be a full timeout
 
 
@@ -223,7 +234,10 @@ def query_file(url: str, is_json: bool = False) -> str | dict[str, Any]:
     try:
         response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
     except requests.exceptions.RequestException as e:
-        raise RemoteError(f'Failed to query file {url} due to: {e!s}') from e
+        raise RemoteError(
+            f'Failed to query file {url} due to: {e!s}',
+            cause=FailureCause.NETWORK,
+        ) from e
 
     if response.status_code != 200:
         raise RemoteError(
@@ -231,6 +245,7 @@ def query_file(url: str, is_json: bool = False) -> str | dict[str, Any]:
                 f'File query for {url} failed with status code '
                 f'{response.status_code} and text: {response.text}'
             ),
+            cause=cause_for_status(response.status_code),
             error_code=response.status_code,
         )
 
@@ -238,6 +253,9 @@ def query_file(url: str, is_json: bool = False) -> str | dict[str, Any]:
         try:
             return response.json()
         except json.decoder.JSONDecodeError as e:
-            raise RemoteError(f'Queried file {url} is not a valid json file') from e
+            raise RemoteError(
+                f'Queried file {url} is not a valid json file',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
     return response.text

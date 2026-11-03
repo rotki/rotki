@@ -2,18 +2,19 @@ from __future__ import annotations
 
 import json
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Literal, get_args
+from typing import TYPE_CHECKING, Literal, get_args
 
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
 )
 from rotkehlchen.db.unresolved_conflicts import DBRemoteConflicts
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.history.events.structures.base import get_event_type_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.serialization.serialize import process_result
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -27,12 +28,12 @@ class AccountingService:
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
 
-    def export_accounting_rules(self, directory_path: Path | None) -> dict[str, Any]:
+    def export_accounting_rules(self, directory_path: Path | None) -> ApiResult:
         db_accounting = DBAccountingRules(self.rotkehlchen.data.db)
         rules_and_properties = db_accounting.get_accounting_rules_and_properties()
 
         if directory_path is None:
-            return {'result': rules_and_properties, 'message': '', 'status_code': HTTPStatus.OK}
+            return OkResult(rules_and_properties)
 
         directory_path.mkdir(parents=True, exist_ok=True)
         try:
@@ -43,15 +44,15 @@ class AccountingService:
             ) as file:
                 json.dump(rules_and_properties, file)
         except (PermissionError, json.JSONDecodeError) as e:
-            return {
-                'result': None,
-                'message': f'Failed to export accounting rules due to: {e!s}',
-                'status_code': HTTPStatus.BAD_REQUEST,
-            }
+            return FailResult(
+                f'Failed to export accounting rules due to: {e!s}',
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.LOCAL_DB,
+            )
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def reset_accounting_rules(self) -> dict[str, Any]:
+    def reset_accounting_rules(self) -> ApiResult:
         """Reset all accounting rules to rotki's current defaults, pulling them from the data
         repo. Destructive: removes all user customizations, event-specific rules and unresolved
         accounting rule conflicts. The user's rules are left untouched if the repo is unreachable.
@@ -59,30 +60,30 @@ class AccountingService:
         try:
             self.rotkehlchen.data_updater.reset_accounting_rules()
         except RemoteError as e:
-            return {
-                'result': None,
-                'message': f'Failed to reset accounting rules due to: {e!s}',
-                'status_code': HTTPStatus.BAD_GATEWAY,
-            }
+            return FailResult(
+                f'Failed to reset accounting rules due to: {e!s}',
+                HTTPStatus.BAD_GATEWAY,
+                e.cause,
+            )
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def import_accounting_rules(self, filepath: Path) -> dict[str, Any]:
+    def import_accounting_rules(self, filepath: Path) -> ApiResult:
         try:
             with open(filepath, encoding='utf-8') as f:
                 json_data = json.load(f)
         except json.JSONDecodeError as e:
-            return {
-                'result': None,
-                'message': f'Failed to import accounting rules due to: {e!s}',
-                'status_code': HTTPStatus.BAD_REQUEST,
-            }
+            return FailResult(
+                f'Failed to import accounting rules due to: {e!s}',
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.INVALID_INPUT,
+            )
         except PermissionError as e:
-            return {
-                'result': None,
-                'message': f'Failed to import accounting rules due to: {e!s}',
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                f'Failed to import accounting rules due to: {e!s}',
+                HTTPStatus.CONFLICT,
+                FailureCause.LOCAL_DB,
+            )
 
         db_accounting_rules = DBAccountingRules(self.rotkehlchen.data.db)
         try:
@@ -95,11 +96,7 @@ class AccountingService:
             error_msg = f'Key {e!s} not found in the accounting rules json file'
 
         if success is False:
-            return {
-                'result': None,
-                'message': error_msg,
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(error_msg, HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
         for rule_info in json_data['accounting_rules'].values():
             self._invalidate_cache_for_accounting_rule(
@@ -109,7 +106,7 @@ class AccountingService:
                 counterparty=rule_info['counterparty'],
             )
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
     def add_accounting_rule(
             self,
@@ -119,7 +116,7 @@ class AccountingService:
             counterparty: str | None,
             rule: BaseEventSettings,
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         db = DBAccountingRules(self.rotkehlchen.data.db)
         try:
             db.add_accounting_rule(
@@ -131,7 +128,7 @@ class AccountingService:
                 links=links,
             )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
         self._invalidate_cache_for_accounting_rule(
             event_ids=event_ids,
@@ -139,7 +136,7 @@ class AccountingService:
             event_subtype=event_subtype,
             counterparty=counterparty,
         )
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
     def update_accounting_rule(
             self,
@@ -150,7 +147,7 @@ class AccountingService:
             rule: BaseEventSettings,
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             identifier: int,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         db = DBAccountingRules(self.rotkehlchen.data.db)
         try:
             db.update_accounting_rule(
@@ -163,7 +160,7 @@ class AccountingService:
                 identifier=identifier,
             )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
         self._invalidate_cache_for_accounting_rule(
             event_ids=event_ids,
@@ -171,16 +168,16 @@ class AccountingService:
             event_subtype=event_subtype,
             counterparty=counterparty,
         )
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def delete_accounting_rule(self, rule_id: int) -> dict[str, Any]:
+    def delete_accounting_rule(self, rule_id: int) -> ApiResult:
         db = DBAccountingRules(self.rotkehlchen.data.db)
         try:
             event_ids, event_type, event_subtype, counterparty = db.remove_accounting_rule(
                 rule_id=rule_id,
             )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
         self._invalidate_cache_for_accounting_rule(
             event_ids=event_ids,
@@ -188,9 +185,9 @@ class AccountingService:
             event_subtype=event_subtype,
             counterparty=counterparty,
         )
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def query_accounting_rules(self, filter_query: AccountingRulesFilterQuery) -> dict[str, Any]:
+    def query_accounting_rules(self, filter_query: AccountingRulesFilterQuery) -> ApiResult:
         db = self.rotkehlchen.data.db
         entries, total_filter_count = DBAccountingRules(db).query_rules_and_serialize(
             filter_query=filter_query,
@@ -206,26 +203,22 @@ class AccountingService:
                 'entries_limit': -1,
             }
 
-        return {
-            'result': process_result(result),
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(result)
 
-    def linkable_accounting_properties(self) -> dict[str, Any]:
+    def linkable_accounting_properties(self) -> ApiResult:
         possible_accounting_setting_names = get_args(LINKABLE_ACCOUNTING_SETTINGS_NAME)
         result = {
             'count_entire_amount_spend': possible_accounting_setting_names,
             'count_cost_basis_pnl': possible_accounting_setting_names,
             'taxable': possible_accounting_setting_names,
         }
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(result)
 
     def solve_multiple_accounting_rule_conflicts(
             self,
             conflicts: list[tuple[int, Literal['remote', 'local']]],
             solve_all_using: Literal['remote', 'local'] | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         conflict_db = DBRemoteConflicts(self.rotkehlchen.data.db)
         try:
             if solve_all_using is None:
@@ -233,11 +226,11 @@ class AccountingService:
             else:
                 conflict_db.solve_all_conflicts(solve_all_using=solve_all_using)
         except (InputError, KeyError) as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def list_accounting_rules_conflicts(self, filter_query: DBFilterQuery) -> dict[str, Any]:
+    def list_accounting_rules_conflicts(self, filter_query: DBFilterQuery) -> ApiResult:
         conflict_db = DBRemoteConflicts(self.rotkehlchen.data.db)
         conflicts = conflict_db.list_accounting_conflicts(filter_query=filter_query)
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -251,11 +244,7 @@ class AccountingService:
             'entries_total': total_entries,
             'entries_limit': -1,
         }
-        return {
-            'result': process_result(result),
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(result)
 
     def _invalidate_cache_for_accounting_rule(
             self,

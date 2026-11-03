@@ -19,6 +19,7 @@ from rotkehlchen.chain.bitcoin.bch.utils import (
 )
 from rotkehlchen.constants.assets import A_BCH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
@@ -142,7 +143,7 @@ def test_query_bch_has_transactions_and_balances(
         def mock_request_get(url: str, *args, api_url=api, **kwargs):
             """Mock request_get to fail requests to apis other than the one we want to test."""
             if api_url not in url:
-                raise RemoteError('Skip to next api')
+                raise RemoteError('Skip to next api', cause=FailureCause.NETWORK)
             elif 'health' in url:
                 return {'ok': True}
 

@@ -11,6 +11,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_htx
 from rotkehlchen.constants.assets import A_CRV, A_DAI, A_DOGE, A_USDT, A_ZRX
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.htx import PAGINATION_LIMIT, Htx
 from rotkehlchen.fval import FVal
@@ -168,7 +169,7 @@ def test_htx_movement_query_should_report_remote_errors(htx_exchange: Htx) -> No
         patch.object(
             htx_exchange,
             '_paginated_query',
-            side_effect=RemoteError('API unavailable'),
+            side_effect=RemoteError('API unavailable', cause=FailureCause.NETWORK),
         ),
         pytest.raises(RemoteError, match='API unavailable'),
     ):

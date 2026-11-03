@@ -30,10 +30,12 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     NotERC20Conformant,
     RecoverableRemoteError,
     RemoteError,
+    cause_for_status,
     remote_error_for_status,
 )
 from rotkehlchen.errors.serialization import DeserializationError
@@ -168,7 +170,10 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             try:
                 response = self.session.get(query_str, timeout=timeout)
             except requests.exceptions.RequestException as e:
-                raise RecoverableRemoteError(f'ZKSync Lite API request failed due to {e!s}') from e
+                raise RecoverableRemoteError(
+                    f'ZKSync Lite API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 log.debug(
@@ -180,7 +185,8 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 continue
 
             if response.status_code != HTTPStatus.OK:
-                raise remote_error_for_status(response.status_code)(
+                raise remote_error_for_status(
+                    response.status_code,
                     f'ZKSync Lite API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
@@ -192,12 +198,14 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 raise RemoteError(
                     f'ZKSync Lite API request {response.url} returned invalid '
                     f'JSON response: {response.text}',
+                    cause=FailureCause.BAD_DATA,
                 ) from e
 
             if (result := json_ret.get('result')) is None:
                 raise RemoteError(
                     f'Unexpected format of ZKSync lite response for request {response.url}. '
                     f'Missing a result in response. Response was: {response.text}',
+                    cause=FailureCause.BAD_DATA,
                 )
 
             # success, break out of the loop and return result
@@ -205,6 +213,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
 
         raise RecoverableRemoteError(
             'Getting zksync lite too many requests error even after we incrementally backed off',
+            cause=FailureCause.RATE_LIMITED,
         )
 
     def _get_cached_or_query_eligibility(self, address: ChecksumEvmAddress) -> dict[str, Any]:
@@ -240,12 +249,16 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'ZKSync Lite eligibility API request failed due to {e!s}') from e
+            raise RemoteError(
+                f'ZKSync Lite eligibility API request failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
                 f'ZKSync Lite eligibility API request {response.url} failed with HTTP status '
                 f'code {response.status_code} and text {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
@@ -254,6 +267,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             raise RemoteError(
                 f'ZKSync Lite eligibility API request {response.url} returned invalid JSON '
                 f'response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         can_cache = True
@@ -365,7 +379,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             if result is None:
                 msg = 'Unexpected zksync lite tokens response. Could not find result in the response.'  # noqa: E501
                 log.error(f'{msg} Response: {response}')
-                raise RemoteError(msg)
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA)
 
             asset: CryptoAsset
             for entry in result[0 if from_idx == 0 else 1:]:
@@ -560,7 +574,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             if result is None:
                 msg = 'Unexpected zksync transactions response. Could not find result in the response.'  # noqa: E501
                 log.error(f'{msg} Response: {response}')
-                raise RemoteError(msg)
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA)
 
             for idx, entry in enumerate(result):
                 if idx == 0 and entry['txHash'] == last_tx_hash:
@@ -764,6 +778,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                     raise RemoteError(
                         f'Unexpected zksync lite eligibility response. Missing tokens list. '
                         f'Response was: {response}',
+                        cause=FailureCause.BAD_DATA,
                     )
 
                 entries: list[tuple[int, CryptoAsset, FVal]] = []

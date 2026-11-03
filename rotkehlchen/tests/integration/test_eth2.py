@@ -16,6 +16,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import EthWithdrawalFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
@@ -94,7 +95,7 @@ def test_withdrawals(eth2: Eth2, database, ethereum_accounts, query_method):
 
     to_ts = ts_now()
     with (
-        patch.object(eth2.ethereum.etherscan, 'get_withdrawals', side_effect=RemoteError) if query_method == 'blockscout' else nullcontext(),  # noqa: E501
+        patch.object(eth2.ethereum.etherscan, 'get_withdrawals', side_effect=RemoteError('failed', cause=FailureCause.NETWORK)) if query_method == 'blockscout' else nullcontext(),  # noqa: E501
         patch.object(eth2, 'detect_exited_validators', side_effect=lambda *args, **kwargs: None),
     ):
         eth2.query_services_for_validator_withdrawals(addresses=ethereum_accounts, to_ts=to_ts)

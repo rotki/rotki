@@ -14,7 +14,8 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import get_query_chunks
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.fval import FVal
@@ -156,7 +157,10 @@ class GnosisPay:
                 timeout=timeout,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Querying {querystr} failed due to {e!s}') from e
+            raise RemoteError(
+                f'Querying {querystr} failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code != HTTPStatus.OK:
             if response.status_code == HTTPStatus.UNAUTHORIZED:
@@ -175,6 +179,7 @@ class GnosisPay:
                 f'Gnosis Pay API request {response.url} failed '
                 f'with HTTP status code {response.status_code} and text '
                 f'{response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         # paginated response has this format
@@ -185,6 +190,7 @@ class GnosisPay:
         except JSONDecodeError as e:
             raise RemoteError(
                 f'Gnosis Pay API returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return data
@@ -215,7 +221,10 @@ class GnosisPay:
             data = self._query(endpoint='cards/transactions', params=page_params)
             if not isinstance(page := data.get('results'), list):
                 log.error('Missing or invalid results in gnosis pay response: %s', data)
-                raise RemoteError('results key missing from paginated endpoint')
+                raise RemoteError(
+                    'results key missing from paginated endpoint',
+                    cause=FailureCause.BAD_DATA,
+                )
 
             if len(page) == 0:
                 # from the docs: The final number might differ a little bit, as one thread might contain multiple transactions.  # noqa: E501
@@ -690,17 +699,21 @@ def fetch_gnosis_pay_siwe_nonce() -> str:
             headers={'User-Agent': ROTKI_USER_AGENT},
         )
     except requests.RequestException as e:
-        raise RemoteError(f'Failed to fetch Gnosis Pay nonce: {e!s}') from e
+        raise RemoteError(
+            f'Failed to fetch Gnosis Pay nonce: {e!s}',
+            cause=FailureCause.NETWORK,
+        ) from e
 
     if response.status_code != HTTPStatus.OK:
         raise RemoteError(
             f'Gnosis Pay nonce request failed with HTTP status code '
             f'{response.status_code} and text {response.text}',
+            cause=cause_for_status(response.status_code),
         )
 
     nonce = response.text.strip()
     if nonce == '':
-        raise RemoteError('Gnosis Pay nonce response was empty')
+        raise RemoteError('Gnosis Pay nonce response was empty', cause=FailureCause.BAD_DATA)
 
     return nonce
 
@@ -720,12 +733,16 @@ def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
             headers={'User-Agent': ROTKI_USER_AGENT},
         )
     except requests.RequestException as e:
-        raise RemoteError(f'Failed to verify Gnosis Pay SIWE signature: {e!s}') from e
+        raise RemoteError(
+            f'Failed to verify Gnosis Pay SIWE signature: {e!s}',
+            cause=FailureCause.NETWORK,
+        ) from e
 
     if response.status_code != HTTPStatus.OK:
         raise RemoteError(
             f'Gnosis Pay challenge request failed with HTTP status code '
             f'{response.status_code} and text {response.text}',
+            cause=cause_for_status(response.status_code),
         )
 
     try:
@@ -733,11 +750,13 @@ def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
     except JSONDecodeError as e:
         raise RemoteError(
             f'Gnosis Pay challenge returned invalid JSON response: {response.text}',
+            cause=FailureCause.BAD_DATA,
         ) from e
 
     if not isinstance(token := data.get('token'), str) or token == '':
         raise RemoteError(
             f'Unexpected payload while verifying Gnosis Pay SIWE signature: {response.text}',
+            cause=FailureCause.BAD_DATA,
         )
 
     try:
@@ -747,7 +766,10 @@ def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
             headers={'User-Agent': ROTKI_USER_AGENT, 'Authorization': f'Bearer {token}'},
         )
     except requests.RequestException as e:
-        raise RemoteError(f'Failed to verify Gnosis Pay token against account balances: {e!s}') from e  # noqa: E501
+        raise RemoteError(
+            f'Failed to verify Gnosis Pay token against account balances: {e!s}',
+            cause=FailureCause.NETWORK,
+        ) from e
 
     if balances_response.status_code != HTTPStatus.OK:
         signer_address_match = EVM_ADDRESS_REGEX.search(message)
@@ -755,6 +777,7 @@ def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
         raise RemoteError(
             f'Failed to authenticate with "{signer_address}". '
             'Make sure it is is an owner/signer of the Gnosis Pay safe',
+            cause=FailureCause.AUTH,
         )
 
     return token

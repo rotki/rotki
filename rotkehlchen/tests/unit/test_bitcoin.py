@@ -19,6 +19,7 @@ from rotkehlchen.chain.bitcoin.utils import (
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS, SupportedBlockchain
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError, XPUBError
 from rotkehlchen.tests.utils.ens import ENS_BRUNO_BTC_ADDR, ENS_BRUNO_BTC_BYTES
 from rotkehlchen.tests.utils.factories import (
@@ -542,7 +543,7 @@ def test_bitcoin_balance_api_resolver(
 
     def mock_query_blockstream_or_mempool(only_blockstream: bool, **kwargs):
         if only_blockstream and 'blockstream' in kwargs['url']:
-            raise RemoteError('Fatality')
+            raise RemoteError('Fatality', cause=FailureCause.NETWORK)
 
         return request_get_dict(**kwargs)
 

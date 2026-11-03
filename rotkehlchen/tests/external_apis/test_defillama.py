@@ -6,6 +6,7 @@ import requests
 
 from rotkehlchen.assets.utils import get_or_create_solana_token
 from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_EUR, A_LINK, A_USD, A_USDC, A_USDT
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
@@ -145,7 +146,7 @@ def test_query_multiple_current_prices_handles_exceptions_and_chunking(session_d
         nonlocal call_count
         call_count += 1
         if call_count == 1:  # Fail the first chunk to simulate "413 content too large"
-            raise RemoteError('413 content too large')
+            raise RemoteError('413 content too large', cause=FailureCause.NETWORK)
 
         # Succeed for subsequent chunks
         return original_query(*args, **kwargs)

@@ -8,6 +8,7 @@ from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmOperatorType
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmNodeOperatorStats
 from rotkehlchen.db.lido_csm import DBLidoCsm
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -186,7 +187,7 @@ def test_add_lido_csm_node_operator_returns_warning_on_metrics_failure(
 
     with patch(
         'rotkehlchen.api.rest.LidoCsmMetricsFetcher.get_operator_stats',
-        side_effect=RemoteError('boom'),
+        side_effect=RemoteError('boom', cause=FailureCause.NETWORK),
     ):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'lidocsmnodeoperatorresource'),
@@ -214,7 +215,7 @@ def test_refresh_metrics_endpoint_warns_on_failure(rotkehlchen_api_server) -> No
 
     with patch(
         'rotkehlchen.api.rest.LidoCsmMetricsFetcher.get_operator_stats',
-        side_effect=RemoteError('boom'),
+        side_effect=RemoteError('boom', cause=FailureCause.NETWORK),
     ):
         response = requests.post(api_url_for(rotkehlchen_api_server, 'lidocsmmetricsresource'))
 

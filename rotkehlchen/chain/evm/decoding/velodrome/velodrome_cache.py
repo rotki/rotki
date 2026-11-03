@@ -16,7 +16,8 @@ from rotkehlchen.chain.evm.utils import (
     maybe_notify_new_pools_status,
 )
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_like,
@@ -450,7 +451,10 @@ def query_velodrome_like_data(
         backfill_velodrome_gauges_from_voter(inquirer=inquirer)
     except (RemoteError, DeserializationError) as e:
         if reload_all:  # a forced refresh is how users recover missing gauges, so report it
-            raise RemoteError(f'Failed to backfill {inquirer.chain_name} gauges from the voter: {e!s}') from e  # noqa: E501
+            raise RemoteError(
+                f'Failed to backfill {inquirer.chain_name} gauges from the voter: {e!s}',
+                cause=cause_of(e, FailureCause.BAD_DATA),
+            ) from e
 
         log.warning(
             'Failed to backfill gauges from the voter',

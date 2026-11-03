@@ -58,6 +58,7 @@ from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.timing import TOKEN_QUERY_FAILURE_COOLDOWN
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     BlockscoutIncompleteResponse,
@@ -591,6 +592,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 raise RemoteError(  # no need to try other nodes since its not a node problem.
                     f'Failed to query {node_info.name} for {method!s}: '
                     f'non-checksum address {e.args[1]}',
+                    cause=FailureCause.INVALID_INPUT,
                 ) from e
             except RequestTooLargeError:
                 gas_limit_error_seen = True
@@ -644,7 +646,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if transaction_not_found_seen:
             raise InputError(f'Transaction {kwargs["tx_hash"]!s} was not found on {self.chain_name}')  # noqa: E501
 
-        raise RemoteError(f'Error querying information from {self.blockchain!s}. Check logs for more information')  # noqa: E501
+        raise RemoteError(
+            f'Error querying information from {self.blockchain!s}. Check logs for more information',  # noqa: E501
+            cause=FailureCause.NETWORK,
+        )
 
     def _get_latest_block_number(self, web3: Web3 | None) -> int:
         if web3 is not None:
@@ -861,7 +866,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
           _query() turns into a RemoteError so the next node is tried
         """
         if web3 is None:  # indexers can't read raw storage, fail over to an rpc node
-            raise RemoteError('Reading contract storage requires an rpc node')
+            raise RemoteError(
+                'Reading contract storage requires an rpc node',
+                cause=FailureCause.UNSUPPORTED,
+            )
         return bytes(web3.eth.get_storage_at(account_address, position))
 
     def _get_transaction_receipt(
@@ -878,7 +886,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 tx_hash=tx_hash,
             ))) is None:
                 if must_exist:  # fail, so other nodes can be tried
-                    raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash!s} returned None')  # noqa: E501
+                    raise RemoteError(
+                        f'Querying for {self.chain_name} receipt {tx_hash!s} returned None',
+                        cause=FailureCause.BAD_DATA,
+                    )
 
                 return None  # else it does not exist
 
@@ -909,6 +920,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 raise RemoteError(
                     f'Couldnt deserialize transaction receipt data from etherscan '
                     f'due to {msg}. Check logs for details',
+                    cause=FailureCause.BAD_DATA,
                 ) from e
 
             return tx_receipt
@@ -918,7 +930,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
         except TransactionNotFound as e:
             if must_exist:  # fail, so other nodes can be tried
-                raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash!s} returned None') from e  # noqa: E501
+                raise RemoteError(
+                    f'Querying for {self.chain_name} receipt {tx_hash!s} returned None',
+                    cause=FailureCause.BAD_DATA,
+                ) from e
 
             raise  # else re-raise e
 
@@ -953,7 +968,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             must_exist=True,
         )
         if tx_receipt is None:
-            raise RemoteError(f'{self.chain_name} tx_receipt should exist for {tx_hash!s}')
+            raise RemoteError(
+                f'{self.chain_name} tx_receipt should exist for {tx_hash!s}',
+                cause=FailureCause.BAD_DATA,
+            )
         return tx_receipt
 
     def _get_transaction_receipts(
@@ -972,7 +990,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
           _query() returns None and the caller falls back to per-tx queries
         """
         if web3 is None:
-            raise RemoteError(f'Batched receipt queries for {self.chain_name} require an rpc node')
+            raise RemoteError(
+                f'Batched receipt queries for {self.chain_name} require an rpc node',
+                cause=FailureCause.UNSUPPORTED,
+            )
 
         if len(batched_hashes := [x for x in tx_hashes if x != GENESIS_HASH]) == 0:
             return [FAKE_GENESIS_TX_RECEIPT] * len(tx_hashes)
@@ -991,12 +1012,14 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             raise RemoteError(
                 f'Batched receipt query to a {self.chain_name} node failed, probably '
                 f'due to the node not supporting batched requests: {e!s}',
+                cause=FailureCause.UNSUPPORTED,
             ) from e
 
         if len(results) != len(batched_hashes):
             raise RemoteError(
                 f'A {self.chain_name} node returned {len(results)} receipts to a '
                 f'batched query for {len(batched_hashes)} transactions',
+                cause=FailureCause.BAD_DATA,
             )
 
         results_iter = iter(results)
@@ -1071,10 +1094,14 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         except (DeserializationError, ValueError) as e:
             raise RemoteError(
                 f'Couldnt deserialize evm transaction data from {tx_data}. Error: {e!s}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         if receipt_data is None:
-            raise RemoteError(f'{self.chain_name} transaction {tx_hash!s} receipt_data is expected to exist')  # noqa: E501  # as etherscan getTransactionByHash does not contains gasUsed'
+            raise RemoteError(
+                f'{self.chain_name} transaction {tx_hash!s} receipt_data is expected to exist',
+                cause=FailureCause.BAD_DATA,
+            )  # as etherscan getTransactionByHash does not contains gasUsed
         return transaction, receipt_data
 
     def maybe_get_transaction_by_hash(
@@ -1745,6 +1772,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             raise RemoteError(
                 f'Resolved an inverted {self.chain_name} block range for {from_ts} - {to_ts}: '
                 f'{from_block} - {to_block}. An indexer is behind on the chain.',
+                cause=FailureCause.BAD_DATA,
             )
 
         # Who could not resolve the end cannot serve a range ending there. This only skips
@@ -2280,9 +2308,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # If any indexer failed with an error that may heal by itself (rate limit, timeout,
         # 5xx) let callers know that trying again later can help.
         if any(isinstance(e, RecoverableRemoteError) for _, e in errors):
-            raise RecoverableRemoteError(message)
+            raise RecoverableRemoteError(message, cause=FailureCause.NETWORK)
 
-        raise RemoteError(message)
+        raise RemoteError(message, cause=FailureCause.REMOTE_REJECTED)
 
     def _maybe_notify_no_indexers(self, blockscout_incomplete_response: bool = False) -> None:
         """Tell the user once per reason that no indexer can serve this chain.

@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.coinex import API_MAX_LIMIT, Coinex, CoinexMarket
 from rotkehlchen.fval import FVal
@@ -45,7 +46,7 @@ def test_failed_history_query_saves_completed_source(coinex_exchange: Coinex) ->
         patch.object(
             coinex_exchange,
             '_query_asset_movements',
-            side_effect=([event], RemoteError('withdrawals failed')),
+            side_effect=([event], RemoteError('withdrawals failed', cause=FailureCause.NETWORK)),
         ),
         pytest.raises(RemoteError, match='withdrawals failed'),
     ):

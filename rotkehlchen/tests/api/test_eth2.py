@@ -24,6 +24,7 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -492,6 +493,7 @@ def test_add_get_edit_delete_eth2_validators(
             response=response,
             contained_in_msg='ETH staking limit exceeded. Current staked: 0 ETH, limit: 0 ETH. Would be: 32.002413771 ETH',  # noqa: E501
             status_code=HTTPStatus.FORBIDDEN,
+            result_exists=True,  # the limit details
         )
         response = requests.get(
             api_url_for(
@@ -709,7 +711,7 @@ def test_add_delete_validator_errors(
         with patch.object(
             eth2.beacon_inquirer,
             'get_validator_data',
-            side_effect=RemoteError(msg),
+            side_effect=RemoteError(msg, cause=FailureCause.NETWORK),
         ):
             response = requests.request(
                 method=method,
@@ -967,7 +969,7 @@ def test_query_online_block_productions_missing_api_key(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('beaconchain_error', [
     APIKeyNotAvailable('Beaconcha.in API key is no longer active'),
-    RemoteError('Beaconcha.in query failed'),
+    RemoteError('Beaconcha.in query failed', cause=FailureCause.NETWORK),
 ])
 def test_query_online_block_productions_beaconchain_error_falls_back_to_indexers(
         rotkehlchen_api_server: APIServer,

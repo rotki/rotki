@@ -1,7 +1,9 @@
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
 
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.externalapis.helius import HELIUS_RPC_NODE_NAME, HELIUS_RPC_URL
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import has_premium_check
@@ -108,23 +110,21 @@ class ExternalServicesService:
     def add_services(
             self,
             services: list[ExternalServiceApiCredentials],
-    ) -> tuple[bool, str, dict[str, Any] | None, HTTPStatus]:
+    ) -> ApiResult:
         should_renable_etherscan = False
         helius_api_key = None
         for service in services:
             if service.service.premium_only() and not has_premium_check(self.rotkehlchen.premium):
-                return (
-                    False,
+                return FailResult(
                     f'You can only use {service.service} with rotki premium',
-                    None,
                     HTTPStatus.FORBIDDEN,
+                    FailureCause.FORBIDDEN,
                 )
             if service.service == ExternalService.GNOSIS_PAY:
-                return (
-                    False,
+                return FailResult(
                     'GnosisPay credentials are set using /services/gnosispay/token',
-                    None,
                     HTTPStatus.FORBIDDEN,
+                    FailureCause.FORBIDDEN,
                 )
             if service.service == ExternalService.ETHERSCAN:
                 should_renable_etherscan = True
@@ -145,7 +145,7 @@ class ExternalServicesService:
         if helius_api_key is not None:
             self._sync_helius_rpc_node(api_key=helius_api_key)
 
-        return True, '', self._build_payload(), HTTPStatus.OK
+        return OkResult(self._build_payload())
 
     def delete_services(
             self,

@@ -10,7 +10,8 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddr
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, YEAR_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKeyOptionalDB
 from rotkehlchen.fval import FVal
@@ -671,27 +672,33 @@ class Coingecko(
             )
         except requests.exceptions.RequestException as e:
             self.note_request_failure(e)
-            raise RemoteError(f'Coingecko API request failed due to {e!s}') from e
+            raise RemoteError(
+                f'Coingecko API request failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             self.last_rate_limit = ts_now()
             self._rate_limiter.shrink_after_429()
             msg = f'Got rate limited by coingecko querying {url}'
             log.warning(msg)
-            raise RemoteError(message=msg, error_code=HTTPStatus.TOO_MANY_REQUESTS)
+            raise RemoteError(
+                message=msg, error_code=HTTPStatus.TOO_MANY_REQUESTS,
+                cause=FailureCause.RATE_LIMITED,
+            )
 
         if response.status_code != 200:
             msg = (
                 f'Coingecko API request {response.url} failed with HTTP status '
                 f'code: {response.status_code}'
             )
-            raise RemoteError(msg)
+            raise RemoteError(msg, cause=cause_for_status(response.status_code))
 
         try:
             decoded_json = json.loads(response.text)
         except json.decoder.JSONDecodeError as e:
             msg = f'Invalid JSON in Coingecko response. {e}'
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
         return decoded_json
 
@@ -733,6 +740,7 @@ class Coingecko(
         except KeyError as e:
             raise RemoteError(
                 f'Missing expected key entry {e} in coingecko coin data response',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return parsed_data

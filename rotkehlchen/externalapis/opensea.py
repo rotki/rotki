@@ -15,7 +15,8 @@ from rotkehlchen.constants.assets import A_ETH, A_USD
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -184,6 +185,7 @@ class Opensea(ExternalServiceWithApiKey):
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'Opensea API request {query_str} failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
                 ) from e
 
             if response.status_code != 200:
@@ -200,6 +202,7 @@ class Opensea(ExternalServiceWithApiKey):
                     raise RemoteError(
                         f'Reached opensea backoff limit after we incrementally backed off '
                         f'for {response.url}',
+                        cause=FailureCause.RATE_LIMITED,
                     )
                 continue
 
@@ -211,6 +214,7 @@ class Opensea(ExternalServiceWithApiKey):
                 f'Opensea API request {response.url} failed '
                 f'with HTTP status code {response.status_code} and text '
                 f'{response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
@@ -219,6 +223,7 @@ class Opensea(ExternalServiceWithApiKey):
             raise RemoteError(
                 f'Opensea API request {response.url} returned invalid '
                 f'JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return json_ret

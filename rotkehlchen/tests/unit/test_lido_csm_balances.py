@@ -14,6 +14,7 @@ from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import (
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.db.lido_csm import DBLidoCsm, LidoCsmNodeOperator
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -37,7 +38,7 @@ def test_lido_csm_balances_skips_on_error():
     entry = LidoCsmNodeOperator(address=make_evm_address(), node_operator_id=5)
 
     def _raise_remote_error(*_args, **_kwargs):
-        raise RemoteError('boom')
+        raise RemoteError('boom', cause=FailureCause.NETWORK)
 
     with patch(
         'rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators',

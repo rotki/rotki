@@ -15,6 +15,7 @@ from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UP
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     BlockscoutIncompleteResponse,
     ChainNotSupported,
@@ -82,7 +83,7 @@ def test_try_indexers_respects_settings_order() -> None:
     def query(indexer: DummyIndexer) -> str:
         calls.append(indexer.name)
         if indexer.name != 'Blockscout':
-            raise RemoteError('boom')
+            raise RemoteError('boom', cause=FailureCause.NETWORK)
         return 'ok'
 
     cached_settings.update_entry(
@@ -111,7 +112,7 @@ def test_try_indexers_custom_override() -> None:
     def query(indexer: DummyIndexer) -> str:
         calls.append(indexer.name)
         if indexer.name != 'Blockscout':
-            raise RemoteError('boom')
+            raise RemoteError('boom', cause=FailureCause.NETWORK)
         return 'ok'
 
     indexer_setting = CachedSettings().evm_indexers_order_override_var.set((
@@ -143,7 +144,7 @@ def test_try_indexers_custom_override_subset() -> None:
     def query(indexer: DummyIndexer) -> str:
         calls.append(indexer.name)
         if indexer.name != 'Routescan':
-            raise RemoteError('boom')
+            raise RemoteError('boom', cause=FailureCause.NETWORK)
         return 'ok'
 
     indexer_setting = CachedSettings().evm_indexers_order_override_var.set((
@@ -187,7 +188,7 @@ def test_try_indexers_notifies_blockscout_key_when_etherscan_refuses_chain() -> 
             raise ChainNotSupported('Free API access is not supported for this chain')
         if indexer.name == 'Routescan':
             raise ChainNotSupported('Routescan does not support BASE')
-        raise RemoteError('Blockscout has no API key configured')
+        raise RemoteError('Blockscout has no API key configured', cause=FailureCause.NETWORK)
 
     for _ in range(3):
         with pytest.raises(RemoteError, match='Failed to query any indexer'):
@@ -220,7 +221,7 @@ def test_try_indexers_notifies_paid_key_when_blockscout_key_would_not_help(
     def query(indexer: Any) -> str:
         if indexer.name == 'Etherscan':
             raise ChainNotSupported('Free API access is not supported for this chain')
-        raise RemoteError('Blockscout is down')
+        raise RemoteError('Blockscout is down', cause=FailureCause.NETWORK)
 
     token = CachedSettings.evm_indexers_order_override_var.set(custom_order)
     try:
@@ -246,7 +247,7 @@ def test_try_indexers_skips_paid_key_notice_for_uncovered_range() -> None:
             raise ChainNotSupported('Free API access is not supported for this chain')
         if indexer.name == 'Blockscout':
             raise IndexerRangeNotCovered('pre-Bedrock internal transactions unavailable')
-        raise RemoteError('Routescan rate limited')
+        raise RemoteError('Routescan rate limited', cause=FailureCause.NETWORK)
 
     with pytest.raises(RemoteError, match='Failed to query any indexer'):
         inquirer._try_indexers(func=cast('Callable[[Any], str]', query))
@@ -274,11 +275,15 @@ def test_try_indexers_notifies_paid_key_needed_when_none_remain() -> None:
 
 @pytest.mark.parametrize('chain_id', [ChainID.OPTIMISM, ChainID.GNOSIS])
 @pytest.mark.parametrize('etherscan_first', [False, True])
-@pytest.mark.parametrize('fallback_error', [ChainNotSupported, RemoteError, None])
+@pytest.mark.parametrize('fallback_error', [
+    ChainNotSupported('Etherscan query failed'),
+    RemoteError('Etherscan query failed', cause=FailureCause.NETWORK),
+    None,
+])
 def test_incomplete_blockscout_response_notification(
         chain_id: SUPPORTED_CHAIN_IDS,
         etherscan_first: bool,
-        fallback_error: type[RemoteError] | None,
+        fallback_error: RemoteError | None,
 ) -> None:
     """Preserve Blockscout's incomplete response through iterator fallback, in either order."""
     fallback_succeeds = fallback_error is None
@@ -309,7 +314,7 @@ def test_incomplete_blockscout_response_notification(
                 'get_transactions',
                 create=True,
                 return_value=iter([[]]),
-                side_effect=fallback_error('Etherscan query failed') if fallback_error is not None else None,  # noqa: E501
+                side_effect=fallback_error,
             ),
         ):
             for _ in range(1 if fallback_succeeds else 3):
@@ -331,7 +336,7 @@ def test_incomplete_blockscout_response_notification(
     finally:
         CachedSettings.evm_indexers_order_override_var.reset(token)
 
-    if fallback_error != ChainNotSupported:
+    if not isinstance(fallback_error, ChainNotSupported):
         inquirer.database.msg_aggregator.add_message.assert_not_called()  # type: ignore
     else:
         assert EvmIndexer.BLOCKSCOUT in inquirer.available_indexers
@@ -356,7 +361,10 @@ def test_incomplete_blockscout_context_does_not_leak_into_next_query() -> None:
         inquirer.database.msg_aggregator.add_message.assert_not_called()  # type: ignore
 
         with pytest.raises(RemoteError, match='Failed to query any indexer'):
-            inquirer._try_indexers(func=MagicMock(side_effect=RemoteError('down')))
+            inquirer._try_indexers(func=MagicMock(side_effect=RemoteError(
+                'down',
+                cause=FailureCause.NETWORK,
+            )))
     finally:
         CachedSettings.evm_indexers_order_override_var.reset(token)
 
@@ -366,9 +374,12 @@ def test_incomplete_blockscout_context_does_not_leak_into_next_query() -> None:
     )
 
 
-@pytest.mark.parametrize('first_etherscan_error', [ChainNotSupported, RemoteError])
+@pytest.mark.parametrize('first_etherscan_error', [
+    ChainNotSupported('Etherscan query failed'),
+    RemoteError('Etherscan query failed', cause=FailureCause.NETWORK),
+])
 def test_incomplete_blockscout_response_does_not_suppress_later_key_notice(
-        first_etherscan_error: type[RemoteError],
+        first_etherscan_error: RemoteError,
 ) -> None:
     """A temporary failure cannot silence a later missing-key notice for the same chain."""
     inquirer = DummyEvmNodeInquirer(missing_blockscout_key=False)
@@ -382,10 +393,10 @@ def test_incomplete_blockscout_response_does_not_suppress_later_key_notice(
         with pytest.raises(RemoteError, match='Failed to query any indexer'):
             inquirer._try_indexers(func=MagicMock(side_effect=[
                 BlockscoutIncompleteResponse('Blockscout is missing data'),
-                first_etherscan_error('Etherscan query failed'),
+                first_etherscan_error,
             ]))
 
-        if first_etherscan_error == ChainNotSupported:
+        if isinstance(first_etherscan_error, ChainNotSupported):
             expected_messages.append(call(
                 message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
                 data={'chain': SupportedBlockchain.BASE.value, 'reason': 'blockscout_incomplete_response'},  # noqa: E501
@@ -396,7 +407,10 @@ def test_incomplete_blockscout_response_does_not_suppress_later_key_notice(
             for _ in range(3):
                 with pytest.raises(RemoteError, match='Failed to query any indexer'):
                     inquirer._try_indexers(func=MagicMock(side_effect=[
-                        RemoteError('Blockscout has no API key configured'),
+                        RemoteError(
+                            'Blockscout has no API key configured',
+                            cause=FailureCause.NETWORK,
+                        ),
                         ChainNotSupported('Free API access is not supported for this chain'),
                     ]))
     finally:
@@ -433,7 +447,7 @@ def test_try_indexers_does_not_blame_the_key_when_etherscan_was_not_refused() ->
     inquirer = DummyEvmNodeInquirer()
 
     def query(indexer: Any) -> str:
-        raise RemoteError('down')
+        raise RemoteError('down', cause=FailureCause.NETWORK)
 
     with pytest.raises(RemoteError, match='Failed to query any indexer'):
         inquirer._try_indexers(func=query)
@@ -569,7 +583,7 @@ def test_cached_incomplete_blockscout_range_still_fails_the_sync(
             fallback_mocks = [stack.enter_context(patch.object(
                 inquirer.available_indexers[indexer],
                 'get_transactions',
-                side_effect=RemoteError('fallback indexer failed'),
+                side_effect=RemoteError('fallback indexer failed', cause=FailureCause.NETWORK),
             )) for indexer in other_indexers]
             stack.enter_context(patch.object(inquirer, '_resolve_timestamp_range', side_effect=[
                 (OP_BEDROCK_BLOCK + 100, OP_BEDROCK_BLOCK + 200, frozenset()),

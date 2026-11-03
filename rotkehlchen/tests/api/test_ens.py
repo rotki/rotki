@@ -8,6 +8,7 @@ import requests
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import ENS_UPDATE_INTERVAL
 from rotkehlchen.db.ens import DBEns
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -70,7 +71,10 @@ def mocked_find_ens_mappings(
     try:
         query_results = ethereum_inquirer.ens_reverse_lookup(addresses_to_query)
     except (RemoteError, BlockchainQueryError) as e:
-        raise RemoteError(f'Error occurred while querying ens names: {e!s}') from e
+        raise RemoteError(
+            f'Error occurred while querying ens names: {e!s}',
+            cause=FailureCause.NETWORK,
+        ) from e
 
     with dbens.db.user_write() as write_cursor:
         return dbens.update_values(

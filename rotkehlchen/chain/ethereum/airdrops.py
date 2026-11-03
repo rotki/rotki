@@ -28,7 +28,8 @@ from rotkehlchen.constants.misc import AIRDROPSDIR_NAME, AIRDROPSPOAPDIR_NAME, A
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
@@ -269,12 +270,16 @@ def fetch_airdrops_metadata(database: DBHandler) -> tuple[dict[str, Airdrop], di
                 headers=headers,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Airdrops Index request failed due to {e!s}') from e
+            raise RemoteError(
+                f'Airdrops Index request failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         if remote_metadata_res.status_code not in (HTTPStatus.OK, HTTPStatus.NOT_MODIFIED):
             raise RemoteError(
                 f'Airdrops Index request failed with HTTP status '
                 f'{remote_metadata_res.status_code}: {remote_metadata_res.text}',
+                cause=cause_for_status(remote_metadata_res.status_code),
             )
 
         if remote_metadata_res.status_code == HTTPStatus.NOT_MODIFIED:  # index is not modified, use cached index  # noqa: E501
@@ -301,7 +306,10 @@ def fetch_airdrops_metadata(database: DBHandler) -> tuple[dict[str, Airdrop], di
             try:
                 airdrops_data = remote_metadata_res.json()
             except JSONDecodeError as e:
-                raise RemoteError(f'Airdrops Index is not valid JSON {e!s}') from e
+                raise RemoteError(
+                    f'Airdrops Index is not valid JSON {e!s}',
+                    cause=FailureCause.BAD_DATA,
+                ) from e
 
     return (
         _parse_airdrops(database=database, airdrops_data=airdrops_data['airdrops']),
@@ -337,7 +345,10 @@ def _maybe_get_updated_file(
         try:
             response = requests.get(url=remote_url, timeout=(30, 100))  # a large read timeout is necessary because the queried data is quite large  # noqa: E501
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Airdrops file request failed due to {e!s}') from e
+            raise RemoteError(
+                f'Airdrops file request failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
         process_response(response, filename)
 
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -356,11 +367,17 @@ def _process_airdrop_csv(response: Response, filename: Path) -> None:
     try:
         if len(pd.read_csv(filename, nrows=1).columns) < 2:
             filename.unlink()
-            raise RemoteError(f'Invalid CSV file {filename}. Removing it.')
+            raise RemoteError(
+                f'Invalid CSV file {filename}. Removing it.',
+                cause=FailureCause.BAD_DATA,
+            )
     except (OSError, UnicodeDecodeError, pd.errors.ParserError) as e:
         filename.unlink()
         log.error('Deleted invalid CSV file %s due to %s', filename, e)
-        raise RemoteError(f'Invalid CSV file {filename}. Removing it.') from e
+        raise RemoteError(
+            f'Invalid CSV file {filename}. Removing it.',
+            cause=FailureCause.BAD_DATA,
+        ) from e
 
 
 def get_airdrop_data(

@@ -13,7 +13,8 @@ from rotkehlchen.constants import MONTH_IN_MILLISECONDS, WEEK_IN_MILLISECONDS, Z
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -200,6 +201,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'{self.name} request at {request_url} connection error: {e!s}.',
+                    cause=FailureCause.NETWORK,
                 ) from e
 
         return response
@@ -210,6 +212,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(
                 f'{self.name} query responded with HTTP status '
                 f'{response.status_code}: {response.text}',
+                cause=cause_for_status(response.status_code),
             )
 
         try:
@@ -217,6 +220,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
         except json.JSONDecodeError as e:
             raise RemoteError(
                 f'{self.name} returned invalid JSON response: {response.text}',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         code = data.get('code', -1)
@@ -480,7 +484,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                 msg = f'Failed to query {self.name} {query_type}s: {result.message}'
                 log.error(msg)
                 self.add_classified_error(msg, NetworkFailure(record=record, error=msg))
-                raise RemoteError(msg)
+                raise RemoteError(msg, cause=FailureCause.REMOTE_REJECTED)
 
             page_events: list[HistoryBaseEntry] = []
             for raw_asset_movement in (raw_list := result.result.get(result_key, [])):

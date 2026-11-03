@@ -93,6 +93,7 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -393,7 +394,10 @@ def test_find_usd_price_via_second_oracle(inquirer):
     inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
 
     expected_price = Price(FVal('30000'))
-    inquirer._oracle_instances[0].query_multiple_current_prices.side_effect = RemoteError
+    inquirer._oracle_instances[0].query_multiple_current_prices.side_effect = RemoteError(
+        'oracle failed',
+        cause=FailureCause.NETWORK,
+    )
     inquirer._oracle_instances[1].query_multiple_current_prices.return_value = {A_BTC: expected_price}  # noqa: E501
 
     price = inquirer.find_usd_price(A_BTC)
@@ -508,7 +512,10 @@ def test_manual_price_batch_isolates_asset_errors(globaldb) -> None:
     }
     with (
         patch.object(GlobalDBHandler, 'get_manual_current_prices', return_value=manual_prices),
-        patch.object(Inquirer, 'find_price', side_effect=(RemoteError('boom'), Price(FVal(4)))),
+        patch.object(Inquirer, 'find_price', side_effect=(RemoteError(
+            'boom',
+            cause=FailureCause.NETWORK,
+        ), Price(FVal(4)))),
     ):
         assert ManualCurrentOracle().query_multiple_current_prices(
             from_assets=[btc, eth],
@@ -1423,7 +1430,7 @@ def test_waiters_of_failed_owner_retry_once(inquirer: Inquirer) -> None:
         if not in_oracle.is_set():  # the owner
             in_oracle.set()
             assert release.wait(timeout=10)
-            raise RemoteError('owner failed')
+            raise RemoteError('owner failed', cause=FailureCause.NETWORK)
         return _cache_and_return_price(from_assets, to_asset, Price(FVal(2)))
 
     with (

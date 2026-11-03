@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -308,7 +309,10 @@ class ProtocolWithGauges(ProtocolWithBalance):
                 normalized_balance = token_normalized_value(token_balance, token)
                 balances[token] += normalized_balance
         except ValueError as e:
-            raise RemoteError('tokensBalance query returned less tokens than expected') from e
+            raise RemoteError(
+                'tokensBalance query returned less tokens than expected',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         return balances
 

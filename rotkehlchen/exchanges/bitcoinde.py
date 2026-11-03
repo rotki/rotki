@@ -12,7 +12,8 @@ from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.converters import asset_from_bitcoinde
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.exchanges.exchange import (
@@ -139,31 +140,44 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
         try:
             response = getattr(self.session, verb)(request_url, data=data, headers=headers)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Bitcoin.de API request failed due to {e!s}') from e
+            raise RemoteError(
+                f'Bitcoin.de API request failed due to {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         try:
             json_ret = json.loads(response.text)
         except JSONDecodeError as exc:
-            raise RemoteError('Bitcoin.de returned invalid JSON response') from exc
+            raise RemoteError(
+                'Bitcoin.de returned invalid JSON response',
+                cause=FailureCause.BAD_DATA,
+            ) from exc
 
         if response.status_code not in {200, 401}:
             if isinstance(json_ret, dict) and 'errors' in json_ret:
                 for error in json_ret['errors']:
                     if error.get('field') == 'X-API-KEY' and error.get('code') == 1:
-                        raise RemoteError('Provided API Key is in invalid Format')
+                        raise RemoteError(
+                            'Provided API Key is in invalid Format',
+                            cause=FailureCause.AUTH,
+                        )
 
                     if error.get('code') == 3:
-                        raise RemoteError('Provided API Key is invalid')
+                        raise RemoteError('Provided API Key is invalid', cause=FailureCause.AUTH)
 
-                raise RemoteError(json_ret['errors'])
+                raise RemoteError(json_ret['errors'], cause=FailureCause.REMOTE_REJECTED)
 
             raise RemoteError(
                 f'Bitcoin.de api request for {response.url} failed '
                 f'with HTTP status code {response.status_code}',
+                cause=cause_for_status(response.status_code),
             )
 
         if not isinstance(json_ret, dict):
-            raise RemoteError('Bitcoin.de returned invalid non-dict response')
+            raise RemoteError(
+                'Bitcoin.de returned invalid non-dict response',
+                cause=FailureCause.BAD_DATA,
+            )
 
         return json_ret
 

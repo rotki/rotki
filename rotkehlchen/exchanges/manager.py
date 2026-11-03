@@ -14,7 +14,8 @@ from rotkehlchen.db.constants import (
     OKX_LOCATION_KEY,
 )
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import InputError, RemoteError, cause_of, combined_cause
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithExtras, HistoryEventQueue
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -417,6 +418,7 @@ class ExchangeManager:
             exchanges_list.extend(exchanges)
 
         errors: list[str] = []
+        causes: set[FailureCause] = set()
         for exchange in exchanges_list:
             if exchange.location_id() in excluded:
                 log.info(
@@ -437,10 +439,12 @@ class ExchangeManager:
                     e,
                 )
                 errors.append(f'{exchange.name}: {e!s}')
+                causes.add(cause_of(e, FailureCause.INVALID_INPUT))
 
         if len(errors) != 0:
             raise RemoteError(
                 f'Failed to query {location!s} history events for {", ".join(errors)}',
+                cause=combined_cause(causes),
             )
 
     def requery_exchange_history_events(

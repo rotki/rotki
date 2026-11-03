@@ -13,6 +13,7 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
@@ -584,12 +585,15 @@ def test_cancelled_comparison_is_retried(database: DBHandler) -> None:
 @pytest.mark.parametrize('rule_stage', [
     'address', 'input', 'event', 'post_decoding', 'enrichment',
 ])
-@pytest.mark.parametrize('error_type', [RemoteError, ValueError])
+@pytest.mark.parametrize('rule_error', [
+    RemoteError('rule unavailable', cause=FailureCause.NETWORK),
+    ValueError('rule unavailable'),
+], ids=lambda error: type(error).__name__)
 def test_decoder_rule_failure_is_reported_as_failed_comparison(
         database: DBHandler,
         ethereum_transaction_decoder: EthereumTransactionDecoder,
         rule_stage: str,
-        error_type: type[Exception],
+        rule_error: Exception,
 ) -> None:
     """A rule failure invalidates previews without changing normal decoding's error tolerance."""
     issue_id, tx_hash = _add_negative_balance_issue(database, customized=True)
@@ -619,7 +623,7 @@ def test_decoder_rule_failure_is_reported_as_failed_comparison(
     assert receipt is not None
     saved_rows = _get_saved_event_rows(database)
     decoder = ethereum_transaction_decoder
-    failing_rule = Mock(__name__='failing_rule', side_effect=error_type('rule unavailable'))
+    failing_rule = Mock(__name__='failing_rule', side_effect=rule_error)
     chains_aggregator = MagicMock()
     chains_aggregator.get_evm_manager.return_value.transactions_decoder = decoder
 

@@ -16,6 +16,7 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.api import PremiumPermissionError
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import APIKeyNotAvailable, ChainNotSupported, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -682,10 +683,15 @@ class Eth2(EthereumModule):
 
         if len(result) != 1:
             raise RemoteError(
-                f'Validator data for {query_key} could not be found. Likely invalid validator.')
+                f'Validator data for {query_key} could not be found. Likely invalid validator.',
+                cause=FailureCause.NOT_FOUND,
+            )
 
         if result[0].validator_index is None:
-            raise RemoteError(f'Validator {result[0].public_key} has no index assigned yet')
+            raise RemoteError(
+                f'Validator {result[0].public_key} has no index assigned yet',
+                cause=FailureCause.CONFLICT,
+            )
 
         # Get the actual validator balance (to check the staking limit)
         balance_mapping = self.beacon_inquirer.get_balances(
@@ -693,7 +699,10 @@ class Eth2(EthereumModule):
             has_premium=self.premium is not None,
         )
         if (validator_balance := balance_mapping.get(result[0].public_key)) is None:
-            raise RemoteError(f'No balance was returned for validator {result[0].public_key}')
+            raise RemoteError(
+                f'No balance was returned for validator {result[0].public_key}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         # Check ETH staking limit with actual validator balance
         self._check_eth_staking_limit(validator_balance.amount, ownership_proportion)

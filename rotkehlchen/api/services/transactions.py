@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
@@ -38,12 +39,14 @@ from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import PremiumApiError
 from rotkehlchen.errors.asset import WrongAssetType
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     AlreadyExists,
     DataIntegrityError,
     IncompleteTransactionsQuery,
     InputError,
     RemoteError,
+    cause_of,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.gnosispay import GnosisPay
@@ -111,7 +114,7 @@ class TransactionsService:
             blockchain: CHAINS_WITH_TRANSACTIONS_TYPE,
             tx_ref: EVMTxHash | Signature,
             associated_address: ChecksumEvmAddress | SolanaAddress,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         chain_manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)
         try:
             if blockchain == SupportedBlockchain.SOLANA:
@@ -125,34 +128,30 @@ class TransactionsService:
                     associated_address=associated_address,
                 )
         except (KeyError, DeserializationError, RemoteError, AlreadyExists, InputError) as e:
+            message = (
+                f'Unable to add transaction with reference {tx_ref!s} for blockchain '
+                f'{blockchain} and associated address {associated_address} due to {e!s}'
+            )
             if isinstance(e, AlreadyExists):
-                status_code = HTTPStatus.CONFLICT
-            elif isinstance(e, InputError):
-                status_code = HTTPStatus.NOT_FOUND
-            else:
-                status_code = HTTPStatus.BAD_GATEWAY
-
-            return {
-                'result': None,
-                'message': (
-                    f'Unable to add transaction with reference {tx_ref!s} for blockchain '
-                    f'{blockchain} and associated address {associated_address} due to {e!s}'
-                ),
-                'status_code': status_code,
-            }
+                return FailResult(message, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+            if isinstance(e, InputError):
+                return FailResult(message, HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND)
+            if isinstance(e, RemoteError):
+                return FailResult(message, HTTPStatus.BAD_GATEWAY, e.cause)
+            return FailResult(message, HTTPStatus.BAD_GATEWAY, FailureCause.BAD_DATA)
 
         chain_manager.transactions_decoder.decode_transaction_hashes(  # type: ignore[attr-defined]
             ignore_cache=True,
             tx_hashes=[tx_ref],
         )
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
     def lookup_evm_transaction(
             self,
             evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
             tx_hash: EVMTxHash,
             related_address: ChecksumEvmAddress,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id=evm_chain)
         chain_id_db = evm_chain.serialize_for_db()
         try:
@@ -168,44 +167,40 @@ class TransactionsService:
                     relevant_address=related_address,
                 )
         except InputError as e:
-            return {
-                'result': None,
-                'message': f'Unable to find transaction {tx_hash!s} at {evm_chain.to_name()}: {e!s}',  # noqa: E501
-                'status_code': HTTPStatus.NOT_FOUND,
-            }
+            return FailResult(
+                f'Unable to find transaction {tx_hash!s} at {evm_chain.to_name()}: {e!s}',
+                HTTPStatus.NOT_FOUND,
+                FailureCause.INVALID_INPUT,
+            )
         except RemoteError as e:
-            return {
-                'result': None,
-                'message': f'Temporary error while querying transaction {tx_hash!s} at {evm_chain.to_name()}: {e!s}',  # noqa: E501
-                'status_code': HTTPStatus.CONFLICT,
-            }
+            return FailResult(
+                f'Temporary error while querying transaction {tx_hash!s} at {evm_chain.to_name()}: {e!s}',  # noqa: E501
+                HTTPStatus.CONFLICT,
+                e.cause,
+            )
         except (DeserializationError, KeyError) as e:
-            return {
-                'result': None,
-                'message': f'Unable to deserialize transaction {tx_hash!s} at {evm_chain.to_name()} due to {e!s}',  # noqa: E501
-                'status_code': HTTPStatus.BAD_GATEWAY,
-            }
+            return FailResult(
+                f'Unable to deserialize transaction {tx_hash!s} at {evm_chain.to_name()} due to {e!s}',  # noqa: E501
+                HTTPStatus.BAD_GATEWAY,
+                FailureCause.BAD_DATA,
+            )
 
-        return {
-            'result': {
-                'tx_hash': str(transaction.tx_hash),
-                'evm_chain': evm_chain.to_name(),
-                'timestamp': transaction.timestamp,
-                'block_number': transaction.block_number,
-                'from_address': transaction.from_address,
-                'to_address': transaction.to_address,
-                'value': str(transaction.value),
-                'gas': str(transaction.gas),
-                'gas_price': str(transaction.gas_price),
-                'gas_used': str(transaction.gas_used),
-                'nonce': transaction.nonce,
-                'was_fetched': was_fetched,
-            },
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult({
+            'tx_hash': str(transaction.tx_hash),
+            'evm_chain': evm_chain.to_name(),
+            'timestamp': transaction.timestamp,
+            'block_number': transaction.block_number,
+            'from_address': transaction.from_address,
+            'to_address': transaction.to_address,
+            'value': str(transaction.value),
+            'gas': str(transaction.gas),
+            'gas_price': str(transaction.gas_price),
+            'gas_used': str(transaction.gas_used),
+            'nonce': transaction.nonce,
+            'was_fetched': was_fetched,
+        })
 
-    def get_rpc_nodes(self, blockchain: SupportedBlockchain) -> dict[str, Any]:
+    def get_rpc_nodes(self, blockchain: SupportedBlockchain) -> ApiResult:
         nodes = self.rotkehlchen.data.db.get_rpc_nodes(blockchain=blockchain)
 
         inquirer = None
@@ -237,17 +232,13 @@ class TransactionsService:
 
             result.append(serialized)
 
-        return {
-            'result': result,
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult(result)
 
-    def add_rpc_node(self, node: WeightedNode) -> dict[str, Any]:
+    def add_rpc_node(self, node: WeightedNode) -> ApiResult:
         try:
             self.rotkehlchen.data.db.add_rpc_node(node)
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
         if node.node_info.blockchain in CHAINS_WITH_NODES:
             manager = self.rotkehlchen.chains_aggregator.get_chain_manager(
@@ -255,19 +246,19 @@ class TransactionsService:
             )
             manager.node_inquirer.refresh_nodes(added={node.node_info}, removed=set())  # type: ignore[attr-defined]
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def update_and_connect_rpc_node(self, node: WeightedNode) -> dict[str, Any]:
+    def update_and_connect_rpc_node(self, node: WeightedNode) -> ApiResult:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if (old_node_row := cursor.execute(
                 'SELECT name, endpoint, owned FROM rpc_nodes WHERE identifier=?',
                 (node.identifier,),
             ).fetchone()) is None:
-                return {
-                    'result': None,
-                    'message': f"Node with identifier {node.identifier} doesn't exist",
-                    'status_code': HTTPStatus.CONFLICT,
-                }
+                return FailResult(
+                    f"Node with identifier {node.identifier} doesn't exist",
+                    HTTPStatus.CONFLICT,
+                    FailureCause.NOT_FOUND,
+                )
             old_node = NodeName(
                 name=old_node_row[0],
                 endpoint=old_node_row[1],
@@ -278,7 +269,7 @@ class TransactionsService:
         try:
             self.rotkehlchen.data.db.update_rpc_node(node)
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
         nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
             blockchain=node.node_info.blockchain,
@@ -298,9 +289,9 @@ class TransactionsService:
             removed={old_node, node.node_info},
         )
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
-    def delete_rpc_node(self, identifier: int, blockchain: SupportedBlockchain) -> dict[str, Any]:
+    def delete_rpc_node(self, identifier: int, blockchain: SupportedBlockchain) -> ApiResult:
         # Fetch the endpoint before deletion so we can clean up runtime state
         deleted_node_info: NodeName | None = None
         if blockchain in CHAINS_WITH_NODES:
@@ -322,7 +313,7 @@ class TransactionsService:
                 blockchain=blockchain,
             )
         except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
         nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
             blockchain=blockchain,
@@ -332,19 +323,19 @@ class TransactionsService:
         if deleted_node_info is not None:
             manager.node_inquirer.refresh_nodes(added=set(), removed={deleted_node_info})
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
     def connect_rpc_node(
             self,
             identifier: int | None,
             blockchain: SupportedBlockchain,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         if blockchain not in CHAINS_WITH_NODES:
-            return {
-                'result': None,
-                'message': f'{blockchain} nodes are connected at login',
-                'status_code': HTTPStatus.BAD_REQUEST,
-            }
+            return FailResult(
+                f'{blockchain} nodes are connected at login',
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.CONFLICT,
+            )
 
         bindings: tuple[str | int, ...]
         if identifier is not None:
@@ -360,11 +351,11 @@ class TransactionsService:
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if len(db_entries := cursor.execute(query, bindings).fetchall()) == 0:
-                return {
-                    'result': None,
-                    'message': 'RPC node not found',
-                    'status_code': HTTPStatus.BAD_REQUEST,
-                }
+                return FailResult(
+                    'RPC node not found',
+                    HTTPStatus.BAD_REQUEST,
+                    FailureCause.NOT_FOUND,
+                )
 
         manager = cast(
             'ChainManagerWithNodesMixin',
@@ -383,42 +374,42 @@ class TransactionsService:
             if success is False:
                 errors.append({'name': node.name, 'error': msg})
 
-        return {'result': {'errors': errors}, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult({'errors': errors})
 
-    def get_watchers(self) -> dict[str, Any]:
+    def get_watchers(self) -> ApiResult:
         return self._watcher_query(method='GET', data=None)
 
-    def add_watchers(self, watchers: list[dict[str, Any]]) -> dict[str, Any]:
+    def add_watchers(self, watchers: list[dict[str, Any]]) -> ApiResult:
         return self._watcher_query(method='PUT', data={'watchers': watchers})
 
-    def edit_watchers(self, watchers: list[dict[str, Any]]) -> dict[str, Any]:
+    def edit_watchers(self, watchers: list[dict[str, Any]]) -> ApiResult:
         return self._watcher_query(method='PATCH', data={'watchers': watchers})
 
-    def delete_watchers(self, watchers: list[str]) -> dict[str, Any]:
+    def delete_watchers(self, watchers: list[str]) -> ApiResult:
         return self._watcher_query(method='DELETE', data={'watchers': watchers})
 
     def _watcher_query(
             self,
             method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],
             data: dict[str, Any] | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         try:
             result_json = self.rotkehlchen.premium.watcher_query(  # type:ignore[union-attr]
                 method=method,
                 data=data,
             )
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
         except PremiumApiError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.REMOTE_REJECTED)
 
-        return {'result': result_json, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(result_json)
 
     def delete_blockchain_transaction_data(
             self,
             chain: CHAINS_WITH_TRANSACTIONS_TYPE | None,
             tx_ref: EVMTxHash | Signature | BTCTxId | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.user_write() as write_cursor:
             if tx_ref is not None:
@@ -481,14 +472,14 @@ class TransactionsService:
                         tx_ids=[tx_ref],  # type: ignore[list-item]  # is a BTCTxId for bitcoin chains
                     )
 
-        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(True)
 
     def refresh_transactions(
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             accounts: list[OptionalBlockchainAccount] | None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         blockchain_addresses: dict[CHAINS_WITH_TRANSACTIONS_TYPE, ListOfBlockchainAddresses]
         chains_aggregator = self.rotkehlchen.chains_aggregator
         if accounts is None or len(accounts) == 0:
@@ -554,27 +545,41 @@ class TransactionsService:
         }
         wait(list(tasks.values()))
 
-        result, message, status_code = True, '', HTTPStatus.OK
         for blockchain, task in tasks.items():
             if (chain_exception := exception_of(task)) is None:
                 continue
             if isinstance(chain_exception, AttributeError):
-                result = False
-                message = f'Transaction querying for {blockchain} is not implemented.'
-                status_code = HTTPStatus.BAD_REQUEST
-            elif isinstance(chain_exception, IncompleteTransactionsQuery):
+                return FailResult(
+                    f'Transaction querying for {blockchain} is not implemented.',
+                    HTTPStatus.BAD_REQUEST,
+                    FailureCause.UNSUPPORTED,
+                    result=False,
+                )
+            if isinstance(chain_exception, IncompleteTransactionsQuery):
                 # a status of its own, so the frontend can tell it from an unreachable backend
-                result, message = False, str(chain_exception)
-                status_code = HTTPStatus.SERVICE_UNAVAILABLE
-            elif isinstance(chain_exception, RemoteError):
-                result, message, status_code = False, str(chain_exception), HTTPStatus.BAD_GATEWAY
-            elif isinstance(chain_exception, sqlcipher.OperationalError):  # pylint: disable=no-member
-                result, message, status_code = False, str(chain_exception), HTTPStatus.BAD_REQUEST
-            else:
-                raise chain_exception
-            break
+                return FailResult(
+                    str(chain_exception),
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    chain_exception.cause,
+                    result=False,
+                )
+            if isinstance(chain_exception, RemoteError):
+                return FailResult(
+                    str(chain_exception),
+                    HTTPStatus.BAD_GATEWAY,
+                    chain_exception.cause,
+                    result=False,
+                )
+            if isinstance(chain_exception, sqlcipher.OperationalError):  # pylint: disable=no-member
+                return FailResult(
+                    str(chain_exception),
+                    HTTPStatus.BAD_REQUEST,
+                    FailureCause.LOCAL_DB,
+                    result=False,
+                )
+            raise chain_exception
 
-        return {'result': result, 'message': message, 'status_code': status_code}
+        return OkResult(True)
 
     def decode_given_transactions(
             self,
@@ -582,8 +587,8 @@ class TransactionsService:
             tx_refs: list[EVMTxHash | Signature],
             delete_custom: bool,
             custom_indexers_order: list[EvmIndexer] | None = None,
-    ) -> dict[str, Any]:
-        success, message, status_code = True, '', HTTPStatus.OK
+    ) -> ApiResult:
+        failure: FailResult | None = None
         indexer_order_customized = (
             CachedSettings().evm_indexers_order_override_var.set(tuple(custom_indexers_order))
             if custom_indexers_order
@@ -608,15 +613,16 @@ class TransactionsService:
                 for solana_tx_ref in solana_tx_refs:
                     self._decode_given_solana_tx(solana_tx_ref, delete_custom)
         except (RemoteError, DeserializationError, InputError, DataIntegrityError) as e:
-            success = False
-            message = (
-                f'Failed to request {chain.name.lower()} transaction decoding due to {e!s}'
-            )
-            status_code = (
-                HTTPStatus.CONFLICT
-                if isinstance(e, (InputError, DataIntegrityError))
-                else HTTPStatus.BAD_GATEWAY
-            )
+            message = f'Failed to request {chain.name.lower()} transaction decoding due to {e!s}'
+            if isinstance(e, InputError):
+                cause, status = FailureCause.INVALID_INPUT, HTTPStatus.CONFLICT
+            elif isinstance(e, DataIntegrityError):
+                cause, status = FailureCause.LOCAL_DB, HTTPStatus.CONFLICT
+            elif isinstance(e, RemoteError):
+                cause, status = e.cause, HTTPStatus.BAD_GATEWAY
+            else:
+                cause, status = FailureCause.BAD_DATA, HTTPStatus.BAD_GATEWAY
+            failure = FailResult(message, status, cause, result=False)
             if chain.is_evm():
                 with self.rotkehlchen.data.db.user_write() as write_cursor:
                     if table_exists(write_cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
@@ -633,13 +639,13 @@ class TransactionsService:
             if indexer_order_customized:
                 CachedSettings().evm_indexers_order_override_var.reset(indexer_order_customized)
 
-        return {'result': success, 'message': message, 'status_code': status_code}
+        return OkResult(True) if failure is None else failure
 
     def decode_transactions(
             self,
             chain: CHAINS_WITH_PENDING_TX_DECODING_TYPE,
             force_redecode: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Decode the transactions of the chain that are pending decoding. With force_redecode
         the chain's events are reset first, so all its saved transactions are decoded again
         except for the ones with customized or matched events.
@@ -684,9 +690,9 @@ class TransactionsService:
                         retry_deferred=True,  # the deferred txs are in the count, so retry them
                     )
 
-        return {'result': {'decoded_tx_number': decoded_count}, 'message': '', 'status_code': HTTPStatus.OK}  # noqa: E501
+        return OkResult({'decoded_tx_number': decoded_count})
 
-    def get_evm_transactions_status(self) -> dict[str, Any]:
+    def get_evm_transactions_status(self) -> ApiResult:
         where_str = ' OR '.join(['name LIKE ?'] * len(EVM_CHAINS_WITH_TRANSACTIONS))
         bindings = [
             f'{blockchain.to_range_prefix("txs")}_%'
@@ -705,17 +711,13 @@ class TransactionsService:
         undecoded_count = DBEvmTx(self.rotkehlchen.data.db).count_hashes_not_decoded(
             filter_query=EvmTransactionsNotDecodedFilterQuery.make(),
         )
-        return {
-            'result': {
-                'last_queried_ts': last_queried_ts,
-                'undecoded_tx_count': undecoded_count,
-                'has_evm_accounts': has_evm_accounts,
-            },
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult({
+            'last_queried_ts': last_queried_ts,
+            'undecoded_tx_count': undecoded_count,
+            'has_evm_accounts': has_evm_accounts,
+        })
 
-    def get_latest_transaction_timestamps(self) -> dict[str, Any]:
+    def get_latest_transaction_timestamps(self) -> ApiResult:
         """Return the latest raw transaction timestamp per chain and tracked address."""
         result: dict[str, dict[str, Any]] = {
             chain.serialize(): {'latest_timestamp': 0, 'addresses': {}}
@@ -791,9 +793,9 @@ class TransactionsService:
                     addresses = result[chain]['addresses']
                     addresses[address] = timestamp
 
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(result)
 
-    def get_count_transactions_not_decoded(self) -> dict[str, Any]:
+    def get_count_transactions_not_decoded(self) -> ApiResult:
         tx_info: dict[str, dict[str, int]] = defaultdict(dict)
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
 
@@ -839,12 +841,12 @@ class TransactionsService:
                     (location.serialize_for_db(),),
                 ).fetchone()[0]
 
-        return {'result': tx_info, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(tx_info)
 
     def get_pending_internal_tx_repull_conflicts(
             self,
             filter_query: InternalTxConflictsFilterQuery,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if not table_exists(cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
                 entries = []
@@ -863,47 +865,39 @@ class TransactionsService:
                     'SELECT COUNT(*) FROM evm_internal_tx_conflicts',
                 ).fetchone()[0]
 
-        return {
-            'result': {
-                'entries': [
-                    {
-                        'chain': chain_id.to_name(),
-                        'tx_hash': str(row_tx_hash),
-                        'timestamp': tx_timestamp,
-                        'action': action,
-                        'repull_reason': repull_reason,
-                        'redecode_reason': redecode_reason,
-                        'last_retry_ts': last_retry_ts,
-                        'last_error': last_error,
-                        'group_identifier': group_identifier,
-                    }
-                    for chain_id, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error, group_identifier in entries  # noqa: E501
-                ],
-                'entries_found': entries_found,
-                'entries_total': entries_total,
-                'entries_limit': -1,
-            },
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult({
+            'entries': [
+                {
+                    'chain': chain_id.to_name(),
+                    'tx_hash': str(row_tx_hash),
+                    'timestamp': tx_timestamp,
+                    'action': action,
+                    'repull_reason': repull_reason,
+                    'redecode_reason': redecode_reason,
+                    'last_retry_ts': last_retry_ts,
+                    'last_error': last_error,
+                    'group_identifier': group_identifier,
+                }
+                for chain_id, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error, group_identifier in entries  # noqa: E501
+            ],
+            'entries_found': entries_found,
+            'entries_total': entries_total,
+            'entries_limit': -1,
+        })
 
     def get_pending_internal_tx_repull_conflicts_count(
             self,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if not table_exists(cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
                 pending = failed = 0
             else:
                 pending, failed = get_pending_internal_tx_repull_conflicts_count(cursor=cursor)
 
-        return {
-            'result': {
-                'pending': pending,
-                'failed': failed,
-            },
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult({
+            'pending': pending,
+            'failed': failed,
+        })
 
     def force_refetch_transactions(
             self,
@@ -911,7 +905,7 @@ class TransactionsService:
             to_timestamp: Timestamp,
             chain: CHAINS_WITH_TRANSACTION_DECODERS_TYPE | None = None,
             address: ChecksumEvmAddress | SolanaAddress | None = None,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         log.debug(
             'Force refetching transactions',
             from_ts=from_timestamp,
@@ -985,15 +979,11 @@ class TransactionsService:
         new_transactions_count = sum(
             len(tx_hashes) for tx_hashes in formatted_new_transactions.values()
         )
-        return {
-            'result': {
-                'new_transactions': formatted_new_transactions,
-                'new_transactions_count': new_transactions_count,
-                'new_history_events_count': new_history_events_count,
-            },
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
+        return OkResult({
+            'new_transactions': formatted_new_transactions,
+            'new_transactions_count': new_transactions_count,
+            'new_history_events_count': new_history_events_count,
+        })
 
     def _refetch_hyperliquid_core_history(
             self,
@@ -1087,7 +1077,7 @@ class TransactionsService:
             self,
             from_address: ChecksumEvmAddress,
             to_address: ChecksumEvmAddress,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT COUNT(*) FROM history_events JOIN chain_events_info ON '
@@ -1095,11 +1085,7 @@ class TransactionsService:
                 'location_label=? AND address=?',
                 (from_address, to_address),
             )
-            return {
-                'result': cursor.fetchone()[0] > 0,
-                'message': '',
-                'status_code': HTTPStatus.OK,
-            }
+            return OkResult(cursor.fetchone()[0] > 0)
 
     def prepare_token_transfer(
             self,
@@ -1108,7 +1094,7 @@ class TransactionsService:
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             token: EvmToken,
             amount: FVal,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain=blockchain)
         try:
             payload = manager.active_management.create_token_transfer(
@@ -1118,9 +1104,9 @@ class TransactionsService:
                 amount=amount,
             )
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, e.cause)
 
-        return {'result': payload, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(payload)
 
     def prepare_native_transfer(
             self,
@@ -1128,7 +1114,7 @@ class TransactionsService:
             to_address: ChecksumEvmAddress,
             chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
             amount: FVal,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain)
         try:
             payload = manager.active_management.transfer_native_token(
@@ -1137,16 +1123,16 @@ class TransactionsService:
                 amount=amount,
             )
         except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+            return FailResult(str(e), HTTPStatus.BAD_REQUEST, e.cause)
 
-        return {'result': payload, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(payload)
 
     def fetch_token_balance_for_address(
             self,
             address: ChecksumEvmAddress,
             evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
             asset: CryptoAsset,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         node_inquirer = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain).node_inquirer
         try:
             if asset == node_inquirer.native_token:
@@ -1162,15 +1148,19 @@ class TransactionsService:
                     token=token,
                 )
             else:
-                return {
-                    'result': None,
-                    'message': 'Token exists on different chain than requested',
-                    'status_code': HTTPStatus.CONFLICT,
-                }
+                return FailResult(
+                    'Token exists on different chain than requested',
+                    HTTPStatus.CONFLICT,
+                    FailureCause.CONFLICT,
+                )
         except (RemoteError, WrongAssetType, InputError) as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+            return FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                cause_of(e, FailureCause.INVALID_INPUT),
+            )
 
-        return {'result': balance, 'message': '', 'status_code': HTTPStatus.OK}
+        return OkResult(balance)
 
     def _delete_zksync_tx_data(
             self,
@@ -1416,6 +1406,7 @@ class TransactionsService:
         )) is None:
             raise RemoteError(
                 f'Failed to fetch transaction {tx_ref!s} from the zksync lite API',
+                cause=FailureCause.NOT_FOUND,
             )
 
         self.rotkehlchen.chains_aggregator.zksync_lite.decode_transaction(

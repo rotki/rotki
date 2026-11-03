@@ -19,6 +19,7 @@ from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
@@ -293,7 +294,10 @@ def test_add_multievm_accounts(rotkehlchen_api_server: APIServer) -> None:
     ) -> Callable:  # pylint: disable=unused-argument
         """Make the logic fail when adding new accounts if failing_account is given as argument"""
         if failing_account in accounts:
-            raise RemoteError('Mocking a failure when adding addresses')
+            raise RemoteError(
+                'Mocking a failure when adding addresses',
+                cause=FailureCause.NETWORK,
+            )
 
         return original_modify_blockchain_accounts
 

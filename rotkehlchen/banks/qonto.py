@@ -45,7 +45,8 @@ from rotkehlchen.banks.normalization import (
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -128,7 +129,10 @@ class Qonto(BankConnector):
             try:
                 response = self.session.get(url, params=params, timeout=timeout)
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Qonto API request to {endpoint} failed due to {e!s}') from e
+                raise RemoteError(
+                    f'Qonto API request to {endpoint} failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code != HTTPStatus.TOO_MANY_REQUESTS:
                 break
@@ -158,6 +162,7 @@ class Qonto(BankConnector):
             raise RemoteError(
                 f'Qonto query {endpoint} failed with HTTP {response.status_code}: '
                 f'{response.text[:200]}',
+                cause=cause_for_status(response.status_code),
             )
         try:
             return jsonloads_dict(response.text)

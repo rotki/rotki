@@ -6,6 +6,7 @@ import requests
 
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -193,7 +194,7 @@ def test_lookup_evm_transaction_returns_conflict_for_remote_errors(
     ethereum_manager = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.ETHEREUM)  # noqa: E501
 
     def raise_remote_error(tx_hash: str) -> None:
-        raise RemoteError('node is temporarily unavailable')
+        raise RemoteError('node is temporarily unavailable', cause=FailureCause.NETWORK)
 
     monkeypatch.setattr(ethereum_manager.node_inquirer, 'get_transaction_by_hash', raise_remote_error)  # noqa: E501
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:

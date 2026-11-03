@@ -33,6 +33,7 @@ from rotkehlchen.chain.solana.utils import (
     is_solana_token_nft,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.helius import HELIUS_RPC_NODE_NAME
@@ -69,7 +70,7 @@ def test_transaction_query_failure_sends_finished_status(
         patch.object(
             transactions.node_inquirer,
             'query_tx_signatures_for_address',
-            side_effect=RemoteError('RPC unavailable'),
+            side_effect=RemoteError('RPC unavailable', cause=FailureCause.NETWORK),
         ),
         patch.object(transactions.database.msg_aggregator, 'add_message') as add_message,
     ):
@@ -103,7 +104,7 @@ def test_transaction_query_continues_after_address_failure(
     with patch.object(
         solana_manager.transactions,
         'query_transactions_for_address',
-        side_effect=[RemoteError('RPC unavailable'), None],
+        side_effect=[RemoteError('RPC unavailable', cause=FailureCause.NETWORK), None],
     ) as query_address:
         solana_manager.query_transactions(
             addresses=addresses,
@@ -721,7 +722,7 @@ def test_get_stake_accounts_by_owner_skips_failing_owner(solana_manager: SolanaM
 
     def get_stake_accounts(owner: SolanaAddress) -> list[StakeAccountInfo]:
         if owner == failing:
-            raise RemoteError('boom')
+            raise RemoteError('boom', cause=FailureCause.NETWORK)
         return [stake_account]
 
     with patch.object(solana_manager.node_inquirer, 'get_stake_accounts', side_effect=get_stake_accounts):  # noqa: E501
@@ -733,7 +734,10 @@ def test_get_stake_accounts_by_owner_skips_failing_owner(solana_manager: SolanaM
 def test_get_stake_accounts_readable_error(solana_manager: SolanaManager) -> None:
     """The error of a failed stake accounts query names the getProgramAccounts requirement."""
     with (
-        patch.object(solana_manager.node_inquirer, 'query', side_effect=RemoteError('x')),
+        patch.object(solana_manager.node_inquirer, 'query', side_effect=RemoteError(
+            'x',
+            cause=FailureCause.NETWORK,
+        )),
         pytest.raises(RemoteError, match='getProgramAccounts'),
     ):
         solana_manager.node_inquirer.get_stake_accounts(

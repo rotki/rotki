@@ -10,6 +10,7 @@ from rotkehlchen.chain.evm.constants import ZERO_32_BYTES_HEX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, UnknownCounterpartyMapping
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -316,7 +317,10 @@ def test_spot_metadata_failure_fails_the_history_query_and_is_retried() -> None:
     api = HyperliquidAPI()
     spot_fill = {'tid': 1, 'time': 1000, 'coin': '@107', 'px': '1', 'sz': '1', 'side': 'B', 'fee': '0', 'feeToken': 'USDC'}  # noqa: E501
     with (
-        patch.object(api, '_query_dict', side_effect=RemoteError('spotMeta down')) as spot_meta,
+        patch.object(api, '_query_dict', side_effect=RemoteError(
+            'spotMeta down',
+            cause=FailureCause.NETWORK,
+        )) as spot_meta,
         patch.object(api, '_query_list', side_effect=lambda payload, **_: [spot_fill] if payload['type'] == 'userFillsByTime' else []),  # noqa: E501
     ):
         for _ in range(2):

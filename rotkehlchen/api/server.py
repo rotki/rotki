@@ -7,14 +7,14 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 import uvicorn
-from flask import Blueprint, Flask, Response, abort, g, jsonify, request
+from flask import Blueprint, Flask, Response, abort, g, request
 from flask.views import MethodView
 from flask_cors import CORS
 from webargs.flaskparser import parser
 from werkzeug.exceptions import NotFound
 
 from rotkehlchen.api.asgi import create_asgi_app
-from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
+from rotkehlchen.api.result import AUTH_REQUIRED, FailResult, api_response
 from rotkehlchen.api.session_token import (
     MCP_BACKEND_PROOF_HEADER,
     SESSION_COOKIE_NAME,
@@ -214,6 +214,7 @@ from rotkehlchen.api.v1.wallet_resources import (
     PrepareTokenTransferResource,
 )
 from rotkehlchen.concurrency import Task
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -222,6 +223,7 @@ if TYPE_CHECKING:
     from marshmallow import Schema
     from marshmallow.exceptions import ValidationError
 
+    from rotkehlchen.api.rest import RestAPI
     from rotkehlchen.api.websockets.notifier import RotkiNotifier
 
 URLS = list[
@@ -486,7 +488,7 @@ def endpoint_not_found(e: NotFound) -> Response:
     # be a "NotFound" error here
     if isinstance(e, NotFound):
         msg = e.description
-    return api_response(wrap_in_fail_result(msg), HTTPStatus.NOT_FOUND)
+    return api_response(FailResult(msg, HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND))
 
 
 @parser.error_handler  # type: ignore
@@ -509,9 +511,7 @@ def handle_request_parsing_error(
     elif isinstance(err.messages, list):
         msg = ','.join(err.messages)
 
-    err_response = jsonify(result=None, message=msg)
-    err_response.status_code = HTTPStatus.BAD_REQUEST
-    abort(err_response)
+    abort(api_response(FailResult(msg, HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)))
 
 
 class APIServer:
@@ -579,7 +579,11 @@ class APIServer:
             exception=str(exception),
             traceback=''.join(traceback.format_exception(exception)) if not is_rotki_exception else None,  # noqa: E501
         )
-        return api_response(wrap_in_fail_result(str(exception)), HTTPStatus.INTERNAL_SERVER_ERROR)
+        return api_response(FailResult(
+            str(exception),
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+            FailureCause.INTERNAL,
+        ))
 
     def before_request_callback(self) -> Response | None:
         """Function that runs before each request.
@@ -619,10 +623,7 @@ class APIServer:
                         internal_claims.sid,
                     )
                 ):
-                    return api_response(
-                        wrap_in_fail_result('Authentication required'),
-                        HTTPStatus.UNAUTHORIZED,
-                    )
+                    return api_response(AUTH_REQUIRED)
                 else:
                     claims = internal_claims
 
@@ -645,10 +646,7 @@ class APIServer:
                         self.rest_api.rotkehlchen.user_is_logged_in and
                         claims.username != self.rest_api.rotkehlchen.data.username
                 ):
-                    return api_response(
-                        wrap_in_fail_result('Authentication required'),
-                        HTTPStatus.UNAUTHORIZED,
-                    )
+                    return api_response(AUTH_REQUIRED)
 
                 g.rotki_session_user = claims.username
                 g.rotki_session_sid = claims.sid

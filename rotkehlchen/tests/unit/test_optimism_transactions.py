@@ -19,6 +19,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.pending_transactions import UNRESOLVED_L1_FEE_RETRY_AFTER
 from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import ChainNotSupported, NoAvailableIndexers, RemoteError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.fval import FVal
@@ -155,11 +156,11 @@ def test_l1_fee_queried_when_missing(
             patch.object(optimism_transactions.evm_inquirer.etherscan, 'get_l1_fee', return_value=l1_fee_value),  # noqa: E501
         ]),
         (True, [  # Fall back to blockscout
-            patch.object(optimism_transactions.evm_inquirer.etherscan, 'get_l1_fee', side_effect=RemoteError('BOOM')),  # noqa: E501
+            patch.object(optimism_transactions.evm_inquirer.etherscan, 'get_l1_fee', side_effect=RemoteError('BOOM', cause=FailureCause.NETWORK)),  # noqa: E501
         ]),
         (True, [  # Fall back to routescan
-            patch.object(optimism_transactions.evm_inquirer.etherscan, 'get_l1_fee', side_effect=RemoteError('BOOM')),  # noqa: E501
-            patch.object(optimism_transactions.evm_inquirer.blockscout, 'get_l1_fee', side_effect=RemoteError('BOOM')),  # noqa: E501
+            patch.object(optimism_transactions.evm_inquirer.etherscan, 'get_l1_fee', side_effect=RemoteError('BOOM', cause=FailureCause.NETWORK)),  # noqa: E501
+            patch.object(optimism_transactions.evm_inquirer.blockscout, 'get_l1_fee', side_effect=RemoteError('BOOM', cause=FailureCause.NETWORK)),  # noqa: E501
         ]),
     ):
 
@@ -257,9 +258,10 @@ def test_pre_bedrock_failure_does_not_block_post_coverage(
             (OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset()),
         ]) as resolve_range,
         patch.object(inquirer, 'get_transactions_with_source', side_effect=[
-            RemoteError('pre-Bedrock indexers unavailable'),
+            RemoteError('pre-Bedrock indexers unavailable', cause=FailureCause.NETWORK),
             (iter([[]]), EvmIndexer.BLOCKSCOUT) if post_succeeds else RemoteError(
                 'post-Bedrock indexers unavailable',
+                cause=FailureCause.NETWORK,
             ),
         ]),
         patch.object(
@@ -304,7 +306,10 @@ def test_pre_bedrock_failure_does_not_block_post_coverage(
             )) as resolve_retry,
             patch.object(inquirer, 'get_transactions_with_source', return_value=(
                 iter([[]]), EvmIndexer.ROUTESCAN,
-            ), side_effect=RemoteError('pre-Bedrock indexers still unavailable') if partial_pre_coverage else None,  # noqa: E501
+            ), side_effect=RemoteError(
+                'pre-Bedrock indexers still unavailable',
+                cause=FailureCause.NETWORK,
+            ) if partial_pre_coverage else None,
             ) as query_retry,
         ):
             assert optimism_transactions._get_internal_transactions_for_ranges(
@@ -347,11 +352,12 @@ def test_post_bedrock_replacement_keeps_pre_coverage_if_probe_fails(
             (OP_BEDROCK_BLOCK, OP_BEDROCK_BLOCK + 10, frozenset()),
         ]),
         patch.object(inquirer, 'get_transactions_with_source', side_effect=[
-            RemoteError('pre-Bedrock indexers unavailable'),
+            RemoteError('pre-Bedrock indexers unavailable', cause=FailureCause.NETWORK),
             (iter([[]]), EvmIndexer.BLOCKSCOUT),
         ]),
         patch.object(inquirer, 'get_blocknumber_by_time', side_effect=RemoteError(
             'could not determine indexed end',
+            cause=FailureCause.NETWORK,
         )) as end_probe,
     ):
         assert optimism_transactions._get_internal_transactions_for_ranges(
@@ -395,7 +401,7 @@ def test_pre_bedrock_success_is_kept_when_post_fails(
         ]),
         patch.object(inquirer, 'get_transactions_with_source', side_effect=[
             (iter([[]]), EvmIndexer.ROUTESCAN),
-            RemoteError('post-Bedrock indexers unavailable'),
+            RemoteError('post-Bedrock indexers unavailable', cause=FailureCause.NETWORK),
         ]),
     ):
         assert optimism_transactions._get_internal_transactions_for_ranges(
@@ -440,7 +446,7 @@ def _interrupted_internal_batches(
         internal_tx: EvmInternalTransaction,
 ) -> Iterator[list[EvmInternalTransaction]]:
     yield [internal_tx]
-    raise RemoteError('interrupted internal transaction pagination')
+    raise RemoteError('interrupted internal transaction pagination', cause=FailureCause.NETWORK)
 
 
 def test_pre_bedrock_interruption_keeps_batch_progress(
@@ -471,7 +477,7 @@ def test_pre_bedrock_interruption_keeps_batch_progress(
         ]),
         patch.object(inquirer, 'get_transactions_with_source', side_effect=[
             (_interrupted_internal_batches(internal_tx), EvmIndexer.ROUTESCAN),
-            RemoteError('post-Bedrock indexers unavailable'),
+            RemoteError('post-Bedrock indexers unavailable', cause=FailureCause.NETWORK),
         ]) as query_indexers,
         patch.object(optimism_transactions, '_process_internal_transactions_batch', return_value=[
             (internal_tx, batch_ts),
@@ -606,7 +612,10 @@ def test_post_bedrock_interruption_keeps_batch_progress(
     ]
     if saved_range_start != start_ts:  # older half is not already covered
         resolved_ranges.insert(0, (OP_BEDROCK_BLOCK - 10, OP_BEDROCK_BLOCK - 1, frozenset()))
-        indexer_results.insert(0, RemoteError('pre-Bedrock indexers unavailable'))
+        indexer_results.insert(0, RemoteError(
+            'pre-Bedrock indexers unavailable',
+            cause=FailureCause.NETWORK,
+        ))
 
     with (
         patch.object(inquirer, '_resolve_timestamp_range', side_effect=resolved_ranges),

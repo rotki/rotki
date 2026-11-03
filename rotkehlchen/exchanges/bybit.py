@@ -15,7 +15,8 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -236,7 +237,10 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                     headers=headers,
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Bybit API request failed due to {e}') from e
+                raise RemoteError(
+                    f'Bybit API request failed due to {e}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 if tries >= 1:
@@ -250,12 +254,14 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                 raise RemoteError(
                     f'Bybit api request for {response.url} failed with HTTP '
                     f'status code {response.status_code} and response {response.text}',
+                    cause=FailureCause.RATE_LIMITED,
                 )
 
             if response.status_code != HTTPStatus.OK:
                 raise RemoteError(
                     f'Bybit api request for {response.url} failed with HTTP status '
                     f'code {response.status_code} and response {response.text}',
+                    cause=cause_for_status(response.status_code),
                 )
 
             break  # else all good, we can break off the retry loop
@@ -264,13 +270,22 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
         try:
             json_ret: dict[str, Any] = json.loads(response.text)
         except json.JSONDecodeError as e:
-            raise RemoteError('Bybit returned invalid JSON response') from e
+            raise RemoteError(
+                'Bybit returned invalid JSON response',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         if (result := json_ret.get('result')) is None:
-            raise RemoteError(f'Remote response is missing expected field result: {json_ret}')
+            raise RemoteError(
+                f'Remote response is missing expected field result: {json_ret}',
+                cause=FailureCause.BAD_DATA,
+            )
 
         if json_ret.get('retCode', 0) != 0 and json_ret.get('retMsg', 'OK') != 'OK':
-            raise RemoteError(f'Bybit returned error in request {json_ret}')
+            raise RemoteError(
+                f'Bybit returned error in request {json_ret}',
+                cause=FailureCause.REMOTE_REJECTED,
+            )
 
         return result
 

@@ -13,12 +13,7 @@ from marshmallow.utils import missing
 from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 
-from rotkehlchen.api.rest import (
-    RestAPI,
-    api_response,
-    make_response_from_dict,
-    wrap_in_fail_result,
-)
+from rotkehlchen.api.result import NOT_LOGGED_IN, ApiResult, FailResult, OkResult, api_response
 from rotkehlchen.api.v1.common_resources import BaseMethodView
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
@@ -227,6 +222,7 @@ from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockcha
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.premium.premium import (
     GNOSIS_PAY_CAPABILITY,
@@ -238,7 +234,6 @@ from rotkehlchen.serialization.schemas import (
     BaseCustomAssetSchema,
     CustomAssetWithIdentifierSchema,
 )
-from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     CHAINS_WITH_PENDING_TX_DECODING_TYPE,
     CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
@@ -286,6 +281,7 @@ if TYPE_CHECKING:
 
     from werkzeug.datastructures import FileStorage
 
+    from rotkehlchen.api.rest import RestAPI
     from rotkehlchen.assets.asset import (
         Asset,
         AssetWithNameAndType,
@@ -419,23 +415,19 @@ def allow_async_validation() -> Callable:
             raw_data: dict[str, Any],
             *args: Any,
             **kwargs: Any,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         """Do the validation and return error if it fails, otherwise execute the endpoint logic"""
         try:
             data = schema.load(raw_data)
             kwargs.update(data)
         except ValidationError as e:
-            return {
-                'result': None,
-                'message': json.dumps(e.normalized_messages()),  # type: ignore[no-untyped-call]  # marshmallow doesn't have types for this function
-                'status_code': HTTPStatus.BAD_REQUEST,
-            }
+            return FailResult(
+                json.dumps(e.normalized_messages()),  # type: ignore[no-untyped-call]  # marshmallow doesn't have types for this function
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.INVALID_INPUT,
+            )
         except Exception as e:  # pylint: disable=broad-exception-caught
-            return {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.INTERNAL_SERVER_ERROR,
-            }
+            return FailResult(str(e), HTTPStatus.INTERNAL_SERVER_ERROR, FailureCause.INTERNAL)
         kwargs.pop('async_query')  # async query has already been handled so it can be removed
         return method(view, *args, **kwargs)
 
@@ -446,7 +438,7 @@ def allow_async_validation() -> Callable:
             if (async_validation := kwargs.pop('do_async_validation', None)) is None:
                 kwargs.pop('async_query', None)  # we already know that it won't be async
                 output = f(view, *args, **kwargs)
-                return make_response_from_dict(output)
+                return api_response(output)
 
             schema = async_validation['schema']
             raw_data = async_validation['data']
@@ -477,8 +469,7 @@ def require_loggedin_user() -> Callable:
             rest_api = view_class.rest_api
             with rest_api.session_usage() as session_usable:
                 if session_usable is False:
-                    result_dict = wrap_in_fail_result('No user is currently logged in')
-                    return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+                    return api_response(NOT_LOGGED_IN)
                 return f(*args, **kwargs)
 
         return wrapper
@@ -503,20 +494,18 @@ def require_premium_user(active_check: bool) -> Callable:
             rest_api = view_class.rest_api
             with rest_api.session_usage() as session_usable:
                 if session_usable is False:
-                    result_dict = wrap_in_fail_result('No user is currently logged in')
-                    return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+                    return api_response(NOT_LOGGED_IN)
 
                 msg = (
                     f'Currently logged in user {rest_api.rotkehlchen.data.username} '
                     f'does not have a premium subscription'
                 )
-                if rest_api.rotkehlchen.premium is None:
-                    result_dict = wrap_in_fail_result(msg)
-                    return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
-
-                if active_check and rest_api.rotkehlchen.premium.is_active() is False:
-                    result_dict = wrap_in_fail_result(msg)
-                    return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
+                if (premium := rest_api.rotkehlchen.premium) is None or (
+                    active_check and premium.is_active() is False
+                ):
+                    return api_response(
+                        FailResult(msg, HTTPStatus.FORBIDDEN, FailureCause.FORBIDDEN),
+                    )
 
                 return f(*args, **kwargs)
 
@@ -533,16 +522,16 @@ def require_premium_capability(capability_name: str, pretty_name: str) -> Callab
             rest_api = view_class.rest_api
             with rest_api.session_usage() as session_usable:
                 if session_usable is False:
-                    result_dict = wrap_in_fail_result('No user is currently logged in')
-                    return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+                    return api_response(NOT_LOGGED_IN)
 
                 if has_premium_capability(rest_api.rotkehlchen.premium, capability_name):
                     return f(*args, **kwargs)
 
-                result_dict = wrap_in_fail_result(
+                return api_response(FailResult(
                     f'{pretty_name} is not available for your current subscription tier',
-                )
-                return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
+                    HTTPStatus.FORBIDDEN,
+                    FailureCause.FORBIDDEN,
+                ))
 
         return wrapper
     return _require_premium_capability
@@ -1880,7 +1869,7 @@ class AccountingReportExportResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(self, report_id: int, directory_path: Path) -> Response:
-        return make_response_from_dict(
+        return api_response(
             self.rest_api.history_service.export_pnl_report_csv(
                 report_id=report_id,
                 directory_path=directory_path,
@@ -1898,7 +1887,7 @@ class AccountingReportDownloadResource(BaseMethodView):
         response = self.rest_api.history_service.download_pnl_report_csv(report_id=report_id)
         if isinstance(response, Response):
             return response
-        return make_response_from_dict(response)
+        return api_response(response)
 
 
 class PeriodicDataResource(BaseMethodView):
@@ -1925,7 +1914,7 @@ class EvmAccountsResource(BaseMethodView):
         as_kwargs=True,
     )
     @allow_async_validation()
-    def put(self, accounts: list[dict[str, Any]]) -> dict[str, Any]:
+    def put(self, accounts: list[dict[str, Any]]) -> ApiResult:
         account_data = [
             SingleBlockchainAccountData[ChecksumEvmAddress](
                 address=entry['address'],
@@ -1972,7 +1961,7 @@ class BlockchainsAccountsResource(BaseMethodView):
             self,
             blockchain: SupportedBlockchain,
             accounts: list[dict[str, Any]],
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         account_data = [
             SingleBlockchainAccountData(
                 address=entry['address'],
@@ -1992,7 +1981,7 @@ class BlockchainsAccountsResource(BaseMethodView):
             self,
             accounts: list[dict[str, Any]],
             blockchain: SupportedBlockchain,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         account_data = [
             SingleBlockchainAccountData(
                 address=entry['address'],
@@ -2012,7 +2001,7 @@ class BlockchainsAccountsResource(BaseMethodView):
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.rest_api.remove_single_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
@@ -2545,9 +2534,10 @@ class EvmModuleBalancesResource(BaseMethodView):
             )
 
         # this shouldn't happen since we have validation in marshmallow
-        return api_response(wrap_in_fail_result(
-            message='unknown module provided for balances',
-            status_code=HTTPStatus.BAD_REQUEST,
+        return api_response(FailResult(
+            'unknown module provided for balances',
+            HTTPStatus.BAD_REQUEST,
+            FailureCause.INVALID_INPUT,
         ))
 
 
@@ -2564,9 +2554,10 @@ class EvmModuleBalancesWithVersionResource(BaseMethodView):
             async_query: bool,
     ) -> Response:
         if module != ModuleWithBalances.UNISWAP:
-            return api_response(wrap_in_fail_result(
-                message='unknown module provided for balances',
-                status_code=HTTPStatus.BAD_REQUEST,
+            return api_response(FailResult(
+                'unknown module provided for balances',
+                HTTPStatus.BAD_REQUEST,
+                FailureCause.INVALID_INPUT,
             ))
 
         if version == 2:
@@ -2576,9 +2567,10 @@ class EvmModuleBalancesWithVersionResource(BaseMethodView):
             )
 
         # this shouldn't happen since we have validation in marshmallow
-        return api_response(wrap_in_fail_result(
-            message='unknown module provided for balances',
-            status_code=HTTPStatus.BAD_REQUEST,
+        return api_response(FailResult(
+            'unknown module provided for balances',
+            HTTPStatus.BAD_REQUEST,
+            FailureCause.INVALID_INPUT,
         ))
 
 
@@ -2599,9 +2591,10 @@ class ModuleStatsResource(BaseMethodView):
             return self.rest_api.get_liquity_stats(async_query=async_query)
 
         # this shouldn't happen since we have validation in marshmallow
-        return api_response(wrap_in_fail_result(
-            message='unknown module provided for balances',
-            status_code=HTTPStatus.BAD_REQUEST,
+        return api_response(FailResult(
+            'unknown module provided for balances',
+            HTTPStatus.BAD_REQUEST,
+            FailureCause.INVALID_INPUT,
         ))
 
 
@@ -3088,7 +3081,7 @@ class UserAssetsResource(BaseMethodView):
             self,
             async_query: bool,
             destination: Path | None,
-    ) -> Response | dict[str, Any]:
+    ) -> ApiResult | Response:
         return self.rest_api.export_user_assets(async_query=async_query, path=destination)
 
     @require_loggedin_user()
@@ -3462,11 +3455,7 @@ class CounterpartiesResource(BaseMethodView):
 class LocationResource(BaseMethodView):
 
     def get(self) -> Response:
-        result = process_result({'locations': LOCATION_DETAILS})
-        return api_response(
-            result={'result': result, 'message': ''},
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult({'locations': LOCATION_DETAILS}))
 
 
 class ProtocolDataRefreshResource(BaseMethodView):
@@ -3480,13 +3469,7 @@ class ProtocolDataRefreshResource(BaseMethodView):
         )
 
     def get(self) -> Response:
-        return api_response(
-            result={
-                'result': [protocol.serialize() for protocol in ProtocolsWithCache],
-                'message': '',
-            },
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OkResult([protocol.serialize() for protocol in ProtocolsWithCache]))
 
 
 class AirdropsMetadataResource(BaseMethodView):
@@ -3514,7 +3497,7 @@ class ExportHistoryEventResource(BaseMethodView):
             filter_query: HistoryBaseEntryFilterQuery,
             directory_path: Path,
             match_exact_events: bool,
-    ) -> dict[str, Any]:
+    ) -> ApiResult:
         return self.rest_api.export_history_events(
             filter_query=filter_query,
             directory_path=directory_path,
@@ -3524,7 +3507,7 @@ class ExportHistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query')
-    def put(self, async_query: bool, filter_query: HistoryBaseEntryFilterQuery, match_exact_events: bool) -> Response | dict[str, Any]:  # noqa: E501
+    def put(self, async_query: bool, filter_query: HistoryBaseEntryFilterQuery, match_exact_events: bool) -> ApiResult | Response:  # noqa: E501
         return self.rest_api.export_history_events(
             filter_query=filter_query,
             directory_path=None,

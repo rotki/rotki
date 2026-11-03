@@ -20,6 +20,7 @@ from rotkehlchen.db.internal_tx_conflicts import (
     is_tx_customized,
 )
 from rotkehlchen.db.settings import DEFAULT_INTERNAL_TXS_TO_REPULL
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import DataIntegrityError, InputError, RemoteError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -708,6 +709,7 @@ def test_repull_internal_tx_conflicts_batch_decode_failure_purges_cache_marks_fi
     ethereum_decoder = MagicMock()
     ethereum_decoder.decode_and_get_transaction_hashes.side_effect = RemoteError(
         'batch decode failed',
+        cause=FailureCause.NETWORK,
     )
     ethereum_decoder._load_transaction_context.return_value = MagicMock(
         transaction=MagicMock(),
@@ -767,6 +769,7 @@ def test_repull_internal_tx_conflicts_batch_decode_failure_purge_isolates_failur
     ethereum_decoder = MagicMock()
     ethereum_decoder.decode_and_get_transaction_hashes.side_effect = RemoteError(
         'batch decode failed',
+        cause=FailureCause.NETWORK,
     )
     ethereum_decoder._load_transaction_context.return_value = MagicMock(
         transaction=MagicMock(),
@@ -909,7 +912,7 @@ def test_repull_fetch_failure_keeps_db_unchanged(database) -> None:
         _repull_internal_tx_data(
             database=database,
             chains_aggregator=make_dummy_chains_aggregator(
-                query_internal_side_effect=RemoteError('fetch failed'),
+                query_internal_side_effect=RemoteError('fetch failed', cause=FailureCause.NETWORK),
             ),
             chain_id=ChainID.ETHEREUM,
             tx_hash=tx_hash,

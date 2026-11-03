@@ -12,7 +12,8 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKeyOptionalDB
@@ -163,7 +164,10 @@ class Birdeye(
                 )
             except requests.RequestException as e:
                 self.penalty_info.note_failure_or_penalize()
-                raise RemoteError(f'Birdeye API request failed due to {e!s}') from e
+                raise RemoteError(
+                    f'Birdeye API request failed due to {e!s}',
+                    cause=FailureCause.NETWORK,
+                ) from e
 
             if response.status_code != HTTPStatus.TOO_MANY_REQUESTS:
                 break
@@ -174,7 +178,10 @@ class Birdeye(
             if retries_left == 0 or wait > BIRDEYE_RATE_LIMIT_MAX_WAIT:
                 msg = f'Got rate limited by Birdeye querying {url}'
                 log.warning(msg)
-                raise RemoteError(message=msg, error_code=HTTPStatus.TOO_MANY_REQUESTS)
+                raise RemoteError(
+                    message=msg, error_code=HTTPStatus.TOO_MANY_REQUESTS,
+                    cause=FailureCause.RATE_LIMITED,
+                )
 
             retries_left -= 1
             log.debug('Birdeye rate limited querying %s. Retrying in %.1f seconds', url, wait)
@@ -187,12 +194,16 @@ class Birdeye(
                     f'code: {response.status_code} with reason: {response.text}'
                 ),
                 error_code=response.status_code,
+                cause=cause_for_status(response.status_code),
             )
 
         try:
             decoded_json = response.json()
         except requests.RequestException as e:
-            raise RemoteError(f'Invalid JSON in Birdeye API response. {e}') from e
+            raise RemoteError(
+                f'Invalid JSON in Birdeye API response. {e}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         if (
             not isinstance(decoded_json, dict) or
@@ -202,6 +213,7 @@ class Birdeye(
             raise RemoteError(
                 f'Birdeye API request {response.url} returned an unexpected response: '
                 f'{response.text}',
+                cause=FailureCause.BAD_DATA,
             )
 
         return data

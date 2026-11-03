@@ -13,7 +13,8 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -136,7 +137,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
         except KeyError as e:
             msg = f'Woo balances JSON response is missing the key {e}'
             log.error(msg, response)
-            raise RemoteError(msg) from e
+            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for entry in balances:
@@ -297,10 +298,14 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             )
             response_dict: dict = response.json()
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'{error_prefix} connection error: {e}.') from e
+            raise RemoteError(
+                f'{error_prefix} connection error: {e}.',
+                cause=FailureCause.NETWORK,
+            ) from e
         except JSONDecodeError as e:
             raise RemoteError(
                 f'{error_prefix} failed to decode JSON response.',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         if response.status_code != HTTPStatus.OK:
@@ -309,7 +314,10 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                 f'{error_prefix} responded with error status code: {response.status_code} '
                 f'and text: {reason}.'
             )
-            raise RemoteError(API_KEY_ERROR_CODE_ACTION.get(response_dict.get('code'), msg))
+            raise RemoteError(
+                API_KEY_ERROR_CODE_ACTION.get(response_dict.get('code'), msg),
+                cause=cause_for_status(response.status_code),
+            )
 
         return response_dict
 
@@ -373,7 +381,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                     BadData(record=PAGINATED_ENDPOINT_RECORDS[endpoint], error=str(e)),
                 )
                 log.error(f'{msg}: {response}', options=call_options)
-                raise RemoteError(msg) from e
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
             page_results = []
             for entry in entries:
                 try:
@@ -421,7 +429,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                     f'Failed to load all Woo {endpoint}. Check logs for details.',
                     BadData(record=PAGINATED_ENDPOINT_RECORDS[endpoint], error=str(e)),
                 )
-                raise RemoteError(msg) from e
+                raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
         return results
 

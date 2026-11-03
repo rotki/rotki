@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Final
 
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.sochain import SoChainLikeApi
 from rotkehlchen.utils.rate_limiter import TokenBucket
@@ -44,6 +45,7 @@ class Dogechain(SoChainLikeApi):
             raise RemoteError(
                 f'Unexpected Dogechain balance response for {address}: no confirmed '
                 f'balance in the address summary. Response data: {data}',
+                cause=FailureCause.BAD_DATA,
             )
 
         return self._deserialize_balance(value=confirmed, address=address)

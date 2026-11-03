@@ -13,6 +13,7 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
 )
 from rotkehlchen.db.utils import get_query_chunks
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import NotFoundError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -529,6 +530,7 @@ class HistoricalBalancesManager:
             raise RemoteError(
                 f'Failed to query historical on-chain balance for {asset.identifier} '
                 f'at block {block_number}',
+                cause=FailureCause.NETWORK,
             )
 
         divergence_event = HistoricalBalanceDivergenceEvent(

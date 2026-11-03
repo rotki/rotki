@@ -7,6 +7,14 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Failure Causes
+--------------
+
+* **Changed Response**: every failed API response now carries ``cause`` next to ``result`` and ``message``, saying why it failed: ``network``, ``rate_limited``, ``auth``, ``remote_rejected``, ``bad_data``, ``invalid_input``, ``not_found``, ``conflict``, ``forbidden``, ``unsupported``, ``local_db``, ``internal`` or ``cancelled``. Status codes are unchanged. Successful responses carry no ``cause``.
+* **Changed Response**: a finished async task's outcome carries the same ``cause``, and its entry now always includes ``status_code``. A cancelled task finishes with the ``cancelled`` cause instead of an empty message.
+* **Changed Response**: request validation errors (400) now go through the same response object, so they carry ``cause``: ``invalid_input``.
+* **Changed Response**: a failed eth2 validator request over the staking limit returns the limit details under ``result`` instead of as a top level ``limit_info`` key.
+
 Classified User Messages
 ------------------------
 
