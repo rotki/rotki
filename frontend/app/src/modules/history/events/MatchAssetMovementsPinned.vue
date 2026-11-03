@@ -7,6 +7,7 @@ import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
 } from '@/modules/history/events/use-unmatched-asset-movements';
+import { useMovementUnmatchableExplanation } from '@/modules/history/events/use-untracked-movement-destination';
 import { PinnedNames } from '@/modules/session/types';
 import PinnedDetailSheet from '@/modules/shell/pinned/PinnedDetailSheet.vue';
 
@@ -40,6 +41,8 @@ const {
   potentialMatchGroupIdentifier: () => potentialMatchGroupIdentifier,
   sources: [unmatchedMovements, ignoredMovements],
 });
+
+const { unmatchableExplanation: emptyExplanation } = useMovementUnmatchableExplanation(potentialMatchMovement);
 </script>
 
 <template>
@@ -83,6 +86,7 @@ const {
           <PotentialMatchesContent
             :movement="potentialMatchMovement"
             :highlighted-identifier="activePotentialMatchIdentifier"
+            :empty-explanation="emptyExplanation"
             is-pinned
             @close="closeDrawer()"
             @matched="onMatched()"
