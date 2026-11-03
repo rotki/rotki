@@ -1,3 +1,4 @@
+import type { BankConnection } from '@/modules/banks/types';
 import { bigNumberify } from '@rotki/common';
 import { createTestBalance, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
 import { createPinia, setActivePinia } from 'pinia';
@@ -7,6 +8,7 @@ import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-con
 import { BalanceType } from '@/modules/balances/types/balances';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
 import { summarizeSources } from '@/modules/dashboard/holdings/core/source-summary';
@@ -118,6 +120,32 @@ describe('useHoldingsContributions', () => {
       { at: 'external', kind: 'manual', value: '300' },
       { at: 'ethereum', kind: 'manual', value: '50' },
     ]);
+  });
+
+  it('should count every bank connection as one banks contribution that still adds up to the net worth', () => {
+    useSettingsRepo().updateFrontend({ nftsInNetValue: true });
+    const connection = (connector: string, name: string): BankConnection => ({
+      bankCode: null,
+      connector,
+      displayName: connector,
+      name,
+      syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false },
+    });
+    useBankConnectionsStore().setConnections([connection('qonto', 'Business'), connection('fints', 'DKB')]);
+    set(storeToRefs(useBalancesStore()).bankBalances, [
+      { accounts: [], balances: { DAI: createTestBalance(200, 200) }, connector: 'qonto', name: 'Business' },
+      { accounts: [], balances: { DAI: createTestBalance(300, 300), SPAM: createTestBalance(1, 10) }, connector: 'fints', name: 'DKB' },
+    ]);
+    const { contributions, liabilities, nfts } = useHoldingsContributions();
+
+    const banks = get(contributions).filter(contribution => contribution.kind === SourceKind.BANK);
+    expect(banks.map(contribution => [contribution.kind === SourceKind.BLOCKCHAIN ? contribution.chain : contribution.location, contribution.value.toFixed()])).toEqual([['banks', '500']]);
+    const summary = summarizeSources(get(contributions), { liabilities: get(liabilities), nfts: get(nfts) });
+    expect(summary.gross.minus(summary.liabilities).toFixed()).toBe(get(storeToRefs(useStatisticsStore()).totalNetWorth).toFixed());
+  });
+
+  it('should add no banks contribution while the banks hold nothing', () => {
+    expect(get(useHoldingsContributions().contributions).some(contribution => contribution.kind === SourceKind.BANK)).toBe(false);
   });
 
   it('should place a chain under its trade location, and a chain with none under nothing', () => {

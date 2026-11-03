@@ -4,6 +4,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBankBalancesPage } from '@/pages/balances/banks/use-bank-balances-page';
 
@@ -49,10 +50,10 @@ describe('useBankBalancesPage', () => {
       connection('ING', { authChallenge: { challenge: null, challengeData: null, challengeHtml: null, challengeMimeType: null, primitive: 'otp input', prompt: 'TAN' } }),
       connection('Comdirect'),
     ]);
-    store.setConnectionBalances([
+    useBalancesStore().bankBalances = [
       { accounts: [], balances: eur(100), connector: 'fints', name: 'DKB' },
       { accounts: [], balances: eur(2), connector: 'fints', name: 'ING' },
-    ]);
+    ];
   });
 
   it('should list every bank together without a selection', () => {

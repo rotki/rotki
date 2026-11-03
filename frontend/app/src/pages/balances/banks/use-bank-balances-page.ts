@@ -1,7 +1,7 @@
 import type { AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
-import { type BankConnectionState, bankConnectionState } from '@/modules/banks/bank-connection-state';
+import { BankConnectionState, bankConnectionState } from '@/modules/banks/bank-connection-state';
 import { type BankBalanceData, useBankData } from '@/modules/banks/use-bank-data';
 import { useBanks } from '@/modules/banks/use-banks';
 import { ActivityKind } from '@/modules/task-center/core/types';
@@ -16,7 +16,7 @@ interface UseBankBalancesPageReturn {
   /** The connections in view that need the user, a pending TAN first. */
   issues: ComputedRef<BankConnection[]>;
   total: ComputedRef<BigNumber>;
-  /** Whether any bank balance query runs, for the whole page or one bank. */
+  /** Whether every bank is being queried; a bank refreshed on its own shows through {@link isBankLoading}. */
   loading: ComputedRef<boolean>;
   isBankLoading: (name: string) => boolean;
   refreshAll: () => Promise<void>;
@@ -27,10 +27,10 @@ interface UseBankBalancesPageReturn {
 
 /** Which connection needs the user first; a connection that is fine needs nothing. */
 const STATE_RANK: Readonly<Record<BankConnectionState, number | undefined>> = {
-  authentication: 0,
-  expired: 1,
-  failed: 2,
-  ok: undefined,
+  [BankConnectionState.AUTHENTICATION]: 0,
+  [BankConnectionState.EXPIRED]: 1,
+  [BankConnectionState.FAILED]: 2,
+  [BankConnectionState.OK]: undefined,
 };
 
 /**
@@ -41,13 +41,12 @@ const STATE_RANK: Readonly<Record<BankConnectionState, number | undefined>> = {
 export function useBankBalancesPage(selected: MaybeRefOrGetter<string | undefined>): UseBankBalancesPageReturn {
   const { allBalances, banks, total } = useBankData();
   const { fetchBankBalances, refreshBankConnections } = useBanks();
-  const { useIsActive, useIsActivePrefix } = useTaskCenter();
+  const { useIsActive } = useTaskCenter();
 
   /** The banks this page is refreshing on their own. */
   const refreshing = ref<Set<string>>(new Set());
 
-  const loading = useIsActivePrefix(ActivityKind.BANK_BALANCES);
-  const loadingAll = useIsActive(ActivityKind.BANK_BALANCES);
+  const loading = useIsActive(ActivityKind.BANK_BALANCES);
 
   const selectedBank = computed<BankBalanceData | undefined>(() => {
     const name = toValue(selected);
@@ -69,7 +68,7 @@ export function useBankBalancesPage(selected: MaybeRefOrGetter<string | undefine
 
   /** A tile spins while every bank is queried, or while this page refreshes its bank alone. */
   function isBankLoading(name: string): boolean {
-    return get(loadingAll) || get(refreshing).has(name);
+    return get(loading) || get(refreshing).has(name);
   }
 
   async function refreshAll(): Promise<void> {

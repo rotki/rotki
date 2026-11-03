@@ -100,7 +100,8 @@ export function fintsBankLogo(bankCode: string): string | undefined {
   return logoByBankCode.get(bankCode);
 }
 
-function normalizeSearch(value: string): string {
+/** `value` lower-cased and without diacritics, so `Münster` matches `munster`. */
+export function normalizeSearch(value: string): string {
   return value
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
@@ -115,9 +116,4 @@ function searchableText(bank: FintsBank): string {
 
 export function toFintsBankOptions(banks: readonly FintsBank[] = fintsBanks): FintsBankOption[] {
   return banks.map(bank => ({ ...bank, searchText: searchableText(bank) }));
-}
-
-export function searchFintsBanks(query: string, banks: readonly FintsBank[] = fintsBanks): FintsBank[] {
-  const terms = normalizeSearch(query).trim().split(/\s+/u);
-  return banks.filter(bank => terms.every(term => searchableText(bank).includes(term)));
 }

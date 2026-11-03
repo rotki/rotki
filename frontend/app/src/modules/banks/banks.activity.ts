@@ -1,12 +1,12 @@
 import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
-import { EXCHANGE_LANE } from '@/modules/task-center/core/orchestrator/spec';
+import { BANK_BALANCES_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { ActivityKind } from '@/modules/task-center/core/types';
 
-/** Loading the balances of every bank connection, as one request on the exchange lane. */
+/** Loading the balances of every bank connection, as one request. */
 export const bankBalancesActivity = defineActivity<void, readonly []>({
   key: () => [],
   kind: ActivityKind.BANK_BALANCES,
-  lane: () => EXCHANGE_LANE,
+  lane: () => BANK_BALANCES_LANE,
 });
 
 /**
@@ -19,5 +19,5 @@ export const bankBalancesActivity = defineActivity<void, readonly []>({
 export const bankConnectionBalancesActivity = defineActivity<{ name: string }, readonly [string]>({
   key: subject => [subject.name],
   kind: ActivityKind.BANK_BALANCES,
-  lane: () => EXCHANGE_LANE,
+  lane: () => BANK_BALANCES_LANE,
 });

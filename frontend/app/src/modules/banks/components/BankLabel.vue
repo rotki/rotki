@@ -10,10 +10,7 @@ const { bankCode, connector, name } = defineProps<{
 </script>
 
 <template>
-  <span
-    class="flex items-center gap-2 min-w-0"
-    :title="connector"
-  >
+  <span class="flex items-center gap-2 min-w-0">
     <BankConnectorIcon
       :connector="connector"
       :bank-code="bankCode"

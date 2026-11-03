@@ -86,9 +86,7 @@ onMounted(async () => {
         :breakdown="{
           scope: { chains: chainsFilter },
         }"
-        :visible-columns="dashboardTablesVisibleColumns[tableType]"
-        show-per-protocol
-        sticky-header
+        :display="{ showPerProtocol: true, stickyHeader: true, visibleColumns: dashboardTablesVisibleColumns[tableType] }"
       />
     </TableFrame>
   </TablePageLayout>

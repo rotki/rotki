@@ -8,6 +8,7 @@ import { TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
 /** Every balance the app holds, as the stores report it. */
 export interface BalanceInputs {
   readonly blockchain: Balances;
+  /** The exchanges and the `banks` location, each keyed by its location. */
   readonly exchanges: ExchangeData;
   readonly manual: readonly ManualBalanceWithValue[];
 }
@@ -19,7 +20,7 @@ export interface BalanceInputs {
  * A location identifier may be a chain alias, such as `ethereum` standing for `eth`. Where `chain`
  * resolves, the location is treated as that chain, so the balances on it surface alongside any
  * manual balance tagged with the same label. The umbrella `blockchain` location reads every chain.
- * Anything else is an exchange or another manual location.
+ * Anything else is an exchange, the banks, or another manual location.
  *
  * @param location - the trade-location identifier
  * @param inputs - the balances to read from

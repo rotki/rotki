@@ -45,6 +45,15 @@ describe('asset-balances', () => {
     expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');
   });
 
+  it('should show each amount in the format its asset asks for, and the usual format otherwise', async () => {
+    const rows = (): string => wrapper.findAll('tbody tr').map(row => row.text()).join(' ');
+    await wrapper.setProps({ balances: [{ ...balance('KWD'), amount: bigNumberify('1.5') }] });
+    expect(rows()).not.toContain('1.500');
+
+    await wrapper.setProps({ display: { amountFormat: (asset: string) => (asset === 'KWD' ? { decimals: 3 } : {}) } });
+    expect(rows()).toContain('1.500');
+  });
+
   /** The cells already carry the currency symbol, so the headers never repeat it. */
   it('should leave the currency out of the price and value headers, nested or not', async () => {
     const headers = (): string => wrapper.find('thead').text();
@@ -87,7 +96,7 @@ describe('asset-balances', () => {
       try {
         const panel = mount(AssetBalances, {
           global: { plugins: [createCustomPinia()], provide: libraryDefaults },
-          props: { balances: [balance('ETH')], layout: 'panel', showPerProtocol: true },
+          props: { balances: [balance('ETH')], display: { showPerProtocol: true }, layout: 'panel' },
         });
         await nextTick();
 

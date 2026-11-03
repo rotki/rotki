@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { AssetBreakdownOptions } from '@/modules/balances/types/balances';
+import type { AssetBalancesDisplay, AssetBreakdownOptions } from '@/modules/balances/types/balances';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { isEvmNativeToken } from '@/modules/assets/types';
@@ -33,16 +33,12 @@ const {
   layout,
   loading = false,
   selectionMode = false,
-  showPerProtocol = false,
-  stickyHeader = false,
-  visibleColumns = [],
+  display,
 } = defineProps<{
   balances: AssetBalanceWithPrice[];
   breakdown?: AssetBreakdownOptions;
   loading?: boolean;
-  stickyHeader?: boolean;
-  visibleColumns?: TableColumn[];
-  showPerProtocol?: boolean;
+  display?: AssetBalancesDisplay;
   selectionMode?: boolean;
   /**
    * Where the table sits, when not on a page of its own.
@@ -59,8 +55,6 @@ const {
 defineSlots<{
   /** What the table says when it has no rows and no search is narrowing it. */
   empty?: () => any;
-  /** The amount cell, for a source whose amounts have a known precision, such as a bank's cents. */
-  amount?: (props: { row: AssetBalanceWithPrice }) => any;
 }>();
 
 const nested = computed<boolean>(() => layout !== undefined);
@@ -171,7 +165,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     sortable: true,
   }];
 
-  if (showPerProtocol) {
+  if (display?.showPerProtocol) {
     headers.splice(1, 0, {
       align: 'end',
       cellClass: 'py-0',
@@ -182,7 +176,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     });
   }
 
-  if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
+  if (display?.visibleColumns?.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
       align: 'end',
       cellClass: 'py-0 text-rui-text-secondary',
@@ -192,7 +186,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     });
   }
 
-  if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
+  if (display?.visibleColumns?.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
       align: 'end',
       cellClass: 'py-0 text-rui-text-secondary',
@@ -212,7 +206,7 @@ const rowAppendLabelColspan = computed(() => {
 
   if (selectionMode)
     colspan++;
-  if (showPerProtocol)
+  if (display?.showPerProtocol)
     colspan++;
 
   return colspan;
@@ -272,7 +266,7 @@ const panelTableProps = computed<Record<string, unknown>>(() => get(fillsPanel)
     :expanded="expanded"
     :loading-text="t('asset_balances.loading')"
     :empty="{ description: t('data_table.no_data') }"
-    :sticky-header="stickyHeader"
+    :sticky-header="display?.stickyHeader ?? false"
     v-bind="panelTableProps"
     row-attr="asset"
     single-expand
@@ -318,12 +312,10 @@ const panelTableProps = computed<Record<string, unknown>>(() => get(fillsPanel)
       />
     </template>
     <template #item.amount="{ row }">
-      <slot
-        name="amount"
-        :row="row"
-      >
-        <ValueDisplay :value="row.amount" />
-      </slot>
+      <ValueDisplay
+        :value="row.amount"
+        :format="display?.amountFormat?.(row.asset)"
+      />
     </template>
     <template #item.value="{ row }">
       <AssetValueDisplay

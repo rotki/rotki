@@ -5,6 +5,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import BankBalances from '@/pages/balances/banks/index.vue';
 import '@test/i18n';
@@ -54,7 +55,7 @@ describe('bank balances page', () => {
       global: {
         plugins: [pinia],
         stubs: {
-          AssetBalances: { props: ['balances'], template: '<div data-testid="bank-asset-balances" :data-rows="balances.length"><template v-for="row in balances" :key="row.asset"><slot name="amount" :row="row" /></template></div>' },
+          AssetBalances: { props: ['balances', 'display'], template: '<div data-testid="bank-asset-balances" :data-rows="balances.length"><span v-for="row in balances" :key="row.asset" data-testid="bank-amount" :data-format="JSON.stringify(display.amountFormat(row.asset))" /></div>' },
           BankAccountsTable: { props: ['accounts', 'search'], template: '<div data-testid="bank-accounts" :data-accounts="accounts.map(a => a.identifier).join()" :data-search="search" />' },
           BankBalanceCards: { props: ['selected'], template: '<div data-testid="bank-balance-cards" :data-selected="selected" />' },
           BankBalancesEmpty: { template: '<div data-testid="bank-balances-empty" />' },
@@ -115,7 +116,7 @@ describe('bank balances page', () => {
   it('should list every bank together, amounts to the cent, and only the connections that need the user', async () => {
     const store = useBankConnectionsStore();
     store.setConnections([connection, { ...connection, name: 'Broken', syncStatus: { ...connection.syncStatus, lastError: 'boom' } }]);
-    store.setConnectionBalances([{ accounts: [], balances: { EUR: { amount: bigNumberify(1), value: bigNumberify(1) } }, connector: 'qonto', name: 'Qonto main' }]);
+    useBalancesStore().bankBalances = [{ accounts: [], balances: { EUR: { amount: bigNumberify(1), value: bigNumberify(1) } }, connector: 'qonto', name: 'Qonto main' }];
     wrapper = createWrapper();
     await flushPromises();
 
@@ -139,12 +140,12 @@ describe('bank balances page', () => {
     route.query = { bank: 'Qonto main' };
     const store = useBankConnectionsStore();
     store.setConnections([connection]);
-    store.setConnectionBalances([{
+    useBalancesStore().bankBalances = [{
       accounts: [{ amount: bigNumberify(1), asset: 'EUR', iban: null, identifier: 'acc', name: 'Main', value: bigNumberify(1) }],
       balances: { EUR: { amount: bigNumberify(1), value: bigNumberify(1) } },
       connector: 'qonto',
       name: 'Qonto main',
-    }]);
+    }];
     wrapper = createWrapper();
     await flushPromises();
 

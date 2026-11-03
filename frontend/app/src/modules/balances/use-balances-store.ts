@@ -4,15 +4,18 @@ import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import type { BlockchainAssetBalances, BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
+import type { BankConnectionBalances } from '@/modules/banks/types';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
-import { updateBlockchainAssetBalances, updateExchangeBalancesPrices, updateManualBalancePrices } from '@/modules/assets/prices/price-utils';
+import { updateAssetValuePrices, updateBankBalancesPrices, updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/modules/assets/prices/price-utils';
 
 export const useBalancesStore = defineStore('balances', () => {
   const manualBalances = shallowRef<ManualBalanceWithValue[]>([]);
   const manualLiabilities = shallowRef<ManualBalanceWithValue[]>([]);
 
   const exchangeBalances = shallowRef<ExchangeData>({});
+  /** What each bank connection holds; banks are a source of their own, never an exchange. */
+  const bankBalances = shallowRef<BankConnectionBalances[]>([]);
   const nonFungibleTotalValue = ref<BigNumber>(Zero);
 
   const blockchainBalances = shallowRef<Balances>({});
@@ -25,9 +28,10 @@ export const useBalancesStore = defineStore('balances', () => {
     for (const exchange in exchanges) exchanges[exchange] = updateExchangeBalancesPrices(exchanges[exchange], latestPrices);
 
     set(exchangeBalances, exchanges);
+    set(bankBalances, updateBankBalancesPrices(get(bankBalances), latestPrices));
 
-    set(manualBalances, updateManualBalancePrices(get(manualBalances), latestPrices));
-    set(manualLiabilities, updateManualBalancePrices(get(manualLiabilities), latestPrices));
+    set(manualBalances, updateAssetValuePrices(get(manualBalances), latestPrices));
+    set(manualLiabilities, updateAssetValuePrices(get(manualLiabilities), latestPrices));
   };
 
   const updateBlockchainBalances = (chain: string, { perAccount }: BlockchainBalances): void => {
@@ -78,6 +82,7 @@ export const useBalancesStore = defineStore('balances', () => {
 
   return {
     balances: blockchainBalances,
+    bankBalances,
     exchangeBalances,
     manualBalances,
     manualLiabilities,

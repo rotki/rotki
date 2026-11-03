@@ -2,11 +2,13 @@
 import type { BankConnectionIdentity } from '@/modules/banks/types';
 import BankLabel from '@/modules/banks/components/BankLabel.vue';
 
-const { banks, selected, loading = false } = defineProps<{
+const { banks, selected, loading = false, isBankLoading } = defineProps<{
   banks: BankConnectionIdentity[];
   /** The bank the page shows; the button then refreshes only it. */
   selected?: string;
+  /** Whether every bank is being refreshed. */
   loading?: boolean;
+  isBankLoading: (name: string) => boolean;
 }>();
 
 const emit = defineEmits<{
@@ -18,6 +20,8 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const menuOpen = ref<boolean>(false);
+
+const buttonLoading = computed<boolean>(() => (selected ? isBankLoading(selected) : loading));
 
 const tooltip = computed<string>(() => selected
   ? t('bank_balances.refresh_menu.bank', { bank: selected })
@@ -47,7 +51,7 @@ function refreshBank(bank: BankConnectionIdentity): void {
         <RuiButton
           data-testid="refresh-bank-balances"
           :disabled="banks.length === 0"
-          :loading="loading"
+          :loading="buttonLoading"
           @click="emit('refresh')"
         >
           <template #prepend>
@@ -102,7 +106,7 @@ function refreshBank(bank: BankConnectionIdentity): void {
           v-for="bank in banks"
           :key="`${bank.connector}#${bank.name}`"
           variant="list"
-          :disabled="loading"
+          :disabled="isBankLoading(bank.name)"
           :aria-label="t('bank_balances.refresh_menu.bank', { bank: bank.name })"
           data-testid="refresh-bank-menu-item"
           :data-bank="bank.name"

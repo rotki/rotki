@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
 import {
-  type BankConnectionState,
+  BankConnectionState,
   bankConnectionState,
   bankConnectionStatus,
   type BankConnectionStatusDisplay,
@@ -21,24 +21,24 @@ const router = useRouter();
 
 const state = computed<BankConnectionState>(() => bankConnectionState(connection));
 
-const status = computed<BankConnectionStatusDisplay | undefined>(() => bankConnectionStatus(connection));
+const status = computed<BankConnectionStatusDisplay | undefined>(() => bankConnectionStatus(get(state)));
 
 /** Only a failure names a reason. */
 const statusText = computed<string>(() => {
   const current = get(status);
   if (!current)
     return '';
-  return get(state) === 'failed' ? t(current.text, { error: connection.syncStatus.lastError }) : t(current.text);
+  return get(state) === BankConnectionState.FAILED ? t(current.text, { error: connection.syncStatus.lastError }) : t(current.text);
 });
 
 /** A pending TAN opens its answer, an expired one syncs again for a fresh TAN, a failure leads to the connection. */
 async function act(): Promise<void> {
   const { connector, name } = connection;
-  if (get(state) === 'expired') {
+  if (get(state) === BankConnectionState.EXPIRED) {
     emit('sync', { connector, name });
     return;
   }
-  const query: Record<string, string> = get(state) === 'authentication' ? { authenticate: name, connector } : {};
+  const query: Record<string, string> = get(state) === BankConnectionState.AUTHENTICATION ? { authenticate: name, connector } : {};
   await router.push({ name: '/api-keys/banks/', query });
 }
 </script>
@@ -58,7 +58,7 @@ async function act(): Promise<void> {
     <span class="text-caption text-rui-text-secondary shrink-0">{{ connection.displayName }}</span>
 
     <i18n-t
-      v-if="state === 'ok' && connection.syncStatus.lastSyncTs"
+      v-if="state === BankConnectionState.OK && connection.syncStatus.lastSyncTs"
       scope="global"
       keypath="bank_balances.status.synced"
       tag="span"

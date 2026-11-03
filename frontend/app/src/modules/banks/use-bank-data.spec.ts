@@ -4,6 +4,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBankData } from '@/modules/banks/use-bank-data';
 
@@ -26,10 +27,10 @@ describe('useBankData', () => {
     setActivePinia(createCustomPinia());
     const store = useBankConnectionsStore();
     store.setConnections([connection('qonto', 'Business'), connection('fints', 'Checking')]);
-    store.setConnectionBalances([
+    useBalancesStore().bankBalances = [
       { accounts: [], balances: { EUR: balance(200), SPAM: balance(5000) }, connector: 'qonto', name: 'Business' },
       { accounts: [], balances: { EUR: balance(300) }, connector: 'fints', name: 'Checking' },
-    ]);
+    ];
   });
 
   it('should keep each bank connection separate, richest first', () => {
@@ -80,16 +81,24 @@ describe('useBankData', () => {
     expect(get(total).toFixed()).toBe('500');
   });
 
+  it('should leave a connection that is gone out of the total, as its tile is', () => {
+    useAssetsStore().ignoredAssets = ['SPAM'];
+    useBankConnectionsStore().setConnections([connection('fints', 'Checking')]);
+    const { banks, total } = useBankData();
+    expect(get(banks).map(bank => bank.name)).toEqual(['Checking']);
+    expect(get(total).toFixed()).toBe('300');
+  });
+
   it('should list a bank\'s accounts richest first, leaving out those holding an ignored asset', () => {
     useAssetsStore().ignoredAssets = ['SPAM'];
     const account = (identifier: string, asset: string, amount: number): { amount: ReturnType<typeof bigNumberify>; asset: string; iban: null; identifier: string; name: string; value: ReturnType<typeof bigNumberify> } =>
       ({ asset, iban: null, identifier, name: identifier, ...balance(amount) });
-    useBankConnectionsStore().setConnectionBalances([{
+    useBalancesStore().bankBalances = [{
       accounts: [account('checking', 'EUR', 50), account('spam', 'SPAM', 5000), account('savings', 'EUR', 150)],
       balances: { EUR: balance(200), SPAM: balance(5000) },
       connector: 'qonto',
       name: 'Business',
-    }]);
+    }];
     const { banks } = useBankData();
 
     expect(get(banks).find(bank => bank.name === 'Business')?.accounts.map(({ identifier }) => identifier)).toEqual(['savings', 'checking']);

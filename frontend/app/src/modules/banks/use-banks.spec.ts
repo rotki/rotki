@@ -286,6 +286,21 @@ describe('useBanks', () => {
     expect(notifyError).toHaveBeenCalledOnce();
   });
 
+  it('should drop a removed connection\'s balances at once, keeping the others', async () => {
+    const dkb = { connector: 'fints', name: 'DKB' };
+    useBankConnectionsStore().setConnections([connection]);
+    const balances = useBalancesStore();
+    balances.bankBalances = [
+      { accounts: [], balances: eur, connector: 'qonto', name: 'Qonto main' },
+      { accounts: [], balances: eur, ...dkb },
+    ];
+    removeBank.mockResolvedValue(true);
+    queryBankBalances.mockReturnValue(new Promise(() => {}));
+
+    expect(await useBanks().removeBank(dkb)).toBe(true);
+    expect(balances.bankBalances.map(({ name }) => name)).toEqual(['Qonto main']);
+  });
+
   it('should leave balances alone when the backend refuses the removal', async () => {
     useBankConnectionsStore().setConnections([connection]);
     removeBank.mockResolvedValue(false);
@@ -377,7 +392,7 @@ describe('useBanks', () => {
     expect(await useBanks().syncBanks()).toBe(false);
   });
 
-  it('should write the banks aggregate and connection balances, then drop both without connections', async () => {
+  it('should keep bank balances apart from the exchange balances, and drop them without connections', async () => {
     const balances = useBalancesStore();
     balances.exchangeBalances = { kraken: eur };
     const store = useBankConnectionsStore();
@@ -386,8 +401,8 @@ describe('useBanks', () => {
 
     await banks.fetchBankBalances(true);
     expect(queryBankBalances).toHaveBeenCalledWith(true, undefined);
-    expect(Object.keys(balances.exchangeBalances).sort()).toEqual(['banks', 'kraken']);
-    expect(store.connectionBalances).toEqual([{
+    expect(Object.keys(balances.exchangeBalances)).toEqual(['kraken']);
+    expect(balances.bankBalances).toEqual([{
       accounts: [],
       balances: eur,
       connector: 'qonto',
@@ -397,19 +412,19 @@ describe('useBanks', () => {
     store.setConnections([]);
     await banks.fetchBankBalances();
     expect(queryBankBalances).toHaveBeenCalledOnce();
+    expect(balances.bankBalances).toEqual([]);
     expect(Object.keys(balances.exchangeBalances)).toEqual(['kraken']);
-    expect(store.connectionBalances).toEqual([]);
   });
 
-  it('should refresh one connection without dropping the others, and rebuild the banks aggregate', async () => {
+  it('should refresh one connection without dropping the others', async () => {
     const balances = useBalancesStore();
     const store = useBankConnectionsStore();
     const dkb = { connector: 'fints', name: 'DKB' };
     store.setConnections([connection, { ...connection, ...dkb, displayName: 'FinTS' }]);
-    store.setConnectionBalances([
+    balances.bankBalances = [
       { accounts: [], balances: eur, connector: 'qonto', name: 'Qonto main' },
       { accounts: [], balances: eur, ...dkb },
-    ]);
+    ];
     queryBankBalances.mockResolvedValue({
       aggregate: { EUR: { amount: '5', value: '5' } },
       connections: [{ accounts: [], balances: { EUR: { amount: '5', value: '5' } }, ...dkb }],
@@ -418,12 +433,33 @@ describe('useBanks', () => {
     await useBanks().fetchBankBalances(true, dkb);
 
     expect(queryBankBalances).toHaveBeenCalledWith(true, dkb);
-    expect(submitTask).toHaveBeenCalledWith(expect.objectContaining({ id: 'bank-balances:DKB' }));
-    expect(store.connectionBalances.map(({ balances, name }) => [name, balances.EUR.amount.toFixed()])).toEqual([
+    expect(submitTask).toHaveBeenCalledWith(expect.objectContaining({ id: 'bank-balances:DKB', lane: 'bank-balances' }));
+    expect(balances.bankBalances.map(({ balances, name }) => [name, balances.EUR.amount.toFixed()])).toEqual([
       ['Qonto main', '10'],
       ['DKB', '5'],
     ]);
-    expect(balances.exchangeBalances.banks.EUR.amount.toFixed()).toBe('15');
+  });
+
+  it('should keep what a bank last reported when a full refresh leaves it out for a TAN', async () => {
+    const balances = useBalancesStore();
+    const store = useBankConnectionsStore();
+    const dkb = { connector: 'fints', name: 'DKB' };
+    store.setConnections([connection, { ...connection, ...dkb, displayName: 'FinTS' }]);
+    balances.bankBalances = [
+      { accounts: [], balances: eur, connector: 'qonto', name: 'Qonto main' },
+      { accounts: [], balances: eur, ...dkb },
+    ];
+    queryBankBalances.mockResolvedValue({
+      aggregate: { EUR: { amount: '5', value: '5' } },
+      connections: [{ accounts: [], balances: { EUR: { amount: '5', value: '5' } }, connector: 'qonto', name: 'Qonto main' }],
+    });
+
+    await useBanks().fetchBankBalances(true);
+
+    expect(balances.bankBalances.map(({ balances, name }) => [name, balances.EUR.amount.toFixed()])).toEqual([
+      ['DKB', '10'],
+      ['Qonto main', '5'],
+    ]);
   });
 
   it('should keep the accounts of each bank connection it reads', async () => {
@@ -440,7 +476,7 @@ describe('useBanks', () => {
 
     await useBanks().fetchBankBalances();
 
-    expect(useBankConnectionsStore().connectionBalances[0].accounts).toEqual([
+    expect(useBalancesStore().bankBalances[0].accounts).toEqual([
       { amount: bigNumberify(10), asset: 'EUR', iban: 'DE86601995651153419937', identifier: 'acc', name: 'Main', value: bigNumberify(11) },
     ]);
   });

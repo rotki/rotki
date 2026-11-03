@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type FintsBank,
   FintsBankDirectory,
   fintsBankDirectory,
   fintsBankLogo,
   fintsBanks,
-  searchFintsBanks,
   toFintsBankOptions,
 } from '@/modules/banks/fints-bank-directory';
+
+function bankNamed(name: string): FintsBank | undefined {
+  return fintsBanks.find(bank => bank.name.includes(name));
+}
 
 describe('fintsBankDirectory', () => {
   it('should ship the complete compact registry catalog with reproducible provenance', () => {
@@ -49,9 +53,9 @@ describe('fintsBankDirectory', () => {
   });
 
   it('should give a bank the logo of its brand or banking group, and none to a bank without one', () => {
-    expect(searchFintsBanks('Deutsche Kreditbank')[0]?.logo).toBe('bank_dkb.svg');
-    expect(searchFintsBanks('Berliner Sparkasse')[0]?.logo).toBe('bank_sparkasse.svg');
-    expect(searchFintsBanks('Allgemeine Beamten Bank')[0]?.logo).toBeUndefined();
+    expect(bankNamed('Deutsche Kreditbank')?.logo).toBe('bank_dkb.svg');
+    expect(bankNamed('Berliner Sparkasse')?.logo).toBe('bank_sparkasse.svg');
+    expect(bankNamed('Allgemeine Beamten Bank')?.logo).toBeUndefined();
   });
 
   it('should find a logo by any of the bank\'s codes', () => {
@@ -61,14 +65,8 @@ describe('fintsBankDirectory', () => {
     expect(fintsBankLogo('00000000')).toBeUndefined();
   });
 
-  it('should find institutions by name, alias, city, and every eight-digit BLZ', () => {
-    expect(searchFintsBanks('BBBank Karlsruhe')[0]?.bankCodes).toContain('66090800');
-    expect(searchFintsBanks('66090800')[0]?.name).toBe('BBBank eG');
-    expect(searchFintsBanks('SKG BANK')[0]?.bankCodes).toContain('12030000');
-  });
-
   it('should group comdirect into one searchable institution with all its BLZs', () => {
-    const matches = searchFintsBanks('comdirect');
+    const matches = fintsBanks.filter(bank => bank.name.toLowerCase().includes('comdirect'));
     expect(matches).toHaveLength(1);
     expect(matches[0]?.bankCodes).toEqual([
       '20041111',

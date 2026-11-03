@@ -3,7 +3,7 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { BankAccountBalance } from '@/modules/banks/types';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
-import { BANK_AMOUNT_FORMAT } from '@/modules/banks/bank-balances';
+import { bankAmountFormat } from '@/modules/banks/bank-balances';
 import { useBankAccountLabel } from '@/modules/banks/use-bank-account-label';
 
 const { accounts, search = '', loading = false } = defineProps<{
@@ -87,7 +87,7 @@ const rows = computed<BankAccountBalance[]>(() => {
     <template #item.amount="{ row }">
       <ValueDisplay
         :value="row.amount"
-        :format="BANK_AMOUNT_FORMAT"
+        :format="bankAmountFormat(row.asset)"
       />
     </template>
     <template #item.value="{ row }">
