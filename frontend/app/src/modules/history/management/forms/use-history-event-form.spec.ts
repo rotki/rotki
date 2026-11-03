@@ -42,6 +42,8 @@ interface FormState {
 
 const PRICE_FAILED_KEY = 'transactions.events.form.asset_price.failed';
 
+const SAVE_FAILED_KEY = 'transactions.events.form.save_failed';
+
 const ethPrice: PriceIntent = {
   fromAsset: 'ETH',
   price: '2000',
@@ -284,14 +286,14 @@ describe('useHistoryEventForm', () => {
       expect(handle.form.errors('amount')).toEqual(['too small']);
     });
 
-    it('should report a save rejected with an empty message as unsaved, without showing anything', async () => {
+    it('should report a save rejected with an empty message as unsaved, with the generic save error', async () => {
       addHistoryEvent.mockResolvedValue({ message: '', success: false });
       const { handle } = mountForm();
       handle.seed(filledState());
 
       await expect(handle.save()).resolves.toBe(false);
 
-      expect(showErrorMessage).not.toHaveBeenCalled();
+      expect(showErrorMessage).toHaveBeenCalledExactlyOnceWith(SAVE_FAILED_KEY);
       expect(handle.form.errors('amount')).toEqual([]);
       expect(handle.form.state.amount).toBe('1');
     });
