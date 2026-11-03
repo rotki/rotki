@@ -22,6 +22,7 @@ import { seedEvmTransaction, seedHistoricPrices } from '../../helpers/seed-db';
 import { EVENT_ROW, MOVEMENT_ROW, SWAP_ROW } from '../../pages/history-event-rows';
 import { HistoryEventsPage } from '../../pages/history-events-page';
 import { PillFilterBar } from '../../pages/pill-filter-bar';
+import { HistoricPricePage } from '../../pages/price-manager-page';
 import { RotkiApp } from '../../pages/rotki-app';
 
 /**
@@ -537,6 +538,39 @@ test.describe.serial('evm history events', () => {
     await page.rows.delete(evmSwapRow);
 
     await expect(evmSwapRow).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
+  });
+});
+
+test.describe.serial('history event price', () => {
+  let ctx: SharedTestContext;
+  let page: HistoryEventsPage;
+
+  test.beforeAll(async ({ browser, request }) => {
+    seedHistoricPrices(TEST_PRICE_ENTRIES, TEST_EVENT_TIMESTAMP);
+    ctx = await createLoggedInContext(browser, request, LOGIN_OPTIONS);
+    page = new HistoryEventsPage(ctx.sharedPage);
+  });
+
+  test.afterAll(async () => {
+    await cleanupContext(ctx);
+  });
+
+  test('saving an event with an edited price stores that price as a historic price', async () => {
+    await page.visit();
+    await waitForNoRunningTasks(ctx.sharedPage);
+    const before = await page.rows.idsOf(EVENT_ROW);
+
+    await page.openAddDialog();
+    await page.selectEntryType('history event');
+    await page.fillOnlineEventForm({ ...onlineEventFixture, notes: 'E2E test event with an edited price' });
+    await page.setEventPrice('3141');
+    await page.saveForm();
+    await page.rows.waitForNewRow(before, EVENT_ROW);
+
+    const prices = new HistoricPricePage(ctx.sharedPage);
+    await prices.visit();
+    await prices.filterByFromAsset(onlineEventFixture.asset);
+    await prices.expectRowWithValue('3,141');
   });
 });
 
