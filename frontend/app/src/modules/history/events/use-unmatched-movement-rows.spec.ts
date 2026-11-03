@@ -109,7 +109,7 @@ describe('use-unmatched-movement-rows', () => {
 
       const { row, spec } = rowFor('spend');
 
-      expect(row.untrackedDestination).toBe(true);
+      expect(row.untracked).toBe(true);
       expect(spec.markExternal?.emphasize).toBe(true);
       expect(spec.confirms?.[UNMATCHED_ACTIONS.MARK_EXTERNAL]).toBeUndefined();
     });
@@ -163,7 +163,7 @@ describe('use-unmatched-movement-rows', () => {
   it('should not claim an untracked destination on an already ignored row', () => {
     spies.isDestinationUntracked.mockReturnValue(true);
 
-    expect(rowFor('spend', true).row.untrackedDestination).toBe(false);
+    expect(rowFor('spend', true).row.untracked).toBe(false);
   });
 
   describe('an already resolved row', () => {
@@ -171,7 +171,6 @@ describe('use-unmatched-movement-rows', () => {
       const { row } = rowForMovement(createResolvedMovement('deposit'), true);
 
       expect(row.direction).toBe('deposit');
-      expect(row.resolvedAsExternal).toBe(true);
       expect(row.resolvedLabel).toBe('asset_movement_matching.dialog.resolved_income');
     });
 
@@ -183,11 +182,11 @@ describe('use-unmatched-movement-rows', () => {
     });
 
     it('should not mark a merely ignored movement as resolved', () => {
-      expect(rowFor('receive', true).row.resolvedAsExternal).toBe(false);
+      expect(rowFor('receive', true).row.resolvedLabel).toBeUndefined();
     });
 
     it('should not mark an unstamped history event as resolved', () => {
-      expect(rowForMovement(createUnstampedMovement(), true).row.resolvedAsExternal).toBe(false);
+      expect(rowForMovement(createUnstampedMovement(), true).row.resolvedLabel).toBeUndefined();
     });
   });
 });

@@ -31,8 +31,8 @@ function mountList(props: { error?: unknown; isPinned?: boolean } = {}): VueWrap
     global: {
       provide: libraryDefaults,
       stubs: {
-        UnmatchedMovementsCards: presentation('UnmatchedMovementsCards'),
-        UnmatchedMovementsTable: presentation('UnmatchedMovementsTable'),
+        UnmatchedCards: presentation('UnmatchedCards'),
+        UnmatchedTable: presentation('UnmatchedTable'),
       },
     },
     props: { ...props, movements: [], selected: [] },
@@ -43,25 +43,25 @@ describe('unmatchedMovementsList', () => {
   it('should hand the failure to the dialog table', () => {
     const wrapper = mountList({ error: new Error('backend down') });
 
-    expect(wrapper.findComponent({ name: 'UnmatchedMovementsTable' }).props('failure')).toEqual(failure);
+    expect(wrapper.findComponent({ name: 'UnmatchedTable' }).props('failure')).toEqual(failure);
   });
 
   it('should hand the failure to the pinned cards', () => {
     const wrapper = mountList({ error: new Error('backend down'), isPinned: true });
 
-    expect(wrapper.findComponent({ name: 'UnmatchedMovementsCards' }).props('failure')).toEqual(failure);
+    expect(wrapper.findComponent({ name: 'UnmatchedCards' }).props('failure')).toEqual(failure);
   });
 
   it('should hand no failure while nothing failed', () => {
     const wrapper = mountList();
 
-    expect(wrapper.findComponent({ name: 'UnmatchedMovementsTable' }).props('failure')).toBeUndefined();
+    expect(wrapper.findComponent({ name: 'UnmatchedTable' }).props('failure')).toBeUndefined();
   });
 
   it('should pass a retry from the presentation up to its host', async () => {
     const wrapper = mountList({ error: new Error('backend down') });
 
-    wrapper.findComponent({ name: 'UnmatchedMovementsTable' }).vm.$emit('retry');
+    wrapper.findComponent({ name: 'UnmatchedTable' }).vm.$emit('retry');
 
     expect(wrapper.emitted('retry')).toHaveLength(1);
   });

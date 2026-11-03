@@ -1,5 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
 import { HistoryEventEntryType } from '@rotki/common';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
@@ -40,27 +41,15 @@ function movementDirection(entry: HistoryEventEntry): 'deposit' | 'withdrawal' {
   return getAssetMovementsType(entry.eventSubtype);
 }
 
-/** One unmatched asset movement, with its wording already decided. See [[UnmatchedBridgeRow]]. */
-export interface UnmatchedMovementRow {
-  /** Row key: a movement is matched as a whole group, unlike a bridge leg. */
-  groupIdentifier: string;
-  entry: HistoryEventEntry;
-  eventSubtype: string;
-  typeLabel: string;
-  isFiat: boolean;
-  location: string;
-  timestamp: number;
-  original: UnmatchedAssetMovement;
+/**
+ * One unmatched asset movement. Its `id` is its group, since a movement is matched as a whole.
+ *
+ * @remarks
+ * Only a withdrawal is ever `untracked`, see {@link getMovementDestinationAddress}.
+ */
+export interface UnmatchedMovementRow extends UnmatchedRow<UnmatchedAssetMovement> {
   /** A withdrawal is resolved as a payment out, a deposit as income. */
   direction: 'deposit' | 'withdrawal';
-  destinationAddress?: string;
-  /** Only ever true for a withdrawal - see {@link getMovementDestinationAddress}. */
-  untrackedDestination: boolean;
-  untrackedLabel: string;
-  untrackedTooltip: string;
-  /** The row was already resolved as a payment or as income, rather than merely ignored. */
-  resolvedAsExternal: boolean;
-  resolvedLabel: string;
 }
 
 interface UseUnmatchedMovementRowsOptions {
@@ -105,6 +94,13 @@ export function useUnmatchedMovementRows(options: UseUnmatchedMovementRowsOption
     showInEventsTooltip: t('asset_movement_matching.dialog.show_in_events'),
   }));
 
+  /** What a movement the backend resolved as external was resolved as. */
+  function resolvedLabelFor(direction: 'deposit' | 'withdrawal'): string {
+    return direction === 'deposit'
+      ? t('asset_movement_matching.dialog.resolved_income')
+      : t('asset_movement_matching.dialog.resolved_payment');
+  }
+
   const rows = computed<UnmatchedMovementRow[]>(() =>
     toValue(movements).map((movement) => {
       const { entry, ...meta } = getEventEntryFromCollection(movement.events);
@@ -112,23 +108,19 @@ export function useUnmatchedMovementRows(options: UseUnmatchedMovementRowsOption
       const ignored = !!toValue(showRestore);
       const address = getMovementDestinationAddress(eventEntry);
       const direction = movementDirection(eventEntry);
-      const resolvedAsExternal = externalResolution(eventEntry) !== undefined;
       return {
-        destinationAddress: address,
         direction,
         entry: eventEntry,
-        eventSubtype: entry.eventSubtype,
         groupIdentifier: movement.groupIdentifier,
+        id: movement.groupIdentifier,
         isFiat: movement.isFiat,
         location: entry.location,
         original: movement,
-        resolvedAsExternal,
-        resolvedLabel: direction === 'deposit'
-          ? t('asset_movement_matching.dialog.resolved_income')
-          : t('asset_movement_matching.dialog.resolved_payment'),
+        resolvedLabel: externalResolution(eventEntry) ? resolvedLabelFor(direction) : undefined,
         timestamp: entry.timestamp,
         typeLabel: direction,
-        untrackedDestination: !ignored && isDestinationUntracked(eventEntry),
+        untracked: !ignored && isDestinationUntracked(eventEntry),
+        untrackedAddress: address,
         untrackedLabel: t('asset_movement_matching.dialog.untracked_destination'),
         untrackedTooltip: t('asset_movement_matching.dialog.untracked_destination_tooltip', { address: address ?? '' }),
       };
@@ -178,7 +170,7 @@ export function useUnmatchedMovementRows(options: UseUnmatchedMovementRowsOption
       },
     };
 
-    if (!row.untrackedDestination) {
+    if (!row.untracked) {
       confirms[UNMATCHED_ACTIONS.MARK_EXTERNAL] = {
         confirmLabel: t('asset_movement_matching.dialog.mark_external'),
         message: row.direction === 'withdrawal'
@@ -192,7 +184,7 @@ export function useUnmatchedMovementRows(options: UseUnmatchedMovementRowsOption
 
   function markExternalFor(row: UnmatchedMovementRow): UnmatchedRowOptionalAction {
     return {
-      emphasize: row.untrackedDestination,
+      emphasize: row.untracked,
       label: t('asset_movement_matching.dialog.mark_external'),
       tooltip: row.direction === 'withdrawal'
         ? t('asset_movement_matching.dialog.mark_external_tooltip')

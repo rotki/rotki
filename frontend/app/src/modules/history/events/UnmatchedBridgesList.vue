@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { UnmatchedActionPayload, UnmatchedMatchAccess } from '@/modules/history/events/unmatched-actions';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
-import { HISTORY_DIALOG_MAX_HEIGHT } from '@/modules/history/events/dialog-layout';
-import UnmatchedBridgesCards from '@/modules/history/events/UnmatchedBridgesCards.vue';
-import UnmatchedBridgesTable from '@/modules/history/events/UnmatchedBridgesTable.vue';
+import { UnmatchedVariant } from '@/modules/history/events/unmatched-row';
+import UnmatchedCards from '@/modules/history/events/UnmatchedCards.vue';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
+import UnmatchedTable from '@/modules/history/events/UnmatchedTable.vue';
 import { useUnmatchedBridgeRows } from '@/modules/history/events/use-unmatched-bridge-rows';
 
 const selected = defineModel<string[]>('selected', { required: true });
@@ -73,13 +73,13 @@ const { description, emptyDescription, failure, rows, specFor } = useUnmatchedBr
     </div>
 
     <Component
-      :is="isPinned ? UnmatchedBridgesCards : UnmatchedBridgesTable"
+      :is="isPinned ? UnmatchedCards : UnmatchedTable"
       v-model:selected="selected"
+      :variant="isPinned ? undefined : UnmatchedVariant.BRIDGE"
       :rows="rows"
       :spec-for="specFor"
       :empty-description="emptyDescription"
       :failure="failure"
-      :max-height="isPinned ? undefined : HISTORY_DIALOG_MAX_HEIGHT"
       :highlighted-group-identifier="highlightedGroupIdentifier"
       :ignore-loading="ignoreLoading"
       :loading="loading"
@@ -91,7 +91,7 @@ const { description, emptyDescription, failure, rows, specFor } = useUnmatchedBr
         #alert
       >
         <UnmatchedMatchDisabledAlert
-          variant="bridge"
+          :variant="UnmatchedVariant.BRIDGE"
           :count="showRestore ? 0 : transactions.length"
           :match-minimum-tier="matchAccess?.minimumTier"
         />

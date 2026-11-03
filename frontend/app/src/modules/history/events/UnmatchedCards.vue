@@ -1,44 +1,45 @@
-<script setup lang="ts">
-import type { UnmatchedBridgeRow } from '@/modules/history/events/use-unmatched-bridge-rows';
-import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
+<script setup lang="ts" generic="TItem">
+import type { UnmatchedPresentationEmits, UnmatchedPresentationProps, UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
-import { UNMATCHED_LAYOUTS, type UnmatchedActionPayload, type UnmatchedFailure, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
+import { UNMATCHED_LAYOUTS } from '@/modules/history/events/unmatched-actions';
 import UnmatchedActions from '@/modules/history/events/UnmatchedActions.vue';
 import UnmatchedCardList from '@/modules/history/events/UnmatchedCardList.vue';
+import UnmatchedFiatHint from '@/modules/history/events/UnmatchedFiatHint.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const selected = defineModel<string[]>('selected', { required: true });
 
-const { rows, highlightedGroupIdentifier } = defineProps<{
-  rows: UnmatchedBridgeRow[];
-  specFor: (row: UnmatchedBridgeRow) => UnmatchedRowActionSpec;
-  emptyDescription: string;
-  /** why the last load failed, shown in place of the empty text or above the rows it left */
-  failure?: UnmatchedFailure;
-  highlightedGroupIdentifier?: string;
-  ignoreLoading?: boolean;
-  loading?: boolean;
-}>();
+const { highlightedGroupIdentifier } = defineProps<UnmatchedPresentationProps<TItem>>();
 
-const emit = defineEmits<{
-  action: [payload: UnmatchedActionPayload<UnmatchedBridgeTransaction>];
-  retry: [];
-}>();
+const emit = defineEmits<UnmatchedPresentationEmits<TItem>>();
 
 defineSlots<{
   alert?: () => unknown;
 }>();
+
+function rowKey(row: UnmatchedRow<TItem>): string {
+  return row.id;
+}
+
+function isHighlighted(row: UnmatchedRow<TItem>): boolean {
+  return row.groupIdentifier === highlightedGroupIdentifier;
+}
+
+function isUntracked(row: UnmatchedRow<TItem>): boolean {
+  return row.untracked;
+}
 </script>
 
 <template>
   <UnmatchedCardList
     v-model:selected="selected"
     :items="rows"
-    :row-key="(row: UnmatchedBridgeRow) => row.id"
-    :highlighted="(row: UnmatchedBridgeRow) => row.groupIdentifier === highlightedGroupIdentifier"
-    :accented="(row: UnmatchedBridgeRow) => row.untrackedCounterpart"
+    :row-key="rowKey"
+    :highlighted="isHighlighted"
+    :accented="isUntracked"
     :empty-description="emptyDescription"
     :failure="failure"
     :loading="loading"
@@ -54,12 +55,25 @@ defineSlots<{
     <template #header="{ item }">
       <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
         <BadgeDisplay class="normal-case!">
-          {{ item.directionLabel }}
+          {{ item.typeLabel }}
         </BadgeDisplay>
+        <RuiChip
+          v-if="item.resolvedLabel"
+          size="sm"
+          color="info"
+          class="py-0!"
+          data-testid="unmatched-row-resolved"
+        >
+          {{ item.resolvedLabel }}
+        </RuiChip>
         <LocationDisplay
           size="16px"
           :identifier="item.location"
           horizontal
+          dense
+        />
+        <UnmatchedFiatHint
+          v-if="item.isFiat"
           dense
         />
         <DateDisplay
@@ -72,7 +86,7 @@ defineSlots<{
 
     <template #warning="{ item }">
       <div
-        v-if="item.untrackedCounterpart"
+        v-if="item.untracked"
         class="flex items-start gap-1.5 rounded-sm px-2 py-1 text-caption bg-rui-warning/10 text-rui-warning"
         data-testid="unmatched-card-untracked-reason"
       >
@@ -81,15 +95,22 @@ defineSlots<{
           name="lu-triangle-alert"
           class="shrink-0 mt-0.5"
         />
-        <i18n-t
-          scope="global"
-          keypath="bridge_matching.dialog.untracked_reason"
-          tag="span"
-        >
-          <template #label>
-            <strong>{{ item.untrackedLabel }}</strong>
-          </template>
-        </i18n-t>
+        <div class="flex flex-col items-start gap-0.5 min-w-0">
+          <i18n-t
+            scope="global"
+            keypath="asset_movement_matching.dialog.untracked_reason"
+            tag="span"
+          >
+            <template #label>
+              <strong>{{ item.untrackedLabel }}</strong>
+            </template>
+          </i18n-t>
+          <HashLink
+            v-if="item.untrackedAddress"
+            class="[&_span]:text-caption!"
+            :text="item.untrackedAddress"
+          />
+        </div>
       </div>
     </template>
 

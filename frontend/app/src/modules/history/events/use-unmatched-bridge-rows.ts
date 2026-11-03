@@ -1,5 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { HistoryEventEntry, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
+import type { HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
+import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { arrayify } from '@/modules/core/common/data/array';
@@ -7,28 +8,9 @@ import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { UNMATCHED_ACTIONS, type UnmatchedFailure, type UnmatchedRowActionLabels, type UnmatchedRowActionSpec, type UnmatchedRowConfirms, type UnmatchedRowOptionalAction } from '@/modules/history/events/unmatched-actions';
 import { canCreateBridgeCounterpart, getBridgeCounterpartAddress, isCounterpartUnqueryable, useUntrackedBridgeCounterpart } from '@/modules/history/events/use-untracked-bridge-counterpart';
 
-/**
- * One unmatched bridge leg, with everything either presentation needs already decided.
- *
- * The wording lives on the row rather than in a helper each presentation calls, because a
- * helper is only shared until someone forgets: the dialog table rendered the raw
- * `deposit`/`withdrawal` for a while precisely because the card had its own label function.
- */
-export interface UnmatchedBridgeRow {
-  /** Row key: the leg event identifier, since a group can carry several bridge legs. */
-  id: string;
-  groupIdentifier: string;
-  entry: HistoryEventEntry;
+/** One unmatched bridge leg. Its `id` is the leg's own event, since a group can carry several legs. */
+export interface UnmatchedBridgeRow extends UnmatchedRow<UnmatchedBridgeTransaction> {
   direction: 'deposit' | 'withdrawal';
-  directionLabel: string;
-  location: string;
-  timestamp: number;
-  original: UnmatchedBridgeTransaction;
-  counterpartAddress?: string;
-  untrackedCounterpart: boolean;
-  /** Names the untracked side ("Untracked destination"/"Untracked source"). */
-  untrackedLabel: string;
-  untrackedTooltip: string;
   canCreateCounterpart: boolean;
   unqueryableCounterpart: boolean;
 }
@@ -95,9 +77,8 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
       return {
         id: transaction.identifier.toString(),
         canCreateCounterpart: !ignored && canCreateBridgeCounterpart(transaction, untrackedCounterpart),
-        counterpartAddress: address,
         direction: transaction.direction,
-        directionLabel: isDeposit
+        typeLabel: isDeposit
           ? t('bridge_matching.dialog.direction_out')
           : t('bridge_matching.dialog.direction_in'),
         entry: eventEntry,
@@ -106,7 +87,7 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
         original: transaction,
         timestamp: entry.timestamp,
         unqueryableCounterpart: !ignored && isCounterpartUnqueryable(transaction),
-        untrackedCounterpart,
+        untracked: untrackedCounterpart,
         untrackedLabel: isDeposit
           ? t('bridge_matching.dialog.untracked_destination')
           : t('bridge_matching.dialog.untracked_source'),
@@ -153,7 +134,7 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
       },
     };
 
-    if (!row.untrackedCounterpart) {
+    if (!row.untracked) {
       confirms[UNMATCHED_ACTIONS.MARK_EXTERNAL] = {
         confirmLabel: t('bridge_matching.dialog.mark_external'),
         message: row.direction === 'deposit'
@@ -167,7 +148,7 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
 
   function markExternalFor(row: UnmatchedBridgeRow): UnmatchedRowOptionalAction {
     return {
-      emphasize: row.untrackedCounterpart && !row.unqueryableCounterpart,
+      emphasize: row.untracked && !row.unqueryableCounterpart,
       label: t('bridge_matching.dialog.mark_external'),
       tooltip: row.direction === 'deposit'
         ? t('bridge_matching.dialog.mark_external_tooltip')

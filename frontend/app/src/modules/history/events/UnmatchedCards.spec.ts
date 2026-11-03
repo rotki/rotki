@@ -1,39 +1,18 @@
 import type { UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
+import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import { createMock } from '@test/utils/create-mock';
 import { libraryDefaults } from '@test/utils/provide-defaults';
-import { movementRow, UNMATCHED_PANEL_KINDS, type UnmatchedPanelKind, type UnmatchedRowCase } from '@test/utils/unmatched-panel-kinds';
+import { MOVEMENT_KIND, movementRow, plainRow, UNMATCHED_PANEL_KINDS, UnmatchedActionsStub, type UnmatchedPanelKind, untrackedRow } from '@test/utils/unmatched-panel-kinds';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { type Component, defineComponent } from 'vue';
-import UnmatchedBridgesCards from '@/modules/history/events/UnmatchedBridgesCards.vue';
-import UnmatchedMovementsCards from '@/modules/history/events/UnmatchedMovementsCards.vue';
+import UnmatchedCards from '@/modules/history/events/UnmatchedCards.vue';
 import '@test/i18n';
 
-const UnmatchedActions = defineComponent({
-  name: 'UnmatchedActions',
-  props: ['spec'],
-  emits: ['action'],
-  template: '<button data-testid="card-action" @click.stop="$emit(\'action\', \'ignore\')" />',
-});
-
-const COMPONENTS: Record<UnmatchedPanelKind['name'], Component> = {
-  'asset movement': UnmatchedMovementsCards,
-  'bridge': UnmatchedBridgesCards,
-};
-
-const plainRow: UnmatchedRowCase = { key: 'row-1', typeLabel: 'Deposit' };
-
-const untrackedRow: UnmatchedRowCase = {
-  key: 'row-2',
-  typeLabel: 'Withdrawal',
-  untracked: { label: 'Untracked destination', tooltip: 'Not one of your accounts' },
-};
-
-function mountCards(kind: UnmatchedPanelKind, rows: unknown[]): VueWrapper {
-  return mount(COMPONENTS[kind.name], {
+function mountCards(kind: UnmatchedPanelKind, rows: UnmatchedRow<unknown>[]): VueWrapper {
+  return mount(UnmatchedCards, {
     global: {
       provide: libraryDefaults,
-      stubs: { DateDisplay: true, HashLink: true, HistoryEventAsset: true, LocationDisplay: true, UnmatchedActions },
+      stubs: { DateDisplay: true, HashLink: true, HistoryEventAsset: true, LocationDisplay: true, UnmatchedActions: UnmatchedActionsStub },
     },
     props: {
       emptyDescription: 'empty',
@@ -56,11 +35,11 @@ describe.each(UNMATCHED_PANEL_KINDS)('unmatched cards, $name', (kind) => {
     expect(card(wrapper, 1).text()).toContain('Withdrawal');
   });
 
-  it('should explain an untracked row in this kind\'s words, and leave a tracked one alone', () => {
+  it('should explain an untracked row, and leave a tracked one alone', () => {
     const wrapper = mountCards(kind, [kind.row(plainRow), kind.row(untrackedRow)]);
 
     expect(card(wrapper, 0).find('[data-testid=unmatched-card-untracked-reason]').exists()).toBe(false);
-    expect(card(wrapper, 1).find('[data-testid=unmatched-card-untracked-reason] i18n-t-stub').attributes('keypath')).toBe(kind.untrackedReasonKey);
+    expect(card(wrapper, 1).find('[data-testid=unmatched-card-untracked-reason] i18n-t-stub').attributes('keypath')).toBe('asset_movement_matching.dialog.untracked_reason');
   });
 
   it('should select a card by what the selection stores', async () => {
@@ -75,17 +54,17 @@ describe.each(UNMATCHED_PANEL_KINDS)('unmatched cards, $name', (kind) => {
     const row = kind.row(plainRow);
     const wrapper = mountCards(kind, [row]);
 
-    await card(wrapper, 0).find('[data-testid=card-action]').trigger('click');
+    await card(wrapper, 0).find('[data-testid=row-action]').trigger('click');
 
     expect(wrapper.emitted('action')).toEqual([[{ action: 'ignore', item: row.original }]]);
   });
 });
 
 describe('unmatched cards, asset movement only', () => {
-  const kind = UNMATCHED_PANEL_KINDS[1];
+  const kind = MOVEMENT_KIND;
 
   it('should name a movement already resolved as external', () => {
-    const wrapper = mountCards(kind, [movementRow(plainRow, { resolvedAsExternal: true, resolvedLabel: 'Resolved as income' })]);
+    const wrapper = mountCards(kind, [movementRow(plainRow, { resolvedLabel: 'Resolved as income' })]);
 
     expect(card(wrapper, 0).find('[data-testid=unmatched-row-resolved]').text()).toBe('Resolved as income');
   });
@@ -98,7 +77,7 @@ describe('unmatched cards, asset movement only', () => {
   });
 
   it('should show where an untracked withdrawal went', () => {
-    const wrapper = mountCards(kind, [movementRow(untrackedRow, { destinationAddress: '0xA090e606E30bD747d4E6245a1517EbE430F0057e' })]);
+    const wrapper = mountCards(kind, [movementRow(untrackedRow, { untrackedAddress: '0xA090e606E30bD747d4E6245a1517EbE430F0057e' })]);
 
     expect(card(wrapper, 0).findComponent({ name: 'HashLink' }).props('text')).toBe('0xA090e606E30bD747d4E6245a1517EbE430F0057e');
   });

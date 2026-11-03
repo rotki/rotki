@@ -2203,7 +2203,6 @@
         "ignored": "Could not load the ignored bridge transactions",
         "unmatched": "Could not load the unmatched bridge transactions"
       },
-      "manual_action": "Manual Action",
       "mark_external": "Mark external",
       "mark_external_in_tooltip": "Resolve this bridge withdrawal as income from an external (untracked) source.",
       "mark_external_tooltip": "Resolve this bridge deposit as a payment to an external (untracked) address.",
@@ -2217,7 +2216,6 @@
       "title": "Match Bridge Transactions",
       "untracked_destination": "Destination not tracked",
       "untracked_destination_tooltip": "The destination address {address} is not tracked by rotki, so the counterpart event cannot exist in your history. Resolve this bridge deposit by marking it as an external payment.",
-      "untracked_reason": "{label}: no match can exist",
       "untracked_source": "Source not tracked",
       "untracked_source_tooltip": "The source address {address} is not tracked by rotki, so the counterpart event cannot exist in your history. Resolve this bridge withdrawal by marking it as external income."
     },

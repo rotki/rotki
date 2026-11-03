@@ -2,7 +2,9 @@ import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatc
 import type { UnmatchedBridgeRow } from '@/modules/history/events/use-unmatched-bridge-rows';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import type { UnmatchedMovementRow } from '@/modules/history/events/use-unmatched-movement-rows';
-import { createAssetMovementEvent } from '@test/utils/history-events';
+import { createAssetMovementEvent, createEvmEvent } from '@test/utils/history-events';
+import { defineComponent } from 'vue';
+import { UnmatchedVariant } from '@/modules/history/events/unmatched-row';
 
 /** What a test says about a row, in words both kinds understand. */
 export interface UnmatchedRowCase {
@@ -15,36 +17,56 @@ export interface UnmatchedRowCase {
 /** The kind-specific parts of an unmatched panel that a spec over both kinds has to know. */
 export interface UnmatchedPanelKind {
   name: 'bridge' | 'asset movement';
+  variant: UnmatchedVariant;
   /** The group a row belongs to, which a deep link highlights. */
   groupOf: (key: string) => string;
   locationLabel: string;
-  actionsLabel: string;
-  untrackedReasonKey: string;
   row: (rowCase: UnmatchedRowCase) => UnmatchedBridgeRow | UnmatchedMovementRow;
 }
 
+export const plainRow: UnmatchedRowCase = { key: 'row-1', typeLabel: 'Deposit' };
+
+export const untrackedRow: UnmatchedRowCase = {
+  key: 'row-2',
+  typeLabel: 'Withdrawal',
+  untracked: { label: 'Untracked destination', tooltip: 'Not one of your accounts' },
+};
+
+/** Stands in for the row actions: one button that reports an ignore, without selecting the row it sits on. */
+export const UnmatchedActionsStub = defineComponent({
+  name: 'UnmatchedActions',
+  props: ['spec'],
+  emits: ['action'],
+  template: '<button data-testid="row-action" @click.stop="$emit(\'action\', \'ignore\')" />',
+});
+
 const TIMESTAMP = 1700000000000;
 
+function bridgeGroupOf(key: string): string {
+  return `${key}-group`;
+}
+
 function bridgeRow({ key, typeLabel, untracked }: UnmatchedRowCase): UnmatchedBridgeRow {
+  const groupIdentifier = bridgeGroupOf(key);
   const original: UnmatchedBridgeTransaction = {
     asset: 'ETH',
     direction: 'deposit',
     events: [],
-    groupIdentifier: `${key}-group`,
+    groupIdentifier,
     identifier: 1,
   };
   return {
     canCreateCounterpart: false,
     direction: 'deposit',
-    directionLabel: typeLabel,
-    entry: createAssetMovementEvent({ groupIdentifier: `${key}-group`, location: 'ethereum', timestamp: TIMESTAMP }),
-    groupIdentifier: `${key}-group`,
+    entry: createEvmEvent({ groupIdentifier, location: 'ethereum', timestamp: TIMESTAMP }),
+    groupIdentifier,
     id: key,
     location: 'ethereum',
     original,
     timestamp: TIMESTAMP,
+    typeLabel,
     unqueryableCounterpart: false,
-    untrackedCounterpart: !!untracked,
+    untracked: !!untracked,
     untrackedLabel: untracked?.label ?? '',
     untrackedTooltip: untracked?.tooltip ?? '',
   };
@@ -58,7 +80,7 @@ function bridgeRow({ key, typeLabel, untracked }: UnmatchedRowCase): UnmatchedBr
  */
 export function movementRow(
   { key, typeLabel, untracked }: UnmatchedRowCase,
-  extras: Partial<Pick<UnmatchedMovementRow, 'destinationAddress' | 'isFiat' | 'resolvedAsExternal' | 'resolvedLabel'>> = {},
+  extras: Partial<Pick<UnmatchedMovementRow, 'isFiat' | 'resolvedLabel' | 'untrackedAddress'>> = {},
 ): UnmatchedMovementRow {
   const original: UnmatchedAssetMovement = {
     asset: 'ETH',
@@ -69,37 +91,34 @@ export function movementRow(
   return {
     direction: 'withdrawal',
     entry: createAssetMovementEvent({ groupIdentifier: key, location: 'kraken', timestamp: TIMESTAMP }),
-    eventSubtype: 'remove asset',
     groupIdentifier: key,
+    id: key,
     isFiat: false,
     location: 'kraken',
     original,
-    resolvedAsExternal: false,
-    resolvedLabel: '',
     timestamp: TIMESTAMP,
     typeLabel,
-    untrackedDestination: !!untracked,
+    untracked: !!untracked,
     untrackedLabel: untracked?.label ?? '',
     untrackedTooltip: untracked?.tooltip ?? '',
     ...extras,
   };
 }
 
-export const UNMATCHED_PANEL_KINDS: UnmatchedPanelKind[] = [
-  {
-    actionsLabel: 'bridge_matching.dialog.manual_action',
-    groupOf: key => `${key}-group`,
-    locationLabel: 'common.location',
-    name: 'bridge',
-    row: bridgeRow,
-    untrackedReasonKey: 'bridge_matching.dialog.untracked_reason',
-  },
-  {
-    actionsLabel: 'asset_movement_matching.dialog.manual_action',
-    groupOf: key => key,
-    locationLabel: 'common.exchange',
-    name: 'asset movement',
-    row: rowCase => movementRow(rowCase),
-    untrackedReasonKey: 'asset_movement_matching.dialog.untracked_reason',
-  },
-];
+const BRIDGE_KIND: UnmatchedPanelKind = {
+  groupOf: bridgeGroupOf,
+  locationLabel: 'common.location',
+  name: 'bridge',
+  row: bridgeRow,
+  variant: UnmatchedVariant.BRIDGE,
+};
+
+export const MOVEMENT_KIND: UnmatchedPanelKind = {
+  groupOf: key => key,
+  locationLabel: 'common.exchange',
+  name: 'asset movement',
+  row: rowCase => movementRow(rowCase),
+  variant: UnmatchedVariant.ASSET_MOVEMENT,
+};
+
+export const UNMATCHED_PANEL_KINDS: UnmatchedPanelKind[] = [BRIDGE_KIND, MOVEMENT_KIND];

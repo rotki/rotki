@@ -1898,7 +1898,6 @@
       "direction_out": "Köprü çıkışı",
       "ignore_tooltip": "Bu köprü işlemini karşılık gelen bir olayı olmayan işlem olarak işaretle.",
       "ignored_description": "Bu köprü işlemleri, karşılık gelen bir olayı olmayan işlemler olarak işaretlendikleri ya da bağlantılarını siz kaldırdığınız için otomatik eşleştirmenin dışında tutulur. Dilediğiniz zaman birini elle eşleştirebilir veya otomatik eşleştirmenin onu yeniden dikkate alması için geri yükleyebilirsiniz.",
-      "manual_action": "Manuel eylem",
       "mark_external": "Harici olarak işaretle",
       "mark_external_in_tooltip": "Bu köprü çekme işlemini harici (takip edilmeyen) bir kaynaktan gelen gelir olarak sonuçlandır.",
       "mark_external_tooltip": "Bu köprü yatırma işlemini harici (takip edilmeyen) bir adrese yapılan ödeme olarak sonuçlandır.",
@@ -1912,7 +1911,6 @@
       "title": "Köprü işlemlerini eşleştir",
       "untracked_destination": "Hedef takip edilmiyor",
       "untracked_destination_tooltip": "{address} hedef adresi rotki tarafından takip edilmiyor, bu nedenle karşılık olay geçmişinizde yer alamaz. Bu köprü yatırma işlemini harici ödeme olarak işaretleyerek sonuçlandırın.",
-      "untracked_reason": "{label}: eşleşme mümkün değil",
       "untracked_source": "Kaynak takip edilmiyor",
       "untracked_source_tooltip": "{address} kaynak adresi rotki tarafından takip edilmiyor, bu nedenle karşılık olay geçmişinizde yer alamaz. Bu köprü çekme işlemini harici gelir olarak işaretleyerek sonuçlandırın."
     },

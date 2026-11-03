@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { msg } from '@/message-key';
 import { useCountFormatter } from '@/modules/assets/amount-display/use-count-formatter';
+import { UnmatchedVariant } from '@/modules/history/events/unmatched-row';
 import { usePlanUpgradeLink } from '@/modules/premium/use-plan-upgrade-link';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
@@ -10,7 +11,7 @@ const {
   matchMinimumTier = null,
   variant,
 } = defineProps<{
-  variant: 'bridge' | 'asset-movement';
+  variant: UnmatchedVariant;
   /** How many entries are waiting to be matched; 0 (the ignored list) leaves the count out. */
   count?: number;
   matchMinimumTier?: string | null;
@@ -26,7 +27,7 @@ const { formatCount } = useCountFormatter();
 const tier = computed<string>(() => matchMinimumTier ?? t('premium_settings.title'));
 
 const messageKey = computed<string>(() => {
-  if (variant === 'bridge')
+  if (variant === UnmatchedVariant.BRIDGE)
     return count > 0 ? msg.$t('bridge_matching.premium.unmatched') : msg.$t('bridge_matching.premium.locked');
   return count > 0 ? msg.$t('asset_movement_matching.premium.unmatched') : msg.$t('asset_movement_matching.premium.locked');
 });

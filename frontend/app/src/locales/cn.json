@@ -1879,7 +1879,6 @@
       "direction_out": "跨链转出",
       "ignore_tooltip": "将此跨链桥交易标记为没有对应事件。",
       "ignored_description": "这些跨链桥交易不参与自动匹配，原因是它们被标记为没有对应事件，或已被你取消关联。你可以随时手动匹配，或将其恢复以重新参与自动匹配。",
-      "manual_action": "手动操作",
       "mark_external": "标记为外部",
       "mark_external_in_tooltip": "将此跨链桥提取处理为来自外部（未追踪）来源的收入。",
       "mark_external_tooltip": "将此跨链桥存入处理为向外部（未追踪）地址的付款。",
@@ -1893,7 +1892,6 @@
       "title": "匹配跨链桥交易",
       "untracked_destination": "目标未追踪",
       "untracked_destination_tooltip": "目标地址 {address} 未被 rotki 追踪，因此你的历史中不可能存在对应事件。请将此跨链桥存入标记为外部付款来处理。",
-      "untracked_reason": "{label}：不可能存在匹配",
       "untracked_source": "来源未追踪",
       "untracked_source_tooltip": "源地址 {address} 未被 rotki 追踪，因此你的历史中不可能存在对应事件。请将此跨链桥提取标记为外部收入来处理。"
     },
