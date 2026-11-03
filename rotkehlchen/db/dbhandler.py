@@ -1546,10 +1546,16 @@ class DBHandler:
         chain is enabled again, until its next refresh.
         """
         for chain, disabled_addresses in disabled_chain_queries.items():
-            if len(disabled_addresses) != 0 and not {row[0] for row in write_cursor.execute(
-                'SELECT account FROM blockchain_accounts WHERE blockchain=?', (chain.value,),
-            )}.issubset(disabled_addresses):
-                continue
+            if len(disabled_addresses) != 0:
+                if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
+                    accounts = write_cursor.execute('SELECT public_key FROM eth2_validators')
+                else:
+                    accounts = write_cursor.execute(
+                        'SELECT account FROM blockchain_accounts WHERE blockchain=?',
+                        (chain.value,),
+                    )
+                if not {row[0] for row in accounts}.issubset(disabled_addresses):
+                    continue
 
             self.delete_dynamic_cache(
                 write_cursor=write_cursor,

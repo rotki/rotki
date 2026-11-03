@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.chain.solana.constants import SOLANA_V1_ACTIVATION_SLOT
 from rotkehlchen.chain.solana.types import SolanaTransaction
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -118,3 +119,52 @@ def test_migration_30_removes_query_ts_of_fully_disabled_chains(database: DBHand
         assert {row[0] for row in cursor.execute(
             "SELECT name FROM key_value_cache WHERE name LIKE '%_last_balances_query_ts'",
         )} == {keys[partially_disabled], keys[enabled]}
+
+
+@pytest.mark.parametrize('data_migration_version', [29])
+@pytest.mark.parametrize('disabled_validator_indices', [[], [0], [0, 1], [2]])
+def test_migration_30_preserves_enabled_validators(
+        database: DBHandler,
+        disabled_validator_indices: list[int],
+) -> None:
+    """The migration uses validator public keys, not the empty ETH2 blockchain_accounts set."""
+    chain = SupportedBlockchain.ETHEREUM_BEACONCHAIN
+    pubkeys = [f'0x{index:096x}' for index in range(3)]
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('disabled_chain_queries', json.dumps({
+                chain.serialize(): [pubkeys[index] for index in disabled_validator_indices],
+            })),
+        )
+        write_cursor.executemany(
+            'INSERT INTO eth2_validators(public_key, validator_type, ownership_proportion) '
+            'VALUES(?, 0, ?)',
+            [(pubkey, '1') for pubkey in pubkeys[:2]],
+        )
+        database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+            blockchain=chain.serialize(),
+            value=1,
+        )
+        write_cursor.executemany(
+            'INSERT INTO blockchain_balances_cache(blockchain, address, asset, label, category, amount) '  # noqa: E501
+            'VALUES(?, ?, ?, ?, ?, ?)',
+            [(chain.serialize(), pubkey, chain.get_native_token_id(), '', BalanceType.ASSET.serialize_for_db(), '32') for pubkey in pubkeys[:2]],  # noqa: E501
+        )
+
+    run_single_migration(database=database, migration=30)
+
+    with database.conn.read_ctx() as cursor:
+        should_preserve = disabled_validator_indices in ([0], [2])
+        assert cursor.execute(
+            'SELECT address, amount FROM blockchain_balances_cache WHERE blockchain=? ORDER BY address',  # noqa: E501
+            (chain.serialize(),),
+        ).fetchall() == ([(pubkey, '32') for pubkey in pubkeys[:2]] if should_preserve else [])
+        assert cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?',
+            (DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS.get_db_key(
+                blockchain=chain.serialize(),
+            ),),
+        ).fetchone() == (('1',) if should_preserve else None)

@@ -975,6 +975,15 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 blockchain=blockchain.serialize(),
             )
 
+            # Settings can disable a chain while its remote balance query is in flight.
+            # Read the persisted settings in this transaction so that a late refresh cannot
+            # recreate a fully disabled chain's cache after settings cleanup has committed.
+            if (disabled_addresses := self.database.get_settings(write_cursor).disabled_chain_queries.get(blockchain)) is not None:  # noqa: E501
+                self.database.delete_balances_query_ts_for_disabled_chains(
+                    write_cursor=write_cursor,
+                    disabled_chain_queries={blockchain: disabled_addresses},
+                )
+
     def sync_bitcoin_accounts_with_db(
             self,
             write_cursor: DBCursor,
