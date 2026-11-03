@@ -40,7 +40,7 @@ describe('modules/balances/LocationAssetsEmpty', () => {
     const { allLocations } = storeToRefs(useLocationStore());
     set(allLocations, {
       cash: { label: 'Cash' },
-      fints: { isBank: true, label: 'FinTS' },
+      banks: { isBank: true, label: 'Banks' },
       kraken: { isExchange: true, label: 'Kraken' },
     });
   });
@@ -76,13 +76,13 @@ describe('modules/balances/LocationAssetsEmpty', () => {
     expect(wrapper.findComponent(RouterLinkStub).props('to')).toMatchObject({ name: '/accounts/evm/[[tab]]' });
   });
 
-  it('should send a bank to the bank setup with the bank picked', () => {
-    const wrapper = createWrapper('fints', 'FinTS');
+  it('should send the banks location to the bank setup add dialog', () => {
+    const wrapper = createWrapper('banks', 'Banks');
 
-    expect(wrapper.find('[data-testid=notice]').attributes('data-description')).toBe('locations.empty.bank::FinTS');
+    expect(wrapper.find('[data-testid=notice]').attributes('data-description')).toBe('locations.empty.bank::Banks');
     expect(wrapper.find('[data-testid=notice]').attributes('data-icon')).toBe('lu-landmark');
-    expect(wrapper.text()).toContain('locations.empty.connect::FinTS');
-    expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ path: '/api-keys/banks', query: { add: 'true', location: 'fints' } });
+    expect(wrapper.text()).toContain('locations.empty.connect::Banks');
+    expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ path: '/api-keys/banks', query: { add: 'true' } });
   });
 
   it('should send an exchange to the exchange setup with the exchange picked', () => {

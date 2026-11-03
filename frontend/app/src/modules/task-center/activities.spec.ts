@@ -78,6 +78,7 @@ const samples = new Map<string, readonly unknown[]>([
   ['balanceDivergenceActivity', [{ address, asset: 'ETH', evmChain: 'ethereum' }]],
   ['balancesRunActivity', [{ chains: ['btc', 'eth'], mode: 'user' }]],
   ['bankBalancesActivity', [undefined]],
+  ['bankConnectionBalancesActivity', [{ name: 'Checking' }]],
   ['bankEventsActivity', [{ location: 'bank', name: 'Checking' }]],
   ['blockDecodeActivity', [{ blockNumbers: [19000002, 19000001] }]],
   ['bridgeMatchActivity', [undefined]],
