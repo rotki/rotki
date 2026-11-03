@@ -24,6 +24,7 @@ const challenge: BankAuthChallenge = {
 
 function connection(name: string, syncStatus: Partial<BankConnection['syncStatus']> = {}): BankConnection {
   return {
+    bankCode: null,
     displayName: 'FinTS',
     connector: 'fints',
     name,

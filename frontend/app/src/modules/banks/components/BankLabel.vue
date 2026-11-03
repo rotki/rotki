@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import BankConnectorIcon from '@/modules/banks/components/BankConnectorIcon.vue';
 
-/** A bank as one line: its connector's icon and its connector or institute name. */
-const { connector, name } = defineProps<{
+/** A bank as one line: its logo and its connector or institute name. */
+const { bankCode, connector, name } = defineProps<{
   connector: string;
   name: string;
+  bankCode?: string | null;
 }>();
 </script>
 
@@ -13,7 +14,10 @@ const { connector, name } = defineProps<{
     class="flex items-center gap-2 min-w-0"
     :title="connector"
   >
-    <BankConnectorIcon :connector="connector" />
+    <BankConnectorIcon
+      :connector="connector"
+      :bank-code="bankCode"
+    />
     <span class="truncate">{{ name }}</span>
   </span>
 </template>

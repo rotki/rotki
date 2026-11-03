@@ -173,6 +173,7 @@ class BankManager:
             'connector': bank.connector,
             'location': bank.location,
             'display_name': bank.manifest.display_name,
+            'bank_code': bank.bank_code,
             'sync_status': self.sync_status[bank.location_id()].serialize(),
         } for bank in self.iterate_banks()]
 

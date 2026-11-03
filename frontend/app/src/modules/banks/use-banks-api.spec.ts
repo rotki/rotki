@@ -29,17 +29,27 @@ describe('useBanksApi', () => {
     expect(manifest).toMatchObject({ displayName: 'Qonto', docsUrl: 'https://docs.qonto.com', image: 'qonto.svg', setupNotes: ['Only one key per organization'] });
   });
 
-  it('should parse the bank connections with their sync status', async () => {
+  it('should parse the bank connections with their bank code and sync status', async () => {
     server.use(http.get(`${backendUrl}/api/1/banks`, () => HttpResponse.json({
       message: '',
-      result: [{ display_name: 'Qonto', connector: 'qonto', name: 'main', sync_status: { auth_challenge: null, auth_expired: false, last_error: 'boom', last_sync_ts: 10, running: false } }],
+      result: [
+        { bank_code: null, display_name: 'Qonto', connector: 'qonto', name: 'main', sync_status: { auth_challenge: null, auth_expired: false, last_error: 'boom', last_sync_ts: 10, running: false } },
+        { bank_code: '12030000', display_name: 'FinTS/HBCI', connector: 'fints', name: 'DKB', sync_status: { auth_challenge: null, auth_expired: false, last_error: null, last_sync_ts: null, running: false } },
+      ],
     })));
 
     expect(await useBanksApi().getBanks()).toEqual([{
+      bankCode: null,
       displayName: 'Qonto',
       connector: 'qonto',
       name: 'main',
       syncStatus: { authChallenge: null, authExpired: false, lastError: 'boom', lastSyncTs: 10, running: false },
+    }, {
+      bankCode: '12030000',
+      displayName: 'FinTS/HBCI',
+      connector: 'fints',
+      name: 'DKB',
+      syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false },
     }]);
   });
 

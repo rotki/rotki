@@ -14,6 +14,7 @@ function balance(amount: number): { amount: ReturnType<typeof bigNumberify>; val
 function connection(connector: string, name: string): BankConnection {
   return {
     connector,
+    bankCode: null,
     displayName: connector,
     name,
     syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false },

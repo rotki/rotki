@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FintsBankDirectory,
   fintsBankDirectory,
+  fintsBankLogo,
   fintsBanks,
   searchFintsBanks,
   toFintsBankOptions,
@@ -23,12 +24,41 @@ describe('fintsBankDirectory', () => {
         ['Two', '', 0, '12345678'],
       ],
       e: ['https://one.example/fints'],
+      g: {},
       h: 'a'.repeat(64),
       v: '2026-01-01',
     };
+    expect(FintsBankDirectory.safeParse({ ...directory, b: [['One', '', 0, '12345679']] }).success).toBe(true);
     expect(FintsBankDirectory.safeParse(directory).success).toBe(false);
     expect(FintsBankDirectory.safeParse({ ...directory, b: [['One', '', 1, '12345679']] }).success).toBe(false);
     expect(FintsBankDirectory.safeParse({ ...directory, b: [['One', '', 0, '12345679']], e: ['http://one.example/fints'] }).success).toBe(false);
+  });
+
+  it('should reject a logo naming a missing institution, one that already has a logo, or an unpackaged file', () => {
+    const directory = {
+      b: [['One', '', 0, '12345678']],
+      e: ['https://one.example/fints'],
+      g: { 'bank_one.svg': [0] },
+      h: 'a'.repeat(64),
+      v: '2026-01-01',
+    };
+    expect(FintsBankDirectory.safeParse(directory).success).toBe(true);
+    expect(FintsBankDirectory.safeParse({ ...directory, g: { 'bank_one.svg': [1] } }).success).toBe(false);
+    expect(FintsBankDirectory.safeParse({ ...directory, g: { 'bank_one.svg': [0], 'bank_two.svg': [0] } }).success).toBe(false);
+    expect(FintsBankDirectory.safeParse({ ...directory, g: { '../one.svg': [0] } }).success).toBe(false);
+  });
+
+  it('should give a bank the logo of its brand or banking group, and none to a bank without one', () => {
+    expect(searchFintsBanks('Deutsche Kreditbank')[0]?.logo).toBe('bank_dkb.svg');
+    expect(searchFintsBanks('Berliner Sparkasse')[0]?.logo).toBe('bank_sparkasse.svg');
+    expect(searchFintsBanks('Allgemeine Beamten Bank')[0]?.logo).toBeUndefined();
+  });
+
+  it('should find a logo by any of the bank\'s codes', () => {
+    expect(fintsBankLogo('20041199')).toBe('bank_comdirect.svg');
+    expect(fintsBankLogo('12030000')).toBe('bank_dkb.svg');
+    expect(fintsBankLogo('10030400')).toBeUndefined();
+    expect(fintsBankLogo('00000000')).toBeUndefined();
   });
 
   it('should find institutions by name, alias, city, and every eight-digit BLZ', () => {

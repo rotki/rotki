@@ -44,7 +44,7 @@ const main: BankConnectionIdentity = { connector: 'qonto', name: 'rotki Solution
 const side: BankConnectionIdentity = { connector: 'qonto', name: 'Side organization' };
 
 function connection(identity: BankConnectionIdentity): BankConnection {
-  return { ...identity, displayName: 'Qonto', syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false } };
+  return { ...identity, bankCode: null, displayName: 'Qonto', syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false } };
 }
 
 const noNovelty = { newAccounts: [], newBanks: [], newExchanges: [] };

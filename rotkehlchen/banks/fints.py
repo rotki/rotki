@@ -158,6 +158,7 @@ class RotkiFinTS3PinTanClient(FinTS3PinTanClient):
 
 class Fints(BankConnector):
     manifest = FINTS_MANIFEST
+    bank_code: str
 
     def __init__(
             self,

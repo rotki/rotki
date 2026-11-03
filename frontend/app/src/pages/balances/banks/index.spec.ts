@@ -38,6 +38,7 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
 }));
 
 const connection: BankConnection = {
+  bankCode: null,
   displayName: 'Qonto',
   connector: 'qonto',
   name: 'Qonto main',

@@ -32,7 +32,25 @@ const AutoCompleteStub = defineComponent({
   template: '<div />',
 });
 
+const ItemSlotStub = defineComponent({
+  props: { options: { default: (): unknown[] => [], type: Array } },
+  template: '<div><slot name="item" :item="options[0]" /></div>',
+});
+
 describe('bankConnectionPicker', () => {
+  it('should show a directory bank with the logo of its bank code', async () => {
+    const wrapper = mount(BankConnectionPicker, {
+      global: { stubs: { BankLabel: { props: ['connector', 'name', 'bankCode'], template: '<i class="bank-label" :data-bank-code="bankCode">{{ name }}</i>' }, RuiAutoComplete: ItemSlotStub } },
+      props: { errorMessages: [], manifests: [manifest] },
+    });
+    wrapper.findComponent(ItemSlotStub).vm.$emit('update:searchInput', '12030000');
+    await nextTick();
+
+    const label = wrapper.find('.bank-label');
+    expect(label.text()).toBe('Deutsche Kreditbank Berlin (DKB) AG');
+    expect(label.attributes('data-bank-code')).toBe('12030000');
+  });
+
   it('should combine dedicated connectors, every FinTS institution, and the manual fallback', () => {
     const wrapper = mount(BankConnectionPicker, {
       global: { stubs: { BankLabel: true, RuiAutoComplete: AutoCompleteStub } },
