@@ -31,6 +31,7 @@ from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
     AlreadyExists,
+    BlockRangeOutsideBounds,
     DataIntegrityError,
     IncompleteTransactionsQuery,
     IndexerHistoryStartsAt,
@@ -598,6 +599,8 @@ class EvmTransactions(ABC):  # noqa: B024
             try:
                 with self.evm_inquirer.blocks_within(lowest=lowest, highest=highest):
                     query(chunk_start, chunk_end, progress_start)
+            except BlockRangeOutsideBounds:
+                continue  # a half of a split part that lies wholly on the other side
             except RequestTooLargeError as e:
                 if chunk_end - chunk_start <= MIN_SPLITTABLE_QUERY_RANGE:
                     raise

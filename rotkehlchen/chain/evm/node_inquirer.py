@@ -60,6 +60,7 @@ from rotkehlchen.constants.timing import TOKEN_QUERY_FAILURE_COOLDOWN
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
+    BlockRangeOutsideBounds,
     BlockscoutIncompleteResponse,
     ChainNotSupported,
     EventNotInABI,
@@ -1792,6 +1793,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         than an error, which reads as "the address had no activity" and gets the range
         recorded as fully queried. That is how a stale indexer silently costs a user a day
         of history that only a manual repull brings back.
+
+        May raise:
+        - BlockRangeOutsideBounds if none of the period's blocks lie within blocks_within
         """
         if period.range_type != 'timestamps':
             yield period  # already blocks, nothing was resolved and nothing can be stale
@@ -1815,6 +1819,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             from_block = max(from_block, lowest)
         if highest is not None:
             to_block = min(to_block, highest)
+        if from_block > to_block:
+            raise BlockRangeOutsideBounds(
+                f'The {self.chain_name} range {period.from_value} - {period.to_value} has no '
+                f'block between {lowest} and {highest}',
+            )
         token = DEGRADED_INDEXERS.set(DEGRADED_INDEXERS.get() | failed)
         try:
             yield TimestampOrBlockRange(

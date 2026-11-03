@@ -17,7 +17,7 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
-from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
+from rotkehlchen.errors.misc import ChainNotSupported, RemoteError, RequestTooLargeError
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.externalapis.nuthatch import Nuthatch
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
@@ -506,20 +506,26 @@ def _sync_from_history_start(
         nuthatch: Nuthatch,
         order: tuple[EvmIndexer, ...],
         start_block: int,
-) -> tuple[RangeQueryOutcome, list[tuple[int, int]], list[int], tuple[int, int] | None]:
-    """Sync ADDRESS's transactions over blocks 0 to 300 from a nest whose history starts at
-    start_block. Returns the outcome, the block ranges etherscan
-    was asked for, the blocks of the transactions saved and the range recorded as queried."""
+        end_block: int = 300,
+        etherscan_limit: int | None = None,
+) -> tuple[RangeQueryOutcome, list[tuple[int, int]], list[int], tuple[int, int] | None, list[tuple[int, int]]]:  # noqa: E501
+    """Sync ADDRESS's transactions over blocks 0 to end_block from a nest whose history starts
+    at start_block. Etherscan refuses as too large a range wider than etherscan_limit blocks.
+    Returns the outcome, the block ranges etherscan was asked for, the blocks of the
+    transactions saved, the range recorded as queried and the block ranges the nest was asked
+    for."""
     inquirer = (transactions := ethereum_manager.transactions).evm_inquirer
     inquirer.available_indexers[EvmIndexer.NUTHATCH] = nuthatch
     nest_rows, etherscan_rows = [_tx_row(200)], [_tx_row(100)]
     asked_of_etherscan: list[tuple[int, int]] = []
+    asked_of_nest: list[tuple[int, int]] = []
 
     def nest(url: str, **kwargs: Any) -> MockResponse:
         params = kwargs['params']
         if params['action'] == 'getblocknobytime':
             return _answer(str((int(params['timestamp']) - GENESIS_TS) // 10))
-        if (start := int(params.get('startblock', 0))) < start_block:
+        asked_of_nest.append((start := int(params.get('startblock', 0)), int(params['endblock'])))
+        if start < start_block:
             return _answer(f'NUTHATCH_INCOMPLETE: history starts at block {start_block}; ask from there and use another source before it', status='0')  # noqa: E501
         return _answer([
             row for row in nest_rows
@@ -528,6 +534,8 @@ def _sync_from_history_start(
 
     def etherscan(chain_id, account, action, period_or_hash, tx_timestamp=None):
         asked_of_etherscan.append((period_or_hash.from_value, period_or_hash.to_value))
+        if etherscan_limit is not None and period_or_hash.to_value - period_or_hash.from_value > etherscan_limit:  # noqa: E501
+            raise RequestTooLargeError('Query Timeout occurred')
         yield [
             deserialize_evm_transaction(data=row, internal=False, chain_id=ChainID.ETHEREUM)[0]
             for row in etherscan_rows
@@ -543,7 +551,7 @@ def _sync_from_history_start(
         outcome = transactions._get_transactions_for_range(
             address=ADDRESS,
             start_ts=Timestamp(GENESIS_TS),
-            end_ts=Timestamp(GENESIS_TS + 3000),
+            end_ts=Timestamp(GENESIS_TS + end_block * 10),
         )
 
     with (database := transactions.database).conn.read_ctx() as cursor:
@@ -555,14 +563,14 @@ def _sync_from_history_start(
             cursor=cursor,
             name=f'{SupportedBlockchain.ETHEREUM.to_range_prefix("txs")}_{ADDRESS}',
         )
-    return outcome, asked_of_etherscan, saved, recorded
+    return outcome, asked_of_etherscan, saved, recorded, asked_of_nest
 
 
 def test_nuthatch_history_start_serves_its_range_alone(ethereum_manager, nuthatch: Nuthatch) -> None:  # noqa: E501
     """A nest whose history starts at block 150 is the only indexer. It serves blocks 150 to
     300, and blocks before it are left as not covered rather than failing the sync. Only the
     nest's part is recorded, so a covering indexer configured later fills the rest."""
-    outcome, _, saved, recorded = _sync_from_history_start(
+    outcome, _, saved, recorded, _ = _sync_from_history_start(
         ethereum_manager=ethereum_manager,
         nuthatch=nuthatch,
         order=(EvmIndexer.NUTHATCH,),
@@ -580,7 +588,7 @@ def test_nuthatch_history_start_asks_the_next_indexer_only_before_it(
 ) -> None:
     """With etherscan after the nest, etherscan is asked for blocks 0 to 149 alone. Asking it
     for the nest's range too would give it the address's history the nest keeps private."""
-    outcome, asked_of_etherscan, saved, recorded = _sync_from_history_start(
+    outcome, asked_of_etherscan, saved, recorded, _ = _sync_from_history_start(
         ethereum_manager=ethereum_manager,
         nuthatch=nuthatch,
         order=(EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN),
@@ -598,7 +606,7 @@ def test_nuthatch_history_from_genesis_needs_no_other_indexer(
         nuthatch: Nuthatch,
 ) -> None:
     """A nest that holds the whole history is asked for all of it, and nothing else is."""
-    outcome, asked_of_etherscan, saved, recorded = _sync_from_history_start(
+    outcome, asked_of_etherscan, saved, recorded, _ = _sync_from_history_start(
         ethereum_manager=ethereum_manager,
         nuthatch=nuthatch,
         order=(EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN),
@@ -609,6 +617,30 @@ def test_nuthatch_history_from_genesis_needs_no_other_indexer(
     assert outcome == RangeQueryOutcome.QUERIED
     assert saved == [200]
     assert recorded == (GENESIS_TS, GENESIS_TS + 3000)
+
+
+def test_nuthatch_history_start_halves_ask_no_indexer_an_inverted_range(
+        ethereum_manager,
+        nuthatch: Nuthatch,
+) -> None:
+    """Etherscan refuses the blocks before the nest's history start as too large, so that part
+    is halved by time. The later half lies wholly after the start, and kept to the blocks before
+    it comes out empty with its start past its end. Indexers answer such a range with nothing
+    rather than an error, so it must not be asked of any."""
+    outcome, asked_of_etherscan, saved, _, asked_of_nest = _sync_from_history_start(
+        ethereum_manager=ethereum_manager,
+        nuthatch=nuthatch,
+        order=(EvmIndexer.NUTHATCH, EvmIndexer.ETHERSCAN),
+        start_block=1500,
+        end_block=3000,
+        etherscan_limit=1000,
+    )
+
+    assert all(start <= end for start, end in asked_of_etherscan + asked_of_nest)
+    assert len(asked_of_etherscan) > 1, 'the blocks before the start were halved'
+    assert all(end < 1500 for _, end in asked_of_etherscan)
+    assert outcome == RangeQueryOutcome.QUERIED
+    assert saved == [100], 'block 200 comes before the start, and only etherscan has it'
 
 
 def _nest(
