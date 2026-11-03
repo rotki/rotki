@@ -1,36 +1,25 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="TItem">
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { UnmatchedBridgeRow } from '@/modules/history/events/use-unmatched-bridge-rows';
-import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
+import { HISTORY_DIALOG_MAX_HEIGHT } from '@/modules/history/events/dialog-layout';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
-import { UNMATCHED_LAYOUTS, type UnmatchedActionPayload, type UnmatchedFailure, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
+import { UNMATCHED_LAYOUTS } from '@/modules/history/events/unmatched-actions';
+import { type UnmatchedPresentationEmits, type UnmatchedRow, type UnmatchedTableProps, UnmatchedVariant } from '@/modules/history/events/unmatched-row';
 import UnmatchedActions from '@/modules/history/events/UnmatchedActions.vue';
+import UnmatchedFiatHint from '@/modules/history/events/UnmatchedFiatHint.vue';
 import UnmatchedUntrackedBadge from '@/modules/history/events/UnmatchedUntrackedBadge.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const selected = defineModel<string[]>('selected', { required: true });
 
-const { highlightedGroupIdentifier } = defineProps<{
-  rows: UnmatchedBridgeRow[];
-  specFor: (row: UnmatchedBridgeRow) => UnmatchedRowActionSpec;
-  emptyDescription: string;
-  /** why the last load failed, shown in place of the empty text or above the rows it left */
-  failure?: UnmatchedFailure;
-  maxHeight: string;
-  highlightedGroupIdentifier?: string;
-  ignoreLoading?: boolean;
-  loading?: boolean;
-}>();
+const { highlightedGroupIdentifier, variant } = defineProps<UnmatchedTableProps<TItem>>();
 
-const emit = defineEmits<{
-  action: [payload: UnmatchedActionPayload<UnmatchedBridgeTransaction>];
-  retry: [];
-}>();
+const emit = defineEmits<UnmatchedPresentationEmits<TItem>>();
 
 defineSlots<{
   alert?: () => unknown;
@@ -38,19 +27,21 @@ defineSlots<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const columns = computed<DataTableColumn<UnmatchedBridgeRow>[]>(() => [
+const isBridge = computed<boolean>(() => variant === UnmatchedVariant.BRIDGE);
+
+const columns = computed<DataTableColumn<UnmatchedRow<TItem>>[]>(() => [
   {
     key: 'timestamp',
     label: t('common.datetime'),
   },
   {
-    key: 'direction',
+    key: 'type',
     label: t('common.type'),
   },
   {
     align: 'center',
     key: 'location',
-    label: t('common.location'),
+    label: get(isBridge) ? t('common.location') : t('common.exchange'),
   },
   {
     key: 'asset',
@@ -58,11 +49,11 @@ const columns = computed<DataTableColumn<UnmatchedBridgeRow>[]>(() => [
   },
   {
     key: 'actions',
-    label: t('bridge_matching.dialog.manual_action'),
+    label: t('asset_movement_matching.dialog.manual_action'),
   },
 ]);
 
-function getRowClass(row: UnmatchedBridgeRow): string {
+function getRowClass(row: UnmatchedRow<TItem>): string {
   const classes = ['transition-all'];
   if (row.groupIdentifier === highlightedGroupIdentifier) {
     classes.push('bg-rui-warning/15!');
@@ -72,7 +63,7 @@ function getRowClass(row: UnmatchedBridgeRow): string {
 </script>
 
 <template>
-  <ScrollableDialogContent :max-height="maxHeight">
+  <ScrollableDialogContent :max-height="HISTORY_DIALOG_MAX_HEIGHT">
     <RuiDataTable
       v-model="selected"
       :cols="columns"
@@ -112,21 +103,39 @@ function getRowClass(row: UnmatchedBridgeRow): string {
         </tr>
       </template>
       <template #item.asset="{ row }">
-        <HistoryEventAsset
-          disable-options
-          :event="row.entry"
-        />
+        <div class="flex items-center gap-2">
+          <HistoryEventAsset
+            disable-options
+            :event="row.entry"
+          />
+          <UnmatchedFiatHint v-if="row.isFiat" />
+        </div>
       </template>
-      <template #item.direction="{ row }">
+      <template #item.type="{ row }">
         <div class="flex flex-col items-start gap-1">
           <BadgeDisplay class="normal-case!">
-            {{ row.directionLabel }}
+            {{ row.typeLabel }}
           </BadgeDisplay>
-          <UnmatchedUntrackedBadge
-            v-if="row.untrackedCounterpart"
-            :label="row.untrackedLabel"
-            :tooltip="row.untrackedTooltip"
-          />
+          <template v-if="row.untracked">
+            <UnmatchedUntrackedBadge
+              :label="row.untrackedLabel"
+              :tooltip="row.untrackedTooltip"
+            />
+            <HashLink
+              v-if="row.untrackedAddress"
+              class="[&_span]:text-caption!"
+              :text="row.untrackedAddress"
+            />
+          </template>
+          <RuiChip
+            v-if="row.resolvedLabel"
+            size="sm"
+            color="info"
+            class="py-0!"
+            data-testid="unmatched-row-resolved"
+          >
+            {{ row.resolvedLabel }}
+          </RuiChip>
         </div>
       </template>
       <template #item.location="{ row }">

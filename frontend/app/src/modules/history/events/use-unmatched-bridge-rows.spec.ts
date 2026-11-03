@@ -91,7 +91,7 @@ describe('use-unmatched-bridge-rows', () => {
   });
 
   it('should label the row by direction', () => {
-    expect(rowFor('deposit').row.directionLabel).toBe('bridge_matching.dialog.direction_out');
-    expect(rowFor('withdrawal').row.directionLabel).toBe('bridge_matching.dialog.direction_in');
+    expect(rowFor('deposit').row.typeLabel).toBe('bridge_matching.dialog.direction_out');
+    expect(rowFor('withdrawal').row.typeLabel).toBe('bridge_matching.dialog.direction_in');
   });
 });

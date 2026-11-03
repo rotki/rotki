@@ -1,12 +1,12 @@
 import type { UnmatchedFailure, UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
+import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import { createMock } from '@test/utils/create-mock';
 import { libraryDefaults } from '@test/utils/provide-defaults';
-import { movementRow, UNMATCHED_PANEL_KINDS, type UnmatchedPanelKind, type UnmatchedRowCase } from '@test/utils/unmatched-panel-kinds';
+import { MOVEMENT_KIND, movementRow, plainRow, UNMATCHED_PANEL_KINDS, UnmatchedActionsStub, type UnmatchedPanelKind, untrackedRow } from '@test/utils/unmatched-panel-kinds';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { type Component, defineComponent } from 'vue';
-import UnmatchedBridgesTable from '@/modules/history/events/UnmatchedBridgesTable.vue';
-import UnmatchedMovementsTable from '@/modules/history/events/UnmatchedMovementsTable.vue';
+import { defineComponent } from 'vue';
+import UnmatchedTable from '@/modules/history/events/UnmatchedTable.vue';
 import '@test/i18n';
 
 /** Renders each row's cells through the table's own item slots, so what a cell shows can be read. */
@@ -32,46 +32,26 @@ const RuiDataTable = defineComponent({
   `,
 });
 
-const UnmatchedActions = defineComponent({
-  name: 'UnmatchedActions',
-  props: ['spec'],
-  emits: ['action'],
-  template: '<button data-testid="row-action" @click="$emit(\'action\', \'ignore\')" />',
-});
-
-const COMPONENTS: Record<UnmatchedPanelKind['name'], Component> = {
-  'asset movement': UnmatchedMovementsTable,
-  'bridge': UnmatchedBridgesTable,
-};
-
 const failure: UnmatchedFailure = { message: 'backend down', title: 'Could not load' };
-
-const plainRow: UnmatchedRowCase = { key: 'row-1', typeLabel: 'Deposit' };
-
-const untrackedRow: UnmatchedRowCase = {
-  key: 'row-2',
-  typeLabel: 'Withdrawal',
-  untracked: { label: 'Untracked destination', tooltip: 'Not one of your accounts' },
-};
 
 interface TableState {
   failure?: UnmatchedFailure;
   highlightedGroupIdentifier?: string;
-  rows?: unknown[];
+  rows?: UnmatchedRow<unknown>[];
   withAlert?: boolean;
 }
 
 function mountTable(kind: UnmatchedPanelKind, state: TableState = {}): VueWrapper {
-  return mount(COMPONENTS[kind.name], {
+  return mount(UnmatchedTable, {
     global: {
       provide: libraryDefaults,
-      stubs: { DateDisplay: true, HashLink: true, HistoryEventAsset: true, LocationDisplay: true, RuiDataTable, UnmatchedActions },
+      stubs: { DateDisplay: true, HashLink: true, HistoryEventAsset: true, LocationDisplay: true, RuiDataTable, UnmatchedActions: UnmatchedActionsStub },
     },
     props: {
       emptyDescription: 'empty',
+      variant: kind.variant,
       failure: state.failure,
       highlightedGroupIdentifier: state.highlightedGroupIdentifier,
-      maxHeight: '100px',
       rows: state.rows ?? [],
       selected: [],
       specFor: () => createMock<UnmatchedRowActionSpec>(),
@@ -124,7 +104,7 @@ describe.each(UNMATCHED_PANEL_KINDS)('unmatched table, $name', (kind) => {
     it('should head the columns in this kind\'s words', () => {
       const cols: { label: string }[] = mountTable(kind).findComponent(RuiDataTable).props('cols');
 
-      expect(cols.map(col => col.label)).toEqual(['common.datetime', 'common.type', kind.locationLabel, 'common.asset', kind.actionsLabel]);
+      expect(cols.map(col => col.label)).toEqual(['common.datetime', 'common.type', kind.locationLabel, 'common.asset', 'asset_movement_matching.dialog.manual_action']);
     });
 
     it('should key each row by what the selection stores', () => {
@@ -156,7 +136,7 @@ describe.each(UNMATCHED_PANEL_KINDS)('unmatched table, $name', (kind) => {
       const row = kind.row(plainRow);
       const wrapper = mountTable(kind, { rows: [row] });
 
-      await cell(wrapper, 'row-1', kind.actionsLabel).find('[data-testid=row-action]').trigger('click');
+      await cell(wrapper, 'row-1', 'asset_movement_matching.dialog.manual_action').find('[data-testid=row-action]').trigger('click');
 
       expect(wrapper.emitted('action')).toEqual([[{ action: 'ignore', item: row.original }]]);
     });
@@ -164,10 +144,10 @@ describe.each(UNMATCHED_PANEL_KINDS)('unmatched table, $name', (kind) => {
 });
 
 describe('unmatched table, asset movement only', () => {
-  const kind = UNMATCHED_PANEL_KINDS[1];
+  const kind = MOVEMENT_KIND;
 
   it('should name a movement already resolved as external', () => {
-    const wrapper = mountTable(kind, { rows: [movementRow(plainRow, { resolvedAsExternal: true, resolvedLabel: 'Resolved as income' })] });
+    const wrapper = mountTable(kind, { rows: [movementRow(plainRow, { resolvedLabel: 'Resolved as income' })] });
 
     expect(cell(wrapper, 'row-1', 'common.type').find('[data-testid=unmatched-row-resolved]').text()).toBe('Resolved as income');
   });
@@ -181,8 +161,8 @@ describe('unmatched table, asset movement only', () => {
   it('should show where an untracked withdrawal went, and nothing for a tracked one', () => {
     const wrapper = mountTable(kind, {
       rows: [
-        movementRow(untrackedRow, { destinationAddress: '0xA090e606E30bD747d4E6245a1517EbE430F0057e' }),
-        movementRow(plainRow, { destinationAddress: '0xA090e606E30bD747d4E6245a1517EbE430F0057e' }),
+        movementRow(untrackedRow, { untrackedAddress: '0xA090e606E30bD747d4E6245a1517EbE430F0057e' }),
+        movementRow(plainRow, { untrackedAddress: '0xA090e606E30bD747d4E6245a1517EbE430F0057e' }),
       ],
     });
 

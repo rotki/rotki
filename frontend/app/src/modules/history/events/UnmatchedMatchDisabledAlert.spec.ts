@@ -1,5 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { UnmatchedVariant } from '@/modules/history/events/unmatched-row';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
 
 const { currentTier, premium } = await vi.hoisted(async () => {
@@ -13,7 +14,7 @@ vi.mock('@/modules/premium/use-premium-helper', () => ({
 }));
 
 interface Props {
-  variant: 'bridge' | 'asset-movement';
+  variant: UnmatchedVariant;
   count?: number;
   matchMinimumTier?: string | null;
 }
@@ -41,36 +42,36 @@ describe('modules/history/events/UnmatchedMatchDisabledAlert', () => {
   });
 
   it('should state the unmatched bridge transactions when there are some', () => {
-    const wrapper = mountAlert({ count: 17, matchMinimumTier: 'Basic', variant: 'bridge' });
+    const wrapper = mountAlert({ count: 17, matchMinimumTier: 'Basic', variant: UnmatchedVariant.BRIDGE });
     expect(wrapper.find('.message').attributes('data-keypath')).toBe('bridge_matching.premium.unmatched');
     expect(wrapper.find('.message').attributes('data-plural')).toBe('17');
     expect(wrapper.find('.count').text()).toBe('17');
   });
 
   it('should fall back to the bridge message without a count', () => {
-    const wrapper = mountAlert({ matchMinimumTier: 'Basic', variant: 'bridge' });
+    const wrapper = mountAlert({ matchMinimumTier: 'Basic', variant: UnmatchedVariant.BRIDGE });
     expect(wrapper.find('.message').attributes('data-keypath')).toBe('bridge_matching.premium.locked');
   });
 
   it('should state the unmatched asset movements when there are some', () => {
-    const wrapper = mountAlert({ count: 3, matchMinimumTier: 'Basic', variant: 'asset-movement' });
+    const wrapper = mountAlert({ count: 3, matchMinimumTier: 'Basic', variant: UnmatchedVariant.ASSET_MOVEMENT });
     expect(wrapper.find('.message').attributes('data-keypath')).toBe('asset_movement_matching.premium.unmatched');
   });
 
   it('should fall back to the asset movement message without a count', () => {
-    const wrapper = mountAlert({ matchMinimumTier: 'Basic', variant: 'asset-movement' });
+    const wrapper = mountAlert({ matchMinimumTier: 'Basic', variant: UnmatchedVariant.ASSET_MOVEMENT });
     expect(wrapper.find('.message').attributes('data-keypath')).toBe('asset_movement_matching.premium.locked');
   });
 
   it('should name the unlocking plan and the current plan', () => {
     set(currentTier, 'Lite');
-    const wrapper = mountAlert({ count: 1, matchMinimumTier: 'Basic', variant: 'bridge' });
+    const wrapper = mountAlert({ count: 1, matchMinimumTier: 'Basic', variant: UnmatchedVariant.BRIDGE });
     expect(wrapper.find('.tier').text()).toBe('Basic');
     expect(wrapper.find('.current-tier').text()).toBe('Lite');
   });
 
   it('should name the product when the server did not say which plan unlocks matching', () => {
-    const wrapper = mountAlert({ count: 1, variant: 'bridge' });
+    const wrapper = mountAlert({ count: 1, variant: UnmatchedVariant.BRIDGE });
     expect(wrapper.find('.tier').text()).toBe('premium_settings.title');
   });
 });

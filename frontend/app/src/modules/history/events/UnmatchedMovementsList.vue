@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { UnmatchedActionPayload, UnmatchedMatchAccess } from '@/modules/history/events/unmatched-actions';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
-import { HISTORY_DIALOG_MAX_HEIGHT } from '@/modules/history/events/dialog-layout';
+import { UnmatchedVariant } from '@/modules/history/events/unmatched-row';
+import UnmatchedCards from '@/modules/history/events/UnmatchedCards.vue';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
-import UnmatchedMovementsCards from '@/modules/history/events/UnmatchedMovementsCards.vue';
-import UnmatchedMovementsTable from '@/modules/history/events/UnmatchedMovementsTable.vue';
+import UnmatchedTable from '@/modules/history/events/UnmatchedTable.vue';
 import { useUnmatchedMovementRows } from '@/modules/history/events/use-unmatched-movement-rows';
 
 const selected = defineModel<string[]>('selected', { required: true });
@@ -73,13 +73,13 @@ const { description, emptyDescription, failure, rows, specFor } = useUnmatchedMo
     </div>
 
     <Component
-      :is="isPinned ? UnmatchedMovementsCards : UnmatchedMovementsTable"
+      :is="isPinned ? UnmatchedCards : UnmatchedTable"
       v-model:selected="selected"
+      :variant="isPinned ? undefined : UnmatchedVariant.ASSET_MOVEMENT"
       :rows="rows"
       :spec-for="specFor"
       :empty-description="emptyDescription"
       :failure="failure"
-      :max-height="isPinned ? undefined : HISTORY_DIALOG_MAX_HEIGHT"
       :highlighted-group-identifier="highlightedGroupIdentifier"
       :ignore-loading="ignoreLoading"
       :loading="loading"
@@ -91,7 +91,7 @@ const { description, emptyDescription, failure, rows, specFor } = useUnmatchedMo
         #alert
       >
         <UnmatchedMatchDisabledAlert
-          variant="asset-movement"
+          :variant="UnmatchedVariant.ASSET_MOVEMENT"
           :count="showRestore ? 0 : movements.length"
           :match-minimum-tier="matchAccess?.minimumTier"
         />
