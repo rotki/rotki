@@ -24,6 +24,7 @@ from rotkehlchen.history.events.structures.bank_transaction import BankTransacti
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import LOCATION_BANKS
+from rotkehlchen.tests.unit.test_location_catalog import PACKAGED_IMAGES_DIR
 from rotkehlchen.tests.utils.banks import (
     BANK_KITS,
     BankConnectorKit,
@@ -67,6 +68,8 @@ def test_manifest_is_valid_and_registered(kit: BankConnectorKit):
     assert len(slots) >= 2
     # the module/class naming the bank manager relies on to instantiate it
     assert BankManager._connector_class(kit.connector) is kit.connector_class
+    # a logo must be one the frontend ships, or the connector shows a broken image
+    assert manifest.image is None or (PACKAGED_IMAGES_DIR / manifest.image).is_file()
 
 
 @KITS

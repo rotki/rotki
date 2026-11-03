@@ -7,6 +7,7 @@ import { emptyCredentials } from '@/modules/banks/bank-connection-form';
 import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticationDialog.vue';
 import BankConnectionActions from '@/modules/banks/components/BankConnectionActions.vue';
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
+import BankConnectorIcon from '@/modules/banks/components/BankConnectorIcon.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
@@ -15,7 +16,6 @@ import TableFailureDescription from '@/modules/core/table/TableFailureDescriptio
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
-import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -243,11 +243,7 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
         </template>
         <template #item.connector="{ row }">
           <div class="flex items-center gap-2">
-            <LocationIcon
-              item="banks"
-              icon
-              size="20px"
-            />
+            <BankConnectorIcon :connector="row.connector" />
             <span>{{ row.displayName }}</span>
           </div>
         </template>

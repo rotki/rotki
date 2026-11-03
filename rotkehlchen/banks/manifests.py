@@ -18,6 +18,7 @@ from rotkehlchen.banks.manifest import (
 QONTO_MANIFEST: Final = BankManifest(
     connector=BankConnectorType.QONTO,
     display_name='Qonto',
+    image='qonto.svg',
     access_tier=BankAccessTier.OFFICIAL_API,
     capabilities=frozenset({BankCapability.BALANCES, BankCapability.TRANSACTIONS}),
     auth_flow=(AuthStep(primitive=AuthPrimitive.STATIC_SECRET),),

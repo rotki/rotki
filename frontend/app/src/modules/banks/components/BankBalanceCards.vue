@@ -4,8 +4,8 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { BankBalanceData } from '@/modules/banks/use-bank-data';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { bankConnectionStatus, type BankConnectionStatusDisplay } from '@/modules/banks/bank-connection-state';
+import BankConnectorIcon from '@/modules/banks/components/BankConnectorIcon.vue';
 import { calculatePercentage } from '@/modules/core/common/data/calculation';
-import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
@@ -84,9 +84,8 @@ function stateClass(active: boolean): string {
       :data-bank="bank.name"
     >
       <div class="row-span-3">
-        <LocationIcon
-          item="banks"
-          icon
+        <BankConnectorIcon
+          :connector="bank.connector"
           size="28px"
         />
       </div>

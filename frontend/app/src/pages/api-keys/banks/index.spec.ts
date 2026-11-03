@@ -39,6 +39,7 @@ const manifest: BankManifest = {
   capabilities: ['balances'],
   displayName: 'Qonto',
   docsUrl: 'https://docs.qonto.com',
+  image: null,
   connector: 'qonto',
   maintainer: 'rotki',
   secrets: [{ description: '', label: 'Login', secret: false, slot: 'api_key' }, { description: '', label: 'Secret', secret: true, slot: 'api_secret' }],

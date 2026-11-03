@@ -19,7 +19,7 @@ const challenge: BankAuthChallenge = {
 };
 
 const stubs = {
-  LocationIcon: true,
+  BankConnectorIcon: true,
   RuiButton: { template: '<button data-testid="bank-balances-connection-action"><slot /></button>' },
   RuiIcon: true,
   TimeAgoDisplay: true,

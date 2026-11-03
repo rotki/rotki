@@ -7,7 +7,7 @@ import BankBalanceCards from '@/modules/banks/components/BankBalanceCards.vue';
 const stubs = {
   I18nT: { props: ['keypath'], template: '<div :data-keypath="keypath"><slot name="connector" /> <slot name="time" /></div>' },
   FiatDisplay: { props: ['value', 'loading'], template: '<span data-testid="fiat" :data-loading="loading">{{ value.toFixed() }}</span>' },
-  LocationIcon: true,
+  BankConnectorIcon: true,
   PercentageDisplay: { props: ['value'], template: '<span data-testid="percentage">{{ value }}</span>' },
   RouterLink: { props: ['to'], template: '<a :data-to="JSON.stringify(to)"><slot /></a>' },
   RuiIcon: true,

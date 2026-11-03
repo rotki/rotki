@@ -65,8 +65,10 @@ def test_supported_banks_and_locations(rotkehlchen_api_server: APIServer) -> Non
     assert manifest['auth_flow'] == [{'primitive': 'static secret'}]
     assert [s['slot'] for s in manifest['secrets']] == ['api_key', 'api_secret']
     assert len(manifest['setup_notes']) > 0
+    assert manifest['image'] == 'qonto.svg'
     fints = result[1]
     assert fints['access_tier'] == 'fints'
+    assert fints['image'] is None
     assert [field['slot'] for field in fints['secrets']] == [
         'bank_code', 'endpoint', 'username', 'pin',
     ]
