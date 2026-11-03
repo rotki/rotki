@@ -45,6 +45,7 @@ from rotkehlchen.types import (
     Location,
     ModuleName,
     SupportedBlockchain,
+    Timestamp,
 )
 
 if TYPE_CHECKING:
@@ -1007,7 +1008,7 @@ def test_disabling_eth2_queries_preserves_enabled_validators(
             write_cursor=write_cursor,
             name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
             blockchain=chain.serialize(),
-            value=1,
+            value=Timestamp(1),
         )
         write_cursor.executemany(
             'INSERT INTO blockchain_balances_cache(blockchain, address, asset, label, category, amount) '  # noqa: E501
