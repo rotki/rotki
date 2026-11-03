@@ -11,7 +11,8 @@ import psutil
 import requests
 from flask import url_for
 
-from rotkehlchen.api.server import APIServer, RestAPI
+from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.errors.cause import FailureCause
 
 if TYPE_CHECKING:

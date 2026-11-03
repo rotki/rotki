@@ -15,7 +15,6 @@ from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.history.events.structures.base import get_event_type_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.serialization.serialize import process_result
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -204,7 +203,7 @@ class AccountingService:
                 'entries_limit': -1,
             }
 
-        return OkResult(process_result(result))
+        return OkResult(result)
 
     def linkable_accounting_properties(self) -> ApiResult:
         possible_accounting_setting_names = get_args(LINKABLE_ACCOUNTING_SETTINGS_NAME)
@@ -245,7 +244,7 @@ class AccountingService:
             'entries_total': total_entries,
             'entries_limit': -1,
         }
-        return OkResult(process_result(result))
+        return OkResult(result)
 
     def _invalidate_cache_for_accounting_rule(
             self,

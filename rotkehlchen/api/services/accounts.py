@@ -15,7 +15,6 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError, TagConstraintError
-from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_EVM_CHAINS_TYPE,
@@ -280,8 +279,7 @@ class AccountsService:
                 if entry.value.value > value_threshold
             ]
 
-        balances = process_result({'balances': db_entries})
-        return OkResult(balances)
+        return OkResult({'balances': db_entries})
 
     def get_manually_tracked_balances(self, value_threshold: FVal | None) -> ApiResult:
         return self._get_manually_tracked_balances(value_threshold=value_threshold)
@@ -353,12 +351,12 @@ class AccountsService:
             assets=assets_to_ignore,
         )
         result = {'successful': list(newly_ignored), 'no_action': list(already_ignored)}
-        return OkResult(process_result(result))
+        return OkResult(result)
 
     def remove_ignored_assets(self, assets: list[Asset]) -> ApiResult:
         succeeded, no_action = self.rotkehlchen.data.remove_ignored_assets(assets=assets)
         result = {'successful': list(succeeded), 'no_action': list(no_action)}
-        return OkResult(process_result(result))
+        return OkResult(result)
 
     def get_xpub_balances(self, xpub_data: XpubData, ignore_cache: bool) -> ApiResult:
         try:

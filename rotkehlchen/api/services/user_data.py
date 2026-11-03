@@ -14,7 +14,6 @@ from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.snapshots import DBSnapshot
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError, TagConstraintError
-from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 
 if TYPE_CHECKING:
@@ -258,7 +257,7 @@ class UserDataService:
             prioritizer=self.rotkehlchen.addressbook_prioritizer,
             chain_addresses=chain_addresses,
         )
-        return OkResult(process_result_list(mappings))
+        return OkResult(mappings)
 
     def get_queried_addresses_per_module(self) -> ApiResult:
         result = QueriedAddresses(self.rotkehlchen.data.db).get_queried_addresses_per_module()
@@ -308,11 +307,15 @@ class UserDataService:
         return OkResult(mappings)
 
     def resolve_ens_name(self, name: str, ignore_cache: bool) -> ApiResult:
-        if (address := maybe_resolve_name(
-            ethereum_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
-            name=name,
-            ignore_cache=ignore_cache,
-        )) is None:
+        try:
+            address = maybe_resolve_name(
+                ethereum_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+                name=name,
+                ignore_cache=ignore_cache,
+            )
+        except RemoteError as e:
+            return FailResult(str(e), HTTPStatus.NOT_FOUND, e.cause)
+        if address is None:
             return FailResult('', HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND)
         return OkResult(address)
 

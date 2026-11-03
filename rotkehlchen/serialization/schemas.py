@@ -3,6 +3,7 @@ from uuid import uuid4
 
 import webargs
 from marshmallow import Schema, ValidationError, fields, post_load, validates_schema
+from marshmallow.exceptions import SCHEMA
 
 from rotkehlchen.api.v1.fields import (
     AssetField,
@@ -30,7 +31,7 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ONE
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, RequestFieldRemoteError
 from rotkehlchen.types import TokenKind
 
 if TYPE_CHECKING:
@@ -51,9 +52,11 @@ def _validate_single_oracle_id(
     try:
         all_coins = oracle_obj.all_coins()
     except RemoteError as e:
-        raise ValidationError(
+        raise RequestFieldRemoteError(
+            SCHEMA,
             f'Could not validate {oracle_name} identifier {coin_key} due to '
             f'problem communicating with {oracle_name}: {e!s}',
+            cause=e.cause,
         ) from e
 
     if coin_key not in all_coins:

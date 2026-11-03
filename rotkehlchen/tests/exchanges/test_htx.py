@@ -407,14 +407,24 @@ def test_paginated_query_advances_cursor(htx_exchange: Htx) -> None:
     assert len(ids) == len(set(ids)) == PAGINATION_LIMIT + 3
 
 
-def test_malformed_json_is_bad_data(htx_exchange: Htx) -> None:
+@pytest.mark.parametrize(('status_code', 'expected_cause'), [
+    (200, FailureCause.BAD_DATA),
+    (429, FailureCause.RATE_LIMITED),
+    (502, FailureCause.NETWORK),
+    (503, FailureCause.NETWORK),
+])
+def test_undecodable_body_cause_follows_the_status(
+        htx_exchange: Htx,
+        status_code: int,
+        expected_cause: FailureCause,
+) -> None:
     response = requests.Response()
-    response.status_code = 200
-    response._content = b'not json'
+    response.status_code = status_code
+    response._content = b'<html>not json</html>'
     with (
         patch.object(htx_exchange.session, 'get', return_value=response),
         pytest.raises(RemoteError) as excinfo,
     ):
         htx_exchange._query('/v1/account/accounts')
 
-    assert excinfo.value.cause == FailureCause.BAD_DATA
+    assert excinfo.value.cause == expected_cause

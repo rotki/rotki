@@ -13,7 +13,7 @@ from rotkehlchen.assets.converters import asset_from_bitcoinde
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_status, cause_for_undecodable_body
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -153,7 +153,7 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
         except JSONDecodeError as exc:
             raise RemoteError(
                 'Bitcoin.de returned invalid JSON response',
-                cause=FailureCause.BAD_DATA,
+                cause=cause_for_undecodable_body(response.status_code),
             ) from exc
 
         if response.status_code not in {200, 401}:

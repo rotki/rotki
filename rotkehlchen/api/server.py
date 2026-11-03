@@ -16,8 +16,12 @@ from webargs.flaskparser import parser
 from werkzeug.exceptions import NotFound
 
 from rotkehlchen.api.asgi import create_asgi_app
-from rotkehlchen.api.rest import RestAPI, api_response
-from rotkehlchen.api.result import FailResult
+from rotkehlchen.api.result import (
+    AUTH_REQUIRED,
+    FailResult,
+    api_response,
+    request_field_failure,
+)
 from rotkehlchen.api.session_token import (
     MCP_BACKEND_PROOF_HEADER,
     SESSION_COOKIE_NAME,
@@ -226,6 +230,7 @@ from rotkehlchen.api.v1.wallet_resources import (
 )
 from rotkehlchen.concurrency import Task
 from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RequestFieldRemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -234,6 +239,7 @@ if TYPE_CHECKING:
     from marshmallow import Schema
     from marshmallow.exceptions import ValidationError
 
+    from rotkehlchen.api.rest import RestAPI
     from rotkehlchen.api.websockets.notifier import RotkiNotifier
 
 URLS = list[
@@ -573,6 +579,10 @@ def handle_request_parsing_error(
     abort(api_response(FailResult(msg, HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)))
 
 
+def handle_request_field_remote_error(error: RequestFieldRemoteError) -> Response:
+    return api_response(request_field_failure(error))
+
+
 class APIServer:
 
     _api_prefix = '/api/1'
@@ -624,6 +634,10 @@ class APIServer:
 
         self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
         self.flask_app.register_error_handler(Exception, self.unhandled_exception)
+        self.flask_app.register_error_handler(
+            RequestFieldRemoteError,
+            handle_request_field_remote_error,
+        )
         self.flask_app.before_request(self.before_request_callback)
         self.flask_app.after_request(self.after_request_callback)
 
@@ -694,11 +708,7 @@ class APIServer:
                         internal_claims.sid,
                     )
                 ):
-                    return api_response(FailResult(
-                        'Authentication required',
-                        HTTPStatus.UNAUTHORIZED,
-                        FailureCause.AUTH,
-                    ))
+                    return api_response(AUTH_REQUIRED)
                 else:
                     claims = internal_claims
 
@@ -721,11 +731,7 @@ class APIServer:
                         self.rest_api.rotkehlchen.user_is_logged_in and
                         claims.username != self.rest_api.rotkehlchen.data.username
                 ):
-                    return api_response(FailResult(
-                        'Authentication required',
-                        HTTPStatus.UNAUTHORIZED,
-                        FailureCause.AUTH,
-                    ))
+                    return api_response(AUTH_REQUIRED)
 
                 g.rotki_session_user = claims.username
                 g.rotki_session_sid = claims.sid

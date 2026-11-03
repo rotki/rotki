@@ -15,7 +15,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_credential_check, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.fval import FVal
@@ -779,7 +779,7 @@ def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
         raise RemoteError(
             f'Failed to authenticate with "{signer_address}". '
             'Make sure it is is an owner/signer of the Gnosis Pay safe',
-            cause=FailureCause.AUTH,
+            cause=cause_for_credential_check(balances_response.status_code),
         )
 
     return token

@@ -10,7 +10,7 @@ from rotkehlchen.banks.manager import BankCredentialInput
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError, combined_cause
 from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
@@ -65,6 +65,8 @@ class BanksService:
             return OkResult(self._challenge(e), status=HTTPStatus.ACCEPTED)
         except InputError as e:
             return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
+        except RemoteError as e:
+            return FailResult(str(e), HTTPStatus.CONFLICT, e.cause)
         if identifier is None:
             return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
         if (bank := self.rotkehlchen.bank_manager.get_bank(identifier)) is None:
@@ -90,7 +92,7 @@ class BanksService:
         except BankMFARequired as e:
             return OkResult(self._challenge(e), status=HTTPStatus.ACCEPTED)
         except BankAuthExpired as e:  # dropped by the bank: only a new sync or setup helps
-            return FailResult(str(e), HTTPStatus.GONE, FailureCause.AUTH)
+            return FailResult(str(e), HTTPStatus.GONE, e.cause)
         except RemoteError as e:
             return FailResult(str(e), HTTPStatus.CONFLICT, e.cause)
         if result is False:
@@ -115,6 +117,8 @@ class BanksService:
             )
         except InputError as e:
             return FailResult(str(e), HTTPStatus.BAD_REQUEST, FailureCause.INVALID_INPUT)
+        except RemoteError as e:
+            return FailResult(str(e), HTTPStatus.CONFLICT, e.cause)
         if not result:
             return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
         return OkResult(True, message=msg)
@@ -176,6 +180,7 @@ class BanksService:
 
         aggregate: dict[AssetWithOracles, Balance] = {}
         connections: list[dict[str, Any]] = []
+        failure_causes: set[FailureCause] = set()
         error_msg = ''
         if identifier is not None:
             if (
@@ -195,13 +200,15 @@ class BanksService:
         for bank in banks:
             status = manager.sync_status[bank.connection_identifier]
             try:
-                accounts, msg = bank.query_account_balances(ignore_cache=ignore_cache)
+                accounts = bank.query_account_balances(ignore_cache=ignore_cache)
             except BankMFARequired as e:
                 status.set_challenge(e.challenge)
                 error_msg += f'{bank.manifest.display_name} {bank.name} requires authentication. '
+                failure_causes.add(FailureCause.AUTH)
                 continue
-            if accounts is None:
-                error_msg += msg
+            if isinstance(accounts, RemoteError):
+                error_msg += str(accounts)
+                failure_causes.add(accounts.cause)
                 continue
             # a cached success must not drop a challenge the connector still waits on
             status.drop_challenge(still_pending=bank.has_pending_authentication)
@@ -219,5 +226,5 @@ class BanksService:
             })
 
         if len(connections) == 0 and error_msg != '':
-            return FailResult(error_msg, HTTPStatus.CONFLICT, FailureCause.NETWORK)
+            return FailResult(error_msg, HTTPStatus.CONFLICT, combined_cause(failure_causes))
         return OkResult({'aggregate': aggregate, 'connections': connections}, message=error_msg)

@@ -16,7 +16,7 @@ from rotkehlchen.db.constants import OKX_LOCATION_KEY
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, cause_for_undecodable_body
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -209,7 +209,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         except requests.exceptions.JSONDecodeError as e:
             raise RemoteError(
                 f'{self.name} returned invalid JSON response: {response.text}',
-                cause=FailureCause.BAD_DATA,
+                cause=cause_for_undecodable_body(response.status_code),
             ) from e
 
         return json_response

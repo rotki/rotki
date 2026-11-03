@@ -46,6 +46,7 @@ from rotkehlchen.errors.misc import (
     IncompleteTransactionsQuery,
     InputError,
     RemoteError,
+    cause_of,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.gnosispay import GnosisPay
@@ -103,6 +104,15 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+class TransactionLookupError(InputError):
+    """Fetching a transaction failed, which callers treat like the hash being wrong. `cause`
+    keeps what actually failed, since it may well be the remote."""
+
+    def __init__(self, message: str, *, cause: FailureCause) -> None:
+        super().__init__(message)
+        self.cause = cause
 
 
 class TransactionsService:
@@ -614,7 +624,9 @@ class TransactionsService:
                     self._decode_given_solana_tx(solana_tx_ref, delete_custom)
         except (RemoteError, DeserializationError, InputError, DataIntegrityError) as e:
             message = f'Failed to request {chain.name.lower()} transaction decoding due to {e!s}'
-            if isinstance(e, InputError):
+            if isinstance(e, TransactionLookupError):
+                cause, status = e.cause, HTTPStatus.CONFLICT
+            elif isinstance(e, InputError):
                 cause, status = FailureCause.INVALID_INPUT, HTTPStatus.CONFLICT
             elif isinstance(e, DataIntegrityError):
                 cause, status = FailureCause.LOCAL_DB, HTTPStatus.CONFLICT
@@ -1157,7 +1169,7 @@ class TransactionsService:
             return FailResult(
                 str(e),
                 HTTPStatus.CONFLICT,
-                e.cause if isinstance(e, RemoteError) else FailureCause.INVALID_INPUT,
+                cause_of(e, FailureCause.INVALID_INPUT),
             )
 
         return OkResult(balance)
@@ -1220,8 +1232,9 @@ class TransactionsService:
         except InputError:
             raise
         except RemoteError as e:
-            raise InputError(
+            raise TransactionLookupError(
                 f'hash {tx_ref!s} does not correspond to a transaction at {chain.name}. {e!s}',
+                cause=e.cause,
             ) from e
         except DeserializationError as e:
             raise InputError(str(e)) from e

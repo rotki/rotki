@@ -163,11 +163,7 @@ class SoChainLikeApi:
                     f'{response.status_code}: {reason or response.text}'
                 ),
                 error_code=response.status_code,
-                cause=(  # a 200 that still failed is SoChain refusing the query
-                    cause_for_status(response.status_code)
-                    if response.status_code != HTTPStatus.OK
-                    else FailureCause.REMOTE_REJECTED
-                ),
+                cause=cause_for_status(response.status_code),
             )
 
         return data

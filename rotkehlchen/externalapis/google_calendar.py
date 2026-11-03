@@ -15,7 +15,7 @@ from googleapiclient.errors import HttpError
 
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, cause_for_credential_check
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -487,7 +487,7 @@ class GoogleCalendarAPI:
         if response.status_code != 200:
             raise RemoteError(
                 f'Invalid access token: {response.status_code} {response.text}',
-                cause=FailureCause.AUTH,
+                cause=cause_for_credential_check(response.status_code),
             )
 
         user_info = response.json()

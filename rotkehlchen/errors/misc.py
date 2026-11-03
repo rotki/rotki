@@ -1,6 +1,10 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 from rotkehlchen.errors.cause import FailureCause
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
 
 
 class SystemPermissionError(Exception):
@@ -107,6 +111,15 @@ class RemoteError(Exception):
         super().__init__(message)
 
 
+class RequestFieldRemoteError(RemoteError):
+    """A remote needed to validate a request field failed. A marshmallow ValidationError
+    keeps only its messages, so the cause of the failure would not survive one."""
+
+    def __init__(self, field_name: str, message: str, *, cause: FailureCause) -> None:
+        super().__init__(message, cause=cause)
+        self.field_name = field_name
+
+
 class RecoverableRemoteError(RemoteError):
     """Raised when a remote query failed for a reason that is expected to go away by itself
     shortly, such as rate limiting, a timeout, a connection problem or a 408/5xx response."""
@@ -132,14 +145,49 @@ def cause_for_status(status_code: int) -> FailureCause:
     return FailureCause.REMOTE_REJECTED
 
 
+def cause_for_undecodable_body(status_code: int) -> FailureCause:
+    """The cause of a response whose body could not be decoded. A success that can't be read
+    is bad data. On any other status the body is likely an error page, so the status decides.
+    """
+    if HTTPStatus.OK <= status_code < HTTPStatus.MULTIPLE_CHOICES:
+        return FailureCause.BAD_DATA
+    return cause_for_status(status_code)
+
+
+def cause_for_credential_check(status_code: int) -> FailureCause:
+    """The cause of a failed response to a request that only checks credentials. Any refusal
+    means they were rejected, but a 429 or a server error says nothing about them."""
+    cause = cause_for_status(status_code)
+    return FailureCause.AUTH if cause == FailureCause.REMOTE_REJECTED else cause
+
+
 def remote_error_for_status(status_code: int, message: str) -> RemoteError:
     """Build the error for a failed HTTP response. Server errors and request timeouts
     (408) are expected to clear up by themselves, so they are recoverable."""
-    error_class = RecoverableRemoteError if (
-        status_code == HTTPStatus.REQUEST_TIMEOUT or
-        status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
-    ) else RemoteError
-    return error_class(message, cause=cause_for_status(status_code), error_code=status_code)
+    cause = cause_for_status(status_code)
+    error_class = RecoverableRemoteError if cause == FailureCause.NETWORK else RemoteError
+    return error_class(message, cause=cause, error_code=status_code)
+
+
+def cause_of(error: Exception, default: FailureCause) -> FailureCause:
+    """The cause a caught error carries, or `default` for one that is not a RemoteError."""
+    return error.cause if isinstance(error, RemoteError) else default
+
+
+def combined_cause(causes: Collection[FailureCause]) -> FailureCause:
+    """The cause of one failure that stands for several: theirs when they all agree, and
+    otherwise REMOTE_REJECTED, since a retry would not help every one of them."""
+    return next(iter(causes)) if len(set(causes)) == 1 else FailureCause.REMOTE_REJECTED
+
+
+def alternatives_cause(causes: Collection[FailureCause]) -> FailureCause:
+    """The cause of a query that failed on every source able to answer it. Any one source
+    answering is enough, so a retry can help as soon as one of them may heal by itself, and
+    a source that never serves this query says nothing about what the others need."""
+    for transient_cause in (FailureCause.RATE_LIMITED, FailureCause.NETWORK):
+        if transient_cause in causes:
+            return transient_cause
+    return combined_cause((set(causes) - {FailureCause.UNSUPPORTED}) or causes)
 
 
 class APIKeyNotAvailable(RemoteError):

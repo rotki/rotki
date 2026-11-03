@@ -126,11 +126,10 @@ def test_account_balances_add_up_to_the_bank_balances(database, function_scope_m
         BankAccount(identifier='d', name='Closed', asset=A_EUR.resolve_to_asset_with_oracles(), balance=FVal('5'), is_active=False),  # noqa: E501
         BankAccount(identifier='e', name='Empty', asset=A_EUR.resolve_to_asset_with_oracles(), balance=ZERO),  # noqa: E501
     ]):
-        accounts, message = connector.query_account_balances()
+        accounts = connector.query_account_balances()
         balances, _ = connector.query_balances()
 
-    assert message == ''
-    assert accounts is not None and balances is not None
+    assert isinstance(accounts, list) and balances is not None
     assert [(x['identifier'], x['name'], x['iban'], x['asset'], x['amount']) for x in (x.serialize() for x in accounts)] == [  # noqa: E501
         ('a', 'Checking', 'DE02120300000000202051', A_EUR.identifier, '100.25'),
         ('b', 'Savings', 'DE02120300000000202052', A_EUR.identifier, '900.5'),

@@ -27,9 +27,11 @@ from rotkehlchen.errors.misc import (
     ContractReverted,
     IndexerRangeNotCovered,
     NoAvailableIndexers,
+    RecoverableRemoteError,
     RemoteError,
     RequestTooLargeError,
 )
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -904,3 +906,42 @@ def test_multicall_chunks_on_gas_limit_but_not_on_revert(
     assert indexer_call.call_count == indexer_calls
     # the failed length is what makes later big multicalls start from the smaller chunks
     assert ('nodes' in inquirer._multicall_failed_length) is (indexer_calls == 0)
+
+
+@pytest.mark.parametrize(('errors', 'expected_class', 'expected_cause'), [
+    (
+        [RemoteError('no key', cause=FailureCause.AUTH)] * 3,
+        RemoteError,
+        FailureCause.AUTH,
+    ),
+    ([BlockscoutIncompleteResponse('not indexed')] * 3, RemoteError, FailureCause.NETWORK),
+    (
+        [
+            RemoteError('no key', cause=FailureCause.AUTH),
+            RecoverableRemoteError('slow down', cause=FailureCause.RATE_LIMITED),
+            RemoteError('refused', cause=FailureCause.REMOTE_REJECTED),
+        ],
+        RecoverableRemoteError,
+        FailureCause.RATE_LIMITED,
+    ),
+    ([DeserializationError('garbled')] * 3, RemoteError, FailureCause.BAD_DATA),
+    (
+        [
+            RemoteError('no key', cause=FailureCause.AUTH),
+            RemoteError('refused', cause=FailureCause.REMOTE_REJECTED),
+            RemoteError('refused', cause=FailureCause.REMOTE_REJECTED),
+        ],
+        RemoteError,
+        FailureCause.REMOTE_REJECTED,
+    ),
+])
+def test_try_indexers_keeps_the_cause_of_the_failures(
+        errors: list[Exception],
+        expected_class: type[RemoteError],
+        expected_cause: FailureCause,
+) -> None:
+    with pytest.raises(RemoteError) as excinfo:
+        DummyEvmNodeInquirer()._try_indexers(func=MagicMock(side_effect=errors))
+
+    assert type(excinfo.value) is expected_class
+    assert excinfo.value.cause == expected_cause

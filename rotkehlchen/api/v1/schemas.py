@@ -97,7 +97,13 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.misc import AddressNotSupported, InputError, RemoteError, XPUBError
+from rotkehlchen.errors.misc import (
+    AddressNotSupported,
+    InputError,
+    RemoteError,
+    RequestFieldRemoteError,
+    XPUBError,
+)
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.constants import (
     ALL_SUPPORTED_EXCHANGES,
@@ -2657,11 +2663,13 @@ def _transform_btc_or_bch_address(
             blockchain=blockchain,
         )
     except (RemoteError, InputError) as e:
-        raise ValidationError(
+        message = (
             f'Given ENS address {given_address} could not be resolved '
-            f'for {blockchain!s} due to: {e!s}',
-            field_name='address',
-        ) from None
+            f'for {blockchain!s} due to: {e!s}'
+        )
+        if isinstance(e, RemoteError):
+            raise RequestFieldRemoteError('address', message, cause=e.cause) from None
+        raise ValidationError(message, field_name='address') from None
 
     if resolved_address is None:
         raise ValidationError(
@@ -2688,11 +2696,20 @@ def _resolve_evm_name(
         name: str,
         field_name: str,
 ) -> ChecksumEvmAddress:
-    if (resolved_address := maybe_resolve_name(
-        ethereum_inquirer=ethereum_inquirer,
-        name=name,
-        ignore_cache=True,  # account mutations must not use a potentially stale name mapping
-    )) is None:
+    try:
+        resolved_address = maybe_resolve_name(
+            ethereum_inquirer=ethereum_inquirer,
+            name=name,
+            ignore_cache=True,  # account mutations must not use a potentially stale name mapping
+        )
+    except RemoteError as e:
+        raise RequestFieldRemoteError(
+            field_name,
+            f'Given name {name} could not be resolved for Ethereum due to: {e!s}',
+            cause=e.cause,
+        ) from None
+
+    if resolved_address is None:
         raise ValidationError(
             f'Given name {name} could not be resolved for Ethereum',
             field_name=field_name,
@@ -2751,11 +2768,13 @@ def _transform_substrate_address(
             blockchain=chain,
         )
     except (RemoteError, InputError) as e:
-        raise ValidationError(
+        message = (
             f'Given ENS address {given_address} could not be resolved '
-            f'for {chain} due to: {e!s}',
-            field_name='address',
-        ) from None
+            f'for {chain} due to: {e!s}'
+        )
+        if isinstance(e, RemoteError):
+            raise RequestFieldRemoteError('address', message, cause=e.cause) from None
+        raise ValidationError(message, field_name='address') from None
 
     if resolved_address is None:
         raise ValidationError(

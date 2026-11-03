@@ -224,12 +224,13 @@ def test_refresh_metrics_endpoint_warns_on_failure(rotkehlchen_api_server: APISe
 
     with patch(
         'rotkehlchen.api.rest.LidoCsmMetricsFetcher.get_operator_stats',
-        side_effect=RemoteError('boom', cause=FailureCause.NETWORK),
+        side_effect=RemoteError('boom', cause=FailureCause.REMOTE_REJECTED),
     ):
         response = requests.post(api_url_for(rotkehlchen_api_server, 'lidocsmmetricsresource'))
 
     assert response.status_code == HTTPStatus.BAD_GATEWAY
     payload = response.json()
+    assert payload['cause'] == FailureCause.REMOTE_REJECTED
     assert payload['result'][0]['metrics'] is None
     assert '7' in payload['message']
 

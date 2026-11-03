@@ -75,6 +75,13 @@ class PreSerializedList(list):  # noqa: FURB189  # we want a genuine list subcla
     """
 
 
+class PreSerializedDict(dict):  # noqa: FURB189  # a genuine dict subclass for the same reason as PreSerializedList
+    """A dict that ``process_result`` already produced. ``process_result`` returns it
+    untouched, so wrapping an already serialized payload, such as a finished task's
+    outcome inside the task status response, does not walk it a second time.
+    """
+
+
 def _process_dict(entry: dict) -> dict:
     new_dict = {}
     for k, v in entry.items():
@@ -168,6 +175,7 @@ HANDLERS.update(dict.fromkeys((
 ), lambda x: _process_dict(x._asdict())))
 # already JSON-ready: return as-is and skip the (expensive) recursive re-walk
 HANDLERS[PreSerializedList] = lambda x: x
+HANDLERS[PreSerializedDict] = lambda x: x
 
 
 def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):

@@ -22,6 +22,8 @@ from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_ad
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
@@ -303,3 +305,21 @@ def test_download_gwei_name_avatar(ethereum_inquirer):
         assert (tempdir / 'skas.gwei.png').read_bytes() == image_bytes
 
     assert dbens.get_last_avatar_update('skas.gwei') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501
+
+
+@pytest.mark.parametrize(('cause', 'raises'), [
+    (FailureCause.NETWORK, True),
+    (FailureCause.RATE_LIMITED, True),
+    (FailureCause.REMOTE_REJECTED, False),  # an unregistered name reverts
+])
+def test_gns_resolve_tells_an_outage_from_an_unknown_name(
+        cause: FailureCause,
+        raises: bool,
+) -> None:
+    inquirer = Mock()
+    inquirer.call_contract.side_effect = RemoteError('failed', cause=cause)
+    if raises:
+        with pytest.raises(RemoteError):
+            gns_resolve(inquirer, 'rotki.gwei')
+    else:
+        assert gns_resolve(inquirer, 'rotki.gwei') is None

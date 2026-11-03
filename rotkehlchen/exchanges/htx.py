@@ -14,7 +14,7 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, cause_for_undecodable_body
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
@@ -147,15 +147,20 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
                 params=signed_payload,
                 timeout=CachedSettings().get_timeout_tuple(),
             )
-            res_body = response.json()
         except requests.RequestException as e:
             log.error(f'Failed to query HTX api. Exception: {e} {options}, URL: {url}')
             raise RemoteError(
                 f'Failed to query HTX for {url}. Check log for more details',
-                cause=(
-                    FailureCause.BAD_DATA if isinstance(e, requests.exceptions.JSONDecodeError)
-                    else FailureCause.NETWORK
-                ),
+                cause=FailureCause.NETWORK,
+            ) from e
+
+        try:
+            res_body = response.json()
+        except requests.JSONDecodeError as e:
+            log.error('Could not decode HTX response from %s: %s', url, response.text)
+            raise RemoteError(
+                f'Failed to query HTX for {url}. Check log for more details',
+                cause=cause_for_undecodable_body(response.status_code),
             ) from e
 
         if res_body.get('status') != 'ok':

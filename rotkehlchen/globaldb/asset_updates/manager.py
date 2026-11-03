@@ -21,7 +21,7 @@ from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.settings import DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, cause_for_undecodable_body
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.utils import initialize_globaldb
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -229,7 +229,7 @@ class AssetsUpdater:
         except requests.exceptions.RequestException as e:
             raise RemoteError(
                 f'Could not parse assets update info as json from Github: {response.text}',
-                cause=FailureCause.BAD_DATA,
+                cause=cause_for_undecodable_body(response.status_code),
             ) from e
 
         return json_data
