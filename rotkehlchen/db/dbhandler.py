@@ -1530,6 +1530,28 @@ class DBHandler:
 
         write_cursor.execute(query, bindings)
 
+    @staticmethod
+    def is_chain_fully_disabled(
+            cursor: DBCursor,
+            chain: SupportedBlockchain,
+            disabled_addresses: frozenset[str],
+    ) -> bool:
+        """Whether a disable rule covers the whole chain or every tracked account.
+
+        Beacon-chain accounts are validator public keys, not blockchain_accounts rows.
+        """
+        if len(disabled_addresses) == 0:
+            return True
+
+        if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
+            accounts = cursor.execute('SELECT public_key FROM eth2_validators')
+        else:
+            accounts = cursor.execute(
+                'SELECT account FROM blockchain_accounts WHERE blockchain=?',
+                (chain.value,),
+            )
+        return {row[0] for row in accounts}.issubset(disabled_addresses)
+
     def delete_balances_query_ts_for_disabled_chains(
             self,
             write_cursor: DBCursor,
@@ -1546,16 +1568,12 @@ class DBHandler:
         chain is enabled again, until its next refresh.
         """
         for chain, disabled_addresses in disabled_chain_queries.items():
-            if len(disabled_addresses) != 0:
-                if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
-                    accounts = write_cursor.execute('SELECT public_key FROM eth2_validators')
-                else:
-                    accounts = write_cursor.execute(
-                        'SELECT account FROM blockchain_accounts WHERE blockchain=?',
-                        (chain.value,),
-                    )
-                if not {row[0] for row in accounts}.issubset(disabled_addresses):
-                    continue
+            if not self.is_chain_fully_disabled(
+                cursor=write_cursor,
+                chain=chain,
+                disabled_addresses=disabled_addresses,
+            ):
+                continue
 
             self.delete_dynamic_cache(
                 write_cursor=write_cursor,

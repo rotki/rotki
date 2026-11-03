@@ -29,6 +29,7 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_USDT,
 )
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import LocationData
 from rotkehlchen.errors.misc import RemoteError
@@ -1014,6 +1015,73 @@ def test_blockchain_balances_cache_skips_disabled_entries(
         assert set(cached_balances.optimism) == {optimism_address}
     finally:
         CachedSettings().update_entry('disabled_chain_queries', {})
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('disabled_validator_indices', [None, [], [0], [0, 1], [2]], ids=[
+    'enabled', 'whole-chain', 'one-validator', 'all-validators', 'untracked-validator',
+])
+def test_disabled_beacon_chain_does_not_trigger_balance_refresh(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        disabled_validator_indices: list[int] | None,
+) -> None:
+    """A missing beacon timestamp requires a refresh only while validators remain enabled."""
+    chains_aggregator = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator
+    database = chains_aggregator.database
+    pubkeys = [f'0x{index:096x}' for index in range(3)]
+    eth_balance = BalanceSheet()
+    eth_balance.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE)
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO eth2_validators(public_key, validator_type, ownership_proportion) '
+            'VALUES(?, 0, ?)',
+            [(pubkey, '1') for pubkey in pubkeys[:2]],
+        )
+        database.set_blockchain_balances_cache(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            balances={ethereum_accounts[0]: eth_balance},
+        )
+        database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+            value=Timestamp(1),
+            blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+        )
+
+    assert_proper_response(requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'disabled_chain_queries': (
+            {} if disabled_validator_indices is None else {
+                SupportedBlockchain.ETHEREUM_BEACONCHAIN.serialize(): [
+                    pubkeys[index] for index in disabled_validator_indices
+                ],
+            }
+        )}},
+    ))
+    with (
+        patch.object(chains_aggregator, 'get_price_for_cached_balances', return_value=Price(ONE)),
+        patch.object(
+            chains_aggregator,
+            'query_balances',
+            return_value=chains_aggregator.get_balances_update(
+                chain=None,
+                from_cache=True,
+                only_cache=True,
+            ),
+        ) as query_mock,
+    ):
+        for _ in range(2):
+            result = assert_proper_sync_response_with_result(requests.get(
+                api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+            ))
+            assert result['per_account']['eth'][ethereum_accounts[0]]['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '1'  # noqa: E501
+            assert result['last_refresh_ts'] == {SupportedBlockchain.ETHEREUM.serialize(): 1}
+
+    assert query_mock.call_count == (
+        0 if disabled_validator_indices in ([], [0, 1]) else 2
+    )
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
