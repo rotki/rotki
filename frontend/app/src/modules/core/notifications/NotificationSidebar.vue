@@ -122,7 +122,7 @@ const mutedCount = computed<number>(() => get(muted).problems.length + get(muted
           data-testid="notification-day-group"
         >
           <div
-            class="sticky top-0 z-1 bg-rui-surface pt-2 pb-0.5 text-caption font-medium text-rui-text-secondary"
+            class="sticky top-0 z-1 bg-rui-overlay pt-2 pb-0.5 text-caption font-medium text-rui-text-secondary"
             data-testid="notification-day"
           >
             <template v-if="day.label === NotificationDayLabel.TODAY">
@@ -161,7 +161,7 @@ const mutedCount = computed<number>(() => get(muted).problems.length + get(muted
         >
           <button
             type="button"
-            class="sticky top-0 z-1 bg-rui-surface pt-2 pb-0.5 flex items-center gap-1.5 text-caption font-medium text-rui-text-secondary cursor-pointer"
+            class="sticky top-0 z-1 bg-rui-overlay pt-2 pb-0.5 flex items-center gap-1.5 text-caption font-medium text-rui-text-secondary cursor-pointer"
             :aria-expanded="modelProblemsOpen"
             data-testid="notification-problems-toggle"
             @click="modelProblemsOpen = !modelProblemsOpen"
@@ -204,7 +204,7 @@ const mutedCount = computed<number>(() => get(muted).problems.length + get(muted
         >
           <button
             type="button"
-            class="sticky top-0 z-1 bg-rui-surface pt-2 pb-0.5 flex items-center gap-1.5 text-caption font-medium text-rui-text-secondary cursor-pointer"
+            class="sticky top-0 z-1 bg-rui-overlay pt-2 pb-0.5 flex items-center gap-1.5 text-caption font-medium text-rui-text-secondary cursor-pointer"
             :aria-expanded="modelMutedOpen"
             data-testid="notification-muted-toggle"
             @click="modelMutedOpen = !modelMutedOpen"
