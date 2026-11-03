@@ -1034,7 +1034,7 @@ class RestAPI:
             elif supported_chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
                 has_accounts = len(self.rotkehlchen.chains_aggregator.queried_addresses_for_module('eth2')) != 0  # noqa: E501
             else:
-                has_accounts = len(self.rotkehlchen.chains_aggregator.accounts.get(supported_chain)) != 0  # noqa: E501
+                has_accounts = len(self.rotkehlchen.chains_aggregator.get_active_addresses(supported_chain)) != 0  # noqa: E501
 
             if has_accounts is True and supported_chain.serialize() not in last_refresh_ts:
                 return True
