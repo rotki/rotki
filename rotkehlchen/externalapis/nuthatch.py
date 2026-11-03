@@ -1,6 +1,7 @@
 import json
 import logging
 import operator
+import re
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from http import HTTPStatus
@@ -12,7 +13,12 @@ import requests
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError, TimestampLookupUnsupported
+from rotkehlchen.errors.misc import (
+    IndexerHistoryStartsAt,
+    IndexerRangeNotCovered,
+    RemoteError,
+    TimestampLookupUnsupported,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -56,6 +62,8 @@ NUTHATCH_PAGINATION_LIMIT: Final = 1000
 NUTHATCH_RATE_LIMIT_RPS: Final = 50.0
 NUTHATCH_RATE_LIMIT_BURST: Final = 50
 NUTHATCH_UNSUPPORTED: Final = 'NUTHATCH_UNSUPPORTED:'
+# How a nest refuses an account range that starts before the block its history starts at.
+HISTORY_STARTS_AT: Final = re.compile(r'history starts at block (\d+)')
 # Kept in a paged query's options and never sent: the pages it has read so far.
 PAGES_READ: Final = '_nuthatch_pages_read'
 # The index of an internal row's frame in its transaction's whole trace. The Etherscan-shaped
@@ -150,6 +158,7 @@ class Nuthatch(EtherscanLikeApi):
 
         May raise:
         - TimestampLookupUnsupported if the nest never resolves timestamps on the chain
+        - IndexerHistoryStartsAt if the request starts before the nest's history does
         - RemoteError if the nest has not indexed the request, or refused it
         """
         if json_ret.get('status') != '0':
@@ -168,6 +177,8 @@ class Nuthatch(EtherscanLikeApi):
         if action == 'getLogs' and 'narrower range' in str(result):
             # the wording rotki's get_logs looks for before it halves the block range
             raise RemoteError(f'{message}. Please select a smaller result dataset')
+        if (history_start := HISTORY_STARTS_AT.search(str(result))) is not None:
+            raise IndexerHistoryStartsAt(message, start_block=int(history_start.group(1)))
 
         raise RemoteError(message)
 
@@ -229,12 +240,19 @@ class Nuthatch(EtherscanLikeApi):
         """Every row of every page the nest answers. A hash's internals come whole, unpaged.
 
         May raise:
+        - IndexerHistoryStartsAt if the nest's history starts inside the requested blocks
+        - IndexerRangeNotCovered if the requested blocks all come before the nest's history
         - RemoteError if the nest cannot answer a page
         """
         if 'txhash' not in options:
             options |= {'page': '1', 'offset': str(self.pagination_limit)}
         while True:
-            page = self._query(chain_id=chain_id, module='account', action=action, options=options)
+            try:
+                page = self._query(chain_id=chain_id, module='account', action=action, options=options)  # noqa: E501
+            except IndexerHistoryStartsAt as e:
+                if 'endblock' in options and int(options['endblock']) < e.start_block:
+                    raise IndexerRangeNotCovered(str(e)) from e  # nothing of it to serve
+                raise
             if not isinstance(page, list):
                 raise RemoteError(f'{self.name} answered {action} with {page}')
             yield from page
@@ -364,7 +382,10 @@ class Nuthatch(EtherscanLikeApi):
     ) -> HasChainActivity:
         """The base's several queries, all asked of one nest."""
         with self._one_nest():
-            return super().has_activity(chain_id=chain_id, account=account)
+            try:
+                return super().has_activity(chain_id=chain_id, account=account)
+            except IndexerHistoryStartsAt as e:  # the check has no range that could be split
+                raise RemoteError(str(e)) from e
 
     def _nest_call(
             self,
