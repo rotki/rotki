@@ -506,6 +506,10 @@ class EvmTokens(ABC):  # noqa: B024
                 balances_per_address=detected_erc20_balances,
                 failed_detection_addresses=failed_detection_addresses,
             )
+            self.db.delete_balances_cache_if_chain_disabled(
+                write_cursor=write_cursor,
+                blockchain=self.evm_inquirer.blockchain,
+            )
             for address, detected_tokens in all_detected_tokens.items():
                 if address in failed_detection_addresses:
                     log.warning(
