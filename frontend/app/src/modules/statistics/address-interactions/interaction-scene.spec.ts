@@ -28,6 +28,27 @@ describe('interaction scene', () => {
     expect([...result.activeNodeIds].sort()).toEqual(['b', 'c']);
   });
 
+  it('should keep a connection that is not a matched bridge drawn but inactive when only bridges are wanted', () => {
+    const bridged = sceneOf(graphOf([
+      { chain: 'eth', source: 'a', target: 'b', txHash: '0x1' },
+      { chain: 'eth', source: 'b', target: 'c', targetChain: 'optimism', targetTxHash: '0x2', txHash: '0x3' },
+    ]), { bridgesOnly: true });
+
+    expect(bridged.connections).toHaveLength(2);
+    expect([...bridged.activeConnectionIds]).toEqual([JSON.stringify(['b', 'c'])]);
+    expect([...bridged.activeNodeIds].sort()).toEqual(['b', 'c']);
+  });
+
+  it('should treat a pair as a bridge only on the chains its bridge legs happened on', () => {
+    const pair = graphOf([
+      { chain: 'eth', source: 'a', target: 'b', targetChain: 'optimism', targetTxHash: '0x2', txHash: '0x1' },
+      { chain: 'gnosis', source: 'a', target: 'b', txHash: '0x3' },
+    ]);
+
+    expect(sceneOf(pair, { bridgesOnly: true, chain: 'optimism' }).activeConnectionIds.size).toBe(1);
+    expect(sceneOf(pair, { bridgesOnly: true, chain: 'gnosis' }).activeConnectionIds.size).toBe(0);
+  });
+
   it('should keep a connection below the minimum drawn but inactive', () => {
     expect([...scene({ minTransactions: 2 }).activeConnectionIds]).toEqual([AB]);
   });

@@ -22,8 +22,8 @@ describe('address interaction graph model', () => {
     expect(graph.connections).toHaveLength(1);
     const [connection] = graph.connections;
     expect(connection.activity).toEqual([
-      { chain: 'eth', txHashes: ['0x1', '0x2'] },
-      { chain: 'optimism', txHashes: ['0x3'] },
+      { bridgeTxHashes: [], chain: 'eth', txHashes: ['0x1', '0x2'] },
+      { bridgeTxHashes: [], chain: 'optimism', txHashes: ['0x3'] },
     ]);
     expect(connection.txCount).toBe(3);
   });
@@ -32,6 +32,43 @@ describe('address interaction graph model', () => {
     const [connection] = createAddressInteractionGraph([interaction('eth', '0x1'), interaction('optimism', '0x1')]).connections;
 
     expect(connection.txCount).toBe(2);
+  });
+
+  it('should put each bridge leg under its own chain and each address on its endpoint chain', () => {
+    const graph = createAddressInteractionGraph([
+      { chain: 'eth', source: B, target: A, targetChain: 'optimism', targetTxHash: '0xwithdrawal', txHash: '0xdeposit' },
+    ]);
+
+    const [connection] = graph.connections;
+    expect(connection.activity).toEqual([
+      { bridgeTxHashes: ['0xdeposit'], chain: 'eth', txHashes: ['0xdeposit'] },
+      { bridgeTxHashes: ['0xwithdrawal'], chain: 'optimism', txHashes: ['0xwithdrawal'] },
+    ]);
+    expect(connection.txCount).toBe(2);
+    expect(graph.nodes.find(node => node.id === B)?.chains).toEqual(['eth']);
+    expect(graph.nodes.find(node => node.id === A)?.chains).toEqual(['optimism']);
+  });
+
+  it('should deduplicate a repeated bridge and fold it with ordinary transfers of the same pair', () => {
+    const bridge = { ...interaction('eth', '0xdeposit'), targetChain: 'optimism', targetTxHash: '0xwithdrawal' };
+    const [connection] = createAddressInteractionGraph([bridge, bridge, interaction('eth', '0x1')]).connections;
+
+    expect(connection.activity).toEqual([
+      { bridgeTxHashes: ['0xdeposit'], chain: 'eth', txHashes: ['0x1', '0xdeposit'] },
+      { bridgeTxHashes: ['0xwithdrawal'], chain: 'optimism', txHashes: ['0xwithdrawal'] },
+    ]);
+  });
+
+  it('should flag only the pairs a matched bridge links', () => {
+    const graph = createAddressInteractionGraph([
+      interaction('eth', '0x1', A, C),
+      { ...interaction('eth', '0xdeposit', B, A), targetChain: 'optimism', targetTxHash: '0xwithdrawal' },
+    ]);
+
+    expect(graph.connections.map(({ isBridge, source, target }) => [source.id, target.id, isBridge])).toEqual([
+      [A, B, true],
+      [A, C, false],
+    ]);
   });
 
   it('should skip an address interacting with itself', () => {

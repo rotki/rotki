@@ -206,6 +206,31 @@ describe('address interaction graph', () => {
     expect(listedConnections(wrapper)).toBe(2);
   });
 
+  it('should grey out pairs that are not bridges when bridges only is switched on', async () => {
+    const bridge = { ...interaction('eth', '0xdeposit', TARGET, OTHER), targetChain: 'optimism', targetTxHash: '0xwithdrawal' };
+    const wrapper = createWrapper([interaction(), bridge]);
+    expect(listedConnections(wrapper)).toBe(2);
+
+    await wrapper.get('[data-testid=interaction-bridges-only]').trigger('click');
+
+    expect(listedConnections(wrapper)).toBe(1);
+    expect(wrapper.get('[data-testid=interaction-muted]').text()).toContain('1');
+  });
+
+  it('should label a bridged pair in the list and each bridge leg beside its transaction, and leave ordinary ones unlabeled', async () => {
+    const bridge = { ...interaction('eth', '0xdeposit', TARGET, OTHER), targetChain: 'optimism', targetTxHash: '0xwithdrawal' };
+    const wrapper = createWrapper([interaction(), bridge]);
+
+    expect(wrapper.findAll('[data-testid=interaction-connection-bridge]')).toHaveLength(1);
+
+    await wrapper.findAll('[data-testid=interaction-connection]').find(row => row.find('[data-testid=interaction-connection-bridge]').exists())?.trigger('click');
+    expect(wrapper.findAll('[data-testid=interaction-tx-bridge]')).toHaveLength(2);
+  });
+
+  it('should not offer bridges only while no pair is bridged', () => {
+    expect(createWrapper([interaction()]).find('[data-testid=interaction-bridges-only]').exists()).toBe(false);
+  });
+
   it('should grey out pairs below the minimum number of shared transactions', async () => {
     const wrapper = createWrapper([interaction(), interaction('eth', '0xsecond'), interaction('eth', '0xother', TARGET, OTHER)]);
     const slider = wrapper.getComponent({ name: 'RuiSlider' });

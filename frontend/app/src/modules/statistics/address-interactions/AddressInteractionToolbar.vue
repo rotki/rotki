@@ -6,15 +6,18 @@ import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import { useChainColors } from './use-chain-colors';
 
 const address = defineModel<string>('address', { required: true });
+const bridgesOnly = defineModel<boolean>('bridgesOnly', { required: true });
 const chain = defineModel<string>('chain', { required: true });
 const minTransactions = defineModel<number>('minTransactions', { required: true });
 
-const { addressOptions, chains, maxTransactions, hasFilters = false } = defineProps<{
+const { addressOptions, chains, hasBridges = false, maxTransactions, hasFilters = false } = defineProps<{
   addressOptions: LocationLabel[];
   chains: readonly string[];
   maxTransactions: number;
   /** Shows Reset filters at the end of the row while a chain or a minimum is set. */
   hasFilters?: boolean;
+  /** Offers the bridges-only switch; hidden while no pair is linked by a bridge. */
+  hasBridges?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -108,6 +111,26 @@ function chipClass(selected: boolean): string {
         </span>
         {{ getChainName(item) }}
       </button>
+      <template v-if="hasBridges">
+        <span
+          class="mx-1 h-5 w-px bg-rui-grey-300 dark:bg-rui-grey-700"
+          aria-hidden="true"
+        />
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-rui-primary"
+          :class="chipClass(bridgesOnly)"
+          :aria-pressed="bridgesOnly"
+          data-testid="interaction-bridges-only"
+          @click="bridgesOnly = !bridgesOnly"
+        >
+          <RuiIcon
+            name="lu-arrow-left-right"
+            size="14"
+          />
+          {{ t('address_interactions.bridges_only') }}
+        </button>
+      </template>
     </div>
   </div>
 </template>

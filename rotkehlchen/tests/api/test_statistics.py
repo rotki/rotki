@@ -18,6 +18,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_EUR, A_SOL, A_USDC
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.constants import HistoryEventLinkType
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import DBAssetBalance
@@ -916,6 +917,228 @@ def test_address_interactions(rotkehlchen_api_server: APIServer) -> None:
     assert assert_proper_sync_response_with_result(requests.get(url)) == [
         row for row in expected if row['chain'] != SupportedBlockchain.ETHEREUM.serialize()
     ]
+
+
+def test_address_interactions_matched_bridges(rotkehlchen_api_server: APIServer) -> None:
+    """Only actual links between accounts tracked on each leg's chain form bridge edges."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    events_db = DBHistoryEvents(db)
+    url = api_url_for(rotkehlchen_api_server, 'statisticsaddressinteractionsresource')
+    source = to_checksum_address('0x52908400098527886e0f7030069857d2e4169ee7')
+    target = to_checksum_address('0x00000000000000000000000000000000000000aa')
+    wrong_source = to_checksum_address('0x00000000000000000000000000000000000000dd')
+    wrong_target = to_checksum_address('0x00000000000000000000000000000000000000cc')
+    untracked = to_checksum_address('0x00000000000000000000000000000000000000ee')
+    source_tx = deserialize_evm_tx_hash(b'\x01' * 32)
+    target_tx = deserialize_evm_tx_hash(b'\x02' * 32)
+    history: list[HistoryBaseEntry] = []
+    pairs = []
+    for index, (source_label, target_label, target_location) in enumerate([
+        (str(source).lower(), str(target).lower(), Location.OPTIMISM),
+        (source, target, Location.OPTIMISM),  # repeated logs collapse to one edge
+        (source, target, Location.ARBITRUM_ONE),  # same hashes, different destination chain
+        (wrong_source, target, Location.OPTIMISM),  # source tracked only on Optimism
+        (source, wrong_target, Location.OPTIMISM),  # target tracked only on Ethereum
+        (untracked, target, Location.OPTIMISM),
+        (source, untracked, Location.OPTIMISM),
+        (source, str(source).lower(), Location.OPTIMISM),  # same EVM address, different casing
+        (source, target, Location.OPTIMISM),  # a different link type is not a bridge
+        (source, target, Location.ETHEREUM),  # not cross-chain
+    ]):
+        pair = []
+        for location, label, tx_ref, event_type in (
+            (Location.ETHEREUM, source_label, source_tx, HistoryEventType.DEPOSIT),
+            (target_location, target_label, target_tx, HistoryEventType.WITHDRAWAL),
+        ):
+            pair.append(len(history))
+            history.append(EvmEvent(
+                tx_ref=tx_ref,
+                sequence_index=index,
+                timestamp=TimestampMS(1700000000000),
+                location=location,
+                event_type=event_type,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_ETH,
+                amount=ONE,
+                location_label=label,
+            ))
+        pairs.append(pair)
+
+    # Synthetic counterparts have no transaction reference and cannot form a tx edge.
+    history.append(HistoryEvent(
+        group_identifier='synthetic_bridge_counterpart',
+        sequence_index=0,
+        timestamp=TimestampMS(1700000000000),
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_ETH,
+        amount=ONE,
+        location_label=target,
+    ))
+    with db.conn.write_ctx() as cursor:
+        cursor.executemany(
+            'INSERT OR IGNORE INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            [
+                ('ETH', source), ('ETH', target), ('ETH', wrong_target),
+                ('OPTIMISM', str(source).lower()), ('OPTIMISM', target),
+                ('OPTIMISM', wrong_source),
+                ('ARBITRUM_ONE', target),
+            ],
+        )
+        identifiers = []
+        for event in history:
+            identifier = events_db.add_history_event(write_cursor=cursor, event=event)
+            assert identifier is not None
+            identifiers.append(identifier)
+
+    # Even bridge-typed events with matching chains, amounts and addresses need a link.
+    assert assert_proper_sync_response_with_result(requests.get(url)) == []
+    with db.conn.write_ctx() as cursor:
+        cursor.executemany(
+            'INSERT INTO history_event_links(left_event_id, right_event_id, link_type) '
+            'VALUES (?, ?, ?)',
+            [
+                (
+                    identifiers[left], identifiers[right],
+                    (
+                        HistoryEventLinkType.ASSET_MOVEMENT_MATCH if index == 8 else
+                        HistoryEventLinkType.BRIDGE_MATCH
+                    ).serialize_for_db(),
+                )
+                for index, (left, right) in enumerate(pairs)
+            ] + [
+                (
+                    identifiers[pairs[0][0]], identifiers[-1],
+                    HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),
+                ),
+            ],
+        )
+
+    expected = [{
+        'chain': SupportedBlockchain.ETHEREUM.serialize(),
+        'source': source,
+        'target': target,
+        'tx_hash': str(source_tx),
+        'target_chain': chain.serialize(),
+        'target_tx_hash': str(target_tx),
+    } for chain in (SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.OPTIMISM)]
+    assert assert_proper_sync_response_with_result(requests.get(url)) == expected
+
+    # Tracking is checked live, independently for the two chains.
+    with db.conn.write_ctx() as cursor:
+        cursor.execute(
+            'DELETE FROM blockchain_accounts WHERE blockchain=? AND account=?',
+            ('OPTIMISM', target),
+        )
+    assert assert_proper_sync_response_with_result(requests.get(url)) == expected[:1]
+    with db.conn.write_ctx() as cursor:
+        cursor.execute(
+            'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            ('OPTIMISM', target),
+        )
+        cursor.execute(
+            'DELETE FROM blockchain_accounts WHERE blockchain=? AND account=?',
+            ('ETH', source),
+        )
+    assert assert_proper_sync_response_with_result(requests.get(url)) == []
+    with db.conn.write_ctx() as cursor:
+        cursor.execute(
+            'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            ('ETH', source),
+        )
+        cursor.execute(
+            'DELETE FROM history_event_links WHERE left_event_id=? AND right_event_id=?',
+            (identifiers[pairs[0][0]], identifiers[pairs[0][1]]),
+        )
+    assert assert_proper_sync_response_with_result(requests.get(url)) == expected
+    with db.conn.write_ctx() as cursor:
+        cursor.execute(
+            'DELETE FROM history_event_links WHERE left_event_id=? AND right_event_id=?',
+            (identifiers[pairs[1][0]], identifiers[pairs[1][1]]),
+        )
+    assert assert_proper_sync_response_with_result(requests.get(url)) == expected[:1]
+    assert events_db.delete_history_events_by_identifier(
+        identifiers=[identifiers[pairs[2][1]]],
+        force_delete=True,
+    ) is None
+    assert assert_proper_sync_response_with_result(requests.get(url)) == []
+
+
+@pytest.mark.parametrize('source_is_solana', [True, False])
+def test_address_interactions_solana_bridges(
+        rotkehlchen_api_server: APIServer,
+        source_is_solana: bool,
+) -> None:
+    """Each bridge leg uses its chain's transaction serializer and address collation."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    events_db = DBHistoryEvents(db)
+    url = api_url_for(rotkehlchen_api_server, 'statisticsaddressinteractionsresource')
+    evm_address = to_checksum_address('0x00000000000000000000000000000000000000aa')
+    solana_address = 'So11111111111111111111111111111111111111112'
+    tx_hash = deserialize_evm_tx_hash(b'\x01' * 32)
+    signature = SolanaEvent._deserialize_tx_ref(b'\x02' * 64)
+    links = []
+    with db.conn.write_ctx() as cursor:
+        cursor.executemany(
+            'INSERT OR IGNORE INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            [('ETH', evm_address), ('SOLANA', solana_address)],
+        )
+        for index, solana_label in enumerate((solana_address, solana_address.lower())):
+            evm_event = EvmEvent(
+                tx_ref=tx_hash,
+                sequence_index=index,
+                timestamp=TimestampMS(1700000000000),
+                location=Location.ETHEREUM,
+                event_type=(
+                    HistoryEventType.WITHDRAWAL if source_is_solana else HistoryEventType.DEPOSIT
+                ),
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_ETH,
+                amount=ONE,
+                location_label=str(evm_address).lower(),
+            )
+            solana_event = SolanaEvent(
+                tx_ref=(
+                    signature if index == 0 else SolanaEvent._deserialize_tx_ref(b'\x03' * 64)
+                ),
+                sequence_index=index,
+                timestamp=TimestampMS(1700000000000),
+                event_type=(
+                    HistoryEventType.DEPOSIT if source_is_solana else HistoryEventType.WITHDRAWAL
+                ),
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=A_SOL,
+                amount=ONE,
+                location_label=solana_label,
+            )
+            evm_id = events_db.add_history_event(write_cursor=cursor, event=evm_event)
+            solana_id = events_db.add_history_event(write_cursor=cursor, event=solana_event)
+            assert evm_id is not None and solana_id is not None
+            links.append((
+                solana_id if source_is_solana else evm_id,
+                evm_id if source_is_solana else solana_id,
+                HistoryEventLinkType.BRIDGE_MATCH.serialize_for_db(),
+            ))
+        cursor.executemany(
+            'INSERT INTO history_event_links(left_event_id, right_event_id, link_type) '
+            'VALUES (?, ?, ?)',
+            links,
+        )
+
+    evm_leg = (SupportedBlockchain.ETHEREUM.serialize(), evm_address, str(tx_hash))
+    solana_leg = (SupportedBlockchain.SOLANA.serialize(), solana_address, str(signature))
+    source_leg, target_leg = (
+        (solana_leg, evm_leg) if source_is_solana else (evm_leg, solana_leg)
+    )
+    assert assert_proper_sync_response_with_result(requests.get(url)) == [{
+        'chain': source_leg[0],
+        'source': source_leg[1],
+        'target': target_leg[1],
+        'tx_hash': source_leg[2],
+        'target_chain': target_leg[0],
+        'target_tx_hash': target_leg[2],
+    }]
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])

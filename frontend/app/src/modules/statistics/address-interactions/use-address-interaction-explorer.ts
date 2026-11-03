@@ -20,6 +20,9 @@ interface InteractionStats {
 export interface AddressInteractionExplorer {
   modelAddress: Ref<string>;
   modelChain: Ref<string>;
+  modelBridgesOnly: Ref<boolean>;
+  /** Whether any pair is linked by a matched bridge, so the filter is worth offering. */
+  hasBridges: ComputedRef<boolean>;
   /** The picked chain, or `undefined` for all chains. */
   activeChain: ComputedRef<string | undefined>;
   modelMinTransactions: Ref<number>;
@@ -82,6 +85,7 @@ function isSameScene(a: InteractionScene, b: InteractionScene): boolean {
 export function useAddressInteractionExplorer(interactions: MaybeRefOrGetter<readonly AddressInteraction[]>): AddressInteractionExplorer {
   const { namedChain } = useInteractionLabels();
   const modelChain = shallowRef<string>('');
+  const modelBridgesOnly = shallowRef<boolean>(false);
   const minTransactions = shallowRef<number>(1);
   const selectedNodeId = shallowRef<string>();
   const selectedConnectionId = shallowRef<string>();
@@ -102,6 +106,7 @@ export function useAddressInteractionExplorer(interactions: MaybeRefOrGetter<rea
     return previous && isSameGraph(previous, next) ? previous : next;
   });
   const chains = computed<string[]>(() => [...new Set(get(graph).connections.flatMap(({ activity }) => activity.map(({ chain }) => chain)))].sort());
+  const hasBridges = computed<boolean>(() => get(graph).connections.some(({ isBridge }) => isBridge));
   const activeChain = computed<string | undefined>(() => get(modelChain) || undefined);
   const maxTransactions = computed<number>(() => Math.min(MAX_MIN_TRANSACTIONS, Math.max(1, ...get(graph).connections.map(({ txCount }) => txCount))));
   /** The chosen minimum, capped by what the data allows, so a smaller refresh never greys out everything. */
@@ -109,10 +114,10 @@ export function useAddressInteractionExplorer(interactions: MaybeRefOrGetter<rea
     get: () => Math.min(get(minTransactions), get(maxTransactions)),
     set: value => set(minTransactions, value),
   });
-  const hasFilters = computed<boolean>(() => !!get(activeChain) || get(modelMinTransactions) > 1);
+  const hasFilters = computed<boolean>(() => !!get(activeChain) || get(modelBridgesOnly) || get(modelMinTransactions) > 1);
   const drawn = computed<DrawnGraph>(() => drawGraph(get(graph), get(hiddenIds)));
   const scene = computed<InteractionScene>((previous) => {
-    const next = activateScene(get(drawn), { chain: get(activeChain), minTransactions: get(modelMinTransactions) });
+    const next = activateScene(get(drawn), { bridgesOnly: get(modelBridgesOnly), chain: get(activeChain), minTransactions: get(modelMinTransactions) });
     return previous && isSameScene(previous, next) ? previous : next;
   });
   const clusters = computed<InteractionCluster[]>(() => findClusters(get(drawn).connections));
@@ -264,6 +269,7 @@ export function useAddressInteractionExplorer(interactions: MaybeRefOrGetter<rea
 
   function resetFilters(): void {
     set(modelChain, '');
+    set(modelBridgesOnly, false);
     set(minTransactions, 1);
   }
 
@@ -279,10 +285,12 @@ export function useAddressInteractionExplorer(interactions: MaybeRefOrGetter<rea
     connections,
     focus,
     graph,
+    hasBridges,
     hasFilters,
     hideNode,
     maxTransactions,
     modelAddress,
+    modelBridgesOnly,
     modelChain,
     modelMinTransactions,
     path,
