@@ -1535,12 +1535,15 @@ class DBHandler:
             write_cursor: DBCursor,
             disabled_chain_queries: Mapping[SupportedBlockchain, frozenset[str]],
     ) -> None:
-        """Delete the last balances query timestamp of chains left with no active address.
+        """Delete the last balances query timestamp and cached balances of chains left with
+        no active address. That is the case when the whole chain is disabled or when every
+        tracked address of it is. A chain with some addresses still enabled is kept since those
+        are refreshed and update the timestamp.
 
-        Nothing refreshes it while no address of the chain is queried, so it would keep being
-        reported as the last refresh time. That is the case when the whole chain is disabled
-        or when every tracked address of it is. A chain with some addresses still enabled is
-        kept since those are refreshed and update the timestamp.
+        Nothing refreshes the timestamp while no address of the chain is queried, so it would keep
+        being reported as the last refresh time. The cached balances go with it since they are
+        priced using that timestamp, so keeping them would show them with a zero value once the
+        chain is enabled again, until its next refresh.
         """
         for chain, disabled_addresses in disabled_chain_queries.items():
             if len(disabled_addresses) != 0 and not {row[0] for row in write_cursor.execute(
@@ -1553,6 +1556,7 @@ class DBHandler:
                 name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
                 blockchain=chain.serialize(),
             )
+            self.delete_blockchain_balances_cache(write_cursor=write_cursor, blockchain=chain)
 
     def get_historical_balance_cache(
             self,

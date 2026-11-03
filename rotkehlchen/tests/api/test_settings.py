@@ -952,6 +952,11 @@ def test_disabling_chain_queries_removes_balances_query_ts(
             'INSERT INTO key_value_cache(name, value) VALUES(?, ?)',
             [(key, 1) for key in keys.values()],
         )
+        write_cursor.executemany(
+            'INSERT INTO blockchain_balances_cache(blockchain, address, asset, label, category, amount) '  # noqa: E501
+            'VALUES(?, ?, ?, ?, ?, ?)',
+            [(chain.serialize(), addresses[0], chain.get_native_token_id(), '', 'asset', '1') for chain in keys],  # noqa: E501
+        )
 
     assert_proper_response(requests.put(
         api_url_for(rotkehlchen_api_server, 'settingsresource'),
@@ -966,3 +971,16 @@ def test_disabling_chain_queries_removes_balances_query_ts(
         assert {row[0] for row in cursor.execute(
             "SELECT name FROM key_value_cache WHERE name LIKE '%_last_balances_query_ts'",
         )} == {keys[partially_disabled], keys[enabled]}
+        assert {row[0] for row in cursor.execute(
+            'SELECT blockchain FROM blockchain_balances_cache',
+        )} == {partially_disabled.serialize(), enabled.serialize()}
+
+    # re-enabling must not bring back unpriced cached balances without their timestamp
+    assert_proper_response(requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'disabled_chain_queries': {}}},
+    ))
+    with database.conn.read_ctx() as cursor:
+        assert {row[0] for row in cursor.execute(
+            'SELECT DISTINCT blockchain FROM blockchain_balances_cache',
+        )} == {partially_disabled.serialize(), enabled.serialize()}
