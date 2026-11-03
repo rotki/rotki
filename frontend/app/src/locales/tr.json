@@ -14,15 +14,21 @@
     "open_data_dir_tooltip": "Veri dizinini aç",
     "platform": "Platform:",
     "release_notes": "Yenilikler",
-    "user_agent": "Kullanıcı aracısı:"
+    "user_agent": "Kullanıcı aracısı:",
+    "version": "Sürüm"
   },
   "account_balance_table": {
     "liabilities": "Borçlar"
   },
   "account_balances": {
+    "accounts": "Hesaplar",
+    "addresses": "Adresler",
+    "asset_count": "{count} varlık | {count} varlık",
     "chain_filter": {
       "add": "\"{chain}\" zincirini filtreye ekle",
       "clear": "Tüm zincirleri etkinleştir",
+      "excluded": "hariç",
+      "more": "{count} zincir daha",
       "remove": "\"{chain}\" zincirini filtreden kaldır"
     },
     "confirm_delete": {
@@ -40,10 +46,17 @@
       "group": "{type} hesapları",
       "loading": "rotki blokzinciri sorgularken lütfen bekleyin..."
     },
+    "details_of": "{account} ayrıntıları",
     "detect_tokens": {
       "confirmation": {
         "message": "Her zincirdeki tüm EVM adreslerini tarar, bu biraz zaman alabilir.",
         "title": "Tüm zincirlerde tokenları yeniden tespit et"
+      },
+      "menu": {
+        "all_description": "Her EVM adresindeki tokenları tarayın",
+        "chains_description": "Taranacak zincirleri seçin",
+        "chains_title": "Belirli zincirlerde tokenları yeniden tespit et",
+        "section": "Tespit et"
       },
       "selection": {
         "redetect": "Yeniden tespit et",
@@ -53,6 +66,7 @@
         "type": "Zinciri yazın"
       },
       "tooltip": {
+        "detected": "{count} token tespit edildi",
         "disabled": "Ayarlar → Zincirler bölümünde atlandığı için rotki bunu sorgulamaz",
         "last_detected": "Son tespit: {time}",
         "redetect": "Tokenları yeniden tespit et"
@@ -63,12 +77,32 @@
       "tooltip": "Hesap tespiti bu adresi şu zincirlerde ekledi: {chains}. Kapatmak için tıklayın."
     },
     "edit_tooltip": "Hesabı düzenle",
+    "empty": {
+      "clear_filters": "Filtreleri temizle",
+      "description": "Bakiyelerini takip etmeye başlamak için bir adres ekleyin.",
+      "filtered_description": "Başka filtreler deneyin ya da tüm hesapları görmek için filtreleri temizleyin.",
+      "filtered_title": "Filtrelerle eşleşen hesap yok",
+      "title": "Henüz hesap yok"
+    },
     "enter_selection_mode": "Yok saymak veya spam olarak işaretlemek için genişletilmiş bir hesaptaki varlıkları seçin",
     "filter_field_labels": {
       "account": "Hesap",
       "chain": "Zincir"
     },
+    "open_details": "{account} ayrıntılarını aç",
     "per_chain": "Zincir bazında",
+    "refresh_menu": {
+      "label": "Yenileme seçenekleri",
+      "one_chain": "Tek bir zinciri yenile"
+    },
+    "row_menu": "Bu hesap için diğer işlemler",
+    "row_refresh": {
+      "chains": "{count} zincirinde",
+      "one_chain": "{chain} üzerinde",
+      "title": "Bakiyeleri yenile"
+    },
+    "show_all_assets": "{count} varlığın tümünü göster",
+    "show_top_assets": "Yalnızca ilk {count} varlığı göster",
     "skip_queries": {
       "chain_marker": "rotki bu hesabı {chain} zincirinde sorgulamaz",
       "chain_skipped": "atlandı",
@@ -79,7 +113,20 @@
       "resume": "Bu hesabı şu zincirlerde yeniden sorgula: {chains}",
       "resume_all": "Bu zinciri yeniden sorgula | {count} zincirin tümünü yeniden sorgula",
       "skip": "Bu hesap için şu zincirlerde bakiye ve geçmiş sorgularını atla: {chains}",
-      "skip_all": "Bu zincirdeki sorguları atla | {count} zincirin tümünü atla"
+      "skip_all": "Bu zincirdeki sorguları atla | {count} zincirin tümünü atla",
+      "title": "Sorguları atla"
+    },
+    "staleness": {
+      "never": "henüz yenilenmedi",
+      "oldest": "En eski: {chain}, {time}",
+      "skipped": "Sorgular atlandı",
+      "title": "Zincir başına son bakiye yenilemesi"
+    },
+    "xpub": {
+      "empty_hidden": "Bakiyesi olmayan {count} adres gizlendi. | Bakiyesi olmayan {count} adres gizlendi.",
+      "funded": "{count} adresten {funded} tanesinde bakiye var | {count} adresten {funded} tanesinde bakiye var",
+      "hide_empty": "Boş adresleri gizle",
+      "show_empty": "Göster"
     }
   },
   "account_form": {
@@ -105,6 +152,7 @@
       "multiple": "Birden fazla adres ekle"
     },
     "validation": {
+      "address_invalid": "{addresses} bu zincir için geçerli bir adres değil | {addresses} bu zincir için geçerli adresler değil",
       "address_non_empty": "Adres boş bırakılamaz",
       "xpub_non_empty": "XPUB alanı boş bırakılamaz"
     },
@@ -196,11 +244,13 @@
     "days": "{days} gün",
     "eth_staking_taxable_after_withdrawal_enabled": "ETH staking olayları, çekme etkinleştirilene kadar hesaba katılmaz:",
     "gas_costs": "Gas maliyetleri hesaba katıldı:",
+    "no": "Hayır",
     "past_cost_basis": "Rapor oluşturulurken geçmiş maliyet esası hesaplandı:",
     "profit_currency": "Kâr para birimi:",
     "subtitle": "Rapor oluşturulurken bu muhasebe ayarları kullanıldı",
     "tax_free_period": "Vergiden muaf dönem uygulandı:",
-    "title": "Muhasebe ayarları"
+    "title": "Muhasebe ayarları",
+    "yes": "Evet"
   },
   "accounting_overlay": {
     "balance_after": "Bu olaydan sonraki bakiye",
@@ -236,6 +286,7 @@
         "event_specific_exists": "Bu olay için zaten olaya özel bir kural var.",
         "for_all_similar": "Bu tür, alt tür ve karşı tarafa sahip tüm olaylar için",
         "general_rule_exists": "Bu olay türü için genel bir muhasebe kuralı var.",
+        "load_failed": "Bu olayın kuralları okunamadı",
         "no_rule_exists": "Bu olay için muhasebe kuralı yok.",
         "only_this_event": "Yalnızca bu olaya uygulanır",
         "override_general": "Bu olay için genel kuralı geçersiz kıl",
@@ -361,6 +412,7 @@
     }
   },
   "action_center": {
+    "blocking": "biri şu an sizi bekliyor",
     "button_checking": "Eylemler kontrol ediliyor",
     "button_clear": "Her şey yolunda",
     "checks_passed": "{count} kontrol başarılı | {count} kontrol başarılı",
@@ -370,6 +422,7 @@
     "locked": "Premium",
     "locked_hint": "Bunun için {tier} seviyesi gerekir.",
     "locked_hint_generic": "Bunun için rotki Premium planı gerekir.",
+    "mute": "Sessize al",
     "new": "Yeni",
     "new_count": "{count} yeni | {count} yeni",
     "remind_later": "Daha sonra hatırlat",
@@ -438,7 +491,13 @@
         "bank_authentication": {
           "action": "Kimlik doğrula",
           "description": "rotki'nin yeni işlemleri çekebilmesi için '{name}' adlı {location} bağlantısında erişimi onaylamanız gerekiyor.",
+          "start_over": "Yeni bir TAN ile baştan başla",
           "title": "Banka kimlik doğrulaması gerekli"
+        },
+        "bank_authentication_expired": {
+          "action": "Yeniden senkronize et",
+          "description": "Banka, {location} bağlantısı '{name}' için son TAN'ı reddetti ya da TAN'ın süresi doldu. Yenisini almak için yeniden senkronize edin.",
+          "title": "Banka kimlik doğrulamasının süresi doldu"
         },
         "binance_pairs_missing": {
           "action": "Parite seç",
@@ -450,6 +509,11 @@
           },
           "title": "{exchange} borsasındaki {name} hesabında piyasa çifti yok"
         },
+        "exchange_key_rejected": {
+          "action": "Anahtarı düzenle",
+          "description": "{exchange} anahtarı reddetti, bu yüzden bu hesabın bakiyeleri ya da geçmişi güncellenmiyor. Anahtarın {exchange} üzerindeki izinlerini kontrol edin ya da yeni bir anahtar girin.",
+          "title": "{exchange} üzerinde {name}: anahtar reddedildi"
+        },
         "gnosis_pay_safe_migration": {
           "do_not_show_again": "Bir daha gösterme",
           "suppress_confirm": {
@@ -459,7 +523,9 @@
         },
         "gnosis_pay_session": {
           "description": "Gnosis Pay işlemlerini içe aktarmaya devam etmek için yeniden giriş yapın.",
-          "title": "Gnosis Pay oturumunun süresi doldu"
+          "description_not_connected": "Gnosis Pay işlemlerinizin bazılarında yalnızca Gnosis Pay'in sağlayabildiği satıcı bilgileri eksik. Bunları eklemek için oturum açın.",
+          "title": "Gnosis Pay oturumunun süresi doldu",
+          "title_not_connected": "Gnosis Pay bağlı değil"
         },
         "missing_api_key": {
           "action": "Anahtar gir",
@@ -484,7 +550,15 @@
         },
         "monerium_session": {
           "description": "Monerium hareketlerini içe aktarmaya devam etmek için yeniden giriş yapın.",
-          "title": "Monerium oturumunun süresi doldu"
+          "description_not_connected": "Monerium transferlerinizin bazılarında yalnızca Monerium'un sağlayabildiği bilgiler eksik. Bunları eklemek için oturum açın.",
+          "title": "Monerium oturumunun süresi doldu",
+          "title_not_connected": "Monerium bağlı değil"
+        },
+        "oracle_penalized": {
+          "action": "Fiyat oracle'ları",
+          "description_errors": "{oracle} fiyat sorgularında sürekli hata verdi, bu yüzden fiyatlar şimdilik diğer oracle'lardan alınıyor. rotki {oracle} kaynağını kendiliğinden yeniden dener.",
+          "description_timeout": "{oracle} fiyat sorgularına yanıt vermeyi bıraktı, bu yüzden fiyatlar şimdilik diğer oracle'lardan alınıyor. rotki {oracle} kaynağını kendiliğinden yeniden dener.",
+          "title": "{oracle} bir süreliğine devre dışı bırakıldı"
         },
         "premium_inactive": {
           "description_device_limit": "Premium bu cihazda kapalı: {reason}",
@@ -505,14 +579,22 @@
       "assets": "Varlıklar",
       "chains": "Zincirler ve düğümler",
       "history": "Geçmiş",
-      "integrations": "Entegrasyonlar ve anahtarlar"
+      "integrations": "Entegrasyonlar ve anahtarlar",
+      "set_aside": "Kenara alınanlar"
+    },
+    "set_aside": {
+      "muted": "Sessize alındı",
+      "snoozed": "Ertelendi",
+      "snoozed_until": "{date} tarihine kadar ertelendi",
+      "toggle_hint": "Bu satırları göster ya da gizle"
     },
     "subtitle": "İncelenecek {count} kategori | İncelenecek {count} kategori",
     "subtitle_checking": "İlgilenmeniz gereken bir şey olup olmadığı kontrol ediliyor.",
     "subtitle_clear": "Her şey kontrol edildi.",
     "title": "Gereken eylemler",
     "title_checking": "Eylemler kontrol ediliyor",
-    "title_clear": "Gereken eylem yok"
+    "title_clear": "Gereken eylem yok",
+    "unmute": "Sessize almayı kaldır"
   },
   "actions": {
     "accounting_rules": {
@@ -818,6 +900,7 @@
       "success": {
         "action": "Çekilen işlemleri gör",
         "description": "{length} işlem yeniden çekildi",
+        "events_description": "{length} olay yeniden çekildi | {length} olay yeniden çekildi",
         "no_tx_description": "Hiçbir işlem yeniden çekilmedi"
       },
       "task": {
@@ -843,8 +926,13 @@
         }
       },
       "force_sync": {
+        "error": {
+          "message": "Senkronizasyon sırasında bir hata oluştu: {error}",
+          "title": "Zorla senkronizasyon"
+        },
         "success": {
           "message": "Veri senkronizasyonu başarıyla tamamlandı.",
+          "message_download": "Veri senkronizasyonu başarıyla tamamlandı. Geri yüklenen yedek, verilerinizi {date} tarihindeki haliyle içeriyor.",
           "title": "Zorunlu senkronizasyon"
         }
       },
@@ -944,6 +1032,12 @@
       "add_title": "Adres defteri kaydı ekle",
       "edit_title": "Adres defteri kaydını düzenle"
     },
+    "empty": {
+      "filtered": "Eşleşen kayıt yok",
+      "filtered_description": "Bu adres defterinde filtreyle eşleşen bir şey yok.",
+      "private": "Özel adres defteriniz boş",
+      "private_description": "\"Adres defteri kaydı ekle\" ile bir adrese isim verin ya da bir CSV dosyası içe aktarın."
+    },
     "filter_field_labels": {
       "address": "Adres",
       "chain": "Zincir",
@@ -978,6 +1072,7 @@
       "private_description": "adres defteri yalnızca bu hesap için kaydedilir."
     },
     "import": {
+      "description": "\"address\" ve \"name\" sütunlarını, isteğe bağlı olarak da \"blockchain\" ve \"location\" (global ya da private) sütunlarını içeren bir CSV dosyasından isim ekleyin. Konumu olmayan satırlar özel adres defterinize eklenir.",
       "import_error": {
         "invalid_format": "Geçersiz CSV biçimi. \"address\" ve \"name\" sütunlarını içermelidir.",
         "message": "Adres defteri adları içe aktarılırken hata oluştu: {error}"
@@ -987,12 +1082,79 @@
       },
       "title": "Adres defteri kayıtlarını içe aktar"
     },
+    "no_name": "—",
     "strict_blockchain_filter": {
       "hint": "Etkinse sonuçlar 'blokzincir filtresi' ile tam eşleşenlerle sınırlanır. Devre dışıysa sonuçlar, aynı zincir ailesinden adres biçimini kabul eden tüm blokzincirleri içerir (ör. filtre bir EVM zincirine ayarlanmışsa EVM tabanlı tüm zincirler).",
       "label": "Katı blokzincir filtresi"
     }
   },
+  "address_interactions": {
+    "all_chains": "Tüm zincirler",
+    "canvas_hint": "Yakınlaştırmak için kaydırın, gezinmek için sürükleyin. İncelemek için bir adres ya da bağlantı seçin.",
+    "clear_selection": "Seçimi temizle",
+    "cluster": {
+      "addresses": "{count} adres | {count} adres",
+      "heading": "Kümeler ({count})",
+      "help": "Aynı kümedeki adresler, zinciri okuyan herkes tarafından birbiriyle ilişkilendirilebilir.",
+      "no_weakest_link": "Kümeyi tek başına bir arada tutan bir işlem yok",
+      "show_all": "{count} kümenin tümünü göster",
+      "show_less": "Daha az göster",
+      "weakest_link": "En zayıf halka"
+    },
+    "connected_addresses": "Bağlı adresler ({count})",
+    "connection_summary": "{chain} · {count} ortak işlem | {chain} · {count} ortak işlem",
+    "connections": "Bağlantılar ({count})",
+    "decoded_events_hint": "Şimdiye kadar çözümlenen olaylara dayanır. Bağlantılar, işlemleri çözümlendikçe görünür.",
+    "empty": "Takip ettiğiniz adresler arasında etkileşim bulunamadı. İşlem geçmişinizi senkronize edip çözümleyin, sonra bu grafiği yenileyin.",
+    "error": "Adres etkileşimleri yüklenemedi.",
+    "filter_chain": "Zincire göre filtrele",
+    "filtered_out": "Bu filtrelerle eşleşen çift yok",
+    "fit_graph": "Grafiği sığdır",
+    "graph_help": "Her adres bir kez görünür. Herhangi bir zincirde ortak bir işlemi olan iki adres bir çizgiyle birleştirilir; daha kalın çizgiler daha fazla ortak işlem anlamına gelir.",
+    "graph_label": "Adres ağı",
+    "hide": "Grafikten gizle",
+    "legend": {
+      "few": "Az işlem",
+      "many": "Çok işlem",
+      "several_chains": "Gri: birden fazla zincir",
+      "title": "Açıklama"
+    },
+    "loading": "Adres etkileşimleri yükleniyor",
+    "min_transactions": "En az 1 ortak işlem | En az {count} ortak işlem",
+    "open_tx_in_history": "Bu işlemi geçmiş olaylarında aç",
+    "path": {
+      "find": "Şuraya yol bul…",
+      "linked": "Doğrudan bağlı | {count} adımda bağlı",
+      "linked_help": "Bu işlemleri takip eden herkes {from} adresini {to} adresiyle ilişkilendirebilir.",
+      "not_linked": "Bağlı değil",
+      "not_linked_help": "{from} adresini {to} adresine bağlayan bir işlem yok.",
+      "picking": "{address} adresine nasıl bağlı olduğunu görmek için başka bir adres seçin."
+    },
+    "premium": {
+      "description": "Adreslerinizden hangilerinin birbiriyle işlem yaptığını, oluşturdukları kümeleri ve onları birbirine bağlayan işlemleri görmek için premium'a geçin.",
+      "title": "Adreslerinizin nasıl etkileştiğini görün"
+    },
+    "reset_filters": "Filtreleri sıfırla",
+    "search": "Bir adres ya da isim bulun",
+    "select_connection": "{source} ile {target} arasındaki bağlantıyı seç",
+    "selected_address": "Seçili adres",
+    "selected_connection": "Bağlantı ayrıntıları",
+    "show_hidden": "Gizli {count} adresi göster | Gizli {count} adresi göster",
+    "show_more": "{count} tane daha göster",
+    "sorted_by_activity": "En çok ortak işlemi olanlar önce",
+    "stats": {
+      "addresses": "{count} adres | {count} adres",
+      "clusters": "{count} küme | {count} küme",
+      "muted": "{count} tanesi gri gösteriliyor",
+      "pairs": "{count} çift | {count} çift"
+    },
+    "transactions": "İşlemler ({count})",
+    "tx_count": "{count} işlem | {count} işlem",
+    "view_history": "Geçmiş olaylarını aç",
+    "view_in_history": "Geçmiş olaylarında görüntüle"
+  },
   "airdrops": {
+    "claim_by": "Son talep tarihi",
     "headers": {
       "source": "Kaynak"
     },
@@ -1020,7 +1182,12 @@
     }
   },
   "asset_balances": {
-    "loading": "rotki bakiyeleri sorgularken lütfen bekleyin..."
+    "loading": "rotki bakiyeleri sorgularken lütfen bekleyin...",
+    "no_match": {
+      "clear": "Aramayı temizle",
+      "description": "Burada \"{search}\" ile eşleşen bir şey yok. Başka bir isim ya da sembol deneyin.",
+      "title": "Eşleşen varlık yok"
+    }
   },
   "asset_details_layout": {
     "tab": {
@@ -1032,6 +1199,7 @@
     "add_error": "Varlık kaydedilemedi",
     "edit_error": "Varlık düzenlenemedi",
     "fetch_latest_icon": {
+      "failed": "Simge yenilenemedi",
       "title": "En son simgeyi al"
     },
     "help_coingecko": "CoinGecko tanımlayıcısını nasıl bulacağınızla ilgili yardım için tıklayın",
@@ -1052,6 +1220,7 @@
       "cryptocompare_hint": "Varlığın CryptoCompare üzerindeki tanımlayıcısı. Belirtilmezse varsayılan olarak sembol kullanılır. Bu işe yaramazsa ve başka bir değer ayarlanmamışsa rotki bu varlığın fiyatlarını CryptoCompare'den alamaz",
       "decimals": "Ondalık basamak",
       "forked": "Fork kaynağı",
+      "icon": "Simge",
       "rebasing": "Rebase eden token",
       "rebasing_hint": "Bakiyesi transfer olayı olmadan zamanla değişen tokenlar için etkinleştirin.",
       "started": "Başlangıç",
@@ -1100,6 +1269,7 @@
       "delete_error": "Eşleme silinemedi: {message}",
       "edit_error": "Eşleme düzenlenemedi: {message}",
       "edit_title": "Eşlemeyi düzenle",
+      "exchange_name": "Borsa bunu {name} olarak adlandırıyor",
       "form": {
         "asset_non_empty": "Tanınan varlık alanı boş bırakılamaz",
         "location_non_empty": "Konum alanı boş bırakılamaz",
@@ -1132,6 +1302,16 @@
     "edit_title": "Varlığı düzenle",
     "merge_assets": "Varlıkları birleştir",
     "merge_assets_tooltip": "İki varlığı tek bir varlıkta birleştir (özel varlıkları resmi olarak desteklenen varlıklara taşımak için kullanılabilir)",
+    "more": {
+      "descriptions": {
+        "cex_mapping": "Bir borsanın kullandığı sembolü rotki'nin bildiği varlıkla eşleyin.",
+        "counterparty_mapping": "Bir protokolün kullandığı sembolü rotki'nin bildiği varlıkla eşleyin.",
+        "missing_mappings": "rotki'nin henüz tanıyamadığı ve eşlenmeyi bekleyen borsa sembolleri.",
+        "newly_detected": "Hesaplarınızda bulunan tokenları inceleyin, sonra kabul edin ya da spam olarak işaretleyin.",
+        "solana_token_migration": "Eski biçimde kaydedilmiş Solana tokenlarını yeni biçime taşıyın ya da birleştirin."
+      },
+      "switch_tool": "Başka bir araca geç"
+    },
     "solana_token_migration": {
       "dialog_title": "Solana token taşıma",
       "merge_suggestion": {
@@ -1154,11 +1334,13 @@
   },
   "asset_mappings": {
     "error": {
+      "identifiers_more": "{identifiers} ve {count} tane daha",
       "message": "Şu tanımlayıcılar için varlık eşlemeleri alınamadı: {identifiers} ({message}) | Varlık eşlemeleri {count} kez alınamadı, en son şu tanımlayıcılar için: {identifiers} ({message})",
       "title": "Varlık ayrıntıları yüklenemedi"
     }
   },
   "asset_movement_matching": {
+    "action_failed": "Varlık hareketi güncellenemedi",
     "actions": {
       "auto_match": "Otomatik eşleştirmeyi başlat",
       "auto_match_tooltip": "Varlık hareketlerini miktar, varlık ve zaman damgasına göre karşılık gelen olaylarla otomatik olarak eşleştir.",
@@ -1200,10 +1382,15 @@
       "ignore": "Yok say",
       "ignore_tooltip": "Bu varlık hareketini karşılık gelen bir olayı olmayan hareket olarak işaretle.",
       "ignored_description": "Bu varlık hareketleri, karşılık gelen bir olayı olmayan hareketler olarak işaretlendikleri ya da bağlantılarını siz kaldırdığınız için otomatik eşleştirmenin dışında tutulur. Dilediğiniz zaman birini elle eşleştirebilir veya otomatik eşleştirmenin onu yeniden dikkate alması için geri yükleyebilirsiniz.",
+      "load_failed": {
+        "ignored": "Yok sayılan varlık hareketleri yüklenemedi",
+        "unmatched": "Eşleşmemiş varlık hareketleri yüklenemedi"
+      },
       "manual_action": "Manuel eylem",
       "mark_external": "Harici olarak işaretle",
       "mark_external_in_tooltip": "Bu yatırma işlemini takip edilmeyen bir kaynaktan gelen gelir olarak sonuçlandır; böylece yalnızca ücret değil, miktarın tamamı muhasebeleştirilir.",
       "mark_external_tooltip": "Bu çekme işlemini takip edilmeyen bir adrese yapılan ödeme olarak sonuçlandır; böylece yalnızca ücret değil, miktarın tamamı muhasebeleştirilir.",
+      "match_failed": "Eşleşmeler bağlanamadı",
       "matching_for": "Aşağıdaki varlık hareketi için eşleşmeler aranıyor.",
       "matching_hint": "Bağlamak için bir veya daha fazla olay seçebilirsiniz.",
       "no_ignored": "Yok sayılan varlık hareketi yok.",
@@ -1218,6 +1405,7 @@
       "restore": "Geri yükle",
       "restore_tooltip": "Bu varlık hareketini eşleşmeyenler listesine geri yükle.",
       "search_description": "Belirtilen ölçütlere uyan olayları arayın:",
+      "search_failed": "Eşleşme aranamadı",
       "select": "Seç",
       "select_match_title": "Eşleşen olayı seç",
       "selected": "Seçili",
@@ -1287,6 +1475,7 @@
     },
     "delete_tooltip": "Varlığı sil",
     "edit_tooltip": "Varlığı düzenle",
+    "enter_selection_mode": "Birlikte yok saymak, yok saymayı kaldırmak ya da spam olarak işaretlemek için varlıkları seçin",
     "filter_by_ignored_status": "Yok sayılma durumuna göre filtrele",
     "headers": {
       "started": "Başlangıç"
@@ -1300,6 +1489,7 @@
       "mark_as_spam": "Tokenı spam olarak işaretle",
       "mark_selected_as_spam": "Seçili tokenları spam olarak işaretle",
       "seen_during": "Görüldüğü yer",
+      "select_all_matching": "{count} tokenın tümünü seç",
       "subtitle": "Yeni tespit edilen tokenların listesini inceleyin ve istediğiniz varlıkları spam token listesine ekleyin",
       "token_type": "Token türü"
     },
@@ -1558,12 +1748,80 @@
     },
     "trade_location": {
       "banks": "Bankalar",
+      "bonds": "Tahviller",
+      "collectibles": "Koleksiyon öğeleri",
       "commodities": "Emtialar",
       "equities": "Hisse senetleri",
-      "external": "Harici"
+      "etf": "ETF'ler",
+      "external": "Harici",
+      "realestate": "Gayrimenkul"
     }
   },
   "backend_problems": {
+    "actions": {
+      "add_price": "Fiyat ekle",
+      "copy_details": "Ayrıntıları kopyala",
+      "report_issue": "Sorun bildir"
+    },
+    "count": "{count} sorun | {count} sorun",
+    "entry": {
+      "accounting_event": "Muhasebe olayı",
+      "addressbook_entry": "Adres defteri kaydı",
+      "asset": "Varlık",
+      "asset_update": "Varlık güncellemesi",
+      "balance_snapshot": "Bakiye anlık görüntüsü",
+      "blockchain_account": "Blokzincir hesabı",
+      "db_upgrade": "Veritabanı yükseltmesi",
+      "exchange_credentials": "Borsa kimlik bilgileri",
+      "history_event": "Geçmiş olayı",
+      "manually_tracked_balance": "Manuel bakiye",
+      "margin_position": "Marjin pozisyonu",
+      "market": "Piyasa",
+      "setting": "Ayar",
+      "tag": "Etiket",
+      "token_list": "Token listesi",
+      "transaction": "İşlem"
+    },
+    "feature": {
+      "asset": "Varlık türü",
+      "asset_update_schema": "Varlık güncelleme biçimi",
+      "exchange_strategy": "Borsa stratejisi",
+      "multi_trade": "Çok varlıklı alım satım",
+      "vault_collateral_type": "Kasa teminat türü"
+    },
+    "more": "+{count} tane daha gösterilmiyor",
+    "operation": {
+      "background_task": "Arka plan görevi",
+      "balance_query": "Bakiye sorgusu",
+      "data_migration": "Veri taşıma",
+      "decoder_initialization": "Çözümleyicinin başlatılması",
+      "module_activation": "Modül etkinleştirme",
+      "transaction_decoding": "İşlem çözümleme"
+    },
+    "price_batch": "Birkaç varlık",
+    "priced_at": "{date} tarihinde",
+    "record": {
+      "asset_movement": "Yatırmalar ve çekmeler",
+      "asset_update": "Varlık güncellemeleri",
+      "balance": "Bakiyeler",
+      "data_update": "Veri güncellemeleri",
+      "history_event": "Geçmiş olayları",
+      "market": "Piyasalar",
+      "node": "Düğüm",
+      "position": "Pozisyonlar",
+      "premium_backup": "Premium yedek",
+      "premium_limits": "Premium limitleri",
+      "protocol_cache": "Protokol verileri",
+      "trade": "Alım satımlar",
+      "transaction": "İşlemler",
+      "validator": "Doğrulayıcılar",
+      "wallet": "Cüzdanlar"
+    },
+    "repeats": "×{count}",
+    "seen": "bir kez görüldü | {count} kez görüldü",
+    "show_fewer": "Daha az göster",
+    "show_rest": "{count} tane daha göster",
+    "summary": "{problems}, {seen}",
     "title": {
       "bad_data": "Okunamayan veri",
       "balance_snapshot": "Bakiye anlık görüntüsü alınamadı",
@@ -1708,8 +1966,15 @@
   },
   "balance_divergence": {
     "action": "Sapmayı bul",
+    "apart": {
+      "days": "{count} gün arayla | {count} gün arayla",
+      "hours": "{count} saat arayla | {count} saat arayla",
+      "minutes": "bir dakikadan kısa arayla | {count} dakika arayla | {count} dakika arayla",
+      "rounded": "Yuvarlanmıştır. Yukarıdaki tarihler kesindir."
+    },
     "asset": "Varlık",
     "block": "Blok",
+    "block_range": "{from} → {to} blokları",
     "chain": "Zincir",
     "chain_missing_archive_node": "Bu kontrol için bir arşiv düğümü gerekir. {chain} için bağlı bir arşiv düğümü yok. {link} bölümünden bir tane ekleyin veya bağlayın.",
     "checked": "{probes} nokta kontrol edildi.",
@@ -1718,21 +1983,33 @@
     "first_diverged": "Sapma gösteren ilk olay",
     "last_matching": "Eşleşen son olay",
     "location_label": "Konum etiketi",
+    "match": "Eşleştir",
     "missing_group": "İşlem yok",
     "new_search": "Yeni arama",
     "no_checkpoints": "Bu zamana kadar takip edilen cüzdan bakiyesine ait kontrol noktası yok. Daha önce eksik kalmış bir alma ya da hatalı kaydedilmiş bir harcama olup olmadığını kontrol edin.",
     "no_divergence": "Aranan geçmişin sonunda takip edilen ve zincir üstü bakiyeler eşleşiyor. Bulunacak kalıcı bir sapma yok. {probes} nokta kontrol edildi.",
     "no_options": "Kullanılabilir EVM konum etiketi yok.",
     "onchain": "Zincir üstü",
+    "search_again": "Yeniden ara",
     "search_failed": "Son arama başarısız oldu. Ayrıntılar için etkinlik paneline bakın.",
+    "search_window": "Bu aralıkta ara",
     "settings_link": "RPC düğümü ayarları",
+    "status": {
+      "diverged": "Fark bulundu",
+      "diverged_from_start": "İlk olaydan itibaren farklı",
+      "no_checkpoints": "Karşılaştırılacak bir şey yok",
+      "no_divergence": "Fark bulunamadı"
+    },
     "title": "Bakiye sapmasını bul",
     "tracked": "Takip edilen",
+    "tracked_higher": "Farkın başladığı ilk olayda takip edilen bakiye zincirdekinden yüksek.",
+    "tracked_lower": "Farkın başladığı ilk olayda takip edilen bakiye zincirdekinden düşük.",
     "view_event": "Olayı görüntüle"
   },
   "bank_balances": {
     "add_bank": "Banka bağlantısı ekle",
     "connections": "Banka bağlantıları",
+    "connections_failed": "Banka bağlantıları yüklenemedi",
     "empty": {
       "description": "Bir banka hesabı bağlayın; rotki bakiyelerini ve işlemlerini doğrudan bu cihazdan okur. Hiçbir zaman para transferi yapmaz.",
       "supported": "Desteklenen bankalar",
@@ -1746,6 +2023,7 @@
     "status": {
       "authenticate": "Kimlik doğrula",
       "authentication": "TAN bekleniyor, bakiyeler güncel olmayabilir",
+      "expired": "Son TAN'ın süresi doldu, yenisini almak için yeniden senkronize edin",
       "failed": "Senkronize edilemedi: {error}",
       "review": "İncele",
       "synced": "{time} senkronize edildi"
@@ -1754,13 +2032,16 @@
   "bank_settings": {
     "authentication": {
       "continue": "Devam et",
+      "expired": "{error}. Banka bu isteğe artık yanıt kabul etmiyor: yenisini almak için yeniden senkronize edin.",
       "response": "TAN",
+      "sync_again": "Yeniden senkronize et",
       "tooltip": "Bankanızın istediği kimlik doğrulamasını tamamlayın"
     },
     "confirmation": {
       "message": "{name} adlı {bank} bağlantısını rotki'den kaldırmak istediğinizden emin misiniz? Bağlantının kimlik bilgileri ve senkronizasyon ilerlemesi silinir. Daha önce alınan işlemler korunur.",
       "title": "Onay gerekli"
     },
+    "connections_failed": "Banka bağlantıları yenilenemedi, bu yüzden liste güncel olmayabilir",
     "delete": {
       "tooltip": "Banka bağlantısını kaldır"
     },
@@ -1779,7 +2060,9 @@
     "errors": {
       "remove_message": "{name} adlı banka bağlantısı kaldırılamadı: {error}",
       "remove_title": "Banka bağlantısını kaldırma",
-      "setup_message": "{bank} bağlantısı kurulamadı: {error}"
+      "setup_message": "{bank} bağlantısı kurulamadı: {error}",
+      "start_over_message": "{name} için bekleyen kimlik doğrulaması iptal edilemedi: {error}",
+      "start_over_title": "Banka kimlik doğrulaması"
     },
     "form": {
       "bank": "Banka",
@@ -1799,7 +2082,9 @@
       "title": "Sınırlı banka geçmişi"
     },
     "subtitle": "rotki, burada girdiğiniz kimlik bilgileriyle her bankaya doğrudan bu bilgisayardan bağlanır. İşlemler geçmişinize, bakiyeler de net değerinize aktarılır.",
+    "supported_failed": "Desteklenen bankalar yüklenemedi, bu yüzden henüz banka eklenemiyor",
     "sync": {
+      "authentication_expired": "Kimlik doğrulamasının süresi doldu, yeniden senkronize edin",
       "authentication_required": "Kimlik doğrulaması gerekli",
       "failed": "Son senkronizasyon başarısız oldu",
       "never": "Hiç senkronize edilmedi",
@@ -1835,12 +2120,18 @@
   },
   "blockchain_balances": {
     "add_account": "Hesap ekle",
+    "add_bitcoin_account": "Bitcoin hesabı ekle",
+    "add_dogecoin_account": "Dogecoin hesabı ekle",
+    "add_evm_account": "EVM hesabı ekle",
+    "add_solana_account": "Solana hesabı ekle",
+    "add_substrate_account": "Substrate hesabı ekle",
     "add_validator_premium": "ETH staking doğrulayıcıları eklemek için rotki Premium planı gerekir.",
     "binance_warning": "Binance Smart Chain hesapları yalnızca ücretli bir Etherscan anahtarıyla tespit edilebilir.",
     "early_chain_warning": "rotki'nin {chain} entegrasyonu henüz erken aşamada: şimdilik bu zincirde yalnızca sınırlı sayıda protokol çözümleniyor. Diğer protokollere ait işlemler düz transfer olarak görünecek; zamanla daha fazla protokol eklenecek.",
     "eth_staking_limit_error": "Bu doğrulayıcıyı eklerseniz {currentTier} planınızın {limit} ETH olan ETH staking limitini aşarsınız. {link} ya da özel bir plan için bizimle iletişime geçerek limitinizi artırın.",
     "eth_staking_no_access": "{currentTier} planınız ETH staking içermiyor. {link} ya da özel bir plan için bizimle iletişime geçerek erişim elde edin.",
     "evm_detection": {
+      "description": "Adreslerinizin diğer EVM zincirlerindeki etkinliğini bulun ve onları oraya da ekleyin",
       "found": "{count} zincire eklendi | {count} zincire eklendi",
       "none": "Yeni zincir bulunamadı",
       "title": "EVM hesaplarını tespit et"
@@ -1852,7 +2143,8 @@
     "form_dialog": {
       "add_title": "Blokzincir hesabı ekle",
       "edit_subtitle": "Hesap ayrıntılarını değiştirin",
-      "edit_title": "Blokzincir hesabını düzenle"
+      "edit_title": "Blokzincir hesabını düzenle",
+      "import_action": "CSV'den içe aktar"
     },
     "group_label": "Blokzincir bakiyeleri",
     "import_blockchain_accounts": "Blokzincir hesaplarını içe aktar",
@@ -1862,6 +2154,10 @@
       "message": "Blokzincir hesapları içe aktarılırken hata oluştu: {error}"
     },
     "last_refresh_tooltip": "Blokzincir bakiyelerinin son yenilenme zamanı",
+    "refresh_menu": {
+      "prices": "Yalnızca fiyatları yenile",
+      "prices_description": "Zincirleri sorgulamadan en güncel fiyatları alın"
+    },
     "solana_warning": "Bu, ilk Solana entegrasyonudur. Şu anda yalnızca birkaç protokol destekleniyor, ancak zamanla daha fazlası eklenecek.",
     "tabs": {
       "accounts": "Hesaplar",
@@ -1870,10 +2166,12 @@
     "validator_index_label": "{index} numaralı Ethereum doğrulayıcısı",
     "validators": {
       "auto_detection_info": "Doğrulayıcılar ETH yatırma işlemlerinden otomatik olarak tespit edilir. Yatırmayı yapan adresi Ethereum hesabı olarak ekleyin, geçmiş olaylarını çözümleyin, ardından listeyi güncellemek için yenile düğmesine tıklayın.",
-      "consolidated": "Birleştirildiği doğrulayıcı:"
+      "consolidated": "Birleştirildiği doğrulayıcı:",
+      "enter_selection_mode": "Birlikte silmek için doğrulayıcıları seçin"
     }
   },
   "bridge_matching": {
+    "action_failed": "Köprü işlemi güncellenemedi",
     "actions": {
       "auto_match_tooltip": "Köprü işlemlerini miktar, varlık ve zaman damgasına göre diğer zincirdeki karşılık olaylarıyla otomatik olarak eşleştir.",
       "create_counterpart": "Karşılık olayı oluştur",
@@ -1898,6 +2196,10 @@
       "direction_out": "Köprü çıkışı",
       "ignore_tooltip": "Bu köprü işlemini karşılık gelen bir olayı olmayan işlem olarak işaretle.",
       "ignored_description": "Bu köprü işlemleri, karşılık gelen bir olayı olmayan işlemler olarak işaretlendikleri ya da bağlantılarını siz kaldırdığınız için otomatik eşleştirmenin dışında tutulur. Dilediğiniz zaman birini elle eşleştirebilir veya otomatik eşleştirmenin onu yeniden dikkate alması için geri yükleyebilirsiniz.",
+      "load_failed": {
+        "ignored": "Yok sayılan köprü işlemleri yüklenemedi",
+        "unmatched": "Eşleşmemiş köprü işlemleri yüklenemedi"
+      },
       "manual_action": "Manuel eylem",
       "mark_external": "Harici olarak işaretle",
       "mark_external_in_tooltip": "Bu köprü çekme işlemini harici (takip edilmeyen) bir kaynaktan gelen gelir olarak sonuçlandır.",
@@ -1929,6 +2231,7 @@
   "calendar": {
     "add_error": "Etkinlik eklenemedi: {message}",
     "add_event": "Etkinlik ekle",
+    "all_addresses": "Tüm adresler",
     "delete_error": {
       "message": "Etkinlik silinemedi: {message}"
     },
@@ -1937,6 +2240,7 @@
       "add": {
         "title": "Etkinlik ekle"
       },
+      "color": "Olay rengi",
       "delete": {
         "message": "Etkinliği silmek istediğinizden emin misiniz?"
       },
@@ -1961,7 +2265,9 @@
     },
     "go_to_date": "Tarihe git",
     "more_events": "{hidden} tane daha",
+    "next_month": "Sonraki ay",
     "no_events": "Etkinlik yok",
+    "previous_month": "Önceki ay",
     "reminder": {
       "add_error": {
         "message": "Hatırlatıcı eklenirken bir sorun oluştu: {message}",
@@ -2030,6 +2336,26 @@
       "password_mismatch": "Parola onayı girilen parolayla eşleşmiyor"
     }
   },
+  "claims": {
+    "account_awaiting": "{amount} talep edilmeyi bekliyor",
+    "claim_with": "Şununla talep et:",
+    "open_page": "Talep sayfasını aç",
+    "request": {
+      "ready": "Hazır",
+      "ready_on": "Beklemede, {date} tarihinde hazır",
+      "requested": "Beklemede, {date} tarihinde istendi"
+    },
+    "requests": "{protocol} çekme işlemi · {count} istek | {protocol} çekme işlemi · {count} istek",
+    "status": {
+      "pending": "Beklemede",
+      "ready": "Talep edilmeye hazır",
+      "unlocks": "{date} tarihinde açılır"
+    },
+    "tooltip": {
+      "pending": "{protocol} üzerinde {amount} beklemede",
+      "ready": "{protocol} üzerinde {amount} talep edilmeye hazır"
+    }
+  },
   "common": {
     "account": "Hesap",
     "actions": {
@@ -2048,6 +2374,7 @@
       "delete": "Sil",
       "discard": "Vazgeç",
       "dismiss": "Kapat",
+      "done": "Tamam",
       "download": "İndir",
       "download_csv": "CSV indir",
       "edit": "Düzenle",
@@ -2066,6 +2393,7 @@
       "retry": "Tekrar dene",
       "save": "Kaydet",
       "search": "Ara",
+      "select": "Seç",
       "select_all": "Tümünü seç",
       "show_less": "Daha az göster",
       "show_more_num": "{count} tane daha göster",
@@ -2080,10 +2408,12 @@
     "amount": "Miktar",
     "asset": "Varlık",
     "assets": "Varlıklar",
+    "backend_unreachable": "rotki'nin backend'i yanıt vermedi. Hâlâ çalıştığını kontrol edip yeniden deneyin.",
     "balance": "Bakiye",
     "blockchain": "Blokzincir",
     "category": "Kategori",
     "chain": "Zincirler",
+    "change_not_applied": "rotki'nin backend'i değişikliği uygulamadı.",
     "claimed": "Talep edildi",
     "counterparty": "Karşı taraf",
     "datetime": "Tarih/Saat",
@@ -2229,16 +2559,20 @@
         "description": "Yeni bir yerel rotki profiliyle sıfırdan başlayın.",
         "title": "Yeni hesap oluştur"
       },
+      "intro": "Profiller parolanızla şifrelenir, bu cihazda kalır ve rotki.com hesabınızdan ayrıdır. {documentation}",
       "restore": {
         "description": "Zaten rotki Premium kullanıcısı mısınız? Daha önce buluta senkronize ettiğiniz veritabanını geri yükleyin.",
         "title": "Bulut senkronizasyonundan geri yükle"
       }
     },
     "premium": {
+      "account_link": "rotki.com hesabınız",
       "button_premium_approve": "Evet, Premium'u etkinleştir",
+      "get_premium": "Premium edinin",
       "premium_question": "Zaten Premium kullanıcısı mısınız? API kimlik bilgilerinizle şimdi etkinleştirin. {premiumLink}",
       "restore_question": "Başka bir cihazdan senkronize ettiğiniz veritabanını indirmek için Premium API kimlik bilgilerinizi girin. Bunları {premiumLink} içinde bulabilirsiniz."
     },
+    "step_progress": "Adım {current} / {total}",
     "steps": {
       "step_1": {
         "description": "Nasıl başlamak istediğinizi seçin",
@@ -2296,7 +2630,9 @@
     "zar": "Güney Afrika randı"
   },
   "currency_drop_down": {
-    "profit_currency": "Kâr para birimi ({currency})"
+    "profit_currency": "Kâr para birimi ({currency})",
+    "search_placeholder": "Para birimlerinde ara",
+    "title": "Ana para birimi"
   },
   "customized_event_duplicates": {
     "actions": {
@@ -2335,6 +2671,7 @@
       "non_duplicated_description": "Bu olaylar yinelenen değil olarak işaretlendi ve kontrollerin dışında tutuluyor.",
       "title": "Yinelenen olaylar"
     },
+    "load_failed": "Yinelenenler yüklenemedi",
     "no_items": "Yinelenen olay bulunamadı.",
     "tabs": {
       "auto_fix": "Otomatik düzeltilebilir",
@@ -2351,6 +2688,7 @@
       },
       "categories": {
         "bitcoin": "Bitcoin adresi",
+        "dogecoin": "Dogecoin adresi",
         "evm": "EVM adresi",
         "solana": "Solana adresi",
         "substrate": "Substrate adresi"
@@ -2655,7 +2993,8 @@
     "no_assets": "Henüz varlık yok. İlk sorgu tamamlandığında bakiyeleriniz burada görünecek.",
     "no_search_result": "\"{search}\" araması sonuç vermedi.",
     "price_unknown": "Yapılandırdığınız fiyat oracle'larının hiçbirinde bu varlık için fiyat bulunamadı, bu nedenle varlık net değerinize dahil edilmiyor. Fiyat yöneticisinden manuel olarak fiyat belirleyebilirsiniz.",
-    "select_visible_columns": "Görünür sütunları seç"
+    "select_visible_columns": "Görünür sütunları seç",
+    "visible_columns": "Görünen sütunlar"
   },
   "data_issues": {
     "action": {
@@ -2701,6 +3040,8 @@
       "unmatched_bridge_withdrawal": "Eşleşmemiş {asset} köprü çekmesi. Manuel olarak eşleştirin."
     },
     "detail": {
+      "after_event": "Olaydan sonra",
+      "before_event": "Olaydan önce",
       "checked_customizations": "Kontrol edilen özelleştirilmiş işlemler",
       "comparison": {
         "added": "Eklendi",
@@ -2738,6 +3079,8 @@
       "divergence_scope": "Takip edilen cüzdan bakiyesini {date} tarihine kadar zincir üstü bakiyeyle karşılaştırır.",
       "event_date": "Etkilenen olay:",
       "match_in_history": "Geçmişte eşleştir",
+      "mismatch_cause": "Bazı {asset} işlemleri muhtemelen eksik ya da yanlış kaydedilmiş.",
+      "negative_balance_cause": "Daha önceki bir {asset} işlemi muhtemelen eksik ya da yanlış kaydedilmiş.",
       "no_attempts": "Henüz hiçbir otomatik kontrol veya düzeltme denenmedi.",
       "open_event": "#{id} olayını aç",
       "redecoding_failed": "rotki, özelleştirilmiş işlemleri mevcut çözümleyiciyle karşılaştıramadı. Kaydedilen olaylarınız değiştirilmedi.",
@@ -2746,7 +3089,13 @@
       "remediation_history": "Otomatik kontroller ve düzeltmeler",
       "resolution_note": "Çözüm notu",
       "title": "Sorun ayrıntıları",
+      "untracked_exchange_cause": "Bu olay, rotki'nin takip etmediği bir borsadan yapılan bir çekme işlemi. Borsayı takibe alıp geçmişini senkronize edin ya da olayı Alma / Ödeme olarak değiştirin.",
       "whats_wrong": "Sorun nedir"
+    },
+    "detect": {
+      "action": "Bakiyeleri kontrol et",
+      "error": "Bakiyeler zincirle karşılaştırılamadı: {error}",
+      "tooltip": "rotki'nin hesapladığı bakiyeleri son yenilemedeki zincir bakiyeleriyle karşılaştırır ve her farkı işaretler."
     },
     "empty": {
       "all_clear_subtitle": "Muhasebe verileriniz sağlıklı görünüyor. rotki sürekli kontrol eder ve bir sorun bulursa burada işaretler.",
@@ -2910,6 +3259,7 @@
     },
     "user_backups": {
       "backup_button": "Yeni yedek oluştur",
+      "enter_selection_mode": "Birlikte silmek için yedekleri seçin",
       "title": "Kullanıcı veritabanı yedekleri"
     }
   },
@@ -3005,6 +3355,7 @@
   },
   "event_asset_price_update": {
     "description": "Bu varlığın olayın zaman damgasındaki fiyatını ayarlayın.",
+    "fetch_error": "Mevcut fiyat yüklenemedi",
     "mode": {
       "manual": {
         "label": "Manuel olarak kaydet"
@@ -3015,6 +3366,7 @@
     },
     "price_error": "Fiyat pozitif bir sayı olmalıdır.",
     "price_label": "Fiyat ({symbol})",
+    "save_error": "Fiyat kaydedilemedi",
     "success": {
       "description": "Fiyat güncellendi.",
       "title": "Fiyat güncellendi"
@@ -3117,8 +3469,28 @@
   },
   "exchange_balances": {
     "add_exchange": "Borsa ekle",
+    "cards": {
+      "all": "Tüm borsalar",
+      "label": "Borsalar"
+    },
+    "empty": {
+      "connect": "Bir borsa bağlayın",
+      "description": "rotki borsa bakiyelerinizi salt okunur bir API anahtarıyla okur; anahtar bu makinede kalır.",
+      "popular": "Ya da şunlardan biriyle başlayın",
+      "title": "Bağlı borsa yok"
+    },
+    "empty_table": {
+      "description": "Son sorgu burada bir şey bulamadı. Borsayı yeniden sorgulamak için yenileyin.",
+      "title": "Bu borsada bakiye yok"
+    },
     "received_interest": "Alınan faiz",
     "received_interest_history": "Geçmiş",
+    "refresh_menu": {
+      "all": "Tüm borsaları yenile",
+      "exchange": "{exchange} borsasını yenile",
+      "section": "Tek bir borsa",
+      "title": "Diğer yenileme seçenekleri"
+    },
     "tabs": {
       "balances": "Bakiyeler",
       "savings_interest_history": "Tasarruf faizi geçmişi"
@@ -3210,6 +3582,11 @@
     "address": "Adresler",
     "block": "Bloklar",
     "chain_selector": "Blokzincir",
+    "custom": "Özel",
+    "customized": "Özel blok gezginleri:",
+    "default_url": "Varsayılan: {url}",
+    "none": "yok",
+    "reset": "Varsayılanlara sıfırla",
     "subtitle": "Adresler ve işlemler için harici gezgin URL'lerini ayarlayın",
     "title": "Blok gezginleri",
     "token": "Token",
@@ -3220,6 +3597,7 @@
       "authenticate": "Kimlik doğrula",
       "delete_key": "Anahtarı sil",
       "enter_api_key": "API anahtarı gir",
+      "manage": "Yönet",
       "reauthenticate": "Yeniden kimlik doğrula",
       "remove_authentication": "Kimlik doğrulamayı kaldır",
       "replace_key": "Anahtarı değiştir",
@@ -3284,7 +3662,13 @@
       "hint": "Etherscan API anahtarınızı girin",
       "title": "Etherscan"
     },
+    "get_key_from": "{service} API anahtarı alın",
     "gnosispay": {
+      "connected": {
+        "description": "rotki Gnosis Pay işlemlerinizi okuyabiliyor.",
+        "safes": "Gnosis Pay Safe",
+        "sign_in_again": "Yeniden oturum aç"
+      },
       "delete_confirmation": {
         "message": "Gnosis Pay kimlik doğrulamasını kaldırmak istediğinizden emin misiniz?",
         "title": "Kimlik doğrulamayı kaldır"
@@ -3292,11 +3676,18 @@
       "description": "İşlem verilerinize erişmek için Ethereum cüzdanınızı kullanarak Gnosis Pay ile kimlik doğrulaması yapın.",
       "errors": {
         "connection_failed": "Cüzdan bağlanamadı",
+        "hide_owners": "Safe sahiplerini gizle",
         "invalid_address": "Bu adres, hiçbir Gnosis Pay hesabı için zincir üstünde yönetici olarak kayıtlı değil. Zincir üstünde görünmeyen başka yetkili adresler olabileceğinden yine de girişe devam edebilirsiniz. Kayıtlı yönetici adresleri bilgi amacıyla aşağıda listelenmiştir.",
         "no_wallet_connected": "Bağlı cüzdan yok",
         "safe_wallet": "Safe cüzdanı:",
+        "show_owners": "Safe sahiplerini göster",
         "signature_rejected": "İmza isteği kullanıcı tarafından reddedildi",
         "unknown": "Bilinmeyen bir hata oluştu"
+      },
+      "no_safe": {
+        "action": "Safe'i Gnosis Chain'e ekle",
+        "description": "Gnosis Pay, kartınıza bağlı Safe üzerinden oturum açmanızı sağlar. Bu Safe'i bir Gnosis Chain hesabı olarak ekleyin, sonra buraya dönün.",
+        "title": "Önce Gnosis Pay Safe'inizi ekleyin"
       },
       "safe_migration": {
         "account_label": "Gnosis Pay Safe",
@@ -3313,8 +3704,14 @@
         "controlled_safe": "Kontrol edilen Gnosis Pay Safe hesapları:",
         "disconnect": "Cüzdan bağlantısını kes",
         "domain_notice": "Cüzdanınız, sitenin mesajdaki alan adıyla eşleşmediği konusunda uyarı verebilir. Bu beklenen bir durumdur: imza isteyen sayfa rotki.com üzerinden sunulmaz, ancak Gnosis Pay mesajda yalnızca rotki.com alan adını kabul eder. Onaylamadan önce mesajda Gnosis Pay adının geçtiğini ve adresin size ait olduğunu kontrol edin.",
+        "domain_notice_short": "Cüzdanınız siteyle ilgili bir uyarı gösterebilir; bu beklenen bir durumdur.",
+        "domain_notice_title": "Cüzdanınız neden uyarı verebilir",
         "explanation": "Gnosis Pay ile kimlik doğrulaması yapmak için Gnosis Pay Safe hesabını kontrol eden bir Ethereum cüzdanıyla mesaj imzalamanız gerekir.",
         "failed": "Gnosis Pay ile kimlik doğrulanamadı",
+        "mode_hint": {
+          "local_bridge": "Tarayıcınızdaki cüzdan eklentisini kullanır.",
+          "wallet_connect": "QR kod tarayarak bir mobil ya da masaüstü cüzdan bağlayın."
+        },
         "sign_explanation": "Kimliğinizi doğrulamak ve bir oturum belirteci oluşturmak için cüzdanınızla bir mesaj imzalayın.",
         "sign_message": "Kimlik doğrulamak için mesajı imzala",
         "step1_title": "Cüzdan modunu seç ve bağlan",
@@ -3349,6 +3746,12 @@
       "title": "Google Takvim",
       "token_required": "Lütfen geçerli bir erişim belirteci girin"
     },
+    "groups": {
+      "blockchain": "Blokzincir verileri",
+      "integrations": "Entegrasyonlar",
+      "prices": "Fiyatlar",
+      "staking": "Staking ve NFT'ler"
+    },
     "helius": {
       "api_key_message": "Geçmiş Solana işlemlerini sorgulamak için Helius API anahtarı gerekir.",
       "description": "Herkese açık RPC'lerin ağır istek sınırlarına takılmadan Solana işlem verilerini sorgulamak için önerilir.",
@@ -3365,12 +3768,25 @@
       "disconnected": "Monerium bağlantısı kesildi.",
       "error": "Monerium OAuth",
       "opening_browser": "Monerium yetkilendirmesini tamamlamak için tarayıcı açılıyor...",
+      "paste_tokens": "Açılan sayfada erişimi onaylayın, sonra orada gösterilen iki tokenı buraya yapıştırın.",
+      "privacy": "Tokenlar bu cihazda kalır ve yalnızca hesabınızı okumak için kullanılır.",
       "refresh_token": "Yenileme belirteci",
+      "reopen": "Sayfayı yeniden aç",
+      "start_over": "Baştan başla",
+      "steps": {
+        "approve": "rotki.com üzerinden Monerium'da oturum açın ve salt okunur erişimi onaylayın.",
+        "return_app": "Onayladığınızda rotki bağlantıyı otomatik olarak algılar.",
+        "return_web": "Orada gösterilen erişim ve yenileme tokenlarını buraya yapıştırın."
+      },
       "submit_token": "Belirteçleri gönder",
       "success": "Monerium OAuth",
       "title": "Monerium",
       "token_required": "Hem erişim hem de yenileme belirteci gereklidir.",
       "unknown_email": "bilinmeyen e-posta",
+      "waiting": {
+        "description": "Açılan tarayıcı penceresinde erişimi onaylayın; işiniz bitince bu pencere güncellenir.",
+        "title": "Onayınız bekleniyor"
+      },
       "website_url_missing": "Monerium OAuth web sitesi URL'si yapılandırılmamış."
     },
     "moralis": {
@@ -3395,6 +3811,13 @@
         "message": "{serviceName} için anahtar başarıyla güncellendi"
       }
     },
+    "set_up_count": "{total} hizmetten {count} tanesi kuruldu",
+    "set_up_only": "Yalnızca kurulanlar",
+    "status": {
+      "connected": "Bağlı",
+      "key_set": "Anahtar ayarlı",
+      "premium": "rotki Premium'a dahil"
+    },
     "subtitle": "rotki, geçmiş fiyatlar veya blokzincir verileri gibi bilgileri almak için çeşitli servis sağlayıcılarına bağlanır. Bazı durumlarda rotki temel bilgiler için bu API'lere bağımlıdır; bu durumda bir API anahtarı sağlamanız gerekir.",
     "thegraph": {
       "description": "rotki, Balancer bakiyeleri ve ENS verileri gibi çeşitli bilgileri almak için The Graph kullanır",
@@ -3407,6 +3830,11 @@
       "hint": "Dosyanızdaki tarih biçimi şu ise bunu kullanın: {format}",
       "placeholder": "Özel tarih biçimi girin",
       "switch_label": "Dosyanızı ayrıştırmak için özel tarih biçimi kullan"
+    },
+    "dropzone": {
+      "choose": "bir dosya seçin",
+      "prefix": "Sürükleyip bırakın ya da",
+      "replace": "dosyayı değiştir"
     },
     "import_complete": "İçe aktarma başarıyla tamamlandı.",
     "timezone": {
@@ -3424,7 +3852,10 @@
       }
     },
     "alias_names": {
+      "data_name": "isim kaynağı",
       "label": "Blokzincir adresleri için takma adı göster.",
+      "row_title": "Adres isimleri",
+      "saved": "Kaydedildi",
       "title": "Döndürülen adların önceliği aşağıdaki sırayı izler. Yukarıdan aşağıya doğru bulunan ilk ad gösterilir.",
       "validation": {
         "error": "Takma adların görünürlüğü değiştirilemedi"
@@ -3538,6 +3969,13 @@
       "validation": {
         "error": "Karıştırma modu ayarlanırken hata oluştu: {message}"
       }
+    },
+    "sections": {
+      "addresses": "Adresler",
+      "display": "Görünüm",
+      "graphs": "Grafikler",
+      "privacy": "Gizlilik",
+      "refresh": "Yenileme"
     },
     "title": "Yalnızca arayüz ayarları",
     "validation": {
@@ -3893,11 +4331,13 @@
       "end_date": "Bitiş tarihi",
       "start_date": "Başlangıç tarihi"
     },
+    "older": "Daha eski",
     "period": "Dönem",
     "sub_period": {
       "all": "Tümü"
     },
     "sub_period_label": "Dönem ayrıntıları",
+    "summary_all_time": "Şu ana kadarki her şey",
     "validation": {
       "empty_end_date": "Bitiş tarihi boş bırakılamaz",
       "empty_start_date": "Başlangıç tarihi boş bırakılamaz",
@@ -3905,6 +4345,12 @@
     }
   },
   "global_search": {
+    "asset_search_unavailable": "Varlık araması şu an kullanılamıyor",
+    "hints": {
+      "close": "kapat",
+      "navigate": "gezin",
+      "open": "aç"
+    },
     "no_actions": "Eylem bulunamadı",
     "search_placeholder": "Sayfalarda, ayarlarda ve varlıklarda arayın…"
   },
@@ -3982,6 +4428,11 @@
       },
       "subtitle": "Hata bildirin veya özellik isteyin",
       "title": "Sorun bildir"
+    },
+    "sections": {
+      "get_help": "Yardım al",
+      "more": "Diğer",
+      "report": "Sorun bildir"
     },
     "support": {
       "subtitle": "Aktif topluluğumuza katılın ve destek alın",
@@ -4266,6 +4717,7 @@
     "unignore_tooltip": "Seçili varlıkları yok saymayı bırak"
   },
   "import_data": {
+    "before_you_import": "İçe aktarmadan önce",
     "binance": {
       "api_history_note": "Daha eski etkinlikler için bu CSV'yi kullanın. Binance API senkronizasyonu yalnızca içe aktarılan en son kayıttan sonraki etkinlikleri, hiç CSV içe aktarılmadıysa da API anahtarının eklenmesinden sonraki etkinlikleri sorgular.",
       "line_one": "İşlediğimiz sütunlar şunlardır: User_ID, UTC_Time, Account, Operation, Coin, Change ve Remark.",
@@ -4310,7 +4762,9 @@
       "import_trade": "alım satımları",
       "import_transactions": "işlemleri",
       "line_one": "[Deneysel] İçe aktarılan verilerde bir sorun fark ederseniz kodu buna göre uyarlayabilmemiz için bize bildirin.",
-      "name": "BlockFi"
+      "name": "BlockFi",
+      "trades_file": "Alım satım raporu: yalnızca alım satımları içeren dışa aktarma dosyası.",
+      "transactions_file": "İşlem geçmişi: yatırmalar, çekmeler, faiz ve bonuslar. İçindeki alım satımlar atlanır, bu yüzden onları alım satım raporundan içe aktarın."
     },
     "blockpit": {
       "line_one": "Blockpit'ten içe aktarılan alım satımlar alış olarak değerlendirilir; örneğin USD karşılığında ETH satışı, ETH ile USD alışı olarak gösterilir.",
@@ -4339,6 +4793,8 @@
     "custom": {
       "import_events": "Olayları içe aktar",
       "import_trades": "Alım satımları içe aktar",
+      "migration_assistant": "rotki'nin doğrudan içe aktaramadığı bir hizmetten mi dışa aktarıyorsunuz? {link}, o hizmetin CSV dosyasını bu biçimlere dönüştürür. Tamamen tarayıcınızda çalışır ve sunucuya hiçbir veri göndermez.",
+      "migration_assistant_link": "Taşıma yardımcısı",
       "name": "Özel içe aktarma"
     },
     "description": "Aşağıdaki servislerden verileri, dosyayı ilgili alana sürükleyerek veya seç düğmesine tıklayarak manuel olarak içe aktarabilirsiniz.",
@@ -4356,7 +4812,10 @@
     },
     "notice": "Bu platformlar biçimlerini oldukça sık ve geriye dönük uyumsuz şekilde değiştirebilir. Bu nedenle bu içe aktarma çalışmayı durdurabilir. Böyle bir durumda {link}, biz de neler yapabileceğimize bakalım.",
     "notice_link": "rotki için bir sorun kaydı açın",
+    "parsing_options": "Ayrıştırma seçenekleri",
+    "parsing_options_active": "Ayrıştırma seçenekleri ({count} açık)",
     "select_source": {
+      "hint": "Dosyanızın nereden geldiğini seçin ya da yukarıda arayın.",
       "title": "Kaynak seçin"
     },
     "shapeshift": {
@@ -4450,6 +4909,7 @@
       "description": "rotki, Kraken staking ödüllerinizi salt okunur bir API anahtarıyla okur. Ne kazandığınızı görmek için bir tane ekleyin.",
       "title": "Staking bilgilerinizi görmek için Kraken'ı bağlayın"
     },
+    "fetch_failed": "Kraken staking olayları yüklenemedi",
     "loading": "Kraken staking bilgileriniz yükleniyor...",
     "no_premium": "Kraken staking bilgileri için rotki Premium planı gerekir"
   },
@@ -4546,11 +5006,16 @@
       "label": "Backend URL'si",
       "placeholder": "http://localhost:4242",
       "session_only": "Yalnızca bu oturum için kaydet",
+      "toggle": "Backend ayarları",
       "tooltip": "Farklı bir rotki backend'ine bağlan",
       "validation": {
         "non_empty": "Özel backend URL'si boş bırakılamaz",
         "url": "Girilen değer geçerli bir URL biçiminde değil"
       }
+    },
+    "description": {
+      "intro": "Yerel rotki profilinizde oturum açın. {documentation}",
+      "learn_more": "Profiller nasıl çalışır"
     },
     "incomplete_upgrade_error": {
       "abort": "İptal et",
@@ -4598,6 +5063,7 @@
   "manage_user_assets": {
     "export": {
       "button": "Dışa aktar",
+      "failed": "Özel varlıklar dışa aktarılamadı",
       "subtitle": "Varlıklarınızın zip arşivini oluşturun",
       "success": "Arşiv başarıyla oluşturuldu: {filePath}",
       "title": "Dışa aktar"
@@ -4765,6 +5231,7 @@
     },
     "all_accounts": "Tüm adresler",
     "filter": "Modül ara",
+    "no_match": "Aramayla eşleşen modül yok",
     "select_accounts_hint": "Her alt modül için verilerin alınacağı hesapları seçin. Hiçbir adres seçilmezse veriler mevcut tüm adresler için alınır",
     "some_accounts": "{number} adres",
     "table": {
@@ -4786,6 +5253,9 @@
         "pool_details": {
           "premium_only": "rotki Premium planıyla tüm varlıklarınıza eksiksiz bir genel bakış elde edin"
         },
+        "pool_icon": {
+          "more": "Bu havuzda {count} varlık daha"
+        },
         "pool_table": {
           "title": "LP tokenları"
         }
@@ -4796,6 +5266,7 @@
     "accounts": "Hesaplar",
     "accounts_sub": {
       "bitcoin": "Bitcoin hesapları",
+      "dogecoin": "Dogecoin @:navigation_menu.accounts",
       "evm": "EVM hesapları",
       "solana": "Solana hesapları",
       "substrate": "Substrate hesapları"
@@ -4867,6 +5338,7 @@
     "staking": "Staking",
     "statistics": "İstatistikler",
     "statistics_sub": {
+      "address_interactions": "Adres Etkileşimleri",
       "graphs": "Grafikler",
       "historical_balances": "Geçmiş bakiyeler",
       "history_events": "Olay analizi",
@@ -4903,6 +5375,7 @@
     "select_account": "Hesap seç",
     "select_collection": "Koleksiyon seç",
     "sort": {
+      "by": "Sıralama ölçütü",
       "collection": "Koleksiyon"
     }
   },
@@ -4940,22 +5413,34 @@
     "refresh": "Bakiyeleri yenile"
   },
   "notes_menu": {
+    "add": "Not ekle",
     "delete_confirmation": "Bu notu silmek istediğinizden emin misiniz?",
     "dialog": {
       "add_title": "Not ekle",
       "edit_title": "Notu düzenle"
+    },
+    "empty": {
+      "action": "Bir not ekleyin",
+      "description": "Hatırlatmaları ve bağlamı verilerinizin yanında tutun. Notlar hesabınızla birlikte kaydedilir.",
+      "title": "Henüz not yok"
     },
     "labels": {
       "content": "Not alın...",
       "title": "Başlık"
     },
     "last_updated": "Son güncelleme: {datetime}",
+    "no_match": {
+      "action": "Aramayı temizle",
+      "description": "Başka kelimeler deneyin ya da tüm notlarınızı görmek için aramayı temizleyin.",
+      "title": "\"{search}\" ile eşleşen not yok"
+    },
     "rules": {
       "content": {
         "non_empty": "Lütfen notu doldurun"
       }
     },
     "search": "Ara",
+    "search_placeholder": "Notlarda ara",
     "tabs": {
       "general": "Genel",
       "in_this_page": "\"{page}\" sayfasında ",
@@ -5007,12 +5492,26 @@
       "message": "Bu eylem tüm etkin bildirimleri temizleyecek. Devam etmek istiyor musunuz?",
       "title": "Etkin bildirimleri temizle"
     },
+    "day": {
+      "today": "Bugün",
+      "yesterday": "Dün"
+    },
+    "empty": {
+      "description": "Senkronizasyon sonuçları, uyarılar ve hatalar oluştukça burada görünür.",
+      "title": "Tüm bildirimleri gördünüz"
+    },
     "message_overflow": "Alınan bildirimlerin toplam sayısı 200 sınırını aştı. Eski bildirimler kaldırıldı.",
+    "mute": "Sessize al",
+    "muted": "Sessize alınanlar ({count})",
+    "problems": "Sorunlar ({count})",
+    "show_less": "Daha az göster",
+    "show_more": "Daha fazla göster",
     "silent": {
       "off": "Bildirim açılır pencerelerini sessize al",
       "on": "Açılır pencereler sessize alındı. Yeniden izin vermek için tıklayın"
     },
     "title": "Bildirimler",
+    "unmute": "Sessize almayı kaldır",
     "view_calendar": "Takvimi görüntüle"
   },
   "oracle_cache_management": {
@@ -5043,6 +5542,8 @@
       }
     },
     "cache": {
+      "add": "Önbellek ekle",
+      "add_subtitle": "Bir paritenin tüm geçmiş fiyatlarını bir oracle'dan tek seferde alın; böylece raporlar ve grafikler oracle'ı her gün için ayrı ayrı sorgulamak yerine fiyatları yerelden okur.",
       "delete": {
         "error": "{fromAsset}/{toAsset} çifti için önbellek temizlenemedi: {error}",
         "message": "{source} üzerindeki {fromAsset}/{toAsset} çifti için önbelleğe alınmış tüm fiyatları silmek istediğinizden emin misiniz?",
@@ -5060,10 +5561,12 @@
         "to_asset": "Hedef varlık",
         "to_date": "Bitiş tarihi"
       },
+      "hint": "rotki'nin, gösterilen iki tarih arasındaki tüm fiyat geçmişini bir oracle'dan alıp sakladığı pariteler. Birini silerseniz rotki bu fiyatları yeniden ihtiyaç duyulduğunda gün gün alır.",
       "notification": {
         "success": "{source} üzerinde {fromAsset}/{toAsset} çifti için önbellek başarıyla oluşturuldu",
         "title": "Oracle önbelleği oluşturma"
-      }
+      },
+      "refresh_tooltip": "Oracle önbellek listesini yenile"
     },
     "delete": {
       "dialog": {
@@ -5094,6 +5597,7 @@
     "headers": {
       "source": "Kaynak"
     },
+    "hint": "rotki'nin fiyat oracle'larından alıp sakladığı fiyatlar. Birini düzenlemek, rotki'nin o zaman için kullandığı fiyatı değiştirir; birini silmek, rotki'nin bir sonraki ihtiyaçta onu yeniden almasını sağlar.",
     "refresh_tooltip": "Oracle fiyat listesini yenile",
     "settings_tooltip": "Fiyat oracle'ı ayarları: hangi oracle'ların hangi sırayla kullanılacağını seçin",
     "sources": {
@@ -5241,6 +5745,7 @@
       "check_problematic_event": "Bu ve önceki olaylarda tutarsızlık olup olmadığını kontrol edin",
       "click_to_open_snapshot": "Bu anlık görüntüyü açmak için tıklayın",
       "current_balances_no_snapshot": "Henüz anlık görüntü olmadığı için güncel bakiyeler",
+      "data_starts_on": "{symbol} verileri {date} tarihinde başlıyor",
       "discrepancy": {
         "amount_from_current_balance": "Güncel bakiyedeki miktar",
         "amount_from_last_event": "Son olaydaki miktar",
@@ -5278,9 +5783,15 @@
       "fetching_graph_daily_data": "Grafik için günlük veriler getiriliyor ({processed}/{total})",
       "fetching_graph_data": "Grafik verileri getiriliyor",
       "history_events_no_data": "Geçmiş olaylarının işlenmesinden gösterilebilecek veri yok.",
+      "holdings_value": "Varlıklarınızın {currency} cinsinden değeri",
+      "liability_holdings_value": "Borçlarınızın {currency} cinsinden değeri",
+      "more_history_events": "Bu geçmiş olaylarınızdan oluşturulur. Daha geriye uzatmak için daha eski olayları içe aktarın ya da çekin.",
+      "more_history_snapshot": "Bu geçmiş ilk bakiye anlık görüntünüzle başlıyor. Bunun yerine olaylarınızdan yeniden oluşturmak için kaynağı geçmiş olaylarına çevirin.",
       "negative_amount_detected": "Geçmiş veriler işlenirken negatif miktar tespit edildi.",
       "net_value": "Net değer",
       "no_balance_snapshot_data_available": "Bakiye anlık görüntüsü verisi yok.",
+      "now": "Şimdi",
+      "open_history_events": "Geçmiş olaylarını aç",
       "others": "Diğerleri",
       "others_count": "{count} tane daha",
       "range_selector": {
@@ -5294,18 +5805,25 @@
       "search_asset_to_see_graph_description": "Miktarının, fiyatının ve değerinin zaman içinde nasıl değiştiğini görmek için varlıklarınızdan birini seçin.",
       "select_asset": "Varlık ara",
       "series": {
+        "liability_value": "Borç değeri",
         "price": "Fiyat",
-        "snapshot_amount": "Anlık görüntü miktarı"
+        "snapshot_amount": "Anlık görüntü miktarı",
+        "snapshot_value": "Anlık görüntü değeri"
       },
       "show_all": "{count} öğenin tümünü göster",
       "show_less": "Daha az göster",
+      "snapshot_holdings_value": "Varlıklarınızın {currency} cinsinden anlık görüntü değeri",
       "snapshot_taken": "Anlık görüntü tarihi",
       "some_prices_are_missing": "Fiyatlar eksik olduğu için bazı noktalar gizlendi.\nFiyatları almayı denemek için \"Fiyatları getir\" düğmesine tıklayın.",
+      "source_events": "Geçmiş olayları",
+      "source_snapshots": "Anlık görüntüler",
       "timeframe_custom": "Özel",
       "total": "Toplam",
       "value_distribution_by_asset": "Varlığa göre değer dağılımı",
       "value_distribution_by_location": "Konuma göre değer dağılımı",
-      "warnings": "{count} uyarı | {count} uyarı"
+      "warnings": "{count} uyarı | {count} uyarı",
+      "your_holdings": "{symbol} varlıklarınız",
+      "your_liabilities": "{symbol} borçlarınız"
     },
     "theme_manager": {
       "dark_theme": "Koyu tema",
@@ -5334,6 +5852,8 @@
     }
   },
   "premium_devices": {
+    "at_limit": "Cihaz sınırına ulaştınız. Yeni bir cihazda oturum açmak için bir cihazı kaldırın.",
+    "count": "{current} / {limit}",
     "delete": {
       "error": {
         "title": "Silinemedi"
@@ -5341,6 +5861,7 @@
       "message": "\"{device}\" cihazını silmek istediğinizden emin misiniz?",
       "title": "Cihazı sil"
     },
+    "description": "Bu abonelikle oturum açmış cihazlar.",
     "fetch": {
       "error": {
         "title": "Cihazlar yüklenemedi"
@@ -5368,13 +5889,16 @@
     "refresh": "Cihazları yenile",
     "table": {
       "actions": {
+        "delete_current_tooltip": "Bu, kullandığınız cihaz; bu yüzden buradan kaldırılamaz",
         "delete_tooltip": "Cihazı sil",
         "edit_tooltip": "Cihazı düzenle"
       },
       "current_device": "Bu cihaz",
       "headers": {
+        "device": "Cihaz",
         "last_seen": "Son görülme"
-      }
+      },
+      "user_platform": "{platform} üzerinde {user}"
     },
     "title": "Premium cihazlar"
   },
@@ -5424,8 +5948,67 @@
       "api_secret": "API gizli anahtarı"
     },
     "get": "Premium'a geç",
+    "limits": {
+      "backup": "Bulut yedeği",
+      "backup_value": "{size} MB",
+      "devices": "Cihazlar",
+      "eth_staked": "Takip edilen stake edilmiş ETH",
+      "eth_staked_value": "{amount} ETH",
+      "history_events": "Geçmiş olayları",
+      "pnl_events": "Kâr/zarar raporu olayları",
+      "reports": "Kaydedilen raporlar"
+    },
     "manage_or_upgrade": "Aboneliği yönet veya yükselt",
+    "status": {
+      "active": "Etkin"
+    },
+    "subscription": {
+      "credentials_saved": "API kimlik bilgileri bu cihazda kayıtlı.",
+      "replace_hint": "Yeni anahtarı ve gizli anahtarı girin. Yeni anahtar doğrulanana kadar mevcut anahtar kullanılmaya devam eder.",
+      "title": "Abonelik"
+    },
+    "sync": {
+      "description": "Verilerinizin şifreli bir kopyasını rotki sunucusunda tutun.",
+      "last_upload": "Son gönderim",
+      "never": "Hiç",
+      "title": "Veri senkronizasyonu"
+    },
     "title": "rotki Premium",
+    "upsell": {
+      "activate": "Etkinleştir",
+      "description": "Portföyünüzün zamanla nasıl büyüdüğünü görün, paranızın nereye gittiğini anlayın ve verilerinizi her cihazda güvenle yedekli tutun; verileriniz bu sırada gizli kalır ve makinenizde durur.",
+      "features": {
+        "graphs": {
+          "description": "Net değerinizi ve her varlığı zaman içinde takip edin.",
+          "title": "Grafikler ve istatistikler"
+        },
+        "limits": {
+          "description": "Daha büyük kâr/zarar raporları ve daha fazla geçmiş olayı.",
+          "title": "Daha yüksek limitler"
+        },
+        "matching": {
+          "description": "Borsalar ve cüzdanlar arasındaki yatırma ve çekme işlemlerini eşleştirin.",
+          "title": "Hareket eşleştirme"
+        },
+        "mcp": {
+          "description": "Yapay zekâ asistanlarının rotki verilerinizi sorgulamasına izin verin ve ne kadarının maskeleneceğini seçin.",
+          "title": "Yapay zekâ asistanları (MCP)"
+        },
+        "staking": {
+          "description": "Doğrulayıcılarınızı, ödüllerinizi ve çekme işlemlerinizi takip edin.",
+          "title": "ETH staking"
+        },
+        "sync": {
+          "description": "Şifreli yedekler ve her cihazda aynı veriler.",
+          "title": "Yedekleme ve senkronizasyon"
+        }
+      },
+      "see_plans": "Planları ve fiyatları görün",
+      "subscribed_description": "rotki.com'daki hesabınızdan aldığınız API anahtarını ve gizli anahtarı girin.",
+      "subscribed_title": "Zaten abone misiniz?",
+      "supports": "Her abonelik rotki'nin açık kaynak olarak geliştirilmesini destekler",
+      "title": "rotki'nin tüm olanaklarından yararlanın"
+    },
     "validation": {
       "api_key": {
         "non_empty": "API anahtarı boş bırakılamaz"
@@ -5470,10 +6053,12 @@
     },
     "from_asset": "Kaynak varlık",
     "historic": {
-      "add_title": "Manuel geçmiş fiyat ekle"
+      "add_title": "Manuel geçmiş fiyat ekle",
+      "hint": "Bir varlık için belirli bir zamanda geçerli olacak şekilde belirlediğiniz fiyatlar. rotki, geçmiş kayıtlarında ve kâr/zarar raporlarında o zamana ait fiyatı almak yerine belirlediğiniz fiyatı kullanır."
     },
     "latest": {
-      "add_title": "Manuel güncel fiyat ekle"
+      "add_title": "Manuel güncel fiyat ekle",
+      "hint": "Bir varlık için belirlediğiniz güncel fiyatlar. Hiçbir oracle'da fiyatı bulunmayan ya da alınan fiyatı yanlış olan varlıklar için rotki, aldığı fiyat yerine belirlediğiniz fiyatı kullanır."
     },
     "to_asset": "Hedef varlık"
   },
@@ -5536,6 +6121,7 @@
     "edit_historic_price": "Geçmiş fiyatı güncelle",
     "edit_price_warning": "Güncellenen fiyatı rapor olaylarında görmek için raporu yeniden oluşturmanız gerekir.",
     "headers": {
+      "event": "Olay",
       "pnl_free": "Vergiden muaf PnL",
       "pnl_taxable": "Vergiye tabi PnL",
       "tax_free_amount": "Vergiden muaf miktar",
@@ -5544,6 +6130,7 @@
     "same_action": "Bu olaylar aynı eylem içinde gerçekleşir"
   },
   "profit_loss_overview": {
+    "empty": "Bu dönemde vergiye tabi ya da vergiden muaf kâr veya zarar yok.",
     "headers": {
       "tax_free_profit_loss": "Vergiden muaf kâr/zarar",
       "taxable_profit_loss": "Vergiye tabi kâr/zarar"
@@ -5597,12 +6184,14 @@
       "stale_details": "Eksik fiyat ve eksik edinim ayrıntıları yalnızca en son oluşturulan rapor için saklanır. Bunları incelemek için bu raporu yeniden oluşturun."
     },
     "binance_markets_alert": "Aşağıdaki Binance borsaları için piyasa çiftleri yapılandırılmamış: \n{exchanges}.\n\n Lütfen rapor oluşturmadan önce piyasa çiftlerini yapılandırın.",
+    "cancel_generation": "Oluşturmayı durdur",
     "csv_export_error": "Dışa aktarma sırasında bir hata oluştu",
     "download_failed": "Rapor indirilemiyor",
     "error": {
       "subtitle": "Bir hata nedeniyle rapor oluşturulamadı",
       "title": "Kâr/zarar raporu oluşturma"
     },
+    "generate_title": "Rapor oluştur",
     "go_to_exchanges": "Borsa ayarlarına git",
     "loading": "Kâr/zarar raporunuz yüklenirken lütfen bekleyin",
     "loading_hint": "Seçilen dönemde gerçekleştirdiğiniz alım satım ve diğer işlemlerin sayısına bağlı olarak raporunuzun oluşturulması biraz zaman alabilir.",
@@ -5610,11 +6199,13 @@
     "out_of_sync_alert": "Geçmiş olaylarınızın verileri güncel değil. Lütfen rapor oluşturmadan önce geçmiş olaylarınızı güncelleyin.",
     "processing_alert": "Geçmiş olayları şu anda işleniyor (%{percentage}). Lütfen işleme tamamlanana kadar bekleyin.",
     "report_period": "Rapor dönemi: {start} - {end}",
+    "settings": "Muhasebe ayarları",
     "sync_history": "Geçmişi şimdi senkronize et"
   },
   "profit_loss_reports": {
     "columns": {
       "created": "Oluşturulma tarihi",
+      "period": "Dönem",
       "taxable_profit_loss": "Vergiye tabi kâr/zarar",
       "taxfree_profit_loss": "Vergiden muaf kâr/zarar"
     },
@@ -5679,10 +6270,15 @@
     "all_address_queried": "{module} modülü için tüm Ethereum adresleri sorgulanıyor. Yalnızca belirli adresleri sorgulamak için onları ekleyin.",
     "remove_tooltip": "Adresi sorgulanan adreslerden kaldır",
     "subtitle": "rotki'nin {module} modülü için sorgulayacağı Ethereum adreslerini seçin",
-    "title": "Sorgulanan adresler"
+    "title": "Sorgulanan adresler",
+    "untracked": "Artık takip edilen bir hesap değil"
   },
   "reports_table": {
     "delete": "Raporu sil",
+    "delete_confirm": {
+      "message": "Rapor ve olayları silinir. Yeniden oluşturmak biraz zaman alabilir.",
+      "title": "Bu rapor silinsin mi?"
+    },
     "load": "Raporu yükle"
   },
   "request_queue": {
@@ -5859,6 +6455,7 @@
   "snapshot_import_dialog": {
     "balance_snapshot_file": "Bakiye anlık görüntüsü dosyası",
     "balance_snapshot_file_suggested": "Önerilen dosya adı: balances_snapshot_import.csv",
+    "description": "Bir anlık görüntünün iki CSV dosyasını da seçin. İçe aktarma başarılı olursa oturumunuz kapatılır; anlık görüntü bir sonraki girişinizde yüklenir.",
     "location_data_snapshot_file": "Konum verisi anlık görüntüsü dosyası",
     "location_data_snapshot_suggested": "Önerilen dosya adı: location_data_snapshot_import.csv",
     "title": "Anlık görüntüyü manuel olarak içe aktar"
@@ -6004,14 +6601,24 @@
     "unique_id": "Benzersiz tanımlayıcı",
     "unique_id_hint": "Benzersiz bir olay tanımlayıcısı oluşturmak için olay konumuyla birleştirilir",
     "validation": {
-      "at_least_one": "En az bir varlık gereklidir"
+      "at_least_one": "En az bir varlık gereklidir",
+      "only_one": "İşlemi olmayan bir takasın her iki tarafında birer varlık bulunur"
     }
   },
   "sync_buttons": {
+    "download": "Geri yükle",
     "download_tooltip": "Kayıtlı verileri sunucudan çeker ve yerel veritabanınızı bunlarla değiştirir",
-    "upload_tooltip": "Yerel veritabanınızı sunucuya gönderir ve oradaki tüm verileri bununla değiştirir"
+    "upload": "Yedekle",
+    "upload_tooltip": "Yerel veritabanınızı sunucuya gönderir ve oradaki tüm verileri bununla değiştirir",
+    "waiting_for_balances": "Bakiyeler yüklendikten ve token tespiti tamamlandıktan sonra kullanılabilir."
   },
   "sync_indicator": {
+    "activity": {
+      "automatic": "Otomatik yedekleniyor",
+      "download": "Sunucudaki yedekten geri yükleniyor",
+      "failed": "Yedekleme tamamlanmadı",
+      "upload": "Bu veritabanı yedekleniyor"
+    },
     "cloud_backup_unavailable": "Bulut yedekleme mevcut planınızda kullanılamıyor. Bulut senkronizasyonunu etkinleştirmek için planınızı yükseltin.",
     "cloud_backup_upgrade": "Planı yükselt",
     "db_upload_result": {
@@ -6026,6 +6633,10 @@
         "title": "Otomatik veritabanı senkronizasyonu."
       },
       "title": "Senkronizasyon ayarı"
+    },
+    "status": {
+      "failed": "Son yedekleme tamamlanmadı. Ayrıntılar görev panelinde.",
+      "running": "Bir senkronizasyon çalışıyor. İlerlemesi görev panelinde."
     },
     "upload_confirmation": {
       "action": "Gönder | Çek",
@@ -6082,8 +6693,14 @@
       },
       "name_placeholder": "Bu filtrelere ad verin…",
       "nothing_to_save": "Görünüm olarak kaydetmek için bir filtre ekleyin.",
+      "remove_failed": "Kayıtlı görünüm kaldırılamadı: {message}",
       "title": "Görünümler"
     }
+  },
+  "table_selection": {
+    "actions": "İşlemler",
+    "count": "{count} seçili",
+    "label": "Seçim işlemleri"
   },
   "tag_creator": {
     "labels": {
@@ -6112,6 +6729,7 @@
       "subtitle": "Etiketi düzenleyin ve tercihlerinize göre özelleştirin.",
       "title": "Etiketi düzenle"
     },
+    "system_tag": "Sistem etiketi, düzenlenemez ya da silinemez",
     "title": "Etiket yöneticisi"
   },
   "task_center": {
@@ -6166,6 +6784,7 @@
         "verify": "İmza doğrulanıyor ve token oluşturuluyor"
       },
       "historical_balances": {
+        "detection": "Hesaplanan bakiyeler zincirle karşılaştırılıyor",
         "divergence": "{asset} varlığında sapma aranıyor",
         "processing": "Bakiyeleri hesaplamak için geçmiş olaylar işleniyor",
         "series": "{asset} varlığının bakiye serisi oluşturuluyor"
@@ -6204,6 +6823,7 @@
         "daily": "{asset} varlığı için günlük fiyatlar dolduruluyor",
         "exchange_rates": "{currency} para birimi için kurlar güncelleniyor",
         "historic": "{date} tarihi için {fromAsset}/{toAsset} fiyatı aranıyor",
+        "historic_batches": "{toAsset} için geçmiş kurlar alınıyor",
         "latest": "{count} varlık güncelleniyor | {count} varlık güncelleniyor",
         "manual_add": "{asset} varlığı için manuel fiyat kaydediliyor",
         "manual_remove": "{asset} varlığının manuel fiyatı kaldırılıyor"
@@ -6318,6 +6938,7 @@
         "failed": "{count} başarısız",
         "running": "{count} çalışıyor"
       },
+      "dismiss_all": "Tümünü kapat",
       "keep_running": "Çalışmaya devam et",
       "outcome": {
         "attention": "{count} dikkat gerektiriyor | {count} dikkat gerektiriyor",
@@ -6336,6 +6957,7 @@
       "stop_all": "Tümünü durdur",
       "stop_all_info": "Bu işlem {count} yenileme veya senkronizasyonu durdurur. Şimdiye kadar alınan veriler korunur; yeniden çalıştırdığınızda kalanı tamamlanır. | Bu işlem {count} yenileme ve senkronizasyonu durdurur. Şimdiye kadar alınan veriler korunur; yeniden çalıştırdığınızda kalanı tamamlanır.",
       "stop_all_kept": "Verilerinizi değiştiren {count} görev çalışmaya devam edecek; durdurulması verilerin yarım yazılmış kalmasına neden olabilir. | Verilerinizi değiştiren {count} görev çalışmaya devam edecek; durdurulmaları verilerin yarım yazılmış kalmasına neden olabilir.",
+      "stop_confirm": "Durdurulsun mu? Tamamlanmamış olarak kalır.",
       "title": {
         "attention": "İlginizi bekliyor",
         "finished": "Tamamlandı",
