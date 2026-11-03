@@ -1,3 +1,5 @@
+import type { assetMovementMatchingKind } from '@/modules/history/events/matching/asset-movement-matching-kind';
+import type { bridgeMatchingKind } from '@/modules/history/events/matching/bridge-matching-kind';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
 import type { UnmatchedBridgeRow } from '@/modules/history/events/use-unmatched-bridge-rows';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
@@ -5,6 +7,9 @@ import type { UnmatchedMovementRow } from '@/modules/history/events/use-unmatche
 import { createAssetMovementEvent, createEvmEvent } from '@test/utils/history-events';
 import { defineComponent } from 'vue';
 import { UnmatchedVariant } from '@/modules/history/events/unmatched-row';
+
+/** Either real matching kind, each with its own item type; the shared panels accept both. */
+export type AnyMatchingKind = typeof assetMovementMatchingKind | typeof bridgeMatchingKind;
 
 /** What a test says about a row, in words both kinds understand. */
 export interface UnmatchedRowCase {

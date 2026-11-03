@@ -1,4 +1,6 @@
-import type { Component } from 'vue';
+import type { AsyncComponentLoader, Component, VNode } from 'vue';
+import type { assetMovementMatchingKind } from '@/modules/history/events/matching/asset-movement-matching-kind';
+import type { bridgeMatchingKind } from '@/modules/history/events/matching/bridge-matching-kind';
 import { RuiProgress } from '@rotki/ui-library/components';
 
 /**
@@ -21,7 +23,7 @@ function DialogLoadingComponent(): ReturnType<typeof h> {
 /** The delay before the loading placeholder appears, so a fast chunk never flashes one. */
 const LOADING_DELAY = 200;
 
-function lazyDialog(loader: () => Promise<{ default: Component }>): Component {
+function lazyDialog(loader: AsyncComponentLoader): Component {
   return defineAsyncComponent({
     delay: LOADING_DELAY,
     loader,
@@ -55,18 +57,47 @@ export const InternalTxConflictsDialog = lazyDialog(
   async () => import('@/modules/history/internal-tx-conflicts/InternalTxConflictsDialog.vue'),
 );
 
-export const MatchAssetMovementsDialog = lazyDialog(
-  async () => import('@/modules/history/events/MatchAssetMovementsDialog.vue'),
+/**
+ * A matching dialog with its kind already bound.
+ *
+ * @remarks
+ * The kind is loaded with the dialog, not imported by the container, so a kind's action and row
+ * composables stay out of the events page until a matching dialog is opened.
+ */
+function lazyMatchingDialog(
+  loadDialog: () => Promise<{ default: Component }>,
+  loadKind: () => Promise<typeof assetMovementMatchingKind | typeof bridgeMatchingKind>,
+): Component {
+  return lazyDialog(async () => {
+    const [{ default: dialog }, kind] = await Promise.all([loadDialog(), loadKind()]);
+    return (_: unknown, { attrs }: { attrs: Record<string, unknown> }): VNode => h(dialog, { ...attrs, kind });
+  });
+}
+
+async function loadMovementKind(): Promise<typeof assetMovementMatchingKind> {
+  return (await import('@/modules/history/events/matching/asset-movement-matching-kind')).assetMovementMatchingKind;
+}
+
+async function loadBridgeKind(): Promise<typeof bridgeMatchingKind> {
+  return (await import('@/modules/history/events/matching/bridge-matching-kind')).bridgeMatchingKind;
+}
+
+export const MatchAssetMovementsDialog = lazyMatchingDialog(
+  async () => import('@/modules/history/events/UnmatchedMatchingDialog.vue'),
+  loadMovementKind,
 );
 
-export const PotentialMatchesDialog = lazyDialog(
+export const PotentialMatchesDialog = lazyMatchingDialog(
   async () => import('@/modules/history/events/PotentialMatchesDialog.vue'),
+  loadMovementKind,
 );
 
-export const MatchBridgeTransactionsDialog = lazyDialog(
-  async () => import('@/modules/history/events/MatchBridgeTransactionsDialog.vue'),
+export const MatchBridgeTransactionsDialog = lazyMatchingDialog(
+  async () => import('@/modules/history/events/UnmatchedMatchingDialog.vue'),
+  loadBridgeKind,
 );
 
-export const BridgePotentialMatchesDialog = lazyDialog(
-  async () => import('@/modules/history/events/BridgePotentialMatchesDialog.vue'),
+export const BridgePotentialMatchesDialog = lazyMatchingDialog(
+  async () => import('@/modules/history/events/PotentialMatchesDialog.vue'),
+  loadBridgeKind,
 );

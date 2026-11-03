@@ -1,14 +1,14 @@
-import type { UnmatchedFailure, UnmatchedMatchAccess } from '@/modules/history/events/unmatched-actions';
-import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
-import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
-import { createMock } from '@test/utils/create-mock';
+import type { AnyMatchingKind } from '@test/utils/unmatched-panel-kinds';
+import type { VueWrapper } from '@vue/test-utils';
+import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import type { UnmatchedFailure } from '@/modules/history/events/unmatched-actions';
+import { mountGeneric } from '@test/utils/mount-generic';
 import { libraryDefaults } from '@test/utils/provide-defaults';
-import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, defineComponent } from 'vue';
-import { UnmatchedVariant } from '@/modules/history/events/unmatched-row';
-import UnmatchedBridgesList from '@/modules/history/events/UnmatchedBridgesList.vue';
-import UnmatchedMovementsList from '@/modules/history/events/UnmatchedMovementsList.vue';
+import { assetMovementMatchingKind } from '@/modules/history/events/matching/asset-movement-matching-kind';
+import { bridgeMatchingKind } from '@/modules/history/events/matching/bridge-matching-kind';
+import UnmatchedList from '@/modules/history/events/UnmatchedList.vue';
 
 const failure: UnmatchedFailure = { message: 'backend down', title: 'could not load' };
 
@@ -20,13 +20,27 @@ const rowsComposable = vi.hoisted(() => (options: { error?: () => unknown }): Re
   specFor: vi.fn(),
 }));
 
+/** The match access both kinds' sources report, which the list turns into its alert. */
+const access = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
+  return { isAutoMatchAllowed: ref<boolean>(true), minimumTier: ref<string | null>(null) };
+});
+
+function source(): Record<string, unknown> {
+  return { autoMatchMinimumTier: access.minimumTier, isAutoMatchAllowed: access.isAutoMatchAllowed };
+}
+
 vi.mock('@/modules/history/events/use-unmatched-bridge-rows', () => ({ useUnmatchedBridgeRows: rowsComposable }));
 vi.mock('@/modules/history/events/use-unmatched-movement-rows', () => ({ useUnmatchedMovementRows: rowsComposable }));
+vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({ useUnmatchedAssetMovements: source }));
+vi.mock('@/modules/history/events/use-unmatched-bridge-transactions', async importOriginal => ({
+  ...await importOriginal<Record<string, unknown>>(),
+  useUnmatchedBridgeTransactions: source,
+}));
 
 interface ListProps {
   error?: unknown;
   isPinned?: boolean;
-  matchAccess?: UnmatchedMatchAccess;
   showRestore?: boolean;
   /** How many items the list is given; only the count is read. */
   itemCount?: number;
@@ -56,35 +70,25 @@ const global = {
   },
 };
 
-interface ListKind {
-  name: string;
-  variant: UnmatchedVariant;
-  mount: (props: ListProps) => VueWrapper;
-}
-
-const LIST_KINDS: ListKind[] = [
-  {
-    mount: ({ itemCount = 0, ...props }): VueWrapper => mount(UnmatchedBridgesList, {
-      global,
-      props: { ...props, selected: [], transactions: Array.from({ length: itemCount }, () => createMock<UnmatchedBridgeTransaction>()) },
-    }),
-    name: 'bridge',
-    variant: UnmatchedVariant.BRIDGE,
-  },
-  {
-    mount: ({ itemCount = 0, ...props }): VueWrapper => mount(UnmatchedMovementsList, {
-      global,
-      props: { ...props, movements: Array.from({ length: itemCount }, () => createMock<UnmatchedAssetMovement>()), selected: [] },
-    }),
-    name: 'asset movement',
-    variant: UnmatchedVariant.ASSET_MOVEMENT,
-  },
+const LIST_KINDS: { name: string; kind: AnyMatchingKind }[] = [
+  { kind: bridgeMatchingKind, name: 'bridge' },
+  { kind: assetMovementMatchingKind, name: 'asset movement' },
 ];
 
-describe.each(LIST_KINDS)('unmatched list ($name)', (kind) => {
-  function mountList(props: ListProps = {}): VueWrapper {
-    return kind.mount(props);
+describe.each(LIST_KINDS)('unmatched list ($name)', ({ kind }) => {
+  function mountList({ itemCount = 0, ...props }: ListProps = {}): VueWrapper {
+    const items: UnmatchedEventGroup[] = Array.from({ length: itemCount }, (_, index) => ({
+      asset: 'ETH',
+      events: [],
+      groupIdentifier: `group-${index}`,
+    }));
+    return mountGeneric(UnmatchedList, { ...props, items, kind, selected: [] }, global);
   }
+
+  beforeEach(() => {
+    set(access.isAutoMatchAllowed, true);
+    set(access.minimumTier, null);
+  });
 
   it('should render the table with its variant in the dialog', () => {
     const wrapper = mountList();
@@ -139,20 +143,22 @@ describe.each(LIST_KINDS)('unmatched list ($name)', (kind) => {
     expect(mountList({ isPinned: true }).find('button').exists()).toBe(false);
   });
 
-  it('should show no match alert while matching is allowed or not gated', () => {
+  it('should show no match alert while matching is allowed', () => {
     expect(mountList().findComponent(AlertStub).exists()).toBe(false);
-    expect(mountList({ matchAccess: { allowed: true, minimumTier: null } }).findComponent(AlertStub).exists()).toBe(false);
   });
 
   it('should count the unmatched items in the match alert', () => {
-    const wrapper = mountList({ itemCount: 2, matchAccess: { allowed: false, minimumTier: 'basic' } });
+    set(access.isAutoMatchAllowed, false);
+    set(access.minimumTier, 'basic');
+    const wrapper = mountList({ itemCount: 2 });
     const alert = wrapper.findComponent(AlertStub);
 
     expect(alert.props()).toEqual({ count: 2, matchMinimumTier: 'basic', variant: kind.variant });
   });
 
   it('should count nothing in the match alert of the ignored tab', () => {
-    const wrapper = mountList({ itemCount: 2, matchAccess: { allowed: false, minimumTier: null }, showRestore: true });
+    set(access.isAutoMatchAllowed, false);
+    const wrapper = mountList({ itemCount: 2, showRestore: true });
 
     expect(wrapper.findComponent(AlertStub).props('count')).toBe(0);
   });

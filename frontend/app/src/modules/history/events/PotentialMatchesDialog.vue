@@ -1,15 +1,16 @@
-<script setup lang="ts">
-import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
+<script setup lang="ts" generic="TItem extends UnmatchedEventGroup, TRow extends UnmatchedRow<TItem>">
+import type { MatchingKind } from '@/modules/history/events/matching/matching-kind';
+import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import PotentialMatchesContent from '@/modules/history/events/PotentialMatchesContent.vue';
-import { useMovementUnmatchableExplanation } from '@/modules/history/events/use-untracked-movement-destination';
-import { PinnedNames } from '@/modules/session/types';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
 const modelValue = defineModel<boolean>({ required: true });
 
-const { movement } = defineProps<{
-  movement: UnmatchedAssetMovement;
+const { item, kind } = defineProps<{
+  kind: MatchingKind<TItem, TRow>;
+  item: TItem;
 }>();
 
 const emit = defineEmits<{
@@ -18,8 +19,11 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { pin } = usePinnedPanel(PinnedNames.MATCH_ASSET_MOVEMENTS);
-const { unmatchableExplanation: emptyExplanation } = useMovementUnmatchableExplanation(() => movement);
+const { pin } = usePinnedPanel(kind.pinnedName);
+
+const flow = kind.useFlow();
+const entryLabels = kind.useEntryLabels(() => item);
+const emptyExplanation = kind.useUnmatchableExplanation(() => item);
 
 function closeDialog(): void {
   set(modelValue, false);
@@ -31,14 +35,14 @@ function onMatched(): void {
 }
 
 function showUnmatchedInEvents(): void {
-  pin({ highlightedGroupIdentifier: movement.groupIdentifier });
+  pin({ highlightedGroupIdentifier: item.groupIdentifier });
   set(modelValue, false);
   emit('pinned');
 }
 
 function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier: string }): void {
   pin({
-    highlightedGroupIdentifier: movement.groupIdentifier,
+    highlightedGroupIdentifier: item.groupIdentifier,
     highlightedPotentialMatchIdentifier: data.identifier,
     potentialMatchGroupIdentifier: data.groupIdentifier,
   });
@@ -72,7 +76,9 @@ function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier:
       </template>
 
       <PotentialMatchesContent
-        :movement="movement"
+        :movement="item"
+        :flow="flow"
+        :entry-labels="entryLabels"
         :empty-explanation="emptyExplanation"
         @close="closeDialog()"
         @matched="onMatched()"

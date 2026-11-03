@@ -27,7 +27,7 @@ vi.mock('@/modules/history/events/dialog-components', async () => {
     CustomizedEventDuplicatesDialog: stubDialog('CustomizedEventDuplicatesDialog'),
     HistoryEventFormDialog: stubDialog('HistoryEventFormDialog', ['refresh']),
     InternalTxConflictsDialog: stubDialog('InternalTxConflictsDialog'),
-    MatchAssetMovementsDialog: stubDialog('MatchAssetMovementsDialog', ['find-match', 'refresh']),
+    MatchAssetMovementsDialog: stubDialog('MatchAssetMovementsDialog', ['find-match']),
     MatchBridgeTransactionsDialog: stubDialog('MatchBridgeTransactionsDialog', ['find-match']),
     MissingRulesDialog: stubDialog('MissingRulesDialog', ['add', 'dismiss', 'edit-event', 'redecode']),
     PotentialMatchesDialog: stubDialog('PotentialMatchesDialog', ['matched', 'pinned']),

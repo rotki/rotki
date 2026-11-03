@@ -62,10 +62,9 @@ export interface UsePinnedMatchPanelReturn<T extends PinnedMatchSubject> {
  * The whole behaviour of a pinned matching panel: which row the drawer is on, which
  * highlights the events table is showing, and the navigation that keeps the two in step.
  *
- * `MatchAssetMovementsPinned` and `MatchBridgeTransactionsPinned` are the same panel over different
- * rows, and vary only in the collections they search, how a row names its event (an asset movement
- * must be unwrapped from its collection, a bridge transaction carries the identifier directly) and
- * the extra props their drawer content takes.
+ * `UnmatchedMatchingPinned` drives it for either matching kind, which supplies the collections it
+ * searches and how a row names its event (an asset movement must be unwrapped from its collection,
+ * a bridge transaction carries the identifier directly).
  */
 export function usePinnedMatchPanel<T extends PinnedMatchSubject>(
   options: UsePinnedMatchPanelOptions<T>,

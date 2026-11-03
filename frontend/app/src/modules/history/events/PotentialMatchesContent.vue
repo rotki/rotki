@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type MatchingFailure, MatchingFailureKind, type MatchingFlow, type UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import { type MatchingFailure, MatchingFailureKind, type MatchingFlow, type PotentialMatchEntryLabels, type UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import { usePotentialMatches } from '@/modules/history/events/matching/use-potential-matches';
 import PotentialMatchesList from '@/modules/history/events/PotentialMatchesList.vue';
 
@@ -13,7 +13,7 @@ const { flow, isPinned, movement } = defineProps<{
    */
   flow?: MatchingFlow;
   /** How the unmatched entry is described in the summary table; see `PotentialMatchesList`. */
-  entryLabels?: { type: string; locationHeader: string; matchingFor?: string };
+  entryLabels?: PotentialMatchEntryLabels;
   /** Shown when a search returns no matches, explaining why none can be found. */
   emptyExplanation?: string;
 }>();

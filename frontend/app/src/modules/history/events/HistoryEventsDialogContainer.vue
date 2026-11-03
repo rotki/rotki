@@ -114,14 +114,13 @@ defineExpose({
     <MatchAssetMovementsDialog
       v-if="currentDialog.type === DIALOG_TYPES.MATCH_ASSET_MOVEMENTS"
       v-model="modelDialogOpen"
-      @refresh="eventHandlers.onHistoryEventSaved?.()"
       @find-match="openMovementMatches($event)"
     />
 
     <PotentialMatchesDialog
       v-if="movementSubject && modelMovementMatchesOpen"
       v-model="modelMovementMatchesOpen"
-      :movement="movementSubject"
+      :item="movementSubject"
       @matched="onMovementMatched()"
       @pinned="onMovementPinned()"
     />
@@ -135,7 +134,7 @@ defineExpose({
     <BridgePotentialMatchesDialog
       v-if="bridgeSubject && modelBridgeMatchesOpen"
       v-model="modelBridgeMatchesOpen"
-      :transaction="bridgeSubject"
+      :item="bridgeSubject"
       @matched="onBridgeMatched()"
       @pinned="onBridgePinned()"
     />
