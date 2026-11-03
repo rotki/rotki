@@ -54,6 +54,7 @@ describe('bank balances page', () => {
         plugins: [pinia],
         stubs: {
           AssetBalances: { props: ['balances'], template: '<div data-testid="bank-asset-balances" :data-rows="balances.length"><template v-for="row in balances" :key="row.asset"><slot name="amount" :row="row" /></template></div>' },
+          BankAccountsTable: { props: ['accounts', 'search'], template: '<div data-testid="bank-accounts" :data-accounts="accounts.map(a => a.identifier).join()" :data-search="search" />' },
           BankBalanceCards: { props: ['selected'], template: '<div data-testid="bank-balance-cards" :data-selected="selected" />' },
           BankBalancesEmpty: { template: '<div data-testid="bank-balances-empty" />' },
           BankBalancesRefreshButton: true,
@@ -113,7 +114,7 @@ describe('bank balances page', () => {
   it('should list every bank together, amounts to the cent, and only the connections that need the user', async () => {
     const store = useBankConnectionsStore();
     store.setConnections([connection, { ...connection, name: 'Broken', syncStatus: { ...connection.syncStatus, lastError: 'boom' } }]);
-    store.setConnectionBalances([{ balances: { EUR: { amount: bigNumberify(1), value: bigNumberify(1) } }, connector: 'qonto', name: 'Qonto main' }]);
+    store.setConnectionBalances([{ accounts: [], balances: { EUR: { amount: bigNumberify(1), value: bigNumberify(1) } }, connector: 'qonto', name: 'Qonto main' }]);
     wrapper = createWrapper();
     await flushPromises();
 
@@ -131,5 +132,22 @@ describe('bank balances page', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid=bank-balance-cards]').attributes('data-selected')).toBe('Qonto main');
+  });
+
+  it('should list the accounts of the bank the route names instead of its assets', async () => {
+    route.query = { bank: 'Qonto main' };
+    const store = useBankConnectionsStore();
+    store.setConnections([connection]);
+    store.setConnectionBalances([{
+      accounts: [{ amount: bigNumberify(1), asset: 'EUR', iban: null, identifier: 'acc', name: 'Main', value: bigNumberify(1) }],
+      balances: { EUR: { amount: bigNumberify(1), value: bigNumberify(1) } },
+      connector: 'qonto',
+      name: 'Qonto main',
+    }]);
+    wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=bank-accounts]').attributes('data-accounts')).toBe('acc');
+    expect(wrapper.find('[data-testid=bank-asset-balances]').exists()).toBe(false);
   });
 });

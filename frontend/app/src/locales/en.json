@@ -2010,6 +2010,9 @@
     "view_event": "View event"
   },
   "bank_balances": {
+    "accounts": {
+      "account": "Account"
+    },
     "add_bank": "Add a bank connection",
     "cards": {
       "all": "All banks",

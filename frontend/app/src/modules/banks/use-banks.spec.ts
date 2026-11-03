@@ -99,7 +99,7 @@ describe('useBanks', () => {
     submitTask.mockImplementation(async spec => spec.run({ runTask: async (fn: () => Promise<unknown>) => ok(await fn()) }));
     queryBankBalances.mockResolvedValue({
       aggregate: eurOnTheWire,
-      connections: [{ balances: eurOnTheWire, connector: 'qonto', name: 'Qonto main' }],
+      connections: [{ accounts: [], balances: eurOnTheWire, connector: 'qonto', name: 'Qonto main' }],
     });
   });
 
@@ -386,6 +386,7 @@ describe('useBanks', () => {
     expect(queryBankBalances).toHaveBeenCalledWith(true, undefined);
     expect(Object.keys(balances.exchangeBalances).sort()).toEqual(['banks', 'kraken']);
     expect(store.connectionBalances).toEqual([{
+      accounts: [],
       balances: eur,
       connector: 'qonto',
       name: 'Qonto main',
@@ -404,12 +405,12 @@ describe('useBanks', () => {
     const dkb = { connector: 'fints', name: 'DKB' };
     store.setConnections([connection, { ...connection, ...dkb, displayName: 'FinTS' }]);
     store.setConnectionBalances([
-      { balances: eur, connector: 'qonto', name: 'Qonto main' },
-      { balances: eur, ...dkb },
+      { accounts: [], balances: eur, connector: 'qonto', name: 'Qonto main' },
+      { accounts: [], balances: eur, ...dkb },
     ]);
     queryBankBalances.mockResolvedValue({
       aggregate: { EUR: { amount: '5', value: '5' } },
-      connections: [{ balances: { EUR: { amount: '5', value: '5' } }, ...dkb }],
+      connections: [{ accounts: [], balances: { EUR: { amount: '5', value: '5' } }, ...dkb }],
     });
 
     await useBanks().fetchBankBalances(true, dkb);
@@ -421,5 +422,24 @@ describe('useBanks', () => {
       ['DKB', '5'],
     ]);
     expect(balances.exchangeBalances.banks.EUR.amount.toFixed()).toBe('15');
+  });
+
+  it('should keep the accounts of each bank connection it reads', async () => {
+    useBankConnectionsStore().setConnections([connection]);
+    queryBankBalances.mockResolvedValue({
+      aggregate: eurOnTheWire,
+      connections: [{
+        accounts: [{ amount: '10', asset: 'EUR', iban: 'DE86601995651153419937', identifier: 'acc', name: 'Main', value: '11' }],
+        balances: eurOnTheWire,
+        connector: 'qonto',
+        name: 'Qonto main',
+      }],
+    });
+
+    await useBanks().fetchBankBalances();
+
+    expect(useBankConnectionsStore().connectionBalances[0].accounts).toEqual([
+      { amount: bigNumberify(10), asset: 'EUR', iban: 'DE86601995651153419937', identifier: 'acc', name: 'Main', value: bigNumberify(11) },
+    ]);
   });
 });

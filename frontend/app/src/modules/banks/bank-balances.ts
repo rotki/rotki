@@ -1,7 +1,11 @@
+import type { FormatOptions } from '@/modules/assets/amount-display/types';
 import type { AssetBalances } from '@/modules/balances/types/balances';
 import type { BankConnectionBalances, BankConnectionIdentity } from '@/modules/banks/types';
 import { zeroBalance } from '@/modules/core/common/data/bignumbers';
 import { balanceSum } from '@/modules/core/common/data/calculation';
+
+/** Bank balances are kept in cents, so every bank amount shows exactly two decimals. */
+export const BANK_AMOUNT_FORMAT: FormatOptions = { decimals: 2 };
 
 function sameConnection(a: BankConnectionIdentity, b: BankConnectionIdentity): boolean {
   return a.connector === b.connector && a.name === b.name;

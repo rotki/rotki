@@ -16,6 +16,7 @@ const stubs = {
 
 function bank(name: string, total: number, syncStatus: Partial<BankBalanceData['syncStatus']> = {}): BankBalanceData {
   return {
+    accounts: [],
     balances: [],
     connector: 'fints',
     displayName: 'FinTS/HBCI',

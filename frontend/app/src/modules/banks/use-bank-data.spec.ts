@@ -26,8 +26,8 @@ describe('useBankData', () => {
     const store = useBankConnectionsStore();
     store.setConnections([connection('qonto', 'Business'), connection('fints', 'Checking')]);
     store.setConnectionBalances([
-      { balances: { EUR: balance(200), SPAM: balance(5000) }, connector: 'qonto', name: 'Business' },
-      { balances: { EUR: balance(300) }, connector: 'fints', name: 'Checking' },
+      { accounts: [], balances: { EUR: balance(200), SPAM: balance(5000) }, connector: 'qonto', name: 'Business' },
+      { accounts: [], balances: { EUR: balance(300) }, connector: 'fints', name: 'Checking' },
     ]);
   });
 
@@ -76,5 +76,21 @@ describe('useBankData', () => {
     useAssetsStore().ignoredAssets = ['SPAM'];
     const { total } = useBankData();
     expect(get(total).toFixed()).toBe('500');
+  });
+
+  it('should list a bank\'s accounts richest first, leaving out those holding an ignored asset', () => {
+    useAssetsStore().ignoredAssets = ['SPAM'];
+    const account = (identifier: string, asset: string, amount: number): { amount: ReturnType<typeof bigNumberify>; asset: string; iban: null; identifier: string; name: string; value: ReturnType<typeof bigNumberify> } =>
+      ({ asset, iban: null, identifier, name: identifier, ...balance(amount) });
+    useBankConnectionsStore().setConnectionBalances([{
+      accounts: [account('checking', 'EUR', 50), account('spam', 'SPAM', 5000), account('savings', 'EUR', 150)],
+      balances: { EUR: balance(200), SPAM: balance(5000) },
+      connector: 'qonto',
+      name: 'Business',
+    }]);
+    const { banks } = useBankData();
+
+    expect(get(banks).find(bank => bank.name === 'Business')?.accounts.map(({ identifier }) => identifier)).toEqual(['savings', 'checking']);
+    expect(get(banks).find(bank => bank.name === 'Checking')?.accounts).toEqual([]);
   });
 });

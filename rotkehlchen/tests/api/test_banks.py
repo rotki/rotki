@@ -162,6 +162,9 @@ def test_bank_lifecycle(rotkehlchen_api_server: APIServer) -> None:
         ))
         assert FVal(result['aggregate'][A_EUR.identifier]['amount']) == FVal(transport.organization['organization']['bank_accounts'][0]['balance_cents']) / 100  # noqa: E501
         assert result['connections'][0]['name'] == 'Qonto 1'
+        assert [(x['iban'], x['asset'], x['amount']) for x in result['connections'][0]['accounts']] == [  # noqa: E501
+            ('DE86601995651153419937', A_EUR.identifier, result['aggregate'][A_EUR.identifier]['amount']),  # noqa: E501
+        ]
         assert assert_proper_sync_response_with_result(requests.get(
             api_url_for(rotkehlchen_api_server, 'bankbalancesresource'),
             json={'connector': 'qonto', 'name': 'Qonto 1'},

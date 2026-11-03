@@ -1,4 +1,5 @@
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { Balance } from '@rotki/common';
 import { z } from 'zod';
 import { AssetBalances } from '@/modules/balances/types/balances';
 
@@ -88,10 +89,21 @@ export const BankConnections = z.array(BankConnection);
 
 export type BankConnections = z.infer<typeof BankConnections>;
 
+/** One account of a bank connection and what it holds; an account holds a single currency. */
+export const BankAccountBalance = Balance.extend({
+  identifier: z.string(),
+  name: z.string(),
+  iban: z.string().nullable(),
+  asset: z.string(),
+});
+
+export type BankAccountBalance = z.infer<typeof BankAccountBalance>;
+
 export const BankConnectionBalances = z.object({
   connector: z.string(),
   name: z.string(),
   balances: AssetBalances,
+  accounts: z.array(BankAccountBalance),
 });
 
 export type BankConnectionBalances = z.infer<typeof BankConnectionBalances>;
