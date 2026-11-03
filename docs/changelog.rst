@@ -3,7 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Fixed missing profile images for ENS names migrated to v2.
-* :bug:`13520` Disabling balance queries for a chain now removes its stale last refresh time even when a refresh is already running. Excluding individual Ethereum staking validators preserves enabled validators' cached balances.
+* :bug:`13520` Disabling balance queries for a chain now removes its stale last refresh time even when a refresh is already running. Excluding individual Ethereum staking validators preserves enabled validators' cached balances. API balance reads no longer trigger repeated refreshes when Ethereum staking queries are fully disabled.
 * :bug:`13514` Profit and loss reports no longer crash while refreshing Kraken history containing two receive or two spend ledger entries with the same transaction reference.
 * :bug:`13463` Repeated current price queries no longer ask DeFiLlama again for assets it has just confirmed it cannot price.
 * :bug:`13508` Solana v1 transactions are now included in transaction history. Previously skipped transactions are recovered during the next Solana transaction refresh.
