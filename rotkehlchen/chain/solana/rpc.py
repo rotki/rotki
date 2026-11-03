@@ -220,12 +220,19 @@ class UiTokenBalance:
 
 
 @dataclass(frozen=True)
+class LoadedAddresses:
+    writable: list[Pubkey]
+    readonly: list[Pubkey]
+
+
+@dataclass(frozen=True)
 class TransactionMeta:
     fee: int
     err: Any | None
     inner_instructions: list[UiInnerInstructions] | None
     pre_token_balances: list[UiTokenBalance] | None
     post_token_balances: list[UiTokenBalance] | None
+    loaded_addresses: LoadedAddresses | None
 
 
 @dataclass(frozen=True)
@@ -257,6 +264,7 @@ class EncodedConfirmedTransactionWithStatusMeta:
 @dataclass(frozen=True)
 class SignatureStatus:
     signature: Signature
+    slot: int
 
 
 @dataclass(frozen=True)
@@ -374,6 +382,10 @@ def _parse_transaction(raw_tx: dict[str, Any]) -> EncodedConfirmedTransactionWit
                 ],
                 pre_token_balances=None if (pre := raw_meta.get('preTokenBalances')) is None else [_parse_token_balance(entry) for entry in pre],  # noqa: E501
                 post_token_balances=None if (post := raw_meta.get('postTokenBalances')) is None else [_parse_token_balance(entry) for entry in post],  # noqa: E501
+                loaded_addresses=None if (loaded := raw_meta.get('loadedAddresses')) is None else LoadedAddresses(  # noqa: E501
+                    writable=[Pubkey.from_string(entry) for entry in loaded['writable']],
+                    readonly=[Pubkey.from_string(entry) for entry in loaded['readonly']],
+                ),
             ),
         ),
     )
@@ -509,7 +521,10 @@ class Client:
             config['until'] = str(until)
         try:
             return RPCResponse(value=[
-                SignatureStatus(signature=Signature.from_string(entry['signature']))
+                SignatureStatus(
+                    signature=Signature.from_string(entry['signature']),
+                    slot=int(entry['slot']),
+                )
                 for entry in self._request('getSignaturesForAddress', [str(account), config])
             ])
         except _RPC_DECODE_EXCEPTIONS as e:

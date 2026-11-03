@@ -129,6 +129,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.db.reports import DBAccountingReports
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import (
     AuthenticationError,
     IncorrectApiKeyFormat,
@@ -1147,8 +1148,15 @@ class RestAPI:
                 has_accounts = len(addresses) != 0
             elif supported_chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
                 has_accounts = len(self.rotkehlchen.chains_aggregator.queried_addresses_for_module('eth2')) != 0  # noqa: E501
+                if has_accounts and (disabled := CachedSettings().get_settings().disabled_chain_queries.get(supported_chain)) is not None:  # noqa: E501
+                    with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                        has_accounts = not self.rotkehlchen.data.db.is_chain_fully_disabled(
+                            cursor=cursor,
+                            chain=supported_chain,
+                            disabled_addresses=disabled,
+                        )
             else:
-                has_accounts = len(self.rotkehlchen.chains_aggregator.accounts.get(supported_chain)) != 0  # noqa: E501
+                has_accounts = len(self.rotkehlchen.chains_aggregator.get_active_addresses(supported_chain)) != 0  # noqa: E501
 
             if has_accounts is True and supported_chain.serialize() not in last_refresh_ts:
                 return True

@@ -1575,6 +1575,11 @@ class Rotkehlchen:
 
         with self.data.db.user_write() as cursor:
             self.data.db.set_settings(cursor, settings)
+            if settings.disabled_chain_queries is not None:
+                self.data.db.delete_balances_query_ts_for_disabled_chains(
+                    write_cursor=cursor,
+                    disabled_chain_queries=settings.disabled_chain_queries,
+                )
         if settings.submit_usage_analytics is not None and self.indexer_stats is not None:
             self.indexer_stats.discard()
 

@@ -1,6 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
+import { AccountKind } from '@/modules/accounts/blockchain-accounts';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalanceStaleness } from '@/modules/balances/use-blockchain-balance-staleness';
 import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
+
+const rules = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
+  return {
+    disabledChains: ref<string[]>([]),
+    excludedAddresses: ref<string[]>([]),
+  };
+});
+
+vi.mock('@/modules/settings/general/disabled-chain-queries/use-disabled-chains', () => ({
+  useDisabledChains: (): {
+    isAddressExcluded: (chain: string, address: string) => boolean;
+    isChainExcluded: (chain: string) => boolean;
+  } => ({
+    isAddressExcluded: (_chain: string, address: string): boolean => rules.excludedAddresses.value.includes(address),
+    isChainExcluded: (chain: string): boolean => rules.disabledChains.value.includes(chain),
+  }),
+}));
 
 describe('useBlockchainBalanceStaleness', () => {
   let store: ReturnType<typeof useBlockchainRefreshTimestampsStore>;
@@ -10,6 +31,8 @@ describe('useBlockchainBalanceStaleness', () => {
     setActivePinia(pinia);
     store = useBlockchainRefreshTimestampsStore();
     vi.useFakeTimers();
+    rules.disabledChains.value = [];
+    rules.excludedAddresses.value = [];
   });
 
   afterEach(() => {
@@ -60,12 +83,67 @@ describe('useBlockchainBalanceStaleness', () => {
     expect(get(lastRefreshTimestamp)).toBe(now - 300);
   });
 
-  it('should return a non-empty lastRefreshed string when timestamps exist', () => {
-    const now = Math.floor(Date.now() / 1000);
-    store.updateTimestamps({ eth: now - 60 });
+  it('should ignore a disabled chain in the oldest timestamp', () => {
+    store.updateTimestamps({ eth: 100, gnosis: 50 });
+    rules.disabledChains.value = ['gnosis'];
 
-    const { lastRefreshed } = useBlockchainBalanceStaleness();
-    expect(get(lastRefreshed)).toBeTruthy();
-    expect(typeof get(lastRefreshed)).toBe('string');
+    const { lastRefreshTimestamp } = useBlockchainBalanceStaleness();
+    expect(get(lastRefreshTimestamp)).toBe(100);
+  });
+
+  it('should return undefined when every chain is disabled', () => {
+    store.updateTimestamps({ eth: 100, gnosis: 50 });
+    rules.disabledChains.value = ['eth', 'gnosis'];
+
+    const { lastRefreshTimestamp } = useBlockchainBalanceStaleness();
+    expect(get(lastRefreshTimestamp)).toBeUndefined();
+  });
+
+  it('should ignore a chain whose tracked addresses all become excluded while running', () => {
+    useBlockchainAccountsStore().updateAccounts('gnosis', [
+      { kind: AccountKind.ADDRESS, address: '0xA', chain: 'gnosis' },
+    ]);
+    store.updateTimestamps({ eth: 100, gnosis: 50 });
+
+    const { lastRefreshTimestamp } = useBlockchainBalanceStaleness();
+    expect(get(lastRefreshTimestamp)).toBe(50);
+
+    rules.excludedAddresses.value = ['0xA'];
+    expect(get(lastRefreshTimestamp)).toBe(100);
+  });
+
+  it('should keep a chain that still has an enabled tracked address', () => {
+    useBlockchainAccountsStore().updateAccounts('gnosis', [
+      { kind: AccountKind.ADDRESS, address: '0xA', chain: 'gnosis' },
+      { kind: AccountKind.ADDRESS, address: '0xB', chain: 'gnosis' },
+    ]);
+    store.updateTimestamps({ eth: 100, gnosis: 50 });
+    rules.excludedAddresses.value = ['0xA'];
+
+    const { lastRefreshTimestamp } = useBlockchainBalanceStaleness();
+    expect(get(lastRefreshTimestamp)).toBe(50);
+  });
+
+  it('should ignore a camelCased chain whose tracked addresses are all excluded', () => {
+    useBlockchainAccountsStore().updateAccounts('polygon_pos', [
+      { kind: AccountKind.ADDRESS, address: '0xA', chain: 'polygon_pos' },
+    ]);
+    store.updateTimestamps({ eth: 100, polygonPos: 50 });
+    rules.excludedAddresses.value = ['0xA'];
+
+    const { lastRefreshTimestamp } = useBlockchainBalanceStaleness();
+    expect(get(lastRefreshTimestamp)).toBe(100);
+  });
+
+  it('should ignore an xpub chain once every derived address is excluded', () => {
+    useBlockchainAccountsStore().updateAccounts('btc', [
+      { kind: AccountKind.XPUB, xpub: 'xpub123', chain: 'btc' },
+      { kind: AccountKind.ADDRESS, address: '1A', chain: 'btc', xpubParent: { xpub: 'xpub123' } },
+    ]);
+    store.updateTimestamps({ btc: 50, eth: 100 });
+    rules.excludedAddresses.value = ['1A'];
+
+    const { lastRefreshTimestamp } = useBlockchainBalanceStaleness();
+    expect(get(lastRefreshTimestamp)).toBe(100);
   });
 });

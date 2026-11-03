@@ -243,4 +243,4 @@ def test_skipped_external_events(
     )
     result = assert_proper_sync_response_with_result(response)
     events = result['entries']
-    assert len(events) == 3
+    assert len(events) == 5

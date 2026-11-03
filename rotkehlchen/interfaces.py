@@ -91,6 +91,17 @@ class CurrentPriceOracleInterface(abc.ABC):
 
         return prices
 
+    def query_multiple_current_prices_uncached(
+            self,
+            from_assets: list[AssetWithOracles],
+            to_asset: AssetWithOracles,
+    ) -> dict[AssetWithOracles, Price]:
+        """Query current prices while bypassing any provider-local cache.
+
+        Oracles with no local cache use the ordinary query implementation.
+        """
+        return self.query_multiple_current_prices(from_assets=from_assets, to_asset=to_asset)
+
 
 class HistoricalPriceOracleInterface(CurrentPriceOracleInterface, abc.ABC):
     """Query prices for certain timestamps. Oracle could be rate limited"""

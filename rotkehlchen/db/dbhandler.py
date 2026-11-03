@@ -1091,6 +1091,24 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: DBCursor,
+            name: Literal[DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT],
+            **kwargs: Unpack[AddressArgType],
+    ) -> int | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
+            name: Literal[DBCacheDynamic.SOLANA_TX_BACKFILL_FAILED_ATTEMPTS],
+            **kwargs: Unpack[AddressArgType],
+    ) -> int | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: DBCursor,
             name: Literal[DBCacheDynamic.WITHDRAWALS_TS],
             **kwargs: Unpack[AddressArgType],
     ) -> Timestamp | None:
@@ -1406,6 +1424,26 @@ class DBHandler:
     def set_dynamic_cache(
             self,
             write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT],
+            value: int,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
+            name: Literal[DBCacheDynamic.SOLANA_TX_BACKFILL_FAILED_ATTEMPTS],
+            value: int,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: DBCursor,
             name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
             value: Timestamp,
             **kwargs: Unpack[BlockchainArgType],
@@ -1633,6 +1671,75 @@ class DBHandler:
             query += f' WHERE {" AND ".join(conditions)}'
 
         write_cursor.execute(query, bindings)
+
+    @staticmethod
+    def is_chain_fully_disabled(
+            cursor: DBCursor,
+            chain: SupportedBlockchain,
+            disabled_addresses: frozenset[str],
+    ) -> bool:
+        """Whether a disable rule covers the whole chain or every tracked account.
+
+        Beacon-chain accounts are validator public keys, not blockchain_accounts rows.
+        """
+        if len(disabled_addresses) == 0:
+            return True
+
+        if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
+            accounts = cursor.execute('SELECT public_key FROM eth2_validators')
+        else:
+            accounts = cursor.execute(
+                'SELECT account FROM blockchain_accounts WHERE blockchain=?',
+                (chain.value,),
+            )
+        return {row[0] for row in accounts}.issubset(disabled_addresses)
+
+    def delete_balances_query_ts_for_disabled_chains(
+            self,
+            write_cursor: DBCursor,
+            disabled_chain_queries: Mapping[SupportedBlockchain, frozenset[str]],
+    ) -> None:
+        """Delete the last balances query timestamp and cached balances of chains left with
+        no active address. That is the case when the whole chain is disabled or when every
+        tracked address of it is. A chain with some addresses still enabled is kept since those
+        are refreshed and update the timestamp.
+
+        Nothing refreshes the timestamp while no address of the chain is queried, so it would keep
+        being reported as the last refresh time. The cached balances go with it since they are
+        priced using that timestamp, so keeping them would show them with a zero value once the
+        chain is enabled again, until its next refresh.
+        """
+        for chain, disabled_addresses in disabled_chain_queries.items():
+            if not self.is_chain_fully_disabled(
+                cursor=write_cursor,
+                chain=chain,
+                disabled_addresses=disabled_addresses,
+            ):
+                continue
+
+            self.delete_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+                blockchain=chain.serialize(),
+            )
+            self.delete_blockchain_balances_cache(write_cursor=write_cursor, blockchain=chain)
+
+    def delete_balances_cache_if_chain_disabled(
+            self,
+            write_cursor: DBCursor,
+            blockchain: SupportedBlockchain,
+    ) -> None:
+        """Undo a balances cache write for a chain that is now fully disabled.
+
+        Settings can disable a chain while a remote balance or token detection query is in
+        flight. The persisted settings are read in the writer's transaction so that a late write
+        cannot recreate a fully disabled chain's cache after the settings cleanup has committed.
+        """
+        if (disabled_addresses := self.get_settings(write_cursor).disabled_chain_queries.get(blockchain)) is not None:  # noqa: E501
+            self.delete_balances_query_ts_for_disabled_chains(
+                write_cursor=write_cursor,
+                disabled_chain_queries={blockchain: disabled_addresses},
+            )
 
     def get_historical_balance_cache(
             self,

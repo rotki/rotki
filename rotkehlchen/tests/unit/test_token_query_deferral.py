@@ -424,6 +424,7 @@ def test_failed_token_is_not_queried_again_during_the_cooldown(
     decoder, now = ethereum_transaction_decoder, ts_now()
     with (
         patch.object(ethereum_inquirer, 'multicall_2', **NODES_DOWN) as multicall,
+        patch('rotkehlchen.chain.evm.decoding.decoder.ts_now', return_value=now),
         patch('rotkehlchen.chain.evm.node_inquirer.ts_now', return_value=now),
     ):
         assert sorted(decoder.get_and_decode_undecoded_transactions()) == sorted(tx_hashes)

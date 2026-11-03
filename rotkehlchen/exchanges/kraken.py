@@ -773,23 +773,25 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     def process_kraken_events_for_trade(
             self,
             trade_parts: list[HistoryEvent],
-    ) -> list[SwapEvent]:
-        """Processes events from trade parts to a list of SwapEvents. If it's an adjustment
-        adds it to a separate list"""
+    ) -> Sequence[SwapEvent | HistoryEvent]:
+        """Process trade parts into swaps, preserving same-side receive/spend groups."""
         event_id = trade_parts[0].group_identifier
         is_spend_receive = False
+        receive_spend_types: list[HistoryEventType] = []
         trade_assets = []
         spend_part, receive_part, fee_parts, kfee_part = None, None, [], None
 
         for trade_part in trade_parts:
             if trade_part.event_type == HistoryEventType.RECEIVE:
                 is_spend_receive = True
+                receive_spend_types.append(trade_part.event_type)
                 receive_part = trade_part
             elif trade_part.event_type == HistoryEventType.SPEND:
                 if trade_part.event_subtype == HistoryEventSubType.FEE:
                     fee_parts.append(trade_part)
                 else:
                     is_spend_receive = True
+                    receive_spend_types.append(trade_part.event_type)
                     spend_part = trade_part
             elif trade_part.event_type == HistoryEventType.TRADE:
                 if trade_part.event_subtype == HistoryEventSubType.FEE:
@@ -806,6 +808,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 trade_part.event_subtype != HistoryEventSubType.FEE
             ):
                 trade_assets.append(trade_part.asset)
+
+        if len(receive_spend_types) > 1 and len(set(receive_spend_types)) == 1:
+            return trade_parts
 
         if is_spend_receive and len(trade_parts) < 2:
             log.warning(
@@ -916,7 +921,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         May raise:
         - RemoteError if the pairs couldn't be correctly queried
         """
-        swap_events = []
+        swap_events: list[SwapEvent | HistoryEvent] = []
         max_ts = 0
         get_attr = operator.attrgetter('group_identifier')
         # Create a list of lists where each sublist has the events for the same group identifier
@@ -1454,14 +1459,13 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 # valid trade (e.g. buy 100 ONDO for 100 USD). Do not add an asset equality check
                 # here: Kraken staking transfer pairs can cancel out with different asset symbols,
                 # and the skipped-event reprocessing flow relies on keeping that behavior.
-                if (  # Compare if amounts cancel themselves out (also fee if exists)
+                if (  # Compare the raw pair since either entry may not generate a group event.
                         len(events) == 2 and idx == 1 and
                         event_type != HistoryEventType.TRADE and
                         events[0]['type'] == events[1]['type'] and
                         events[0]['subtype'] == events[1]['subtype'] and
-                        abs(raw_amount) == group_events[0][1].amount and (
-                            len(group_events) != 2 or
-                            abs(fee_amount) == group_events[1][1].amount)
+                        raw_amount == -deserialize_fval(events[0]['amount']) and
+                        fee_amount == -deserialize_fval(events[0]['fee'])
                 ):
                     log.info(f'Skipping failed kraken events that cancel each other out: {events}')
                     return [], skipped, False
@@ -1553,7 +1557,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     any(x.get('aclass') == 'tokenized_asset' for x in events)
             ):
                 _remove_canceling_ledger_legs(event_set)
-            if len(event_set) == 2:
+            if len(event_set) == 2 and {
+                event.event_type for _, event in event_set
+            } == {HistoryEventType.RECEIVE, HistoryEventType.SPEND}:
                 for _, history_event in event_set:
                     history_event.event_subtype = HistoryEventSubType.RECEIVE if history_event.event_type == HistoryEventType.RECEIVE else HistoryEventSubType.SPEND  # noqa: E501
                     history_event.event_type = HistoryEventType.TRADE

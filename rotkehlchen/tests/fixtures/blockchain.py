@@ -60,7 +60,6 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.externalapis.jupiter import Jupiter
 from rotkehlchen.externalapis.monerium import Monerium
-from rotkehlchen.externalapis.opensea import Opensea
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
@@ -1162,15 +1161,6 @@ def fixture_ethereum_modules() -> list[str]:
 @pytest.fixture(name='beaconchain')
 def fixture_beaconchain(database, messages_aggregator):
     return BeaconChain(database=database, msg_aggregator=messages_aggregator)
-
-
-@pytest.fixture(name='opensea')
-def fixture_opensea(database, messages_aggregator, ethereum_inquirer):
-    return Opensea(
-        database=database,
-        msg_aggregator=messages_aggregator,
-        ethereum_inquirer=ethereum_inquirer,
-    )
 
 
 @pytest.fixture(name='btc_derivation_gap_limit')

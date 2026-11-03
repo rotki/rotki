@@ -14,6 +14,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_solana_token, get_solana_token
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import RPCNode, SolanaNodeCapabilities
+from rotkehlchen.chain.solana.constants import SOLANA_V1_ACTIVATION_SLOT
 from rotkehlchen.chain.solana.rpc import (
     Client,
     MemcmpOpts,
@@ -33,6 +34,7 @@ from rotkehlchen.chain.solana.utils import (
     is_solana_token_nft,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.helius import HELIUS_RPC_NODE_NAME
@@ -54,26 +56,41 @@ def identifier_to_address(identifier: str) -> SolanaAddress:
     return SolanaAddress(identifier.split(':')[1])
 
 
-@pytest.mark.parametrize('query_range', [False, True])
+@pytest.mark.parametrize('failure_source', ['address', 'range', 'backfill'])
 @pytest.mark.parametrize('solana_accounts', [[SolanaAddress('updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM')]])  # noqa: E501
 def test_transaction_query_failure_sends_finished_status(
         solana_manager: SolanaManager,
         solana_accounts: list[SolanaAddress],
-        query_range: bool,
+        failure_source: str,
 ) -> None:
     """A failed RPC query must not leave the frontend progress row running forever."""
     address = solana_accounts[0]
     transactions = solana_manager.transactions
+    if failure_source == 'backfill':
+        with transactions.database.conn.write_ctx() as write_cursor:
+            transactions.database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT,
+                value=SOLANA_V1_ACTIVATION_SLOT,
+                address=address,
+            )
+
     with (
         patch.object(transactions.node_inquirer, 'query_token_accounts_by_owner', return_value=[]),
         patch.object(
             transactions.node_inquirer,
             'query_tx_signatures_for_address',
+            return_value=[],
+            side_effect=None if failure_source == 'backfill' else RemoteError('RPC unavailable'),
+        ) as query_signatures,
+        patch.object(
+            transactions.node_inquirer,
+            'query_tx_signature_pages_for_address',
             side_effect=RemoteError('RPC unavailable'),
-        ),
+        ) as query_signature_pages,
         patch.object(transactions.database.msg_aggregator, 'add_message') as add_message,
     ):
-        if query_range:
+        if failure_source == 'range':
             with pytest.raises(RemoteError, match='RPC unavailable'):
                 transactions.query_transactions_in_range(
                     address=address,
@@ -88,6 +105,21 @@ def test_transaction_query_failure_sends_finished_status(
         str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
         str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
     ]
+    query_signatures.assert_called_once()
+    if failure_source == 'backfill':
+        query_signature_pages.assert_called_once_with(
+            address=address,
+            until=None,
+            min_slot=SOLANA_V1_ACTIVATION_SLOT,
+        )
+        with transactions.database.conn.read_ctx() as cursor:
+            assert transactions.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.SOLANA_TX_BACKFILL_FROM_SLOT,
+                address=address,
+            ) == SOLANA_V1_ACTIVATION_SLOT
+    else:
+        query_signature_pages.assert_not_called()
 
 
 @pytest.mark.parametrize('solana_accounts', [[
@@ -202,6 +234,129 @@ def test_solana_rpc_method_decode_errors_raise_serde_error() -> None:
             pytest.raises(SerdeJSONError, match='Failed to decode solana'),
         ):
             method()
+
+
+@pytest.mark.vcr
+def test_query_v1_tx_from_rpc(solana_inquirer: SolanaInquirer) -> None:
+    """Test that v1 transactions are requested and deserialized."""
+    signature_str = '3UTqecoEGPw1fq28hHFiJSWAPtKBtBQAv8dLyDEUbtmwC7bC1DZwxuLvDhZPPVSr69YnSQjDA2wwBwzZKiFnyR5q'  # noqa: E501
+    # Cassette replay ignores the request body, so a reverted version would still get this
+    # response. The spy is what ties the test to the version that is actually requested.
+    with patch(
+        'requests.Session.post',
+        autospec=True,
+        side_effect=requests.Session.post,
+    ) as post_mock:
+        tx, token_account_mapping = solana_inquirer.get_transaction_for_signature(
+            signature=(signature := deserialize_tx_signature(signature_str)),
+        )
+
+    assert post_mock.call_args.kwargs['json']['params'] == [signature_str, {
+        'encoding': 'json',
+        'maxSupportedTransactionVersion': 1,
+    }]
+    assert tx.signature == signature
+    assert tx.fee == 10470
+    assert tx.slot == 463752700
+    assert tx.block_time == Timestamp(1793463445)
+    assert tx.success is True
+    assert len(tx.account_keys) == 16
+    assert tx.account_keys[0] == 'ybrFb3UHYRgs2NXJviyGAWVKk1F87uRfCD6KmpnZWkt'
+    assert tx.account_keys[-1] == 'GyY3R42mB5xYuuXEFruACXANikTh5SimtwTffcMZ9Cy7'
+    assert len(tx.instructions) == 6
+    assert len([x for x in tx.instructions if x.parent_execution_index is None]) == 3
+    assert token_account_mapping == {}
+
+
+@pytest.mark.vcr
+def test_query_tx_with_closed_lookup_table(solana_inquirer: SolanaInquirer) -> None:
+    """Accounts from a closed lookup table are read from the tx meta, in key order.
+
+    The cassette has no getAccountInfo for the table, so querying it would fail the test.
+    """
+    tx, _ = solana_inquirer.get_transaction_for_signature(
+        signature=(signature := deserialize_tx_signature('539VNkXupFrdFLS6NbMbhBVLjcsu5aGmZGtd8rdGXs7LYcT9LbFJ8ft8txKCxfrn1wCRTRTnhD9gfdg2r2N4rgye')),  # noqa: E501
+    )
+    assert tx.signature == signature
+    assert tx.fee == 15000
+    assert tx.slot == 447140000
+    assert tx.block_time == Timestamp(1789440582)
+    assert tx.success is True
+    assert len(tx.account_keys) == 30
+    assert tx.account_keys[19:] == [
+        '3HjjzkfzPdNSEbHpEZ5Um934SJ2Ek35MngA1K2k4SjFD',  # last key from the tx's account keys
+        '35cTmMoEFSJTsaV1CAp8BQpV5fkxJRSbEcUUaorTQAFb',  # first writable from the closed table
+        '9rocekFk1wFNt2ZKmxtWPBfkcwuobtNEfCr6PdtwPenG',
+        '9dG6xjHko2zWrhgGERXbWk41QhxaHtdoTuBXFvtXRHkc',
+        'So11111111111111111111111111111111111111112',  # first readonly from the closed table
+        'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+        'ADyA8hdefvWN2dbGGWFotbzWxrAvLW83WG6QCVXvJKqw',
+        'GS4CU59F31iL7aR2Q8zVS8DRrcRnXX1yjQ66TqNVQnaR',
+        'C2aFPdENg4A2HQsmrd5rTw5TaYBX5Ku887cWjbFKtZpw',
+        '5PHirr8joyTMp9JMm6nW7hNDVyEYdkzDqazxPD7RaTjx',
+        'pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ',
+    ]
+    assert len(tx.instructions) == 25
+
+
+def test_query_tx_without_loaded_addresses_uses_lookup_table(
+        solana_inquirer: SolanaInquirer,
+) -> None:
+    """Without loaded addresses in the tx meta the lookup table is queried instead.
+
+    Real responses include them, so this path can only be reached with a mocked response.
+    """
+    client = Client(endpoint='http://example.invalid', timeout=1)
+    response = mock_solana_rpc_response({'result': {
+        'blockTime': 1786000000,
+        'meta': {
+            'err': None,
+            'fee': 5000,
+            'innerInstructions': [],
+            'postTokenBalances': [],
+            'preTokenBalances': [],
+        },
+        'slot': 447140000,
+        'transaction': {
+            'message': {
+                'accountKeys': [(user_address := 'ybrFb3UHYRgs2NXJviyGAWVKk1F87uRfCD6KmpnZWkt')],
+                'addressTableLookups': [{
+                    'accountKey': '7xgG7mVnWVFKTp1VXQJaaAeMhsfaz5VchLACJXzjnFiK',
+                    'readonlyIndexes': [1],
+                    'writableIndexes': [0],
+                }],
+                'instructions': [{
+                    'accounts': [0, 1],
+                    'data': '3Bxs412MvVNQj175',
+                    'programIdIndex': 2,
+                }],
+            },
+            'signatures': ['539VNkXupFrdFLS6NbMbhBVLjcsu5aGmZGtd8rdGXs7LYcT9LbFJ8ft8txKCxfrn1wCRTRTnhD9gfdg2r2N4rgye'],  # noqa: E501
+        },
+        'version': 0,
+    }})
+    with (
+        patch.object(client.session, 'post', return_value=response),
+        patch.object(
+            solana_inquirer,
+            'query',
+            side_effect=lambda method, **_: method(client),
+        ),
+        patch.object(
+            solana_inquirer,
+            '_query_address_lookup_table',
+            return_value=(
+                [(writable_address := 'So11111111111111111111111111111111111111112')],
+                [(readonly_address := '11111111111111111111111111111111')],
+            ),
+        ) as lookup_table_mock,
+    ):
+        tx, _ = solana_inquirer.get_transaction_for_signature(
+            signature=deserialize_tx_signature('539VNkXupFrdFLS6NbMbhBVLjcsu5aGmZGtd8rdGXs7LYcT9LbFJ8ft8txKCxfrn1wCRTRTnhD9gfdg2r2N4rgye'),
+        )
+
+    assert lookup_table_mock.call_count == 1
+    assert tx.account_keys == [user_address, writable_address, readonly_address]
 
 
 @pytest.mark.vcr
@@ -378,6 +533,45 @@ def test_query_signatures_for_address(solana_inquirer: SolanaInquirer) -> None:
     assert len(signatures) == 312
     assert signatures[0] == deserialize_tx_signature('5gJFZweW8EsTQCNWH2EyjJA3vm2VcT91vQtrNAcx7YXeq4zHmqXzSqxxnhb9GxiLvecWJJZv8xxW6opHSnJME643')  # noqa: E501
     assert signatures[63] == deserialize_tx_signature('63u9VxkLKDSBs2nH7Knv4MwX7dU9BKx8WEMGXquWkzVkCm9McGrDcbhhfw8TRm7LgRzXDvutdX74pNMRmo7L2TbL')  # noqa: E501
+
+
+def test_query_signatures_for_address_min_slot(solana_inquirer: SolanaInquirer) -> None:
+    """Signatures at the boundary are included and pagination stops after reaching older slots."""
+    boundary_signature, old_signature = Signature.new_unique(), Signature.new_unique()
+    client = MagicMock(spec=Client)
+    client.get_signatures_for_address.side_effect = [
+        SimpleNamespace(value=[
+            *[SimpleNamespace(
+                signature=Signature.new_unique(),
+                slot=SOLANA_V1_ACTIVATION_SLOT + 1,
+            ) for _ in range(999)],
+            SimpleNamespace(
+                signature=boundary_signature,
+                slot=SOLANA_V1_ACTIVATION_SLOT,
+            ),
+        ]),
+        SimpleNamespace(value=[SimpleNamespace(
+            signature=old_signature,
+            slot=SOLANA_V1_ACTIVATION_SLOT - 1,
+        )]),
+    ]
+    with patch.object(
+        solana_inquirer,
+        'query',
+        side_effect=lambda method, **kwargs: method(client),
+    ):
+        signatures = solana_inquirer.query_tx_signatures_for_address(
+            address=SolanaAddress('7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY'),
+            min_slot=SOLANA_V1_ACTIVATION_SLOT,
+        )
+
+    assert len(signatures) == 1000
+    assert signatures[-1] == boundary_signature
+    assert old_signature not in signatures
+    assert client.get_signatures_for_address.call_count == 2
+    assert (
+        client.get_signatures_for_address.call_args_list[1].kwargs['before'] == boundary_signature
+    )
 
 
 @pytest.mark.parametrize('solana_accounts', [[SolanaAddress('7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY')]])  # noqa: E501

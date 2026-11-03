@@ -4,8 +4,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import requests
-from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI
-from ens.utils import normal_name_to_hash
+from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI, UNIVERSAL_RESOLVER
+from ens.constants import UNIVERSAL_RESOLVER_ADDR
+from ens.utils import dns_encode_name, normal_name_to_hash
 from eth_utils import to_checksum_address
 from requests.exceptions import RequestException
 from web3 import Web3
@@ -151,19 +152,36 @@ def try_download_ens_avatar(
     if (is_gwei_name := ens_name.endswith(GWEI_NAME_SUFFIX)):
         # the GNS contract is an ENS-compatible resolver for all .gwei names
         resolver_addr: ChecksumEvmAddress | None = GWEI_NAMES_ADDRESS
+        normal_name: str | None = ens_name
     else:
-        resolver_addr, _ = eth_inquirer.get_ens_resolver_addr(ens_name)
+        resolver_addr, normal_name = eth_inquirer.get_ens_resolver_addr(ens_name)
 
-    if resolver_addr is None:
+    if resolver_addr is None or normal_name is None:
         log.error('Could not find ENS resolver address for %s', ens_name)
         return
 
-    avatar_url = eth_inquirer.call_contract(
-        contract_address=resolver_addr,
-        abi=ENS_RESOLVER_ABI,
-        method_name='text',
-        arguments=[normal_name_to_hash(ens_name), 'avatar'],
-    )
+    if is_gwei_name:
+        avatar_url = eth_inquirer.call_contract(
+            contract_address=resolver_addr,
+            abi=ENS_RESOLVER_ABI,
+            method_name='text',
+            arguments=[normal_name_to_hash(normal_name), 'avatar'],
+        )
+    else:
+        # Extended resolvers may only expose records through resolve(), not text().
+        result, _ = eth_inquirer.call_contract(
+            contract_address=UNIVERSAL_RESOLVER_ADDR,
+            abi=UNIVERSAL_RESOLVER,
+            method_name='resolve',
+            arguments=[
+                dns_encode_name(normal_name),
+                Web3().eth.contract(abi=ENS_RESOLVER_ABI).encode_abi(
+                    'text',
+                    args=[normal_name_to_hash(normal_name), 'avatar'],
+                ),
+            ],
+        )
+        avatar_url = Web3().codec.decode(['string'], result)[0]
     with eth_inquirer.database.conn.write_ctx() as cursor:
         cursor.execute(  # Set timestamp of the last update of the avatar
             'UPDATE ens_mappings SET last_avatar_update=? WHERE ens_name=?',

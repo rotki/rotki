@@ -646,6 +646,7 @@ class Inquirer:
             oracle_instance: CurrentPriceOracleInstance,
             from_assets: list[AssetWithOracles],
             to_asset: AssetWithOracles,
+            ignore_cache: bool = False,
     ) -> tuple[dict[AssetWithOracles, Price], list[AssetWithOracles]]:
         """Tries to query the current prices of the from_assets
         in to_asset valuation, using the provided oracle instance.
@@ -653,7 +654,12 @@ class Inquirer:
         and a list of assets for which no price was found.
         """
         try:
-            prices = oracle_instance.query_multiple_current_prices(
+            query_method = (
+                oracle_instance.query_multiple_current_prices_uncached
+                if ignore_cache
+                else oracle_instance.query_multiple_current_prices
+            )
+            prices = query_method(
                 from_assets=from_assets,
                 to_asset=to_asset,
             )
@@ -686,6 +692,7 @@ class Inquirer:
             from_assets: list[Asset],
             to_asset: Asset,
             skip_onchain: bool = False,
+            ignore_cache: bool = False,
     ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
         """Query oracle instances.
         Returns a dict mapping assets to a tuple of the price found and the oracle used.
@@ -739,6 +746,7 @@ class Inquirer:
                 oracle_instance=oracle_instance,
                 from_assets=unpriced_assets,
                 to_asset=to_asset,
+                ignore_cache=ignore_cache,
             )
             for from_asset, price in prices.items():
                 log.debug(
@@ -984,6 +992,7 @@ class Inquirer:
             unpriced_assets: list[Asset],
             to_asset: Asset,
             skip_onchain: bool,
+            ignore_cache: bool = False,
     ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
         """Find prices for already normalized assets that are not in the cache, going through
         the manual, fiat and special sources first and then the oracles."""
@@ -1001,11 +1010,19 @@ class Inquirer:
             if len(unpriced_assets) == 0:
                 break
         else:
-            found_prices.update(Inquirer._query_oracle_instances(
-                from_assets=unpriced_assets,
-                to_asset=to_asset,
-                skip_onchain=skip_onchain,
-            ))
+            if ignore_cache:
+                found_prices.update(Inquirer._query_oracle_instances(
+                    from_assets=unpriced_assets,
+                    to_asset=to_asset,
+                    skip_onchain=skip_onchain,
+                    ignore_cache=True,
+                ))
+            else:
+                found_prices.update(Inquirer._query_oracle_instances(
+                    from_assets=unpriced_assets,
+                    to_asset=to_asset,
+                    skip_onchain=skip_onchain,
+                ))
 
         return found_prices
 
@@ -1191,6 +1208,7 @@ class Inquirer:
                     unpriced_assets=unpriced_assets,
                     to_asset=to_asset,
                     skip_onchain=skip_onchain,
+                    ignore_cache=True,
                 ))
             else:
                 found_prices.update(Inquirer._query_coalesced_prices(

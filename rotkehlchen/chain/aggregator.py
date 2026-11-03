@@ -1025,6 +1025,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     address=stored_address,
                 )
 
+            self.database.delete_balances_cache_if_chain_disabled(
+                write_cursor=write_cursor,
+                blockchain=blockchain,
+            )
+
     def sync_bitcoin_accounts_with_db(
             self,
             write_cursor: DBCursor,
