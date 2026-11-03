@@ -231,9 +231,18 @@ class DBSnapshot:
     ) -> None:
         """Import the validated snapshot data to the database.
         May raise:
-        - InputError if any timed location data is already present in the database, or any timed
-          balance is already present in the database or contains an unknown asset.
+        - InputError if any location does not exist, any timed location data is already present
+          in the database, or any timed balance is already present in the database or contains
+          an unknown asset.
         """
+        locations = {entry.location for entry in processed_location_data_list}
+        known = {row[0] for row in write_cursor.execute(
+            f'SELECT identifier FROM locations WHERE identifier IN ({",".join("?" * len(locations))})',  # noqa: E501
+            tuple(locations),
+        )}
+        if len(unknown := locations - known) != 0:
+            raise InputError(f'Snapshot references unknown locations: {", ".join(sorted(unknown))}')  # noqa: E501
+
         self.add_nft_asset_ids(
             write_cursor=write_cursor,
             entries=[entry.asset.identifier for entry in processed_balances_list],
