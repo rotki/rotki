@@ -1,23 +1,27 @@
-from contextlib import ExitStack
+from contextlib import ExitStack, nullcontext
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, call, patch
 
 import pytest
+from web3 import HTTPProvider, Web3
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE_NAME
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.transactions import RangeQueryOutcome
-from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
+from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.structures import TimestampOrBlockRange
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import (
+    BlockchainQueryError,
     BlockscoutIncompleteResponse,
     ChainNotSupported,
+    ContractReverted,
     IndexerRangeNotCovered,
     NoAvailableIndexers,
     RemoteError,
@@ -578,3 +582,71 @@ def test_cached_incomplete_blockscout_range_still_fails_the_sync(
     assert all(x.call_count == 2 for x in fallback_mocks)
     with optimism_transactions.database.conn.read_ctx() as cursor:
         assert optimism_transactions.database.get_used_query_range(cursor, location_string) is None
+
+
+@pytest.mark.parametrize(('node_error', 'expected'), [
+    # eth_call errors as returned by real mainnet nodes (USDC/WETH calls), run through web3
+    ({'code': 3, 'message': 'execution reverted', 'data': '0x'}, ContractReverted),  # publicnode
+    ({'code': 3, 'message': 'execution reverted'}, ContractReverted),  # dRPC/Tenderly, no data
+    ({
+        'code': 3,
+        'message': 'execution reverted: ERC20: transfer amount exceeds balance',
+        'data': '0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002645524332303a207472616e7366657220616d6f756e7420657863656564732062616c616e63650000000000000000000000000000000000000000000000000000',  # noqa: E501
+    }, ContractReverted),
+    ({'code': -32003, 'message': 'out of gas: gas required exceeds: 30000'}, BlockchainQueryError),
+    ({'code': -32603, 'message': 'Internal error'}, BlockchainQueryError),  # cloudflare
+])
+def test_call_contract_only_flags_real_reverts(node_error: dict, expected: type) -> None:
+    """Only a revert is a ContractReverted. Any other node error must stay generic so that
+    failover still happens. The errors go through web3's own parsing, as with a real node.
+    """
+    def make_request(method: str, params: Any) -> dict[str, Any]:
+        if method == 'eth_chainId':  # web3 asks for it before eth_call
+            return {'jsonrpc': '2.0', 'id': 1, 'result': '0x1'}
+        return {'jsonrpc': '2.0', 'id': 1, 'error': node_error}
+
+    web3 = Web3(HTTPProvider('http://localhost:1'))
+    with patch.object(HTTPProvider, 'make_request', side_effect=make_request), pytest.raises(expected):  # noqa: E501
+        DummyEvmNodeInquirer()._call_contract(
+            web3=web3,
+            contract_address=make_evm_address(),
+            abi=[{'inputs': [], 'name': 'totalSupply', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}],  # noqa: E501
+            method_name='totalSupply',
+        )
+
+
+@pytest.mark.parametrize(('outcomes', 'expectation', 'failures'), [
+    # two nodes agreeing on a revert stops the walk, and a revert is not the node's fault
+    ([ContractReverted('r')] * 5, pytest.raises(ContractReverted), 0),
+    # a single revert is not trusted, so a later node can still answer
+    ([ContractReverted('r'), 42, 43], nullcontext(), 0),
+    # no second node to confirm, so the one revert seen is raised instead of the generic error
+    ([ContractReverted('r'), RemoteError('down')], pytest.raises(ContractReverted), 1),
+])
+def test_query_reverts(outcomes: list[Any], expectation: Any, failures: int) -> None:
+    """A revert is deterministic, so _query stops after the second node confirms it instead of
+    walking every node and the indexers. Each fake node raises or returns its outcome in turn.
+    """
+    inquirer = DummyEvmNodeInquirer()
+    inquirer._removed_nodes = set()
+    inquirer.rpc_mapping = {}
+    inquirer.failed_to_connect_nodes = set()
+    inquirer.methods_that_query_past_data = ()  # type: ignore[assignment]
+    inquirer.mark_node_failure = (mark_failure := MagicMock())  # type: ignore[method-assign]
+    inquirer.mark_node_success = MagicMock()  # type: ignore[method-assign]
+    hit: list[int] = []
+
+    def method(web3: Any) -> Any:
+        outcome = outcomes[len(hit)]
+        hit.append(len(hit))
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+    # the indexers entry needs no rpc connection, so it exercises the loop directly
+    node = NodeName(name=EVM_INDEXERS_NODE_NAME, endpoint='', owned=False, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
+    with expectation:
+        inquirer._query(method=method, call_order=[WeightedNode(node, True, ONE)] * len(outcomes))
+
+    assert hit == [0, 1]
+    assert mark_failure.call_count == failures

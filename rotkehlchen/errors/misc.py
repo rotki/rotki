@@ -178,6 +178,13 @@ class NotSPLConformant(Exception):
     """An address is not conforming to the solana SPL token standard"""
 
 
+class ContractReverted(RemoteError):
+    """Raised when a contract call reverted on-chain.
+
+    The revert is deterministic, so querying other nodes can't change the outcome.
+    """
+
+
 class BlockchainQueryError(Exception):
     """Raises when there are problems querying a blockchain node.
 

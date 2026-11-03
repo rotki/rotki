@@ -221,7 +221,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             )
         except (BlockchainQueryError, RemoteError) as e:
             # Universal Resolver reverts for unresolvable names. RPC nodes surface this as
-            # BlockchainQueryError while indexers surface it as RemoteError. In both cases
+            # ContractReverted (a RemoteError) and indexers as a plain RemoteError. In both cases
             # the ENS lookup should behave like the old registry flow and return None.
             log.error('blockchain query for ens_lookup failed due to %s', e)
             return None
