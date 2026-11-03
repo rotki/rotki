@@ -10,10 +10,13 @@ from rotkehlchen.constants.assets import A_ETH, A_WBTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.accounting import accounting_history_process, assert_pnl_totals_close
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
+from rotkehlchen.types import Price, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -41,7 +44,7 @@ def test_paraswap_swap_with_fee(accountant: Accountant, db_settings: dict):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(1700000000000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_WBTC,
@@ -54,7 +57,7 @@ def test_paraswap_swap_with_fee(accountant: Accountant, db_settings: dict):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(1700000001000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_WBTC,
@@ -67,7 +70,7 @@ def test_paraswap_swap_with_fee(accountant: Accountant, db_settings: dict):
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=TimestampMS(1700000001000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
@@ -80,7 +83,7 @@ def test_paraswap_swap_with_fee(accountant: Accountant, db_settings: dict):
         tx_ref=tx_hash,
         sequence_index=3,
         timestamp=TimestampMS(1700000001000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,

@@ -9,9 +9,13 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -26,7 +30,7 @@ def test_attest_optimism(optimism_inquirer, optimism_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1700569289000)),
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -37,7 +41,7 @@ def test_attest_optimism(optimism_inquirer, optimism_accounts):
             tx_ref=tx_hash,
             sequence_index=10,
             timestamp=timestamp,
-            location=Location.OPTIMISM,
+            location=LOCATION_OPTIMISM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.ATTEST,
             asset=A_ETH,
@@ -63,7 +67,7 @@ def test_attest_gitcoin_mint(arbitrum_one_inquirer, arbitrum_one_accounts):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
-        location=Location.ARBITRUM_ONE,
+        location=LOCATION_ARBITRUM_ONE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -74,7 +78,7 @@ def test_attest_gitcoin_mint(arbitrum_one_inquirer, arbitrum_one_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.ARBITRUM_ONE,
+        location=LOCATION_ARBITRUM_ONE,
         event_type=HistoryEventType.MINT,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -87,7 +91,7 @@ def test_attest_gitcoin_mint(arbitrum_one_inquirer, arbitrum_one_accounts):
         tx_ref=tx_hash,
         sequence_index=11,
         timestamp=timestamp,
-        location=Location.ARBITRUM_ONE,
+        location=LOCATION_ARBITRUM_ONE,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.ATTEST,
         asset=A_ETH,

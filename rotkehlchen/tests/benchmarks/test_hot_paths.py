@@ -24,13 +24,15 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.serialization.deserialize import deserialize_evm_tx_hash
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     EvmTransaction,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -109,7 +111,7 @@ def _make_events() -> list[EvmEvent]:
             tx_ref=deserialize_evm_tx_hash(idx.to_bytes(32, 'big')),
             sequence_index=idx % 16,
             timestamp=TimestampMS(1700000000000 + idx * 13_000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDC if idx % 3 == 0 else A_ETH,
@@ -177,7 +179,7 @@ def test_redecode_delete_customized_lookup(benchmark: Callable, database: DBHand
                         tx_ref=tx_hash,
                         sequence_index=seq_idx,
                         timestamp=TimestampMS(1700000000000),
-                        location=Location.ETHEREUM,
+                        location=LOCATION_ETHEREUM,
                         event_type=HistoryEventType.RECEIVE,
                         event_subtype=HistoryEventSubType.NONE,
                         asset=A_ETH,
@@ -191,7 +193,7 @@ def test_redecode_delete_customized_lookup(benchmark: Callable, database: DBHand
             db.delete_events_by_tx_ref(
                 write_cursor=write_cursor,
                 tx_refs=[tx_hashes[0]],
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 customized_handling='preserve_transactions',
             )
 

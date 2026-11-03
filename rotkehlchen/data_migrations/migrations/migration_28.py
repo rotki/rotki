@@ -16,8 +16,10 @@ from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.icons import NOT_FOUND_ICON_MARKER_SUFFIX
+from rotkehlchen.locations.chains import location_from_chain_id
+from rotkehlchen.locations.constants import LOCATION_BITMEX
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import ChainID, EVMTxHash, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, EVMTxHash, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import from_wei
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
 
@@ -100,7 +102,7 @@ def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                 dbevents.delete_events_by_tx_ref(
                     write_cursor=write_cursor,
                     tx_refs=chain_tx_hashes,
-                    location=Location.from_chain_id(chain_id),
+                    location=location_from_chain_id(chain_id),
                     customized_handling='preserve_transactions',
                 )
             write_cursor.executemany(
@@ -143,7 +145,7 @@ def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
 
             bindings = (
                 tx_hash,
-                Location.from_chain_id(chain_id).serialize_for_db(),
+                location_from_chain_id(chain_id),
                 CPT_GAS,
                 HistoryEventType.SPEND.serialize(),
                 HistoryEventType.FAIL.serialize(),  # gas of failed transactions
@@ -182,11 +184,11 @@ def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
         with rotki.data.db.user_write() as write_cursor:
             write_cursor.execute(  # cascades to user_credentials_mappings
                 'DELETE FROM user_credentials WHERE location=?',
-                (Location.BITMEX.serialize_for_db(),),
+                (LOCATION_BITMEX,),
             )
             write_cursor.execute(
                 'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
-                (f'{Location.BITMEX!s}\\_%', '\\'),
+                (f'{LOCATION_BITMEX!s}\\_%', '\\'),
             )
             if (non_syncing_exchanges := write_cursor.execute(
                 "SELECT value FROM settings WHERE name='non_syncing_exchanges'",
@@ -201,7 +203,7 @@ def data_migration_28(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
 
             write_cursor.execute(
                 "UPDATE settings SET value=? WHERE name='non_syncing_exchanges'",
-                (json.dumps([x for x in exchanges if x['location'] != Location.BITMEX.serialize()]),),  # noqa: E501
+                (json.dumps([x for x in exchanges if x['location'] != LOCATION_BITMEX]),),
             )
 
     @progress_step(description='Removing empty asset icon files')

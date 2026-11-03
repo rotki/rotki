@@ -10,12 +10,21 @@ text without the symbol: the notes filter matches the words around it and search
 is what the asset filter is for.
 """
 from string import Formatter
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
-from rotkehlchen.constants.location_details import get_formatted_location_name
+from rotkehlchen.constants.location_details import LOCATION_DETAILS, get_formatted_location_name
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import CHAINS_WITH_TRANSACTIONS, Location
+from rotkehlchen.locations.chains import (
+    location_from_chain,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
+from rotkehlchen.types import CHAINS_WITH_TRANSACTIONS
+
+if TYPE_CHECKING:
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 def sql_string_literal(value: str) -> str:
@@ -106,8 +115,8 @@ PLAIN_TRANSFER_SUBTYPES: Final = {
 EXCHANGE_TRANSFER_TYPES: Final = (HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL)
 EXCHANGE_COUNTERPARTIES: Final = frozenset(str(location) for location in ALL_SUPPORTED_EXCHANGES)
 # Native asset identifier of every chain that produces onchain events, keyed by location
-NATIVE_ASSET_BY_LOCATION: Final[dict[Location, str]] = {
-    Location.from_chain(chain): chain.get_native_token_id()
+NATIVE_ASSET_BY_LOCATION: Final[dict[LocationIdentifier, str]] = {
+    location_from_chain(chain): chain.get_native_token_id()
     for chain in CHAINS_WITH_TRANSACTIONS
 }
 
@@ -134,14 +143,14 @@ def is_plain_transfer(
 # the first match, and the columns of the chain and staking info tables are read through one
 # scalar subquery per entry type kind instead of one per placeholder.
 _LOCATION_NAME_SQL: Final = 'CASE location ' + ' '.join(
-    f'WHEN {sql_string_literal(location.serialize_for_db())} THEN {sql_string_literal(get_formatted_location_name(location))}'  # noqa: E501
-    for location in Location
-) + ' END'
+    f'WHEN {sql_string_literal(location)} THEN {sql_string_literal(get_formatted_location_name(location))}'  # noqa: E501
+    for location in LOCATION_DETAILS
+) + ' ELSE location END'
 _EXCHANGE_COUNTERPARTIES_SQL: Final = 'counterparty IN (' + ', '.join(
     sql_string_literal(x) for x in sorted(EXCHANGE_COUNTERPARTIES)
 ) + ')'
 _NATIVE_ASSET_SQL: Final = 'CASE location ' + ' '.join(
-    f'WHEN {sql_string_literal(location.serialize_for_db())} THEN asset={sql_string_literal(asset_id)}'  # noqa: E501
+    f'WHEN {sql_string_literal(location)} THEN asset={sql_string_literal(asset_id)}'
     for location, asset_id in NATIVE_ASSET_BY_LOCATION.items()
 ) + ' END'
 _COMMON_FIELDS: Final[dict[str, str | None]] = {'amount': 'amount', 'symbol': None, 'location': _LOCATION_NAME_SQL}  # noqa: E501
@@ -183,7 +192,7 @@ def _transfer_type_sql(event_type: HistoryEventType, text: str) -> str:
 
 def _kraken_staking_sql() -> str:
     return _if(
-        f'location={sql_string_literal(Location.KRAKEN.serialize_for_db())} AND type={sql_string_literal(HistoryEventType.STAKING.serialize())}',  # noqa: E501
+        f'location={sql_string_literal(LOCATION_KRAKEN)} AND type={sql_string_literal(HistoryEventType.STAKING.serialize())}',  # noqa: E501
         _case('subtype', {
             HistoryEventSubType.REWARD.serialize(): KRAKEN_STAKING_REWARD_TEMPLATE.to_sql(**_COMMON_FIELDS),  # noqa: E501
             HistoryEventSubType.FEE.serialize(): KRAKEN_STAKING_FEE_TEMPLATE.to_sql(**_COMMON_FIELDS),  # noqa: E501

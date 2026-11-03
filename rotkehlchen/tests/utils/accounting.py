@@ -15,12 +15,16 @@ from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import create_swap_events
+from rotkehlchen.locations.constants import (
+    LOCATION_EXTERNAL,
+    LOCATION_POLONIEX,
+)
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
 from rotkehlchen.tests.utils.constants import (
     TEST_PREMIUM_PNL_EVENTS_LIMIT,
     TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
 )
-from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TimestampMS
+from rotkehlchen.types import AssetAmount, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
@@ -55,21 +59,21 @@ MOCKED_PRICES = {
 history1 = [
     *create_swap_events(
         timestamp=TimestampMS(1446979735000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('268.678317859') * FVal(82)),
         receive=AssetAmount(asset=A_BTC, amount=FVal(82)),
     ),
     *create_swap_events(
         timestamp=TimestampMS(1446979735000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='2xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal('0.2315893') * FVal(1450)),
         receive=AssetAmount(asset=A_ETH, amount=FVal(1450)),
     ),
     *create_swap_events(
         timestamp=TimestampMS(1473505138000),  # cryptocompare hourly BTC/EUR price: 556.435
-        location=Location.POLONIEX,
+        location=LOCATION_POLONIEX,
         group_identifier='3xyz',  # cryptocompare hourly ETH/EUR price: 10.36
         spend=AssetAmount(asset=A_BTC, amount=FVal('0.01858275') * FVal(50)),
         receive=AssetAmount(asset=A_ETH, amount=FVal(50)),
@@ -77,7 +81,7 @@ history1 = [
     ),
     *create_swap_events(
         timestamp=TimestampMS(1475042230000),  # cryptocompare hourly BTC/EUR price: 537.805
-        location=Location.POLONIEX,
+        location=LOCATION_POLONIEX,
         group_identifier='4xyz',  # cryptocompare hourly ETH/EUR price: 11.925
         spend=AssetAmount(asset=A_ETH, amount=FVal(25)),
         receive=AssetAmount(asset=A_BTC, amount=FVal('0.02209898') * FVal(25)),

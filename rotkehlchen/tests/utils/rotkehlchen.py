@@ -8,8 +8,18 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
+from rotkehlchen.exchanges.binance import Binance
+from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.locations.constants import (
+    LOCATION_BANKS,
+    LOCATION_BINANCE,
+    LOCATION_BLOCKCHAIN,
+    LOCATION_KRAKEN,
+    LOCATION_POLONIEX,
+    LOCATION_TOTAL,
+)
 from rotkehlchen.tests.utils.blockchain import (
     mock_beaconchain,
     mock_bitcoin_balances_query,
@@ -24,7 +34,6 @@ from rotkehlchen.tests.utils.exchanges import (
 from rotkehlchen.types import (
     BTCAddress,
     ChecksumEvmAddress,
-    Location,
     Price,
     SupportedBlockchain,
     Timestamp,
@@ -178,9 +187,9 @@ def setup_balances(
     for idx, btc_acc in enumerate(btc_accounts):
         btc_map[btc_acc] = btc_balances[idx]
 
-    binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
+    binance = try_get_first_exchange(rotki.exchange_manager, LOCATION_BINANCE, Binance)
     binance_patch = patch_binance_balances_query(binance) if binance else None
-    poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
+    poloniex = try_get_first_exchange(rotki.exchange_manager, LOCATION_POLONIEX, Poloniex)
     poloniex_patch = patch_poloniex_balances_query(poloniex) if poloniex else None
     etherscan_patch = mock_etherscan_query(
         eth_map=eth_map,
@@ -280,62 +289,62 @@ def add_starting_balances(datahandler) -> list[DBAssetBalance]:
     location_data = [
         LocationData(
             time=Timestamp(1451606400),
-            location=Location.KRAKEN.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_KRAKEN,  # pylint: disable=no-member
             usd_value='100',
         ),
         LocationData(
             time=Timestamp(1451606400),
-            location=Location.BANKS.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_BANKS,  # pylint: disable=no-member
             usd_value='1000',
         ),
         LocationData(
             time=Timestamp(1461606500),
-            location=Location.POLONIEX.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_POLONIEX,  # pylint: disable=no-member
             usd_value='50',
         ),
         LocationData(
             time=Timestamp(1461606500),
-            location=Location.KRAKEN.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_KRAKEN,  # pylint: disable=no-member
             usd_value='200',
         ),
         LocationData(
             time=Timestamp(1461606500),
-            location=Location.BANKS.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_BANKS,  # pylint: disable=no-member
             usd_value='50000',
         ),
         LocationData(
             time=Timestamp(1491607800),
-            location=Location.POLONIEX.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_POLONIEX,  # pylint: disable=no-member
             usd_value='100',
         ),
         LocationData(
             time=Timestamp(1491607800),
-            location=Location.KRAKEN.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_KRAKEN,  # pylint: disable=no-member
             usd_value='2000',
         ),
         LocationData(
             time=Timestamp(1491607800),
-            location=Location.BANKS.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_BANKS,  # pylint: disable=no-member
             usd_value='10000',
         ),
         LocationData(
             time=Timestamp(1491607800),
-            location=Location.BLOCKCHAIN.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_BLOCKCHAIN,  # pylint: disable=no-member
             usd_value='200000',
         ),
         LocationData(
             time=Timestamp(1451606400),
-            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_TOTAL,  # pylint: disable=no-member
             usd_value='1500',
         ),
         LocationData(
             time=Timestamp(1461606500),
-            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_TOTAL,  # pylint: disable=no-member
             usd_value='4500',
         ),
         LocationData(
             time=Timestamp(1491607800),
-            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            location=LOCATION_TOTAL,  # pylint: disable=no-member
             usd_value='10700.5',
         ),
     ]
@@ -381,22 +390,22 @@ def add_starting_nfts(datahandler):
         location_data = [
             LocationData(
                 time=Timestamp(1488326400),
-                location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+                location=LOCATION_TOTAL,  # pylint: disable=no-member
                 usd_value='3000',
             ),
             LocationData(
                 time=Timestamp(1488426400),
-                location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+                location=LOCATION_TOTAL,  # pylint: disable=no-member
                 usd_value='4000',
             ),
             LocationData(
                 time=Timestamp(1488526400),
-                location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+                location=LOCATION_TOTAL,  # pylint: disable=no-member
                 usd_value='5000',
             ),
             LocationData(
                 time=Timestamp(1488626400),
-                location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+                location=LOCATION_TOTAL,  # pylint: disable=no-member
                 usd_value='5500',
             ),
         ]

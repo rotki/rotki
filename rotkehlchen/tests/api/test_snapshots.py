@@ -23,6 +23,7 @@ from rotkehlchen.db.snapshots import (
 )
 from rotkehlchen.db.utils import BalanceType, DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
+from rotkehlchen.locations.types import deserialize_location_identifier
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -32,7 +33,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.messages import consume_errors
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -394,7 +395,7 @@ def assert_csv_export_response(
                     display_date_in_localtime=timestamp_validation_data[1],
                     is_for_import=False,
                 )
-            assert Location.deserialize(row['location']) is not None
+            assert deserialize_location_identifier(row['location']) is not None
             assert row[f'{main_currency.symbol.lower()}_value'] is not None
             count += 1
         assert count == 3
@@ -413,7 +414,7 @@ def assert_csv_export_response(
                     display_date_in_localtime=timestamp_validation_data[1],
                     is_for_import=True,
                 )
-            assert Location.deserialize(row['location']) is not None
+            assert deserialize_location_identifier(row['location']) is not None
             assert row['usd_value'] is not None
             count += 1
         assert count == 3
@@ -701,6 +702,33 @@ def test_import_snapshot(
         status_code=HTTPStatus.CONFLICT,
     )
 
+    # check that importing snapshot with an unknown location fails before writing anything.
+    csv_dir7 = str(tmpdir_factory.mktemp('test_csv_dir7'))
+    _create_snapshot_with_valid_data(csv_dir7, (unknown_location_ts := Timestamp(1651071200)))
+    with open(Path(csv_dir7) / LOCATION_DATA_IMPORT_FILENAME, 'a', encoding='utf8') as f:
+        csv.DictWriter(f, fieldnames=LOCATION_DATA_IMPORT_HEADERS).writerow(
+            {'timestamp': unknown_location_ts, 'location': 'krakn', 'usd_value': '1'},
+        )
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dbsnapshotsresource',
+        ),
+        json={
+            'balances_snapshot_file': f'{csv_dir7}/{BALANCES_FOR_IMPORT_FILENAME}',
+            'location_data_snapshot_file': f'{csv_dir7}/{LOCATION_DATA_IMPORT_FILENAME}',
+        },
+    )
+    assert_error_response(
+        response,
+        contained_in_msg='Snapshot references unknown locations: krakn',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    with db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM timed_balances WHERE timestamp=?', (unknown_location_ts,),
+        ).fetchone()[0] == 0
+
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_delete_snapshot(rotkehlchen_api_server: APIServer) -> None:
@@ -891,3 +919,29 @@ def test_edit_snapshot(rotkehlchen_api_server: APIServer) -> None:
     assert len(result['balances_snapshot']) == 2
     assert len(result['location_data_snapshot']) == 2
     assert result == snapshot_payload
+
+    # an unknown location names the location and keeps the previous snapshot
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+        ),
+        json=snapshot_payload | {'location_data_snapshot': [
+            {'timestamp': ts, 'location': 'krakn', 'usd_value': '12929'},
+            {'timestamp': ts, 'location': 'total', 'usd_value': '12929'},
+        ]},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Snapshot references unknown locations: krakn',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+        ),
+    )
+    assert assert_proper_sync_response_with_result(response) == snapshot_payload

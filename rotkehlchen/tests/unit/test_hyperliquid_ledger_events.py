@@ -18,8 +18,9 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import LOCATION_HYPERLIQUID
 from rotkehlchen.tests.utils.hyperliquid import query_history_events
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -100,7 +101,7 @@ def test_send_to_another_account_pays_the_fee(globaldb) -> None:
     assert events[0].notes == f'Hyperliquid spot send to {RECIPIENT}'
     assert events[1].notes == 'Hyperliquid spot send fee'
     assert {event.location_label for event in events} == {SENDER}
-    assert {event.location for event in events} == {Location.HYPERLIQUID}
+    assert {event.location for event in events} == {LOCATION_HYPERLIQUID}
 
 
 def test_send_fee_paid_in_hype(globaldb) -> None:

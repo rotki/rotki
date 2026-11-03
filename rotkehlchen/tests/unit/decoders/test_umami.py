@@ -13,8 +13,11 @@ from rotkehlchen.constants.assets import A_ARB, A_ETH, Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -38,7 +41,7 @@ def test_umami_deposit_request(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -49,7 +52,7 @@ def test_umami_deposit_request(
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
@@ -62,7 +65,7 @@ def test_umami_deposit_request(
         ), EvmEvent(
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
@@ -75,7 +78,7 @@ def test_umami_deposit_request(
         ), EvmEvent(
             sequence_index=3,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -103,7 +106,7 @@ def test_umami_deposit_execution(
         EvmEvent(
             sequence_index=8,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=A_GM_USDC_WBTC,
@@ -130,7 +133,7 @@ def test_umami_withdraw_request(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -141,7 +144,7 @@ def test_umami_withdraw_request(
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=A_GM_USDC_WBTC,
@@ -154,7 +157,7 @@ def test_umami_withdraw_request(
         ), EvmEvent(
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -180,7 +183,7 @@ def test_umami_withdraw_execution(
     assert events == [EvmEvent(
         sequence_index=0,
         timestamp=timestamp,
-        location=Location.ARBITRUM_ONE,
+        location=LOCATION_ARBITRUM_ONE,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
         asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
@@ -193,7 +196,7 @@ def test_umami_withdraw_execution(
     ), EvmEvent(
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.ARBITRUM_ONE,
+        location=LOCATION_ARBITRUM_ONE,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
@@ -220,7 +223,7 @@ def test_umami_stake(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -231,7 +234,7 @@ def test_umami_stake(
         ), EvmEvent(
             sequence_index=5,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_GM_USDC_WBTC,
@@ -259,7 +262,7 @@ def test_umami_unstake(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -270,7 +273,7 @@ def test_umami_unstake(
         ), EvmEvent(
             sequence_index=23,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_ARB,
@@ -283,7 +286,7 @@ def test_umami_unstake(
         ), EvmEvent(
             sequence_index=25,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_GM_USDC_WBTC,
@@ -311,7 +314,7 @@ def test_umami_claim_rewards(
         EvmEvent(
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -322,7 +325,7 @@ def test_umami_claim_rewards(
         ), EvmEvent(
             sequence_index=10,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_ARB,

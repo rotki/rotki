@@ -9,8 +9,11 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr
@@ -26,7 +29,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1706095919000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -37,7 +40,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.DONATE,
         asset=A_ETH,
@@ -50,7 +53,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         sequence_index=278,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=Asset('eip155:1/erc721:0x723932B58a7c6AEf036d1Fe17654E845d0f0fae5/4000000011'),
@@ -63,7 +66,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         sequence_index=280,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=Asset('eip155:1/erc721:0x723932B58a7c6AEf036d1Fe17654E845d0f0fae5/3000000016'),
@@ -89,7 +92,7 @@ def test_fund_raising(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1706711399000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -100,7 +103,7 @@ def test_fund_raising(ethereum_inquirer, ethereum_accounts):
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,

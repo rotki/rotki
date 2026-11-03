@@ -12,8 +12,11 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.network import create_session
 
@@ -119,7 +122,7 @@ class Kraken(CurrentPriceOracleInterface):
         """Return possible Kraken symbols for a batch of explicitly mapped assets."""
         symbols = GlobalDBHandler.get_location_asset_symbols(
             assets=assets,
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
         )
         for asset_symbols in symbols.values():
             if 'XBT' in asset_symbols:

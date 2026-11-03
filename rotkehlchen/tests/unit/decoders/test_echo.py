@@ -8,9 +8,12 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+)
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 USDC_TOKEN = Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
 
@@ -28,7 +31,7 @@ def test_echo_fund(base_inquirer, base_accounts):
             tx_ref=tx_hash,
             sequence_index=262,
             timestamp=(timestamp := TimestampMS(1736535363000)),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=USDC_TOKEN,
@@ -40,7 +43,7 @@ def test_echo_fund(base_inquirer, base_accounts):
             tx_ref=tx_hash,
             sequence_index=265,
             timestamp=timestamp,
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=USDC_TOKEN,
@@ -65,7 +68,7 @@ def test_echo_refund(base_inquirer, base_accounts):
             tx_ref=tx_hash,
             sequence_index=492,
             timestamp=TimestampMS(1730227259000),
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=USDC_TOKEN,

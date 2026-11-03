@@ -16,12 +16,18 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.catalog import deserialize_builtin_location
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE_SC,
+    LOCATION_COINBASEPRO,
+    LOCATION_EXTERNAL,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import DEFAULT_TIMEZONE, Location, Timezone
+from rotkehlchen.types import DEFAULT_TIMEZONE, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -29,6 +35,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 logger = logging.getLogger(__name__)
@@ -68,21 +75,21 @@ COINLEDGER_NEGATIVE_ONLY_TYPES = {
 FEE_RECORD_TYPES = {'Network Fee', 'Platform Fee'}
 
 
-def platform_row_to_location(entry: str) -> Location:
+def platform_row_to_location(entry: str) -> LocationIdentifier:
     """Takes the Platform value from CoinLedger and returns a location."""
     try:
-        return Location.deserialize(entry)
+        return deserialize_builtin_location(entry)
     except DeserializationError:
         pass
 
     # Map aliases that differ from rotki location names
     if entry == 'Binance Smart Chain':
-        return Location.BINANCE_SC
+        return LOCATION_BINANCE_SC
     if entry in {'CoinbasePro', 'GDAX'}:
-        return Location.COINBASEPRO
+        return LOCATION_COINBASEPRO
 
     log.warning(f'Coinledger location "{entry}" unrecognized and imported as external')
-    return Location.EXTERNAL
+    return LOCATION_EXTERNAL
 
 
 class CoinledgerImporter(BaseExchangeImporter):

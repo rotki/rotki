@@ -11,9 +11,13 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+    LOCATION_POLYGON_POS,
+)
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -34,7 +38,7 @@ def test_swap_to_native(
     assert events == [EvmEvent(
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1622501116000)),
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=0,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -45,7 +49,7 @@ def test_swap_to_native(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=2,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
@@ -56,7 +60,7 @@ def test_swap_to_native(
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=3,
         event_subtype=HistoryEventSubType.SPEND,
         asset=Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'),
@@ -68,7 +72,7 @@ def test_swap_to_native(
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=4,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_POL,
@@ -91,7 +95,7 @@ def test_swap(
     assert events == [EvmEvent(
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1747572751000)),
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=0,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -102,7 +106,7 @@ def test_swap(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=1,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
@@ -113,7 +117,7 @@ def test_swap(
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=2,
         event_subtype=HistoryEventSubType.SPEND,
         asset=Asset('eip155:137/erc20:0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063'),
@@ -125,7 +129,7 @@ def test_swap(
     ), EvmSwapEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=3,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:137/erc20:0xeB51D9A39AD5EEF215dC0Bf39a8821ff804A0F01'),
@@ -149,7 +153,7 @@ def test_add_liquidity(
     assert events == [EvmEvent(
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1756221523000)),
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=0,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -160,7 +164,7 @@ def test_add_liquidity(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=1,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
@@ -174,7 +178,7 @@ def test_add_liquidity(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=2,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
@@ -188,7 +192,7 @@ def test_add_liquidity(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.POLYGON_POS,
+        location=LOCATION_POLYGON_POS,
         sequence_index=3,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
@@ -214,7 +218,7 @@ def test_remove_liquidity(
     assert events == [EvmEvent(
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1755330089000)),
-        location=Location.BASE,
+        location=LOCATION_BASE,
         sequence_index=0,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -225,7 +229,7 @@ def test_remove_liquidity(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         sequence_index=1,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.RETURN_WRAPPED,
@@ -238,7 +242,7 @@ def test_remove_liquidity(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         sequence_index=2,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
@@ -252,7 +256,7 @@ def test_remove_liquidity(
     ), EvmEvent(
         tx_ref=tx_hash,
         timestamp=timestamp,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         sequence_index=3,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REDEEM_WRAPPED,

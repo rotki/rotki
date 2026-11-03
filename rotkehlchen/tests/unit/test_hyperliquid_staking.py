@@ -14,9 +14,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import LOCATION_HYPERLIQUID
 from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.utils.hyperliquid import query_staking_history_events
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
@@ -40,12 +41,12 @@ def _staking_event(
 ) -> HistoryEvent:
     return HistoryEvent(
         group_identifier=create_group_identifier_from_unique_id(
-            location=Location.HYPERLIQUID,
+            location=LOCATION_HYPERLIQUID,
             unique_id=unique_id,
         ),
         sequence_index=0,
         timestamp=TimestampMS(timestamp),
-        location=Location.HYPERLIQUID,
+        location=LOCATION_HYPERLIQUID,
         event_type=event_type,
         event_subtype=event_subtype,
         asset=A_HYPE,

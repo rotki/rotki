@@ -19,9 +19,13 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_GNOSIS,
+)
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history_base_entry import add_entries, store_and_retrieve_events
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -191,7 +195,7 @@ def test_missing_accounting_rules_accounting_treatment(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
-        location=Location.GNOSIS,
+        location=LOCATION_GNOSIS,
         asset=A_USDC,
         amount=ONE,
         event_type=HistoryEventType.TRADE,
@@ -203,7 +207,7 @@ def test_missing_accounting_rules_accounting_treatment(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(16433333000),
-        location=Location.GNOSIS,
+        location=LOCATION_GNOSIS,
         asset=A_ETH,
         amount=ONE,
         event_type=HistoryEventType.TRADE,
@@ -215,7 +219,7 @@ def test_missing_accounting_rules_accounting_treatment(
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=TimestampMS(16433333000),
-        location=Location.GNOSIS,
+        location=LOCATION_GNOSIS,
         asset=A_ETH,
         amount=ONE,
         event_type=HistoryEventType.TRADE,
@@ -260,7 +264,7 @@ def test_events_affected_by_others_accounting_treatment(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         asset=A_CUSDC,
         amount=ONE,
         event_type=HistoryEventType.SPEND,
@@ -272,7 +276,7 @@ def test_events_affected_by_others_accounting_treatment(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         asset=A_USDC,
         amount=ONE,
         event_type=HistoryEventType.WITHDRAWAL,
@@ -321,7 +325,7 @@ def test_events_affected_by_others_accounting_treatment_with_fee(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         asset=A_CUSDC,
         amount=ONE,
         event_type=HistoryEventType.TRADE,
@@ -333,7 +337,7 @@ def test_events_affected_by_others_accounting_treatment_with_fee(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         asset=A_USDC,
         amount=ONE,
         event_type=HistoryEventType.TRADE,
@@ -345,7 +349,7 @@ def test_events_affected_by_others_accounting_treatment_with_fee(
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         asset=A_CUSDC,
         amount=ONE,
         event_type=HistoryEventType.TRADE,
@@ -408,7 +412,7 @@ def test_correct_accounting_treatment_is_selected(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         asset=A_CUSDC,
         amount=ONE,
         event_type=HistoryEventType.DEPOSIT,
@@ -420,7 +424,7 @@ def test_correct_accounting_treatment_is_selected(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         asset=A_USDC,
         amount=ONE,
         event_type=HistoryEventType.RECEIVE,
@@ -446,7 +450,7 @@ def test_resolve_accounting_treatment_prefers_event_specific_rule(database: DBHa
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         asset=A_USDC,
         amount=ONE,
         event_type=HistoryEventType.TRADE,
@@ -501,7 +505,7 @@ def test_resolve_accounting_treatment_prefers_counterparty_specific(database: DB
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=TimestampMS(16433333000),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         asset=A_USDC,
         amount=ONE,
         event_type=HistoryEventType.DEPOSIT,

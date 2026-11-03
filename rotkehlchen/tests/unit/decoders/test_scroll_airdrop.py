@@ -13,8 +13,11 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_SCROLL,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
@@ -36,7 +39,7 @@ def test_claim_scroll_airdop(
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.SCROLL,
+            location=LOCATION_SCROLL,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -47,7 +50,7 @@ def test_claim_scroll_airdop(
             tx_ref=tx_hash,
             sequence_index=64,
             timestamp=timestamp,
-            location=Location.SCROLL,
+            location=LOCATION_SCROLL,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_SCR,
@@ -75,7 +78,7 @@ def test_receive_offchain_scroll_airdop(
             tx_ref=tx_hash,
             sequence_index=58,
             timestamp=timestamp,
-            location=Location.SCROLL,
+            location=LOCATION_SCROLL,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_SCR,

@@ -23,8 +23,10 @@ from rotkehlchen.db.internal_tx_conflicts import (
 )
 from rotkehlchen.errors.misc import DataIntegrityError, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import get_chunks, ts_now
 
 if TYPE_CHECKING:
@@ -336,7 +338,7 @@ def _decode_conflicts_in_batches(
                     chain_manager.transactions_decoder._maybe_load_or_purge_events_from_db(
                         transaction=context.transaction,
                         tx_ref=tx_hash,
-                        location=Location.from_chain_id(chain_id),
+                        location=location_from_chain_id(chain_id),
                         ignore_cache=True,
                         delete_customized=False,
                     )

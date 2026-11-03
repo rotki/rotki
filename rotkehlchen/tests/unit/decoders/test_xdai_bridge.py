@@ -16,8 +16,12 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH, A_XDAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_GNOSIS,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -41,7 +45,7 @@ def test_bridge_dai_from_ethereum(ethereum_inquirer, ethereum_accounts):
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1697470703000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -52,7 +56,7 @@ def test_bridge_dai_from_ethereum(ethereum_inquirer, ethereum_accounts):
         ), EvmEvent(
             sequence_index=63,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_DAI,
@@ -83,7 +87,7 @@ def test_bridge_dai_from_ethereum_pre_usds_upgrade(
     assert events == [EvmEvent(
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1750340699000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -94,7 +98,7 @@ def test_bridge_dai_from_ethereum_pre_usds_upgrade(
     ), EvmEvent(
         sequence_index=446,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=A_DAI,
@@ -127,7 +131,7 @@ def test_bridge_dai_from_ethereum_post_usds_upgrade(
     assert events == [EvmEvent(
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1786049939000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -138,7 +142,7 @@ def test_bridge_dai_from_ethereum_post_usds_upgrade(
     ), EvmEvent(
         sequence_index=485,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=A_DAI,
@@ -170,7 +174,7 @@ def test_bridge_dai_from_ethereum_nolog(ethereum_inquirer, ethereum_accounts):
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1705093391000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -181,7 +185,7 @@ def test_bridge_dai_from_ethereum_nolog(ethereum_inquirer, ethereum_accounts):
         ), EvmEvent(
             sequence_index=150,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_DAI,
@@ -212,7 +216,7 @@ def test_withdraw_dai_to_ethereum(ethereum_inquirer, ethereum_accounts):
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1697473655000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -223,7 +227,7 @@ def test_withdraw_dai_to_ethereum(ethereum_inquirer, ethereum_accounts):
         ), EvmEvent(
             sequence_index=171,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_DAI,
@@ -254,7 +258,7 @@ def test_withdraw_dai_from_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1697473395000)),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
@@ -265,7 +269,7 @@ def test_withdraw_dai_from_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis
         ), EvmEvent(
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_XDAI,
@@ -295,7 +299,7 @@ def test_deposit_dai_to_gnosis(gnosis_inquirer, gnosis_accounts, allow_gnosis_et
     assert events == [EvmEvent(
         sequence_index=24,
         timestamp=TimestampMS(1609959945000),
-        location=Location.GNOSIS,
+        location=LOCATION_GNOSIS,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=A_XDAI,
@@ -331,7 +335,7 @@ def test_bridge_dai_from_ethereum_with_nonce(
     assert events == [EvmEvent(
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1749508919000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -342,7 +346,7 @@ def test_bridge_dai_from_ethereum_with_nonce(
     ), EvmEvent(
         sequence_index=834,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=A_DAI,
@@ -376,7 +380,7 @@ def test_receive_dai_on_gnosis_with_nonce(
     assert events == [EvmEvent(
         sequence_index=10,
         timestamp=TimestampMS(1749509175000),
-        location=Location.GNOSIS,
+        location=LOCATION_GNOSIS,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=A_XDAI,

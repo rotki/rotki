@@ -15,7 +15,8 @@ import pytest
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.externalapis.hyperliquid import HistoryQueryType, HyperliquidAPI
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.locations.constants import LOCATION_HYPERLIQUID
+from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -114,5 +115,5 @@ def test_funding_is_paged_and_every_payment_is_saved(database: DBHandler) -> Non
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
             'SELECT COUNT(*) FROM history_events WHERE location=?',
-            (Location.HYPERLIQUID.serialize_for_db(),),
+            (LOCATION_HYPERLIQUID,),
         ).fetchone()[0] == len(events) > 700

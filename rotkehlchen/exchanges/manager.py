@@ -17,13 +17,19 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithExtras, HistoryEventQueue
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BINANCEUS,
+    LOCATION_GATE,
+    LOCATION_KRAKEN,
+    LOCATION_OKX,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     ExchangeApiCredentials,
     ExchangeAuthCredentials,
-    Location,
     Timestamp,
 )
 
@@ -37,6 +43,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -46,7 +53,7 @@ log = RotkehlchenLogsAdapter(logger)
 class ExchangeManager:
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
-        self.connected_exchanges: dict[Location, list[ExchangeInterface]] = defaultdict(list)
+        self.connected_exchanges: dict[LocationIdentifier, list[ExchangeInterface]] = defaultdict(list)  # noqa: E501
         self.msg_aggregator = msg_aggregator
         # Serializes compound mutations of connected_exchanges (check-then-append,
         # check-then-rebind) together with their DB persistence: concurrent api
@@ -57,16 +64,16 @@ class ExchangeManager:
         self.registry_lock = threading.Lock()
 
     @staticmethod
-    def _get_exchange_module_name(location: Location) -> str:
-        if location == Location.BINANCEUS:
-            return str(Location.BINANCE)
+    def _get_exchange_module_name(location: LocationIdentifier) -> str:
+        if location == LOCATION_BINANCEUS:
+            return str(LOCATION_BINANCE)
 
         return str(location)
 
     def connected_and_syncing_exchanges_num(self) -> int:
         return sum(1 for _ in self.iterate_exchanges())
 
-    def get_exchange(self, name: str, location: Location) -> ExchangeInterface | None:
+    def get_exchange(self, name: str, location: LocationIdentifier) -> ExchangeInterface | None:
         """Get the exchange object for an exchange with a given name and location
 
         Returns None if it can not be found
@@ -97,7 +104,7 @@ class ExchangeManager:
     def edit_exchange(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             new_name: str | None,
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
@@ -177,7 +184,7 @@ class ExchangeManager:
 
         return True, ''
 
-    def delete_exchange(self, name: str, location: Location) -> tuple[bool, str]:
+    def delete_exchange(self, name: str, location: LocationIdentifier) -> tuple[bool, str]:
         """
         Deletes an exchange with the specified name + location from both connected_exchanges
         and the DB.
@@ -217,18 +224,18 @@ class ExchangeManager:
         for location, exchanges in list(self.connected_exchanges.items()):
             for exchangeobj in exchanges:
                 data = {'location': str(location), 'name': exchangeobj.name}
-                if location == Location.KRAKEN:  # ignore type since we know this is kraken here
+                if location == LOCATION_KRAKEN:  # ignore type since we know this is kraken here
                     data[KRAKEN_ACCOUNT_TYPE_KEY] = str(exchangeobj.account_type)  # type: ignore
-                elif location == Location.OKX:  # ignore type since we know this is okx here
+                elif location == LOCATION_OKX:  # ignore type since we know this is okx here
                     data[OKX_LOCATION_KEY] = exchangeobj.okx_location.serialize()  # type: ignore
-                elif location == Location.GATE:  # ignore type since we know this is gate here
+                elif location == LOCATION_GATE:  # ignore type since we know this is gate here
                     data[GATE_LOCATION_KEY] = exchangeobj.gate_location.serialize()  # type: ignore
 
                 exchange_info.append(data)
 
         return exchange_info
 
-    def _get_exchange_module(self, location: Location) -> ModuleType:
+    def _get_exchange_module(self, location: LocationIdentifier) -> ModuleType:
         module_name = self._get_exchange_module_name(location)
         try:
             module = import_module(f'rotkehlchen.exchanges.{module_name}')
@@ -243,7 +250,7 @@ class ExchangeManager:
     def setup_exchange(
             self,
             name: str,
-            location: Location,
+            location: LocationIdentifier,
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             database: DBHandler,
@@ -315,7 +322,7 @@ class ExchangeManager:
                 gate_location=kwargs.get('gate_location'),
             )
             if (
-                    location in (Location.BINANCE, Location.BINANCEUS) and
+                    location in (LOCATION_BINANCE, LOCATION_BINANCEUS) and
                     isinstance(exchange, ExchangeWithExtras)
             ):
                 exchange.reset_to_db_extras()
@@ -337,9 +344,9 @@ class ExchangeManager:
         exchange_ctor = getattr(module, module_name.capitalize())
         if credentials.passphrase is not None:
             kwargs['passphrase'] = credentials.passphrase
-        elif credentials.location == Location.BINANCE:
+        elif credentials.location == LOCATION_BINANCE:
             kwargs['uri'] = BINANCE_BASE_URL
-        elif credentials.location == Location.BINANCEUS:
+        elif credentials.location == LOCATION_BINANCEUS:
             kwargs['uri'] = BINANCEUS_BASE_URL
 
         params = {
@@ -357,7 +364,7 @@ class ExchangeManager:
 
     def initialize_exchanges(
             self,
-            exchange_credentials: dict[Location, list[ExchangeApiCredentials]],
+            exchange_credentials: dict[LocationIdentifier, list[ExchangeApiCredentials]],
             database: DBHandler,
     ) -> None:
         log.debug('Initializing exchanges')
@@ -383,13 +390,13 @@ class ExchangeManager:
                     self.connected_exchanges[location].append(exchange_obj)
         log.debug('Initialized exchanges')
 
-    def get_user_binance_pairs(self, name: str, location: Location) -> list[str]:
+    def get_user_binance_pairs(self, name: str, location: LocationIdentifier) -> list[str]:
         is_connected = location in self.connected_exchanges
         if is_connected:
             return self.database.get_binance_pairs(name, location)
         return []
 
-    def query_exchange_history_events(self, location: Location, name: str | None) -> None:
+    def query_exchange_history_events(self, location: LocationIdentifier, name: str | None) -> None:  # noqa: E501
         """Queries new history events for the specified exchange.
 
         May raise:
@@ -445,7 +452,7 @@ class ExchangeManager:
 
     def requery_exchange_history_events(
             self,
-            location: Location,
+            location: LocationIdentifier,
             name: str,
             start_ts: Timestamp,
             end_ts: Timestamp,

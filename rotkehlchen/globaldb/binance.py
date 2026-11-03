@@ -13,7 +13,7 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from rotkehlchen.types import Location
+    from rotkehlchen.locations.types import LocationIdentifier
 
     from .handler import GlobalDBHandler
 
@@ -29,7 +29,7 @@ class GlobalDBBinance:
     def save_all_binance_pairs(
             self,
             new_pairs: Iterable[BinancePair],
-            location: Location,
+            location: LocationIdentifier,
     ) -> None:
         """Saves all possible binance pairs into the GlobalDB.
         NB: This is not the user-selected binance pairs. This is just a cache.
@@ -48,7 +48,7 @@ class GlobalDBBinance:
 
         self.db.add_setting_value(name=f'binance_pairs_queried_at_{location}', value=ts_now())
 
-    def get_all_binance_pairs(self, location: Location) -> list[BinancePair]:
+    def get_all_binance_pairs(self, location: LocationIdentifier) -> list[BinancePair]:
         """Gets all possible binance pairs from the GlobalDB.
         NB: This is not the user-selected binance pairs. This is just a cache.
         """
@@ -56,7 +56,7 @@ class GlobalDBBinance:
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT pair, base_asset, quote_asset, location FROM binance_pairs WHERE location=?',  # noqa: E501
-                (location.serialize_for_db(),),
+                (location,),
             )
             for pair in cursor:
                 try:

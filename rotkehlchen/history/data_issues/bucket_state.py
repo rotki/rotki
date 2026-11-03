@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import EVM_LOCATIONS, SupportedBlockchain, TimestampMS
+from rotkehlchen.locations.chains import EVM_LOCATIONS, location_to_chain
+from rotkehlchen.types import SupportedBlockchain, TimestampMS
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -121,8 +122,7 @@ def delete_balance_checks(
 def get_evm_location_code(blockchain: SupportedBlockchain) -> str | None:
     """The location code of the wallet buckets of an EVM chain, None for any other chain."""
     return next((
-        location.serialize_for_db() for location in EVM_LOCATIONS
-        if SupportedBlockchain.from_location(location) == blockchain
+        location for location in EVM_LOCATIONS if location_to_chain(location) == blockchain
     ), None)
 
 

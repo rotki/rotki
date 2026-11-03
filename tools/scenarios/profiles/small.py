@@ -11,7 +11,14 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChainID, Location, SupportedBlockchain
+from rotkehlchen.locations.constants import (
+    LOCATION_BANKS,
+    LOCATION_BINANCE,
+    LOCATION_BLOCKCHAIN,
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+)
+from rotkehlchen.types import ChainID, SupportedBlockchain
 from tools.scenarios.deterministic import DeterministicFactory, monthly_ramp_weights
 from tools.scenarios.profiles.common import (
     MODULE_TOKEN_PRICES,
@@ -47,7 +54,7 @@ N_STAKING_REWARDS: Final = 80
 N_DECODABLE_TXS: Final = 50
 USDT_ADDRESS: Final = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
 
-EXCHANGES: Final = (Location.KRAKEN, Location.BINANCE)
+EXCHANGES: Final = (LOCATION_KRAKEN, LOCATION_BINANCE)
 EXCHANGE_WEIGHTS: Final = (0.6, 0.4)
 
 # (identifier, symbol) — mainnet majors only; checked against the global DB at build
@@ -93,7 +100,7 @@ def build(builder: ProfileBuilder) -> dict[str, Any] | None:
             identifier=-1,
             asset=Asset('EUR'),
             label='Bank savings',
-            location=Location.BANKS,
+            location=LOCATION_BANKS,
             tags=None,
             balance_type=BalanceType.ASSET,
             amount=FVal('12500'),
@@ -102,7 +109,7 @@ def build(builder: ProfileBuilder) -> dict[str, Any] | None:
             identifier=-1,
             asset=A_BTC,
             label='Paper wallet',
-            location=Location.BLOCKCHAIN,
+            location=LOCATION_BLOCKCHAIN,
             tags=None,
             balance_type=BalanceType.ASSET,
             amount=FVal('0.35'),
@@ -144,9 +151,9 @@ def build(builder: ProfileBuilder) -> dict[str, Any] | None:
         assets=pools.assets,
         weeks=ACTIVE_MONTHS * 52 // 12,
         location_weights=(
-            (Location.BLOCKCHAIN, 0.6),
-            (Location.KRAKEN, 0.25),
-            (Location.BINANCE, 0.15),
+            (LOCATION_BLOCKCHAIN, 0.6),
+            (LOCATION_KRAKEN, 0.25),
+            (LOCATION_BINANCE, 0.15),
         ),
     )
     builder.add_balance_snapshots(balance_rows, location_rows, snapshot_count)
@@ -160,7 +167,7 @@ def build(builder: ProfileBuilder) -> dict[str, Any] | None:
             events.extend(make_evm_tx_group(
                 factory=factory,
                 pools=pools,
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 account=factory.weighted_choice(eth_accounts, [1.0] * len(eth_accounts)),
                 timestamp=factory.timestamp_ms_in_month(
                     factory.weighted_choice(month_indices, month_weights),

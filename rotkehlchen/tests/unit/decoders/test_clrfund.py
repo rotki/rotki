@@ -9,8 +9,11 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -27,7 +30,7 @@ def test_ethstaker_matching_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=TimestampMS(1654833348000),
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.DONATE,
             asset=EvmToken('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
@@ -53,7 +56,7 @@ def test_add_recipient(arbitrum_one_inquirer, arbitrum_one_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -64,7 +67,7 @@ def test_add_recipient(arbitrum_one_inquirer, arbitrum_one_accounts):
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -90,7 +93,7 @@ def test_voted(arbitrum_one_inquirer, arbitrum_one_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -101,7 +104,7 @@ def test_voted(arbitrum_one_inquirer, arbitrum_one_accounts):
             tx_ref=tx_hash,
             sequence_index=17,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -127,7 +130,7 @@ def test_contribution(arbitrum_one_inquirer, arbitrum_one_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -138,7 +141,7 @@ def test_contribution(arbitrum_one_inquirer, arbitrum_one_accounts):
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
+            location=LOCATION_ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.DONATE,
             asset=EvmToken('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),

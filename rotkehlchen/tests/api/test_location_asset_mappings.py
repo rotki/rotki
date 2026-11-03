@@ -3,12 +3,18 @@ from typing import TYPE_CHECKING, Any, Final
 
 import requests
 
+from rotkehlchen.locations.constants import (
+    LOCATION_BINANCE,
+    LOCATION_BINANCEUS,
+    LOCATION_COINBASE,
+    LOCATION_COINBASEPRIME,
+    LOCATION_COINBASEPRO,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_sync_response_with_result,
 )
-from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -233,20 +239,20 @@ def test_location_asset_mappings_errors(rotkehlchen_api_server: APIServer) -> No
 
     # check that some locations are not allowed since they share mappings with another location.
     for location, replacement_location in (
-        (Location.BINANCEUS, Location.BINANCE),
-        (Location.COINBASEPRIME, Location.COINBASE),
-        (Location.COINBASEPRO, Location.COINBASE),
+        (LOCATION_BINANCEUS, LOCATION_BINANCE),
+        (LOCATION_COINBASEPRIME, LOCATION_COINBASE),
+        (LOCATION_COINBASEPRO, LOCATION_COINBASE),
     ):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'locationassetmappingsresource'),
             json={'entries': [
-                {'asset': 'BTC', 'location': location.serialize(), 'location_symbol': 'XYZ'},
+                {'asset': 'BTC', 'location': location, 'location_symbol': 'XYZ'},
             ]},
         )
         assert_error_response(
             response=response,
             status_code=HTTPStatus.BAD_REQUEST,
-            contained_in_msg=f'Mappings for {location.name} should use a location of {replacement_location.name}.',  # noqa: E501
+            contained_in_msg=f'Mappings for {location} should use a location of {replacement_location}.',  # noqa: E501
         )
 
     # delete a mapping that does not exist and expect failure

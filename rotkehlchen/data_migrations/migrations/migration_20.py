@@ -18,9 +18,14 @@ from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.locations.legacy_chars import location_from_v53_char, location_to_v53_char
+from rotkehlchen.locations.legacy_chars import (
+    V53_CHAR_TO_NAME,
+    V53_LEGACY_LOCATION_CHARS,
+    location_from_v53_char,
+    location_to_v53_char,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import LEGACY_PROTOCOL_LOCATIONS, AssetAmount, FVal, Location, Price
+from rotkehlchen.types import AssetAmount, FVal, Price
 from rotkehlchen.user_messages import LocalDbProblem
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
@@ -185,7 +190,7 @@ def data_migration_20(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
 
         # check if any events have location hash as their identifier
         # this indicates the upgrade bug affected this database
-        location_hashes = tuple(hash_id(str(loc)) for loc in Location)
+        location_hashes = tuple(hash_id(name) for name in V53_CHAR_TO_NAME.values())
         placeholders = ','.join('?' * len(location_hashes))
         with db.conn.read_ctx() as cursor:
             if (affected_events_count := cursor.execute(
@@ -266,12 +271,15 @@ def data_migration_20(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
         old_db_conn.close()
         try:  # a failure rolls back the deletion too, so the affected events stay as they were
             with db.conn.write_ctx() as write_cursor:
+                db_location: dict[str, str] = {}
                 for location in {x.location for x in recovered_events}:
-                    if location in LEGACY_PROTOCOL_LOCATIONS:  # a node exists only if data uses it
-                        DBLocations.add_legacy_location(
+                    if (char := location_to_v53_char(location)) in V53_LEGACY_LOCATION_CHARS:
+                        db_location[location] = DBLocations.add_legacy_location(
                             write_cursor=write_cursor,
-                            char=location_to_v53_char(location),
+                            char=char,
                         )
+                    else:
+                        db_location[location] = location
 
                 write_cursor.execute(
                     f'DELETE FROM history_events WHERE group_identifier IN ({placeholders})',
@@ -287,7 +295,7 @@ def data_migration_20(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                         event.group_identifier,
                         event.sequence_index,
                         event.timestamp,
-                        event.location.serialize_for_db(),
+                        db_location[event.location],
                         event.location_label,
                         event.asset.identifier,
                         str(event.amount),

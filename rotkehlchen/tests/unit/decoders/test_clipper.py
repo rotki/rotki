@@ -10,8 +10,12 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, SupportedBlockchain, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import SupportedBlockchain, TimestampMS, deserialize_evm_tx_hash
 
 CLIPPER_POOL_ETH = string_to_evm_address('0x655eDCE464CC797526600a462A8154650EEe4B77')
 CLIPPER_POOL_BASE = string_to_evm_address('0xb32D856cAd3D2EF07C94867A800035E37241247C')
@@ -28,7 +32,7 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -39,7 +43,7 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
             amount=FVal(out_amount),
@@ -51,7 +55,7 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             amount=FVal(in_amount),
@@ -74,7 +78,7 @@ def test_swap_token_to_eth_ethereum(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -85,7 +89,7 @@ def test_swap_token_to_eth_ethereum(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
             amount=FVal(out_amount),
@@ -97,7 +101,7 @@ def test_swap_token_to_eth_ethereum(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal(in_amount),
@@ -136,7 +140,7 @@ def test_swap_eth_to_token_base(base_inquirer, base_accounts, allow_base_routesc
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=timestamp,
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -147,7 +151,7 @@ def test_swap_eth_to_token_base(base_inquirer, base_accounts, allow_base_routesc
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal(out_amount),
@@ -159,7 +163,7 @@ def test_swap_eth_to_token_base(base_inquirer, base_accounts, allow_base_routesc
             tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.BASE,
+            location=LOCATION_BASE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
             amount=FVal(in_amount),

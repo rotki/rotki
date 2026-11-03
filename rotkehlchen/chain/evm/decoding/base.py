@@ -14,12 +14,14 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTransaction,
     EVMTxHash,
-    Location,
     Timestamp,
     TokenKind,
 )
@@ -176,7 +178,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             tx_ref=tx_ref,
             sequence_index=sequence_index,
             timestamp=ts_sec_to_ms(timestamp),
-            location=Location.from_chain_id(self.evm_inquirer.chain_id),
+            location=location_from_chain_id(self.evm_inquirer.chain_id),
             event_type=event_type,
             event_subtype=event_subtype,
             asset=asset,

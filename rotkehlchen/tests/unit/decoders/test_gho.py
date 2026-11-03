@@ -15,8 +15,11 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -38,7 +41,7 @@ def test_activate_cooldown(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1772137403000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -49,7 +52,7 @@ def test_activate_cooldown(
         tx_ref=tx_hash,
         sequence_index=406,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=Asset(STKGHO_IDENTIFIER),
@@ -76,7 +79,7 @@ def test_stake_gho(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1772137607000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -87,7 +90,7 @@ def test_stake_gho(
         tx_ref=tx_hash,
         sequence_index=212,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset(GHO_IDENTIFIER),
@@ -98,7 +101,7 @@ def test_stake_gho(
         tx_ref=tx_hash,
         sequence_index=213,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         asset=Asset(GHO_IDENTIFIER),
@@ -111,7 +114,7 @@ def test_stake_gho(
         tx_ref=tx_hash,
         sequence_index=214,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         asset=Asset(STKGHO_IDENTIFIER),
@@ -138,7 +141,7 @@ def test_redeem_stkgho(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1772137523000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -149,7 +152,7 @@ def test_redeem_stkgho(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.RETURN_WRAPPED,
         asset=Asset(STKGHO_IDENTIFIER),
@@ -162,7 +165,7 @@ def test_redeem_stkgho(
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REMOVE_ASSET,
         asset=Asset(GHO_IDENTIFIER),

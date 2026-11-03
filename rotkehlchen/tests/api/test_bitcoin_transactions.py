@@ -15,8 +15,12 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+    LOCATION_BITCOIN_CASH,
+)
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
-from rotkehlchen.types import BTCTxId, Location, SupportedBlockchain, Timestamp, TimestampMS
+from rotkehlchen.types import BTCTxId, SupportedBlockchain, Timestamp, TimestampMS
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
@@ -146,7 +150,7 @@ def test_query_btc_transactions(
         # The timestamps are relatively close though, and the timestamp isn't included in the
         # history event unique constraint, so it should be fine.
         timestamp=(timestamp := TimestampMS(1747980089000) if use_blockcypher else TimestampMS(1747979393000)),  # noqa: E501
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
@@ -158,7 +162,7 @@ def test_query_btc_transactions(
         identifier=75,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -171,7 +175,7 @@ def test_query_btc_transactions(
         identifier=3,
         sequence_index=0,
         timestamp=TimestampMS(1519764871000),
-        location=Location.BITCOIN,
+        location=LOCATION_BITCOIN,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BTC,
@@ -237,7 +241,7 @@ def test_query_bch_transactions(
         identifier=100,
         sequence_index=0,
         timestamp=TimestampMS(1703868928000),
-        location=Location.BITCOIN_CASH,
+        location=LOCATION_BITCOIN_CASH,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BCH,
@@ -259,7 +263,7 @@ def test_query_bch_transactions(
         identifier=102,
         sequence_index=0,
         timestamp=TimestampMS(1732270516000),
-        location=Location.BITCOIN_CASH,
+        location=LOCATION_BITCOIN_CASH,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BCH,
@@ -271,7 +275,7 @@ def test_query_bch_transactions(
         identifier=103,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1749190001000)),
-        location=Location.BITCOIN_CASH,
+        location=LOCATION_BITCOIN_CASH,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BCH,
@@ -283,7 +287,7 @@ def test_query_bch_transactions(
         identifier=104,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.BITCOIN_CASH,
+        location=LOCATION_BITCOIN_CASH,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BCH,
@@ -296,7 +300,7 @@ def test_query_bch_transactions(
         identifier=2,
         sequence_index=0,
         timestamp=TimestampMS(1545323818000),
-        location=Location.BITCOIN_CASH,
+        location=LOCATION_BITCOIN_CASH,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BCH,

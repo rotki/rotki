@@ -48,6 +48,16 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.locations.chains import (
+    location_to_chain_id,
+)
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+    LOCATION_BITCOIN_CASH,
+    LOCATION_HYPERLIQUID,
+    LOCATION_KRAKEN,
+)
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.bridges import (
     get_bridge_match_window,
@@ -58,7 +68,6 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     ChainID,
     EventMetricKey,
-    Location,
     Timestamp,
     TimestampMS,
 )
@@ -111,7 +120,7 @@ INTERNAL_STAKING_EVENTS: Final[EventTypeSubtypePairs] = {
     (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
     (HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET),
 }
-INTERNAL_STAKING_LOCATIONS: Final = {Location.KRAKEN, Location.HYPERLIQUID}
+INTERNAL_STAKING_LOCATIONS: Final = {LOCATION_KRAKEN, LOCATION_HYPERLIQUID}
 
 # Events that affect both sender and receiver wallet buckets.
 # Sender direction is OUT, receiver direction is IN.
@@ -151,7 +160,7 @@ def _get_wallet_protocol(event: HistoryBaseEntry) -> str | None:
     activity, so it is kept in its own bucket and the wallet bucket holds only what a HyperEVM
     node reports.
     """
-    if event.location == Location.HYPERLIQUID and not isinstance(event, EvmEvent):
+    if event.location == LOCATION_HYPERLIQUID and not isinstance(event, EvmEvent):
         return HYPERCORE_BUCKET_PROTOCOL
 
     return None
@@ -179,7 +188,7 @@ class Bucket(NamedTuple):
         return {
             'asset': self.asset,
             'protocol': self.protocol,
-            'location': Location.deserialize_from_db(self.location).serialize(),
+            'location': LocationIdentifier(self.location),
             'location_label': self.location_label,
         }
 
@@ -201,7 +210,7 @@ class Bucket(NamedTuple):
         - Everything else: tracked in wallet bucket, which for HyperCore activity is its own
           hyperliquid bucket (see _get_wallet_protocol)
         """
-        location = event.location.serialize_for_db()
+        location = event.location
         wallet_protocol = _get_wallet_protocol(event)
         asset = (
             A_ETH.identifier if treat_eth2_as_eth is True and event.asset == A_ETH2 else
@@ -215,7 +224,7 @@ class Bucket(NamedTuple):
             # would only debit the sender bucket and never credit the receiver.
             address is None and
             event_key in DUAL_BUCKET_TRANSFER_EVENTS and
-            event.location in (Location.BITCOIN, Location.BITCOIN_CASH) and
+            event.location in (LOCATION_BITCOIN, LOCATION_BITCOIN_CASH) and
             len(addresses := get_bitcoin_counterparty_addresses(
                 location=event.location,
                 notes=event.notes,
@@ -377,7 +386,7 @@ def _get_rebasing_reconciliation_points(
         event_buckets.append((event, buckets))
         transaction_keys.add((
             bytes(event.tx_ref),
-            event.location.to_chain_id(),
+            location_to_chain_id(event.location),
         ))
 
     transaction_blocks: dict[tuple[bytes, int], int] = {}
@@ -401,7 +410,7 @@ def _get_rebasing_reconciliation_points(
     missing_points: dict[tuple[bytes, int, Bucket], int] = {}
     for event, buckets in event_buckets:
         assert event.identifier is not None
-        chain_id = event.location.to_chain_id()
+        chain_id = location_to_chain_id(event.location)
         tx_key = (bytes(event.tx_ref), chain_id)
         if (block_number := transaction_blocks.get(tx_key)) is None:
             for bucket in buckets:
@@ -445,7 +454,7 @@ def _query_rebasing_balance(
 
     try:
         token = Asset(bucket.asset).resolve_to_evm_token()
-        chain_id = ChainID(event.location.to_chain_id())
+        chain_id = ChainID(location_to_chain_id(event.location))
     except (UnknownAsset, ValueError, WrongAssetType):
         return None, 'unsupported_bucket'
 
@@ -795,7 +804,7 @@ def _detect_unmatched_bridge_issues(database: DBHandler) -> None:
                 payload['bridge'] = bridge_data
             issues_manager.write_issue(
                 kind=IssueKind.UNMATCHED_BRIDGE,
-                location=event.location.serialize_for_db(),
+                location=event.location,
                 location_label=event.location_label,
                 protocol=counterparty,
                 asset=event.asset.identifier,
@@ -1057,7 +1066,7 @@ def _apply_to_buckets(
                 event.event_subtype == HistoryEventSubType.REMOVE_ASSET and
                 event.counterparty is not None and
                 any(str(loc) == event.counterparty for loc in ALL_SUPPORTED_EXCHANGES) and
-                Location.deserialize(event.counterparty) not in database.get_associated_locations()
+                event.counterparty not in database.get_associated_locations()
             ):
                 payload['reason'] = 'untracked_exchange'
 

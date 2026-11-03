@@ -10,8 +10,11 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import timestamp_to_date
 
 
@@ -28,7 +31,7 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1672197467000)),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
@@ -39,7 +42,7 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
             tx_ref=tx_hash,
             sequence_index=305,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=Asset('eip155:1/erc20:0xCdF7028ceAB81fA0C6971208e83fa7872994beE5'),

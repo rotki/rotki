@@ -29,6 +29,21 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import location_to_chain_id
+from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
+    LOCATION_BANKS,
+    LOCATION_BASE,
+    LOCATION_BINANCE,
+    LOCATION_BITCOIN,
+    LOCATION_COINBASE,
+    LOCATION_ETHEREUM,
+    LOCATION_EXTERNAL,
+    LOCATION_GNOSIS,
+    LOCATION_KRAKEN,
+    LOCATION_OPTIMISM,
+    LOCATION_POLONIEX,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -54,7 +69,6 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     EvmTransaction,
-    Location,
     SolanaAddress,
     SupportedBlockchain,
     Timestamp,
@@ -100,7 +114,7 @@ def test_query_statistics_asset_balance_liabilities(
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
 def test_query_statistics_netvalue(
         rotkehlchen_api_server_with_exchanges: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -141,7 +155,7 @@ def test_query_statistics_netvalue(
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 def test_query_statistics_asset_balance(
         rotkehlchen_api_server_with_exchanges: APIServer,
@@ -293,7 +307,7 @@ def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: APIServer
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+@pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 @pytest.mark.parametrize('db_settings', [{'treat_eth2_as_eth': True}, {'treat_eth2_as_eth': False}])  # noqa: E501
 def test_query_statistics_value_distribution(
@@ -319,7 +333,7 @@ def test_query_statistics_value_distribution(
             asset=A_EUR,
             label='My EUR bank',
             amount=FVal('1550'),
-            location=Location.BANKS,
+            location=LOCATION_BANKS,
             tags=None,
             balance_type=BalanceType.ASSET,
         ), ManuallyTrackedBalance(
@@ -327,7 +341,7 @@ def test_query_statistics_value_distribution(
             asset=A_ETH2,
             label='John Doe',
             amount=FVal('2.6'),
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             tags=None,
             balance_type=BalanceType.ASSET,
         )],
@@ -535,28 +549,28 @@ def test_query_events_analysis(
             history=[
                 *create_swap_events(
                     timestamp=TimestampMS(1718562595000),
-                    location=Location.KRAKEN,
+                    location=LOCATION_KRAKEN,
                     group_identifier='1xyz',
                     spend=AssetAmount(asset=A_BTC, amount=ONE),
                     receive=AssetAmount(asset=A_ETH, amount=ONE),
                     fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
                 ), *create_swap_events(
                     timestamp=TimestampMS(1734373795000),
-                    location=Location.COINBASE,
+                    location=LOCATION_COINBASE,
                     group_identifier='2xyz',
                     spend=AssetAmount(asset=A_BTC, amount=FVal(2)),
                     receive=AssetAmount(asset=A_ETH, amount=FVal(2)),
                     fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
                 ), *create_swap_events(
                     timestamp=TimestampMS(1734373795000),
-                    location=Location.EXTERNAL,
+                    location=LOCATION_EXTERNAL,
                     group_identifier='3xyz',
                     spend=AssetAmount(asset=A_BTC, amount=FVal(2)),
                     receive=AssetAmount(asset=A_ETH, amount=FVal(2)),
                     fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
                 ), *create_swap_events(
                     timestamp=TimestampMS(1702751395000),  # last year
-                    location=Location.EXTERNAL,
+                    location=LOCATION_EXTERNAL,
                     group_identifier='4xyz',
                     spend=AssetAmount(asset=A_BTC, amount=FVal(2)),
                     receive=AssetAmount(asset=A_ETH, amount=FVal(2)),
@@ -568,9 +582,9 @@ def test_query_events_analysis(
         db.add_to_ignored_assets(write_cursor=write_cursor, asset=A_USDC)
         tx_hash1, tx_hash2, tx_hash3, tx_hash4 = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()  # noqa: E501
         tx_hash_to_chain = {
-            make_evm_tx_hash(): Location.ETHEREUM,
-            make_evm_tx_hash(): Location.BASE,
-            make_evm_tx_hash(): Location.ARBITRUM_ONE,
+            make_evm_tx_hash(): LOCATION_ETHEREUM,
+            make_evm_tx_hash(): LOCATION_BASE,
+            make_evm_tx_hash(): LOCATION_ARBITRUM_ONE,
         }
         events_db.add_history_events(
             write_cursor=write_cursor,
@@ -592,7 +606,7 @@ def test_query_events_analysis(
                     tx_ref=tx_hash1,
                     sequence_index=1,
                     timestamp=TimestampMS(1702751395000),
-                    location=Location.BASE,
+                    location=LOCATION_BASE,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=A_ETH,
@@ -604,7 +618,7 @@ def test_query_events_analysis(
                     tx_ref=tx_hash2,
                     sequence_index=1,
                     timestamp=TimestampMS(1734373795000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=A_ETH,
@@ -616,7 +630,7 @@ def test_query_events_analysis(
                     tx_ref=tx_hash2,
                     sequence_index=2,
                     timestamp=TimestampMS(1734373795000),
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=A_ETH,
@@ -627,7 +641,7 @@ def test_query_events_analysis(
                     tx_ref=tx_hash3,
                     sequence_index=1,
                     timestamp=TimestampMS(1734373795000),
-                    location=Location.GNOSIS,
+                    location=LOCATION_GNOSIS,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_USDC,
@@ -638,7 +652,7 @@ def test_query_events_analysis(
                     tx_ref=tx_hash4,
                     sequence_index=1,
                     timestamp=TimestampMS(1640995200000),  # 2022 - outside range
-                    location=Location.ETHEREUM,
+                    location=LOCATION_ETHEREUM,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=A_ETH,
@@ -654,7 +668,7 @@ def test_query_events_analysis(
             write_cursor=write_cursor,
             evm_transactions=[EvmTransaction(
                 tx_hash=tx_hash,
-                chain_id=ChainID(chain.to_chain_id()),
+                chain_id=ChainID(location_to_chain_id(chain)),
                 timestamp=Timestamp(1718562595),
                 block_number=3,
                 from_address=make_evm_address(),
@@ -790,7 +804,7 @@ def test_wrap_stats_counts_non_evm_chains(
                 group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{make_btc_tx_id()}',
                 sequence_index=0,
                 timestamp=ts_ms,
-                location=Location.BITCOIN,
+                location=LOCATION_BITCOIN,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_BTC,
@@ -839,16 +853,16 @@ def test_address_interactions(rotkehlchen_api_server: APIServer) -> None:
             address=ChecksumEvmAddress(HexAddress(HexStr(target))),
         )
         for index, (source, target, location, tx) in enumerate([
-            (str(first).lower(), str(second).lower(), Location.ETHEREUM, tx_hash),
-            (second, first, Location.ETHEREUM, tx_hash),  # reciprocal
-            (first, second, Location.ETHEREUM, tx_hash),  # repeated
-            (first, second, Location.ETHEREUM, next_hash),  # another transaction
-            (first, str(first).lower(), Location.ETHEREUM, tx_hash),  # self
-            (first, other_chain, Location.ETHEREUM, tx_hash),  # tracked elsewhere
-            (other_chain, first, Location.ETHEREUM, tx_hash),
-            (first, untracked, Location.ETHEREUM, tx_hash),
-            (untracked, second, Location.ETHEREUM, tx_hash),
-            (first, second, Location.OPTIMISM, tx_hash),  # same hash, another chain
+            (str(first).lower(), str(second).lower(), LOCATION_ETHEREUM, tx_hash),
+            (second, first, LOCATION_ETHEREUM, tx_hash),  # reciprocal
+            (first, second, LOCATION_ETHEREUM, tx_hash),  # repeated
+            (first, second, LOCATION_ETHEREUM, next_hash),  # another transaction
+            (first, str(first).lower(), LOCATION_ETHEREUM, tx_hash),  # self
+            (first, other_chain, LOCATION_ETHEREUM, tx_hash),  # tracked elsewhere
+            (other_chain, first, LOCATION_ETHEREUM, tx_hash),
+            (first, untracked, LOCATION_ETHEREUM, tx_hash),
+            (untracked, second, LOCATION_ETHEREUM, tx_hash),
+            (first, second, LOCATION_OPTIMISM, tx_hash),  # same hash, another chain
         ])
     ]
     history.extend(SolanaEvent(
@@ -934,20 +948,20 @@ def test_address_interactions_matched_bridges(rotkehlchen_api_server: APIServer)
     history: list[HistoryBaseEntry] = []
     pairs = []
     for index, (source_label, target_label, target_location) in enumerate([
-        (str(source).lower(), str(target).lower(), Location.OPTIMISM),
-        (source, target, Location.OPTIMISM),  # repeated logs collapse to one edge
-        (source, target, Location.ARBITRUM_ONE),  # same hashes, different destination chain
-        (wrong_source, target, Location.OPTIMISM),  # source tracked only on Optimism
-        (source, wrong_target, Location.OPTIMISM),  # target tracked only on Ethereum
-        (untracked, target, Location.OPTIMISM),
-        (source, untracked, Location.OPTIMISM),
-        (source, str(source).lower(), Location.OPTIMISM),  # same EVM address, different casing
-        (source, target, Location.OPTIMISM),  # a different link type is not a bridge
-        (source, target, Location.ETHEREUM),  # not cross-chain
+        (str(source).lower(), str(target).lower(), LOCATION_OPTIMISM),
+        (source, target, LOCATION_OPTIMISM),  # repeated logs collapse to one edge
+        (source, target, LOCATION_ARBITRUM_ONE),  # same hashes, different destination chain
+        (wrong_source, target, LOCATION_OPTIMISM),  # source tracked only on Optimism
+        (source, wrong_target, LOCATION_OPTIMISM),  # target tracked only on Ethereum
+        (untracked, target, LOCATION_OPTIMISM),
+        (source, untracked, LOCATION_OPTIMISM),
+        (source, str(source).lower(), LOCATION_OPTIMISM),  # same EVM address, different casing
+        (source, target, LOCATION_OPTIMISM),  # a different link type is not a bridge
+        (source, target, LOCATION_ETHEREUM),  # not cross-chain
     ]):
         pair = []
         for location, label, tx_ref, event_type in (
-            (Location.ETHEREUM, source_label, source_tx, HistoryEventType.DEPOSIT),
+            (LOCATION_ETHEREUM, source_label, source_tx, HistoryEventType.DEPOSIT),
             (target_location, target_label, target_tx, HistoryEventType.WITHDRAWAL),
         ):
             pair.append(len(history))
@@ -969,7 +983,7 @@ def test_address_interactions_matched_bridges(rotkehlchen_api_server: APIServer)
         group_identifier='synthetic_bridge_counterpart',
         sequence_index=0,
         timestamp=TimestampMS(1700000000000),
-        location=Location.OPTIMISM,
+        location=LOCATION_OPTIMISM,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.BRIDGE,
         asset=A_ETH,
@@ -1089,7 +1103,7 @@ def test_address_interactions_solana_bridges(
                 tx_ref=tx_hash,
                 sequence_index=index,
                 timestamp=TimestampMS(1700000000000),
-                location=Location.ETHEREUM,
+                location=LOCATION_ETHEREUM,
                 event_type=(
                     HistoryEventType.WITHDRAWAL if source_is_solana else HistoryEventType.DEPOSIT
                 ),

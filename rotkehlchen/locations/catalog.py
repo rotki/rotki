@@ -6,13 +6,15 @@ is a built-in node, so the file does not repeat ``is_builtin``.
 import json
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.locations.types import (
     ROOT_LOCATION_IDENTIFIER,
     LocationIdentifier,
     LocationNode,
     LocationTreeError,
+    deserialize_location_identifier,
 )
 
 if TYPE_CHECKING:
@@ -99,3 +101,19 @@ def validate_location_tree(nodes: Iterable[LocationNode]) -> None:
                 raise LocationTreeError(f'Location {node.identifier} is part of a cycle')
             seen.add(current.parent_identifier)
             current = by_identifier[current.parent_identifier]
+
+
+@cache
+def builtin_location_identifiers() -> frozenset[LocationIdentifier]:
+    return frozenset(x.identifier for x in load_builtin_catalog())
+
+
+def deserialize_builtin_location(value: Any) -> LocationIdentifier:
+    """Parse a location that must be one of the locations rotki ships.
+
+    For outside data naming a well-known venue or chain, where anything else means the value
+    is not a location at all. May raise DeserializationError.
+    """
+    if (location := deserialize_location_identifier(value)) not in builtin_location_identifiers():
+        raise DeserializationError(f'{value} is not a location known to rotki')
+    return location

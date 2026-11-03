@@ -29,12 +29,16 @@ from rotkehlchen.history.events.structures.swap import (
     create_swap_events_multi_fee,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BLOCKCHAIN,
+    LOCATION_ETHEREUM,
+    LOCATION_EXTERNAL,
+)
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     AssetAmount,
     CostBasisMethod,
-    Location,
     Price,
     SupportedBlockchain,
     Timestamp,
@@ -68,7 +72,7 @@ def add_in_event(
     pot.add_in_event(
         event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Test',
-        location=Location.BLOCKCHAIN,
+        location=LOCATION_BLOCKCHAIN,
         timestamp=EXAMPLE_TIMESTAMP,
         asset=asset,
         amount=amount,
@@ -92,7 +96,7 @@ def add_out_event(
     pot.add_out_event(
         event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Test',
-        location=Location.BLOCKCHAIN,
+        location=LOCATION_BLOCKCHAIN,
         timestamp=EXAMPLE_TIMESTAMP,
         asset=asset,
         amount=amount,
@@ -1035,7 +1039,7 @@ def test_swaps_taxability(
             tx_ref=make_evm_tx_hash(),
             sequence_index=1,
             timestamp=TimestampMS(146902084000),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
             amount=ONE,
@@ -1048,7 +1052,7 @@ def test_swaps_taxability(
             tx_ref=make_evm_tx_hash(),
             sequence_index=2,
             timestamp=TimestampMS(1469020840),
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             location_label=make_evm_address(),
             asset=A_3CRV,
             amount=ONE,
@@ -1110,7 +1114,7 @@ def test_event_specific_accounting_rules(accountant: Accountant) -> None:
             tx_ref=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             location_label=user,
             asset=A_ETH,
             amount=ONE,
@@ -1122,7 +1126,7 @@ def test_event_specific_accounting_rules(accountant: Accountant) -> None:
             tx_ref=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
-            location=Location.ETHEREUM,
+            location=LOCATION_ETHEREUM,
             location_label=user,
             asset=A_3CRV,
             amount=ONE,
@@ -1185,7 +1189,7 @@ def test_taxable_acquisition(accountant: Accountant) -> None:
     pot.add_in_event(
         event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Swap 0.15 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
-        location=Location.BLOCKCHAIN,
+        location=LOCATION_BLOCKCHAIN,
         timestamp=Timestamp(1469020840),
         asset=A_ETH,
         amount=ONE,
@@ -1231,28 +1235,28 @@ def test_fees(accountant: Accountant, expected_pnls: list[FVal]):
     """
     history = [*create_swap_events(
         timestamp=TimestampMS(1677593073000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal(5000)),
         receive=AssetAmount(asset=A_ETH, amount=FVal(100)),
         fee=AssetAmount(asset=A_EUR, amount=FVal(10)),
     ), *create_swap_events(
         timestamp=TimestampMS(1677593074000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='2xyz',
         spend=AssetAmount(asset=A_ETH, amount=FVal(50)),
         receive=AssetAmount(asset=A_EUR, amount=FVal(6000)),
         fee=AssetAmount(asset=A_EUR, amount=FVal(10)),
     ), *create_swap_events(
         timestamp=TimestampMS(1677593075000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='3xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal(6500)),
         receive=AssetAmount(asset=A_ETH, amount=FVal(50)),
         fee=AssetAmount(asset=A_EUR, amount=FVal(10)),
     ), *create_swap_events(
         timestamp=TimestampMS(1677593076000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='4xyz',
         spend=AssetAmount(asset=A_ETH, amount=FVal(40)),
         receive=AssetAmount(asset=A_EUR, amount=FVal(3600)),
@@ -1283,14 +1287,14 @@ def test_swaps_with_multiple_fees(accountant: Accountant, expected_pnls: list[FV
         group_identifier='1xyz',
         sequence_index=0,
         timestamp=TimestampMS(1600000000000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
         amount=ONE,  # Acquire the ETH that will be paid in the fee
     ), *create_swap_events_multi_fee(
         timestamp=TimestampMS(1600000000000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='1xyz',
         spend=AssetAmount(asset=A_EUR, amount=FVal(100)),
         receive=AssetAmount(asset=A_ETH, amount=FVal(10)),
@@ -1300,7 +1304,7 @@ def test_swaps_with_multiple_fees(accountant: Accountant, expected_pnls: list[FV
         ],
     ), *create_swap_events(
         timestamp=TimestampMS(1600000000000),
-        location=Location.EXTERNAL,
+        location=LOCATION_EXTERNAL,
         group_identifier='2xyz',
         spend=AssetAmount(asset=A_ETH, amount=FVal(10)),
         receive=AssetAmount(asset=A_EUR, amount=FVal(100)),

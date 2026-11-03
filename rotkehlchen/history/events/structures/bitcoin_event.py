@@ -1,13 +1,16 @@
 import logging
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import BTCAddress, BTCTxId, FVal, Location, TimestampMS
+from rotkehlchen.types import BTCAddress, BTCTxId, FVal, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -15,6 +18,7 @@ if TYPE_CHECKING:
         HistoryEventSubType,
         HistoryEventType,
     )
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -42,7 +46,7 @@ class BitcoinEvent(OnchainEvent[BTCTxId, BTCAddress]):
             event_subtype: HistoryEventSubType,
             asset: Asset,
             amount: FVal,
-            location: Literal[Location.BITCOIN, Location.BITCOIN_CASH] = Location.BITCOIN,
+            location: LocationIdentifier = LOCATION_BITCOIN,
             location_label: str | None = None,
             notes: str | None = None,
             identifier: int | None = None,
@@ -72,9 +76,9 @@ class BitcoinEvent(OnchainEvent[BTCTxId, BTCAddress]):
         self.counterparty_addresses = counterparty_addresses
 
     @staticmethod
-    def _calculate_group_identifier(tx_ref: BTCTxId, location: Location) -> str:
+    def _calculate_group_identifier(tx_ref: BTCTxId, location: LocationIdentifier) -> str:
         return (
-            BTC_GROUP_IDENTIFIER_PREFIX if location == Location.BITCOIN
+            BTC_GROUP_IDENTIFIER_PREFIX if location == LOCATION_BITCOIN
             else BCH_GROUP_IDENTIFIER_PREFIX
         ) + str(tx_ref)
 

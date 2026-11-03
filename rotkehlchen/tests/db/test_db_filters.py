@@ -18,9 +18,12 @@ from rotkehlchen.db.filtering import (
     TimestampProximityOrder,
 )
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.tests.utils.database import clean_ignored_assets
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 
 
 def test_asset_flag_filter() -> None:
@@ -70,7 +73,7 @@ def test_filter_arguments(and_op, order_by, pagination):
     accounts = [EvmAccount(make_evm_address()), EvmAccount(make_evm_address())]
     address_filter = DBEvmTransactionJoinsFilter(and_op=False, accounts=accounts)
     time_filter = DBTimestampFilter(and_op=True, from_ts=Timestamp(1), to_ts=Timestamp(999))
-    location_filter = DBLocationFilter(and_op=True, location=Location.KRAKEN)
+    location_filter = DBLocationFilter(and_op=True, location=LOCATION_KRAKEN)
     order_by_obj = DBFilterOrder(rules=[('timestamp', True)], case_sensitive=True) if order_by else None  # noqa: E501
     pagination_obj = DBFilterPagination(limit=10, offset=10) if pagination else None
     filter_query = DBFilterQuery(
@@ -99,7 +102,7 @@ def test_filter_arguments(and_op, order_by, pagination):
         accounts[1].address,
         time_filter.from_ts,
         time_filter.to_ts,
-        location_filter.location.serialize_for_db(),
+        location_filter.location,
     ]
 
 

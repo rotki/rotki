@@ -27,11 +27,10 @@ from rotkehlchen.history.data_issues.bucket_state import (
 )
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import CurrentBalanceMismatchIssuePayload
+from rotkehlchen.locations.chains import EVM_LOCATIONS, location_to_chain
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    EVM_LOCATIONS,
     EventMetricKey,
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -75,7 +74,7 @@ def get_derived_wallet_balances(
     """
     if treat_eth2_as_eth is None:
         treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
-    evm_locations = tuple(location.serialize_for_db() for location in EVM_LOCATIONS)
+    evm_locations = tuple(location for location in EVM_LOCATIONS)
     placeholders = ','.join('?' * len(evm_locations))
     only_filter: str = ''
     only_bindings: tuple[str, ...] = ()
@@ -138,7 +137,7 @@ def get_wallet_query_scope(
     balance no longer covers its own activity.
     """
     location_of_chain = {
-        SupportedBlockchain.from_location(location).value: location.serialize_for_db()
+        location_to_chain(location).value: location
         for location in EVM_LOCATIONS
     }
     tracked: set[tuple[str, str]] = set()
@@ -293,9 +292,7 @@ class CurrentBalanceMismatchDetector:
             last_reached = (location, address)
             assets = by_address[location, address]
             checkpoint()
-            blockchain = SupportedBlockchain.from_location(
-                location=Location.deserialize_from_db(location),  # type: ignore[arg-type]  # only EVM locations are tracked
-            )
+            blockchain = location_to_chain(location)
             with self.database.conn.read_ctx() as cursor:  # balances and their time, one snapshot
                 queried_at = self.database.get_dynamic_cache(
                     cursor=cursor,
@@ -407,9 +404,7 @@ class CurrentBalanceMismatchDetector:
     ) -> bool:
         """Whether anything the comparison was based on no longer holds, read inside the write
         transaction so that nothing can change between this check and the write."""
-        blockchain = SupportedBlockchain.from_location(
-            location=Location.deserialize_from_db(location),  # type: ignore[arg-type]  # only EVM locations are tracked
-        )
+        blockchain = location_to_chain(location)
         stopped_assets = wallet_bucket_assets(asset, self.treat_eth2_as_eth)
         if (
             write_cursor.execute(

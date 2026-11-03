@@ -360,12 +360,6 @@
     "image": "qonto.svg"
   },
   {
-    "identifier": "fints",
-    "name": "FinTS",
-    "parent_identifier": "banks",
-    "icon": "lu-landmark"
-  },
-  {
     "identifier": "other",
     "name": "Other",
     "parent_identifier": "total",

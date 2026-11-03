@@ -110,6 +110,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.auto_notes import SELF_TX_TEMPLATE
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    location_from_chain,
+    location_from_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, has_premium_check
 from rotkehlchen.tasks.assets import detect_tokens_from_decoded_events
@@ -119,7 +123,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTransaction,
     EVMTxHash,
-    Location,
     TokenKind,
 )
 from rotkehlchen.user_messages import Internal, NetworkFailure
@@ -408,7 +411,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 f'Failed at initialization of {self.evm_inquirer.chain_name} '
                 f'{class_name} decoder due to asset mismatch: {e!s}',
                 classification=Internal(operation=UserMessageOperation.DECODER_INITIALIZATION),
-                subject=Location.from_chain_id(self.evm_inquirer.chain_id),
+                subject=location_from_chain_id(self.evm_inquirer.chain_id),
             )
             return
         except (NotERC721Conformant, NotERC20Conformant):
@@ -416,7 +419,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 f'Failed at initialization of {self.evm_inquirer.chain_name} '
                 f'{class_name} decoder due to non conformant token',
                 classification=Internal(operation=UserMessageOperation.DECODER_INITIALIZATION),
-                subject=Location.from_chain_id(self.evm_inquirer.chain_id),
+                subject=location_from_chain_id(self.evm_inquirer.chain_id),
             )
             return
 
@@ -498,7 +501,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                         record=UserMessageRecord.PROTOCOL_CACHE,
                         error=str(e),
                     ),
-                    subject=Location.from_chain_id(self.evm_inquirer.chain_id),
+                    subject=location_from_chain_id(self.evm_inquirer.chain_id),
                 )
                 return
 
@@ -1025,7 +1028,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         if (events := self._maybe_load_or_purge_events_from_db(
             transaction=transaction,
             tx_ref=transaction.tx_hash,
-            location=Location.from_chain(self.evm_inquirer.blockchain),  # type: ignore[arg-type]
+            location=location_from_chain(self.evm_inquirer.blockchain),  # type: ignore[arg-type]
             ignore_cache=ignore_cache,
             delete_customized=delete_customized,
         )) is not None:

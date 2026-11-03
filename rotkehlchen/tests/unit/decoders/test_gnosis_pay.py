@@ -17,6 +17,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_GNOSIS,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -24,7 +27,6 @@ from rotkehlchen.types import (
     ApiKey,
     ExternalService,
     ExternalServiceApiCredentials,
-    Location,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -42,7 +44,7 @@ def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethe
         EvmEvent(
             sequence_index=8,
             timestamp=TimestampMS(1726146635000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.CASHBACK,
             asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
@@ -69,7 +71,7 @@ def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethe
         EvmEvent(
             sequence_index=18,
             timestamp=TimestampMS(1727856180000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
@@ -103,7 +105,7 @@ def test_gnosis_pay_spend(
         EvmEvent(
             sequence_index=29,
             timestamp=TimestampMS(1726590745000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYMENT,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
@@ -219,7 +221,7 @@ def test_gnosis_pay_new_spender_contract(
         EvmEvent(
             sequence_index=29,
             timestamp=TimestampMS(1780902380000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYMENT,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
@@ -248,7 +250,7 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts, allow_gnosis_ethers
         EvmEvent(
             sequence_index=10,
             timestamp=TimestampMS(1726832020000),
-            location=Location.GNOSIS,
+            location=LOCATION_GNOSIS,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REFUND,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
@@ -336,7 +338,7 @@ def test_backfill_missing_gnosis_pay_events(gnosis_inquirer, gnosis_accounts):
                     0,
                     'Spend 1 EURe via Gnosis Pay',
                     timestamp_ms,
-                    Location.GNOSIS.serialize_for_db(),
+                    LOCATION_GNOSIS,
                     'ETH',
                     '1',
                     HistoryEventType.RECEIVE.serialize(),
@@ -349,7 +351,7 @@ def test_backfill_missing_gnosis_pay_events(gnosis_inquirer, gnosis_accounts):
                     1,
                     second_note,
                     timestamp_ms,
-                    Location.GNOSIS.serialize_for_db(),
+                    LOCATION_GNOSIS,
                     'eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430',
                     '1.4',
                     HistoryEventType.SPEND.serialize(),

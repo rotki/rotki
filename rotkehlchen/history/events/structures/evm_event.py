@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Final, TypedDict
+from typing import TYPE_CHECKING, Any, Final, TypedDict
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -25,13 +25,18 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import (
+    location_to_chain_id,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
-    Location,
     deserialize_evm_tx_hash,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -71,8 +76,8 @@ class BridgeExtraData(TypedDict, total=False):
 class EvmEvent(OnchainEvent[EVMTxHash, ChecksumEvmAddress]):  # hash in superclass
 
     @staticmethod
-    def _calculate_group_identifier(tx_ref: EVMTxHash, location: Location) -> str:
-        return f'{location.to_chain_id()}{tx_ref!s}'
+    def _calculate_group_identifier(tx_ref: EVMTxHash, location: LocationIdentifier) -> str:
+        return f'{location_to_chain_id(location)}{tx_ref!s}'
 
     @staticmethod
     def _serialize_tx_ref_for_db(tx_ref: EVMTxHash) -> bytes:

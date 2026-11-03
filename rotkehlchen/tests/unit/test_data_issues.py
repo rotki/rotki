@@ -10,7 +10,9 @@ from rotkehlchen.history.data_issues.constants import (
 )
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import DataIssueFilters
-from rotkehlchen.types import Location
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 
 pytestmark = pytest.mark.accounting_update
 
@@ -21,7 +23,7 @@ if TYPE_CHECKING:
 def _write_negative_balance_issue(
         manager: DataIssuesManager,
         event_identifier: int = 1,
-        location: str = Location.ETHEREUM.serialize_for_db(),
+        location: str = LOCATION_ETHEREUM,
         location_label: str = '0x0000000000000000000000000000000000000001',
         protocol: str | None = None,
         asset: str = 'ETH',
@@ -47,7 +49,7 @@ def _write_negative_balance_issue(
 
 def _write_current_balance_mismatch_issue(
         manager: DataIssuesManager,
-        location: str = Location.ETHEREUM.serialize_for_db(),
+        location: str = LOCATION_ETHEREUM,
         location_label: str = '0x0000000000000000000000000000000000000001',
         asset: str = 'ETH',
         derived_balance: str = '1',
@@ -76,7 +78,7 @@ def _write_current_balance_mismatch_issue(
 def _write_rebasing_issue(manager: DataIssuesManager, event_identifier: int = 1) -> int:
     return manager.write_issue(
         IssueKind.REBASING_TOKEN,
-        location=Location.ETHEREUM.serialize_for_db(),
+        location=LOCATION_ETHEREUM,
         location_label='0x0000000000000000000000000000000000000001',
         protocol=None,
         asset='eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
@@ -108,7 +110,7 @@ def test_write_and_list_issues(database: DBHandler) -> None:
     filtered = manager.list_issues(DataIssueFilters(
         kind=IssueKind.NEGATIVE_BALANCE,
         state=IssueState.OPEN,
-        location=Location.ETHEREUM.serialize_for_db(),
+        location=LOCATION_ETHEREUM,
         location_label='0x0000000000000000000000000000000000000001',
         asset='ETH',
     ))

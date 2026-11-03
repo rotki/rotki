@@ -47,6 +47,9 @@ from rotkehlchen.history.events.utils import (
     history_event_to_staking_for_api,
 )
 from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
     ASSET_MOVEMENT_MATCHING_CAPABILITY,
@@ -64,7 +67,6 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     ChecksumEvmAddress,
     HistoryEventQueryType,
-    Location,
     Timestamp,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
@@ -83,6 +85,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.history_events import HistoryEventsWithCountResult
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 logger = logging.getLogger(__name__)
@@ -293,9 +296,7 @@ class HistoryService:
                 f'SELECT COUNT(*) FROM blockchain_accounts WHERE blockchain IN ({",".join(["?"] * len(EVM_CHAINS_WITH_TRANSACTIONS))})',  # noqa: E501
                 [blockchain.value for blockchain in EVM_CHAINS_WITH_TRANSACTIONS],
             ).fetchone()[0] > 0
-            exchanges_bindings_with_rotkehlchen = [
-                location.serialize_for_db() for location in synced_locations
-            ] + ['rotkehlchen']
+            exchanges_bindings_with_rotkehlchen = list(synced_locations) + ['rotkehlchen']
             has_exchanges_accounts = cursor.execute(
                 f'SELECT COUNT(*) FROM user_credentials WHERE location IN ({",".join(["?"] * len(synced_locations))}) AND name != ?',  # noqa: E501
                 exchanges_bindings_with_rotkehlchen,
@@ -501,7 +502,7 @@ class HistoryService:
     ) -> dict[str, Any]:
         return self._get_exchange_staking_or_savings_history(
             only_cache=only_cache,
-            location=Location.KRAKEN,
+            location=LOCATION_KRAKEN,
             query_filter=query_filter,
             value_filter=value_filter,
             event_types=[HistoryEventType.STAKING],
@@ -515,7 +516,7 @@ class HistoryService:
     def get_binance_savings_history(
             self,
             only_cache: bool,
-            location: Literal[Location.BINANCE, Location.BINANCEUS],
+            location: LocationIdentifier,
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
     ) -> dict[str, Any]:
@@ -636,7 +637,7 @@ class HistoryService:
     def _get_exchange_staking_or_savings_history(
             self,
             only_cache: bool,
-            location: Literal[Location.KRAKEN, Location.BINANCE, Location.BINANCEUS],
+            location: LocationIdentifier,
             event_types: list[HistoryEventType],
             query_filter: HistoryEventFilterQuery,
             value_filter: HistoryEventFilterQuery,
@@ -663,7 +664,7 @@ class HistoryService:
         if exchanges_list is None:
             return {
                 'result': None,
-                'message': f'There is no {location.name} account added.',
+                'message': f'There is no {location} account added.',
                 'status_code': HTTPStatus.CONFLICT,
             }
 

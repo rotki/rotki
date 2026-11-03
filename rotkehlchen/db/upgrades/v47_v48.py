@@ -12,9 +12,12 @@ from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_KRAKEN,
+)
 from rotkehlchen.locations.legacy_chars import location_from_v53_char, location_to_v53_char
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import AssetAmount, Location, Price
+from rotkehlchen.types import AssetAmount, Price
 from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
@@ -57,7 +60,7 @@ def upgrade_trade_to_swap_events(
     # Special Kraken logic
     link, location_label = row[9], None
     if (
-        (location := location_from_v53_char(row[1])) == Location.KRAKEN and
+        (location := location_from_v53_char(row[1])) == LOCATION_KRAKEN and
         link is not None and
         len(link) > 10  # Coincidentally both normal and adjustment trade links must be at least 10 chars to be processed here.  # noqa: E501
     ):

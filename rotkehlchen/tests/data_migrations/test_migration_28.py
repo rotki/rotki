@@ -22,10 +22,17 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.icons import IconManager
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+    LOCATION_BITMEX,
+    LOCATION_KRAKEN,
+    LOCATION_OPTIMISM,
+    LOCATION_SCROLL,
+)
 from rotkehlchen.tests.data_migrations.test_migrations import MockRotkiForMigrations
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import ChainID, Location, Timestamp, TimestampMS
+from rotkehlchen.types import ChainID, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -89,7 +96,7 @@ def test_migration_28_resets_legacy_zero_fees(database: DBHandler) -> None:
         for tx, tx_id, location in zip(
                 transactions[:4] + transactions[5:],
                 tx_ids[:4] + tx_ids[5:],
-                (Location.OPTIMISM, Location.BASE, Location.OPTIMISM, Location.SCROLL, Location.OPTIMISM, Location.OPTIMISM, Location.BASE, Location.OPTIMISM, Location.OPTIMISM),  # noqa: E501
+                (LOCATION_OPTIMISM, LOCATION_BASE, LOCATION_OPTIMISM, LOCATION_SCROLL, LOCATION_OPTIMISM, LOCATION_OPTIMISM, LOCATION_BASE, LOCATION_OPTIMISM, LOCATION_OPTIMISM),  # noqa: E501
                 strict=True,
         ):
             dbevents.add_history_event(
@@ -205,9 +212,9 @@ def test_migration_28_removes_bitmex_data(database: DBHandler) -> None:
         write_cursor.executemany(
             'INSERT INTO user_credentials(name, location, api_key, api_secret) VALUES (?, ?, ?, ?)',  # noqa: E501
             [
-                ('bitmex1', (bitmex := Location.BITMEX.serialize_for_db()), 'key', 'secret'),
+                ('bitmex1', (bitmex := LOCATION_BITMEX), 'key', 'secret'),
                 ('bitmex2', bitmex, 'key', 'secret'),
-                ('kraken1', (kraken := Location.KRAKEN.serialize_for_db()), 'key', 'secret'),
+                ('kraken1', (kraken := LOCATION_KRAKEN), 'key', 'secret'),
             ],
         )
         write_cursor.executemany(
@@ -235,7 +242,7 @@ def test_migration_28_removes_bitmex_data(database: DBHandler) -> None:
                 group_identifier='bitmex_event',
                 sequence_index=0,
                 timestamp=TimestampMS(1),
-                location=Location.BITMEX,
+                location=LOCATION_BITMEX,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=Asset('BTC'),
@@ -245,7 +252,7 @@ def test_migration_28_removes_bitmex_data(database: DBHandler) -> None:
         database.add_margin_positions(
             write_cursor=write_cursor,
             margin_positions=[margin_position := MarginPosition(
-                location=Location.BITMEX,
+                location=LOCATION_BITMEX,
                 open_time=None,
                 close_time=Timestamp(1),
                 profit_loss=FVal('0.5'),

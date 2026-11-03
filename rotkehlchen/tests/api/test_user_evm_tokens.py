@@ -17,6 +17,9 @@ from rotkehlchen.constants.resolver import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.locations.constants import (
+    LOCATION_EXTERNAL,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -35,7 +38,7 @@ from rotkehlchen.tests.utils.globaldb import (
     underlying_address4,
     user_token_address1,
 )
-from rotkehlchen.types import ChainID, Location, TokenKind
+from rotkehlchen.types import ChainID, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -576,7 +579,7 @@ def test_user_tokens_delete_guard(rotkehlchen_api_server: APIServer) -> None:
             asset=Asset(token0_id),
             label='manual1',
             amount=ONE,
-            location=Location.EXTERNAL,
+            location=LOCATION_EXTERNAL,
             tags=None,
             balance_type=BalanceType.ASSET,
         )])

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
-    from rotkehlchen.types import Location
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 class BankAccessTier(SerializableEnumNameMixin):
@@ -79,7 +79,7 @@ class SecretField:
 
 @dataclass(frozen=True)
 class BankManifest:
-    location: Location
+    location: LocationIdentifier
     display_name: str
     access_tier: BankAccessTier
     capabilities: frozenset[BankCapability]
@@ -114,7 +114,7 @@ class BankManifest:
 
     def serialize(self) -> dict[str, Any]:
         return {
-            'location': self.location.serialize(),
+            'location': self.location,
             'display_name': self.display_name,
             'access_tier': self.access_tier.serialize(),
             'capabilities': sorted(c.serialize() for c in self.capabilities),

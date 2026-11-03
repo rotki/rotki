@@ -14,9 +14,11 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_BASE,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -51,7 +53,7 @@ def test_mintclub_claim(base_inquirer, base_accounts, allow_base_routescan) -> N
         tx_ref=tx_hash,
         timestamp=(timestamp := TimestampMS(1761942001000)),
         sequence_index=0,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -62,7 +64,7 @@ def test_mintclub_claim(base_inquirer, base_accounts, allow_base_routescan) -> N
         tx_ref=tx_hash,
         timestamp=timestamp,
         sequence_index=36,
-        location=Location.BASE,
+        location=LOCATION_BASE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REWARD,
         asset=Asset('eip155:8453/erc20:0x18b6f6049A0af4Ed2BBe0090319174EeeF89f53a'),

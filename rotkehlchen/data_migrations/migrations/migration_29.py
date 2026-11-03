@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 from rotkehlchen.chain.evm.constants import ZERO_32_BYTES_HEX
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.locations.constants import LOCATION_HYPERLIQUID
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
 
 if TYPE_CHECKING:
@@ -50,10 +50,10 @@ def data_migration_29(rotki: Rotkehlchen, progress_handler: MigrationProgressHan
                 'parent_identifier=history_events.identifier AND name=? AND value=?)',
                 (
                     create_group_identifier_from_unique_id(
-                        location=Location.HYPERLIQUID,
+                        location=LOCATION_HYPERLIQUID,
                         unique_id=ZERO_32_BYTES_HEX,
                     ),
-                    Location.HYPERLIQUID.serialize_for_db(),
+                    LOCATION_HYPERLIQUID,
                     HISTORY_MAPPING_KEY_STATE,
                     HistoryMappingState.CUSTOMIZED.serialize_for_db(),
                 ),

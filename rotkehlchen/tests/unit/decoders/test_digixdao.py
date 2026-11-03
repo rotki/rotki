@@ -13,8 +13,11 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -33,7 +36,7 @@ def test_refund_dgd(
         tx_ref=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1710097595000)),
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
@@ -44,7 +47,7 @@ def test_refund_dgd(
         tx_ref=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.BURN,
         asset=A_DGD,
@@ -57,7 +60,7 @@ def test_refund_dgd(
         tx_ref=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
-        location=Location.ETHEREUM,
+        location=LOCATION_ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.REFUND,
         asset=A_ETH,
