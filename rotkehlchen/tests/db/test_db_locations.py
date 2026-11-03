@@ -89,7 +89,7 @@ def test_custom_location_rules(database: DBHandler) -> None:
         db_locations.add_custom(write_cursor, name='ING', parent_identifier='exchanges')  # other branch  # noqa: E501
         for name, parent, error in (
                 ('ing', 'banks', 'already exists'),  # case-insensitive sibling names
-                ('Qonto', 'banks', 'already exists'),  # built-in siblings too
+                ('Kraken', 'exchanges', 'already exists'),  # built-in siblings too
                 ('  ', 'banks', 'can not be empty'),
                 ('New', 'missing', 'does not exist'),
         ):
