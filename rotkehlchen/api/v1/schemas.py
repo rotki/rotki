@@ -2277,7 +2277,13 @@ class BankSyncSchema(AsyncQueryArgumentSchema):
 
 class BankBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchema):
     connector = SerializableEnumField(enum_class=BankConnectorType, load_default=None)
+    name = EmptyAsNoneStringField(load_default=None)
     ignore_cache = fields.Boolean(load_default=False)
+
+    @validates_schema
+    def validate_schema(self, data: dict[str, Any], **_kwargs: Any) -> None:
+        if data['name'] is not None and data['connector'] is None:
+            raise ValidationError('A bank connection name needs its connector')
 
 
 class ExchangeEventsRangeQuerySchema(

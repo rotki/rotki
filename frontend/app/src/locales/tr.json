@@ -1742,7 +1742,6 @@
       "description": "Bankalarınız henüz bir bakiye bildirmedi. Yeniden sormak için yenileyin.",
       "title": "Henüz bakiye yok"
     },
-    "refresh_tooltip": "Bağlı tüm bankaların güncel bakiyelerini sorgula",
     "status": {
       "authenticate": "Kimlik doğrula",
       "authentication": "TAN bekleniyor, bakiyeler güncel olmayabilir",

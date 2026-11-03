@@ -59,6 +59,8 @@ const {
 defineSlots<{
   /** What the table says when it has no rows and no search is narrowing it. */
   empty?: () => any;
+  /** The amount cell, for a source whose amounts have a known precision, such as a bank's cents. */
+  amount?: (props: { row: AssetBalanceWithPrice }) => any;
 }>();
 
 const nested = computed<boolean>(() => layout !== undefined);
@@ -316,7 +318,12 @@ const panelTableProps = computed<Record<string, unknown>>(() => get(fillsPanel)
       />
     </template>
     <template #item.amount="{ row }">
-      <ValueDisplay :value="row.amount" />
+      <slot
+        name="amount"
+        :row="row"
+      >
+        <ValueDisplay :value="row.amount" />
+      </slot>
     </template>
     <template #item.value="{ row }">
       <AssetValueDisplay

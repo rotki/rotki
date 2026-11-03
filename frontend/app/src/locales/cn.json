@@ -1723,7 +1723,6 @@
       "description": "你的银行尚未返回任何余额。请刷新以再次查询。",
       "title": "暂无余额"
     },
-    "refresh_tooltip": "查询所有已连接银行的当前余额",
     "status": {
       "authenticate": "验证",
       "authentication": "等待 TAN 验证，余额可能不是最新的",

@@ -162,6 +162,10 @@ def test_bank_lifecycle(rotkehlchen_api_server: APIServer) -> None:
         ))
         assert FVal(result['aggregate'][A_EUR.identifier]['amount']) == FVal(transport.organization['organization']['bank_accounts'][0]['balance_cents']) / 100  # noqa: E501
         assert result['connections'][0]['name'] == 'Qonto 1'
+        assert assert_proper_sync_response_with_result(requests.get(
+            api_url_for(rotkehlchen_api_server, 'bankbalancesresource'),
+            json={'connector': 'qonto', 'name': 'Qonto 1'},
+        ))['connections'] == result['connections']
         result = assert_proper_sync_response_with_result(requests.get(
             api_url_for(rotkehlchen_api_server, 'bankbalancesresource'),
         ))
@@ -293,6 +297,28 @@ def test_deleting_bank_keeps_similarly_prefixed_connection_caches(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_query_one_bank_connection_balances(rotkehlchen_api_server: APIServer) -> None:
+    """A connection name limits the balance query to that connection alone"""
+    url = api_url_for(rotkehlchen_api_server, 'bankbalancesresource')
+    with _patch_bank_http(QontoFixtureTransport()):
+        _add_qonto(rotkehlchen_api_server, name='Business')
+        _add_qonto(rotkehlchen_api_server, name='Personal')
+        assert [x['name'] for x in assert_proper_sync_response_with_result(
+            requests.get(url, json={'connector': 'qonto'}),
+        )['connections']] == ['Business', 'Personal']
+        result = assert_proper_sync_response_with_result(
+            requests.get(url, json={'connector': 'qonto', 'name': 'Personal'}),
+        )
+        assert [x['name'] for x in result['connections']] == ['Personal']
+        assert result['aggregate'] == result['connections'][0]['balances']
+        assert_error_response(
+            requests.get(url, json={'connector': 'qonto', 'name': 'nope'}),
+            'No qonto bank connection named nope',
+            HTTPStatus.CONFLICT,
+        )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_failed_bank_deletion_keeps_connection(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with _patch_bank_http(QontoFixtureTransport()):
@@ -398,3 +424,5 @@ def test_bank_errors(rotkehlchen_api_server: APIServer) -> None:
     assert_error_response(response, 'needs its connector', HTTPStatus.BAD_REQUEST)
     response = requests.get(api_url_for(rotkehlchen_api_server, 'named_bank_balances_resource', connector='qonto'))  # noqa: E501
     assert_error_response(response, 'No qonto bank connection', HTTPStatus.CONFLICT)
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'bankbalancesresource'), json={'name': 'x'})  # noqa: E501
+    assert_error_response(response, 'needs its connector', HTTPStatus.BAD_REQUEST)

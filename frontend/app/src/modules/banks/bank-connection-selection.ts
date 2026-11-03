@@ -89,7 +89,7 @@ export function searchBankSelectionOptions(
     .map(({ option }) => option);
 }
 
-export function toManualFintsSelection(manualName: string): BankSelectionOption {
+function toManualFintsSelection(manualName: string): BankSelectionOption {
   return {
     id: 'fints:manual',
     kind: 'fints-manual',

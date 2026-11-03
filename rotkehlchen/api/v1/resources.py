@@ -1111,12 +1111,14 @@ class BankBalancesResource(BaseMethodView):
     def get(
             self,
             connector: BankConnectorType | None,
+            name: str | None,
             async_query: bool,
             ignore_cache: bool,
             value_threshold: FVal | None,
     ) -> Response:
         return self.rest_api.query_bank_balances(
             connector=connector,
+            name=name,
             async_query=async_query,
             ignore_cache=ignore_cache,
             value_threshold=value_threshold,

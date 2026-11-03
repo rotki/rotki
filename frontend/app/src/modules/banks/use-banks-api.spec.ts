@@ -210,7 +210,12 @@ describe('useBanksApi', () => {
 
     await useBanksApi().queryBankBalances();
     await useBanksApi().queryBankBalances(true);
+    await useBanksApi().queryBankBalances(false, { connector: 'fints', name: 'DKB' });
 
-    expect(queries).toEqual(['?async_query=true', '?async_query=true&ignore_cache=true']);
+    expect(queries).toEqual([
+      '?async_query=true',
+      '?async_query=true&ignore_cache=true',
+      '?async_query=true&connector=fints&name=DKB',
+    ]);
   });
 });

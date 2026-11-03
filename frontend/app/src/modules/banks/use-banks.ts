@@ -5,9 +5,11 @@ import { startPromise } from '@shared/utils';
 import { isOk, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { bankBalancesActivity } from '@/modules/banks/banks.activity';
+import { aggregateConnectionBalances, mergeConnectionBalances } from '@/modules/banks/bank-balances';
+import { bankBalancesActivity, bankConnectionBalancesActivity } from '@/modules/banks/banks.activity';
 import {
   BankBalancesResponse,
+  type BankConnectionBalances,
   type BankConnectionIdentity,
   type BankFormData,
   type BankSetupError,
@@ -65,8 +67,15 @@ interface UseBanksReturn {
   cancelBankSetup: (connection: BankConnectionIdentity) => Promise<void>;
   /** Pulls new transactions of one connection, of one bank, or of every connection. */
   syncBanks: (payload?: BankSyncPayload) => Promise<boolean>;
-  /** Queries every bank, preserving per-connection balances and updating the banks aggregate. */
-  fetchBankBalances: (ignoreCache?: boolean) => Promise<void>;
+  /**
+   * Queries every bank, or only the given connection, and updates the per-connection balances
+   * and the banks aggregate.
+   *
+   * @remarks
+   * A single connection's result replaces only its own entry; the aggregate is then rebuilt from
+   * every stored connection, so the other banks keep their last known balances.
+   */
+  fetchBankBalances: (ignoreCache?: boolean, connection?: BankConnectionIdentity) => Promise<void>;
 }
 
 /**
@@ -107,24 +116,30 @@ export function useBanks(): UseBanksReturn {
     Object.entries(get(exchangeBalances)).filter(([location]) => location !== 'banks'),
   );
 
-  const fetchBankBalances = async (ignoreCache = false): Promise<void> => {
+  const storeConnectionBalances = (fresh: BankConnectionBalances[], connection?: BankConnectionIdentity): void => {
+    const connections = connection ? mergeConnectionBalances(get(store.connectionBalances), fresh) : fresh;
+    set(exchangeBalances, { ...withoutBanks(), banks: aggregateConnectionBalances(connections) });
+    store.setConnectionBalances(connections);
+  };
+
+  const fetchBankBalances = async (ignoreCache = false, connection?: BankConnectionIdentity): Promise<void> => {
     if (get(store.connections).length === 0) {
       set(exchangeBalances, withoutBanks());
       store.setConnectionBalances([]);
       return;
     }
 
+    const activity = connection
+      ? { id: bankConnectionBalancesActivity.id(connection), kind: bankConnectionBalancesActivity.kind, lane: bankConnectionBalancesActivity.laneOf?.(connection) }
+      : { id: bankBalancesActivity.id(), kind: bankBalancesActivity.kind, lane: bankBalancesActivity.laneOf?.() };
+
     await submitTask({
-      id: bankBalancesActivity.id(),
-      kind: bankBalancesActivity.kind,
-      lane: bankBalancesActivity.laneOf?.(),
+      ...activity,
       rerunnable: true,
       run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<BankBalancesResponse>(async () => api.queryBankBalances(ignoreCache)),
+        await runTask<BankBalancesResponse>(async () => api.queryBankBalances(ignoreCache, connection)),
         (result) => {
-          const balances = BankBalancesResponse.parse(result);
-          set(exchangeBalances, { ...withoutBanks(), banks: balances.aggregate });
-          store.setConnectionBalances(balances.connections);
+          storeConnectionBalances(BankBalancesResponse.parse(result).connections, connection);
         },
       ),
       subtitle: activityLabelFor(msg.$t('task_center.activity.bank_balances.query')),

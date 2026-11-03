@@ -8,3 +8,16 @@ export const bankBalancesActivity = defineActivity<void, readonly []>({
   kind: ActivityKind.BANK_BALANCES,
   lane: () => EXCHANGE_LANE,
 });
+
+/**
+ * Loading the balances of one bank connection, keyed by its name, which is unique across banks.
+ *
+ * @remarks
+ * Kept apart from {@link bankBalancesActivity} so a bank refreshed on its own, for example to answer
+ * its TAN, neither joins nor waits on a refresh of every bank.
+ */
+export const bankConnectionBalancesActivity = defineActivity<{ name: string }, readonly [string]>({
+  key: subject => [subject.name],
+  kind: ActivityKind.BANK_BALANCES,
+  lane: () => EXCHANGE_LANE,
+});
