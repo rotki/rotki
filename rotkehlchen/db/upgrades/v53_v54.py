@@ -182,6 +182,7 @@ CREATE TABLE {table} (
     api_key TEXT,
     api_secret TEXT,
     passphrase TEXT,
+    connector TEXT,
     PRIMARY KEY (name, location)
 );"""),
     ('user_credentials_mappings', 'credential_location', False, """

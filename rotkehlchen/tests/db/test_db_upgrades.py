@@ -5107,9 +5107,11 @@ def test_upgrade_db_53_to_54(
         # the location tree replaced the character location table
         assert table_exists(cursor, 'locations') and not table_exists(cursor, 'location')
         assert cursor.execute(
-            "SELECT name, parent_identifier FROM locations WHERE identifier IN ('sonic', 'qonto', 'robinhood', 'ink') ORDER BY identifier",  # noqa: E501
-        ).fetchall() == [('Ink', 'evm chains'), ('Qonto', 'banks'), ('Robinhood Chain', 'evm chains'), ('Sonic', 'evm chains')]  # noqa: E501
-        assert cursor.execute("SELECT COUNT(*) FROM locations WHERE identifier='fints'").fetchone()[0] == 0  # noqa: E501
+            "SELECT name, parent_identifier FROM locations WHERE identifier IN ('sonic', 'robinhood', 'ink') ORDER BY identifier",  # noqa: E501
+        ).fetchall() == [('Ink', 'evm chains'), ('Robinhood Chain', 'evm chains'), ('Sonic', 'evm chains')]  # noqa: E501
+        assert cursor.execute(  # bank connectors are not locations, only the banks node is
+            "SELECT identifier FROM locations WHERE identifier IN ('banks', 'fints', 'qonto')",
+        ).fetchall() == [('banks',)]
         # and the obsolete setting was removed
         assert cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
@@ -5262,9 +5264,9 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
         )
 
         def table_rows(cursor, table, location_column='location'):
-            columns = [  # notes are rewritten by another step of this upgrade
+            columns = [  # notes are rewritten by another step, connector is new in v54
                 row[1] for row in cursor.execute(f'PRAGMA table_info({table})')
-                if row[1] not in (location_column, 'notes')
+                if row[1] not in (location_column, 'notes', 'connector')
             ]
             return {
                 (tuple(row[:-1]), row[-1]) for row in cursor.execute(
@@ -5296,8 +5298,8 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
             assert after[table] == {(row, mapping[location]) for row, location in rows}, table
 
         assert cursor.execute(
-            "SELECT api_secret FROM user_credentials WHERE name='kr'",
-        ).fetchone()[0] == secret
+            "SELECT api_secret, connector FROM user_credentials WHERE name='kr'",
+        ).fetchone() == (secret, None)
         assert not table_exists(cursor, 'amm_swaps')
         assert cursor.execute(
             "SELECT timestamp, usd_value FROM timed_location_data WHERE location='total' ORDER BY timestamp",  # noqa: E501
