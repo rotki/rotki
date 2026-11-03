@@ -12,6 +12,7 @@ const wireManifest = {
   capabilities: ['balances', 'transactions'],
   display_name: 'Qonto',
   docs_url: 'https://docs.qonto.com',
+  image: 'qonto.svg',
   connector: 'qonto',
   maintainer: 'rotki',
   secrets: [{ description: 'The organization login', label: 'Login', secret: true, slot: 'api_key' }],
@@ -25,7 +26,7 @@ describe('useBanksApi', () => {
 
     const [manifest] = await useBanksApi().getSupportedBanks();
 
-    expect(manifest).toMatchObject({ displayName: 'Qonto', docsUrl: 'https://docs.qonto.com', setupNotes: ['Only one key per organization'] });
+    expect(manifest).toMatchObject({ displayName: 'Qonto', docsUrl: 'https://docs.qonto.com', image: 'qonto.svg', setupNotes: ['Only one key per organization'] });
   });
 
   it('should parse the bank connections with their sync status', async () => {

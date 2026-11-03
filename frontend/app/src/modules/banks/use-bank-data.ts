@@ -5,6 +5,7 @@ import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { fromExchanges } from '@/modules/balances/aggregation/core/sources';
 import { summarizeBalances } from '@/modules/balances/aggregation/core/summarize';
 import { useAggregationContext } from '@/modules/balances/aggregation/use-aggregation-context';
+import { aggregateConnectionBalances } from '@/modules/banks/bank-balances';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { exchangeAssetSum } from '@/modules/core/common/data/calculation';
@@ -37,8 +38,16 @@ export function useBankData(): UseBankDataReturn {
   const { isAssetIgnored } = useAssetsStore();
   const context = useAggregationContext();
 
+  /**
+   * One row per asset of the given connections.
+   *
+   * @remarks
+   * Every connection counts as the one `banks` source: keyed by connection name, a row held at
+   * several banks would expand into a per-protocol breakdown that renders bank names as protocols.
+   * The tiles already show what each bank holds.
+   */
   const summarize = (entries: readonly BankConnectionBalances[]): AssetBalanceWithPriceAndChains[] =>
-    summarizeBalances([fromExchanges(Object.fromEntries(entries.map(({ balances, name }) => [name, balances])))], context);
+    summarizeBalances([fromExchanges({ banks: aggregateConnectionBalances(entries) })], context);
 
   const banks = computed<BankBalanceData[]>(() => get(connections)
     .map((connection) => {

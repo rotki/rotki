@@ -6,7 +6,7 @@ import {
   bankConnectionStatus,
   type BankConnectionStatusDisplay,
 } from '@/modules/banks/bank-connection-state';
-import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
+import BankConnectorIcon from '@/modules/banks/components/BankConnectorIcon.vue';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
 const { connection } = defineProps<{ connection: BankConnection }>();
@@ -50,11 +50,7 @@ async function act(): Promise<void> {
     :data-connection="connection.name"
     :data-state="state"
   >
-    <LocationIcon
-      item="banks"
-      icon
-      size="20px"
-    />
+    <BankConnectorIcon :connector="connection.connector" />
     <span class="text-body-2 font-medium truncate">{{ connection.name }}</span>
     <span class="text-caption text-rui-text-secondary shrink-0">{{ connection.displayName }}</span>
 

@@ -29,6 +29,8 @@ export const BankManifest = z.object({
   version: z.string(),
   docsUrl: z.string(),
   setupNotes: z.array(z.string()),
+  /** The connector's logo among the protocol images, or null for the generic bank icon. */
+  image: z.string().nullable(),
 });
 
 export type BankManifest = z.infer<typeof BankManifest>;

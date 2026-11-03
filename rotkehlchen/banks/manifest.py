@@ -93,6 +93,9 @@ class BankManifest:
     docs_url: str
     # user-facing setup notes: where to get the credentials, caveats, confidentiality
     setup_notes: tuple[str, ...] = field(default_factory=tuple)
+    # the connector's logo among the frontend protocol images. None for a protocol such as
+    # FinTS that many banks speak, which is shown with the generic bank icon.
+    image: str | None = None
 
     def validate(self) -> None:
         """Raise ValueError when the manifest is internally inconsistent.
@@ -127,4 +130,5 @@ class BankManifest:
             'version': self.version,
             'docs_url': self.docs_url,
             'setup_notes': list(self.setup_notes),
+            'image': self.image,
         }

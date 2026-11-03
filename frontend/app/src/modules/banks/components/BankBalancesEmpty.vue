@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import BankConnectorIcon from '@/modules/banks/components/BankConnectorIcon.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
-import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 
 const emit = defineEmits<{ connect: [connector?: string] }>();
 
@@ -48,9 +48,8 @@ const { manifests } = storeToRefs(useBankConnectionsStore());
           @click="emit('connect', manifest.connector)"
         >
           <template #prepend>
-            <LocationIcon
-              item="banks"
-              icon
+            <BankConnectorIcon
+              :connector="manifest.connector"
               size="18px"
             />
           </template>

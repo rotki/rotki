@@ -66,10 +66,11 @@ describe('useBankData', () => {
     expect(savings?.syncStatus.lastError).toBeNull();
   });
 
-  it('should merge an asset held at several banks into one row of all balances', () => {
+  it('should merge an asset held at several banks into one row of all balances, with no per-bank breakdown to expand', () => {
     useAssetsStore().ignoredAssets = ['SPAM'];
     const { allBalances } = useBankData();
     expect(get(allBalances).map(row => [row.asset, row.amount.toFixed()])).toEqual([['EUR', '500']]);
+    expect(get(allBalances)[0].perProtocol?.map(({ protocol }) => protocol)).toEqual(['banks']);
   });
 
   it('should total every bank, ignored assets left out', () => {

@@ -12,6 +12,7 @@ const manifest: BankManifest = {
   capabilities: [],
   displayName: 'Qonto',
   docsUrl: '',
+  image: null,
   connector: 'qonto',
   maintainer: 'rotki',
   secrets: [],

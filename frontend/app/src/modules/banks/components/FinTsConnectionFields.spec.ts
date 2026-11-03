@@ -15,6 +15,7 @@ const manifest: BankManifest = {
   capabilities: ['balances', 'transactions'],
   displayName: 'FinTS/HBCI',
   docsUrl: 'https://example.com',
+  image: null,
   connector: 'fints',
   maintainer: 'rotki',
   secrets: [
