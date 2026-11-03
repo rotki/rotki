@@ -3,7 +3,7 @@ import sys
 
 from rotkehlchen.accounting.constants import DEFAULT, EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.mcp.taxonomy import get_event_taxonomy, resolve_group
+from rotkehlchen.mcp.taxonomy import get_event_taxonomy, resolve_direction, resolve_group
 
 
 def _entry(taxonomy: dict, event_type: str, event_subtype: str) -> dict:
@@ -39,6 +39,15 @@ def test_resolve_group_should_agree_with_the_advertised_taxonomy() -> None:
     # No combination currently groups differently there, so this pins the parity rather than
     # a difference -- an upstream split would then reach the column with no MCP change.
     assert resolve_group('deposit', 'deposit asset', 'kraken') == 'cex'
+
+
+def test_resolve_should_accept_locations_outside_the_builtin_catalog() -> None:
+    """Migrated protocol locations and custom ones are stored but not in the built-in
+    catalog. Their events must still resolve, or income queries silently drop them.
+    """
+    assert resolve_direction('receive', 'reward', 'legacy:gitcoin') == 'in'
+    assert resolve_group('receive', 'reward', 'legacy:gitcoin') == 'income'
+    assert resolve_direction('receive', 'reward', 'custom:0f1e2d3c') == 'in'
 
 
 def test_every_combination_should_have_a_direction() -> None:

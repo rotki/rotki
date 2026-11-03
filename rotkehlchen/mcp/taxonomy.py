@@ -14,10 +14,10 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.history.events.structures.base import get_event_direction
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.locations.catalog import deserialize_builtin_location
 from rotkehlchen.locations.constants import (
     LOCATION_KRAKEN,
 )
+from rotkehlchen.locations.types import deserialize_location_identifier
 
 if TYPE_CHECKING:
     from rotkehlchen.locations.types import LocationIdentifier
@@ -210,7 +210,7 @@ def _parse_event_key(
             HistoryEventType.deserialize(event_type),
             HistoryEventSubType.deserialize(event_subtype)
             if isinstance(event_subtype, str) else HistoryEventSubType.NONE,
-            deserialize_builtin_location(location) if isinstance(location, str) else None,
+            deserialize_location_identifier(location) if isinstance(location, str) else None,
         )
     except DeserializationError:
         return None
