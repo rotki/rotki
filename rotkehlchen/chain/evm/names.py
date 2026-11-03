@@ -15,7 +15,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import BlockchainQueryError, InputError, RemoteError
+from rotkehlchen.errors.misc import BlockchainQueryError, InputError, RemoteError, cause_of
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -120,7 +120,7 @@ def _find_system_name_mappings(
     except (RemoteError, BlockchainQueryError) as e:
         raise RemoteError(
             f'Error occurred while querying {system.identifier} names: {e!s}',
-            cause=e.cause if isinstance(e, RemoteError) else FailureCause.NETWORK,
+            cause=cause_of(e, FailureCause.NETWORK),
         ) from e
 
     with dbens.db.user_write() as write_cursor:

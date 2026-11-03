@@ -23,8 +23,7 @@ from rotkehlchen.banks.errors import (
     BankMFARequired,
 )
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
-from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError, combined_cause
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
@@ -42,6 +41,7 @@ if TYPE_CHECKING:
     from rotkehlchen.banks.connector import BankConnector
     from rotkehlchen.banks.manifest import BankManifest
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.errors.cause import FailureCause
     from rotkehlchen.types import Timestamp
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -474,7 +474,7 @@ class BankManager:
         if len(errors) != 0:
             raise RemoteError(
                 '; '.join(errors),
-                cause=causes.pop() if len(causes) == 1 else FailureCause.REMOTE_REJECTED,
+                cause=combined_cause(causes),
             )
 
     def sync_one(self, bank: BankConnector) -> None:

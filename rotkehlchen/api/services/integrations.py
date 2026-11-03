@@ -7,7 +7,7 @@ from rotkehlchen.chain.evm.types import ChainID
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError, cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.gnosispay import (
     fetch_gnosis_pay_siwe_nonce,
@@ -20,7 +20,6 @@ from rotkehlchen.premium.premium import (
     ASSET_MOVEMENT_MATCHING_CAPABILITY,
     has_premium_capability,
 )
-from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tasks.bridges import process_bridge_transactions
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials
 
@@ -60,7 +59,7 @@ class IntegrationsService:
         result = DBCalendar(self.rotkehlchen.data.db).query_calendar_entry(
             filter_query=filter_query,
         )
-        return OkResult(process_result(result))
+        return OkResult(result)
 
     def update_calendar_entry(self, calendar: CalendarEntry) -> ApiResult:
         try:
@@ -105,7 +104,7 @@ class IntegrationsService:
 
     def query_reminders(self, event_id: int) -> ApiResult:
         result = DBCalendar(self.rotkehlchen.data.db).query_reminder_entry(event_id=event_id)
-        return OkResult(process_result(result))
+        return OkResult(result)
 
     def get_google_calendar_status(self) -> ApiResult:
         try:
@@ -120,7 +119,7 @@ class IntegrationsService:
             return FailResult(
                 str(e),
                 HTTPStatus.BAD_REQUEST,
-                e.cause if isinstance(e, RemoteError) else FailureCause.INTERNAL,
+                cause_of(e, FailureCause.INTERNAL),
             )
         return OkResult({
             'authenticated': is_authenticated,
@@ -140,7 +139,7 @@ class IntegrationsService:
             return FailResult(
                 str(e),
                 HTTPStatus.BAD_REQUEST,
-                e.cause if isinstance(e, RemoteError) else FailureCause.INTERNAL,
+                cause_of(e, FailureCause.INTERNAL),
             )
         return OkResult(result)
 
@@ -158,7 +157,7 @@ class IntegrationsService:
             return FailResult(
                 str(e),
                 HTTPStatus.BAD_REQUEST,
-                e.cause if isinstance(e, RemoteError) else FailureCause.INTERNAL,
+                cause_of(e, FailureCause.INTERNAL),
             )
         return OkResult({'success': True})
 
@@ -174,7 +173,7 @@ class IntegrationsService:
             return FailResult(
                 str(e),
                 HTTPStatus.BAD_REQUEST,
-                e.cause if isinstance(e, RemoteError) else FailureCause.INTERNAL,
+                cause_of(e, FailureCause.INTERNAL),
             )
         return OkResult(result)
 
@@ -252,7 +251,7 @@ class IntegrationsService:
             return FailResult(
                 str(e),
                 HTTPStatus.CONFLICT,
-                e.cause if isinstance(e, RemoteError) else FailureCause.BAD_DATA,
+                cause_of(e, FailureCause.BAD_DATA),
             )
 
         return OkResult(addresses_with_admins)

@@ -1,8 +1,11 @@
+import json
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Final
 
-from rotkehlchen.errors.cause import FailureCause  # noqa: TC001  # dataclass field type
+from flask import Response, make_response
+
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.serialization.serialize import process_result
 
 
@@ -41,3 +44,28 @@ def serialize_result(result: ApiResult) -> dict[str, Any]:
     if isinstance(result, FailResult):
         serialized['cause'] = result.cause
     return process_result(serialized)
+
+
+def api_response(result: ApiResult, log_result: bool = True) -> Response:
+    return make_response(
+        (
+            json.dumps(serialize_result(result)),
+            result.status,
+            {
+                'mimetype': 'application/json',
+                'Content-Type': 'application/json',
+                'rotki-log-result': log_result,  # popped by after request callback
+            }),
+    )
+
+
+AUTH_REQUIRED: Final = FailResult(
+    'Authentication required',
+    HTTPStatus.UNAUTHORIZED,
+    FailureCause.AUTH,
+)
+NOT_LOGGED_IN: Final = FailResult(
+    'No user is currently logged in',
+    HTTPStatus.UNAUTHORIZED,
+    FailureCause.AUTH,
+)

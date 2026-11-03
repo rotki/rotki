@@ -14,7 +14,6 @@ from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.snapshots import DBSnapshot
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError, TagConstraintError
-from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 
 if TYPE_CHECKING:
@@ -258,7 +257,7 @@ class UserDataService:
             prioritizer=self.rotkehlchen.addressbook_prioritizer,
             chain_addresses=chain_addresses,
         )
-        return OkResult(process_result_list(mappings))
+        return OkResult(mappings)
 
     def get_queried_addresses_per_module(self) -> ApiResult:
         result = QueriedAddresses(self.rotkehlchen.data.db).get_queried_addresses_per_module()

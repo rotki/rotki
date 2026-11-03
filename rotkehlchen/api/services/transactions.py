@@ -46,6 +46,7 @@ from rotkehlchen.errors.misc import (
     IncompleteTransactionsQuery,
     InputError,
     RemoteError,
+    cause_of,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.gnosispay import GnosisPay
@@ -1156,7 +1157,7 @@ class TransactionsService:
             return FailResult(
                 str(e),
                 HTTPStatus.CONFLICT,
-                e.cause if isinstance(e, RemoteError) else FailureCause.INVALID_INPUT,
+                cause_of(e, FailureCause.INVALID_INPUT),
             )
 
         return OkResult(balance)

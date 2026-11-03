@@ -17,7 +17,7 @@ from rotkehlchen.chain.evm.utils import (
 )
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_like,
@@ -453,7 +453,7 @@ def query_velodrome_like_data(
         if reload_all:  # a forced refresh is how users recover missing gauges, so report it
             raise RemoteError(
                 f'Failed to backfill {inquirer.chain_name} gauges from the voter: {e!s}',
-                cause=e.cause if isinstance(e, RemoteError) else FailureCause.BAD_DATA,
+                cause=cause_of(e, FailureCause.BAD_DATA),
             ) from e
 
         log.warning(

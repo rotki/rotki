@@ -69,6 +69,7 @@ from rotkehlchen.errors.misc import (
     NotERC20Conformant,
     RemoteError,
     TokenQueryFailed,
+    cause_of,
 )
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
@@ -83,7 +84,6 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import check_if_image_is_cached, maybe_create_image_response
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
-from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.tasks.assets import (
     update_aave_v3_underlying_assets,
     update_spark_underlying_assets,
@@ -156,7 +156,7 @@ class AssetsService:
                 return FailResult(
                     str(e),
                     HTTPStatus.BAD_GATEWAY,
-                    e.cause if isinstance(e, RemoteError) else FailureCause.NETWORK,
+                    cause_of(e, FailureCause.NETWORK),
                 )
 
         module_obj = self.rotkehlchen.chains_aggregator.get_module(module_name)
@@ -231,8 +231,7 @@ class AssetsService:
 
     def query_owned_assets(self) -> ApiResult:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            result = process_result_list(self.rotkehlchen.data.db.query_owned_assets(cursor))
-        return OkResult(result)
+            return OkResult(self.rotkehlchen.data.db.query_owned_assets(cursor))
 
     def get_asset_types(self) -> ApiResult:
         types = [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
@@ -567,7 +566,7 @@ class AssetsService:
             'target_asset': target_asset,
             'oracles': {str(oracle): oracle.value for oracle in CurrentPriceOracle},
         }
-        return OkResult(process_result(result))
+        return OkResult(result)
 
     @staticmethod
     def _cache_current_prices(
@@ -665,7 +664,7 @@ class AssetsService:
             'assets': {k: dict(v) for k, v in assets_price.items()},
             'target_asset': target_asset,
         }
-        return OkResult(process_result(result))
+        return OkResult(result)
 
     def create_oracle_cache(
             self,
@@ -1048,7 +1047,7 @@ class AssetsService:
             },
             'accounting_events_icons': ACCOUNTING_EVENTS_ICONS,
         }
-        return OkResult(process_result(result))
+        return OkResult(result)
 
     def get_counterparties_details(self) -> ApiResult:
         counterparties = {(exchange_id := x.name.lower()): CounterpartyDetails(

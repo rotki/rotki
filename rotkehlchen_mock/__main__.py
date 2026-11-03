@@ -2,8 +2,8 @@ import logging
 import threading
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.api.rest import RestAPI, api_response
-from rotkehlchen.api.result import OkResult
+from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.result import OkResult, api_response
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.args import app_args
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging

@@ -1101,7 +1101,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             raise RemoteError(
                 f'{self.chain_name} transaction {tx_hash!s} receipt_data is expected to exist',
                 cause=FailureCause.BAD_DATA,
-            )
+            )  # as etherscan getTransactionByHash does not contains gasUsed
         return transaction, receipt_data
 
     def maybe_get_transaction_by_hash(

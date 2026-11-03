@@ -14,8 +14,7 @@ from webargs.flaskparser import parser
 from werkzeug.exceptions import NotFound
 
 from rotkehlchen.api.asgi import create_asgi_app
-from rotkehlchen.api.rest import RestAPI, api_response
-from rotkehlchen.api.result import FailResult
+from rotkehlchen.api.result import AUTH_REQUIRED, FailResult, api_response
 from rotkehlchen.api.session_token import (
     MCP_BACKEND_PROOF_HEADER,
     SESSION_COOKIE_NAME,
@@ -224,6 +223,7 @@ if TYPE_CHECKING:
     from marshmallow import Schema
     from marshmallow.exceptions import ValidationError
 
+    from rotkehlchen.api.rest import RestAPI
     from rotkehlchen.api.websockets.notifier import RotkiNotifier
 
 URLS = list[
@@ -623,11 +623,7 @@ class APIServer:
                         internal_claims.sid,
                     )
                 ):
-                    return api_response(FailResult(
-                        'Authentication required',
-                        HTTPStatus.UNAUTHORIZED,
-                        FailureCause.AUTH,
-                    ))
+                    return api_response(AUTH_REQUIRED)
                 else:
                     claims = internal_claims
 
@@ -650,11 +646,7 @@ class APIServer:
                         self.rest_api.rotkehlchen.user_is_logged_in and
                         claims.username != self.rest_api.rotkehlchen.data.username
                 ):
-                    return api_response(FailResult(
-                        'Authentication required',
-                        HTTPStatus.UNAUTHORIZED,
-                        FailureCause.AUTH,
-                    ))
+                    return api_response(AUTH_REQUIRED)
 
                 g.rotki_session_user = claims.username
                 g.rotki_session_sid = claims.sid

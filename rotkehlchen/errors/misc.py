@@ -1,6 +1,10 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 from rotkehlchen.errors.cause import FailureCause
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
 
 
 class SystemPermissionError(Exception):
@@ -116,8 +120,8 @@ def cause_for_status(status_code: int) -> FailureCause:
     """The cause of a failed HTTP response, read from its status.
 
     A 429 asks us to slow down, and server errors and request timeouts (408) are the remote
-    failing to answer. A 401 or 403 rejects our credentials; any other status rejects the
-    request itself.
+    failing to answer. A 401 or 403 rejects our credentials; any other status, including a
+    2xx whose body reports a failure, rejects the request itself.
     """
     if status_code == HTTPStatus.TOO_MANY_REQUESTS:
         return FailureCause.RATE_LIMITED
@@ -134,11 +138,20 @@ def cause_for_status(status_code: int) -> FailureCause:
 def remote_error_for_status(status_code: int, message: str) -> RemoteError:
     """Build the error for a failed HTTP response. Server errors and request timeouts
     (408) are expected to clear up by themselves, so they are recoverable."""
-    error_class = RecoverableRemoteError if (
-        status_code == HTTPStatus.REQUEST_TIMEOUT or
-        status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
-    ) else RemoteError
-    return error_class(message, cause=cause_for_status(status_code), error_code=status_code)
+    cause = cause_for_status(status_code)
+    error_class = RecoverableRemoteError if cause == FailureCause.NETWORK else RemoteError
+    return error_class(message, cause=cause, error_code=status_code)
+
+
+def cause_of(error: Exception, default: FailureCause) -> FailureCause:
+    """The cause a caught error carries, or `default` for one that is not a RemoteError."""
+    return error.cause if isinstance(error, RemoteError) else default
+
+
+def combined_cause(causes: Collection[FailureCause]) -> FailureCause:
+    """The cause of one failure that stands for several: theirs when they all agree, and
+    otherwise REMOTE_REJECTED, since a retry would not help every one of them."""
+    return next(iter(causes)) if len(set(causes)) == 1 else FailureCause.REMOTE_REJECTED
 
 
 class APIKeyNotAvailable(RemoteError):

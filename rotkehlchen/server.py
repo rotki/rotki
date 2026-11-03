@@ -10,7 +10,8 @@ from typing import Any
 
 import rsqlite
 
-from rotkehlchen.api.server import APIServer, RestAPI
+from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.args import app_args
 from rotkehlchen.db.misc import get_sqlcipher_version_string
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
