@@ -7367,6 +7367,7 @@
         "resulting_combination": {
           "unknown": "The resulting combination is unknown, this event won't be processed correctly."
         },
+        "save_failed": "Failed to save the event",
         "sequence_index": {
           "label": "Sequence Index",
           "validation": {

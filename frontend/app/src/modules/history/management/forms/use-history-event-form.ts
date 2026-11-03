@@ -133,8 +133,9 @@ export function useHistoryEventForm<
       return true;
     }
 
-    if (outcome.outcome === 'error' && outcome.message) {
-      const { message } = outcome;
+    if (outcome.outcome === 'error') {
+      const hasMessage = outcome.message !== undefined && outcome.message !== '';
+      const message = hasMessage ? outcome.message : t('transactions.events.form.save_failed');
       if (typeof message === 'string')
         showErrorMessage(message);
       set(errorMessages, fieldErrorsOf(message));
