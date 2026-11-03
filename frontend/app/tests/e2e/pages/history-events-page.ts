@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { getValidSelectorFromEvmAddress } from '@rotki/common';
 import {
   type AssetMovementEventFixture,
@@ -161,6 +161,19 @@ export class HistoryEventsPage {
     await this.page.locator('[data-testid=amount] input').clear();
     await this.page.locator('[data-testid=amount] input').fill(data.amount);
     await this.page.locator('[data-testid=notes] textarea:not([aria-hidden])').fill(data.notes);
+  }
+
+  /**
+   * Overwrites the event's price in the display currency.
+   *
+   * @remarks
+   * Waits for the fetched price first: the form writes a price only when it differs from the one
+   * it fetched, so typing before the fetch lands races it.
+   */
+  async setEventPrice(price: string): Promise<void> {
+    const input = this.page.locator('[data-testid=bottom-dialog] [data-testid=primary] input');
+    await expect(input).not.toHaveValue('', { timeout: TIMEOUT_MEDIUM });
+    await input.fill(price);
   }
 
   /** The picker's place on screen, which a change of entry type must not move. */
