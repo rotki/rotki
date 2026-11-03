@@ -111,8 +111,12 @@ export const exchangeEventsActivity = defineActivity<ExchangeEventsSubject, read
 });
 
 /**
- * One bank connection's transaction sync. Same subject and detail as an exchange: a location and
- * a name, and the backend streams the same status frames for it.
+ * One bank connection's transaction sync. Same subject and detail as an exchange, and the backend
+ * streams the same status frames for it.
+ *
+ * @remarks
+ * A bank's `location` is its connector, such as `fints`, which is also what those frames name; the
+ * balances and events of every bank sit under the one `banks` location.
  */
 export const bankEventsActivity = defineActivity<ExchangeEventsSubject, readonly [string, string], ExchangeEventsDetail>({
   key: subject => [subject.location, subject.name],
@@ -168,8 +172,8 @@ export function exchangeEventsActivityId(location: string, name: string): Activi
 }
 
 /** One bank connection's transaction sync. See {@link bankEventsActivity}. */
-export function bankEventsActivityId(location: string, name: string): ActivityId {
-  return bankEventsActivity.id({ location, name });
+export function bankEventsActivityId(connector: string, name: string): ActivityId {
+  return bankEventsActivity.id({ location: connector, name });
 }
 
 /** One online-event query. See {@link onlineEventsActivity}. */

@@ -1,6 +1,5 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
 import { createEventsStatusHandler } from '@/modules/history/events-status-handler';
 import { bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
@@ -115,9 +114,8 @@ describe('createEventsStatusHandler', () => {
     expect(get(readActivityDetail(exchangeEventsActivity, kraken))?.period).toStrictEqual([100, 200]);
   });
 
-  it('should publish a bank location frame on the bank activity, not the exchange one', async () => {
+  it('should publish a bank connector frame on the live bank activity, though no location marks the connector a bank', async () => {
     const qonto = { location: 'qonto', name: 'rotki Solutions GmbH' };
-    useLocationStore().$patch({ allLocations: { qonto: { image: 'qonto.svg', isBank: true } } });
     live.add(bankEventsActivity.id(qonto));
     const handler = createEventsStatusHandler();
 

@@ -1,10 +1,9 @@
 import type { StateHandler } from '@/modules/core/messaging/interfaces';
-import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/core/messaging/types';
 import { createStateHandler } from '@/modules/core/messaging/utils';
-import { bankEventsActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
+import { bankEventsActivity, exchangeEventsActivity, type ExchangeEventsSubject } from '@/modules/history/events/tx/sync.activity';
 import { publishActivityDetail } from '@/modules/task-center/use-activity-detail';
-import { useLiveActivityEntries } from '@/modules/task-center/use-live-activity-entries';
+import { type ActivityAddress, useLiveActivityEntries } from '@/modules/task-center/use-live-activity-entries';
 
 /** One exchange's query, as the frames of its run have described it so far. */
 type ExchangeQueryTracking = Pick<HistoryEventsQueryData, 'eventType' | 'period' | 'status'>;
@@ -22,20 +21,31 @@ type ExchangeQueryTracking = Pick<HistoryEventsQueryData, 'eventType' | 'period'
  * as progress; `ExchangeEventsDetail` carries why the range it does stream is not one.
  */
 export function createEventsStatusHandler(): StateHandler {
-  const { banks } = storeToRefs(useLocationStore());
   const tracking = useLiveActivityEntries<ExchangeQueryTracking>();
 
-  /** A bank streams the same frames as an exchange, but its query is an activity of its own kind. */
-  function activityOf(location: string): typeof exchangeEventsActivity {
-    return get(banks).includes(location) ? bankEventsActivity : exchangeEventsActivity;
+  /**
+   * The live query a frame belongs to, a bank's or an exchange's.
+   *
+   * @remarks
+   * A bank streams the same frames as an exchange, naming its connector as the location, but its
+   * query is an activity of its own kind. Which one is live tells them apart, so no list of
+   * connectors has to be loaded first.
+   */
+  function liveQueryOf(subject: ExchangeEventsSubject): { activity: typeof exchangeEventsActivity; address: ActivityAddress } | undefined {
+    for (const activity of [bankEventsActivity, exchangeEventsActivity]) {
+      const address = { kind: activity.kind, parts: activity.partsOf(subject) };
+      if (tracking.isLive(address))
+        return { activity, address };
+    }
+    return undefined;
   }
 
   return createStateHandler((data) => {
     const subject = { location: data.location, name: data.name };
-    const activity = activityOf(data.location);
-    const address = { kind: activity.kind, parts: activity.partsOf(subject) };
-    if (!tracking.isLive(address))
+    const query = liveQueryOf(subject);
+    if (!query)
       return;
+    const { activity, address } = query;
 
     const entry: ExchangeQueryTracking = {
       eventType: data.eventType,
