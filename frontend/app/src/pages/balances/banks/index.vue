@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import type { FormatOptions } from '@/modules/assets/amount-display/types';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
+import { BANK_AMOUNT_FORMAT } from '@/modules/banks/bank-balances';
+import BankAccountsTable from '@/modules/banks/components/BankAccountsTable.vue';
 import BankBalanceCards from '@/modules/banks/components/BankBalanceCards.vue';
 import BankBalancesEmpty from '@/modules/banks/components/BankBalancesEmpty.vue';
 import BankBalancesRefreshButton from '@/modules/banks/components/BankBalancesRefreshButton.vue';
@@ -24,9 +25,6 @@ definePage({
     nav: { labelKey: msg.$t('navigation_menu.balances_sub.bank_balances'), icon: 'lu-landmark', parent: '/balances/', order: 25, drawer: 'balances-banks' },
   },
 });
-
-/** Bank balances are kept in cents, so every amount shows exactly two decimals. */
-const BANK_AMOUNT_FORMAT: FormatOptions = { decimals: 2 };
 
 const { t } = useI18n({ useScope: 'global' });
 const route = useRoute();
@@ -156,8 +154,14 @@ onBeforeMount(() => {
           />
         </template>
 
+        <BankAccountsTable
+          v-if="selectedBank && (selectedBank.accounts.length > 0 || loading)"
+          :accounts="selectedBank.accounts"
+          :search="search"
+          :loading="loading && selectedBank.accounts.length === 0"
+        />
         <AssetBalances
-          v-if="balances.length > 0 || loading"
+          v-else-if="!selectedBank && (balances.length > 0 || loading)"
           v-model:search="search"
           data-testid="bank-asset-balances"
           :breakdown="{ hide: true }"

@@ -3,6 +3,7 @@ from __future__ import annotations
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.banks.connector import sum_account_balances
 from rotkehlchen.banks.errors import BankAuthExpired, BankMFARequired
 from rotkehlchen.banks.manager import BankCredentialInput
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
@@ -189,23 +190,26 @@ class BanksService:
         for bank in banks:
             status = manager.sync_status[bank.location_id()]
             try:
-                balances, msg = bank.query_balances(ignore_cache=ignore_cache)
+                accounts, msg = bank.query_account_balances(ignore_cache=ignore_cache)
             except BankMFARequired as e:
                 status.set_challenge(e.challenge)
                 error_msg += f'{bank.manifest.display_name} {bank.name} requires authentication. '
                 continue
-            if balances is None:
+            if accounts is None:
                 error_msg += msg
                 continue
             # a cached success must not drop a challenge the connector still waits on
             status.drop_challenge(still_pending=bank.has_pending_authentication)
+            balances = sum_account_balances(accounts)
             if value_threshold is not None:
                 balances = {a: b for a, b in balances.items() if b.value > value_threshold}
+                accounts = [x for x in accounts if x.account.asset in balances]
             aggregate = combine_dicts(aggregate, balances)
             connections.append({
                 'connector': bank.connector,
                 'name': bank.name,
                 'balances': balances,
+                'accounts': [x.serialize() for x in accounts],
             })
 
         if len(connections) == 0 and error_msg != '':

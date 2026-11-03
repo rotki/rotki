@@ -1,5 +1,5 @@
 import type { ComputedRef } from 'vue';
-import type { BankConnection, BankConnectionBalances } from '@/modules/banks/types';
+import type { BankAccountBalance, BankConnection, BankConnectionBalances } from '@/modules/banks/types';
 import { type AssetBalanceWithPriceAndChains, type BigNumber, Zero } from '@rotki/common';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { fromExchanges } from '@/modules/balances/aggregation/core/sources';
@@ -11,6 +11,8 @@ import { exchangeAssetSum } from '@/modules/core/common/data/calculation';
 
 export interface BankBalanceData extends BankConnection {
   readonly balances: AssetBalanceWithPriceAndChains[];
+  /** The bank's accounts, richest first, leaving out those holding an ignored asset. */
+  readonly accounts: BankAccountBalance[];
   readonly total: BigNumber;
 }
 
@@ -43,6 +45,9 @@ export function useBankData(): UseBankDataReturn {
       const entry = get(connectionBalances).find(({ connector, name }) => connector === connection.connector && name === connection.name);
       return {
         ...connection,
+        accounts: (entry?.accounts ?? [])
+          .filter(account => !isAssetIgnored(account.asset))
+          .sort((a, b) => sortDesc(a.value, b.value)),
         balances: entry ? summarize([entry]) : [],
         total: entry ? exchangeAssetSum(entry.balances, isAssetIgnored) : Zero,
       };

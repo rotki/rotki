@@ -49,8 +49,8 @@ describe('useBankBalancesPage', () => {
       connection('Comdirect'),
     ]);
     store.setConnectionBalances([
-      { balances: eur(100), connector: 'fints', name: 'DKB' },
-      { balances: eur(2), connector: 'fints', name: 'ING' },
+      { accounts: [], balances: eur(100), connector: 'fints', name: 'DKB' },
+      { accounts: [], balances: eur(2), connector: 'fints', name: 'ING' },
     ]);
   });
 

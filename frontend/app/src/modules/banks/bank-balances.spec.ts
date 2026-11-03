@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { aggregateConnectionBalances, mergeConnectionBalances } from '@/modules/banks/bank-balances';
 
 function holding(connector: string, name: string, eur: number): BankConnectionBalances {
-  return { balances: { EUR: { amount: bigNumberify(eur), value: bigNumberify(eur) } }, connector, name };
+  return { accounts: [], balances: { EUR: { amount: bigNumberify(eur), value: bigNumberify(eur) } }, connector, name };
 }
 
 describe('bank balances', () => {

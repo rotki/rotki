@@ -14,6 +14,7 @@ from collections import defaultdict
 from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import (
     HistoryEventsQueryType,
     HistoryEventsStep,
@@ -27,15 +28,17 @@ from rotkehlchen.banks.errors import (
 )
 from rotkehlchen.banks.normalization import (
     BankAccount,
+    BankAccountBalance,
     BankTransaction,
     bank_transaction_to_event,
 )
 from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -63,6 +66,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def sum_account_balances(
+        accounts: Sequence[BankAccountBalance],
+) -> dict[AssetWithOracles, Balance]:
+    """What the given accounts hold together, per asset"""
+    balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+    for entry in accounts:
+        balances[entry.account.asset] += entry.balance
+    return dict(balances)
 
 
 class BankConnector(ExchangeInterface, ABC):
@@ -284,7 +297,12 @@ class BankConnector(ExchangeInterface, ABC):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
+    def query_account_balances(self, **kwargs: Any) -> tuple[list[BankAccountBalance] | None, str]:
+        """Return each active account with a balance, priced in the main currency.
+
+        Returns None and an error message if the bank could not be queried.
+        May raise BankMFARequired if the bank asks for a TAN.
+        """
         try:
             accounts = self.query_accounts()
         except BankMFARequired:
@@ -292,12 +310,22 @@ class BankConnector(ExchangeInterface, ABC):
         except RemoteError as e:
             return None, f'Failed to query {self.manifest.display_name} balances. {e!s}'
 
-        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
-        for account in accounts:
-            if account.is_active and account.balance != ZERO:
-                amounts[account.asset] += account.balance
+        held = [x for x in accounts if x.is_active and x.balance != ZERO]
+        prices = Inquirer.find_main_currency_prices(list({x.asset for x in held}))
+        return [BankAccountBalance(
+            account=account,
+            balance=Balance(
+                amount=account.balance,
+                value=account.balance * prices.get(account.asset, ZERO_PRICE),
+            ),
+        ) for account in held], ''
 
-        return dict(self.balances_from_amounts(amounts)), ''
+    def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
+        """The balances of all accounts together, per asset. Cached with the accounts."""
+        accounts, msg = self.query_account_balances(**kwargs)
+        if accounts is None:
+            return None, msg
+        return sum_account_balances(accounts), ''
 
     def _sync_account(
             self,

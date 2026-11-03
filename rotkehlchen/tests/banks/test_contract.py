@@ -13,9 +13,13 @@ from rotkehlchen.banks.errors import BankAuthExpired, BankRateLimited, BankSchem
 from rotkehlchen.banks.manager import BankManager
 from rotkehlchen.banks.manifest import BankConnectorType
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
+from rotkehlchen.banks.normalization import BankAccount
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_EUR, A_USD
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.bank_transaction import BankTransactionEvent
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -96,6 +100,32 @@ def test_query_balances(kit: BankConnectorKit, database, function_scope_messages
     assert balances is not None
     assert {asset: balance.amount for asset, balance in balances.items()} == kit.expected_balances
     assert all(isinstance(asset, FiatAsset) for asset in balances)
+
+
+def test_account_balances_add_up_to_the_bank_balances(database, function_scope_messages_aggregator, inquirer):  # pylint: disable=unused-argument  # noqa: E501
+    """Each held account is listed on its own and the bank balances are their sum per asset.
+    Closed and empty accounts hold nothing, so they are left out of both."""
+    connector = BANK_KITS[1].create(database, function_scope_messages_aggregator)
+    with patch.object(type(connector), 'query_accounts', return_value=[
+        BankAccount(identifier='a', name='Checking', asset=A_EUR.resolve_to_asset_with_oracles(), balance=FVal('100.25'), iban='DE02120300000000202051'),  # noqa: E501
+        BankAccount(identifier='b', name='Savings', asset=A_EUR.resolve_to_asset_with_oracles(), balance=FVal('900.50'), iban='DE02120300000000202052'),  # noqa: E501
+        BankAccount(identifier='c', name='Dollars', asset=A_USD.resolve_to_asset_with_oracles(), balance=FVal('7'), iban=None),  # noqa: E501
+        BankAccount(identifier='d', name='Closed', asset=A_EUR.resolve_to_asset_with_oracles(), balance=FVal('5'), is_active=False),  # noqa: E501
+        BankAccount(identifier='e', name='Empty', asset=A_EUR.resolve_to_asset_with_oracles(), balance=ZERO),  # noqa: E501
+    ]):
+        accounts, message = connector.query_account_balances()
+        balances, _ = connector.query_balances()
+
+    assert message == ''
+    assert accounts is not None and balances is not None
+    assert [(x['identifier'], x['name'], x['iban'], x['asset'], x['amount']) for x in (x.serialize() for x in accounts)] == [  # noqa: E501
+        ('a', 'Checking', 'DE02120300000000202051', A_EUR.identifier, '100.25'),
+        ('b', 'Savings', 'DE02120300000000202052', A_EUR.identifier, '900.5'),
+        ('c', 'Dollars', None, A_USD.identifier, '7'),
+    ]
+    assert balances[A_EUR].amount == FVal('1000.75')
+    assert balances[A_EUR].value == accounts[0].balance.value + accounts[1].balance.value
+    assert balances[A_USD].amount == FVal('7')
 
 
 @KITS

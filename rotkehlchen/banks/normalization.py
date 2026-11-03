@@ -19,6 +19,7 @@ from rotkehlchen.history.events.utils import create_group_identifier_from_unique
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.balance import Balance
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.fval import FVal
     from rotkehlchen.locations.types import LocationIdentifier
@@ -47,6 +48,22 @@ class BankAccount:
     balance: FVal  # settled balance
     iban: str | None = None
     is_active: bool = True
+
+
+@dataclass(frozen=True)
+class BankAccountBalance:
+    """An account and what it holds, priced in the main currency"""
+    account: BankAccount
+    balance: Balance
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            'identifier': self.account.identifier,
+            'name': self.account.name,
+            'iban': self.account.iban,
+            'asset': self.account.asset.identifier,
+            **self.balance.serialize(),
+        }
 
 
 @dataclass(frozen=True)
