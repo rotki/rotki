@@ -67,7 +67,7 @@ test.describe.serial('bank connections', () => {
 
     expect(requests.added.slice(addedBefore)).toEqual([{
       credentials: { api_key: 'organization-login', api_secret: 'organization-secret' },
-      location: 'qonto',
+      connector: 'qonto',
       name: ADDED,
     }]);
     await expect(banksPage.connectionRow(ADDED)).toBeVisible({ timeout: TIMEOUT_MEDIUM });
@@ -79,7 +79,7 @@ test.describe.serial('bank connections', () => {
     await banksPage.syncConnection(REVOKED);
 
     await expect.poll(() => requests.synced.slice(syncedBefore), { timeout: TIMEOUT_MEDIUM })
-      .toEqual([expect.objectContaining({ location: 'qonto', name: REVOKED })]);
+      .toEqual([expect.objectContaining({ connector: 'qonto', name: REVOKED })]);
   });
 
   test('should show the bank balance on Balances > Banks', async () => {
@@ -88,8 +88,9 @@ test.describe.serial('bank connections', () => {
     await expect(banksPage.balancesTable()).toContainText('250');
   });
 
-  test('should name each connection in the balances toolbar with what it needs', async () => {
-    await expect(banksPage.balancesConnection(HEALTHY)).toHaveAttribute('data-state', 'ok');
+  test('should name only the connections that need something in the balances toolbar', async () => {
+    await expect(banksPage.balanceCard(HEALTHY)).toBeVisible();
+    await expect(banksPage.balancesConnection(HEALTHY)).toHaveCount(0);
     const revoked = banksPage.balancesConnection(REVOKED);
     await expect(revoked).toHaveAttribute('data-state', 'failed');
     await expect(revoked).toContainText('401 Unauthorized: the API key was revoked');
@@ -100,7 +101,7 @@ test.describe.serial('bank connections', () => {
 
   test('should show the same bank total on the dashboard card', async () => {
     await new DashboardPage(ctx.sharedPage).visit();
-    await expect(banksPage.dashboardCard()).toContainText('Qonto', { timeout: TIMEOUT_MEDIUM });
+    await expect(banksPage.dashboardCard()).toContainText('Banks', { timeout: TIMEOUT_MEDIUM });
     await expect(banksPage.dashboardCard().locator('[data-testid=display-amount]')).toContainText('250');
   });
 
@@ -117,7 +118,7 @@ test.describe.serial('bank connections', () => {
     await banksPage.refreshPickedBank(HEALTHY);
     await banksPage.waitForRefreshSettled();
 
-    expect(requests.synced.slice(syncedBefore)).toEqual([expect.objectContaining({ location: 'qonto', name: HEALTHY })]);
+    expect(requests.synced.slice(syncedBefore)).toEqual([expect.objectContaining({ connector: 'qonto', name: HEALTHY })]);
   });
 
   test('should lead from a sync paused for a TAN to answering it with only the connection identity', async () => {
@@ -131,7 +132,7 @@ test.describe.serial('bank connections', () => {
     await banksPage.answerTan('123456');
 
     await banksPage.dialog().waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
-    expect(requests.authenticated).toEqual([{ location: 'qonto', name: NEEDS_TAN, response: '123456' }]);
+    expect(requests.authenticated).toEqual([{ connector: 'qonto', name: NEEDS_TAN, response: '123456' }]);
     await expect(banksPage.connectionRow(NEEDS_TAN).locator('[data-testid=bank-auth-required]')).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
     await expect(banksPage.actionCenterButton()).not.toHaveAttribute('aria-label', /needs you now/);
   });

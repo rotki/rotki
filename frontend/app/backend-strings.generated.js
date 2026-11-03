@@ -224,7 +224,6 @@ export const backendMappingKeys = [
   'backend_mappings.trade_location.polkadot',
   'backend_mappings.trade_location.poloniex',
   'backend_mappings.trade_location.polygon_pos',
-  'backend_mappings.trade_location.qonto',
   'backend_mappings.trade_location.realestate',
   'backend_mappings.trade_location.robinhood',
   'backend_mappings.trade_location.scroll',

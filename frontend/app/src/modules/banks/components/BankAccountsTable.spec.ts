@@ -62,7 +62,7 @@ describe('modules/banks/components/BankAccountsTable', () => {
   });
 
   it('should narrow the accounts by name, by IBAN however it is spaced, and by currency', () => {
-    expect(accountIds(createWrapper({ search: 'tages' }))).toEqual(['b']);
+    expect(accountIds(createWrapper({ search: 'geld' }))).toEqual(['b']);
     expect(accountIds(createWrapper({ search: '2020 51' }))).toEqual(['a']);
     expect(accountIds(createWrapper({ search: 'usd' }))).toEqual(['c']);
     expect(accountIds(createWrapper({ search: '  ' }))).toEqual(['b', 'a', 'c']);

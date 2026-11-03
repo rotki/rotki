@@ -83,7 +83,11 @@ export class BanksPage {
     return this.page.locator('[data-testid=bank-balances]');
   }
 
-  /** A connection's line in the balances toolbar; `data-state` is `ok`, `authentication` or `failed`. */
+  /** A connection's line in the balances toolbar, only shown when it needs something; `data-state` is `authentication`, `expired` or `failed`. */
+  balanceCard(name: string): Locator {
+    return this.page.locator(`[data-testid=bank-balance-card][data-bank="${name}"]`);
+  }
+
   balancesConnection(name: string): Locator {
     return this.page.locator(`[data-testid=bank-balances-connection][data-connection="${name}"]`);
   }

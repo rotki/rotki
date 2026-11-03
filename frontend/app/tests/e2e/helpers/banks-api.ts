@@ -17,7 +17,8 @@ export interface FakeBankConnection {
 export interface FakeBankSetup {
   connections: FakeBankConnection[];
   /**
-   * Per asset, the amount a Qonto balance query returns.
+   * The USD amount the first connection holds; the other connections hold nothing, so the bank
+   * total equals it.
    *
    * @remarks
    * Served as USD with `value === amount`. The e2e profile's main currency is USD, so the stored value
@@ -75,8 +76,9 @@ async function fulfillJson(route: Route, result: unknown, status = 200): Promise
 
 function toWireConnection(connection: FakeBankConnection): Record<string, unknown> {
   return {
+    bank_code: null,
+    connector: 'qonto',
     display_name: 'Qonto',
-    location: 'qonto',
     name: connection.name,
     sync_status: {
       auth_challenge: connection.pendingTan
@@ -114,7 +116,7 @@ export async function apiAddBankEvent(request: APIRequestContext, event: BankEve
       event_type: event.eventType,
       extra_data: event.extraData ?? null,
       group_identifier: event.groupIdentifier,
-      location: 'qonto',
+      location: 'banks',
       location_label: event.connectionName,
       sequence_index: 0,
       timestamp: event.timestamp,
@@ -202,7 +204,7 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
   await page.route('**/api/1/banks/auth', async (route) => {
     const body = route.request().postDataJSON() ?? {};
     requests.authenticated.push(body);
-    if (Object.keys(body).some(key => !['location', 'name', 'response'].includes(key))) {
+    if (Object.keys(body).some(key => !['connector', 'name', 'response'].includes(key))) {
       await route.fulfill({
         body: JSON.stringify({ message: JSON.stringify({ unknown: ['Unknown field.'] }), result: null }),
         contentType: 'application/json',
@@ -215,10 +217,18 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
   });
 
   await page.route('**/api/1/banks/balances**', async (route) => {
-    const balances = connections.length > 0
-      ? { qonto: { USD: { amount: setup.usdBalance, value: setup.usdBalance } } }
-      : {};
-    await fulfillJson(route, { task_id: startTask(balances) });
+    const name = new URL(route.request().url()).searchParams.get('name');
+    const holder = connections[0]?.name;
+    const balance = { USD: { amount: setup.usdBalance, value: setup.usdBalance } };
+    const queried = connections
+      .filter(connection => !name || connection.name === name)
+      .map(connection => ({ accounts: [], balances: connection.name === holder ? balance : {}, connector: 'qonto', name: connection.name }));
+    await fulfillJson(route, {
+      task_id: startTask({
+        aggregate: queried.some(connection => connection.name === holder) ? balance : {},
+        connections: queried,
+      }),
+    });
   });
 
   await page.route('**/api/1/tasks', async (route) => {

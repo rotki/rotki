@@ -24,7 +24,7 @@ test.describe.serial('bank transaction events', () => {
   let historyPage: HistoryEventsPage;
 
   const bankGroup = (): Locator =>
-    ctx.sharedPage.locator('[data-testid=history-event-group]').filter({ hasText: 'Qonto bank transaction' });
+    ctx.sharedPage.locator('[data-testid=history-event-group]').filter({ hasText: 'Banks bank transaction' });
 
   test.beforeAll(async ({ browser, request }) => {
     ctx = await createLoggedInContext(browser, request);
