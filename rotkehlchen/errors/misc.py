@@ -240,6 +240,12 @@ class IndexerHistoryStartsAt(IndexerRangeNotCovered):
         self.start_block = start_block
 
 
+class BlockRangeOutsideBounds(Exception):
+    """Raised when a range kept to one side of an indexer's history start holds no block of
+    that side. There is nothing to query, and indexers answer the inverted range it would become
+    with an empty result rather than an error."""
+
+
 class TimestampLookupUnsupported(RemoteError):
     """Raised when an indexer never answers a block by timestamp on a chain. That says nothing
     about how far its history reaches, so it does not make the indexer stale for a range."""
