@@ -5,7 +5,7 @@
     "label": "My monero wallet",
     "amount": "50.315",
     "tags": ["public"],
-    "location": "blockchain"
+    "location": "external"
   },
   {
     "asset": "EUR",
