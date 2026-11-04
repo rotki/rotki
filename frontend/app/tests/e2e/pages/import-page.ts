@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import path from 'node:path';
 import { TIMEOUT_LONG } from '../helpers/constants';
 import { dismissNotificationPopups } from '../helpers/notifications';
+import { selectLocationOption } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
 /**
@@ -71,14 +72,17 @@ export class ImportPage {
     await dismissNotificationPopups(this.page);
   }
 
+  /** The location values the open import asks the user to map, in the order it lists them. */
+  async unmappedLocationValues(): Promise<string[]> {
+    return this.page.getByTestId('import-location-mapping').evaluateAll(rows => rows.map(row => row.getAttribute('data-key') ?? ''));
+  }
+
   async importCsv(sourceKey: string, csvFileName: string, locationMappings: Record<string, string> = {}): Promise<void> {
     await this.uploadFile(sourceKey, csvFileName);
     await this.submitImport(sourceKey);
     for (const [value, destination] of Object.entries(locationMappings)) {
-      const mapping = this.page.getByTestId('import-location-mapping').filter({ has: this.page.getByLabel(value, { exact: true }) });
-      await mapping.locator('[data-id=activator]').click();
-      await mapping.locator('input').fill(destination);
-      await this.page.locator(`[id="balance-location__${destination}"]`).click();
+      const mapping = this.page.locator(`[data-testid=import-location-mapping][data-key=${JSON.stringify(value)}]`);
+      await selectLocationOption(this.page, mapping, destination, destination);
     }
     if (Object.keys(locationMappings).length > 0)
       await this.submitImport(sourceKey);

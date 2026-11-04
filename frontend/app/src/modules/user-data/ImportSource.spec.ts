@@ -17,6 +17,7 @@ const checkImportLocations = vi.fn();
 const checkImportFileLocations = vi.fn();
 const importDataFrom = vi.fn();
 const importFile = vi.fn();
+const setLocationAlias = vi.fn<(alias: string, locationIdentifier: string) => Promise<boolean>>();
 
 vi.mock('@/modules/task-center/use-native-task', () => ({
   useNativeTask: vi.fn().mockImplementation(() => ({ submitTask })),
@@ -28,6 +29,10 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   useInterop: vi.fn().mockImplementation(() => ({ getPath })),
+}));
+
+vi.mock('@/modules/locations/use-location-tree-api', () => ({
+  useLocationTreeApi: vi.fn().mockImplementation(() => ({ setLocationAlias })),
 }));
 
 vi.mock('@/modules/user-data/use-import-data-api', () => ({
@@ -284,7 +289,7 @@ describe('importSource', () => {
     expect(removeFile).not.toHaveBeenCalled();
   });
 
-  it.each([undefined, '/tmp/a.csv'])('should require explicit mappings before importing a custom CSV with path %s', async (path) => {
+  it.each([undefined, '/tmp/a.csv'])('should hold the import until every location is mapped, for a custom CSV with path %s', async (path) => {
     const resolutions = [{ value: 'luno', status: 'unresolved', location: null, candidates: [] }];
     checkImportLocations.mockResolvedValueOnce(resolutions).mockResolvedValueOnce([]);
     checkImportFileLocations.mockResolvedValueOnce(resolutions).mockResolvedValueOnce([]);
@@ -303,12 +308,84 @@ describe('importSource', () => {
     expect(mappings.props('locations')).toEqual(resolutions);
     expect(runTask).not.toHaveBeenCalled();
     expect(wrapper.find('[data-testid=import-complete]').exists()).toBe(false);
+    expect(importDisabled()).toBe(true);
 
     mappings.vm.$emit('update:modelValue', { luno: 'external' });
+    await flushPromises();
+    expect(importDisabled()).toBe(false);
     await submit();
 
     expect(runTask).toHaveBeenCalledOnce();
     expect(wrapper.find('[data-testid=import-complete]').exists()).toBe(true);
+    expect(setLocationAlias).toHaveBeenCalledExactlyOnceWith('luno', 'external');
+  });
+
+  it('should import with the chosen mappings but keep them out of the aliases when asked to', async () => {
+    const resolutions = [{ value: 'luno', status: 'unresolved', location: null, candidates: [] }];
+    checkImportLocations.mockResolvedValueOnce(resolutions).mockResolvedValueOnce([]);
+    const runTask = vi.fn().mockResolvedValue(ok(true));
+    submitTask.mockImplementation(async (spec: NativeActivitySpec<boolean>) => spec.run(createMock<ActivityContext>({
+      cancelled: () => false,
+      runTask,
+    })));
+    getPath.mockReturnValue('/tmp/a.csv');
+    wrapper = createWrapper();
+    await wrapper.setProps({ source: 'rotki_events' });
+    await attachFile();
+    await submit();
+
+    const mappings = wrapper.findComponent({ name: 'ImportLocationMappings' });
+    mappings.vm.$emit('update:modelValue', { luno: 'external' });
+    mappings.vm.$emit('update:saveAsAliases', false);
+    await submit();
+
+    expect(runTask).toHaveBeenCalledOnce();
+    expect(setLocationAlias).not.toHaveBeenCalled();
+  });
+
+  it('should say when the aliases of a completed import could not be saved', async () => {
+    const resolutions = [{ value: 'luno', status: 'unresolved', location: null, candidates: [] }];
+    checkImportLocations.mockResolvedValueOnce(resolutions).mockResolvedValueOnce([]);
+    setLocationAlias.mockRejectedValue(new Error('Location external is archived'));
+    submitTask.mockImplementation(async (spec: NativeActivitySpec<boolean>) => spec.run(createMock<ActivityContext>({
+      cancelled: () => false,
+      runTask: vi.fn().mockResolvedValue(ok(true)),
+    })));
+    getPath.mockReturnValue('/tmp/a.csv');
+    wrapper = createWrapper();
+    await wrapper.setProps({ source: 'rotki_events' });
+    await attachFile();
+    await submit();
+    wrapper.findComponent({ name: 'ImportLocationMappings' }).vm.$emit('update:modelValue', { luno: 'external' });
+    await submit();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=import-error]').text()).toBe('import_data.location_mapping.alias_error::luno: Location external is archived');
+  });
+
+  it('should not import a file that was replaced while its locations were checked', async () => {
+    let answer: (found: unknown[]) => void = () => {};
+    checkImportLocations.mockReturnValueOnce(new Promise((resolve) => {
+      answer = resolve;
+    }));
+    const runTask = vi.fn().mockResolvedValue(ok(true));
+    submitTask.mockImplementation(async (spec: NativeActivitySpec<boolean>) => spec.run(createMock<ActivityContext>({
+      cancelled: () => false,
+      runTask,
+    })));
+    getPath.mockReturnValue('/tmp/a.csv');
+    wrapper = createWrapper();
+    await wrapper.setProps({ source: 'rotki_events' });
+    await attachFile();
+    const submitted = submit();
+
+    await attachFile();
+    answer([{ value: 'luno', status: 'unresolved', location: null, candidates: [] }]);
+    await submitted;
+
+    expect(runTask).not.toHaveBeenCalled();
+    expect(wrapper.findComponent({ name: 'ImportLocationMappings' }).exists()).toBe(false);
+    expect(importDisabled()).toBe(false);
   });
 
   it('should send a packaged file preflight only the fields its endpoint accepts', async () => {

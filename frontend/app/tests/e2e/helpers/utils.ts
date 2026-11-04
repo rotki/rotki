@@ -38,6 +38,24 @@ export async function disableAnimations(page: Page): Promise<void> {
 }
 
 /**
+ * Picks a location in a `LocationSelector`.
+ *
+ * @remarks
+ * The option is found by its identifier: names repeat across branches and an option also prints
+ * its parent path, so matching on text can land on a different location that mentions the name.
+ */
+export async function selectLocationOption(page: Page, field: Locator, name: string, identifier: string): Promise<void> {
+  await field.locator('[data-id=activator]').click();
+  const menu = page.locator('[role=listbox]').last();
+  await menu.waitFor({ state: 'visible' });
+  await field.locator('input').fill(name);
+  const option = menu.locator(`[id="balance-location__${identifier}"]`);
+  await option.waitFor({ state: 'visible' });
+  await option.click();
+  await menu.waitFor({ state: 'hidden' });
+}
+
+/**
  * Selects an asset from an asset selector dropdown.
  */
 export async function selectAsset(page: Page, element: string, value: string, id?: string): Promise<void> {

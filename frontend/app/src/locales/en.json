@@ -4840,9 +4840,19 @@
       "name": "Kucoin"
     },
     "location_mapping": {
-      "description": "Choose a destination for each unknown or ambiguous location, then import the file again. Nothing has been imported yet.",
-      "empty_value": "Empty location",
-      "title": "Map CSV locations"
+      "alias_error": "The import succeeded, but these location aliases could not be saved: {error}",
+      "ambiguous": "Matches {count} locations",
+      "choose": "Choose a location",
+      "create": "New location",
+      "create_hint": "Create a location with this name and choose it",
+      "created": "New location created",
+      "description": "Nothing has been imported yet. Choose where the rows of each location below go, then import again.",
+      "empty_value": "No location given",
+      "progress": "{chosen} of {total} chosen",
+      "save_aliases": "Remember these choices for later imports",
+      "skipped": "Nothing has been imported yet. Some locations in the file need a choice first.",
+      "title": "Map CSV locations",
+      "unknown": "No location has this name"
     },
     "nexo": {
       "import": "Import {0} from Nexo",

@@ -48,10 +48,11 @@ test.describe.serial('csv import', () => {
     await historyPage.rows.expectAmount(await historyPage.rows.first('[data-testid=history-event-row]'), '0.10');
   });
 
-  test('import rotki generic trades', async () => {
+  test('import rotki generic trades, resolving the location mapped in the events import through its saved alias', async () => {
     await importPage.visit();
     await importPage.selectSource('Custom');
-    await importPage.importCsv('rotki_trades', 'rotki_generic_trades.csv', { luno: 'external' });
+    await importPage.importCsv('rotki_trades', 'rotki_generic_trades.csv');
+    expect(await importPage.unmappedLocationValues()).toEqual([]);
 
     // Navigate to history and filter by kraken (has LTC→BTC trade from this CSV)
     await historyPage.visit();

@@ -1,26 +1,8 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM } from '../helpers/constants';
-import { confirmDialog, discardChanges } from '../helpers/utils';
+import { confirmDialog, discardChanges, selectLocationOption } from '../helpers/utils';
 import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
-
-/**
- * Picks a location in a `LocationSelector`.
- *
- * @remarks
- * The option is found by its identifier: names repeat across branches and an option also prints
- * its parent path, so matching on text can land on a different location that mentions the name.
- */
-async function selectLocationOption(page: Page, field: Locator, name: string, identifier: string): Promise<void> {
-  await field.locator('[data-id=activator]').click();
-  const menu = page.locator('[role=listbox]').last();
-  await menu.waitFor({ state: 'visible' });
-  await field.locator('input').fill(name);
-  const option = menu.locator(`[id="balance-location__${identifier}"]`);
-  await option.waitFor({ state: 'visible' });
-  await option.click();
-  await menu.waitFor({ state: 'hidden' });
-}
 
 export class LocationManagerPage {
   constructor(private readonly page: Page) {}

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ImportSourceType } from '@/modules/core/common/upload-types';
-import type { ImportLocationResolution } from '@/modules/user-data/import-location-types';
 import { RuiFileUpload } from '@rotki/ui-library';
 import { err, isErr, ok, type Result } from 'plainfp/result';
 import { z, type ZodType } from 'zod';
@@ -19,6 +18,7 @@ import { csvImportActivity } from '@/modules/user-data/csv-import.activity';
 import ImportLocationMappings from '@/modules/user-data/ImportLocationMappings.vue';
 import ImportNotes from '@/modules/user-data/ImportNotes.vue';
 import { useImportDataApi } from '@/modules/user-data/use-import-data-api';
+import { useImportLocationMapping } from '@/modules/user-data/use-import-location-mapping';
 
 const { source, notes = true } = defineProps<{
   source: ImportSourceType;
@@ -45,8 +45,6 @@ const uploaded = ref<boolean>(false);
 const errorMessage = ref<string>('');
 const formatHelp = ref<boolean>(false);
 const file = ref<File>();
-const locationResolutions = ref<ImportLocationResolution[]>([]);
-const locationMappings = ref<Record<string, string>>({});
 
 const { t } = useI18n({ useScope: 'global' });
 const { getPath } = useInterop();
@@ -90,7 +88,16 @@ const { submitTask } = useNativeTask();
 const { useIsActive } = useTaskCenter();
 
 const loading = useIsActive(csvImportActivity.kind, ...csvImportActivity.partsOf({ source }));
-const { checkImportFileLocations, checkImportLocations, importDataFrom, importFile } = useImportDataApi();
+const { importDataFrom, importFile } = useImportDataApi();
+const {
+  checkLocations,
+  choicesMissing,
+  modelMappings: locationMappings,
+  modelSaveAsAliases: saveAsAliases,
+  pending: pendingLocations,
+  rememberAliases,
+  reset: resetLocations,
+} = useImportLocationMapping();
 
 /**
  * An import only counts as done when the task both settled and reported a completed import.
@@ -108,6 +115,9 @@ function applyOutcome(outcome: Result<boolean, TaskError>): boolean {
     if (outcome.value === true) {
       get(uploader)?.removeFile();
       set(uploaded, true);
+      rememberAliases((error) => {
+        set(errorMessage, t('import_data.location_mapping.alias_error', { error }));
+      });
     }
 
     return outcome.value === true;
@@ -149,13 +159,10 @@ async function uploadFile(): Promise<boolean> {
     userStarted: true,
     run: async ({ cancelled, runTask }): Promise<Result<boolean, TaskError>> => {
       if (source === 'rotki_events' || source === 'rotki_trades') {
-        const locations = path
-          ? await checkImportLocations({ file: path, locationMappings: payload.locationMappings, source })
-          : await checkImportFileLocations(formData);
-        set(locationResolutions, locations);
-        if (locations.some(entry => entry.status !== 'resolved'))
-          return err(Skipped({ message: t('import_data.location_mapping.description') }));
-        if (cancelled())
+        const check = await checkLocations(source, path ? { path } : { formData });
+        if (check === 'unplaced')
+          return err(Skipped({ message: t('import_data.location_mapping.skipped') }));
+        if (check === 'replaced' || cancelled())
           return err(Cancelled({ message: 'cancelled' }));
       }
 
@@ -185,8 +192,7 @@ function onFileChange(picked: File | File[] | undefined): void {
 
   set(uploaded, false);
   set(errorMessage, '');
-  set(locationResolutions, []);
-  set(locationMappings, {});
+  resetLocations();
 }
 
 function changeShouldCustomDateFormat(): void {
@@ -270,9 +276,10 @@ const activeOptions = computed<number>(() =>
         />
       </div>
       <ImportLocationMappings
-        v-if="locationResolutions.some(entry => entry.status !== 'resolved')"
+        v-if="pendingLocations.length > 0"
         v-model="locationMappings"
-        :locations="locationResolutions"
+        v-model:save-as-aliases="saveAsAliases"
+        :locations="pendingLocations"
       />
       <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
         <RuiButton
@@ -310,7 +317,7 @@ const activeOptions = computed<number>(() =>
           class="ml-auto"
           data-testid="button-import"
           type="submit"
-          :disabled="!valid || !file || loading"
+          :disabled="!valid || !file || loading || choicesMissing"
         >
           <template #prepend>
             <RuiIcon
