@@ -3,7 +3,7 @@ import type {
   EthereumValidatorRequestPayload,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
-import { includes, isFilterEnabled, sortBy, sortKeyOf } from '@/modules/accounts/account-common';
+import { compareByAttributes, includes, isFilterEnabled } from '@/modules/accounts/account-common';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
 import { sum } from '@/modules/core/common/display/balances';
 
@@ -59,19 +59,7 @@ export function sortAndFilterValidators(
 
   const sorted = orderByAttributes.length === 0
     ? filtered
-    : filtered.sort((a, b) => {
-        for (const [i, attr] of orderByAttributes.entries()) {
-          const key = sortKeyOf(a, attr);
-          if (!key)
-            continue;
-
-          const asc = ascending[i];
-          const order = sortBy(a[key], b[key], asc);
-          if (order)
-            return order;
-        }
-        return 0;
-      });
+    : filtered.sort((a, b) => compareByAttributes(a, b, orderByAttributes, ascending));
 
   const totalAmount = bigNumberSum(filtered.map(account => account.amount));
 
