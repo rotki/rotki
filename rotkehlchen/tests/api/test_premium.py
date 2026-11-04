@@ -297,6 +297,48 @@ def test_password_change_makes_backup_upload_due(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_password_change_during_backup_upload_stays_due(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+        db_password: str,
+) -> None:
+    """An upload encrypted before a password change must not satisfy that password change."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    db, sync_manager = rotki.data.db, rotki.premium_sync_manager
+    with db.conn.read_ctx() as cursor:
+        backup_ts = db.get_setting(cursor, name='last_write_ts')
+
+    def change_password_during_upload(*args: object, **kwargs: object) -> MockResponse:
+        assert_simple_ok_response(requests.patch(
+            api_url_for(rotkehlchen_api_server, 'userpasswordchangeresource', name=username),
+            json={'name': username, 'current_password': db_password, 'new_password': 'foo'},
+        ))
+        return MockResponse(HTTPStatus.OK, '{"success": true}')
+
+    with (
+        create_patched_requests_get_for_premium(
+            session=rotki.premium.session,
+            metadata_last_modify_ts=Timestamp(backup_ts - 1),
+            metadata_data_hash='remote_hash',
+            metadata_data_size=2,
+            saved_data=b'foo',
+        ),
+        patch.object(rotki.premium.session, 'post', side_effect=change_password_during_upload),
+    ):
+        assert sync_manager.maybe_upload_data_to_server() == (True, None)
+
+    with db.conn.read_ctx() as cursor:
+        pending_password_change_ts = db.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
+        )
+    assert pending_password_change_ts is not None
+    assert pending_password_change_ts > backup_ts
+    assert sync_manager.last_upload_attempt_ts == 0
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_pull_db_without_remote_backup(rotkehlchen_api_server: APIServer) -> None:
     """A forced download with no backup on the server is a not found, not a gateway error"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
