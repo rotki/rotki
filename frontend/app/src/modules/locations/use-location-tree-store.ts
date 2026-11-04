@@ -92,21 +92,28 @@ export const useLocationTreeStore = defineStore('locations/tree', () => {
     return pathLabelOf(identifier);
   };
 
-  /** Orders locations the way the tree lists them: each one after its ancestors, siblings by name. */
+  /** The position of every location in a depth-first walk from the total, siblings by name. */
+  const treeOrder = computed<Map<string, number>>(() => {
+    const order = new Map<string, number>();
+    const pending = [ROOT_LOCATION];
+    while (pending.length > 0) {
+      const identifier = pending.pop();
+      if (identifier === undefined || order.has(identifier))
+        continue;
+      order.set(identifier, order.size);
+      pending.push(...childrenOf(identifier).map(child => child.identifier).reverse());
+    }
+    return order;
+  });
+
+  /**
+   * Orders locations the way the tree lists them: each one after its ancestors, siblings by name.
+   * Locations missing from the tree go last.
+   */
   const sortByTree = (identifiers: readonly string[]): string[] => {
-    const paths = new Map(identifiers.map(identifier => [identifier, pathOf(identifier).map(node => node.name)]));
-    const comparePaths = (a: readonly string[], b: readonly string[]): number => {
-      for (const [index, name] of a.entries()) {
-        const other = b[index];
-        if (other === undefined)
-          return 1;
-        const order = name.localeCompare(other, undefined, { sensitivity: 'base' });
-        if (order !== 0)
-          return order;
-      }
-      return a.length - b.length;
-    };
-    return [...identifiers].sort((a, b) => comparePaths(paths.get(a) ?? [], paths.get(b) ?? []));
+    const order = get(treeOrder);
+    const position = (identifier: string): number => order.get(identifier) ?? order.size;
+    return [...identifiers].sort((a, b) => position(a) - position(b));
   };
 
   const setNodes = (value: LocationNode[]): void => {

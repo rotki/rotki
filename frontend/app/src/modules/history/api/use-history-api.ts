@@ -33,7 +33,7 @@ export function useHistoryApi(): UseHistoryApiReturn {
    */
   const fetchAssociatedLocations = async (): Promise<string[]> => {
     const { ancestors, locations } = AssociatedLocationsSchema.parse(await api.get<AssociatedLocations>('/locations/associated'));
-    return [...locations, ...ancestors.filter(ancestor => ancestor !== ROOT_LOCATION && !locations.includes(ancestor))];
+    return [...new Set([...locations, ...ancestors])].filter(identifier => identifier !== ROOT_LOCATION);
   };
 
   const fetchAllLocations = async (): Promise<AllLocationResponse> => {

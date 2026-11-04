@@ -40,6 +40,10 @@ describe('useLocationTreeStore', () => {
       .toEqual(['custom:ing', 'custom:savings', 'custom:ings']);
   });
 
+  it('should put locations missing from the tree last', () => {
+    expect(useLocationTreeStore().sortByTree(['nowhere', 'qonto', 'banks'])).toEqual(['banks', 'qonto', 'nowhere']);
+  });
+
   it('should give a path only for a location whose name another location shares', () => {
     const store = useLocationTreeStore();
     store.setNodes([...store.nodes, node('exchanges', 'total', 'Exchanges'), node('custom:ing-x', 'exchanges', 'ing', { isBuiltin: false })]);
