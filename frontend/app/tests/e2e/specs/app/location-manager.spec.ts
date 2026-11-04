@@ -109,11 +109,13 @@ test.describe.serial('location manager', () => {
     await manager.selectParent('Banks', 'banks');
     await manager.saveForm();
 
-    const confirm = manager.confirmDialog();
-    await expect(confirm).toContainText('Move location');
-    await expect(confirm).toContainText(`Other › ${SCRATCH}`);
-    await expect(confirm).toContainText(`Banks › ${SCRATCH}`);
-    await manager.confirm();
+    const move = manager.moveNotice();
+    await expect(move).toContainText('Move location');
+    await expect(move).toContainText(`Other › ${SCRATCH}`);
+    await expect(move).toContainText(`Banks › ${SCRATCH}`);
+    expect((await customLocation(SCRATCH)).parent_identifier).toBe('other');
+    await manager.saveForm();
+    await manager.expectFormClosed();
 
     await expect.poll(async () => (await customLocation(SCRATCH)).parent_identifier, { timeout: TIMEOUT_MEDIUM }).toBe('banks');
   });
@@ -154,7 +156,7 @@ test.describe.serial('location manager', () => {
     await manager.visit();
     await manager.requestDelete(parent.identifier);
 
-    const usage = manager.usageDialog();
+    const usage = manager.usageNotice();
     await expect(usage).toContainText(`Exchanges › ${PARENT} is in use`);
     await expect(usage.getByTestId('location-usage-entry').filter({ hasText: 'History events' })).toContainText('1');
     await expect(usage.getByTestId('location-usage-entry').filter({ hasText: 'Locations below it' })).toContainText('1');
@@ -176,7 +178,7 @@ test.describe.serial('location manager', () => {
     await manager.visit();
     await manager.search(CHILD);
     await manager.requestDelete(child.identifier);
-    await expect(manager.usageDialog()).toContainText(`Exchanges › ${PARENT} › ${CHILD} is in use`);
+    await expect(manager.usageNotice()).toContainText(`Exchanges › ${PARENT} › ${CHILD} is in use`);
     await manager.archiveFromUsage();
 
     await expect.poll(async () => (await customLocation(CHILD)).is_active, { timeout: TIMEOUT_MEDIUM }).toBe(false);

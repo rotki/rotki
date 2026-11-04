@@ -97,6 +97,11 @@ export class LocationManagerPage {
   }
 
   /** Cancels a form holding edits, accepting the prompt to discard them. */
+  /** The old and new path of a move, shown in the form until a second save confirms it. */
+  moveNotice(): Locator {
+    return this.formDialog().getByTestId('location-form-move');
+  }
+
   async discardForm(): Promise<void> {
     await discardChanges(this.page, this.formDialog());
   }
@@ -114,22 +119,22 @@ export class LocationManagerPage {
     await this.confirmDialog().waitFor({ state: 'detached' });
   }
 
-  usageDialog(): Locator {
-    return this.page.getByTestId('location-usage-dialog');
+  usageNotice(): Locator {
+    return this.page.getByTestId('location-usage');
   }
 
   async closeUsage(): Promise<void> {
-    await this.usageDialog().getByRole('button', { name: 'Close' }).click();
-    await this.usageDialog().waitFor({ state: 'detached' });
+    await this.usageNotice().getByTestId('location-usage-close').click();
+    await this.usageNotice().waitFor({ state: 'detached' });
   }
 
   async openUsageLink(label: string): Promise<void> {
-    await this.usageDialog().getByTestId('location-usage-link').filter({ hasText: label }).click();
-    await this.usageDialog().waitFor({ state: 'detached' });
+    await this.usageNotice().getByTestId('location-usage-link').filter({ hasText: label }).click();
+    await this.usageNotice().waitFor({ state: 'detached' });
   }
 
   async archiveFromUsage(): Promise<void> {
-    await this.usageDialog().getByTestId('location-usage-archive').click();
-    await this.usageDialog().waitFor({ state: 'detached' });
+    await this.usageNotice().getByTestId('location-usage-archive').click();
+    await this.usageNotice().waitFor({ state: 'detached' });
   }
 }

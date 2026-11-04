@@ -4,7 +4,7 @@ import { createLocationNode as node } from '@test/utils/location-tree';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
-import LocationUsageDialog from '@/modules/locations/components/LocationUsageDialog.vue';
+import LocationUsageNotice from '@/modules/locations/components/LocationUsageNotice.vue';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import '@test/i18n';
 
@@ -15,16 +15,16 @@ interface Blocked {
 
 const luno = node('custom:luno', 'exchanges', 'Luno', { isBuiltin: false });
 
-describe('locationUsageDialog', () => {
+describe('locationUsageNotice', () => {
   let pinia: Pinia;
 
-  function createWrapper(usage: Record<string, number>): VueWrapper<InstanceType<typeof LocationUsageDialog>> {
-    const wrapper: VueWrapper<InstanceType<typeof LocationUsageDialog>> = mount(LocationUsageDialog, {
+  function createWrapper(usage: Record<string, number>): VueWrapper<InstanceType<typeof LocationUsageNotice>> {
+    const wrapper: VueWrapper<InstanceType<typeof LocationUsageNotice>> = mount(LocationUsageNotice, {
       global: {
         plugins: [pinia],
         stubs: {
           RouterLink: { props: ['to'], template: '<a :data-to="JSON.stringify(to)"><slot /></a>' },
-          RuiDialog: { props: ['modelValue'], template: '<div v-if="modelValue"><slot /></div>' },
+          RuiAlert: { props: ['title'], template: '<div><strong>{{ title }}</strong><slot /></div>' },
         },
       },
       props: {
@@ -59,5 +59,19 @@ describe('locationUsageDialog', () => {
 
     await link.trigger('click');
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
+  });
+
+  it('should archive the location from its usage and close', async () => {
+    const wrapper = createWrapper({ historyEvents: 3 });
+    await wrapper.find('[data-testid=location-usage-archive]').trigger('click');
+    expect(wrapper.emitted('archive')).toEqual([[luno]]);
+    expect(wrapper.find('[data-testid=location-usage]').exists()).toBe(false);
+  });
+
+  it('should close without archiving', async () => {
+    const wrapper = createWrapper({ historyEvents: 3 });
+    await wrapper.find('[data-testid=location-usage-close]').trigger('click');
+    expect(wrapper.emitted('archive')).toBeUndefined();
+    expect(wrapper.find('[data-testid=location-usage]').exists()).toBe(false);
   });
 });
