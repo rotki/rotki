@@ -42,7 +42,7 @@ function loginTaskOutcome(kind: LoginResult): unknown {
  * Intercepts just the login handshake so the unlock flow resolves to a specific backend
  * state that a real backend can't easily produce. Everything else falls through to the
  * real backend via `route.continue()` (same selective-mock convention as
- * `pages/api-keys-page.ts`). Pass `?skip_update=1` in the URL to skip the asset-update check.
+ * `pages/exchanges-page.ts`). Pass `?skip_update=1` in the URL to skip the asset-update check.
  */
 export async function mockLoginResult(page: Page, kind: LoginResult, username = 'alice'): Promise<void> {
   await page.route('**/api/1/users', async (route) => {

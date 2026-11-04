@@ -60,7 +60,7 @@ async function load(): Promise<void> {
 }
 
 async function connect(connector?: string): Promise<void> {
-  await router.push({ path: '/api-keys/banks', query: { add: 'true', ...(connector ? { connector } : {}) } });
+  await router.push({ name: '/accounts/banks/', query: { add: 'true', ...(connector ? { connector } : {}) } });
 }
 
 onBeforeMount(() => {

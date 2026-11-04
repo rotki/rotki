@@ -39,7 +39,7 @@ async function act(): Promise<void> {
     return;
   }
   const query: Record<string, string> = get(state) === BankConnectionState.AUTHENTICATION ? { authenticate: name, connector } : {};
-  await router.push({ name: '/api-keys/banks/', query });
+  await router.push({ name: '/accounts/banks/', query });
 }
 </script>
 

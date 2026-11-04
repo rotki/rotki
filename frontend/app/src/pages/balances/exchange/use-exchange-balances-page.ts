@@ -93,7 +93,7 @@ export function useExchangeBalancesPage(exchange: MaybeRefOrGetter<string | unde
 
   function navigateToExchangeSetup(location?: string): void {
     startPromise(router.push({
-      path: '/api-keys/exchanges',
+      name: '/accounts/exchanges/',
       query: location ? { add: 'true', location } : { add: 'true' },
     }));
   }

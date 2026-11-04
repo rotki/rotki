@@ -90,7 +90,7 @@ describe('modules/shell/action-center/use-integration-rows', () => {
       description: 'tan',
       icon: 'lu-shield-alert',
       id: 'bank-authentication-fints-main',
-      target: { kind: 'route', to: { name: '/api-keys/banks/' } },
+      target: { kind: 'route', to: { name: '/accounts/banks/' } },
       title: 'tan',
       urgency: ActionUrgency.BLOCKING,
     });
@@ -240,7 +240,7 @@ describe('modules/shell/action-center/use-integration-rows', () => {
 
       expect(row).toMatchObject({
         id: 'exchange-key-rejected-binance-main',
-        target: { kind: 'route', to: { name: '/api-keys/exchanges/', query: main } },
+        target: { kind: 'route', to: { name: '/accounts/exchanges/', query: main } },
         title: 'action_center.rows.integrations.exchange_key_rejected.title::Binance, main',
         urgency: ActionUrgency.DECISION,
       });

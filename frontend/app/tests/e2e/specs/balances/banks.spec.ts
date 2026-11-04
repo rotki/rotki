@@ -96,7 +96,7 @@ test.describe.serial('bank connections', () => {
     await expect(revoked).toContainText('401 Unauthorized: the API key was revoked');
 
     await revoked.locator('[data-testid=bank-balances-connection-action]').click();
-    await expect(ctx.sharedPage).toHaveURL(/\/api-keys\/banks/);
+    await expect(ctx.sharedPage).toHaveURL(/\/accounts\/banks/);
   });
 
   test('should show the same bank total on the dashboard card', async () => {

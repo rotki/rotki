@@ -56,7 +56,7 @@ function importReportData(): void {
   emit('import-data');
 }
 
-const exchangeSettingsRoute: RouteLocationRaw = { name: '/api-keys/exchanges/' };
+const exchangeSettingsRoute: RouteLocationRaw = { name: '/accounts/exchanges/' };
 
 onMounted(async () => {
   await checkMarketPairs();

@@ -33,7 +33,7 @@ const { reload: reloadEvents } = provideHistoryEventsSection();
 
 /** The exchange keys form, opened on Kraken. */
 const connectKrakenLink: RouteLocationRaw = {
-  name: '/api-keys/exchanges/',
+  name: '/accounts/exchanges/',
   query: {
     add: 'true',
     location: 'kraken',

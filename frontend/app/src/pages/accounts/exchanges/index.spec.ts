@@ -7,7 +7,7 @@ import { nextTick, type Ref, ref } from 'vue';
 import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalancesEmpty.vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
-import Exchanges from '@/pages/api-keys/exchanges/index.vue';
+import Exchanges from '@/pages/accounts/exchanges/index.vue';
 import '@test/i18n';
 
 vi.mock('vue-router', () => ({

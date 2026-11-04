@@ -1,6 +1,6 @@
 import { useOverlayStack } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
-import { createRouter, createWebHashHistory, type RouteLocationRaw, type RouteRecordNameGeneric } from 'vue-router';
+import { createRouter, createWebHashHistory, type RouteLocationRaw, type RouteRecordNameGeneric, type RouteRecordRaw } from 'vue-router';
 import { handleHotUpdate, routes } from 'vue-router/auto-routes';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { ACCOUNTING_UPDATE_ROUTES, isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
@@ -21,8 +21,18 @@ const errorRoutes = [
   },
 ];
 
+/**
+ * Exchanges and banks used to live under API Keys. A bookmark or a restored location can still
+ * hold the old path, so it redirects to the page's home under Accounts with its query intact.
+ */
+const movedRoutes: RouteRecordRaw[] = [
+  { path: '/api-keys/banks', redirect: { name: '/accounts/banks/' } },
+  { path: '/api-keys/exchanges', redirect: { name: '/accounts/exchanges/' } },
+];
+
 const allRoutes = [
   ...routes,
+  ...movedRoutes,
   ...errorRoutes,
 ];
 

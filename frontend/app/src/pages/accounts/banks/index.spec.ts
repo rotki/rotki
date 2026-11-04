@@ -8,7 +8,7 @@ import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticat
 import BankConnectionActions from '@/modules/banks/components/BankConnectionActions.vue';
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
-import Banks from '@/pages/api-keys/banks/index.vue';
+import Banks from '@/pages/accounts/banks/index.vue';
 import '@test/i18n';
 
 const { refreshBankConnections, refreshSupportedBanks, removeBank, routeQuery, show, syncBanks } = vi.hoisted(() => ({

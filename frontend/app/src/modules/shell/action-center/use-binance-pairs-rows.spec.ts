@@ -58,7 +58,7 @@ describe('modules/shell/action-center/use-binance-pairs-rows', () => {
 
     expect(row.id).toBe('binance-pairs-missing-binance-main');
     expect(row.title).toBe('action_center.rows.integrations.binance_pairs_missing.title::Binance, main');
-    expect(row.target).toEqual({ kind: 'route', to: { name: '/api-keys/exchanges/', query: { location: 'binance', name: 'main' } } });
+    expect(row.target).toEqual({ kind: 'route', to: { name: '/accounts/exchanges/', query: { location: 'binance', name: 'main' } } });
   });
 
   it('should take the row down once the account is removed or renamed', async () => {

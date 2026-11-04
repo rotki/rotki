@@ -32,8 +32,8 @@ export function useAddSourceOptions(): ComputedRef<AddSourceOption[]> {
     { icon: 'lu-blockchain', key: 'solana', label: t('dashboard.blockchain_balances.categories.solana'), to: route({ name: '/accounts/solana/' }) },
     { icon: 'lu-substrate-accounts', key: 'substrate', label: t('dashboard.blockchain_balances.categories.substrate'), to: route({ name: '/accounts/substrate/' }) },
     { icon: 'lu-dog', key: 'dogecoin', label: t('dashboard.blockchain_balances.categories.dogecoin'), to: route({ name: '/accounts/dogecoin/' }) },
-    { icon: 'lu-building-2', key: 'exchange', label: t('dashboard.holdings.add.exchange'), to: route({ name: '/api-keys/exchanges/' }) },
-    { icon: 'lu-landmark', key: 'bank', label: t('dashboard.holdings.add.bank'), to: route({ name: '/api-keys/banks/' }) },
+    { icon: 'lu-building-2', key: 'exchange', label: t('dashboard.holdings.add.exchange'), to: route({ name: '/accounts/exchanges/' }) },
+    { icon: 'lu-landmark', key: 'bank', label: t('dashboard.holdings.add.bank'), to: route({ name: '/accounts/banks/' }) },
     { icon: 'lu-pencil', key: 'manual', label: t('dashboard.holdings.add.manual'), to: route({ name: '/balances/manual/[[tab]]', params: { tab: 'assets' } }) },
   ]);
 }

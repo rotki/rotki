@@ -5300,16 +5300,16 @@
   "navigation_menu": {
     "accounts": "Accounts",
     "accounts_sub": {
+      "banks": "Banks",
       "bitcoin": "Bitcoin @:navigation_menu.accounts",
       "dogecoin": "Dogecoin @:navigation_menu.accounts",
       "evm": "EVM @:navigation_menu.accounts",
+      "exchanges": "Exchanges",
       "solana": "Solana @:navigation_menu.accounts",
       "substrate": "Substrate @:navigation_menu.accounts"
     },
     "api_keys": "API Keys",
     "api_keys_sub": {
-      "banks": "Banks",
-      "exchanges": "Exchanges",
       "external_services": "External Services",
       "premium": "rotki Premium"
     },

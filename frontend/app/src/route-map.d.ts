@@ -52,6 +52,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/accounts/banks/': RouteRecordInfo<
+      '/accounts/banks/',
+      '/accounts/banks',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/accounts/bitcoin/': RouteRecordInfo<
       '/accounts/bitcoin/',
       '/accounts/bitcoin',
@@ -71,6 +78,13 @@ declare module 'vue-router/auto-routes' {
       '/accounts/evm/:tab?',
       { tab?: ParamValueZeroOrOne<true> },
       { tab?: ParamValueZeroOrOne<false> },
+      | never
+    >,
+    '/accounts/exchanges/': RouteRecordInfo<
+      '/accounts/exchanges/',
+      '/accounts/exchanges',
+      Record<never, never>,
+      Record<never, never>,
       | never
     >,
     '/accounts/solana/': RouteRecordInfo<
@@ -104,20 +118,6 @@ declare module 'vue-router/auto-routes' {
     '/api-keys/': RouteRecordInfo<
       '/api-keys/',
       '/api-keys',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/api-keys/banks/': RouteRecordInfo<
-      '/api-keys/banks/',
-      '/api-keys/banks',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/api-keys/exchanges/': RouteRecordInfo<
-      '/api-keys/exchanges/',
-      '/api-keys/exchanges',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -600,6 +600,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/accounts/banks/index.vue': {
+      routes:
+        | '/accounts/banks/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/accounts/bitcoin/index.vue': {
       routes:
         | '/accounts/bitcoin/'
@@ -623,6 +631,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'tab'
+    }
+    'src/pages/accounts/exchanges/index.vue': {
+      routes:
+        | '/accounts/exchanges/'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
     'src/pages/accounts/solana/index.vue': {
       routes:
@@ -659,22 +675,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/api-keys/index.vue': {
       routes:
         | '/api-keys/'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/api-keys/banks/index.vue': {
-      routes:
-        | '/api-keys/banks/'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/api-keys/exchanges/index.vue': {
-      routes:
-        | '/api-keys/exchanges/'
       views:
         | never
       pathParamNames:

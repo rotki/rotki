@@ -21,7 +21,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: msg.$t('navigation_menu.api_keys_sub.exchanges'), icon: 'lu-coins-exchange', parent: '/api-keys/', order: 20, drawer: 'api-keys-exchanges', addAction: { labelKey: msg.$t('exchange_settings.dialog.add.title') } },
+    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.exchanges'), icon: 'lu-coins-exchange', parent: '/accounts/', order: 60, drawer: 'accounts-exchanges', addAction: { labelKey: msg.$t('exchange_settings.dialog.add.title') } },
   },
 });
 
@@ -38,7 +38,7 @@ const { show } = useConfirmStore();
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
-const route = useRoute('/api-keys/exchanges/');
+const route = useRoute('/accounts/exchanges/');
 const { getExchangeName } = useLocations();
 const { isNonSyncExchange, resetNonSyncingExchanges, toggleSync } = useNonSyncingExchanges();
 
@@ -167,8 +167,8 @@ watch(route, async (route) => {
     class="exchange-settings"
     data-testid="exchanges"
     :title="[
-      t('navigation_menu.api_keys'),
-      t('navigation_menu.api_keys_sub.exchanges'),
+      t('navigation_menu.accounts'),
+      t('navigation_menu.accounts_sub.exchanges'),
     ]"
   >
     <template #buttons>
