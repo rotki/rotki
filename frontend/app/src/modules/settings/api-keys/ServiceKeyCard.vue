@@ -8,6 +8,12 @@ export interface FeatureGate {
   message: string;
 }
 
+/** The service's logo, which some services draw as a circle. */
+interface ServiceKeyImage {
+  src: string;
+  rounded?: boolean;
+}
+
 export interface ServiceKeyAction {
   disabled?: boolean;
   hidden?: boolean;
@@ -23,24 +29,21 @@ const {
   name,
   title,
   subtitle = '',
-  imageSrc,
+  image,
   featureGate,
-  roundedIcon = false,
   keySet = false,
+  onConfirm,
 } = defineProps<{
   name?: string;
   title: string;
   subtitle?: string;
-  imageSrc: string;
+  image: ServiceKeyImage;
   /** Set for a service that needs a premium plan; the card says so whether or not the plan allows it. */
   featureGate?: FeatureGate;
-  roundedIcon?: boolean;
   keySet?: boolean;
   action?: ServiceKeyAction;
-}>();
-
-const emit = defineEmits<{
-  confirm: [];
+  /** The save, bound as `@confirm`. Handed to `BigDialog` as is, so the dialog waits for it. */
+  onConfirm?: () => unknown;
 }>();
 
 defineSlots<{
@@ -110,9 +113,9 @@ defineExpose({
     <div class="flex grow flex-col gap-3 p-4">
       <div class="flex items-center gap-3 min-w-0">
         <AppImage
-          :src="imageSrc"
+          :src="image.src"
           class="size-9 shrink-0"
-          :class="{ 'rounded-full overflow-hidden': roundedIcon }"
+          :class="{ 'rounded-full overflow-hidden': image.rounded }"
         />
         <h3 class="m-0 grow min-w-0 truncate text-base font-semibold text-rui-text">
           {{ title }}
@@ -192,14 +195,14 @@ defineExpose({
       :action="dialogAction"
       :layout="{ autoHeight: true, divide: true, maxWidth: '600px' }"
       @cancel="setOpen(false)"
-      @confirm="emit('confirm')"
+      @confirm="onConfirm?.()"
     >
       <template #header>
         <div class="flex items-center gap-3 mb-1">
           <AppImage
-            :src="imageSrc"
+            :src="image.src"
             class="size-7 shrink-0"
-            :class="{ 'rounded-full overflow-hidden': roundedIcon }"
+            :class="{ 'rounded-full overflow-hidden': image.rounded }"
           />
           <h5 class="m-0 font-medium text-xl text-rui-text">
             {{ title }}

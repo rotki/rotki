@@ -74,7 +74,7 @@ test.describe.serial('settings::accounting-rules', () => {
     await page.pickFirstRuleAction();
     await expect(page.ruleActionPicker).not.toContainText('cannot be empty');
 
-    await page.cancelRuleDialog();
+    await page.discardRuleDialog();
   });
 
   // The tabs are one request parameter, and no seeded or default rule is written for one event.

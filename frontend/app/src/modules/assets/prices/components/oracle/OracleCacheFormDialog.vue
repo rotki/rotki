@@ -8,13 +8,11 @@ const source = defineModel<PriceOracle>('source', { required: true });
 const fromAsset = defineModel<string>('fromAsset', { required: true });
 const toAsset = defineModel<string>('toAsset', { required: true });
 
-const { loading = false, sourceOptions } = defineProps<{
+const { loading = false, onConfirm, sourceOptions } = defineProps<{
   loading?: boolean;
   sourceOptions: { identifier: PriceOracle; label: string }[];
-}>();
-
-const emit = defineEmits<{
-  confirm: [];
+  /** The create, bound as `@confirm`. Handed to `BigDialog` as is, so the dialog waits for it. */
+  onConfirm?: () => unknown;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -28,7 +26,7 @@ const { t } = useI18n({ useScope: 'global' });
     :action="{ primary: t('oracle_prices.cache.dialog.create'), disabled: !fromAsset || !toAsset }"
     :layout="{ autoHeight: true, divide: true, maxWidth: '640px' }"
     :loading="loading"
-    @confirm="emit('confirm')"
+    @confirm="onConfirm?.()"
     @cancel="open = false"
   >
     <div class="flex flex-col gap-2">

@@ -74,7 +74,7 @@ test.describe.serial('calendar', () => {
 
     await page.expectDialogOpen();
     await page.expectReminderError('Cannot set reminder more than 4 Weeks');
-    await page.cancelDialog();
+    await page.discardDialog();
   });
 
   test('keeps a reminder attached to the event it was created with', async () => {

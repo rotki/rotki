@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { type BigNumber, bigNumberify, getValidSelectorFromEvmAddress } from '@rotki/common';
 import { TIMEOUT_MEDIUM } from './constants';
 
@@ -120,6 +120,16 @@ export async function confirmDialog(page: Page, expectedTitle?: string): Promise
   }
 
   await dialog.locator('[data-testid=button-confirm]').click();
+}
+
+/**
+ * Cancels a form dialog holding edits, accepting the prompt to discard them, and waits for it to
+ * close. A form without edits closes on Cancel straight away and never shows the prompt.
+ */
+export async function discardChanges(page: Page, dialog: Locator, timeout: number = TIMEOUT_MEDIUM): Promise<void> {
+  await dialog.locator('[data-testid=cancel]').click();
+  await confirmDialog(page, 'You have unsaved changes');
+  await dialog.waitFor({ state: 'detached', timeout });
 }
 
 /**

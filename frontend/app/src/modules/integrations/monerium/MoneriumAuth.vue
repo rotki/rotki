@@ -242,7 +242,7 @@ onUnmounted(() => {
     :key-set="authenticated"
     :title="t('external_services.monerium.title')"
     :subtitle="t('external_services.monerium.description')"
-    :image-src="getPublicServiceImagePath('monerium.png')"
+    :image="{ src: getPublicServiceImagePath('monerium.png') }"
     :action="cardAction"
     @confirm="confirm()"
   >

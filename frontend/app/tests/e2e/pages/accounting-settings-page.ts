@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM } from '../helpers/constants';
-import { confirmInlineSuccess } from '../helpers/utils';
+import { confirmInlineSuccess, discardChanges } from '../helpers/utils';
 
 export class AccountingSettingsPage {
   constructor(private readonly page: Page) {}
@@ -112,9 +112,8 @@ export class AccountingSettingsPage {
     await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
 
-  async cancelRuleDialog(): Promise<void> {
-    await this.ruleDialog.locator('[data-testid=cancel]').click();
-    await this.ruleDialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+  async discardRuleDialog(): Promise<void> {
+    await discardChanges(this.page, this.ruleDialog);
   }
 
   async visit(): Promise<void> {

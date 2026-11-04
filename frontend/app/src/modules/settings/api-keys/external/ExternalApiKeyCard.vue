@@ -30,8 +30,7 @@ const action = computed<ServiceKeyAction>(() => ({ disabled: !get(serviceKeyRef)
     :data-testid="`${service.name}-api-keys`"
     :title="t(service.title)"
     :subtitle="t(service.description)"
-    :image-src="getPublicServiceImagePath(service.image)"
-    :rounded-icon="service.roundedIcon"
+    :image="{ rounded: service.roundedIcon, src: getPublicServiceImagePath(service.image) }"
     :action="action"
     @confirm="saveHandler()"
   >
