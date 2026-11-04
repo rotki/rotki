@@ -343,6 +343,7 @@ class EtherscanLikeApi(ABC):
                 'tokenbalance',
                 'eth_blockNumber',
                 'eth_getCode',
+                'eth_getStorageAt',
                 'eth_call',
                 'getblocknobytime',
             ],
@@ -517,6 +518,7 @@ class EtherscanLikeApi(ABC):
             method: Literal[
                 'eth_blockNumber',
                 'eth_getCode',
+                'eth_getStorageAt',
                 'eth_call',
             ],
             options: dict[str, Any] | None = None,
@@ -1028,6 +1030,26 @@ class EtherscanLikeApi(ABC):
             method='eth_getCode',
             options={'address': account},
         )
+
+    def get_storage_at(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            account: ChecksumEvmAddress,
+            position: int,
+    ) -> bytes:
+        """Read the raw 32-byte storage word at the given slot of an address at the latest block.
+        May raise RemoteError if there are problems contacting the indexer or the
+        response is not a hex value.
+        """
+        result = self._query_rpc_method(
+            chain_id=chain_id,
+            method='eth_getStorageAt',
+            options={'address': account, 'position': hex(position), 'tag': 'latest'},
+        )
+        try:
+            return bytes.fromhex(result.removeprefix('0x'))
+        except (ValueError, AttributeError) as e:
+            raise RemoteError(f'{self.name} returned an invalid storage value {result}') from e
 
     def get_transaction_receipt(
             self,

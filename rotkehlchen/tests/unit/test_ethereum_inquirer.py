@@ -250,6 +250,23 @@ def test_call_contract(ethereum_inquirer, ethereum_manager_connect_at_start):
     assert result >= 0
 
 
+@pytest.mark.parametrize(*ETHEREUM_WEB3_AND_ETHERSCAN_TEST_PARAMETERS)
+def test_get_storage_at(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_manager_connect_at_start: list[WeightedNode],
+) -> None:
+    """Raw storage can be read both via rpc nodes and via the indexers. Reads the
+    EIP-1967 beacon slot of a beacon proxy (a Kiln DeFi vault)."""
+    wait_until_all_nodes_connected(
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
+    )
+    assert ethereum_inquirer.get_storage_at(
+        account_address=string_to_evm_address('0x924e38bdFDa04990Fc78FEc258E8B83B3478B1Af'),
+        position=0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50,
+    ) == bytes(12) + bytes.fromhex('15f7f910e5a8c86e609fd11c58f7342d86d3a25c')
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE, EVM_INDEXERS_NODE)])  # noqa: E501
 def test_rpc_request_timeout(
