@@ -3,7 +3,7 @@ import type { ZodType } from 'zod';
 import type { Tag } from '@/modules/tags/tags';
 import { invertColor, randomColor } from '@rotki/common';
 import { useModelForm } from '@/modules/core/form/use-model-form';
-import { tagSchema } from '@/modules/tags/tag-forms';
+import { tagSchema, withPickerColors } from '@/modules/tags/tag-forms';
 import TagIcon from '@/modules/tags/TagIcon.vue';
 
 const modelValue = defineModel<Tag>({ required: true });
@@ -19,6 +19,7 @@ const schema = computed<ZodType>(() => tagSchema({
 const form = useModelForm<Tag>({
   model: modelValue,
   schema,
+  seed: withPickerColors,
   stateUpdated,
 });
 
