@@ -7,7 +7,7 @@ import type { RuiIcons } from '@rotki/ui-library';
  * The app only registers icons whose names appear in its source, so a user can only pick from a
  * list spelled out here. An icon the backend holds that is not in the list shows the default.
  */
-const LOCATION_ICONS = [
+export const LOCATION_ICONS = [
   'lu-map-pin',
   'lu-landmark',
   'lu-building-2',
@@ -30,7 +30,7 @@ const LOCATION_ICONS = [
   'lu-archive',
 ] as const satisfies readonly RuiIcons[];
 
-type LocationIcon = typeof LOCATION_ICONS[number];
+export type LocationIcon = typeof LOCATION_ICONS[number];
 
 export const DEFAULT_LOCATION_ICON: LocationIcon = 'lu-map-pin';
 

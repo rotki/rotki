@@ -116,17 +116,35 @@ export const useLocationTreeStore = defineStore('locations/tree', () => {
     return [...identifiers].sort((a, b) => position(a) - position(b));
   };
 
+  /** The location and every location below it. */
+  const subtreeOf = (identifier: string): Set<string> => {
+    const subtree = new Set<string>();
+    const pending = [identifier];
+    while (pending.length > 0) {
+      const current = pending.pop();
+      if (current === undefined || subtree.has(current))
+        continue;
+      subtree.add(current);
+      pending.push(...childrenOf(current).map(child => child.identifier));
+    }
+    return subtree;
+  };
+
   const setNodes = (value: LocationNode[]): void => {
     set(nodes, value);
   };
 
   return {
     assignableIdentifiers,
+    childrenOf,
+    getNode,
     nodes,
     pathIfNameShared,
+    pathLabelOf,
     pathOf,
     setNodes,
     sortByTree,
+    subtreeOf,
   };
 });
 

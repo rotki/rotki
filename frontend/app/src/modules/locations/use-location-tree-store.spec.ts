@@ -24,6 +24,14 @@ describe('useLocationTreeStore', () => {
     expect(store.pathOf('unknown')).toEqual([]);
   });
 
+  it('should give the path label, the sorted children and the subtree of a location', () => {
+    const store = useLocationTreeStore();
+    expect(store.pathLabelOf('custom:savings')).toBe('Banks › ING › Savings');
+    expect(store.pathLabelOf('unknown')).toBe('unknown');
+    expect(store.childrenOf('banks').map(x => x.name)).toEqual(['Closed', 'ING', 'Qonto']);
+    expect([...store.subtreeOf('banks')].sort()).toEqual(['banks', 'custom:closed', 'custom:ing', 'custom:savings', 'qonto']);
+  });
+
   it('should order locations after their ancestors and siblings by name, not by identifier', () => {
     const store = useLocationTreeStore();
     store.setNodes([...store.nodes, node('abn', 'banks', 'ABN')]);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { splitHighlight } from '@/modules/history/events/action-picker/highlight-match';
+import { splitHighlight } from '@/modules/core/common/highlight-match';
 
 describe('splitHighlight', () => {
   it('should return a single unmatched segment for an empty query', () => {

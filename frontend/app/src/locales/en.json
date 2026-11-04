@@ -5013,6 +5013,71 @@
     "title": "Stake",
     "unclaimed_rewards": "Unclaimed rewards"
   },
+  "location_manager": {
+    "actions": {
+      "add": "Add location",
+      "add_child": "Add a location below",
+      "archive": "Archive",
+      "collapse": "Hide the locations below",
+      "expand": "Show the locations below",
+      "unarchive": "Restore from archive"
+    },
+    "archived": "Archived",
+    "custom": "Custom",
+    "delete": {
+      "message": "Delete {name}? This can not be undone.",
+      "title": "Delete location"
+    },
+    "empty": {
+      "create": "Add a location named {name}",
+      "label": "No locations to show",
+      "search_description": "Check the spelling, turn on Show archived, or add the location.",
+      "search_label": "No location matches \"{search}\""
+    },
+    "error": "Could not change the location",
+    "form": {
+      "add_title": "Add location",
+      "edit_title": "Edit location",
+      "error": "Could not save the location",
+      "icon": "Icon",
+      "icon_option": "Use the {icon} icon",
+      "name_hint": "Must be unique among the locations with the same parent",
+      "parent": "Parent location",
+      "validation": {
+        "required": "This field is required"
+      }
+    },
+    "image": {
+      "error": "Could not change the location image",
+      "hint": "An image replaces the icon. It is stored on this device only, so upload it again after restoring a backup or on another device.",
+      "remove": "Remove image"
+    },
+    "move": {
+      "confirm": "Move",
+      "message": "From: {old}\nTo: {new}\n\nIts history and balances then count towards the totals of its new parent locations. You can move it back at any time.",
+      "title": "Move location"
+    },
+    "show_archived": "Show archived",
+    "title": "Location manager",
+    "usage": {
+      "kinds": {
+        "bitcoin_transactions": "Bitcoin transactions",
+        "bucket_balance_checks": "Balance checks",
+        "bucket_processing_stops": "Stopped balance history",
+        "children": "Locations below it",
+        "data_issues": "Data issues",
+        "event_metrics": "Balance history entries",
+        "history_events": "History events",
+        "history_events_backup": "Backed up history events",
+        "manually_tracked_balances": "Manual balances",
+        "margin_positions": "Margin positions",
+        "skipped_external_events": "Skipped external events",
+        "timed_location_data": "Snapshot entries"
+      },
+      "message": "This location can not be deleted while data uses it. Move or remove that data first, or archive the location to hide it from new entries while keeping its data.",
+      "title": "{name} is in use"
+    }
+  },
   "locations": {
     "empty": {
       "add_account": "Add an account",
@@ -5332,6 +5397,7 @@
       "events": "Events"
     },
     "import_data": "Import Data",
+    "location_manager": "Location manager",
     "locations": "Locations",
     "manage_address_book": "Manage Address Book",
     "manage_assets": "Manage Assets",
