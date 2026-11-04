@@ -80,6 +80,26 @@ describe('useSettingWriteFeedback', () => {
     expect(get(feedback.error)).toBe('');
   });
 
+  it('should keep the error of a rejected write that reverts the draft', async () => {
+    const feedback = create();
+
+    set(model, ['etherscan']);
+    set(error, 'the backend said no');
+    await nextTick();
+
+    expect(get(feedback.error)).toContain('the backend said no');
+  });
+
+  it('should keep the error when the revert lands after the error in the same tick', async () => {
+    const feedback = create();
+
+    set(error, 'the backend said no');
+    set(model, ['etherscan']);
+    await nextTick();
+
+    expect(get(feedback.error)).toContain('the backend said no');
+  });
+
   it('should prefix the write error when a prefix is given', async () => {
     const feedback = useSettingWriteFeedback({ error, model, success }, () => '', { errorPrefix: () => 'could not save' });
 
