@@ -5089,6 +5089,30 @@ def test_upgrade_db_53_to_54(
                     (identifier, event_state),
                 )
 
+        # xpubs saved without their type. Only the one with a taproot address is taproot.
+        assert not column_exists(write_cursor, 'xpubs', 'xpub_type')
+        xpubs = [  # (xpub, derivation path, blockchain, derived addresses)
+            ('xpub6BgBgsespWvERF3LHQu6CnqdvfEvtMcQjYrcRzx53QJjSxarj2afYWcLteoGVky7D3UKDP9QyrLprQ3VCECoY49yfdDEHGCtMMj92pReUsQ', '', 'BTC', ['bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr', 'bc1p3qkhfews2uk44qtvauqyr2ttdsw7svhkl9nkm9s9c3x4ax5h60wqwruhk7']),  # noqa: E501
+            ('xpub6BgBgsespWvERF3LHQu6CnqdvfEvtMcQjYrcRzx53QJjSxarj2afYWcLteoGVky7D3UKDP9QyrLprQ3VCECoY49yfdDEHGCtMMj92pReUsQ', 'm/0', 'BTC', ['1MB494PTr8HLyDdVB265D4PV6tzAQVnGft']),  # noqa: E501
+            ('xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk', 'm/0/0/0', 'BCH', ['1LZypJUwJJRdfdndwvDmtAjrVYaHko136r']),  # noqa: E501
+            ('zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q', 'm/0', 'BTC', []),  # noqa: E501
+        ]
+        for xpub, derivation_path, blockchain, addresses in xpubs:
+            write_cursor.execute(
+                'INSERT INTO xpubs(xpub, derivation_path, label, blockchain) VALUES (?, ?, NULL, ?)',  # noqa: E501
+                (xpub, derivation_path, blockchain),
+            )
+            for idx, address in enumerate(addresses):
+                write_cursor.execute(
+                    'INSERT OR IGNORE INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+                    (blockchain, address),
+                )
+                write_cursor.execute(
+                    'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, '
+                    'derived_index, blockchain) VALUES (?, ?, ?, ?, 0, ?)',
+                    (address, xpub, derivation_path, idx, blockchain),
+                )
+
         assert not table_exists(cursor=write_cursor, name='bucket_processing_stops')
         assert not table_exists(cursor=write_cursor, name='bucket_balance_checks')
         write_cursor.execute(  # a negative balance issue asks for the stops to be rebuilt
@@ -5162,6 +5186,12 @@ def test_upgrade_db_53_to_54(
             f'SELECT COUNT(*) FROM history_events WHERE identifier IN ({",".join("?" * len(bitcoin_event_ids))})',  # noqa: E501
             bitcoin_event_ids,
         ).fetchone()[0] == len(bitcoin_event_ids)
+        saved_xpub_types = {
+            tuple(row[:3]): row[3] for row in
+            cursor.execute('SELECT xpub, derivation_path, blockchain, xpub_type FROM xpubs')
+        }
+        for xpub, derivation_path, blockchain, _ in xpubs:  # only the taproot one has a bc1p address  # noqa: E501
+            assert saved_xpub_types[xpub, derivation_path, blockchain] == ('p2tr' if derivation_path == '' else None)  # noqa: E501
         DBLocations().set_alias(cursor, 'Old Kraken', 'kraken')
         assert DBLocations().resolve(cursor, 'old kraken').location == 'kraken'
         assert db.get_setting(cursor, 'version') == 54

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13421` Taproot xpubs now keep finding the new addresses your wallet starts using. Before, only the addresses in use when the xpub was added were found. A Taproot xpub with none of its addresses saved needs to be removed and added again.
 * :feature:`13542` Activity exported from the Krak app can now be imported as a CSV file, including card payments, cashback, earn rewards, converts, deposits, withdrawals and transfers. Transfers between Krak and Kraken are matched with your Kraken history.
 * :feature:`-` Statistics now has an address interactions graph showing which of your tracked addresses have transacted with each other, including matched bridge transfers between different addresses on different chains. Bridge connections show both chains and link to each leg's transaction.
 * :feature:`-` Venice unstaking requests on Base are now decoded in transaction history.

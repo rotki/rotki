@@ -1,6 +1,9 @@
 import pytest
 
-from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
+from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubDerivedAddressData
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.types import SupportedBlockchain
 
@@ -156,4 +159,52 @@ def test_edit_bitcoin_xpub_not_existing_tag(setup_db_for_xpub_tests):
     assert result[0].label == xpub.label
     assert result[0].derivation_path == xpub.derivation_path
     assert result[0].tags != {'test'}
+    db.logout()
+
+
+@pytest.mark.parametrize('xpub_type', [None, *XpubType])
+def test_saved_xpub_keeps_its_type(setup_db_for_xpub_tests, xpub_type):
+    """An xpub loaded from the DB derives the same addresses as when it was added. A taproot
+    xpub has the same prefix as a legacy one, so only its saved type tells them apart."""
+    db, _, _, _, _ = setup_db_for_xpub_tests
+    # account xpub of the BIP-86 test vectors, at m/86'/0'/0'
+    xpub_data = XpubData(
+        xpub=HDKey.from_xpub(
+            xpub='xpub6BgBgsespWvERF3LHQu6CnqdvfEvtMcQjYrcRzx53QJjSxarj2afYWcLteoGVky7D3UKDP9QyrLprQ3VCECoY49yfdDEHGCtMMj92pReUsQ',
+            xpub_type=xpub_type,
+            path='m',
+        ),
+        blockchain=SupportedBlockchain.BITCOIN,
+    )
+    expected_address = xpub_data.xpub.derive_child(1).derive_child(0).address()
+    if xpub_type == XpubType.P2TR:
+        assert expected_address == 'bc1p3qkhfews2uk44qtvauqyr2ttdsw7svhkl9nkm9s9c3x4ax5h60wqwruhk7'
+
+    with db.user_write() as write_cursor:
+        db.add_bitcoin_xpub(write_cursor, xpub_data)
+        db.add_blockchain_accounts(write_cursor, [BlockchainAccountData(
+            chain=SupportedBlockchain.BITCOIN,
+            address=expected_address,
+        )])
+        db.ensure_xpub_mappings_exist(
+            write_cursor=write_cursor,
+            xpub_data=xpub_data,
+            derived_addresses_data=[XpubDerivedAddressData(1, 0, expected_address, ZERO)],
+        )
+
+    with db.conn.read_ctx() as cursor:
+        saved_xpubs = [
+            x for x in db.get_bitcoin_xpub_data(cursor, SupportedBlockchain.BITCOIN)
+            if x == xpub_data
+        ]
+        mapped_xpub = db.get_addresses_to_xpub_mapping(
+            cursor=cursor,
+            blockchain=SupportedBlockchain.BITCOIN,
+            addresses=[expected_address],
+        )[expected_address]
+
+    assert len(saved_xpubs) == 1
+    for loaded in (saved_xpubs[0].xpub, mapped_xpub.xpub):
+        assert loaded.xpub_type == xpub_type
+        assert loaded.derive_child(1).derive_child(0).address() == expected_address
     db.logout()

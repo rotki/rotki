@@ -33,7 +33,7 @@ MINIMIZED_USER_DB_SCHEMA = {
     "settings": "namevarchar[24]notnullprimarykey,valuetext",
     "tags": "nametextnotnullprimarykeycollatenocase,descriptiontext,background_colortext,foreground_colortext",
     "tag_mappings": "object_referencetext,tag_nametext,foreignkey(tag_name)referencestags(name)primarykey(object_reference,tag_name)",
-    "xpubs": "xpubtextnotnull,derivation_pathtextnotnull,labeltext,blockchaintextnotnull,primarykey(xpub,derivation_path,blockchain)",
+    "xpubs": "xpubtextnotnull,derivation_pathtextnotnull,labeltext,blockchaintextnotnull,xpub_typetext,primarykey(xpub,derivation_path,blockchain)",
     "xpub_mappings": "addresstextnotnull,xpubtextnotnull,derivation_pathtextnotnull,account_indexinteger,derived_indexinteger,blockchaintextnotnull,foreignkey(blockchain,address)referencesblockchain_accounts(blockchain,account)ondeletecascadeforeignkey(xpub,derivation_path,blockchain)referencesxpubs(xpub,derivation_path,blockchain)ondeletecascadeprimarykey(address,xpub,derivation_path,blockchain)",
     "eth2_validators": "identifierintegernotnullprimarykey,validator_indexintegerunique,public_keytextnotnullunique,ownership_proportiontextnotnull,withdrawal_addresstext,validator_typeintegernotnullcheck(validator_typein(0,1,2)),activation_timestampinteger,withdrawable_timestampinteger,exited_timestampinteger",
     "eth_validators_data_cache": "idintegernotnullprimarykey,validator_indexintegernotnull,timestampintegernotnull,--timestampisinmillisecondsbalancetextnotnull,withdrawals_pnltextnotnull,exit_pnltextnotnull,unique(validator_index,timestamp),foreignkey(validator_index)referenceseth2_validators(validator_index)onupdatecascadeondeletecascade",
