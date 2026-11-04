@@ -346,14 +346,23 @@ describe('useUnlockFlowController', () => {
     expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('boom'));
   });
 
-  it('should not park an auto-unlock in error (falls back to idle)', async () => {
+  it('should return an auto-unlock rejected for a stale saved password to idle', async () => {
     h.login.mockResolvedValue({ error: { kind: UnlockErrorKind.wrongPassword }, ok: false });
 
     await controller.startAuto();
     await flushPromises();
 
-    // a stale saved password shouldn't leave the login screen stuck in error
     expect(get(controller.state).kind).toBe(UnlockPhase.idle);
+  });
+
+  it('should keep any other auto-unlock failure in error so the form shows it', async () => {
+    h.login.mockResolvedValue({ error: { kind: UnlockErrorKind.unknown, message: 'tables differ' }, ok: false });
+
+    await controller.startAuto();
+    await flushPromises();
+
+    expect(get(controller.state).kind).toBe(UnlockPhase.error);
+    expect(get(controller.errors)).toEqual(['tables differ']);
   });
 
   it('should wire a session-gated 401 handler on the api', () => {
