@@ -6,6 +6,7 @@ import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/modules/assets/u
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { isEventMissingAccountingRule } from '@/modules/history/event-utils';
+import { useFeeNotes } from '@/modules/history/events/use-fee-notes';
 
 export interface UseHistoryMatchedMovementItemProps {
   events: Ref<HistoryEventEntry[]> | ComputedRef<HistoryEventEntry[]>;
@@ -42,6 +43,7 @@ export function useHistoryMatchedMovementItem(
   const { getAssetField } = useAssetInfoRetrieval();
 
   const { getLocationData } = useLocations();
+  const { appendFeeNotes } = useFeeNotes(events);
 
   const primaryEvent = computed<HistoryEventEntry>(() => {
     const assetMovementEvent = get(events).find(
@@ -105,15 +107,6 @@ export function useHistoryMatchedMovementItem(
     if (!event)
       return '';
     return (event.locationLabel ?? getLocationData(event.location)?.name) ?? '';
-  }
-
-  function appendFeeNotes(notes: string): string {
-    const fee = get(events).filter(item => item.eventSubtype === 'fee');
-    if (fee.length === 0)
-      return notes;
-
-    const feeText = fee.map(item => `${item.amount.toFixed()} ${getAssetField(item.asset, 'symbol', ASSET_RESOLUTION_OPTIONS)}`).join('; ');
-    return t('history_events_list_swap.fee_description', { feeText, notes });
   }
 
   // Build compact notes for asset movements with fee

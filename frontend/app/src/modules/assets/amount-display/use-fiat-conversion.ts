@@ -1,9 +1,9 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { Timestamp } from '@/modules/assets/amount-display/types';
 import { type BigNumber, One, Zero } from '@rotki/common';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
-import { normalizeTimestamp, type Timestamp } from '@/modules/assets/amount-display/types';
 import { useAmountDisplaySettings } from '@/modules/assets/amount-display/use-amount-display-settings';
-import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
+import { useHistoricRate } from '@/modules/assets/amount-display/use-historic-rate';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 
 export interface UseFiatConversionOptions {
@@ -40,30 +40,7 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
 
   const { currencySymbol } = useAmountDisplaySettings();
   const { getExchangeRate } = usePriceUtils();
-  const { createKey, getHistoricPrice, getIsPending } = useHistoricPriceCache();
-
-  const timestampToUse = computed<number>(() => {
-    const ts = normalizeTimestamp(toValue(timestamp));
-    if (ts === undefined || ts <= 0) {
-      return -1;
-    }
-    return ts;
-  });
-
-  const loading = computed<boolean>(() => {
-    const fromVal = toValue(from);
-    const ts = get(timestampToUse);
-
-    if (!fromVal) {
-      return false;
-    }
-
-    if (ts > 0) {
-      return getIsPending(createKey(fromVal, ts));
-    }
-
-    return false;
-  });
+  const { isHistoric, loading, rate: historicRate } = useHistoricRate(from, timestamp);
 
   /**
    * Converts value using current exchange rates (for real-time conversion)
@@ -99,20 +76,14 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
 
     const to = get(currencySymbol);
     const fromVal = toValue(from);
-    const ts = get(timestampToUse);
 
     if (!fromVal || to === fromVal) {
       return currentValue;
     }
 
-    if (ts > 0) {
-      const historicRate = getHistoricPrice(fromVal, ts);
-
-      if (historicRate.isPositive()) {
-        return currentValue.multipliedBy(historicRate);
-      }
-
-      return Zero;
+    if (get(isHistoric)) {
+      const rate = get(historicRate);
+      return rate.isPositive() ? currentValue.multipliedBy(rate) : Zero;
     }
 
     return get(latestConvertedValue);

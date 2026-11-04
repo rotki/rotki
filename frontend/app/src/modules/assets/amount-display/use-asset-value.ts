@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { Timestamp } from '@/modules/assets/amount-display/types';
 import { type BigNumber, Zero } from '@rotki/common';
-import { normalizeTimestamp, type Timestamp } from '@/modules/assets/amount-display/types';
-import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
+import { useHistoricRate } from '@/modules/assets/amount-display/use-historic-rate';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 
 export interface UseAssetValueOptions {
@@ -49,42 +49,17 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
   } = options;
 
   const { getAssetPrice } = usePriceUtils();
-  const { createKey, getHistoricPrice, getIsPending } = useHistoricPriceCache();
-
-  const timestampToUse = computed<number>(() => {
-    const ts = normalizeTimestamp(toValue(timestamp));
-    if (ts === undefined || ts <= 0) {
-      return -1;
-    }
-    return ts;
-  });
-
-  const loading = computed<boolean>(() => {
-    const assetVal = toValue(asset);
-    const ts = get(timestampToUse);
-
-    if (!assetVal) {
-      return false;
-    }
-
-    if (ts > 0) {
-      return getIsPending(createKey(assetVal, ts));
-    }
-
-    return false;
-  });
+  const { isHistoric, loading, rate: historicPrice } = useHistoricRate(asset, timestamp);
 
   const price = computed<BigNumber>(() => {
     const assetVal = toValue(asset);
-    const ts = get(timestampToUse);
     const known = toValue(knownPrice);
 
     if (!assetVal)
       return Zero;
 
-    const wantsHistoricPrice = ts > 0;
-    if (wantsHistoricPrice)
-      return positiveOrZero(getHistoricPrice(assetVal, ts));
+    if (get(isHistoric))
+      return positiveOrZero(get(historicPrice));
 
     if (known !== undefined && known !== null)
       return positiveOrZero(known);
