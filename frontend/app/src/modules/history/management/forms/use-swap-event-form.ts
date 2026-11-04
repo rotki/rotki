@@ -5,14 +5,12 @@ import { HistoryEventEntryType, toSnakeCase } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
+import { applyRelocation } from '@/modules/history/management/forms/relocation';
 import { type AddPayload, emptySwapForm, isCompleteSwapGroup, relocateSwap, type SwapFormState, swapIdentifiers, swapSchema, swapServerErrorPaths, swapStateForGroupAdd, swapStateFromEvents, toSwapEditPayload, toSwapPayload } from '@/modules/history/management/forms/swap-event-form';
 import { emptySubEvent, SUB_EVENT_PRICE_INTENT_KEYS } from '@/modules/history/management/forms/swap/swap-sub-event';
 import { useFeeRows } from '@/modules/history/management/forms/swap/use-fee-rows';
 import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
-
-/** The fields a move of location may empty, when they are not valid on the new chain. */
-const CARRIED_FIELDS = ['address', 'txRef'] as const;
 
 export type SwapFormData = StandaloneEventData<EvmHistoryEvent | SolanaEvent> | GroupEventData<SwapEvent | EvmSwapEvent | SolanaSwapEvent>;
 
@@ -121,18 +119,12 @@ export function useSwapEventForm({ data, stateUpdated }: UseSwapEventFormOptions
    *
    * @remarks
    * It runs again when the EVM chains change, so a location picked before they loaded is re-read.
-   * A reference or address the move emptied counts as untouched again, so it is not flagged as
-   * missing before the user has had a chance to fill it in.
    */
   function relocate(location: string): void {
     if (data().type !== 'add')
       return;
     const relocated = relocateSwap({ ...state }, location, get(txChainsToLocation));
-    if (relocated.kind !== state.kind)
-      resetLookup();
-    const emptied = CARRIED_FIELDS.filter(path => state[path] && !relocated[path]);
-    Object.assign(state, relocated);
-    emptied.forEach(path => form.untouch(path));
+    applyRelocation(state, relocated, { resetLookup, untouch: form.untouch });
   }
 
   watchImmediate(data, seedFrom);
