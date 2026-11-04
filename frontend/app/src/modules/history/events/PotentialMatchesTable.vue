@@ -5,6 +5,7 @@ import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogConten
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
+import { usePotentialMatchSelection } from '@/modules/history/events/matching/use-potential-match-selection';
 import RecommendedMatchIcon from '@/modules/history/events/RecommendedMatchIcon.vue';
 import ShowInEventsButton from '@/modules/history/events/ShowInEventsButton.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -36,15 +37,7 @@ const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => [
   { key: 'actions', label: '' },
 ]);
 
-function isSelected(row: PotentialMatchRow): boolean {
-  return get(selectedIds).includes(row.entry.identifier);
-}
-
-function toggle(row: PotentialMatchRow): void {
-  const identifier = row.entry.identifier;
-  const ids = get(selectedIds);
-  set(selectedIds, ids.includes(identifier) ? ids.filter(id => id !== identifier) : [...ids, identifier]);
-}
+const { isSelected, toggle } = usePotentialMatchSelection(selectedIds);
 
 function getRowClass(row: PotentialMatchRow): string {
   return row.entry.identifier === highlightedIdentifier ? 'bg-rui-success/15!' : '';

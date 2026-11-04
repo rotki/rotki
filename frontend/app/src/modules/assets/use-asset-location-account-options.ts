@@ -3,16 +3,7 @@ import type { AssetLocation } from '@/modules/assets/use-asset-locations-data';
 import type { AccountFieldOptions } from '@/modules/core/table/filters/shared/account-field';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { isBlockchain } from '@/modules/core/common/chains';
-import { truncateAddress } from '@/modules/core/common/display/truncate';
-import { useScramble } from '@/modules/settings/use-scramble';
-
-/** One account holding this asset, as the account pill needs to read it. */
-interface AccountOption {
-  readonly address: string;
-  /** Its tracked/ENS name, absent when it has none. */
-  readonly name?: string;
-  readonly tags: string[];
-}
+import { type AccountOption, useAccountOptionResolvers } from '@/modules/core/table/filters/shared/use-account-option-resolvers';
 
 /**
  * The account pill's values for the per-asset locations table: the accounts this asset is actually
@@ -21,12 +12,10 @@ interface AccountOption {
  * Drawn from the rows rather than from every tracked account: an account that does not hold the
  * asset can only ever empty the table. An exchange row carries no address and so offers no account.
  *
- * Each account is labelled with the same name its row shows, and matched on its raw address rather
- * than the shown one, since what a user pastes is the full, unscrambled address.
+ * Each account is labelled with the same name its row shows.
  */
 export function useAssetLocationAccountOptions(rows: MaybeRefOrGetter<AssetLocation[]>): AccountFieldOptions {
   const { getAddressName } = useAddressNameResolution();
-  const { scrambleAddress } = useScramble();
 
   const byAddress = computed<Map<string, AccountOption>>(() => {
     const map = new Map<string, AccountOption>();
@@ -45,20 +34,5 @@ export function useAssetLocationAccountOptions(rows: MaybeRefOrGetter<AssetLocat
     return map;
   });
 
-  const addresses = computed<string[]>(() => [...get(byAddress).keys()]);
-
-  function shortAddress(address: string): string {
-    return truncateAddress(scrambleAddress(address), 4);
-  }
-
-  return {
-    resolveCaption: (address: string): string | undefined =>
-      get(byAddress).get(address)?.name ? shortAddress(address) : undefined,
-    resolveKeywords: (address: string): string | undefined => {
-      const option = get(byAddress).get(address);
-      return option && `${option.address} ${option.name ?? ''} ${option.tags.join(' ')}`.toLowerCase();
-    },
-    resolveLabel: (address: string): string => get(byAddress).get(address)?.name ?? shortAddress(address),
-    suggest: (): string[] => get(addresses),
-  };
+  return useAccountOptionResolvers(byAddress);
 }

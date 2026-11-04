@@ -23,11 +23,9 @@ import {
   toEventEntryEditPayload,
   toEventEntryPayload,
 } from '@/modules/history/management/forms/event-entry-payload';
+import { applyRelocation } from '@/modules/history/management/forms/relocation';
 import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
-
-/** The fields a move of location may empty, when they are not valid on the new chain. */
-const CARRIED_FIELDS = ['address', 'txRef'] as const;
 
 export type EventEntryFormData = StandaloneEventData<EventEntryEvent>;
 
@@ -153,8 +151,6 @@ export function useEventEntryForm({ data, entryType, stateUpdated }: UseEventEnt
    *
    * @remarks
    * It runs again when the EVM chains change, so a location picked before they loaded is re-read.
-   * A reference or address the move emptied counts as untouched again, so it is not flagged as
-   * missing before the user has had a chance to fill it in.
    */
   function relocate(location: string): void {
     if (location)
@@ -162,11 +158,7 @@ export function useEventEntryForm({ data, entryType, stateUpdated }: UseEventEnt
     if (!followsLocation())
       return;
     const relocated = relocateEventEntry({ ...state }, location, get(txChainsToLocation));
-    if (relocated.kind !== state.kind)
-      resetLookup();
-    const emptied = CARRIED_FIELDS.filter(path => state[path] && !relocated[path]);
-    Object.assign(state, relocated);
-    emptied.forEach(path => form.untouch(path));
+    applyRelocation(state, relocated, { resetLookup, untouch: form.untouch });
   }
 
   /** Follows the picker between a history event and a bank transaction while a new event is open. */
