@@ -82,6 +82,26 @@ describe('composables/api/import/index', () => {
   });
 
   describe('checkImportFileLocations', () => {
+    it('should post the uploaded file with its mappings, and keep a blank location value', async () => {
+      let capturedFormData: FormData | null = null;
+      const locations = [{ value: '', status: 'unresolved', location: null, candidates: [] }];
+      server.use(
+        http.post(`${backendUrl}/api/1/import/preflight`, async ({ request }) => {
+          capturedFormData = await request.formData();
+          return HttpResponse.json({ result: { locations }, message: '' });
+        }),
+      );
+      const data = new FormData();
+      data.append('source', 'rotki_events');
+      data.append('file', new Blob(['csv,data'], { type: 'text/csv' }), 'events.csv');
+      data.append('location_mappings', JSON.stringify({ '': 'external' }));
+
+      expect(await useImportDataApi().checkImportFileLocations(data)).toEqual(locations);
+      expect(capturedFormData!.get('source')).toBe('rotki_events');
+      expect(capturedFormData!.get('file')).toBeInstanceOf(File);
+      expect(capturedFormData!.get('location_mappings')).toBe('{"":"external"}');
+    });
+
     it('should reject malformed preflight responses', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/import/preflight`, () => HttpResponse.json({
