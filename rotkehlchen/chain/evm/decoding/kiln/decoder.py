@@ -16,6 +16,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -250,19 +251,33 @@ class KilnDefiCommonDecoder(EvmDecoderInterface):
             strict: bool = False,  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
         """Decode ERC4626 deposits and withdrawals of tracked accounts in Kiln vaults.
-        Topic and tracked account checks come first, so that only logs of tracked
-        accounts in ERC4626 vaults get the on chain vault check."""
+
+        Only vaults whose shares were minted to or burned from a tracked owner, and whose
+        share transfer no other decoder has claimed, get the on chain vault check. Vaults
+        of other protocols are decoded by their own decoders before the rules run, so
+        this avoids a query for each of them.
+        """
         if (topic := tx_log.topics[0]) == DEPOSIT_TOPIC and len(tx_log.topics) == 3:
-            parties = tx_log.topics[1:3]  # sender, owner
             decode_fn: Callable[..., EvmDecodingOutput] = self._decode_deposit
         elif topic == WITHDRAW_TOPIC_V3 and len(tx_log.topics) == 4:
-            parties = tx_log.topics[2:4]  # receiver, owner
             decode_fn = self._decode_withdrawal
         else:
             return DEFAULT_EVM_DECODING_OUTPUT
 
+        owner = bytes_to_address(tx_log.topics[-1])
+        shares_identifier = evm_address_to_identifier(
+            address=tx_log.address,
+            chain_id=self.node_inquirer.chain_id,
+            token_type=TokenKind.ERC20,
+        )
         if (
-                not any(self.base.is_tracked(bytes_to_address(party)) for party in parties) or
+                not any(
+                    event.asset.identifier == shares_identifier and
+                    event.counterparty is None and
+                    event.address == ZERO_ADDRESS and
+                    event.location_label == owner
+                    for event in decoded_events
+                ) or
                 not self._is_kiln_vault(tx_log.address)
         ):
             return DEFAULT_EVM_DECODING_OUTPUT
