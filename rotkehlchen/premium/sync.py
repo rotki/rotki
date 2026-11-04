@@ -426,7 +426,6 @@ class PremiumSyncManager(LockableQueryMixIn):
 
         # update the last data upload value
         self.last_data_upload_ts = ts_now()
-        self.last_upload_attempt_ts = self.last_data_upload_ts
         self.last_remote_data_upload_ts = self.last_data_upload_ts
         # Not user_write(), whose last_write_ts bump would make the local DB look newer than
         # the backup just uploaded and so due for another upload
@@ -441,10 +440,29 @@ class PremiumSyncManager(LockableQueryMixIn):
                 name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
                 value=self.last_data_upload_ts,
             )
-            self.data.db.set_static_cache(
-                write_cursor=cursor,
+            pending_password_change_ts = self.data.db.get_static_cache(
+                cursor=cursor,
                 name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
-                value=Timestamp(0),
+            )
+            if (
+                    pending_password_change_ts is not None and
+                    pending_password_change_ts != Timestamp(0) and
+                    pending_password_change_ts <= our_last_write_ts
+            ):
+                self.data.db.set_static_cache(
+                    write_cursor=cursor,
+                    name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
+                    value=Timestamp(0),
+                )
+                pending_password_change_ts = Timestamp(0)
+
+            # Keep a replacement upload immediately due when the password changed after the
+            # snapshot was encrypted. Do this while holding the DB write lock so a concurrent
+            # password change either appears above or resets the gate after acquiring the lock.
+            self.last_upload_attempt_ts = (
+                Timestamp(0)
+                if pending_password_change_ts not in (None, Timestamp(0))
+                else self.last_data_upload_ts
             )
 
         self.data.msg_aggregator.add_message(
