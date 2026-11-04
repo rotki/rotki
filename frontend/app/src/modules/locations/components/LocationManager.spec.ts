@@ -45,6 +45,7 @@ describe('locationManager', () => {
       global: {
         plugins: [pinia],
         stubs: {
+          LocationAliasesCard: { template: '<div data-testid="location-aliases-stub" />' },
           LocationFormDialog: true,
           LocationIcon: { props: ['item'], template: '<span>{{ item }}</span>' },
           RuiDataTable: {
@@ -100,6 +101,16 @@ describe('locationManager', () => {
 
     await wrapper.find('[data-testid=location-manager-show-archived] input').setValue(true);
     expect(tableProp('pagination')).toEqual({ limit: 3, page: 1, total: 3 });
+  });
+
+  it('should open the aliases from the url and keep the chosen tab in it', async () => {
+    route.query = { tab: 'aliases' };
+    wrapper = createWrapper();
+    expect(wrapper.find('[data-testid=location-aliases-stub]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=table-row]').exists()).toBe(false);
+
+    wrapper.findComponent({ name: 'RuiTabs' }).vm.$emit('update:modelValue', 'locations');
+    expect(replace).toHaveBeenCalledExactlyOnceWith({ query: { tab: undefined } });
   });
 
   it('should keep a location it just archived listed, so it can be restored in place', async () => {

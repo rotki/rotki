@@ -5027,6 +5027,19 @@
       "expand": "Show the locations below",
       "unarchive": "Restore from archive"
     },
+    "aliases": {
+      "add": "Add alias",
+      "alias": "Alias",
+      "empty_description": "Aliases are saved when you map an unknown location during a CSV import, or you can add one here.",
+      "empty_label": "No aliases yet",
+      "empty_search_label": "No alias matches the filter",
+      "error": "Could not change the location alias",
+      "exists": "{alias} already points to {location}.",
+      "load_error": "Could not load the location aliases",
+      "move": "Move alias",
+      "move_notice": "{alias} points to {location}. Saving moves it to the location chosen here, so later imports file its rows there.",
+      "subtitle": "Other names a location goes by in imported files. An import tries the exact location identifier first, then an alias, then the location name."
+    },
     "archived": "Archived",
     "custom": "Custom",
     "delete": {
@@ -5046,7 +5059,7 @@
       "error": "Could not save the location",
       "icon": "Icon",
       "icon_option": "Use the {icon} icon",
-      "name_hint": "Must be unique among the locations with the same parent",
+      "name_hint": "No two locations under the same parent can share a name",
       "parent": "Parent location",
       "validation": {
         "required": "This field is required"
@@ -5054,7 +5067,7 @@
     },
     "image": {
       "error": "Could not change the location image",
-      "hint": "An image replaces the icon. It is stored on this device only, so upload it again after restoring a backup or on another device.",
+      "hint": "Replaces the icon. Stored only on this device, so upload it again on another device or after restoring a backup.",
       "remove": "Remove image"
     },
     "move": {
@@ -5063,6 +5076,10 @@
       "title": "Move location"
     },
     "show_archived": "Show archived",
+    "tabs": {
+      "aliases": "Aliases",
+      "locations": "Locations"
+    },
     "title": "Location manager",
     "usage": {
       "kinds": {

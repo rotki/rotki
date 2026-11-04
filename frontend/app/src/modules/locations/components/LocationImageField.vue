@@ -85,7 +85,7 @@ watch(pending, (value) => {
         :upload-text="t('file_upload.dropzone.prefix')"
         :click-to-upload-text="t('file_upload.dropzone.choose')"
         :replace-text="t('file_upload.dropzone.replace')"
-        :hint="t('location_manager.image.hint')"
+        :hint="chosen ? t('location_manager.image.hint') : undefined"
         details="auto"
         data-testid="location-image-upload"
       />

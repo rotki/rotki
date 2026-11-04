@@ -3,7 +3,7 @@ import { cleanupContext, createLoggedInContext, type SharedTestContext, test } f
 import { waitForNoRunningTasks } from '../../helpers/api';
 import { TIMEOUT_MEDIUM } from '../../helpers/constants';
 import { apiAddOnlineEvent } from '../../helpers/history-events-api';
-import { apiCustomLocation, type ApiLocationNode } from '../../helpers/locations-api';
+import { apiCustomLocation, apiLocationAliases, type ApiLocationNode } from '../../helpers/locations-api';
 import { EVENT_ROW } from '../../pages/history-event-rows';
 import { HistoryEventsPage } from '../../pages/history-events-page';
 import { LocationManagerPage } from '../../pages/location-manager-page';
@@ -130,6 +130,15 @@ test.describe.serial('location manager', () => {
     await expect.poll(async () => apiCustomLocation(api, SCRATCH), { timeout: TIMEOUT_MEDIUM }).toBeUndefined();
   });
 
+  test('saves an alias for a custom location', async () => {
+    await manager.openTab('aliases');
+    await manager.addAlias('luno', PARENT, parent.identifier);
+
+    await expect(manager.aliasRow('luno')).toContainText(`Exchanges › ${PARENT}`);
+    await expect.poll(async () => apiLocationAliases(api), { timeout: TIMEOUT_MEDIUM })
+      .toContainEqual({ alias: 'luno', location_identifier: parent.identifier });
+  });
+
   test('records history at the custom locations', async () => {
     await apiAddOnlineEvent(api, { amount: '0.5', asset: 'ETH', eventSubtype: 'none', eventType: 'receive', groupIdentifier: 'location-manager-parent', location: parent.identifier, sequenceIndex: 0, timestamp: 1700000000000 });
     await apiAddOnlineEvent(api, { amount: '1000', asset: 'EUR', eventSubtype: 'none', eventType: 'receive', groupIdentifier: 'location-manager-child', location: child.identifier, sequenceIndex: 0, timestamp: 1700000001000 });
@@ -195,5 +204,16 @@ test.describe.serial('location manager', () => {
 
     await manager.setShowArchived(true);
     await expect(manager.row(child.identifier)).toContainText('Archived');
+  });
+
+  test('deletes an alias only once confirmed', async () => {
+    await manager.visit();
+    await manager.openTab('aliases');
+    await expect(manager.aliasRow('luno')).toBeVisible();
+
+    await manager.deleteAlias('luno');
+
+    await expect(manager.aliasRow('luno')).toHaveCount(0);
+    await expect.poll(async () => apiLocationAliases(api), { timeout: TIMEOUT_MEDIUM }).toEqual([]);
   });
 });

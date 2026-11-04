@@ -147,4 +147,32 @@ describe('useLocationTreeApi', () => {
     expect(first).toContain('v=a.png');
     expect(second).not.toBe(first);
   });
+
+  it('should read the aliases with their location camel-cased', async () => {
+    server.use(http.get(`${backendUrl}/api/1/locations/aliases`, () => reply([{ alias: 'luno', location_identifier: CUSTOM }])));
+
+    expect(await useLocationTreeApi().fetchLocationAliases()).toEqual([{ alias: 'luno', locationIdentifier: CUSTOM }]);
+  });
+
+  it('should put an alias with the location snake-cased', async () => {
+    const captured: Captured = {};
+    server.use(http.put(`${backendUrl}/api/1/locations/aliases`, async ({ request }) => {
+      captured.body = await request.json();
+      return reply(true);
+    }));
+
+    expect(await useLocationTreeApi().setLocationAlias('luno', CUSTOM)).toBe(true);
+    expect(captured.body).toEqual({ alias: 'luno', location_identifier: CUSTOM });
+  });
+
+  it('should delete an alias by sending it in the body', async () => {
+    const captured: Captured = {};
+    server.use(http.delete(`${backendUrl}/api/1/locations/aliases`, async ({ request }) => {
+      captured.body = await request.json();
+      return reply(true);
+    }));
+
+    expect(await useLocationTreeApi().deleteLocationAlias('luno')).toBe(true);
+    expect(captured.body).toEqual({ alias: 'luno' });
+  });
 });

@@ -10,6 +10,11 @@ export interface ApiLocationNode {
   image: string | null;
 }
 
+export interface ApiLocationAlias {
+  alias: string;
+  location_identifier: string;
+}
+
 async function apiResult<T>(request: APIRequestContext, path: string): Promise<T> {
   const response = await request.get(`${backendUrl}/api/1${path}`);
   const body: { result: T } = await response.json();
@@ -25,4 +30,8 @@ export async function apiLocationTree(request: APIRequestContext): Promise<ApiLo
 export async function apiCustomLocation(request: APIRequestContext, name: string): Promise<ApiLocationNode | undefined> {
   const tree = await apiLocationTree(request);
   return tree.find(node => !node.is_builtin && node.name === name);
+}
+
+export async function apiLocationAliases(request: APIRequestContext): Promise<ApiLocationAlias[]> {
+  return apiResult<ApiLocationAlias[]>(request, '/locations/aliases');
 }
