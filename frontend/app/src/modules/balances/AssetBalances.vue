@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { DataTableSortData } from '@rotki/ui-library';
 import type { AssetBalancesDisplay, AssetBreakdownOptions } from '@/modules/balances/types/balances';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
@@ -9,10 +9,10 @@ import { useAssetBalanceSearch } from '@/modules/assets/use-asset-balance-search
 import { useAssetSelectInfo } from '@/modules/assets/use-asset-select-info';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
+import { useAssetBalancesHeaders } from '@/modules/balances/use-asset-balances-headers';
 import { useValuePending } from '@/modules/balances/value-pending';
 import { bigNumberSum, calculatePercentage } from '@/modules/core/common/data/calculation';
 import { hasAwaitingClaim, sortAssetBalances } from '@/modules/core/common/display/balances';
-import { TableColumn } from '@/modules/core/table/table-column';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useTableRowWindow, useWindowedSelectAll } from '@/modules/core/table/use-table-row-window';
@@ -76,7 +76,6 @@ const { matches, prioritizeExactMatches } = useAssetBalanceSearch(() => balances
 const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
 const { isTotalPending, isValuePending } = useValuePending();
-const { isMdAndDown } = useBreakpoint();
 
 const isExpanded = (asset: string): boolean => get(expanded).some(row => row.asset === asset);
 
@@ -103,103 +102,7 @@ function percentageOfCurrentGroup(val: BigNumber): string {
   return calculatePercentage(val, get(total));
 }
 
-/**
- * Fixed widths, so panel tables stacked one under another keep their columns in line.
- *
- * @remarks
- * They only hold while the asset column is the one auto-width column: a `w-full` there claims the
- * spare width and the browser shrinks the fixed columns back to their content.
- */
-const PANEL_COLUMN_WIDTHS: Record<string, string> = {
-  amount: 'w-28',
-  asset: '',
-  perProtocol: 'w-20',
-  price: 'w-28',
-  value: 'w-32',
-};
-
-/** Columns a panel drops when the screen is too narrow for them, so Amount and Value stay in view. */
-const NARROW_PANEL_DROPPED = new Set<string>(['perProtocol', 'price']);
-
-/** The panel variant of the columns: fixed widths, and fewer of them on a narrow screen. */
-function panelColumns(headers: DataTableColumn<AssetBalanceWithPrice>[]): DataTableColumn<AssetBalanceWithPrice>[] {
-  return headers
-    .filter(header => !get(isMdAndDown) || !NARROW_PANEL_DROPPED.has(String(header.key)))
-    .map((header) => {
-      const width = PANEL_COLUMN_WIDTHS[String(header.key)];
-      if (width === undefined)
-        return header;
-
-      const rest = (header.class ?? '').split(' ').filter(name => name !== 'w-full');
-      const shrinks = header.key === 'asset' ? { cellClass: [header.cellClass, 'max-w-0 overflow-hidden'].filter(Boolean).join(' ') } : {};
-      return { ...header, ...shrinks, class: [...rest, width].filter(Boolean).join(' ') };
-    });
-}
-
-const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
-  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [{
-    cellClass: 'py-0',
-    class: 'text-no-wrap w-full',
-    key: 'asset',
-    label: t('common.asset'),
-    sortable: true,
-  }, {
-    align: 'end',
-    // like the dashboard's asset table: the price recedes and the value leads
-    cellClass: 'py-0 text-rui-text-secondary',
-    key: 'price',
-    label: t('common.price'),
-    sortable: true,
-  }, {
-    align: 'end',
-    cellClass: 'py-0',
-    key: 'amount',
-    label: t('common.amount'),
-    sortable: true,
-  }, {
-    align: 'end',
-    cellClass: 'py-0 font-medium',
-    class: 'text-no-wrap',
-    key: 'value',
-    label: t('common.value'),
-    sortable: true,
-  }];
-
-  if (display?.showPerProtocol) {
-    headers.splice(1, 0, {
-      align: 'end',
-      cellClass: 'py-0',
-      class: 'text-no-wrap',
-      key: 'perProtocol',
-      label: t('common.location'),
-      sortable: false,
-    });
-  }
-
-  if (display?.visibleColumns?.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
-    headers.push({
-      align: 'end',
-      cellClass: 'py-0 text-rui-text-secondary',
-      class: 'text-no-wrap',
-      key: 'percentageOfTotalNetValue',
-      label: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
-    });
-  }
-
-  if (display?.visibleColumns?.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
-    headers.push({
-      align: 'end',
-      cellClass: 'py-0 text-rui-text-secondary',
-      class: 'text-no-wrap',
-      key: 'percentageOfTotalCurrentGroup',
-      label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
-        group: t('blockchain_balances.group_label'),
-      }),
-    });
-  }
-
-  return get(fillsPanel) ? panelColumns(headers) : headers;
-});
+const tableHeaders = useAssetBalancesHeaders(() => display, fillsPanel);
 
 const rowAppendLabelColspan = computed(() => {
   let colspan = 3;
