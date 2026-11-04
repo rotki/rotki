@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.bitcoin.hdkey import XpubType
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.db.utils import replace_tag_mappings
 from rotkehlchen.errors.misc import RemoteError
@@ -36,6 +37,11 @@ class XpubData(NamedTuple):
         """
         return '' if self.derivation_path is None else self.derivation_path
 
+    def serialize_xpub_type_for_db(self) -> str | None:
+        """The type is only known when it was given while adding the xpub. Taproot xpubs
+        need it since they share the xpub prefix with legacy ones."""
+        return None if self.xpub.xpub_type is None else self.xpub.xpub_type.serialize()
+
     def serialize(self) -> dict[str, Any]:
         return {
             'xpub': self.xpub.xpub,
@@ -60,6 +66,11 @@ def deserialize_derivation_path_for_db(path: str) -> str | None:
     https://stackoverflow.com/questions/43827629/why-does-sqlite-insert-duplicate-composite-primary-keys
     """
     return None if path == '' else path
+
+
+def deserialize_xpub_type_from_db(xpub_type: str | None) -> XpubType | None:
+    """May raise DeserializationError if the stored type is unknown"""
+    return None if xpub_type is None else XpubType.deserialize(xpub_type)
 
 
 class XpubDerivedAddressData(NamedTuple):

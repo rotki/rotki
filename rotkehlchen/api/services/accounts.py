@@ -368,11 +368,19 @@ class AccountsService:
         result = None
         try:
             if ignore_cache:
+                with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                    # derive from the saved xpub since the request has no xpub type and tags
+                    stored_xpub_data = next((
+                        x for x in self.rotkehlchen.data.db.get_bitcoin_xpub_data(
+                            cursor=cursor,
+                            blockchain=xpub_data.blockchain,
+                        ) if x == xpub_data
+                    ), xpub_data)
                 XpubManager(
                     chains_aggregator=self.rotkehlchen.chains_aggregator,
                 ).check_for_new_xpub_addresses(
                     blockchain=xpub_data.blockchain,
-                    xpub_data=xpub_data,
+                    xpub_data=stored_xpub_data,
                 )
 
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:

@@ -5,8 +5,10 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
+from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.concurrency import wait
-from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
@@ -755,3 +757,44 @@ def test_get_xpub_balances_ignore_cache_behavior(rotkehlchen_api_server: APIServ
             },
         ))
         mock_check.assert_called()
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('btc_accounts', [[]])
+def test_refresh_taproot_xpub_derives_taproot_addresses(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """A taproot xpub has the same prefix as a legacy one, so refreshing its balances has to
+    look for new addresses with the type it was saved with, which the request does not give."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.add_bitcoin_xpub(write_cursor, XpubData(
+            xpub=HDKey.from_xpub(
+                # account xpub of the BIP-86 test vectors, at m/86'/0'/0'
+                xpub=(xpub := 'xpub6BgBgsespWvERF3LHQu6CnqdvfEvtMcQjYrcRzx53QJjSxarj2afYWcLteoGVky7D3UKDP9QyrLprQ3VCECoY49yfdDEHGCtMMj92pReUsQ'),  # noqa: E501
+                xpub_type=XpubType.P2TR,
+                path='m',
+            ),
+            blockchain=SupportedBlockchain.BITCOIN,
+        ))
+
+    queried_addresses: list[BTCAddress] = []
+
+    def mock_have_transactions(accounts: list[BTCAddress]) -> dict[BTCAddress, tuple[bool, Any]]:
+        queried_addresses.extend(accounts)
+        return dict.fromkeys(accounts, (False, ZERO))
+
+    with patch.object(
+        rotki.chains_aggregator.get_chain_manager(SupportedBlockchain.BITCOIN),
+        'have_transactions',
+        side_effect=mock_have_transactions,
+    ):
+        assert_proper_sync_response_with_result(requests.get(
+            api_url_for(rotkehlchen_api_server, 'btcxpubresource', blockchain='BTC'),
+            json={'xpub': xpub, 'ignore_cache': True},
+        ))
+
+    # a batch of receiving and of change addresses
+    assert len(queried_addresses) == 2 * rotki.chains_aggregator.btc_derivation_gap_limit
+    assert all(address.startswith('bc1p') for address in queried_addresses)
+    assert 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr' in queried_addresses  # receiving 0/0  # noqa: E501

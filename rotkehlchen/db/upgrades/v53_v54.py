@@ -497,6 +497,20 @@ CREATE TABLE IF NOT EXISTS bucket_balance_checks (
             'AND M.value IN (1, 3)))',  # customized, matched
         )
 
+    @progress_step(description='Store the address type of bitcoin xpubs.')
+    def _add_xpub_type(write_cursor: DBCursor) -> None:
+        """Taproot xpubs share the xpub prefix with legacy ones, so the type chosen when
+        adding them is now stored. Existing taproot xpubs are recognized by any of their
+        derived addresses being a taproot (bc1p) address. One with no saved address can't
+        be told apart from a legacy xpub."""
+        write_cursor.execute('ALTER TABLE xpubs ADD COLUMN xpub_type TEXT')
+        write_cursor.execute(
+            "UPDATE xpubs SET xpub_type='p2tr' WHERE blockchain='BTC' AND EXISTS("
+            'SELECT 1 FROM xpub_mappings M WHERE M.xpub=xpubs.xpub AND '
+            'M.derivation_path=xpubs.derivation_path AND M.blockchain=xpubs.blockchain AND '
+            "M.address LIKE 'bc1p%')",
+        )
+
     @progress_step(description='Create the location tree.')
     def _create_location_tree(write_cursor: DBCursor) -> None:
         _add_location_tree(write_cursor)

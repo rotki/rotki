@@ -49,6 +49,9 @@ class XpubType(SerializableEnumNameMixin):
     def prefix_bytes(self) -> bytes:
         return XPUB_TYPE_MAPPING_BYTES[self]  # should not raise due to enum
 
+    def serialize(self) -> str:
+        return self.name.lower()
+
     @classmethod
     def deserialize(cls, value: str) -> XpubType:
         if value == 'p2pkh':
