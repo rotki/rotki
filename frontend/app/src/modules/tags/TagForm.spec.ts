@@ -175,4 +175,11 @@ describe('tagForm', () => {
 
     expect(wrapper.emitted('update:stateUpdated')?.at(-1)).not.toEqual([true]);
   });
+
+  it('should not flag stateUpdated when it opens on upper-case colours, which the pickers rewrite in lower case', async () => {
+    wrapper = createWrapper({ ...baseModel(), backgroundColor: 'E3E3E3', foregroundColor: 'ABCDEF' });
+    await vi.advanceTimersByTimeAsync(600);
+
+    expect(wrapper.emitted('update:stateUpdated')?.at(-1)).not.toEqual([true]);
+  });
 });
