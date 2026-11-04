@@ -145,9 +145,9 @@ class LidoCsmMetricsFetcher:
             arguments=[node_operator_id],
         )
 
-        total_deposited_validators = self.module_contract.call(
+        *_, total_deposited_validators, _ = self.module_contract.call(
             node_inquirer=self.evm_inquirer,
-            method_name='getNodeOperatorTotalDepositedKeys',
+            method_name='getNodeOperatorSummary',
             arguments=[node_operator_id],
         )
 

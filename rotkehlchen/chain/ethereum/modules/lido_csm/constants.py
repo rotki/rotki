@@ -20,26 +20,30 @@ ACCOUNTING_ABI: Final[ABI] = [{'inputs': [{'name': 'nodeOperatorId', 'type': 'ui
 
 STETH_ABI: Final[ABI] = [{'inputs': [{'name': 'sharesAmount', 'type': 'uint256'}], 'name': 'getPooledEthByShares', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 
-CSM_MODULE_ABI: Final[ABI] = [{'inputs': [{'name': 'nodeOperatorId', 'type': 'uint256'}], 'name': 'getNodeOperatorTotalDepositedKeys', 'outputs': [{'name': 'totalDepositedKeys', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+CSM_MODULE_ABI: Final[ABI] = [{'inputs': [{'name': 'nodeOperatorId', 'type': 'uint256'}], 'name': 'getNodeOperatorSummary', 'outputs': [{'name': 'targetLimitMode', 'type': 'uint256'}, {'name': 'targetValidatorsCount', 'type': 'uint256'}, {'name': 'stuckValidatorsCount', 'type': 'uint256'}, {'name': 'refundedValidatorsCount', 'type': 'uint256'}, {'name': 'stuckPenaltyEndTimestamp', 'type': 'uint256'}, {'name': 'totalExitedValidators', 'type': 'uint256'}, {'name': 'totalDepositedValidators', 'type': 'uint256'}, {'name': 'depositableValidatorsCount', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 
 
 class LidoCsmOperatorType(IntEnum):
     """Identifier for the CSM bond curves defined in Lido's on-chain module.
 
-    The contract currently exposes three operator categories (early adopter,
-    permissionless, and ICS). These curve ids are immutable once deployed,
-    so caching them locally is safe. If Lido extends the module in the future
-    we can add new enum values but do not need to poll the contract at runtime.
+    The contract currently exposes four operator categories (permissionless,
+    legacy early adopter, ICS, and identified DVT cluster). These curve ids are
+    immutable once deployed, so caching them locally is safe. If Lido extends the
+    module in the future we can add new enum values but do not need to poll the
+    contract at runtime.
     """
     UNKNOWN = -1
-    EARLY_ADOPTER = 0
-    PERMISSIONLESS = 1
+    PERMISSIONLESS = 0
+    EARLY_ADOPTER = 1
     ICS = 2
+    IDENTIFIED_DVT_CLUSTER = 3
 
     @property
     def label(self) -> str:
         if self is LidoCsmOperatorType.ICS:
             return 'ICS'
+        if self is LidoCsmOperatorType.IDENTIFIED_DVT_CLUSTER:
+            return 'Identified DVT Cluster'
         if self is LidoCsmOperatorType.UNKNOWN:
             return 'Unknown'
         return self.name.replace('_', ' ').title()
@@ -53,7 +57,7 @@ LIDO_CSM_FEE_DISTRIBUTOR_CONTRACT_DEPLOYED_BLOCK: Final[int] = 20935463
 FEE_DISTRIBUTOR_ABI: Final[ABI] = [{'inputs': [], 'name': 'treeCid', 'outputs': [{'name': '', 'type': 'string'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': 'nodeOperatorId', 'type': 'uint256'}], 'name': 'distributedShares', 'outputs': [{'name': 'distributed', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 
 # Public IPFS gateway used to fetch treeCid documents
-LIDO_CSM_IPFS_GATEWAY: Final = 'https://ipfs.io/ipfs/'
+LIDO_CSM_IPFS_GATEWAY: Final = 'https://gateway.pinata.cloud/ipfs/'
 
 # Counterparty identifier for Lido CSM
 CPT_LIDO_CSM: Final = 'lido-csm'
