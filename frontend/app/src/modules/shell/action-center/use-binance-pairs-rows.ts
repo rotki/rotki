@@ -59,7 +59,7 @@ export function useBinancePairsRows(): UseBinancePairsRowsReturn {
         suppress: async () => suppress(account),
       })],
       urgency: ActionUrgency.DECISION,
-      target: { kind: 'route', to: { name: '/api-keys/exchanges/', query: { location: account.location, name: account.name } } },
+      target: { kind: 'route', to: { name: '/accounts/exchanges/', query: { location: account.location, name: account.name } } },
       title: t('action_center.rows.integrations.binance_pairs_missing.title', params),
     });
   }

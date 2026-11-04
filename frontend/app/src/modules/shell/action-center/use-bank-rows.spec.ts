@@ -55,7 +55,7 @@ describe('modules/shell/action-center/use-bank-rows', () => {
     expect(rows[0]).toMatchObject({
       description: 'action_center.rows.integrations.bank_authentication.description::Fints, Main Account',
       id: expect.stringMatching(/^bank-authentication-fints-main-account-[\da-z]+$/),
-      target: { kind: 'route', to: { name: '/api-keys/banks/', query: { authenticate: 'Main Account', connector: 'fints' } } },
+      target: { kind: 'route', to: { name: '/accounts/banks/', query: { authenticate: 'Main Account', connector: 'fints' } } },
       urgency: ActionUrgency.BLOCKING,
     });
   });

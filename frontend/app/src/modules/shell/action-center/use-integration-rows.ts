@@ -183,7 +183,7 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
       icon: 'lu-key-round',
       id: conditionRowId(condition),
       urgency: ActionUrgency.DECISION,
-      target: { kind: 'route', to: { name: '/api-keys/exchanges/', query: { location, name } } },
+      target: { kind: 'route', to: { name: '/accounts/exchanges/', query: { location, name } } },
       title: t('action_center.rows.integrations.exchange_key_rejected.title', params),
     });
   }

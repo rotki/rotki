@@ -2,11 +2,11 @@ import { expect, type Page } from '@playwright/test';
 import { TIMEOUT_DIALOG } from '../helpers/constants';
 import { RotkiApp } from './rotki-app';
 
-export class ApiKeysPage {
+export class ExchangesPage {
   constructor(private readonly page: Page) {}
 
-  async visit(submenu: string): Promise<void> {
-    await RotkiApp.navigateTo(this.page, 'api-keys', submenu);
+  async visit(): Promise<void> {
+    await RotkiApp.navigateTo(this.page, 'accounts', 'accounts-exchanges');
   }
 
   /**

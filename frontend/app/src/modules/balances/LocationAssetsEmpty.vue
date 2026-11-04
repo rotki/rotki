@@ -44,7 +44,7 @@ const action = computed<EmptyAction>(() => {
       description: t('locations.empty.bank', { name }),
       icon: 'lu-landmark',
       label: t('locations.empty.connect', { name }),
-      to: { path: '/api-keys/banks', query: { add: 'true' } },
+      to: { name: '/accounts/banks/', query: { add: 'true' } },
     };
   }
 
@@ -53,7 +53,7 @@ const action = computed<EmptyAction>(() => {
       description: t('locations.empty.exchange', { name }),
       icon: 'lu-coins-exchange',
       label: t('locations.empty.connect', { name }),
-      to: { path: '/api-keys/exchanges', query: { add: 'true', location: identifier } },
+      to: { name: '/accounts/exchanges/', query: { add: 'true', location: identifier } },
     };
   }
 

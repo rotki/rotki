@@ -130,8 +130,8 @@ describe('modules/core/action-center/ActionCenterRow', () => {
   });
 
   it('should turn the action into a menu of choices, handing the chosen one\'s target up instead of the action', async () => {
-    const exchange: ActionTarget = { kind: 'route', to: { name: '/api-keys/exchanges/' } };
-    const bank: ActionTarget = { kind: 'route', to: { name: '/api-keys/banks/' } };
+    const exchange: ActionTarget = { kind: 'route', to: { name: '/accounts/exchanges/' } };
+    const bank: ActionTarget = { kind: 'route', to: { name: '/accounts/banks/' } };
     const wrapper = mount(ActionCenterRow, {
       global: { stubs: { RuiMenu: { template: '<div><slot name="activator" :attrs="{}" /><slot /></div>' } } },
       props: {

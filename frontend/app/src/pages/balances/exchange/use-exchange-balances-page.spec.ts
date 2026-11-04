@@ -266,7 +266,7 @@ describe('pages/balances/exchange/useExchangeBalancesPage', () => {
 
     navigateToExchangeSetup();
 
-    expect(pushMock).toHaveBeenCalledWith({ path: '/api-keys/exchanges', query: { add: 'true' } });
+    expect(pushMock).toHaveBeenCalledWith({ name: '/accounts/exchanges/', query: { add: 'true' } });
   });
 
   it('should open the add dialog on a given exchange', async () => {
@@ -275,6 +275,6 @@ describe('pages/balances/exchange/useExchangeBalancesPage', () => {
 
     navigateToExchangeSetup('kraken');
 
-    expect(pushMock).toHaveBeenCalledWith({ path: '/api-keys/exchanges', query: { add: 'true', location: 'kraken' } });
+    expect(pushMock).toHaveBeenCalledWith({ name: '/accounts/exchanges/', query: { add: 'true', location: 'kraken' } });
   });
 });

@@ -56,13 +56,13 @@ describe('modules/core/action-center/ActionEmptyState', () => {
   });
 
   it('should follow the chosen one when the action offers choices', async () => {
-    const bank: ActionTarget = { kind: 'route', to: { name: '/api-keys/banks/' } };
+    const bank: ActionTarget = { kind: 'route', to: { name: '/accounts/banks/' } };
     const wrapper = mountState(item({
       choices: [{ icon: 'lu-landmark', id: 'add-bank', label: 'Bank', target: bank }],
     }));
 
     await wrapper.find('[data-testid=actions-center-row-choice]').trigger('click');
 
-    expect(push).toHaveBeenCalledExactlyOnceWith({ name: '/api-keys/banks/' });
+    expect(push).toHaveBeenCalledExactlyOnceWith({ name: '/accounts/banks/' });
   });
 });

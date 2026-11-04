@@ -90,7 +90,7 @@ defineExpose({
         tag="span"
       >
         <template #link>
-          <RouterLink :to="{ name: '/api-keys/exchanges/' }">
+          <RouterLink :to="{ name: '/accounts/exchanges/' }">
             <RuiButton
               color="primary"
               variant="link"

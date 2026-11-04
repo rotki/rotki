@@ -40,7 +40,7 @@ describe('modules/accounts/use-tracked-accounts-row', () => {
     ]);
     expect(choices.find(choice => choice.id === 'add-bank')?.target).toEqual({
       kind: 'route',
-      to: { name: '/api-keys/banks/', query: { add: 'true' } },
+      to: { name: '/accounts/banks/', query: { add: 'true' } },
     });
   });
 

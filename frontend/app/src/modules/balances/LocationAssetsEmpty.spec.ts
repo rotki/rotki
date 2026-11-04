@@ -82,14 +82,14 @@ describe('modules/balances/LocationAssetsEmpty', () => {
     expect(wrapper.find('[data-testid=notice]').attributes('data-description')).toBe('locations.empty.bank::Banks');
     expect(wrapper.find('[data-testid=notice]').attributes('data-icon')).toBe('lu-landmark');
     expect(wrapper.text()).toContain('locations.empty.connect::Banks');
-    expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ path: '/api-keys/banks', query: { add: 'true' } });
+    expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ name: '/accounts/banks/', query: { add: 'true' } });
   });
 
   it('should send an exchange to the exchange setup with the exchange picked', () => {
     const wrapper = createWrapper('kraken', 'Kraken');
 
     expect(wrapper.find('[data-testid=notice]').attributes('data-description')).toBe('locations.empty.exchange::Kraken');
-    expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ path: '/api-keys/exchanges', query: { add: 'true', location: 'kraken' } });
+    expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ name: '/accounts/exchanges/', query: { add: 'true', location: 'kraken' } });
   });
 
   it('should send any other location to the manual balance form', () => {

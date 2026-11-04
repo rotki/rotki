@@ -1,16 +1,16 @@
 import { testEnv } from '../../fixtures';
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
-import { ApiKeysPage } from '../../pages/api-keys-page';
+import { ExchangesPage } from '../../pages/exchanges-page';
 
-test.describe.serial('api keys', () => {
+test.describe.serial('exchanges', () => {
   let ctx: SharedTestContext;
-  let apiKeysPage: ApiKeysPage;
+  let exchangesPage: ExchangesPage;
 
   test.beforeAll(async ({ browser, request }) => {
     ctx = await createLoggedInContext(browser, request);
 
-    apiKeysPage = new ApiKeysPage(ctx.sharedPage);
-    await apiKeysPage.visit('api-keys-exchanges');
+    exchangesPage = new ExchangesPage(ctx.sharedPage);
+    await exchangesPage.visit();
   });
 
   test.afterAll(async () => {
@@ -20,7 +20,7 @@ test.describe.serial('api keys', () => {
   test('add exchange key', async () => {
     const apiKey = testEnv.KRAKEN_API_KEY;
     const apiSecret = testEnv.KRAKEN_API_SECRET;
-    await apiKeysPage.addExchange(apiKey, apiSecret, 'kraken', 'My Kraken');
-    await apiKeysPage.exchangeIsAdded('Kraken', 'My Kraken');
+    await exchangesPage.addExchange(apiKey, apiSecret, 'kraken', 'My Kraken');
+    await exchangesPage.exchangeIsAdded('Kraken', 'My Kraken');
   });
 });

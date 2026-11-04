@@ -4796,15 +4796,15 @@
   "navigation_menu": {
     "accounts": "Hesaplar",
     "accounts_sub": {
+      "banks": "Bankalar",
       "bitcoin": "Bitcoin hesapları",
       "evm": "EVM hesapları",
+      "exchanges": "Borsalar",
       "solana": "Solana hesapları",
       "substrate": "Substrate hesapları"
     },
     "api_keys": "API anahtarları",
     "api_keys_sub": {
-      "banks": "Bankalar",
-      "exchanges": "Borsalar",
       "external_services": "Harici servisler",
       "premium": "rotki Premium"
     },

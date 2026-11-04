@@ -22,7 +22,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: msg.$t('navigation_menu.api_keys_sub.banks'), icon: 'lu-landmark', parent: '/api-keys/', order: 25, drawer: 'api-keys-banks', addAction: { labelKey: msg.$t('bank_settings.dialog.add.title') } },
+    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.banks'), icon: 'lu-landmark', parent: '/accounts/', order: 70, drawer: 'accounts-banks', addAction: { labelKey: msg.$t('bank_settings.dialog.add.title') } },
   },
 });
 
@@ -44,7 +44,7 @@ const failureMessage = useFailureMessage();
 const { t } = useI18n({ useScope: 'global' });
 
 const router = useRouter();
-const route = useRoute('/api-keys/banks/');
+const route = useRoute('/accounts/banks/');
 
 const cols = computed<DataTableColumn<BankConnection>[]>(() => [{
   cellClass: 'w-48',
@@ -174,8 +174,8 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
   <TablePageLayout
     data-testid="banks"
     :title="[
-      t('navigation_menu.api_keys'),
-      t('navigation_menu.api_keys_sub.banks'),
+      t('navigation_menu.accounts'),
+      t('navigation_menu.accounts_sub.banks'),
     ]"
   >
     <template #buttons>

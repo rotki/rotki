@@ -60,7 +60,7 @@ export function useBankRows(): ComputedRef<ActionItem[]> {
         label: t('action_center.rows.integrations.bank_authentication.start_over'),
         target: { kind: 'run', run: () => startPromise(startOverAuthentication({ connector, name })) },
       }],
-      target: { kind: 'route', to: { name: '/api-keys/banks/', query: { authenticate: name, connector } } },
+      target: { kind: 'route', to: { name: '/accounts/banks/', query: { authenticate: name, connector } } },
       title: t('action_center.rows.integrations.bank_authentication.title'),
       urgency: ActionUrgency.BLOCKING,
     });

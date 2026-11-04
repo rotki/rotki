@@ -4675,15 +4675,15 @@
   "navigation_menu": {
     "accounts": "账户",
     "accounts_sub": {
+      "banks": "银行",
       "bitcoin": "Bitcoin @:navigation_menu.accounts",
       "evm": "EVM @:navigation_menu.accounts",
+      "exchanges": "交易所",
       "solana": "Solana @:navigation_menu.accounts",
       "substrate": "Substrate @:navigation_menu.accounts"
     },
     "api_keys": "API Key",
     "api_keys_sub": {
-      "banks": "银行",
-      "exchanges": "交易所",
       "external_services": "外部服务",
       "premium": "rotki 高级版"
     },

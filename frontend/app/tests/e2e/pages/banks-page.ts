@@ -8,7 +8,7 @@ export class BanksPage {
   constructor(private readonly page: Page) {}
 
   async visitConnections(): Promise<void> {
-    await RotkiApp.navigateTo(this.page, 'api-keys', 'api-keys-banks');
+    await RotkiApp.navigateTo(this.page, 'accounts', 'accounts-banks');
     await this.page.locator('[data-testid=bank-table]').waitFor({ state: 'visible' });
   }
 

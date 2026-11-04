@@ -69,7 +69,7 @@ describe('modules/banks/components/BankConnectionItem', () => {
 
     await wrapper.find('[data-testid=bank-balances-connection-action]').trigger('click');
 
-    expect(push).toHaveBeenCalledWith({ name: '/api-keys/banks/', query: {} });
+    expect(push).toHaveBeenCalledWith({ name: '/accounts/banks/', query: {} });
   });
 
   it('should ask for authentication and open it for this connection', async () => {
@@ -81,7 +81,7 @@ describe('modules/banks/components/BankConnectionItem', () => {
 
     await wrapper.find('[data-testid=bank-balances-connection-action]').trigger('click');
 
-    expect(push).toHaveBeenCalledWith({ name: '/api-keys/banks/', query: { authenticate: 'main', connector: 'fints' } });
+    expect(push).toHaveBeenCalledWith({ name: '/accounts/banks/', query: { authenticate: 'main', connector: 'fints' } });
   });
 
   it('should say an expired TAN needs a new sync instead of showing the last sync time, and ask for that sync', async () => {

@@ -2008,9 +2008,11 @@
     }
   },
   "navigation_menu": {
+    "accounts_sub": {
+      "exchanges": "Échanges"
+    },
     "api_keys": "Clés d'API",
     "api_keys_sub": {
-      "exchanges": "Échanges",
       "external_services": "Services externes"
     },
     "balances": "Soldes",
