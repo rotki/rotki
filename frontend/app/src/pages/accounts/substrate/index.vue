@@ -5,7 +5,7 @@ import { NoteLocation } from '@/modules/core/common/notes';
 
 definePage({
   meta: {
-    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.substrate'), icon: 'lu-substrate-accounts', parent: '/accounts/', order: 40, drawer: 'accounts-substrate' },
+    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.substrate'), drawerLabelKey: msg.$t('navigation_menu.accounts_sub.short.substrate'), heading: msg.$t('navigation_menu.accounts_sub.heading.blockchain'), icon: 'lu-substrate-accounts', parent: '/accounts/', order: 40, drawer: 'accounts-substrate' },
     noteLocation: NoteLocation.ACCOUNTS_SUBSTRATE,
   },
 });

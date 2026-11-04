@@ -19,8 +19,28 @@ vi.mock('vue-router', () => ({
   })),
 }));
 
-function route(name: string, nav?: Omit<RouteNavMeta, 'icon' | 'labelKey'> & { labelKey: string }): FakeRoute {
-  return { name, meta: nav ? { nav: { icon: 'lu-wallet', ...nav, labelKey: msg.$t(nav.labelKey) } } : {} };
+type FakeNav = Omit<RouteNavMeta, 'icon' | 'labelKey' | 'drawerLabelKey' | 'heading'> & {
+  labelKey: string;
+  drawerLabelKey?: string;
+  heading?: string;
+};
+
+function route(name: string, nav?: FakeNav): FakeRoute {
+  if (!nav)
+    return { name, meta: {} };
+  const { drawerLabelKey, heading, labelKey, ...rest } = nav;
+  return {
+    name,
+    meta: {
+      nav: {
+        icon: 'lu-wallet',
+        ...rest,
+        labelKey: msg.$t(labelKey),
+        ...(drawerLabelKey ? { drawerLabelKey: msg.$t(drawerLabelKey) } : {}),
+        ...(heading ? { heading: msg.$t(heading) } : {}),
+      },
+    },
+  };
 }
 
 function itemAt(items: MenuItem[], index: number): MenuNavItem {
@@ -95,6 +115,49 @@ describe('modules::shell::use-navigation-menu', () => {
 
     expect(group.testId).toBe('balances');
     expect(group.items.map(item => item.testId)).toStrictEqual(['balances-blockchain', 'balances-exchange']);
+  });
+
+  it('should mark the first child of each heading run with its heading', () => {
+    set(routes, [
+      route('/accounts/', { labelKey: 'accounts', order: 20, section: 1, drawer: 'accounts' }),
+      route('/accounts/banks/', { labelKey: 'banks', order: 40, parent: '/accounts/', heading: 'fiat', drawer: 'accounts-banks' }),
+      route('/accounts/bitcoin/', { labelKey: 'bitcoin', order: 20, parent: '/accounts/', heading: 'chains', drawer: 'accounts-bitcoin' }),
+      route('/accounts/evm/', { labelKey: 'evm', order: 10, parent: '/accounts/', heading: 'chains', drawer: 'accounts-evm' }),
+      route('/accounts/exchanges/', { labelKey: 'exchanges', order: 30, parent: '/accounts/', heading: 'fiat', drawer: 'accounts-exchanges' }),
+    ]);
+
+    const { menuItems } = useNavigationMenu();
+    const group = groupAt(get(menuItems), 0);
+
+    expect(group.items.map(item => [item.testId, item.headingKey])).toStrictEqual([
+      ['accounts-evm', 'chains'],
+      ['accounts-bitcoin', undefined],
+      ['accounts-exchanges', 'fiat'],
+      ['accounts-banks', undefined],
+    ]);
+  });
+
+  it('should leave children without a heading unmarked', () => {
+    set(routes, [
+      route('/balances/', { labelKey: 'balances', order: 30, section: 1, drawer: 'balances' }),
+      route('/balances/blockchain/', { labelKey: 'blockchain', order: 10, parent: '/balances/', drawer: 'balances-blockchain' }),
+    ]);
+
+    const { menuItems } = useNavigationMenu();
+
+    expect(groupAt(get(menuItems), 0).items[0]?.headingKey).toBeUndefined();
+  });
+
+  it('should label a drawer entry with its drawer label when it has one', () => {
+    set(routes, [
+      route('/accounts/', { labelKey: 'accounts', order: 20, section: 1, drawer: 'accounts' }),
+      route('/accounts/evm/', { labelKey: 'evm-accounts', drawerLabelKey: 'evm', order: 10, parent: '/accounts/', drawer: 'accounts-evm' }),
+      route('/accounts/banks/', { labelKey: 'banks', order: 20, parent: '/accounts/', drawer: 'accounts-banks' }),
+    ]);
+
+    const { menuItems } = useNavigationMenu();
+
+    expect(groupAt(get(menuItems), 0).items.map(item => item.labelKey)).toStrictEqual(['evm', 'banks']);
   });
 
   describe('history / data-issues gate', () => {
