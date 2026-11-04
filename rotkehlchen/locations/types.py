@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any, Final, NewType
 
 from rotkehlchen.errors.serialization import DeserializationError
@@ -24,6 +25,12 @@ def deserialize_location_identifier(value: Any) -> LocationIdentifier:
     return LocationIdentifier(value.lower().replace('_', ' '))
 
 
+class LocationScope(StrEnum):
+    """Which locations a location filter selects"""
+    EXACT = 'exact'  # only the given location
+    SUBTREE = 'subtree'  # the given location and every descendant
+
+
 class LocationTreeError(Exception):
     """Raised when a set of location nodes does not form a valid location tree"""
 
@@ -47,4 +54,34 @@ class LocationNode:
             'is_active': self.is_active,
             'icon': self.icon,
             'image': self.image,
+        }
+
+
+class LocationResolutionStatus(StrEnum):
+    RESOLVED = 'resolved'  # the value names exactly one location data can be assigned to
+    AMBIGUOUS = 'ambiguous'  # the value is the name of several such locations
+    UNRESOLVED = 'unresolved'  # the value names no such location
+
+
+@dataclass(frozen=True, slots=True)
+class LocationResolution:
+    """What a location value from imported data, such as a CSV source, refers to"""
+    value: str
+    location: LocationIdentifier | None = None
+    candidates: tuple[LocationIdentifier, ...] = ()  # the locations an ambiguous name matches
+
+    @property
+    def status(self) -> LocationResolutionStatus:
+        if self.location is not None:
+            return LocationResolutionStatus.RESOLVED
+        if len(self.candidates) != 0:
+            return LocationResolutionStatus.AMBIGUOUS
+        return LocationResolutionStatus.UNRESOLVED
+
+    def serialize(self) -> dict[str, str | list[str] | None]:
+        return {
+            'value': self.value,
+            'status': str(self.status),
+            'location': self.location,
+            'candidates': list(self.candidates),
         }

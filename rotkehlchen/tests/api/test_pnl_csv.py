@@ -76,14 +76,14 @@ def assert_csv_export_response(
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 14
-            assert row['location'] in {
-                'kraken',
-                'bittrex',
-                'binance',
-                'poloniex',
-                'ethereum',
-                'zksync lite',
+            assert len(row) == 15
+            assert (row['location'], row['location_path']) in {
+                ('kraken', 'Exchanges > Kraken'),
+                ('bittrex', 'Exchanges > Bittrex'),
+                ('binance', 'Exchanges > Binance'),
+                ('poloniex', 'Exchanges > Poloniex'),
+                ('ethereum', 'Blockchains > EVM Chains > Ethereum Mainnet'),
+                ('zksync lite', 'Blockchains > ZKSync Lite'),
             }
             assert row['type'] in (
                 str(AccountingEventType.TRADE),

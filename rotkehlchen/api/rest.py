@@ -41,6 +41,7 @@ from rotkehlchen.api.services.external_services import ExternalServicesService
 from rotkehlchen.api.services.history import HistoryService
 from rotkehlchen.api.services.history_events import HistoryEventsService
 from rotkehlchen.api.services.integrations import IntegrationsService
+from rotkehlchen.api.services.locations import LocationsService
 from rotkehlchen.api.services.settings import SettingsService, serialize_settings
 from rotkehlchen.api.services.transactions import TransactionsService
 from rotkehlchen.api.services.user_data import UserDataService
@@ -128,6 +129,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.lido_csm import DBLidoCsm
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import (
@@ -176,7 +178,7 @@ from rotkehlchen.history.skipped import (
     get_skipped_external_events_summary,
     reprocess_skipped_external_events,
 )
-from rotkehlchen.locations.types import LocationIdentifier
+from rotkehlchen.locations.types import LocationIdentifier, LocationResolutionStatus
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
     ASSET_MOVEMENT_MATCHING_CAPABILITY,
@@ -261,6 +263,7 @@ from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence
+    from types import EllipsisType
 
     from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.assets.nft_handling import NftHandling
@@ -490,6 +493,7 @@ class RestAPI:
         self.history_events_service = HistoryEventsService(rotkehlchen)
         self.history_service = HistoryService(rotkehlchen)
         self.integrations_service = IntegrationsService(rotkehlchen)
+        self.locations_service = LocationsService(rotkehlchen)
         self.settings_service = SettingsService(rotkehlchen)
         self.transactions_service = TransactionsService(rotkehlchen)
         self.user_data_service = UserDataService(rotkehlchen)
@@ -2285,6 +2289,53 @@ class RestAPI:
     def ping() -> Response:
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
+    def _unresolved_import_locations(
+            self,
+            source: DataImportSource,
+            filepath: Path,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> dict[str, Any] | None:
+        """The failure response of an import whose location values are not all resolved"""
+        try:
+            resolutions = self.rotkehlchen.data_importer.resolve_locations(
+                source=source,
+                filepath=filepath,
+                location_mappings=location_mappings,
+            )
+        except InputError as e:
+            return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.BAD_REQUEST)
+        if all(x.status == LocationResolutionStatus.RESOLVED for x in resolutions):
+            return None
+        return {
+            'result': {'locations': [x.serialize() for x in resolutions]},
+            'message': 'Some locations of the file are unknown or ambiguous. Map them first',
+            'status_code': HTTPStatus.CONFLICT,
+        }
+
+    def import_preflight(
+            self,
+            source: DataImportSource,
+            filepath: FileStorage | Path,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> Response:
+        """How the location values of a file resolve before importing it"""
+        with tempfile.TemporaryDirectory() as temp_directory:
+            if isinstance(filepath, FileStorage):
+                filepath.save(temp_path := Path(temp_directory) / 'import.csv')
+                filepath = temp_path
+            try:
+                resolutions = self.rotkehlchen.data_importer.resolve_locations(
+                    source=source,
+                    filepath=filepath,
+                    location_mappings=location_mappings,
+                )
+            except InputError as e:
+                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
+
+        return api_response(_wrap_in_ok_result({
+            'locations': [x.serialize() for x in resolutions],
+        }), status_code=HTTPStatus.OK)
+
     @async_api_call()
     def _import_data(
             self,
@@ -2292,6 +2343,13 @@ class RestAPI:
             filepath: Path,
             **kwargs: Any,
     ) -> dict[str, Any]:
+        if (unresolved := self._unresolved_import_locations(
+            source=source,
+            filepath=filepath,
+            location_mappings=kwargs.get('location_mappings'),
+        )) is not None:
+            return unresolved
+
         success, msg = self.rotkehlchen.data_importer.import_csv(
             source=source,
             filepath=filepath,
@@ -3219,10 +3277,74 @@ class RestAPI:
 
     def get_associated_locations(self) -> Response:
         locations = self.rotkehlchen.data.db.get_associated_locations()
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            ancestors = DBLocations.ancestor_identifiers(cursor, locations)
         return api_response(
-            result=_wrap_in_ok_result([str(location) for location in locations]),
+            result=_wrap_in_ok_result({
+                'locations': sorted(locations),
+                'ancestors': sorted(ancestors - locations),
+            }),
             status_code=HTTPStatus.OK,
         )
+
+    def get_locations(self) -> Response:
+        return make_response_from_dict(self.locations_service.get_locations())
+
+    def get_location_aliases(self) -> Response:
+        return make_response_from_dict(self.locations_service.get_location_aliases())
+
+    def set_location_alias(self, alias: str, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.set_location_alias(alias, identifier))  # noqa: E501
+
+    def delete_location_alias(self, alias: str) -> Response:
+        return make_response_from_dict(self.locations_service.delete_location_alias(alias))
+
+    def add_location(
+            self,
+            name: str,
+            parent_identifier: LocationIdentifier,
+            icon: str | None,
+    ) -> Response:
+        return make_response_from_dict(self.locations_service.add_location(
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+        ))
+
+    def edit_location(
+            self,
+            identifier: LocationIdentifier,
+            name: str | None,
+            parent_identifier: LocationIdentifier | None,
+            icon: str | EllipsisType | None,
+            is_active: bool | None,
+            dry_run: bool,
+    ) -> Response:
+        return make_response_from_dict(self.locations_service.edit_location(
+            identifier=identifier,
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+            is_active=is_active,
+            dry_run=dry_run,
+        ))
+
+    def delete_location(self, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.delete_location(identifier))
+
+    def get_location_usage(self, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.get_location_usage(identifier))
+
+    def get_location_image(self, identifier: LocationIdentifier, match_header: str | None) -> Response:  # noqa: E501
+        return self.locations_service.get_location_image(identifier, match_header)
+
+    def upload_location_image(self, identifier: LocationIdentifier, filepath: Path) -> Response:
+        return make_response_from_dict(
+            self.locations_service.upload_location_image(identifier, filepath),
+        )
+
+    def delete_location_image(self, identifier: LocationIdentifier) -> Response:
+        return make_response_from_dict(self.locations_service.delete_location_image(identifier))
 
     def get_location_labels(self) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:

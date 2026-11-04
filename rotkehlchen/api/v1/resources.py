@@ -81,6 +81,7 @@ from rotkehlchen.api.v1.schemas import (
     CustomAssetsQuerySchema,
     CustomizedEventDuplicatesFixSchema,
     CustomizedEventDuplicatesIgnoreSchema,
+    DataImportPreflightSchema,
     DataImportSchema,
     DataIssueManualResolveSchema,
     DataIssuesFilterSchema,
@@ -136,9 +137,15 @@ from rotkehlchen.api.v1.schemas import (
     IntegerIdentifierSchema,
     InternalTxConflictsSchema,
     LidoCsmNodeOperatorSchema,
+    LocationAliasDeleteSchema,
+    LocationAliasSchema,
     LocationAssetMappingsDeleteSchema,
     LocationAssetMappingsPostSchema,
     LocationAssetMappingsUpdateSchema,
+    LocationCreateSchema,
+    LocationEditSchema,
+    LocationIdentifierSchema,
+    LocationImageUploadSchema,
     ManualBalanceQuerySchema,
     ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
@@ -283,6 +290,7 @@ from .types import ModuleWithBalances, ModuleWithStats, TaskName
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from types import EllipsisType
 
     from werkzeug.datastructures import FileStorage
 
@@ -719,6 +727,113 @@ class AssociatedLocations(BaseMethodView):
     @require_loggedin_user()
     def get(self) -> Response:
         return self.rest_api.get_associated_locations()
+
+
+class LocationsTreeResource(BaseMethodView):
+    post_schema = LocationCreateSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_locations()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            name: str,
+            parent_identifier: LocationIdentifier,
+            icon: str | None,
+    ) -> Response:
+        return self.rest_api.add_location(
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+        )
+
+
+class LocationAliasesResource(BaseMethodView):
+    put_schema = LocationAliasSchema()
+    delete_schema = LocationAliasDeleteSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_location_aliases()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json')
+    def put(self, alias: str, location_identifier: LocationIdentifier) -> Response:
+        return self.rest_api.set_location_alias(alias=alias, identifier=location_identifier)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, alias: str) -> Response:
+        return self.rest_api.delete_location_alias(alias=alias)
+
+
+class CustomLocationResource(BaseMethodView):
+    patch_schema = LocationEditSchema()
+    delete_schema = LocationIdentifierSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json_and_view_args')
+    def patch(
+            self,
+            identifier: LocationIdentifier,
+            name: str | None,
+            parent_identifier: LocationIdentifier | None,
+            icon: str | EllipsisType | None,
+            is_active: bool | None,
+            dry_run: bool,
+    ) -> Response:
+        return self.rest_api.edit_location(
+            identifier=identifier,
+            name=name,
+            parent_identifier=parent_identifier,
+            icon=icon,
+            is_active=is_active,
+            dry_run=dry_run,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='view_args')
+    def delete(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.delete_location(identifier=identifier)
+
+
+class LocationUsageResource(BaseMethodView):
+    get_schema = LocationIdentifierSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='view_args')
+    def get(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.get_location_usage(identifier=identifier)
+
+
+class LocationImageResource(BaseMethodView):
+    identifier_schema = LocationIdentifierSchema()
+    upload_schema = LocationImageUploadSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(identifier_schema, location='view_args')
+    def get(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.get_location_image(
+            identifier=identifier,
+            match_header=get_match_header(),
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='view_args_and_file')
+    def post(self, identifier: LocationIdentifier, file: FileStorage) -> Response:
+        """Only multipart uploads are accepted, never a path on the backend's filesystem"""
+        with TemporaryDirectory() as temp_directory:
+            filepath = Path(temp_directory) / f'image{Path(file.filename or "image.png").suffix}'
+            file.save(str(filepath))
+            return self.rest_api.upload_location_image(identifier=identifier, filepath=filepath)
+
+    @require_loggedin_user()
+    @use_kwargs(identifier_schema, location='view_args')
+    def delete(self, identifier: LocationIdentifier) -> Response:
+        return self.rest_api.delete_location_image(identifier=identifier)
 
 
 class LocationLabelsResource(BaseMethodView):
@@ -2309,6 +2424,39 @@ class PingResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.ping()
+
+
+class DataImportPreflightResource(BaseMethodView):
+    """How the location values of a file resolve, so unknown ones can be mapped first"""
+    upload_schema = DataImportPreflightSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='json')
+    def put(
+            self,
+            source: DataImportSource,
+            file: Path,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> Response:
+        return self.rest_api.import_preflight(
+            source=source,
+            filepath=file,
+            location_mappings=location_mappings,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='form_and_file')
+    def post(
+            self,
+            source: DataImportSource,
+            file: FileStorage,
+            location_mappings: dict[str, LocationIdentifier] | None,
+    ) -> Response:
+        return self.rest_api.import_preflight(
+            source=source,
+            filepath=file,
+            location_mappings=location_mappings,
+        )
 
 
 class DataImportResource(BaseMethodView):

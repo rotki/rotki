@@ -71,9 +71,17 @@ export class ImportPage {
     await dismissNotificationPopups(this.page);
   }
 
-  async importCsv(sourceKey: string, csvFileName: string): Promise<void> {
+  async importCsv(sourceKey: string, csvFileName: string, locationMappings: Record<string, string> = {}): Promise<void> {
     await this.uploadFile(sourceKey, csvFileName);
     await this.submitImport(sourceKey);
+    for (const [value, destination] of Object.entries(locationMappings)) {
+      const mapping = this.page.getByTestId('import-location-mapping').filter({ has: this.page.getByLabel(value, { exact: true }) });
+      await mapping.locator('[data-id=activator]').click();
+      await mapping.locator('input').fill(destination);
+      await this.page.locator(`[id="balance-location__${destination}"]`).click();
+    }
+    if (Object.keys(locationMappings).length > 0)
+      await this.submitImport(sourceKey);
     await this.waitForImportComplete(sourceKey);
     await this.dismissNotifications();
   }

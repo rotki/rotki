@@ -4,17 +4,22 @@ All location SQL, ancestry and descendant queries and the mutation rules live he
 importers, filters and connection setup agree on what the tree contains.
 """
 import uuid
+from types import EllipsisType
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.locations.catalog import load_builtin_catalog, validate_location_tree
+from rotkehlchen.locations.constants import LOCATION_BLOCKCHAIN
 from rotkehlchen.locations.legacy_chars import LEGACY_LOCATIONS_PARENT, V53_LEGACY_LOCATION_CHARS
 from rotkehlchen.locations.types import (
     CUSTOM_LOCATION_PREFIX,
     ROOT_LOCATION_IDENTIFIER,
     LocationIdentifier,
     LocationNode,
+    LocationResolution,
     LocationTreeError,
+    deserialize_location_identifier,
 )
 
 if TYPE_CHECKING:
@@ -36,7 +41,25 @@ LOCATION_REFERENCES: Final = (
     ('bucket_processing_stops', 'location'),
     ('bucket_balance_checks', 'location'),
 )
+# Categories that were locations of their own before the tree, so old data may name them
+_PRE_TREE_CATEGORIES: Final = frozenset({LOCATION_BLOCKCHAIN})
 _NODE_COLUMNS: Final = 'identifier, name, parent_identifier, is_builtin, is_active, icon, image'
+
+
+def subtree_query(placeholders: str) -> str:
+    """A query selecting the identifiers of the locations bound to the given placeholders and of
+    all their descendants.
+
+    Filters use it as an uncorrelated `location IN (...)` subquery. SQLite evaluates that once
+    per statement and probes the location index with the result, so the tree is not joined
+    against every data row.
+    """
+    return (
+        'WITH RECURSIVE subtree(identifier) AS ('
+        f'SELECT identifier FROM locations WHERE identifier IN ({placeholders}) '
+        'UNION SELECT L.identifier FROM locations L JOIN subtree S '
+        'ON L.parent_identifier=S.identifier) SELECT identifier FROM subtree'
+    )
 
 
 def _node_from_row(row: tuple) -> LocationNode:
@@ -65,7 +88,7 @@ class DBLocations:
         )
 
     @staticmethod
-    def add_legacy_location(write_cursor: DBCursor, char: str) -> str:
+    def add_legacy_location(write_cursor: DBCursor, char: str) -> LocationIdentifier:
         """Add the inactive node of a protocol-labelled location from its pre-v54 character,
         with the legacy parent above it, unless they exist already. Returns its identifier.
 
@@ -83,7 +106,7 @@ class DBLocations:
             'is_active, icon, image) VALUES (?, ?, ?, 1, 0, NULL, ?)',
             (identifier, name, parent_id, image),
         )
-        return identifier
+        return LocationIdentifier(identifier)
 
     @staticmethod
     def get_all(cursor: DBCursor) -> list[LocationNode]:
@@ -111,14 +134,52 @@ class DBLocations:
             return set()
         result = {
             LocationIdentifier(row[0]) for row in cursor.execute(
-                'WITH RECURSIVE subtree(identifier) AS ('
-                f'SELECT identifier FROM locations WHERE identifier IN ({",".join("?" * len(identifiers))}) '  # noqa: E501
-                'UNION SELECT L.identifier FROM locations L JOIN subtree S '
-                'ON L.parent_identifier=S.identifier) SELECT identifier FROM subtree',
+                subtree_query(','.join('?' * len(identifiers))),
                 tuple(identifiers),
             )
         }
         return result if include_self else result - {LocationIdentifier(x) for x in identifiers}
+
+    @staticmethod
+    def ancestor_identifiers(
+            cursor: DBCursor,
+            identifiers: Collection[str],
+    ) -> set[LocationIdentifier]:
+        """Identifiers of every proper ancestor of the given locations, the root included"""
+        if len(identifiers) == 0:
+            return set()
+        return {
+            LocationIdentifier(row[0]) for row in cursor.execute(
+                'WITH RECURSIVE path(identifier) AS ('
+                'SELECT parent_identifier FROM locations '
+                f'WHERE identifier IN ({",".join("?" * len(identifiers))}) '
+                'AND parent_identifier IS NOT NULL '
+                'UNION SELECT L.parent_identifier FROM locations L JOIN path P '
+                'ON L.identifier=P.identifier WHERE L.parent_identifier IS NOT NULL) '
+                'SELECT identifier FROM path',
+                tuple(identifiers),
+            )
+        }
+
+    def display_paths(self, cursor: DBCursor) -> dict[LocationIdentifier, str]:
+        """The display path of every location, e.g. Blockchains > EVM Chains > Ethereum Mainnet.
+        The root is left out since every path starts there, so its own path is its name."""
+        nodes = {x.identifier: x for x in self.get_all(cursor)}
+        paths: dict[LocationIdentifier, str] = {}
+
+        def path_of(node: LocationNode) -> str:
+            if (path := paths.get(node.identifier)) is not None:
+                return path
+            if node.parent_identifier is None or node.parent_identifier == ROOT_LOCATION_IDENTIFIER:  # noqa: E501
+                path = node.name
+            else:
+                path = f'{path_of(nodes[node.parent_identifier])} > {node.name}'
+            paths[node.identifier] = path
+            return path
+
+        for node in nodes.values():
+            path_of(node)
+        return paths
 
     @staticmethod
     def path_names(cursor: DBCursor, identifier: str) -> list[str]:
@@ -148,11 +209,16 @@ class DBLocations:
             cursor: DBCursor,
             identifier: str,
             allow_archived: bool = False,
+            allow_category: bool = False,
     ) -> LocationNode:
         """Check that data can be assigned directly to the given location.
 
-        May raise InputError if the location does not exist, is the root, or is archived
-        and allow_archived is False.
+        A category, a built-in location with built-in locations below it such as Blockchains, only
+        groups others, so it is refused unless allow_category is True. Manual balances and
+        history events pass it to keep accepting categories, as before the tree.
+
+        May raise InputError if the location does not exist, is the root, is archived and
+        allow_archived is False, or is a category and allow_category is False.
         """
         if (node := self.get(cursor, identifier)) is None:
             raise InputError(f'Location {identifier} does not exist')
@@ -160,7 +226,17 @@ class DBLocations:
             raise InputError(f'Location {identifier} is the total and cannot be assigned directly')
         if not allow_archived and not node.is_active:
             raise InputError(f'Location {identifier} is archived')
+        if not allow_category and self.is_category(cursor, node):
+            raise InputError(f'Location {identifier} only groups other locations')
         return node
+
+    @staticmethod
+    def is_category(cursor: DBCursor, node: LocationNode) -> bool:
+        """Whether a location only groups others: a built-in one with built-in children"""
+        return node.is_builtin and cursor.execute(
+            'SELECT EXISTS(SELECT 1 FROM locations WHERE parent_identifier=? AND is_builtin=1)',
+            (node.identifier,),
+        ).fetchone()[0] == 1
 
     def usage(self, cursor: DBCursor, identifier: str) -> dict[str, int]:
         """Rows referencing the location directly and its number of children, only counting
@@ -236,11 +312,14 @@ class DBLocations:
             identifier: str,
             name: str | None = None,
             parent_identifier: str | None = None,
-            icon: str | None = None,
+            icon: str | EllipsisType | None = ...,
             is_active: bool | None = None,
+            dry_run: bool = False,
     ) -> LocationNode:
         """Rename, move, change the icon of or (un)archive a custom location. Only the
-        given fields change.
+        given fields change: None leaves a field unchanged, except for the icon where ...
+        leaves it unchanged and None removes it. A dry run checks the edit and returns the
+        resulting location without writing it.
 
         May raise InputError if the location is built-in, the move would create a cycle or
         place an active location below an archived one, archiving would leave active
@@ -269,12 +348,13 @@ class DBLocations:
             parent_identifier=new_parent_id,
             exclude_identifier=identifier,
         )
-        new_icon = node.icon if icon is None else icon
-        write_cursor.execute(
-            'UPDATE locations SET name=?, parent_identifier=?, icon=?, is_active=? '
-            'WHERE identifier=?',
-            (new_name, new_parent_id, new_icon, new_active, identifier),
-        )
+        new_icon = node.icon if isinstance(icon, EllipsisType) else icon
+        if not dry_run:
+            write_cursor.execute(
+                'UPDATE locations SET name=?, parent_identifier=?, icon=?, is_active=? '
+                'WHERE identifier=?',
+                (new_name, new_parent_id, new_icon, new_active, identifier),
+            )
         return LocationNode(
             identifier=node.identifier,
             name=new_name,
@@ -285,12 +365,106 @@ class DBLocations:
             image=node.image,
         )
 
-    def delete_custom(self, write_cursor: DBCursor, identifier: str) -> None:
+    def delete_custom(self, write_cursor: DBCursor, identifier: str) -> LocationNode:
         """Delete a custom location that has no children and is referenced by no data.
+        Returns the deleted location.
 
         May raise InputError if the location is built-in, still has children or is used.
         """
-        self._get_custom(write_cursor, identifier)
+        node = self._get_custom(write_cursor, identifier)
         if len(usage := self.usage(write_cursor, identifier)) != 0:
             raise InputError(f'Location {identifier} is still in use: {usage}')
         write_cursor.execute('DELETE FROM locations WHERE identifier=?', (identifier,))
+        return node
+
+    def set_custom_image(
+            self,
+            write_cursor: DBCursor,
+            identifier: str,
+            image: str | None,
+    ) -> str | None:
+        """Set or with None remove the uploaded image of a custom location. Returns the
+        image it replaces.
+
+        May raise InputError if the location does not exist or is built-in.
+        """
+        node = self._get_custom(write_cursor, identifier)
+        write_cursor.execute(
+            'UPDATE locations SET image=? WHERE identifier=?', (image, identifier),
+        )
+        return node.image
+
+    @staticmethod
+    def get_aliases(cursor: DBCursor) -> dict[str, LocationIdentifier]:
+        """Every alias with the location it resolves to"""
+        return {
+            alias: LocationIdentifier(identifier) for alias, identifier in cursor.execute(
+                'SELECT alias, location_identifier FROM location_aliases ORDER BY alias',
+            )
+        }
+
+    def set_alias(self, write_cursor: DBCursor, alias: str, identifier: str) -> None:
+        """Make the alias resolve to the location, replacing where it resolved before.
+
+        May raise InputError if the alias is empty or the location can not be assigned data or
+        is a category.
+        """
+        if (alias := alias.strip()) == '':
+            raise InputError('A location alias can not be empty')
+        self.validate_assignable(write_cursor, identifier)
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO location_aliases(alias, location_identifier) VALUES (?, ?)',
+            (alias, identifier),
+        )
+
+    @staticmethod
+    def delete_alias(write_cursor: DBCursor, alias: str) -> None:
+        """May raise InputError if the alias does not exist"""
+        if write_cursor.execute(
+            'DELETE FROM location_aliases WHERE alias=?', (alias.strip(),),
+        ).rowcount == 0:
+            raise InputError(f'Location alias {alias} does not exist')
+
+    def _assignable(
+            self,
+            cursor: DBCursor,
+            identifier: str,
+            allow_category: bool = False,
+    ) -> LocationIdentifier | None:
+        try:
+            return self.validate_assignable(cursor, identifier, allow_category=allow_category).identifier  # noqa: E501
+        except InputError:
+            return None
+
+    def resolve(self, cursor: DBCursor, value: str) -> LocationResolution:
+        """Find the location a value from imported data means, in order: an exact location
+        identifier, a saved alias, then a unique case-insensitive name. Only locations data can
+        be assigned to count, so the total and archived locations never match. A category matches
+        only by the exact identifier of a location from before the tree, such as blockchain, which
+        rotki's own exports name for old data. A name several locations share stays ambiguous
+        instead of picking one.
+        """
+        value = value.strip()
+        try:
+            identifier = deserialize_location_identifier(value)
+            if (location := self._assignable(cursor, identifier, allow_category=identifier in _PRE_TREE_CATEGORIES)) is not None:  # noqa: E501
+                return LocationResolution(value=value, location=location)
+        except DeserializationError:
+            return LocationResolution(value=value)
+
+        if (alias := cursor.execute(
+            'SELECT location_identifier FROM location_aliases WHERE alias=?', (value,),
+        ).fetchone()) is not None and (location := self._assignable(cursor, alias[0])) is not None:
+            return LocationResolution(value=value, location=location)
+
+        matching_identifiers = cursor.execute(
+            'SELECT identifier FROM locations WHERE name=? COLLATE NOCASE ORDER BY identifier',
+            (value,),
+        ).fetchall()
+        matches = tuple(
+            location for (identifier,) in matching_identifiers
+            if (location := self._assignable(cursor, identifier)) is not None
+        )
+        if len(matches) == 1:
+            return LocationResolution(value=value, location=matches[0])
+        return LocationResolution(value=value, candidates=matches)

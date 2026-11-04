@@ -7,19 +7,26 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import (
+    LOCATION_BANKS,
     LOCATION_BINANCE,
     LOCATION_BITCOIN,
+    LOCATION_BLOCKCHAIN,
     LOCATION_ETHEREUM,
     LOCATION_KRAKEN,
     LOCATION_NEXO,
     LOCATION_POLONIEX,
 )
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_error_response,
+    assert_proper_sync_response_with_result,
+)
 from rotkehlchen.tests.utils.exchanges import mock_exchange_data_in_db
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
@@ -46,19 +53,33 @@ def test_get_associated_locations(
         ethereum_accounts: list[ChecksumEvmAddress],  # pylint: disable=unused-argument
         start_with_valid_premium: bool,  # pylint: disable=unused-argument
 ) -> None:
+    """Test that associated locations are the directly used ones, and that the ancestors needed
+    to display their paths are listed apart from them"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     mock_exchange_data_in_db(added_exchanges, rotki)
     db = rotki.data.db
     with db.user_write() as cursor:
+        bank = (db_locations := DBLocations()).add_custom(cursor, name='ING', parent_identifier=LOCATION_BANKS)  # noqa: E501
+        account = db_locations.add_custom(cursor, name='Savings', parent_identifier=bank.identifier)  # noqa: E501
         DBHistoryEvents(db).add_history_events(
             write_cursor=cursor,
-            history=create_swap_events(
+            history=[*create_swap_events(
                 timestamp=TimestampMS(1595833195000),
                 location=LOCATION_NEXO,
                 spend=AssetAmount(asset=A_EUR, amount=ONE),
                 receive=AssetAmount(asset=A_ETH, amount=FVal('281.14')),
                 group_identifier='tradeid',
-            ))
+            ), HistoryEvent(
+                group_identifier='bank_deposit',
+                sequence_index=0,
+                timestamp=TimestampMS(1595833195000),
+                location=account.identifier,
+                asset=A_EUR,
+                amount=ONE,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+            )],
+        )
 
     # get locations
     response = requests.get(
@@ -67,8 +88,10 @@ def test_get_associated_locations(
             'associatedlocations',
         ),
     )
-    result = assert_proper_sync_response_with_result(response)
-    assert set(result) == {'nexo', 'binance', 'poloniex'}
+    assert assert_proper_sync_response_with_result(response) == {
+        'locations': sorted(['nexo', 'binance', 'poloniex', account.identifier]),
+        'ancestors': sorted(['total', 'exchanges', 'banks', bank.identifier]),
+    }
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9DBE4Eb4A0a41955E1DC733E322f84295a0aa5c0']])
@@ -168,3 +191,40 @@ def test_get_location_labels_excludes_untracked_accounts(
     assert len(result) == 1
     assert result[0]['location_label'] == tracked_address
     assert result[0]['location'] == 'ethereum'
+
+
+def test_history_events_location_scope(rotkehlchen_api_server: APIServer) -> None:
+    """Test that the history events endpoint matches a location exactly by default and its
+    whole subtree when asked to"""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.user_write() as write_cursor:
+        DBHistoryEvents(db).add_history_events(write_cursor=write_cursor, history=[HistoryEvent(
+            group_identifier=str(location),
+            sequence_index=0,
+            timestamp=TimestampMS(1500000000000),
+            location=location,
+            asset=A_ETH,
+            amount=ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+        ) for location in (LOCATION_ETHEREUM, LOCATION_BLOCKCHAIN, LOCATION_KRAKEN)])
+
+    for filters, expected in (
+        ({'location': 'blockchain'}, {'blockchain'}),
+        ({'location': 'blockchain', 'location_scope': 'exact'}, {'blockchain'}),
+        ({'location': 'blockchain', 'location_scope': 'subtree'}, {'blockchain', 'ethereum'}),
+        ({'location': 'total', 'location_scope': 'subtree'}, {'blockchain', 'ethereum', 'kraken'}),
+    ):
+        result = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=filters,
+        ))
+        assert {x['entry']['location'] for x in result['entries']} == expected, filters
+
+    assert_error_response(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json={'location': 'blockchain', 'location_scope': 'children'},
+        ),
+        contained_in_msg='location_scope',
+    )

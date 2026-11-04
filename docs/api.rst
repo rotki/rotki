@@ -6955,7 +6955,8 @@ Exporting History Events
    :reqjson list[string] group_identifiers: An optional list of group identifiers to filter for.
    :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
    :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
-   :reqjson list location: An optional location name to filter events only for that location.
+   :reqjson string location: An optional location identifier to filter events only for that location.
+   :reqjson string location_scope: Optional. How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
    :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows you to provide more information about the location. When used in blockchains, it is used to specify the user's address. For exchange events, it's the exchange name assigned by the user.
    :reqjson string notes_substring: An optional string to filter events by searching for a substring in the notes field. This searches both user notes and auto-generated notes. Auto-generated notes are matched without the asset symbol, so search for an asset with the asset filter rather than by its symbol in the notes.
    :reqjson object entry_types: An object with two keys named 'values' and 'behavior'. 'values' is a list of entry types to optionally filter by. 'behavior' is optional and is a string with the value 'include' or 'exclude' which defines the filtering behavior. It defaults to 'include'. Entry type is the event category and defines the schema. Possible values are: "history event," "evm event," "eth withdrawal event," "eth block event," "eth deposit event."
@@ -11928,6 +11929,7 @@ Data imports
    :reqjson str filepath: The filepath to the data for importing
    :reqjson str timestamp_format: Optional. Custom format to use for dates in the CSV file. Should follow rules at `Datetime docs <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__.
    :reqjson str timezone: Optional. IANA timezone name to use for dates in the CSV file that do not include timezone information. Defaults to ``"UTC"``. Example: ``"Europe/Madrid"``.
+   :reqjson object location_mappings: Optional. Only for ``"rotki_events"`` and ``"rotki_trades"``, whose rows name their location. Maps values of the ``Location`` column to location identifiers, for values that do not resolve by themselves. Keys are trimmed; use ``{"": "external"}`` to map empty or whitespace-only locations to External. Destinations must still be active, assignable locations. A multipart POST sends it as a JSON string. See `Check the locations of an import`_ for how values resolve.
 
    **Example Response**:
 
@@ -11943,8 +11945,54 @@ Data imports
 
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: Data imported. Check user messages for warnings.
-   :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in.
+   :statuscode 400: Provided JSON or data is in some way malformed, or a mapping points at a location data can not be assigned to.
+   :statuscode 409: User is not logged in, or a location value of the file is unknown or ambiguous and not mapped. Nothing is imported then, and the result holds ``locations`` exactly like `Check the locations of an import`_.
+   :statuscode 500: Internal rotki error
+
+Check the locations of an import
+================================
+
+.. http:put:: /api/(version)/import/preflight
+
+   Doing a PUT on this endpoint with the same ``source`` and ``file`` as an import reports what every distinct value of the file's ``Location`` column resolves to, before importing it. Only ``"rotki_events"`` and ``"rotki_trades"`` files have such a column; for other sources the list is empty. A POST takes the file as a multipart upload instead.
+
+   A value resolves in this order: a location identifier, a saved location alias, then the case-insensitive name of exactly one location. Only locations data can be assigned to count, so ``total`` and archived locations never match. A value matching the names of several locations is ambiguous and never resolves on its own. A value no rule resolves used to be imported at ``external``; it now has to be mapped.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/import/preflight HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"source": "rotki_events", "file": "/path/to/events.csv", "location_mappings": {"luno": "external"}}
+
+   :reqjson str source: The source of the data, as for the import
+   :reqjson str file: The file to check
+   :reqjson object location_mappings: Optional. Mappings to check together with the file, as for the import
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"locations": [
+              {"value": "ING", "status": "ambiguous", "location": null, "candidates": ["custom:1b0c...", "custom:9f3e..."]},
+              {"value": "kraken", "status": "resolved", "location": "kraken", "candidates": []},
+              {"value": "luno", "status": "resolved", "location": "external", "candidates": []},
+              {"value": "My old exchange", "status": "unresolved", "location": null, "candidates": []}
+          ]},
+          "message": ""
+      }
+
+   :resjson list locations: One entry per distinct value, sorted by value. ``status`` is ``resolved`` (``location`` is where its rows go), ``ambiguous`` (``candidates`` are the locations with that name) or ``unresolved``.
+   :statuscode 200: Locations checked
+   :statuscode 400: Provided JSON or file is malformed, or a mapping points at a location data can not be assigned to
+   :statuscode 401: No user is logged in
    :statuscode 500: Internal rotki error
 
 ERC20 token info
@@ -12383,12 +12431,232 @@ Downloading a database backup
    :statuscode 409: Failure to download the backup or the requested file to download is not in the user's data directory.
    :statuscode 500: Internal rotki error.
 
+Location tree
+=============
+
+Locations form a tree rooted at ``total``. rotki ships the built-in locations, which can not be modified. Users can add custom locations below any active location, including below a built-in leaf. A custom location identifier looks like ``custom:<uuid>``, is generated by the backend and never changes, while its name can. Identifiers in the URLs below must be URL encoded (for example ``evm%20chains``).
+
+.. http:get:: /api/(version)/locations
+
+   Returns every location of the tree, archived ones included.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/locations HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+              "identifier": "ethereum",
+              "name": "Ethereum Mainnet",
+              "parent_identifier": "evm chains",
+              "is_builtin": true,
+              "is_active": true,
+              "icon": null,
+              "image": "ethereum.svg"
+          }, {
+              "identifier": "custom:550e8400-e29b-41d4-a716-446655440000",
+              "name": "ING",
+              "parent_identifier": "banks",
+              "is_builtin": false,
+              "is_active": true,
+              "icon": "lu-landmark",
+              "image": null
+          }],
+          "message": ""
+      }
+
+   :resjsonarr string identifier: The immutable identifier of the location.
+   :resjsonarr string name: The display name. Unique among the location's siblings, ignoring case.
+   :resjsonarr string parent_identifier: The parent location. ``null`` only for ``total``.
+   :resjsonarr bool is_builtin: Whether rotki ships the location. Built-in locations can not be modified.
+   :resjsonarr bool is_active: False for an archived location. Archived locations keep their data but should not be offered for new data.
+   :resjsonarr string icon: Optional name of an icon of the frontend icon library.
+   :resjsonarr string image: Optional image. For a built-in location the name of an image packaged with the frontend. For a custom location the name of its uploaded image, served by ``/locations/<identifier>/image``. The name changes whenever the image is replaced. An image takes precedence over an icon.
+   :statuscode 200: Locations successfully queried.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+.. http:post:: /api/(version)/locations
+
+   Creates a custom location.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/locations HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"name": "ING", "parent_identifier": "banks", "icon": "lu-landmark"}
+
+   :reqjson string name: The display name.
+   :reqjson string parent_identifier: The active location to create it below.
+   :reqjson string icon: Optional. The name of an icon of the frontend icon library, such as ``lu-landmark``.
+   :resjson object result: The created location, in the format of ``GET /locations``.
+   :statuscode 200: Location created.
+   :statuscode 400: Invalid input, the parent does not exist or is archived, or a sibling already has the name.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+.. http:patch:: /api/(version)/locations/(identifier)
+
+   Renames, moves, changes the icon of, archives or unarchives a custom location. Only the given fields change. Moving a location changes where its history is aggregated, so a client can first send the edit with ``dry_run`` to show the old and new paths before committing it.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/locations/custom:550e8400-e29b-41d4-a716-446655440000 HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"parent_identifier": "other", "dry_run": true}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "location": {"identifier": "custom:550e8400-e29b-41d4-a716-446655440000", "name": "ING", "parent_identifier": "other", "is_builtin": false, "is_active": true, "icon": "lu-landmark", "image": null},
+              "old_path": ["Total", "Banks", "ING"],
+              "new_path": ["Total", "Other", "ING"]
+          },
+          "message": ""
+      }
+
+   :reqjson string name: Optional. The new display name.
+   :reqjson string parent_identifier: Optional. The new parent. It can not be the location itself or one of its descendants.
+   :reqjson string icon: Optional. The new icon name, or ``null`` to remove the icon.
+   :reqjson bool is_active: Optional. False archives the location, which requires its children to be archived first. An active location can not be below an archived one.
+   :reqjson bool dry_run: Optional, default false. If true the edit is only checked and nothing is saved.
+   :resjson object location: The location after the edit.
+   :resjson list[string] old_path: The display names from the root to the location before the edit.
+   :resjson list[string] new_path: The display names from the root to the location after the edit.
+   :statuscode 200: Location edited, or the dry run found the edit valid.
+   :statuscode 400: The location is built-in or the edit breaks a tree rule.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The location does not exist.
+   :statuscode 500: Internal rotki error.
+
+.. http:delete:: /api/(version)/locations/(identifier)
+
+   Deletes a custom location that has no children and no data, together with its uploaded image. Archive a location that is still used instead.
+
+   :statuscode 200: Location deleted.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The location does not exist.
+   :statuscode 409: The location is built-in, has children or is used by data.
+   :statuscode 500: Internal rotki error.
+
+.. http:get:: /api/(version)/locations/(identifier)/usage
+
+   Returns what prevents deleting a location.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {"result": {"usage": {"history_events": 12, "children": 1}, "deletable": false}, "message": ""}
+
+   :resjson object usage: Number of rows directly using the location per table, and its number of children under ``children``. Only non zero counts are listed.
+   :resjson bool deletable: Whether the location can be deleted. Built-in locations never can.
+   :statuscode 200: Usage successfully queried.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The location does not exist.
+   :statuscode 500: Internal rotki error.
+
+.. http:post:: /api/(version)/locations/(identifier)/image
+
+   Uploads or replaces the image of a custom location as a multipart ``file`` field. Accepted file types are the ones of custom asset icons: ``.png``, ``.svg``, ``.jpeg``, ``.jpg`` and ``.webp``. Paths on the backend's filesystem and remote URLs are not accepted.
+
+   :resjson string image: The name of the stored image, also returned as ``image`` by ``GET /locations``.
+   :statuscode 200: Image stored.
+   :statuscode 400: Unsupported file type, or the location is built-in.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The location does not exist.
+   :statuscode 409: The image could not be stored.
+   :statuscode 500: Internal rotki error.
+
+.. http:get:: /api/(version)/locations/(identifier)/image
+
+   Returns the uploaded image of a custom location, with an ``ETag`` so that a request with a matching ``If-None-Match`` header gets ``304``.
+
+   :statuscode 200: The image.
+   :statuscode 304: The image did not change.
+   :statuscode 404: The location has no uploaded image.
+
+.. http:delete:: /api/(version)/locations/(identifier)/image
+
+   Removes the uploaded image of a custom location, which then shows its icon or the generic location icon.
+
+   :statuscode 200: Image removed.
+   :statuscode 400: The location is built-in.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The location does not exist.
+   :statuscode 500: Internal rotki error.
+
+Location aliases
+================
+
+.. http:get:: /api/(version)/locations/aliases
+
+   Doing a GET on this endpoint returns every location alias. An alias is another name a location is known by in imported files, such as a bank's name in its CSV export. It resolves imported values to its location after exact identifiers and before names, see `Check the locations of an import`_.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {"result": [{"alias": "ING Diba", "location_identifier": "custom:1b0c..."}], "message": ""}
+
+   :statuscode 200: Aliases returned
+   :statuscode 401: No user is logged in
+
+.. http:put:: /api/(version)/locations/aliases
+
+   Doing a PUT on this endpoint makes an alias resolve to a location, replacing the location it resolved to before. Aliases compare case-insensitively and are deleted with their location.
+
+   :reqjson str alias: The alias
+   :reqjson str location_identifier: The location, one data can be assigned to
+   :statuscode 200: Alias saved
+   :statuscode 400: The alias is empty or the location is the total, archived or does not exist
+   :statuscode 401: No user is logged in
+
+.. http:delete:: /api/(version)/locations/aliases
+
+   Doing a DELETE on this endpoint removes an alias.
+
+   :reqjson str alias: The alias
+   :statuscode 200: Alias removed
+   :statuscode 404: The alias does not exist
+   :statuscode 401: No user is logged in
+
 Get associated locations
 ========================
 
 .. http:get:: /api/(version)/locations/associated
 
-   Doing a GET on this endpoint will return a list of locations where the user has information. It contains locations imported in CSV, exchanges and DeFi locations.
+   Doing a GET on this endpoint will return the locations where the user has information: locations of history events and margin positions, and locations of connected exchanges and banks. ``locations`` lists only the locations the data is directly assigned to. ``ancestors`` lists the further locations needed to display their paths in the location tree. A parent is not directly used merely because one of its descendants is.
 
    **Example Request**:
 
@@ -12405,10 +12673,15 @@ Get associated locations
       Content-Type: application/json
 
       {
-          "result": ["nexo", "kraken", "uniswap"],
+          "result": {
+              "locations": ["ethereum", "kraken", "nexo"],
+              "ancestors": ["blockchain", "evm chains", "exchanges", "total"]
+          },
           "message": ""
       }
 
+   :resjson list[string] locations: Identifiers of the locations data is directly assigned to.
+   :resjson list[string] ancestors: Identifiers of every further ancestor of those locations.
    :statuscode 200: Locations successfully queried.
    :statuscode 401: User is not logged in.
    :statuscode 409: Other error. Check error message for details.
@@ -15556,6 +15829,7 @@ Data Issues
     :query state: Optional comma separated or repeated list of states.
     :query kind: Optional comma separated or repeated list of issue kinds.
     :query location: Optional location filter.
+    :query location_scope: Optional. How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
     :query location_label: Optional account/location label filter.
     :query asset: Optional asset identifier filter.
     :query from_timestamp: Optional lower bound for issue time range overlap.
@@ -15868,6 +16142,7 @@ Historical Balance Queries
       :reqjsonarr integer timestamp: The timestamp to query the balance for
       :reqjsonarr string asset: (Optional) The asset identifier to query balance for. If not provided, returns balances for all assets.
       :reqjsonarr string location: (Optional) Filter balances by location (e.g., "ethereum", "kraken", "binance"). If not provided, returns balances across all locations.
+      :reqjsonarr string location_scope: (Optional) How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
       :reqjsonarr string location_label: (Optional) Filter balances by location label (e.g., a specific wallet address). If not provided, returns balances across all location labels.
       :reqjsonarr string protocol: (Optional) Filter balances by protocol (e.g., "aave", "uniswap-v2"). If not provided, returns balances across all protocols.
       :reqjsonarr boolean group_by_account: (Optional, default false) If true, returns one record per location, location label, protocol and asset bucket instead of aggregating by asset.
@@ -15998,6 +16273,7 @@ Historical Balance Queries
 
       :reqjsonarr string asset: (Optional) The asset identifier to query balance for.
       :reqjsonarr string location: (Optional) Filter balances by location.
+      :reqjsonarr string location_scope: (Optional) How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
       :reqjsonarr string location_label: (Optional) Filter balances by location label.
       :reqjsonarr string protocol: (Optional) Filter balances by protocol.
 
@@ -16141,6 +16417,7 @@ Historical Balance Queries
       :reqjsonarr integer from_timestamp: (Optional, default 0) Inclusive start timestamp.
       :reqjsonarr integer to_timestamp: (Optional, default now) Inclusive end timestamp.
       :reqjsonarr string location: (Optional) Filter balances by location.
+      :reqjsonarr string location_scope: (Optional) How ``location`` matches. ``exact`` (default) matches only the given location. ``subtree`` also matches every location below it in the location tree, so ``{"location": "banks", "location_scope": "subtree"}`` matches every bank. The subtree of ``total`` is every location.
       :reqjsonarr string protocol: (Optional) Filter balances by protocol.
 
     **Example Response:**

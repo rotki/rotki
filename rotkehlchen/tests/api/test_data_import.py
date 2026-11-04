@@ -524,12 +524,25 @@ def test_data_import_rotki_generic_trades(
         rotkehlchen_api_server: APIServer,
         websocket_connection: WebsocketReader,
 ) -> None:
-    """Test that data import works for rotki generic trades import csv file."""
+    """Test that data import works for rotki generic trades import csv file. The file names
+    luno, which is no location, so it is only imported once mapped to one."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'rotki_generic_trades.csv'
 
-    json_data = {'source': 'rotki_trades', 'file': str(filepath)}
+    assert_error_response(
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'dataimportresource'),
+            json={'source': 'rotki_trades', 'file': str(filepath)},
+        ),
+        contained_in_msg='Map them first',
+        status_code=HTTPStatus.CONFLICT,
+        result_exists=True,
+    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0
+
+    json_data = {'source': 'rotki_trades', 'file': str(filepath), 'location_mappings': {'luno': 'external'}}  # noqa: E501
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -549,6 +562,7 @@ def test_data_import_rotki_generic_trades(
         'source': 'rotki_trades',
         'file': str(filepath),
         'timestamp_format': '%Y-%m-%d %H:%M:%S',
+        'location_mappings': {'luno': 'external'},
     }
     response = requests.put(
         api_url_for(
@@ -571,7 +585,7 @@ def test_data_import_rotki_generic_events(
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'rotki_generic_events.csv'
 
-    json_data = {'source': 'rotki_events', 'file': str(filepath)}
+    json_data = {'source': 'rotki_events', 'file': str(filepath), 'location_mappings': {'luno': 'external', 'cex': 'external'}}  # noqa: E501
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,

@@ -101,8 +101,12 @@ def add_manually_tracked_balances(
     if len(data) == 0:
         raise InputError('Empty list of manually tracked balances to add was given')
     with db.user_write() as cursor:
-        for entry in data:
-            DBLocations().validate_assignable(cursor=cursor, identifier=entry.location)
+        for location in dict.fromkeys(entry.location for entry in data):  # dedupe, in entry order
+            DBLocations().validate_assignable(
+                cursor=cursor,
+                identifier=location,
+                allow_category=True,
+            )
         db.ensure_tags_exist(
             cursor=cursor,
             given_data=data,
@@ -124,11 +128,12 @@ def edit_manually_tracked_balances(db: DBHandler, data: list[ManuallyTrackedBala
     if len(data) == 0:
         raise InputError('Empty list of manually tracked balances to edit was given')
     with db.user_write() as cursor:
-        for entry in data:
+        for location in dict.fromkeys(entry.location for entry in data):  # dedupe, in entry order
             DBLocations().validate_assignable(
                 cursor=cursor,
-                identifier=entry.location,
+                identifier=location,
                 allow_archived=True,
+                allow_category=True,
             )
         db.ensure_tags_exist(
             cursor=cursor,
