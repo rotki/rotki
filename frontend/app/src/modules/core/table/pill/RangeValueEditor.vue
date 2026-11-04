@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { ActiveFilter, FieldDef, FilterOp } from '@/modules/core/table/pill/core/types';
 import { FilterOps } from '@/modules/core/table/filtering';
-import { useOperatorLabels } from '@/modules/core/table/pill/composables/use-operator-labels';
-import { operatorsFor } from '@/modules/core/table/pill/core/operators';
+import PillOperatorToggle from '@/modules/core/table/pill/PillOperatorToggle.vue';
 
 const { field, filter } = defineProps<{
   field: FieldDef;
@@ -15,7 +14,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const operatorLabels = useOperatorLabels();
 
 // `autofocus` is ignored for an input inserted into an already-loaded document, hence the explicit focus below.
 const firstField = useTemplateRef<{ focus?: () => void }>('firstField');
@@ -25,7 +23,6 @@ onMounted(async () => {
   get(firstField)?.focus?.();
 });
 
-const operators = computed<readonly FilterOp[]>(() => operatorsFor(field));
 const showMin = computed<boolean>(() => filter.op !== FilterOps.LT);
 const showMax = computed<boolean>(() => filter.op !== FilterOps.GT);
 
@@ -113,10 +110,8 @@ function retainedRange(op: FilterOp): { min?: string; max?: string } {
   return range;
 }
 
-function setOperator(op: FilterOp | FilterOp[] | undefined): void {
-  if (op === undefined || Array.isArray(op))
-    return;
-  // Operator changes apply immediately (not debounced).
+/** Applies an operator change at once, without the debounce typed bounds go through. */
+function setOperator(op: FilterOp): void {
   const range = retainedRange(op);
   set(minInput, range.min ?? '');
   set(maxInput, range.max ?? '');
@@ -126,25 +121,12 @@ function setOperator(op: FilterOp | FilterOp[] | undefined): void {
 
 <template>
   <div class="flex flex-col gap-3 p-3 min-w-64">
-    <RuiButtonGroup
-      v-if="operators.length > 1"
+    <PillOperatorToggle
       class="mb-1"
-      :model-value="filter.op"
-      color="primary"
-      size="sm"
-      required
-      @update:model-value="setOperator($event)"
-    >
-      <RuiButton
-        v-for="op in operators"
-        :key="op"
-        :model-value="op"
-        data-testid="pill-op"
-        :data-key="op"
-      >
-        {{ operatorLabels[op] }}
-      </RuiButton>
-    </RuiButtonGroup>
+      :field="field"
+      :op="filter.op"
+      @update:op="setOperator($event)"
+    />
 
     <RuiTextField
       v-if="showMin"

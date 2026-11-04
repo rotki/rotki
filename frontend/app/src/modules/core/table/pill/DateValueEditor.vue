@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { ActiveFilter, FieldDef, FilterOp } from '@/modules/core/table/pill/core/types';
 import { FilterOps } from '@/modules/core/table/filtering';
-import { useOperatorLabels } from '@/modules/core/table/pill/composables/use-operator-labels';
-import { operatorsFor } from '@/modules/core/table/pill/core/operators';
+import PillOperatorToggle from '@/modules/core/table/pill/PillOperatorToggle.vue';
 
 const { field, filter } = defineProps<{
   field: FieldDef;
@@ -48,9 +47,6 @@ function onEscape(): void {
 }
 
 const { t } = useI18n({ useScope: 'global' });
-const operatorLabels = useOperatorLabels();
-
-const operators = computed<readonly FilterOp[]>(() => operatorsFor(field));
 const showFrom = computed<boolean>(() => filter.op !== FilterOps.BEFORE);
 const showTo = computed<boolean>(() => filter.op !== FilterOps.AFTER);
 
@@ -105,9 +101,8 @@ function toEpoch(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function setOperator(op: FilterOp | FilterOp[] | undefined): void {
-  if (op !== undefined && !Array.isArray(op))
-    emit('update', { ...filter, op });
+function setOperator(op: FilterOp): void {
+  emit('update', { ...filter, op });
 }
 
 function setBound(bound: 'from' | 'to', value: number | Date | undefined): void {
@@ -121,25 +116,12 @@ function setBound(bound: 'from' | 'to', value: number | Date | undefined): void 
     class="flex flex-col gap-3 p-3 min-w-64"
     @keydown.esc="onEscape()"
   >
-    <RuiButtonGroup
-      v-if="operators.length > 1"
+    <PillOperatorToggle
       class="mb-1"
-      :model-value="filter.op"
-      color="primary"
-      size="sm"
-      required
-      @update:model-value="setOperator($event)"
-    >
-      <RuiButton
-        v-for="op in operators"
-        :key="op"
-        :model-value="op"
-        data-testid="pill-op"
-        :data-key="op"
-      >
-        {{ operatorLabels[op] }}
-      </RuiButton>
-    </RuiButtonGroup>
+      :field="field"
+      :op="filter.op"
+      @update:op="setOperator($event)"
+    />
 
     <RuiDateTimePicker
       v-if="showFrom"

@@ -25,6 +25,11 @@ export function operatorsFor(field: FieldDef): readonly FilterOp[] {
   return field.operators.length > 0 ? field.operators : DEFAULT_OPERATORS[field.valueType];
 }
 
+/** Whether a field allows more than one operator, so its editor has a choice to offer. */
+export function hasOperatorChoice(field: FieldDef): boolean {
+  return operatorsFor(field).length > 1;
+}
+
 /** The default operator for a field: the first allowed one. Hidden on the pill. */
 export function defaultOp(field: FieldDef): FilterOp {
   return operatorsFor(field)[0];

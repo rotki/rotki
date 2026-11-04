@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { isValidEthAddress } from '@rotki/common';
-import { useOperatorLabels } from '@/modules/core/table/pill/composables/use-operator-labels';
-import { operatorsFor } from '@/modules/core/table/pill/core/operators';
 import { resolveOptionalText, resolveText } from '@/modules/core/table/pill/core/text';
 import { type ActiveFilter, DisplayKinds, type FieldDef, type FilterOp } from '@/modules/core/table/pill/core/types';
+import PillOperatorToggle from '@/modules/core/table/pill/PillOperatorToggle.vue';
 import { useScramble } from '@/modules/settings/use-scramble';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
 
@@ -21,7 +20,6 @@ const emit = defineEmits<{
 const KEYSTROKE_COMMIT_DEBOUNCE_MS = 300;
 
 const { t } = useI18n({ useScope: 'global' });
-const operatorLabels = useOperatorLabels();
 const { scrambleAddress } = useScramble();
 
 /**
@@ -51,8 +49,6 @@ function chipLabel(value: string): string {
 }
 
 const isAddress = computed<boolean>(() => field.display === DisplayKinds.ADDRESS);
-const operators = computed<readonly FilterOp[]>(() => operatorsFor(field));
-const showOperators = computed<boolean>(() => get(operators).length > 1);
 
 const input = ref<string>(field.multiple ? '' : (filter.values[0] ?? ''));
 
@@ -136,9 +132,8 @@ function removeToken(value: string): void {
   emitValues(filter.values.filter(item => item !== value));
 }
 
-function setOperator(op: FilterOp | FilterOp[] | undefined): void {
-  if (op !== undefined && !Array.isArray(op))
-    emit('update', { ...filter, op });
+function setOperator(op: FilterOp): void {
+  emit('update', { ...filter, op });
 }
 
 watchDebounced(input, (value) => {
@@ -163,24 +158,11 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex flex-col gap-3 p-3 w-80">
-    <RuiButtonGroup
-      v-if="showOperators"
-      :model-value="filter.op"
-      color="primary"
-      size="sm"
-      required
-      @update:model-value="setOperator($event)"
-    >
-      <RuiButton
-        v-for="op in operators"
-        :key="op"
-        :model-value="op"
-        data-testid="pill-op"
-        :data-key="op"
-      >
-        {{ operatorLabels[op] }}
-      </RuiButton>
-    </RuiButtonGroup>
+    <PillOperatorToggle
+      :field="field"
+      :op="filter.op"
+      @update:op="setOperator($event)"
+    />
 
     <div
       v-if="field.multiple && filter.values.length > 0"
