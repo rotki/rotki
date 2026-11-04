@@ -3,9 +3,10 @@ import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 /** The page frame of an asset mapping admin (exchange or counterparty): title, Refresh and Add. */
-const { loading, addTestId } = defineProps<{
+const { loading, addTestId, addLabel } = defineProps<{
   loading: boolean;
   addTestId: string;
+  addLabel: string;
 }>();
 
 const emit = defineEmits<{
@@ -46,7 +47,7 @@ const { t } = useI18n({ useScope: 'global' });
         <template #prepend>
           <RuiIcon name="lu-plus" />
         </template>
-        {{ t('asset_management.cex_mapping.add_mapping') }}
+        {{ addLabel }}
       </RuiButton>
     </template>
     <slot />

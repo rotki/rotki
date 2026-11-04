@@ -1,6 +1,6 @@
 import type { DeepReadonly, Ref } from 'vue';
 import { get } from '@vueuse/core';
-import { useSelectedAssetActions } from '@/modules/assets/use-selected-asset-actions';
+import { useSelectedAssetIgnoring, useSelectedAssetSpam } from '@/modules/assets/use-selected-asset-actions';
 
 interface UseAccountAssetSelectionReturn {
   handleIgnoreSelected: (ignored: boolean) => Promise<void>;
@@ -16,7 +16,8 @@ export function useAccountAssetSelection(
   const selectionMode = shallowRef<boolean>(false);
   const selectedAssets = ref<string[]>([]);
 
-  const { ignoreSelected, markSelectedAsSpam } = useSelectedAssetActions();
+  const { ignoreSelected } = useSelectedAssetIgnoring();
+  const { markSelectedAsSpam } = useSelectedAssetSpam();
 
   function toggleSelectionMode(): void {
     set(selectionMode, !get(selectionMode));

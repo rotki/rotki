@@ -7,8 +7,8 @@ import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 interface UseNftDomainWhitelistReturn {
-  /** The domain the NFT media is served from, or null when there is no media URL. */
-  domain: ComputedRef<string | null>;
+  /** The registrable domain the NFT media is served from; empty when there is no media URL. */
+  domain: ComputedRef<string>;
   /** Asks the user to confirm, then adds `domain` to the domains whose NFT media is rendered. */
   confirmAllowDomain: () => void;
 }
@@ -24,7 +24,7 @@ export function useNftDomainWhitelist(mediaUrl: MaybeRefOrGetter<string | null>)
   const whitelistedDomainsForNftImages = useSetting('whitelistedDomainsForNftImages');
   const { updateFrontendSetting } = useSettingsOperations();
 
-  const domain = computed<string | null>(() => getDomain(toValue(mediaUrl) ?? ''));
+  const domain = computed<string>(() => getDomain(toValue(mediaUrl) ?? ''));
 
   function allowDomain(): void {
     const domainVal = get(domain);

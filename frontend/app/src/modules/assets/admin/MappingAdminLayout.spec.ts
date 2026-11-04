@@ -16,7 +16,7 @@ function createWrapper(loading = false): VueWrapper<InstanceType<typeof MappingA
         TablePageLayout: { template: '<div><slot name="buttons" /><slot /></div>' },
       },
     },
-    props: { addTestId: 'add-mapping', loading },
+    props: { addLabel: 'Add a mapping', addTestId: 'add-mapping', loading },
     slots: { default: '<div data-testid="content" />' },
   });
 }
@@ -34,8 +34,10 @@ describe('modules/assets/admin/MappingAdminLayout', () => {
   it('should ask to add a mapping from the button carrying the given test id', async () => {
     const wrapper = createWrapper();
 
-    await wrapper.find('[data-testid=add-mapping]').trigger('click');
+    const add = wrapper.find('[data-testid=add-mapping]');
+    await add.trigger('click');
 
+    expect(add.text()).toBe('Add a mapping');
     expect(wrapper.emitted('add')).toEqual([[]]);
     expect(wrapper.emitted('refresh')).toBeUndefined();
   });

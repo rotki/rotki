@@ -4,25 +4,27 @@ import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
-interface UseSelectedAssetActionsReturn {
+interface UseSelectedAssetIgnoringReturn {
   ignoreSelected: (identifiers: string[], ignored: boolean) => Promise<boolean>;
+}
+
+interface UseSelectedAssetSpamReturn {
   markSelectedAsSpam: (identifiers: string[]) => Promise<boolean>;
 }
 
 /**
- * Bulk ignore, unignore and mark-as-spam for a table selection of asset identifiers.
+ * Bulk ignore and unignore for a table selection of asset identifiers.
  *
  * @remarks
- * Both actions tell the user when there is nothing to act on instead of calling the backend with an
- * empty list. Each resolves to whether the backend call succeeded, so the caller decides what to
- * clear and refresh afterwards.
+ * Tells the user when there is nothing to act on instead of calling the backend with an empty list,
+ * and resolves to whether the backend call succeeded, so the caller decides what to clear and
+ * refresh afterwards.
  */
-export function useSelectedAssetActions(): UseSelectedAssetActionsReturn {
+export function useSelectedAssetIgnoring(): UseSelectedAssetIgnoringReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { showErrorMessage } = useNotifications();
   const { isAssetIgnored } = useAssetsStore();
   const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
-  const { markAssetsAsSpam } = useSpamAsset();
 
   /**
    * Ignores (or unignores) the selected assets.
@@ -46,6 +48,18 @@ export function useSelectedAssetActions(): UseSelectedAssetActionsReturn {
     return status.success;
   }
 
+  return { ignoreSelected };
+}
+
+/**
+ * Bulk mark-as-spam for a table selection of asset identifiers, with the same empty-selection
+ * message and success result as {@link useSelectedAssetIgnoring}.
+ */
+export function useSelectedAssetSpam(): UseSelectedAssetSpamReturn {
+  const { t } = useI18n({ useScope: 'global' });
+  const { showErrorMessage } = useNotifications();
+  const { markAssetsAsSpam } = useSpamAsset();
+
   async function markSelectedAsSpam(identifiers: string[]): Promise<boolean> {
     const ids = identifiers.filter(uniqueStrings);
 
@@ -58,8 +72,5 @@ export function useSelectedAssetActions(): UseSelectedAssetActionsReturn {
     return status.success;
   }
 
-  return {
-    ignoreSelected,
-    markSelectedAsSpam,
-  };
+  return { markSelectedAsSpam };
 }

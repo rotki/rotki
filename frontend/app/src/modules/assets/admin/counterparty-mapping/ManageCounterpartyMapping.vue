@@ -73,6 +73,7 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
   <MappingAdminLayout
     :loading="loading"
     add-test-id="managed-counterparty-mapping-add-btn"
+    :add-label="t('asset_management.cex_mapping.add_mapping')"
     @refresh="refetch()"
     @add="add()"
   >
@@ -82,7 +83,6 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
       :collection="collection"
       :fields="fields"
       :loading="loading"
-      @refresh="refetch()"
       @edit="edit($event)"
       @delete="showDeleteConfirmation($event)"
     />

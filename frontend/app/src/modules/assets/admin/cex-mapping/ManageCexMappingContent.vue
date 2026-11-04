@@ -72,6 +72,7 @@ const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
   <MappingAdminLayout
     :loading="loading"
     add-test-id="managed-cex-mapping-add-btn"
+    :add-label="t('asset_management.cex_mapping.add_mapping')"
     @refresh="refetch()"
     @add="add()"
   >
@@ -81,7 +82,6 @@ const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
       :collection="collection"
       :fields="fields"
       :loading="loading"
-      @refresh="refetch()"
       @edit="edit($event)"
       @delete="showDeleteConfirmation($event)"
     />
