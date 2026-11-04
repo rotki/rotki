@@ -5,7 +5,7 @@ from collections import defaultdict, deque
 from functools import wraps
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple, cast
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import BackgroundTaskKind, WSMessageType
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
@@ -273,6 +273,7 @@ class TaskManager:
             after_seconds=None,
             task_name='Upload data to server',
             exception_is_error=True,
+            kind=BackgroundTaskKind.DB_UPLOAD,
             method=self.premium_sync_manager.maybe_upload_data_to_server,
         )]
 
@@ -397,6 +398,8 @@ class TaskManager:
                 after_seconds=None,
                 task_name=f'Derive new xpub addresses for {chain}',
                 exception_is_error=True,
+                kind=BackgroundTaskKind.XPUB_DERIVATION,
+                subject={'chain': chain.serialize()},
                 method=xpub_manager.check_for_new_xpub_addresses,
                 blockchain=chain,
             ))
@@ -442,6 +445,8 @@ class TaskManager:
                     after_seconds=None,
                     task_name=task_name,
                     exception_is_error=True,
+                    kind=BackgroundTaskKind.EVM_TRANSACTIONS,
+                    subject={'chain': blockchain.serialize(), 'address': address},
                     method=evm_manager.transactions.single_address_query_transactions,
                     address=address,
                     start_ts=0,
@@ -481,6 +486,8 @@ class TaskManager:
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
+                kind=BackgroundTaskKind.EVM_RECEIPTS,
+                subject={'chain': blockchain.serialize(), 'count': len(hash_results)},
                 method=evm_inquirer.transactions.get_receipts_for_transactions_missing_them,
                 limit=TX_RECEIPTS_QUERY_LIMIT,
             )]
@@ -511,6 +518,8 @@ class TaskManager:
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
+            kind=BackgroundTaskKind.EXCHANGE_HISTORY,
+            subject={'location': exchange.status_location, 'name': exchange.name},
             method=exchange.query_history_with_callbacks,
             start_ts=0,
             end_ts=now,
@@ -539,13 +548,16 @@ class TaskManager:
                 tracker.mark_decoding_clean(blockchain, now)
                 continue
 
-            task_name = f'decode {min(number_of_tx_to_decode, TX_DECODING_LIMIT)} {blockchain!s} transactions'  # noqa: E501
+            tx_to_decode = min(number_of_tx_to_decode, TX_DECODING_LIMIT)
+            task_name = f'decode {tx_to_decode} {blockchain!s} transactions'
             log.debug(f'Scheduling periodic task to {task_name}')
             # Since this task is heavy we spawn it only for one chain at a time.
             return [self.task_supervisor.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
+                kind=BackgroundTaskKind.TRANSACTION_DECODING,
+                subject={'chain': blockchain.serialize(), 'count': tx_to_decode},
                 method=chain_inquirer.transactions_decoder.get_and_decode_undecoded_transactions,  # type: ignore[attr-defined]
                 limit=TX_DECODING_LIMIT,
                 send_ws_notifications=True,
@@ -645,6 +657,7 @@ class TaskManager:
             after_seconds=None,
             task_name=HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
             exception_is_error=True,
+            kind=BackgroundTaskKind.HISTORICAL_BALANCES,
             method=process_historical_balances,
             database=self.database,
             msg_aggregator=self.msg_aggregator,
@@ -721,6 +734,7 @@ class TaskManager:
             after_seconds=None,
             task_name=f'{HISTORICAL_BALANCE_PROCESSING_TASK_NAME} for data issue {issue_id}',
             exception_is_error=True,
+            kind=BackgroundTaskKind.HISTORICAL_BALANCES,
             method=retry_rebasing_token_issue,
             database=self.database,
             msg_aggregator=self.msg_aggregator,
@@ -790,6 +804,7 @@ class TaskManager:
             after_seconds=None,
             task_name=DATA_ISSUE_REMEDIATION_TASK_NAME,
             exception_is_error=True,
+            kind=BackgroundTaskKind.HISTORICAL_BALANCES,
             method=run_data_issue_remediation,
             database=self.database,
             chains_aggregator=self.chains_aggregator,
@@ -846,6 +861,7 @@ class TaskManager:
             after_seconds=None,
             task_name=CURRENT_BALANCE_DETECTION_TASK_NAME,
             exception_is_error=True,
+            kind=BackgroundTaskKind.HISTORICAL_BALANCES,
             method=run_current_balance_detection,
             database=self.database,
             msg_aggregator=self.msg_aggregator,
@@ -876,6 +892,7 @@ class TaskManager:
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
+            kind=BackgroundTaskKind.SNAPSHOT_BALANCES,
             method=self.query_balances,
             requested_save_data=True,
             save_despite_errors=False,
@@ -911,6 +928,7 @@ class TaskManager:
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
+            kind=BackgroundTaskKind.ETH_STAKING,
             method=self._query_produced_blocks,
             indices=indices,
         )]
@@ -942,6 +960,7 @@ class TaskManager:
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
+            kind=BackgroundTaskKind.ETH_STAKING,
             method=eth2.query_services_for_validator_withdrawals,
             addresses=addresses,
             to_ts=now,
@@ -968,6 +987,7 @@ class TaskManager:
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
+            kind=BackgroundTaskKind.ETH_STAKING,
             method=eth2.detect_exited_validators,
         )]
 
@@ -987,6 +1007,7 @@ class TaskManager:
             after_seconds=None,
             task_name='Process eth2 events',
             exception_is_error=True,
+            kind=BackgroundTaskKind.ETH_STAKING,
             method=process_eth2_events,
             chains_aggregator=self.chains_aggregator,
             database=self.database,
@@ -1019,6 +1040,7 @@ class TaskManager:
             after_seconds=None,
             task_name='Data update task',
             exception_is_error=True,
+            kind=BackgroundTaskKind.DATA_UPDATES,
             method=self.data_updater.check_for_updates,
         )]
 
@@ -1034,6 +1056,7 @@ class TaskManager:
             after_seconds=None,
             task_name='Detect EVM accounts',
             exception_is_error=True,
+            kind=BackgroundTaskKind.EVM_ACCOUNTS_DETECTION,
             method=self.chains_aggregator.detect_evm_accounts,
             progress_handler=None,
             chains=self.database.get_chains_to_detect_evm_accounts(),
@@ -1049,6 +1072,7 @@ class TaskManager:
             after_seconds=None,
             task_name='Retry failed EVM accounts detection',
             exception_is_error=True,
+            kind=BackgroundTaskKind.EVM_ACCOUNTS_DETECTION,
             method=self.chains_aggregator.retry_failed_activity_checks,
         )]
 
@@ -1279,6 +1303,7 @@ class TaskManager:
             after_seconds=None,
             task_name='Sync Google Calendar',
             exception_is_error=False,  # Don't error out if sync fails
+            kind=BackgroundTaskKind.CALENDAR_SYNC,
             method=self._sync_google_calendar_task,
         )]
 

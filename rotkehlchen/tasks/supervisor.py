@@ -1,9 +1,13 @@
 import logging
 import threading
 import traceback
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.api.websockets.typedefs import UserMessageOperation, WSMessageType
+from rotkehlchen.api.websockets.typedefs import (
+    BackgroundTaskKind,
+    UserMessageOperation,
+    WSMessageType,
+)
 from rotkehlchen.concurrency import (
     DEFAULT_CANCEL_GRACE_SECONDS,
     CancellationToken,
@@ -22,6 +26,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+TASK_ID_MODULUS: Final = 2 ** 32
+
 
 class TaskSupervisor:
     """Collects and manages the background tasks spawned by various sources.
@@ -38,6 +44,9 @@ class TaskSupervisor:
         # work while the scheduler thread prunes finished entries
         self.lock = threading.Lock()
         self.tasks: list[Task] = []
+        # Not reset at logout, so an id stays unique across logins: started_at has one-second
+        # resolution and names repeat, so neither can tell two tasks apart for a client
+        self._last_task_id = 0
         # Non-None from the moment clear() starts cancelling at logout/shutdown
         # until the next session unlocks: a task registered in that window (e.g.
         # spawned by a still-live abandoned thread) is cancelled on the spot, so
@@ -45,11 +54,22 @@ class TaskSupervisor:
         # Mirrors RestAPI.api_tasks_stop_reason for the api-task path.
         self.stop_reason: str | None = None
 
-    def add(self, task_name: str, task: Task, exception_is_error: bool) -> None:
+    def add(
+            self,
+            task_name: str,
+            task: Task,
+            exception_is_error: bool,
+            kind: BackgroundTaskKind = BackgroundTaskKind.OTHER,
+            subject: dict[str, str | int] | None = None,
+    ) -> None:
         task.task_name = task_name
         task.exception_is_error = exception_is_error
+        task.kind = kind
+        task.subject = subject if subject is not None else {}
         task.add_done_callback(self._handle_finished_task)
         with self.lock:
+            self._last_task_id = (self._last_task_id + 1) % TASK_ID_MODULUS
+            task.supervisor_id = self._last_task_id
             self.tasks.append(task)
             if self.stop_reason is not None:
                 task.request_cancellation(self.stop_reason)
@@ -96,8 +116,15 @@ class TaskSupervisor:
             task_name: str,
             exception_is_error: bool,
             method: Callable,
+            *,
+            kind: BackgroundTaskKind = BackgroundTaskKind.OTHER,
+            subject: dict[str, str | int] | None = None,
             **kwargs: Any,
     ) -> Task:
+        """Spawn a tracked task. `kind` and `subject` say what it works on for clients, and
+        are not passed to `method`. `subject` must hold plain values: it is sent as JSON, and
+        a message that does not serialize cannot be held for a client that is not connected.
+        """
         log.debug('Spawning task manager task "%s"', task_name)
         task = Task(
             name=task_name,
@@ -106,7 +133,7 @@ class TaskSupervisor:
             delay=after_seconds,
             token=CancellationToken(),
         )
-        self.add(task_name, task, exception_is_error)
+        self.add(task_name, task, exception_is_error, kind=kind, subject=subject)
         self._notify_task_status(task, 'started')  # before start so it cannot follow 'finished'
         return task.start()
 
@@ -119,25 +146,43 @@ class TaskSupervisor:
         with self.lock:
             return [task for task in self.tasks if task.dead is False and task.task_name.startswith(name)]  # noqa: E501
 
-    def running_tasks_info(self) -> list[dict[str, str | int]]:
-        """The name and start time of all currently running task manager tasks"""
+    def running_tasks_info(self) -> list[dict[str, Any]]:
+        """The running task manager tasks a client shows, which leaves out upkeep"""
         with self.lock:
             return [
-                {'name': task.task_name, 'started_at': task.started_at}
-                for task in self.tasks if task.dead is False
+                self._task_info(task) for task in self.tasks
+                if task.dead is False and task.kind != BackgroundTaskKind.OTHER
             ]
+
+    @staticmethod
+    def _task_info(task: Task) -> dict[str, Any]:
+        return {
+            'id': task.supervisor_id,
+            'kind': task.kind,
+            'name': task.task_name,
+            'started_at': task.started_at,
+            'subject': task.subject,
+        }
 
     def _notify_task_status(self, task: Task, status: str) -> None:
         """Tell connected clients about a task manager task starting or ending. Not sent
-        while logging out. The message type is LIVE so it is dropped if no client
-        receives it: a client that connects afterwards gets the running tasks from the
-        periodic data instead."""
+        while logging out, and upkeep (kind OTHER) only reports a failure with an error.
+
+        Only a failure with an error is held for a client that is not connected, which
+        must still learn of it. The rest is dropped: a client that connects afterwards
+        gets the running tasks from the periodic data instead."""
         if self.stop_reason is not None:
+            return
+
+        data = self._task_info(task) | {'status': status}
+        if status == 'failed' and task.exception_is_error and task.exception is not None:
+            data['error'] = str(task.exception) or type(task.exception).__name__
+        elif task.kind == BackgroundTaskKind.OTHER:
             return
 
         self.msg_aggregator.add_message(
             message_type=WSMessageType.BACKGROUND_TASK_STATUS,
-            data={'name': task.task_name, 'started_at': task.started_at, 'status': status},
+            data=data,
         )
 
     def _handle_finished_task(self, task: Task) -> None:

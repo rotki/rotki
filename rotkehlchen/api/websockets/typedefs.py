@@ -47,6 +47,27 @@ class WSMessageType(StrEnum):
     BACKGROUND_TASK_STATUS = auto()
 
 
+class BackgroundTaskKind(StrEnum):
+    """What a task manager task works on, for clients that show it without parsing its name.
+
+    A task that keeps the default OTHER is upkeep: it is only reported if it fails with an
+    error, see TaskSupervisor.
+    """
+    CALENDAR_SYNC = auto()
+    DATA_UPDATES = auto()
+    DB_UPLOAD = auto()
+    ETH_STAKING = auto()
+    EVM_ACCOUNTS_DETECTION = auto()
+    EVM_RECEIPTS = auto()
+    EVM_TRANSACTIONS = auto()
+    EXCHANGE_HISTORY = auto()
+    HISTORICAL_BALANCES = auto()
+    OTHER = auto()
+    SNAPSHOT_BALANCES = auto()
+    TRANSACTION_DECODING = auto()
+    XPUB_DERIVATION = auto()
+
+
 class UserMessageKey(StrEnum):
     """Why a user message happened.
 
@@ -252,10 +273,12 @@ def delivery_of(message_type: WSMessageType, data: dict[str, Any] | list[Any]) -
             WSMessageType.DB_UPGRADE_STATUS |
             WSMessageType.DATA_MIGRATION_STATUS |
             WSMessageType.HISTORY_EVENTS_STATUS |
-            WSMessageType.DATABASE_UPLOAD_PROGRESS |
-            WSMessageType.BACKGROUND_TASK_STATUS
+            WSMessageType.DATABASE_UPLOAD_PROGRESS
         ):
             return LIVE
+        case WSMessageType.BACKGROUND_TASK_STATUS:  # an absent client must still learn of it
+            has_error = isinstance(data, dict) and 'error' in data
+            return Delivery(DeliveryPolicy.REPORT, key_fields=('name',)) if has_error else LIVE
         case WSMessageType.PROGRESS_UPDATES:  # a CSV import reports its outcome as its last frame
             is_import_result = (
                 isinstance(data, dict) and

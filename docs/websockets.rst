@@ -871,20 +871,28 @@ Sent when a price oracle is set aside for the oracle penalty duration. Price que
 Background task status
 ======================
 
-Sent when a task of the background task manager starts or ends. Tasks started by an API request are not reported. The message is only sent to clients that are connected at that moment and is not kept for later, so a client that reconnects should read the ``running_tasks`` of the periodic data endpoint to learn what is currently running.
+Sent when a task of the background task manager starts or ends. Tasks started by an API request are not reported. Upkeep tasks, which have the kind ``other``, are only reported if they fail with an ``error``. The message is only sent to clients that are connected at that moment, so a client that reconnects should read the ``running_tasks`` of the periodic data endpoint to learn what is currently running. The exception is a failure with an ``error``, which is held for the next client, with repeats of a task name held once with a count.
 
 ::
 
     {
         "type": "background_task_status",
         "data": {
-            "name": "Query EVM transactions for 0x...",
+            "id": 12,
+            "kind": "evm_transactions",
+            "name": "Query ethereum transactions for 0x...",
             "started_at": 1572345800,
-            "status": "started"
+            "status": "failed",
+            "subject": {"chain": "eth", "address": "0x..."},
+            "error": "Failed to query the indexer"
         }
     }
 
 
-- ``name``: The name of the task
+- ``id``: Identifies the task, since two tasks can share a name and start time. Restarts when the backend does and wraps around at 2**32.
+- ``kind``: What the task works on. One of ``calendar_sync``, ``data_updates``, ``db_upload``, ``eth_staking``, ``evm_accounts_detection``, ``evm_receipts``, ``evm_transactions``, ``exchange_history``, ``historical_balances``, ``snapshot_balances``, ``transaction_decoding``, ``xpub_derivation`` or ``other``.
+- ``name``: The name of the task, in English and only meant for logs and tasks of kind ``other``
 - ``started_at``: Unix timestamp at which the task was spawned
 - ``status``: One of ``started``, ``finished``, ``failed`` or ``cancelled``
+- ``subject``: The structured values of what the task works on, empty if the kind has none. ``chain`` and ``address`` for ``evm_transactions``, ``chain`` and ``count`` for ``evm_receipts`` and ``transaction_decoding``, ``location`` (for a bank, its connector) and ``name`` for ``exchange_history`` and ``chain`` for ``xpub_derivation``.
+- ``error`` [Optional]: Why the task failed. Only set when ``status`` is ``failed`` and the failure is treated as an error.

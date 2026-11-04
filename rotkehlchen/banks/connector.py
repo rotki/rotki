@@ -110,6 +110,11 @@ class BankConnector(ExchangeInterface, ABC):
     def connector(self) -> str:
         return self.manifest.connector.serialize()
 
+    @property
+    def status_location(self) -> str:
+        """Sync progress is identified by connector while persisted events use the banks location."""  # noqa: E501
+        return self.connector
+
     def send_history_events_status_msg(
             self,
             step: HistoryEventsStep,
@@ -119,7 +124,7 @@ class BankConnector(ExchangeInterface, ABC):
         """Identify sync progress by connector while persisted events use the banks location."""
         data: dict[str, Any] = {
             'status': str(step),
-            'location': self.connector,
+            'location': self.status_location,
             'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
             'name': name or self.name,
         }

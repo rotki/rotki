@@ -8,6 +8,7 @@ import pytest
 import requests
 from freezegun import freeze_time
 
+from rotkehlchen.api.websockets.typedefs import BackgroundTaskKind
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -251,6 +252,7 @@ def test_data_issue_remediation_runs_daily_after_initial_processing(
             'after_seconds': None,
             'task_name': DATA_ISSUE_REMEDIATION_TASK_NAME,
             'exception_is_error': True,
+            'kind': BackgroundTaskKind.HISTORICAL_BALANCES,
             'method': run_data_issue_remediation,
             'database': task_manager.database,
             'chains_aggregator': task_manager.chains_aggregator,
