@@ -47,10 +47,9 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 NO_REMOTE_BACKUP_MSG: Final = 'There is no database backup on the server.'
-# How much smaller than the remote backup, as a fraction of its size, the new backup can be
-# right after a password change without asking the user. The rekey adds no data and only
-# shifts the compressed size by a few bytes either way.
-PASSWORD_CHANGE_SIZE_TOLERANCE: Final = 0.01
+# How many bytes smaller than the remote backup the new backup can be right after a password
+# change without asking the user. The rekey adds no data and only shifts the compressed size.
+PASSWORD_CHANGE_SIZE_TOLERANCE_BYTES: Final = 1024
 
 
 class CanSync(Enum):
@@ -81,7 +80,14 @@ class PremiumSyncManager(LockableQueryMixIn):
                 cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS,
             )
             self.last_data_upload_ts = Timestamp(0) if self.last_data_upload_ts is None else self.last_data_upload_ts  # noqa: E501
-            self.last_upload_attempt_ts = self.last_data_upload_ts
+            pending_password_change_ts = data.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
+            )
+            self.last_upload_attempt_ts = (
+                Timestamp(0) if pending_password_change_ts not in (None, Timestamp(0))
+                else self.last_data_upload_ts
+            )
         # This contains the last known successful DB upload timestamp in the remote.
         self.last_remote_data_upload_ts = 0  # gets populated only after the first API call
         self.data = data
@@ -218,6 +224,12 @@ class PremiumSyncManager(LockableQueryMixIn):
                     write_cursor=write_cursor,
                     name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
                     value=ts_now(),
+                )
+                # A backup which decrypted successfully already uses the current password.
+                self.data.db.set_static_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
+                    value=Timestamp(0),
                 )
 
         # Need to run migrations in case the app was updated since last sync and in
@@ -368,18 +380,17 @@ class PremiumSyncManager(LockableQueryMixIn):
                 ask_user_upon_size_discrepancy = self.data.db.get_setting(
                     cursor=cursor, name='ask_user_upon_size_discrepancy',
                 )
-                last_password_change_ts = self.data.db.get_static_cache(
-                    cursor=cursor, name=DBCacheStatic.LAST_PASSWORD_CHANGE_TS,
+                pending_password_change_ts = self.data.db.get_static_cache(
+                    cursor=cursor,
+                    name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
                 )
             # A remote backup from before the last password change can only be opened with
             # the old password, so replace it if the sizes differ only as much as a rekey can
             # make them. A much bigger remote backup still holds data we don't have.
             backup_has_old_password = (
-                last_password_change_ts is not None and
-                metadata.last_modify_ts < last_password_change_ts and
-                metadata.data_size - data_bytes_size <= (
-                    metadata.data_size * PASSWORD_CHANGE_SIZE_TOLERANCE
-                )
+                pending_password_change_ts is not None and
+                metadata.last_modify_ts < pending_password_change_ts and
+                metadata.data_size - data_bytes_size <= PASSWORD_CHANGE_SIZE_TOLERANCE_BYTES
             )
             if ask_user_upon_size_discrepancy is True and not backup_has_old_password:
                 message = 'Remote database bigger than the local one'
@@ -429,6 +440,11 @@ class PremiumSyncManager(LockableQueryMixIn):
                 write_cursor=cursor,
                 name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
                 value=self.last_data_upload_ts,
+            )
+            self.data.db.set_static_cache(
+                write_cursor=cursor,
+                name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
+                value=Timestamp(0),
             )
 
         self.data.msg_aggregator.add_message(

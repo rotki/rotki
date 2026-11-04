@@ -16,7 +16,10 @@ from rotkehlchen.data_handler import RemoteBackup
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.misc import RemoteBackupDowngrade
 from rotkehlchen.premium.premium import get_free_capabilities
-from rotkehlchen.premium.sync import PASSWORD_CHANGE_SIZE_TOLERANCE
+from rotkehlchen.premium.sync import (
+    PASSWORD_CHANGE_SIZE_TOLERANCE_BYTES,
+    PremiumSyncManager,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_async_response,
@@ -177,43 +180,69 @@ def test_upload_db_plan_without_backups(rotkehlchen_api_server: APIServer) -> No
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
-@pytest.mark.parametrize('remote_size', ['smaller', 'slightly_bigger', 'far_bigger'])
+@pytest.mark.parametrize('remote_size', ['smaller', 'slightly_bigger', 'over_tolerance'])
 def test_password_change_makes_backup_upload_due(
         rotkehlchen_api_server: APIServer,
         username: str,
         db_password: str,
-        remote_size: Literal['smaller', 'slightly_bigger', 'far_bigger'],
+        remote_size: Literal['smaller', 'slightly_bigger', 'over_tolerance'],
 ) -> None:
     """The backup on the server is encrypted with the password it was made with. After a
     password change it is replaced at the next scheduled upload, even though it holds the
     latest data and an upload was attempted less than an hour ago. That also holds when it
     is a few bytes bigger than the new backup, since the compressed size shifts slightly,
-    but not when it is far bigger and so may hold data this DB lacks. Once replaced, a
-    bigger remote backup is refused again."""
+    but not when the difference exceeds the small byte tolerance and so may represent data
+    this DB lacks. Once replaced, a bigger remote backup is refused again."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     assert rotki.premium is not None
     db, sync_manager = rotki.data.db, rotki.premium_sync_manager
     with db.conn.read_ctx() as cursor:
         backup_ts = db.get_setting(cursor, name='last_write_ts')
-    password_change_ts = Timestamp(backup_ts + 100)
-    sync_manager.last_upload_attempt_ts = ts_now()
+    recent_upload_ts = ts_now()
+    sync_manager.last_upload_attempt_ts = recent_upload_ts
+    with db.conn.write_ctx() as write_cursor:
+        db.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_DATA_UPLOAD_TS,
+            value=recent_upload_ts,
+        )
     with patch.object(rotki.premium, 'get_capabilities', return_value={'max_backup_size_mb': 100}):
         assert sync_manager.check_if_should_sync(force_upload=False) == (False, None)
-        with patch('rotkehlchen.db.dbhandler.ts_now', return_value=password_change_ts):
+        # Use the same second as the previous write to verify that changing the password
+        # still advances last_write_ts strictly past the remote backup timestamp.
+        with patch('rotkehlchen.db.dbhandler.ts_now', return_value=backup_ts):
             assert_simple_ok_response(requests.patch(
                 api_url_for(rotkehlchen_api_server, 'userpasswordchangeresource', name=username),
                 json={'name': username, 'current_password': db_password, 'new_password': 'foo'},
             ))
+        with db.conn.read_ctx() as cursor:
+            assert db.get_setting(cursor, name='last_write_ts') == (
+                password_change_ts := Timestamp(backup_ts + 1)
+            )
+            assert db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
+            ) == password_change_ts
+
+        # Recreating the manager simulates an app restart before the scheduled upload.
+        # The persisted password-change marker must keep the upload immediately due.
+        restarted_sync_manager = PremiumSyncManager(
+            migration_manager=sync_manager.migration_manager,
+            data=rotki.data,
+        )
+        restarted_sync_manager.premium = rotki.premium
+        sync_manager = restarted_sync_manager
+        assert sync_manager.last_upload_attempt_ts == 0
 
         with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
             new_backup, _ = rotki.data.compress_and_encrypt_db(
                 tempdbpath=db.export_unencrypted(tempdbfile),
                 last_modify_ts=password_change_ts,
             )
-        # bigger than the new backup by more than the compressed size can shift, yet within
-        # the tolerance, so that only the remote modification time decides the size check
+        # Bigger than the new backup, yet within the small absolute tolerance, so that only
+        # the remote modification time decides the size check.
         within_tolerance_size = len(new_backup) + 100
-        assert within_tolerance_size * PASSWORD_CHANGE_SIZE_TOLERANCE >= 100
+        over_tolerance_size = len(new_backup) + PASSWORD_CHANGE_SIZE_TOLERANCE_BYTES + 1
         with (
             create_patched_requests_get_for_premium(
                 session=rotki.premium.session,
@@ -222,7 +251,7 @@ def test_password_change_makes_backup_upload_due(
                 metadata_data_size={
                     'smaller': 2,
                     'slightly_bigger': within_tolerance_size,
-                    'far_bigger': len(new_backup) * 2,
+                    'over_tolerance': over_tolerance_size,
                 }[remote_size],
                 saved_data=b'foo',
             ),
@@ -233,7 +262,7 @@ def test_password_change_makes_backup_upload_due(
             ) as post_mock,
         ):
             assert sync_manager.check_if_should_sync(force_upload=False) == (True, None)
-            if remote_size == 'far_bigger':
+            if remote_size == 'over_tolerance':
                 assert sync_manager.maybe_upload_data_to_server() == (
                     False, 'Remote database bigger than the local one',
                 )
@@ -242,6 +271,11 @@ def test_password_change_makes_backup_upload_due(
 
             assert sync_manager.maybe_upload_data_to_server() == (True, None)
             assert post_mock.call_count == 1
+        with db.conn.read_ctx() as cursor:
+            assert db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
+            ) == 0
 
         # the remote backup now has the new password, so the size check applies to it again
         with db.conn.write_ctx() as write_cursor:
@@ -251,7 +285,7 @@ def test_password_change_makes_backup_upload_due(
                 session=rotki.premium.session,
                 metadata_last_modify_ts=password_change_ts,
                 metadata_data_hash='remote_hash',
-                metadata_data_size=within_tolerance_size,
+                metadata_data_size=len(new_backup) * 2,
                 saved_data=b'foo',
             ),
             patch.object(rotki.premium.session, 'post') as post_mock,
