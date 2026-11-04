@@ -15,7 +15,7 @@ from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
-from rotkehlchen.banks.constants import SUPPORTED_BANK_CONNECTORS
+from rotkehlchen.banks.constants import SUPPORTED_BANK_CONNECTORS, bank_connector_module
 from rotkehlchen.banks.errors import (
     BankAuthChallenge,
     BankAuthExpired,
@@ -139,7 +139,7 @@ class BankManager:
 
     @staticmethod
     def _connector_class(connector: BankConnectorType) -> type[BankConnector]:
-        module = import_module(f'rotkehlchen.banks.{connector!s}')
+        module = import_module(bank_connector_module(connector))
         return getattr(module, str(connector).capitalize())
 
     def get_bank(self, identifier: str) -> BankConnector | None:

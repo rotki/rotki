@@ -8,7 +8,7 @@ from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_submodules
 
-from rotkehlchen.banks.manager import BANK_CONNECTOR_CLASSES
+from rotkehlchen.banks.constants import SUPPORTED_BANK_CONNECTORS, bank_connector_module
 from rotkehlchen.constants.misc import GLOBALDB_NAME
 from rotkehlchen.exchanges.manager import EXCHANGE_CONNECTOR_CLASSES
 from rotkehlchen.types import CHAINS_WITH_TRANSACTION_DECODERS
@@ -112,10 +112,10 @@ hiddenimports.extend(collect_submodules('rotkehlchen.mcp'))
 # Exchange and bank connectors are imported by module name from their registries, which
 # pyinstaller cannot detect (https://github.com/rotki/rotki/issues/602), so make sure they
 # are all included as imports in the created executable
-hiddenimports.extend(sorted({
-    module_name
-    for module_name, _ in (*EXCHANGE_CONNECTOR_CLASSES.values(), *BANK_CONNECTOR_CLASSES.values())
-}))
+hiddenimports.extend(sorted(
+    {module_name for module_name, _ in EXCHANGE_CONNECTOR_CLASSES.values()} |
+    {bank_connector_module(connector) for connector in SUPPORTED_BANK_CONNECTORS},
+))
 
 for chain in CHAINS_WITH_TRANSACTION_DECODERS:  # load modules from the chains that have decoders
     hiddenimports.extend(collect_submodules(f'rotkehlchen.chain.{chain.name.lower()}.modules'))
