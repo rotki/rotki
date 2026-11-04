@@ -277,8 +277,10 @@ def delivery_of(message_type: WSMessageType, data: dict[str, Any] | list[Any]) -
         ):
             return LIVE
         case WSMessageType.BACKGROUND_TASK_STATUS:  # an absent client must still learn of it
-            has_error = isinstance(data, dict) and 'error' in data
-            return Delivery(DeliveryPolicy.REPORT, key_fields=('name',)) if has_error else LIVE
+            if not isinstance(data, dict) or 'error' not in data:
+                return LIVE
+            # the subject too, since connections of different locations can share a task name
+            return Delivery(DeliveryPolicy.REPORT, key_fields=('name', 'subject'))
         case WSMessageType.PROGRESS_UPDATES:  # a CSV import reports its outcome as its last frame
             is_import_result = (
                 isinstance(data, dict) and

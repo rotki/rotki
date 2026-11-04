@@ -3,11 +3,7 @@ import threading
 import traceback
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.api.websockets.typedefs import (
-    BackgroundTaskKind,
-    UserMessageOperation,
-    WSMessageType,
-)
+from rotkehlchen.api.websockets.typedefs import BackgroundTaskKind, WSMessageType
 from rotkehlchen.concurrency import (
     DEFAULT_CANCEL_GRACE_SECONDS,
     CancellationToken,
@@ -16,7 +12,6 @@ from rotkehlchen.concurrency import (
     wait,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.user_messages import Internal
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -229,7 +224,3 @@ class TaskSupervisor:
             f'\nTraceback:\n {"".join(traceback.format_tb(task.exc_info[2]))}'  # type: ignore[index]
         )
         log.error(msg)
-        self.msg_aggregator.add_error(
-            f'{first_line}. Check the logs for more details',
-            classification=Internal(operation=UserMessageOperation.BACKGROUND_TASK),
-        )

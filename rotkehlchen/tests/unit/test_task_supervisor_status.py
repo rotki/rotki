@@ -150,13 +150,33 @@ def test_only_failures_with_an_error_are_held_and_repeats_collapse() -> None:
             subject={'chain': SupportedBlockchain.ETHEREUM.serialize(), 'count': 3},
         ).join()
     held, dropped = msg_aggregator.consume_held()
-    held = [x for x in held if x['type'] == WSMessageType.BACKGROUND_TASK_STATUS]
     assert dropped == 0
-    assert len(held) == 1
+    assert len(held) == 1  # the status alone, with no user message reporting it a second time
+    assert held[0]['type'] == WSMessageType.BACKGROUND_TASK_STATUS
     assert held[0]['count'] == 2
     assert held[0]['data']['id'] == 4
     assert held[0]['data']['kind'] == 'evm_receipts'
     assert held[0]['data']['error'] == 'boom'
+
+
+def test_held_failures_of_same_named_connections_stay_apart() -> None:
+    """Connection names are only unique per location, so both tasks have the same name."""
+    supervisor = TaskSupervisor(msg_aggregator=(msg_aggregator := MessagesAggregator()))
+    for location in ('kraken', 'binance', 'kraken'):
+        supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name='Query history of main exchange',
+            exception_is_error=True,
+            method=_fail,
+            kind=BackgroundTaskKind.EXCHANGE_HISTORY,
+            subject={'location': location, 'name': 'main'},
+        ).join()
+    held, dropped = msg_aggregator.consume_held()
+    assert dropped == 0
+    assert sorted((x['data']['subject']['location'], x['count']) for x in held) == [
+        ('binance', 1),
+        ('kraken', 2),
+    ]
 
 
 def test_running_tasks_info_leaves_out_upkeep() -> None:

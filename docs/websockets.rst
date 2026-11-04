@@ -871,7 +871,7 @@ Sent when a price oracle is set aside for the oracle penalty duration. Price que
 Background task status
 ======================
 
-Sent when a task of the background task manager starts or ends. Tasks started by an API request are not reported. Upkeep tasks, which have the kind ``other``, are only reported if they fail with an ``error``. The message is only sent to clients that are connected at that moment, so a client that reconnects should read the ``running_tasks`` of the periodic data endpoint to learn what is currently running. The exception is a failure with an ``error``, which is held for the next client, with repeats of a task name held once with a count.
+Sent when a task of the background task manager starts or ends. Tasks started by an API request are not reported. Upkeep tasks, which have the kind ``other``, are only reported if they fail with an ``error``. The message is only sent to clients that are connected at that moment, so a client that reconnects should read the ``running_tasks`` of the periodic data endpoint to learn what is currently running. The exception is a failure with an ``error``, which is held for the next client, with repeats of a task name and subject held once with a count.
 
 ::
 
