@@ -4,7 +4,7 @@ import AccountBalancesDefaultPage from '@/modules/accounts/AccountBalancesDefaul
 
 definePage({
   meta: {
-    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.dogecoin'), drawerLabelKey: msg.$t('navigation_menu.accounts_sub.short.dogecoin'), heading: msg.$t('navigation_menu.accounts_sub.heading.blockchain'), icon: 'lu-dog', parent: '/accounts/', order: 50, drawer: 'accounts-dogecoin' },
+    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.dogecoin'), drawerLabelKey: msg.$t('navigation_menu.accounts_sub.short.dogecoin'), heading: msg.$t('navigation_menu.accounts_sub.heading.blockchain'), icon: 'lu-dogecoin-accounts', parent: '/accounts/', order: 50, drawer: 'accounts-dogecoin' },
   },
 });
 
