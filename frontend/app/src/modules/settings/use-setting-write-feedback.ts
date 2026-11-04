@@ -36,6 +36,9 @@ export function resolveSettingMessage<T>(message: SettingMessage<T>, value: T): 
  *
  * `successMessage` is read at fire time rather than passed as a string, so it can name whatever the
  * write was about (for example the chain whose order was just saved).
+ *
+ * The clear runs synchronously with the draft change. A rejected write reverts the draft and sets
+ * its error in the same tick, and a queued clear could otherwise run after the error was shown.
  */
 export function useSettingWriteFeedback<T>(
   state: SettingWriteState<T>,
@@ -47,7 +50,7 @@ export function useSettingWriteFeedback<T>(
 
   watch(state.model, () => {
     clearAll();
-  });
+  }, { flush: 'sync' });
 
   watch(state.success, (saved) => {
     if (!saved)
