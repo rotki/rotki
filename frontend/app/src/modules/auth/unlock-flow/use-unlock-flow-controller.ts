@@ -217,13 +217,23 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     await flow.start(payload.credentials);
   }
 
+  /**
+   * Unlocks the last profile in the background from its stored credentials.
+   *
+   * @remarks
+   * A rejected saved password returns to the idle form, since the user only has to type the new
+   * one. Every other failure stays in the error phase so the form shows it: a backend that refuses
+   * the database (a schema mismatch, a failed migration) would otherwise drop the user at an empty
+   * login form with the reason only in the console.
+   */
   async function startAuto(): Promise<void> {
     if (!canStart())
       return;
     set(mode, 'auto');
     active = loginSteps;
     await flow.startAuto();
-    if (get(flow.state).kind === UnlockPhase.error)
+    const current = get(flow.state);
+    if (current.kind === UnlockPhase.error && current.error.kind === UnlockErrorKind.wrongPassword)
       flow.reset();
   }
 
