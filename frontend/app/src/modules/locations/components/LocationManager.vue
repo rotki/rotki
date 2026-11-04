@@ -13,7 +13,7 @@ import LocationTreeFilter from '@/modules/locations/components/LocationTreeFilte
 import LocationTreeRowActions from '@/modules/locations/components/LocationTreeRowActions.vue';
 import LocationTreeRowName from '@/modules/locations/components/LocationTreeRowName.vue';
 import LocationUsageNotice from '@/modules/locations/components/LocationUsageNotice.vue';
-import { type LocationRow, locationRows } from '@/modules/locations/location-rows';
+import { type LocationRow, locationRows, onePage } from '@/modules/locations/location-rows';
 import { useLocationManagement } from '@/modules/locations/use-location-management';
 import { useLocationTreeExpansion } from '@/modules/locations/use-location-tree-expansion';
 import { ROOT_LOCATION, useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
@@ -63,10 +63,7 @@ const rows = computed<LocationRow[]>(() => locationRows({
  * One page as long as the tree: pages would cut a subtree off from its parent, and the rows only
  * make sense in tree order.
  */
-const wholeTree = computed<TablePaginationData>(() => {
-  const total = get(rows).length;
-  return { limit: Math.max(total, 1), page: 1, total };
-});
+const wholeTree = computed<TablePaginationData>(() => onePage(get(rows).length));
 
 const cols = computed<DataTableColumn<LocationRow>[]>(() => [{
   cellClass: 'max-w-0 w-full',
@@ -135,7 +132,13 @@ async function requestDeletion(location: LocationNode): Promise<void> {
   });
 }
 
-const { consumeAddQuery } = useAddQuery(() => addBelow(ROOT_LOCATION));
+/** A quick-add link adds to the tab it names, which clearing the link from the url would otherwise lose. */
+const { consumeAddQuery } = useAddQuery((query) => {
+  if (query.tab !== 'aliases')
+    return addBelow(ROOT_LOCATION);
+  set(tab, 'aliases');
+  set(addingAlias, true);
+});
 
 onMounted(async () => {
   await consumeAddQuery();
@@ -146,31 +149,46 @@ onMounted(async () => {
   <TablePageLayout :title="[t('location_manager.title')]">
     <template #buttons>
       <RuiButton
+        v-if="tab === 'locations'"
         color="primary"
         size="lg"
         data-testid="location-manager-add"
-        @click="tab === 'locations' ? addBelow(ROOT_LOCATION) : addingAlias = true"
+        @click="addBelow(ROOT_LOCATION)"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
         </template>
-        {{ tab === 'locations' ? t('location_manager.actions.add') : t('location_manager.aliases.add') }}
+        {{ t('location_manager.actions.add') }}
+      </RuiButton>
+      <RuiButton
+        v-else
+        color="primary"
+        size="lg"
+        data-testid="location-manager-add"
+        @click="addingAlias = true"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-plus" />
+        </template>
+        {{ t('location_manager.aliases.add') }}
       </RuiButton>
     </template>
 
-    <RuiTabs
-      v-model="tab"
-      color="primary"
-      class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
-      data-testid="location-manager-tabs"
-    >
-      <RuiTab value="locations">
-        {{ t('location_manager.tabs.locations') }}
-      </RuiTab>
-      <RuiTab value="aliases">
-        {{ t('location_manager.tabs.aliases') }}
-      </RuiTab>
-    </RuiTabs>
+    <template #tabs>
+      <RuiTabs
+        v-model="tab"
+        color="primary"
+        variant="segmented"
+        data-testid="location-manager-tabs"
+      >
+        <RuiTab value="locations">
+          {{ t('location_manager.tabs.locations') }}
+        </RuiTab>
+        <RuiTab value="aliases">
+          {{ t('location_manager.tabs.aliases') }}
+        </RuiTab>
+      </RuiTabs>
+    </template>
 
     <TableFrame v-if="tab === 'locations'">
       <template #toolbar>
@@ -259,10 +277,12 @@ onMounted(async () => {
       </RuiDataTable>
     </TableFrame>
 
-    <LocationAliasesCard
-      v-else
-      v-model:adding="addingAlias"
-    />
+    <KeepAlive>
+      <LocationAliasesCard
+        v-if="tab === 'aliases'"
+        v-model:adding="addingAlias"
+      />
+    </KeepAlive>
 
     <LocationFormDialog
       v-model="formData"

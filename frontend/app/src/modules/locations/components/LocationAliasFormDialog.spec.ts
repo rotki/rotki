@@ -1,7 +1,9 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { createLocationNode as node } from '@test/utils/location-tree';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import LocationAliasFormDialog from '@/modules/locations/components/LocationAliasFormDialog.vue';
@@ -27,7 +29,7 @@ const LocationSelectorStub = defineComponent({
 
 const RuiAlertStub = { props: ['type'], template: '<div :data-type="type"><slot /></div>' };
 
-const save = vi.fn<(alias: string, locationIdentifier: string) => Promise<string | undefined>>();
+const save = vi.fn<(alias: string, locationIdentifier: string) => ResultAsync<void, string>>();
 
 describe('locationAliasFormDialog', () => {
   let wrapper: VueWrapper<InstanceType<typeof LocationAliasFormDialog>>;
@@ -62,7 +64,7 @@ describe('locationAliasFormDialog', () => {
   beforeEach(() => {
     setActivePinia(createCustomPinia());
     vi.clearAllMocks();
-    save.mockResolvedValue(undefined);
+    save.mockResolvedValue(ok(undefined));
     useLocationTreeStore().setNodes([
       node('total', null, 'Total'),
       node('exchanges', 'total', 'Exchanges'),
@@ -115,7 +117,7 @@ describe('locationAliasFormDialog', () => {
   });
 
   it('should stay open and show why a save was refused', async () => {
-    save.mockResolvedValue('Location custom:pier is archived');
+    save.mockResolvedValue(err('Location custom:pier is archived'));
     await fill('cex', 'custom:pier');
 
     await confirm();

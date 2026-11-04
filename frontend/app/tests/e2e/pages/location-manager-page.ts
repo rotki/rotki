@@ -59,14 +59,14 @@ export class LocationManagerPage {
   /** Filters the tree by a name through the pill bar; an empty term removes the filter. */
   async search(term: string): Promise<void> {
     const bar = new PillFilterBar(this.page);
-    if (await bar.pill('name').isVisible())
-      await bar.removePill('name');
+    if (await bar.pill('locationName').isVisible())
+      await bar.removePill('locationName');
     if (term === '')
       return;
-    await bar.addField('name');
+    await bar.addField('locationName');
     await bar.typeTextValue(term);
-    await bar.closeEditor('name');
-    await bar.expectPillVisible('name');
+    await bar.closeEditor('locationName');
+    await bar.expectPillVisible('locationName');
   }
 
   async setShowArchived(show: boolean): Promise<void> {

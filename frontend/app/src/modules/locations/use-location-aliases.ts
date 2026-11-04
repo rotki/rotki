@@ -18,7 +18,7 @@ export function sameAlias(a: string, b: string): boolean {
 
 /** The saved location aliases, kept up to date with each change the user makes. */
 export function useLocationAliases(): UseLocationAliasesReturn {
-  const aliases = ref<LocationAliases>([]);
+  const aliases = shallowRef<LocationAliases>([]);
   const loading = shallowRef<boolean>(false);
 
   const api = useLocationTreeApi();

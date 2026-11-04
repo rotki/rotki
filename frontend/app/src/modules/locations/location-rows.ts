@@ -1,3 +1,4 @@
+import type { TablePaginationData } from '@rotki/ui-library';
 import type { LocationNode } from '@/modules/locations/use-location-tree-api';
 import { LOCATION_PATH_SEPARATOR } from '@/modules/locations/location-path';
 
@@ -62,4 +63,9 @@ export function locationRows({ childrenOf, isExpanded, keepArchived, root, searc
   for (const child of childrenOf(root))
     visit(child, 0, '');
   return rows;
+}
+
+/** A single page holding the whole list, for the tables of a tree or a short list, which a pager would only cut up. */
+export function onePage(total: number): TablePaginationData {
+  return { limit: Math.max(total, 1), page: 1, total };
 }
