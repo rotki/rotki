@@ -22,13 +22,13 @@ const paginationModel = defineModel<TablePaginationData>('pagination', { require
 
 const filtersModel = defineModel<MatchedKeyword<K>>('filters', { required: true });
 
-const { sourceKey, sourceLabel, symbolKey, subtitle } = defineProps<{
+const { collection, sourceKey, sourceLabel, symbolKey, subtitle } = defineProps<{
   collection: Collection<T>;
   fields: FieldDef[];
   loading: boolean;
   /** Shown in the toolbar hint. */
   subtitle: string;
-  /** The row attribute naming the source, which also keys the rows. */
+  /** The row attribute naming the source; empty for a mapping that applies to every source. */
   sourceKey: keyof T & string;
   sourceLabel: string;
   /** The row attribute holding the symbol the source uses. */
@@ -48,7 +48,38 @@ const { t } = useI18n({ useScope: 'global' });
 const pillLabels = usePillBarLabels();
 const emptyState = useTableEmptyState();
 
-const cols = computed<DataTableColumn<T>[]>(() => [{
+type KeyedRow = T & { rowKey: string };
+
+/**
+ * The rows with a key unique per mapping, and the mapping behind each key.
+ *
+ * @remarks
+ * A mapping is unique on its source and symbol together. The source alone repeats (several
+ * mappings for one exchange, and every mapping that applies to all exchanges has no source), so it
+ * cannot key the rows. Edit and delete hand back the mapping itself, without the added key.
+ */
+const keyed = computed<{ rows: KeyedRow[]; byKey: Map<string, T> }>(() => {
+  const byKey = new Map<string, T>();
+  const rows = collection.data.map((mapping) => {
+    const rowKey = `${String(mapping[sourceKey] ?? '')}#${String(mapping[symbolKey])}`;
+    byKey.set(rowKey, mapping);
+    return { ...mapping, rowKey };
+  });
+  return { byKey, rows };
+});
+
+function emitMapping(event: 'edit' | 'delete', row: KeyedRow): void {
+  const mapping = get(keyed).byKey.get(row.rowKey);
+  if (!mapping)
+    return;
+
+  if (event === 'edit')
+    emit('edit', mapping);
+  else
+    emit('delete', mapping);
+}
+
+const cols = computed<DataTableColumn<KeyedRow>[]>(() => [{
   cellClass: 'py-2',
   key: sourceKey,
   label: sourceLabel,
@@ -83,12 +114,12 @@ const cols = computed<DataTableColumn<T>[]>(() => [{
     </template>
     <RuiDataTable
       v-model:pagination.external="paginationModel"
-      :rows="collection.data"
+      :rows="keyed.rows"
       dense
       :loading="loading"
       :cols="cols"
       :empty="emptyState"
-      :row-attr="sourceKey"
+      row-attr="rowKey"
     >
       <template #[`item.${sourceKey}`]="{ row }">
         <slot
@@ -104,8 +135,8 @@ const cols = computed<DataTableColumn<T>[]>(() => [{
           align="end"
           :edit-tooltip="t('asset_table.edit_tooltip')"
           :delete-tooltip="t('asset_table.delete_tooltip')"
-          @edit-click="emit('edit', row)"
-          @delete-click="emit('delete', row)"
+          @edit-click="emitMapping('edit', row)"
+          @delete-click="emitMapping('delete', row)"
         />
       </template>
     </RuiDataTable>
