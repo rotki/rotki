@@ -1,5 +1,7 @@
 import type { StubInstance } from '@test/utils/component-vm';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import type { ActivityContext, NativeActivitySpec } from '@/modules/task-center/use-native-task';
+import { createMock } from '@test/utils/create-mock';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { err, ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
@@ -11,6 +13,10 @@ const submitTask = vi.fn();
 const useIsActive = vi.fn();
 const getPath = vi.fn();
 const removeFile = vi.fn<() => void>();
+const checkImportLocations = vi.fn();
+const checkImportFileLocations = vi.fn();
+const importDataFrom = vi.fn();
+const importFile = vi.fn();
 
 vi.mock('@/modules/task-center/use-native-task', () => ({
   useNativeTask: vi.fn().mockImplementation(() => ({ submitTask })),
@@ -26,8 +32,10 @@ vi.mock('@/modules/shell/app/use-electron-interop', () => ({
 
 vi.mock('@/modules/user-data/use-import-data-api', () => ({
   useImportDataApi: vi.fn().mockImplementation(() => ({
-    importDataFrom: vi.fn(),
-    importFile: vi.fn(),
+    checkImportLocations,
+    checkImportFileLocations,
+    importDataFrom,
+    importFile,
   })),
 }));
 
@@ -62,12 +70,15 @@ describe('importSource', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    getPath.mockReturnValue(undefined);
+    checkImportLocations.mockResolvedValue([]);
+    checkImportFileLocations.mockResolvedValue([]);
     useIsActive.mockReturnValue(computed<boolean>(() => false));
     vi.useFakeTimers();
   });
 
   afterEach(() => {
-    wrapper?.unmount();
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
@@ -76,6 +87,7 @@ describe('importSource', () => {
       global: {
         stubs: {
           DateFormatHelp: true,
+          ImportLocationMappings: true,
           RuiFileUpload: fileUploadStub,
           RuiSwitch: {
             emits: ['update:modelValue'],
@@ -116,6 +128,7 @@ describe('importSource', () => {
 
   async function submit(): Promise<void> {
     await wrapper.find('form').trigger('submit');
+    await flushPromises();
   }
 
   async function openOptions(): Promise<void> {
@@ -260,11 +273,42 @@ describe('importSource', () => {
     expect(importDisabled()).toBe(false);
   });
 
-  it('should take only csv files', async () => {
+  it('should not claim success for a non-boolean task result', async () => {
+    submitTask.mockResolvedValue(ok({ locations: [] }));
     wrapper = createWrapper();
-    await vi.advanceTimersToNextTimerAsync();
+    await attachFile();
+    await submit();
 
-    expect(upload().props('accept')).toBe('.csv');
+    expect(wrapper.find('[data-testid=import-complete]').exists()).toBe(false);
+    expect(upload().props('uploaded')).toBe(false);
+    expect(removeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, '/tmp/a.csv'])('should require explicit mappings before importing a custom CSV with path %s', async (path) => {
+    const resolutions = [{ value: 'luno', status: 'unresolved', location: null, candidates: [] }];
+    checkImportLocations.mockResolvedValueOnce(resolutions).mockResolvedValueOnce([]);
+    checkImportFileLocations.mockResolvedValueOnce(resolutions).mockResolvedValueOnce([]);
+    const runTask = vi.fn().mockResolvedValue(ok(true));
+    submitTask.mockImplementation(async (spec: NativeActivitySpec<boolean>) => spec.run(createMock<ActivityContext>({
+      cancelled: () => false,
+      runTask,
+    })));
+    getPath.mockReturnValue(path);
+    wrapper = createWrapper();
+    await wrapper.setProps({ source: 'rotki_events' });
+    await attachFile();
+    await submit();
+
+    const mappings = wrapper.findComponent({ name: 'ImportLocationMappings' });
+    expect(mappings.props('locations')).toEqual(resolutions);
+    expect(runTask).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid=import-complete]').exists()).toBe(false);
+
+    mappings.vm.$emit('update:modelValue', { luno: 'external' });
+    await submit();
+
+    expect(runTask).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid=import-complete]').exists()).toBe(true);
   });
 
   it('should mark the upload done only when the task reports a completed import', async () => {

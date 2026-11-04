@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import type { ImportSourceType } from '@/modules/core/common/upload-types';
+import type { ImportLocationResolution } from '@/modules/user-data/import-location-types';
 import { RuiFileUpload } from '@rotki/ui-library';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { err, isErr, ok, type Result } from 'plainfp/result';
 import { z, type ZodType } from 'zod';
 import { msg } from '@/message-key';
 import { DateFormat } from '@/modules/core/common/date-format';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { useForm } from '@/modules/core/form/use-form';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
+import { Cancelled, isActionable, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
 import DateFormatHelp from '@/modules/settings/controls/DateFormatHelp.vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import { csvImportActivity } from '@/modules/user-data/csv-import.activity';
+import ImportLocationMappings from '@/modules/user-data/ImportLocationMappings.vue';
 import ImportNotes from '@/modules/user-data/ImportNotes.vue';
 import { useImportDataApi } from '@/modules/user-data/use-import-data-api';
 
@@ -38,10 +40,12 @@ const useCustomTimezone = ref<boolean>(false);
 const optionsOpen = ref<boolean>(false);
 const optionsId = useId();
 const timezone = ref<string>();
-const uploaded = ref(false);
-const errorMessage = ref('');
+const uploaded = ref<boolean>(false);
+const errorMessage = ref<string>('');
 const formatHelp = ref<boolean>(false);
 const file = ref<File>();
+const locationResolutions = ref<ImportLocationResolution[]>([]);
+const locationMappings = ref<Record<string, string>>({});
 
 const { t } = useI18n({ useScope: 'global' });
 const { getPath } = useInterop();
@@ -85,7 +89,7 @@ const { submitTask } = useNativeTask();
 const { useIsActive } = useTaskCenter();
 
 const loading = useIsActive(csvImportActivity.kind, ...csvImportActivity.partsOf({ source }));
-const { importDataFrom, importFile } = useImportDataApi();
+const { checkImportFileLocations, checkImportLocations, importDataFrom, importFile } = useImportDataApi();
 
 /**
  * An import only counts as done when the task both settled and reported a completed import.
@@ -100,12 +104,12 @@ const { importDataFrom, importFile } = useImportDataApi();
  */
 function applyOutcome(outcome: Result<boolean, TaskError>): boolean {
   if (!isErr(outcome)) {
-    if (outcome.value) {
+    if (outcome.value === true) {
       get(uploader)?.removeFile();
       set(uploaded, true);
     }
 
-    return outcome.value;
+    return outcome.value === true;
   }
 
   if (isActionable(outcome.error))
@@ -114,61 +118,53 @@ function applyOutcome(outcome: Result<boolean, TaskError>): boolean {
   return false;
 }
 
-async function uploadPackaged(file: string): Promise<boolean> {
-  const outcome = await submitTask<boolean>({
-    id: csvImportActivity.id({ source }),
-    kind: csvImportActivity.kind,
-    rerunnable: false,
-    userStarted: true,
-    run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
-      await runTask<boolean>(
-        () => importDataFrom({
-          file,
-          source,
-          timestampFormat: form.state.dateInputFormat || null,
-          timezone: get(timezone) || null,
-        }),
-      ),
-      value => value,
-    ),
-    subtitle: activityLabelFor(msg.$t('task_center.activity.csv_import.source'), { source }),
-    title: t('task_center.group.csv_import'),
-  });
-
-  return applyOutcome(outcome);
-}
-
 async function uploadFile(): Promise<boolean> {
   const fileVal = get(file);
   if (!fileVal)
     return false;
 
+  set(errorMessage, '');
   const path = getPath(fileVal);
-  if (path)
-    return uploadPackaged(path);
-
+  const payload = {
+    file: path,
+    locationMappings: get(locationMappings),
+    source,
+    timestampFormat: form.state.dateInputFormat || null,
+    timezone: get(timezone) || null,
+  };
   const formData = new FormData();
   formData.append('source', source);
   formData.append('file', fileVal);
-  formData.append('async_query', 'true');
-  const dateInputFormatVal = form.state.dateInputFormat;
-  if (dateInputFormatVal)
-    formData.append('timestamp_format', dateInputFormatVal);
-  const timezoneVal = get(timezone);
-  if (timezoneVal)
-    formData.append('timezone', timezoneVal);
+  formData.append('location_mappings', JSON.stringify(get(locationMappings)));
+  if (payload.timestampFormat)
+    formData.append('timestamp_format', payload.timestampFormat);
+  if (payload.timezone)
+    formData.append('timezone', payload.timezone);
 
   const outcome = await submitTask<boolean>({
     id: csvImportActivity.id({ source }),
     kind: csvImportActivity.kind,
     rerunnable: false,
     userStarted: true,
-    run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
-      await runTask<boolean>(
-        () => importFile(formData),
-      ),
-      value => value,
-    ),
+    run: async ({ cancelled, runTask }): Promise<Result<boolean, TaskError>> => {
+      if (source === 'rotki_events' || source === 'rotki_trades') {
+        const locations = path
+          ? await checkImportLocations({ ...payload, file: path })
+          : await checkImportFileLocations(formData);
+        set(locationResolutions, locations);
+        if (locations.some(entry => entry.status !== 'resolved'))
+          return err(Skipped({ message: t('import_data.location_mapping.description') }));
+        if (cancelled())
+          return err(Cancelled({ message: 'cancelled' }));
+      }
+
+      formData.append('async_query', 'true');
+      const result = await runTask<unknown>(() => path ? importDataFrom({ ...payload, file: path }) : importFile(formData));
+      if (isErr(result))
+        return result;
+
+      return ok(z.boolean().parse(result.value));
+    },
     subtitle: activityLabelFor(msg.$t('task_center.activity.csv_import.source'), { source }),
     title: t('task_center.group.csv_import'),
   });
@@ -188,6 +184,8 @@ function onFileChange(picked: File | File[] | undefined): void {
 
   set(uploaded, false);
   set(errorMessage, '');
+  set(locationResolutions, []);
+  set(locationMappings, {});
 }
 
 function changeShouldCustomDateFormat(): void {
@@ -270,6 +268,11 @@ const activeOptions = computed<number>(() =>
           class="min-h-5"
         />
       </div>
+      <ImportLocationMappings
+        v-if="locationResolutions.some(entry => entry.status !== 'resolved')"
+        v-model="locationMappings"
+        :locations="locationResolutions"
+      />
       <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
         <RuiButton
           v-if="!isRotkiCustomImport"

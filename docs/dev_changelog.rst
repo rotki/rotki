@@ -30,6 +30,7 @@ Location Subtrees and CSV Imports
 * **New Endpoints**: ``GET/PUT/DELETE /api/(version)/locations/aliases`` manage case-insensitive aliases for location values in CSV imports.
 * **New Endpoint**: ``PUT/POST /api/(version)/import/preflight`` reports resolved, unresolved and ambiguous location values without importing data.
 * **Changed Endpoint**: ``PUT/POST /api/(version)/import`` accepts ``location_mappings`` and returns ``409`` without importing while any location value remains unresolved or ambiguous. Mappings override identifier, alias and unique-name resolution. Empty or whitespace-only CSV locations can be mapped with the empty-string key; multipart uploads encode mappings as JSON.
+* **Frontend**: Custom CSV imports run location preflight and ask users to map unknown or ambiguous CSV values before submitting the import. Both browser uploads and packaged file imports pass the selected mappings. Only a boolean success result marks an import as complete.
 * **User DB v54**: The unreleased v53-to-v54 upgrade and fresh database schema now include ``location_aliases``. No additional database version is introduced.
 
 Classified User Messages

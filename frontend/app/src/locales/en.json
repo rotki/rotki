@@ -4833,6 +4833,11 @@
       "line_one": "We support the import of trades csv file type.",
       "name": "Kucoin"
     },
+    "location_mapping": {
+      "description": "Choose a destination for each unknown or ambiguous location, then import the file again. Nothing has been imported yet.",
+      "empty_value": "Empty location",
+      "title": "Map CSV locations"
+    },
     "nexo": {
       "import": "Import {0} from Nexo",
       "import_transactions": "transactions",
