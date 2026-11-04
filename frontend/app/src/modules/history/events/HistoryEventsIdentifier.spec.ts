@@ -1,11 +1,13 @@
 import { I18nTStub } from '@test/stubs/I18nT';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { createOnlineHistoryEvent } from '@test/utils/history-events';
+import { createLocationNode as node } from '@test/utils/location-tree';
 import { mount } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import HistoryEventsIdentifier from '@/modules/history/events/HistoryEventsIdentifier.vue';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import '@test/i18n';
 
 describe('historyEventsIdentifier', () => {
@@ -27,6 +29,14 @@ describe('historyEventsIdentifier', () => {
     useLocationStore().allLocations = { coinbaseprime: { isExchange: true, label: 'Coinbase Prime' } };
 
     expect(identifierText('coinbaseprime')).toContain('Coinbase Prime');
+  });
+
+  it('should name a custom location by the name the user gave it', () => {
+    useLocationTreeStore().setNodes([node('custom:luno', 'exchanges', 'Luno', { isBuiltin: false })]);
+
+    const text = identifierText('custom:luno');
+    expect(text).toContain('Luno');
+    expect(text).not.toContain('custom:luno');
   });
 
   it('should fall back to the identifier while the location is unknown', () => {

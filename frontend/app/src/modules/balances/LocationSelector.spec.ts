@@ -6,9 +6,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
-import { flatLocationTree } from '@/modules/locations/flat-location-tree';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import '@test/i18n';
+
+/** A tree holding one location below the total, named by its identifier. */
+function belowTotal(identifier: string): ReturnType<typeof node>[] {
+  return [node('total', null, 'Total'), node(identifier, 'total', identifier)];
+}
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): Record<string, unknown> => ({
@@ -64,16 +68,16 @@ describe('locationSelector', () => {
     expect(selection('custom:luno')).toBe('Luno');
   });
 
-  it('should show the display name of a chosen location, not its raw tree name, on a flat tree', () => {
+  it('should show the display name of a chosen location, not the identifier the tree names it by', () => {
     useLocationStore().allLocations = { coinbaseprime: { label: 'Coinbase Prime' } };
-    useLocationTreeStore().setNodes(flatLocationTree({ coinbaseprime: {} }));
+    useLocationTreeStore().setNodes(belowTotal('coinbaseprime'));
 
     expect(selection('coinbaseprime')).toBe('Coinbase Prime');
   });
 
   it('should name a chosen chain by its chain name, as the rest of the app does', () => {
     useLocationStore().allLocations = { 'binance sc': { label: 'Binance sc' } };
-    useLocationTreeStore().setNodes(flatLocationTree({ 'binance sc': {} }));
+    useLocationTreeStore().setNodes(belowTotal('binance sc'));
 
     expect(selection('binance sc')).toBe('Binance Smart Chain');
   });
@@ -98,18 +102,18 @@ describe('locationSelector', () => {
       return wrapper.findComponent(AutoCompleteStub).props('itemHeight');
     }
 
-    function useFlatTree(): void {
+    function useSingleLocationTree(): void {
       useLocationStore().allLocations = { kraken: { isExchange: true, label: 'Kraken' } };
-      useLocationTreeStore().setNodes(flatLocationTree({ kraken: {} }));
+      useLocationTreeStore().setNodes(belowTotal('kraken'));
     }
 
     it('should use the single-line height when no option has a path', () => {
-      useFlatTree();
+      useSingleLocationTree();
       expect(itemHeight()).toBe(52);
     });
 
     it('should use the dense single-line height when no option has a path', () => {
-      useFlatTree();
+      useSingleLocationTree();
       expect(itemHeight({ dense: true })).toBe(36);
     });
 

@@ -24,6 +24,22 @@ describe('useLocationTreeStore', () => {
     expect(store.pathOf('unknown')).toEqual([]);
   });
 
+  it('should order locations after their ancestors and siblings by name, not by identifier', () => {
+    const store = useLocationTreeStore();
+    store.setNodes([...store.nodes, node('abn', 'banks', 'ABN')]);
+
+    expect(store.sortByTree(['qonto', 'custom:savings', 'abn', 'banks', 'custom:ing', 'custom:closed']))
+      .toEqual(['banks', 'abn', 'custom:closed', 'custom:ing', 'custom:savings', 'qonto']);
+  });
+
+  it('should keep a location\'s children right after it when a sibling\'s name starts with its name', () => {
+    const store = useLocationTreeStore();
+    store.setNodes([...store.nodes, node('custom:ings', 'banks', 'INGS', { isBuiltin: false })]);
+
+    expect(store.sortByTree(['custom:ings', 'custom:savings', 'custom:ing']))
+      .toEqual(['custom:ing', 'custom:savings', 'custom:ings']);
+  });
+
   it('should give a path only for a location whose name another location shares', () => {
     const store = useLocationTreeStore();
     store.setNodes([...store.nodes, node('exchanges', 'total', 'Exchanges'), node('custom:ing-x', 'exchanges', 'ing', { isBuiltin: false })]);

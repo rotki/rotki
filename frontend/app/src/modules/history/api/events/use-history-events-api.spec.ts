@@ -521,6 +521,20 @@ describe('composables/api/history/events/index', () => {
       expect(result.entriesFound).toBe(0);
     });
 
+    it('should filter a location together with the locations below it', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.post(`${backendUrl}/api/1/history/events`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ message: '', result: { entries: [], entries_found: 0, entries_limit: 50, entries_total: 0 } });
+        }),
+      );
+
+      await useHistoryEventsApi().fetchHistoryEvents({ ...createFetchPayload(), location: 'banks' });
+
+      expect(capturedBody).toMatchObject({ location: 'banks', location_scope: 'subtree' });
+    });
+
     it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/history/events`, () =>

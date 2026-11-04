@@ -14,6 +14,12 @@ export const LocationNode = z.object({
 
 export type LocationNode = z.infer<typeof LocationNode>;
 
+const LocationNodes = z.array(LocationNode);
+
+interface UseLocationTreeApiReturn {
+  fetchLocationTree: () => Promise<LocationNode[]>;
+}
+
 /**
  * The absolute url of the uploaded image of a custom location, for use as an `<img src>`.
  *
@@ -23,4 +29,11 @@ export type LocationNode = z.infer<typeof LocationNode>;
  */
 export function locationImageUrl(identifier: string, image: string): string {
   return api.buildUrl(`locations/${encodeURIComponent(identifier)}/image`, { v: image });
+}
+
+export function useLocationTreeApi(): UseLocationTreeApiReturn {
+  const fetchLocationTree = async (): Promise<LocationNode[]> =>
+    LocationNodes.parse(await api.get<LocationNode[]>('/locations'));
+
+  return { fetchLocationTree };
 }

@@ -1,8 +1,11 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { createLocationNode as node } from '@test/utils/location-tree';
 import { withSetup } from '@test/utils/with-setup';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 const ADDRESS = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
@@ -55,5 +58,34 @@ describe('useSharedFieldResolvers', () => {
     const shown = resolveAssetSymbol('eip155:1/erc20:0x214AF1443f6bB9FFB2bDcF301c762Df28Dd7f818');
 
     expect(shown).toBe('0x214A...f818');
+  });
+
+  describe('location names', () => {
+    beforeEach(() => {
+      useLocationStore().allLocations = { kraken: { image: 'kraken.svg', isExchange: true, label: 'Kraken' } };
+      useLocationTreeStore().setNodes([
+        node('total', null, 'Total'),
+        node('banks', 'total', 'Banks'),
+        node('exchanges', 'total', 'Exchanges'),
+        node('custom:ing-bank', 'banks', 'ING', { isBuiltin: false }),
+        node('custom:ing-broker', 'exchanges', 'ING', { isBuiltin: false }),
+        node('custom:dkb', 'banks', 'DKB', { isBuiltin: false }),
+      ]);
+    });
+
+    it('should name a location by its path when another location shares its name', () => {
+      const { resolveLocationName } = withSetup(useSharedFieldResolvers).result;
+
+      expect(resolveLocationName('custom:ing-bank')).toBe('Banks › ING');
+      expect(resolveLocationName('custom:ing-broker')).toBe('Exchanges › ING');
+      expect(resolveLocationName('custom:dkb')).toBe('DKB');
+    });
+
+    it('should fall back to the packaged name, then to the raw value, for a location outside the tree', () => {
+      const { resolveLocationName } = withSetup(useSharedFieldResolvers).result;
+
+      expect(resolveLocationName('kraken')).toBe('Kraken');
+      expect(resolveLocationName('custom:deleted')).toBe('custom:deleted');
+    });
   });
 });
