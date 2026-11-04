@@ -4,6 +4,7 @@ from http import HTTPStatus
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
+from urllib.parse import urlsplit
 
 import pytest
 import requests
@@ -112,6 +113,68 @@ def test_data_import_cointracking(
     # And also assert data was imported successfully
     assert_cointracking_import_results(rotki, websocket_connection)
     assert_all_events_have_csv_marker(rotki)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('origin', [
+    'https://foreign.example',
+    'http://localhost.evil:4242',
+])
+def test_data_import_rejects_foreign_origin(
+        rotkehlchen_api_server: APIServer,
+        origin: str,
+) -> None:
+    """Non-safe requests reject browser requests from foreign origins."""
+    filepath = Path(__file__).resolve().parent.parent / 'data' / 'cointracking_trades_list.csv'
+    import_url = api_url_for(rotkehlchen_api_server, 'dataimportresource')
+
+    with filepath.open('rb') as infile:
+        response = requests.post(
+            import_url,
+            files={'file': infile},
+            data={'source': 'cointracking'},
+            headers={'Origin': origin},
+        )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {
+        'result': None,
+        'message': 'Cross-origin requests are not allowed',
+    }
+
+    # Verify form-encoded POST without multipart is also rejected
+    response = requests.post(
+        import_url,
+        data={'source': 'cointracking', 'file': str(filepath)},
+        headers={'Origin': origin},
+    )
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {
+        'result': None,
+        'message': 'Cross-origin requests are not allowed',
+    }
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('scheme', ['http', 'https'])
+def test_data_import_allows_same_origin(
+        rotkehlchen_api_server: APIServer,
+        scheme: str,
+) -> None:
+    """Same-origin requests succeed even when behind a reverse proxy handling HTTPS."""
+    filepath = Path(__file__).resolve().parent.parent / 'data' / 'cointracking_trades_list.csv'
+    import_url = api_url_for(rotkehlchen_api_server, 'dataimportresource')
+    same_origin = f'{scheme}://{urlsplit(import_url).netloc}'
+
+    with filepath.open('rb') as infile:
+        response = requests.post(
+            import_url,
+            files={'file': infile},
+            data={'source': 'cointracking'},
+            headers={'Origin': same_origin},
+        )
+
+    assert_proper_sync_response_with_result(response)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

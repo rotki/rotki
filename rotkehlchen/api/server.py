@@ -4,8 +4,10 @@ import re
 import sys
 import time
 import traceback
+from fnmatch import fnmatchcase
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
+from urllib.parse import urlsplit
 
 import uvicorn
 from flask import Blueprint, Flask, Response, abort, g, jsonify, request
@@ -578,6 +580,7 @@ class APIServer:
         self.rotki_notifier = ws_notifier
         self.flask_app = flask_app
         self.blueprint = blueprint
+        self.cors_domain_list = tuple(cors_domain_list or ())
 
         self.uvicorn_server: uvicorn.Server | None = None
         self.uvicorn_task: Task | None = None
@@ -605,9 +608,19 @@ class APIServer:
     def before_request_callback(self) -> Response | None:
         """Function that runs before each request.
 
-        Returning a Response short-circuits the request (the session-cookie gate
-        rejecting with 401); returning None lets it proceed as normal.
+        Returning a Response short-circuits the request; returning None lets it
+        proceed as normal.
         """
+        if (
+                request.method not in ('GET', 'HEAD', 'OPTIONS') and
+                (origin := request.headers.get('Origin')) is not None and
+                not self._is_allowed_origin(origin)
+        ):
+            return api_response(
+                wrap_in_fail_result('Cross-origin requests are not allowed'),
+                HTTPStatus.FORBIDDEN,
+            )
+
         # Session-cookie gate (Docker). Inert without a key; otherwise deny-by-default
         # against `_cookie_less_rules`, rejecting with a plain 401 so the frontend
         # routes to login. The cookie's `sid` must be the user's active session, so a
@@ -683,6 +696,35 @@ class APIServer:
             json_data=request.json if request.is_json else None,
         )
         return None
+
+    def _is_allowed_origin(self, origin: str) -> bool:
+        """Return whether a request's origin can access this API."""
+        if any(
+                fnmatchcase(candidate.casefold(), pattern.casefold())
+                for pattern in self.cors_domain_list
+                for candidate in (origin, f'{origin}/')
+        ):
+            return True
+
+        parsed_origin = urlsplit(origin)
+        if (
+                parsed_origin.scheme.casefold() not in ('http', 'https') or
+                parsed_origin.path or
+                parsed_origin.query or
+                parsed_origin.fragment
+        ):
+            return False
+
+        parsed_host = urlsplit(f'//{request.host}')
+        is_https = parsed_origin.scheme.casefold() == 'https'
+        origin_port = parsed_origin.port or (443 if is_https else 80)
+        host_port = parsed_host.port or (443 if is_https else 80)
+        origin_host = (parsed_origin.hostname or '').casefold()
+        request_host = (parsed_host.hostname or '').casefold()
+        return (
+            origin_host == request_host and
+            origin_port == host_port
+        )
 
     def after_request_callback(self, response: Response) -> Response:
         """Function that runs after each completed request
