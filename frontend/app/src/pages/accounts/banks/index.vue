@@ -214,7 +214,12 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
           </div>
         </template>
         <template #item.name="{ row }">
-          <span class="font-medium">{{ row.name }}</span>
+          <span
+            class="font-medium"
+            data-testid="bank-connection-name"
+          >
+            {{ row.name }}
+          </span>
         </template>
         <template #item.syncStatus="{ row }">
           <BankSyncStatus :status="row.syncStatus" />

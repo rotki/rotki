@@ -75,7 +75,7 @@ describe('banks page', () => {
           RouterLink: true,
           RuiDataTable: {
             props: ['rows', 'empty'],
-            template: `<div><slot name="body.prepend" /><div v-if="rows.length === 0" data-testid="table-empty">{{ empty?.label }}|<slot name="empty-description">{{ empty?.description }}</slot></div><div v-for="row in rows" :key="row.name" data-testid="row"><slot name="item.syncStatus" :row="row" /><slot name="item.balance" :row="row" /><slot name="item.actions" :row="row" /></div></div>`,
+            template: `<div><slot name="body.prepend" /><div v-if="rows.length === 0" data-testid="table-empty">{{ empty?.label }}|<slot name="empty-description">{{ empty?.description }}</slot></div><div v-for="row in rows" :key="row.name" data-testid="row"><slot name="item.name" :row="row" /><slot name="item.syncStatus" :row="row" /><slot name="item.balance" :row="row" /><slot name="item.actions" :row="row" /></div></div>`,
           },
           TablePageLayout: { template: '<div><slot name="buttons" /><slot /></div>' },
           Teleport: { template: '<span><slot /></span>' },
@@ -187,6 +187,7 @@ describe('banks page', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid=bank-balance]').text()).toBe('120');
+    expect(wrapper.find('[data-testid=bank-connection-name]').text()).toBe('Qonto main');
   });
 
   it('should load the supported banks and the connections when it mounts', async () => {
