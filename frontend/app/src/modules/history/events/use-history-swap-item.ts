@@ -7,6 +7,7 @@ import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/modules/assets/u
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getMatchedBridgeUnlink, isEventMissingAccountingRule } from '@/modules/history/event-utils';
+import { useFeeNotes } from '@/modules/history/events/use-fee-notes';
 
 export interface UseHistorySwapItemProps {
   events: Ref<HistoryEventEntry[]> | ComputedRef<HistoryEventEntry[]>;
@@ -48,6 +49,7 @@ export function useHistorySwapItem(
   const { getChain, getChainName } = useSupportedChains();
   const { getAssetField, useAssetInfo } = useAssetInfoRetrieval();
   const { isAssetIgnored } = useAssetsStore();
+  const { appendFeeNotes } = useFeeNotes(events);
 
   const primaryEvent = computed<HistoryEventEntry>(() => get(events)[0]);
 
@@ -161,12 +163,7 @@ export function useHistorySwapItem(
           ...receiveNotes,
         });
 
-    const fee = get(events).filter(item => item.eventSubtype === 'fee');
-    if (fee.length === 0)
-      return notes;
-
-    const feeText = fee.map(item => `${item.amount.toFixed()} ${getAssetField(item.asset, 'symbol', ASSET_RESOLUTION_OPTIONS)}`).join('; ');
-    return t('history_events_list_swap.fee_description', { feeText, notes });
+    return appendFeeNotes(notes);
   });
 
   return {
