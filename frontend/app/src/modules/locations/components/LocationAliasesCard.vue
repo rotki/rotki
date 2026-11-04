@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { LocationAliases } from '@/modules/locations/use-location-tree-api';
+import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
+import { stringParam, toPillParams } from '@/modules/core/table/param-refs';
+import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
+import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
-import LocationAliasesFilter from '@/modules/locations/components/LocationAliasesFilter.vue';
 import LocationAliasFormDialog from '@/modules/locations/components/LocationAliasFormDialog.vue';
+import { toLocationAliasFields } from '@/modules/locations/location-manager-fields';
+import { onePage } from '@/modules/locations/location-rows';
 import { useLocationAliases } from '@/modules/locations/use-location-aliases';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
@@ -41,10 +46,11 @@ const rows = computed<AliasRow[]>(() => {
 });
 
 /** Every alias on one page: there are rarely many, and a pager around a handful only adds noise. */
-const allAliases = computed<TablePaginationData>(() => {
-  const total = get(rows).length;
-  return { limit: Math.max(total, 1), page: 1, total };
-});
+const allAliases = computed<TablePaginationData>(() => onePage(get(rows).length));
+
+const filterFields = toLocationAliasFields(useSharedFieldResolvers(), t, (): string[] => get(aliasLocations));
+const pillLabels = usePillBarLabels();
+const filterParams = toPillParams({ alias: stringParam(aliasSearch), location: stringParam(locationSearch) });
 
 const cols = computed<DataTableColumn<AliasRow>[]>(() => [{
   key: 'alias',
@@ -71,12 +77,6 @@ const empty = computed<{ label: string; description?: string }>(() => {
   return { description: t('location_manager.aliases.empty_description'), label: t('location_manager.aliases.empty_label') };
 });
 
-/** Saves an alias from the form, handing back why it was refused. */
-async function save(alias: string, locationIdentifier: string): Promise<string | undefined> {
-  const outcome = await saveAlias(alias, locationIdentifier);
-  return outcome.ok ? undefined : outcome.error;
-}
-
 async function remove(row: AliasRow): Promise<void> {
   set(confirmingDelete, undefined);
   set(actionFailure, undefined);
@@ -85,17 +85,17 @@ async function remove(row: AliasRow): Promise<void> {
     set(actionFailure, outcome.error);
 }
 
-onMounted(async () => load());
+onMounted(load);
 </script>
 
 <template>
   <TableFrame data-testid="location-aliases">
     <template #toolbar>
-      <LocationAliasesFilter
-        v-model:alias="aliasSearch"
-        v-model:location="locationSearch"
+      <PillFilterBar
+        v-model:params="filterParams"
         class="flex-1 min-w-64"
-        :locations="aliasLocations"
+        :fields="filterFields"
+        :labels="pillLabels"
       />
     </template>
     <RuiDataTable
@@ -202,7 +202,7 @@ onMounted(async () => load());
     <LocationAliasFormDialog
       v-model="adding"
       :aliases="aliases"
-      :save="save"
+      :save="saveAlias"
     />
   </TableFrame>
 </template>

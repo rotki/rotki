@@ -5,14 +5,16 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import LocationManager from '@/modules/locations/components/LocationManager.vue';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import '@test/i18n';
 
 type Management = ReturnType<typeof useLocationManagement>;
 
-const { deleteLocation, editLocation, fetchUsage, show } = vi.hoisted(() => ({
+const { deleteLocation, editLocation, fetchUsage, onAliasesMounted, show } = vi.hoisted(() => ({
   deleteLocation: vi.fn<Management['deleteLocation']>(),
+  onAliasesMounted: vi.fn<() => void>(),
   editLocation: vi.fn<Management['editLocation']>(),
   fetchUsage: vi.fn<Management['fetchUsage']>(),
   show: vi.fn(),
@@ -26,9 +28,10 @@ vi.mock('@/modules/core/common/use-confirm-store', () => ({
   useConfirmStore: (): Record<string, unknown> => ({ show }),
 }));
 
-const { replace, route } = vi.hoisted(() => {
+const { replace, route } = await vi.hoisted(async () => {
+  const { reactive } = await import('vue');
   const query: Record<string, string> = {};
-  return { replace: vi.fn(), route: { query } };
+  return { replace: vi.fn(), route: reactive({ query }) };
 });
 
 vi.mock('vue-router', () => ({
@@ -45,7 +48,7 @@ describe('locationManager', () => {
       global: {
         plugins: [pinia],
         stubs: {
-          LocationAliasesCard: { template: '<div data-testid="location-aliases-stub" />' },
+          LocationAliasesCard: { props: ['adding'], setup: (): void => onAliasesMounted(), template: '<div data-testid="location-aliases-stub" :data-adding="adding" />' },
           LocationFormDialog: true,
           LocationIcon: { props: ['item'], template: '<span>{{ item }}</span>' },
           RuiDataTable: {
@@ -54,7 +57,7 @@ describe('locationManager', () => {
             template: '<div><slot name="body.prepend" /><div v-for="row in rows" :key="row.path" data-testid="table-row"><slot name="item.name" :row="row" /><slot name="item.actions" :row="row" /></div></div>',
           },
           RuiDialog: { props: ['modelValue'], template: '<div v-if="modelValue"><slot /></div>' },
-          TablePageLayout: { template: '<div><slot name="buttons" /><slot /></div>' },
+          TablePageLayout: { template: '<div><slot name="buttons" /><slot name="tabs" /><slot /></div>' },
         },
       },
     });
@@ -108,9 +111,34 @@ describe('locationManager', () => {
     wrapper = createWrapper();
     expect(wrapper.find('[data-testid=location-aliases-stub]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=table-row]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=location-manager-add]').text()).toContain('location_manager.aliases.add');
 
-    wrapper.findComponent({ name: 'RuiTabs' }).vm.$emit('update:modelValue', 'locations');
+    const locationsTab = wrapper.find('[data-testid=location-manager-tabs]').findAll('button').find(button => button.text() === 'location_manager.tabs.locations');
+    assert(locationsTab);
+    await locationsTab.trigger('click');
     expect(replace).toHaveBeenCalledExactlyOnceWith({ query: { tab: undefined } });
+  });
+
+  it('should open the alias form from a quick-add link to the aliases tab, and keep the tab', async () => {
+    route.query = { add: 'true', tab: 'aliases' };
+    wrapper = createWrapper();
+    await flushPromises();
+
+    expect(replace).toHaveBeenLastCalledWith({ query: expect.objectContaining({ tab: 'aliases' }) });
+    expect(wrapper.find('[data-testid=location-aliases-stub]').attributes('data-adding')).toBe('true');
+  });
+
+  it('should keep the aliases alive across tab switches, so they load once per visit', async () => {
+    route.query = { tab: 'aliases' };
+    wrapper = createWrapper();
+    route.query = {};
+    await nextTick();
+    expect(wrapper.find('[data-testid=location-aliases-stub]').exists()).toBe(false);
+    route.query = { tab: 'aliases' };
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=location-aliases-stub]').exists()).toBe(true);
+    expect(onAliasesMounted).toHaveBeenCalledOnce();
   });
 
   it('should keep a location it just archived listed, so it can be restored in place', async () => {

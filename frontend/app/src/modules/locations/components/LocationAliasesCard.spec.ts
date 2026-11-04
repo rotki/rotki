@@ -37,7 +37,7 @@ describe('locationAliasesCard', () => {
       global: {
         plugins: [pinia],
         stubs: {
-          LocationAliasesFilter: { emits: ['update:alias', 'update:location'], name: 'LocationAliasesFilter', props: ['alias', 'location', 'locations'], template: '<div />' },
+          PillFilterBar: { emits: ['update:params'], name: 'PillFilterBar', props: ['params', 'fields', 'labels'], template: '<div />' },
           LocationAliasFormDialog: { name: 'LocationAliasFormDialog', props: ['modelValue', 'aliases', 'save'], template: '<div />' },
           LocationIcon: true,
           RuiDataTable: {
@@ -62,13 +62,8 @@ describe('locationAliasesCard', () => {
     wrapper = mountCard();
   });
 
-  it('should save an alias from the form and hand back why one was refused', async () => {
-    const form = wrapper.findComponent({ name: 'LocationAliasFormDialog' });
-    expect(await form.props('save')('cex', 'custom:ing')).toBeUndefined();
-    expect(saveAlias).toHaveBeenCalledExactlyOnceWith('cex', 'custom:ing');
-
-    saveAlias.mockResolvedValue(err('Location custom:ing is archived'));
-    expect(await form.props('save')('cex', 'custom:ing')).toBe('Location custom:ing is archived');
+  it('should hand the form the save that updates the list', () => {
+    expect(wrapper.findComponent({ name: 'LocationAliasFormDialog' }).props('save')).toBe(saveAlias);
   });
 
   it('should open the form when the page asks to add an alias', async () => {
@@ -79,20 +74,23 @@ describe('locationAliasesCard', () => {
 
   it('should list only the aliases that match the filter', async () => {
     await flushPromises();
-    const filter = wrapper.findComponent({ name: 'LocationAliasesFilter' });
-    filter.vm.$emit('update:alias', 'diba');
+    const filter = wrapper.findComponent({ name: 'PillFilterBar' });
+    filter.vm.$emit('update:params', { alias: 'diba' });
     await nextTick();
     expect(wrapper.findAll('[data-testid=alias-row]')).toHaveLength(1);
 
-    filter.vm.$emit('update:alias', 'luno');
+    filter.vm.$emit('update:params', { alias: 'luno' });
     await nextTick();
     expect(wrapper.findAll('[data-testid=alias-row]')).toHaveLength(0);
     expect(wrapper.findComponent({ name: 'RuiDataTable' }).props('empty')).toEqual({ label: 'location_manager.aliases.empty_search_label' });
 
-    filter.vm.$emit('update:alias', '');
-    filter.vm.$emit('update:location', 'custom:other');
+    filter.vm.$emit('update:params', { location: 'custom:other' });
     await nextTick();
     expect(wrapper.findAll('[data-testid=alias-row]')).toHaveLength(0);
+
+    filter.vm.$emit('update:params', { location: 'custom:ing' });
+    await nextTick();
+    expect(wrapper.findAll('[data-testid=alias-row]')).toHaveLength(1);
   });
 
   it('should name aliases that could not be loaded above the ones still listed, with a retry', async () => {

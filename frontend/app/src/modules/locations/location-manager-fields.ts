@@ -1,14 +1,13 @@
-import type { Ref, WritableComputedRef } from 'vue';
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';
-import { type PillParams, stringParam, toPillParams } from '@/modules/core/table/param-refs';
 import { toParamFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 
 type Translate = (key: string) => string;
 
 /**
- * The pill-bar field of the location tree: a name to look for.
+ * The pill-bar field of the location tree: a name to look for, keyed apart from the name fields of
+ * other tables so their recent values stay apart.
  *
  * @remarks
  * Param-bound, because the page holds the whole tree and narrows it in memory, keeping the
@@ -18,23 +17,13 @@ export function toLocationTreeFields(t: Translate): FieldDef[] {
   return [
     toParamFieldDef({
       freeText: true,
-      key: 'name',
+      key: 'locationName',
       label: (): string => t('common.name'),
       multiple: false,
-      paramKey: 'name',
+      paramKey: 'locationName',
       to: 'both',
     }),
   ];
-}
-
-export function locationTreeParams(name: Ref<string>): WritableComputedRef<PillParams> {
-  return toPillParams({ name: stringParam(name) });
-}
-
-/** What the alias fields need from the Vue layer to be built. */
-export interface LocationAliasFieldOptions {
-  /** The locations the saved aliases point at, offered for the location pill. */
-  readonly locations: () => string[];
 }
 
 /**
@@ -47,7 +36,8 @@ export interface LocationAliasFieldOptions {
 export function toLocationAliasFields(
   resolvers: SharedFieldResolvers,
   t: Translate,
-  options: LocationAliasFieldOptions,
+  /** The locations the saved aliases point at, offered for the location pill. */
+  locations: () => string[],
 ): FieldDef[] {
   return [
     toParamFieldDef({
@@ -64,15 +54,11 @@ export function toLocationAliasFields(
         label: (): string => t('common.location'),
         multiple: false,
         paramKey: 'location',
-        suggest: options.locations,
+        suggest: locations,
         to: 'both',
       }),
       SharedFieldKinds.LOCATION,
       resolvers,
     ),
   ];
-}
-
-export function locationAliasParams(alias: Ref<string>, location: Ref<string>): WritableComputedRef<PillParams> {
-  return toPillParams({ alias: stringParam(alias), location: stringParam(location) });
 }

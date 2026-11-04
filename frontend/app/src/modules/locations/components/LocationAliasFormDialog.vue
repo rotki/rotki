@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ResultAsync } from 'plainfp/result-async';
 import type { DeepReadonly } from 'vue';
 import type { LocationAliases } from '@/modules/locations/use-location-tree-api';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
@@ -12,8 +13,8 @@ const display = defineModel<boolean>({ required: true });
 const { aliases, save } = defineProps<{
   /** The saved aliases, to tell the user when the alias typed already exists. */
   aliases: DeepReadonly<LocationAliases>;
-  /** Saves the alias, handing back why it was refused, or nothing once it is saved. */
-  save: (alias: string, locationIdentifier: string) => Promise<string | undefined>;
+  /** Saves the alias, handing back why it was refused. */
+  save: (alias: string, locationIdentifier: string) => ResultAsync<void, string>;
 }>();
 
 const alias = ref<string>('');
@@ -41,6 +42,15 @@ const moving = computed<boolean>(() => {
 const canSave = computed<boolean>(() => get(alias).trim() !== '' && get(target) !== ''
   && get(existing)?.locationIdentifier !== get(target));
 
+/** What the alias typed already does, and what saving it would change. */
+const notice = computed<string | undefined>(() => {
+  const found = get(existing);
+  if (!found)
+    return undefined;
+  const values = { alias: found.alias, location: pathLabelOf(found.locationIdentifier) };
+  return get(moving) ? t('location_manager.aliases.move_notice', values) : t('location_manager.aliases.exists', values);
+});
+
 const dirty = computed<boolean>(() => get(alias) !== '' || get(target) !== '');
 
 watch(display, (open) => {
@@ -61,11 +71,11 @@ async function confirm(): Promise<void> {
   set(submitting, true);
   set(saveFailure, undefined);
   try {
-    const failure = await save(get(alias), get(target));
-    if (failure === undefined)
+    const outcome = await save(get(alias), get(target));
+    if (outcome.ok)
       close();
     else
-      set(saveFailure, failure);
+      set(saveFailure, outcome.error);
   }
   finally {
     set(submitting, false);
@@ -115,9 +125,7 @@ async function confirm(): Promise<void> {
         :type="moving ? 'warning' : 'info'"
         data-testid="location-alias-existing"
       >
-        {{ moving
-          ? t('location_manager.aliases.move_notice', { alias: existing.alias, location: pathLabelOf(existing.locationIdentifier) })
-          : t('location_manager.aliases.exists', { alias: existing.alias, location: pathLabelOf(existing.locationIdentifier) }) }}
+        {{ notice }}
       </RuiAlert>
     </div>
   </BigDialog>
