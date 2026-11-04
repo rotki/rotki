@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ActiveFilter, FieldDef, FilterOp } from '@/modules/core/table/pill/core/types';
-import { useOperatorLabels } from '@/modules/core/table/pill/composables/use-operator-labels';
-import { operatorsFor } from '@/modules/core/table/pill/core/operators';
+import { hasOperatorChoice } from '@/modules/core/table/pill/core/operators';
+import PillOperatorToggle from '@/modules/core/table/pill/PillOperatorToggle.vue';
 import PillValueIcon from '@/modules/core/table/pill/PillValueIcon.vue';
 import ValueSelectList, { type SelectOption } from '@/modules/core/table/pill/ValueSelectList.vue';
 
@@ -17,10 +17,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const operatorLabels = useOperatorLabels();
 
-const operators = computed<readonly FilterOp[]>(() => operatorsFor(field));
-const showOperators = computed<boolean>(() => get(operators).length > 1);
 /**
  * Builds the option list, carrying everything the field can resolve for a value rather than its
  * label alone.
@@ -48,35 +45,22 @@ const selected = computed<string[]>({
   },
 });
 
-function setOperator(op: FilterOp | FilterOp[] | undefined): void {
-  if (op !== undefined && !Array.isArray(op))
-    emit('update', { ...filter, op });
+function setOperator(op: FilterOp): void {
+  emit('update', { ...filter, op });
 }
 </script>
 
 <template>
   <div class="flex flex-col min-w-64">
     <div
-      v-if="showOperators"
+      v-if="hasOperatorChoice(field)"
       class="p-3 pb-2"
     >
-      <RuiButtonGroup
-        :model-value="filter.op"
-        color="primary"
-        size="sm"
-        required
-        @update:model-value="setOperator($event)"
-      >
-        <RuiButton
-          v-for="op in operators"
-          :key="op"
-          :model-value="op"
-          data-testid="pill-op"
-          :data-key="op"
-        >
-          {{ operatorLabels[op] }}
-        </RuiButton>
-      </RuiButtonGroup>
+      <PillOperatorToggle
+        :field="field"
+        :op="filter.op"
+        @update:op="setOperator($event)"
+      />
     </div>
 
     <ValueSelectList

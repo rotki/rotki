@@ -2,6 +2,7 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { FilterValueTypes } from '@/modules/core/table/filtering';
 import { resolveText } from '@/modules/core/table/pill/core/text';
+import PillComboboxSearch from '@/modules/core/table/pill/PillComboboxSearch.vue';
 
 const { fields, searchPlaceholder = '', emptyText = '' } = defineProps<{
   /** The fields offered to add (typically the ones without an active filter). */
@@ -21,14 +22,6 @@ const highlighted = ref<number>(0);
 
 // Keyboard-shortcut glyphs for the footer (symbols/key names, not translatable copy).
 const keyHints = ['↑', '↓', '↵', 'esc'];
-
-// The menu mounts fresh on every open, so focusing on mount lands the caret ready to type.
-const searchField = useTemplateRef<HTMLInputElement>('searchField');
-
-onMounted(async () => {
-  await nextTick();
-  get(searchField)?.focus();
-});
 
 const filtered = computed<FieldDef[]>(() => {
   const query = get(search).toLowerCase().trim();
@@ -113,31 +106,14 @@ function onKeydown(event: KeyboardEvent): void {
 
 <template>
   <div class="flex flex-col min-w-64 max-w-80">
-    <div class="flex items-center gap-2 px-3 border-b transition-colors border-rui-grey-200 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary">
-      <RuiIcon
-        name="lu-search"
-        size="16"
-        class="text-rui-text-secondary shrink-0"
-        aria-hidden="true"
-      />
-      <input
-        ref="searchField"
-        v-model="search"
-        type="text"
-        class="flex-1 min-w-0 bg-transparent py-2.5 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary"
-        :placeholder="searchPlaceholder"
-        :aria-label="searchPlaceholder"
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded="true"
-        :aria-controls="listId"
-        :aria-activedescendant="activeRowId"
-        autocomplete="off"
-        spellcheck="false"
-        data-testid="pill-menu-search"
-        @keydown="onKeydown($event)"
-      />
-    </div>
+    <PillComboboxSearch
+      v-model="search"
+      :placeholder="searchPlaceholder"
+      :list-id="listId"
+      :active-row-id="activeRowId"
+      test-id="pill-menu-search"
+      @keydown="onKeydown($event)"
+    />
 
     <div
       :id="listId"

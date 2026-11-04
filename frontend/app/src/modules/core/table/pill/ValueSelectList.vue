@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useListHighlight } from '@/modules/core/common/use-list-highlight';
+import PillComboboxSearch from '@/modules/core/table/pill/PillComboboxSearch.vue';
 
 export interface SelectOption {
   value: string;
@@ -44,13 +45,6 @@ defineSlots<{
 }>();
 
 const ITEM_HEIGHT = 32;
-
-const searchField = useTemplateRef<HTMLInputElement>('searchField');
-
-onMounted(async () => {
-  await nextTick();
-  get(searchField)?.focus();
-});
 
 const filtered = computed<SelectOption[]>(() => {
   const query = get(search).toLowerCase().trim();
@@ -139,41 +133,27 @@ function toggle(value: string): void {
       </button>
     </div>
 
-    <div class="flex items-center gap-2 px-3 border-b transition-colors border-rui-grey-200 dark:border-rui-grey-700 focus-within:border-rui-primary dark:focus-within:border-rui-primary">
-      <RuiIcon
-        name="lu-search"
-        size="16"
-        class="text-rui-text-secondary shrink-0"
-        aria-hidden="true"
-      />
-      <input
-        ref="searchField"
-        v-model="search"
-        type="text"
-        class="flex-1 min-w-0 bg-transparent py-2.5 text-sm text-rui-text-primary outline-hidden placeholder:text-rui-text-secondary"
-        :placeholder="searchPlaceholder"
-        :aria-label="searchPlaceholder"
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded="true"
-        :aria-controls="listId"
-        :aria-activedescendant="activeRowId"
-        autocomplete="off"
-        spellcheck="false"
-        data-testid="value-select-search"
-        @keydown="onKeydown($event)"
-      />
-      <RuiProgress
-        v-if="loading"
-        class="shrink-0"
-        color="primary"
-        circular
-        variant="indeterminate"
-        size="16"
-        thickness="2"
-        data-testid="value-select-loading"
-      />
-    </div>
+    <PillComboboxSearch
+      v-model="search"
+      :placeholder="searchPlaceholder"
+      :list-id="listId"
+      :active-row-id="activeRowId"
+      test-id="value-select-search"
+      @keydown="onKeydown($event)"
+    >
+      <template #append>
+        <RuiProgress
+          v-if="loading"
+          class="shrink-0"
+          color="primary"
+          circular
+          variant="indeterminate"
+          size="16"
+          thickness="2"
+          data-testid="value-select-loading"
+        />
+      </template>
+    </PillComboboxSearch>
 
     <div
       v-if="filtered.length > 0"
