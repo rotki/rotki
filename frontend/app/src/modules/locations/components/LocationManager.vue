@@ -9,7 +9,7 @@ import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
 import LocationFormDialog from '@/modules/locations/components/LocationFormDialog.vue';
 import LocationTreeRowActions from '@/modules/locations/components/LocationTreeRowActions.vue';
 import LocationTreeRowName from '@/modules/locations/components/LocationTreeRowName.vue';
-import LocationUsageDialog from '@/modules/locations/components/LocationUsageDialog.vue';
+import LocationUsageNotice from '@/modules/locations/components/LocationUsageNotice.vue';
 import { type LocationRow, locationRows } from '@/modules/locations/location-rows';
 import { useLocationManagement } from '@/modules/locations/use-location-management';
 import { useLocationTreeExpansion } from '@/modules/locations/use-location-tree-expansion';
@@ -84,6 +84,7 @@ function addBelow(parentIdentifier: string, name?: string): void {
 
 async function setArchived(location: LocationNode, archived: boolean): Promise<void> {
   set(actionFailure, undefined);
+  set(blockedDeletion, undefined);
   const outcome = await editLocation(location.identifier, { isActive: !archived });
   if (!outcome.ok) {
     set(actionFailure, outcome.error);
@@ -97,6 +98,7 @@ async function setArchived(location: LocationNode, archived: boolean): Promise<v
 /** A used location can not be deleted; the user then sees what uses it and may archive it. */
 async function requestDeletion(location: LocationNode): Promise<void> {
   set(actionFailure, undefined);
+  set(blockedDeletion, undefined);
   const usage = await fetchUsage(location.identifier);
   if (!usage.ok) {
     set(actionFailure, usage.error);
@@ -175,10 +177,10 @@ onMounted(async () => {
         data-testid="location-manager-table"
       >
         <template
-          v-if="actionFailure"
+          v-if="actionFailure || blockedDeletion"
           #body.prepend
         >
-          <tr>
+          <tr v-if="actionFailure">
             <td :colspan="cols.length">
               <FailureStrip
                 in-table
@@ -186,6 +188,14 @@ onMounted(async () => {
                 :failure="actionFailure"
                 :retryable="false"
                 data-testid="location-manager-error"
+              />
+            </td>
+          </tr>
+          <tr v-if="blockedDeletion">
+            <td :colspan="cols.length">
+              <LocationUsageNotice
+                v-model="blockedDeletion"
+                @archive="setArchived($event, true)"
               />
             </td>
           </tr>
@@ -229,10 +239,6 @@ onMounted(async () => {
     <LocationFormDialog
       v-model="formData"
       @saved="bringIntoView($event)"
-    />
-    <LocationUsageDialog
-      v-model="blockedDeletion"
-      @archive="setArchived($event, true)"
     />
   </TablePageLayout>
 </template>

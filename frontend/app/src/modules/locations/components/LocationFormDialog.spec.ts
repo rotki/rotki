@@ -13,13 +13,11 @@ import '@test/i18n';
 
 type Management = ReturnType<typeof useLocationManagement>;
 
-const { createLocation, editLocation, notifyError, previewEdit, removeImage, show, uploadImage } = vi.hoisted(() => ({
+const { createLocation, editLocation, previewEdit, removeImage, uploadImage } = vi.hoisted(() => ({
   createLocation: vi.fn<Management['createLocation']>(),
   editLocation: vi.fn<Management['editLocation']>(),
   previewEdit: vi.fn<Management['previewEdit']>(),
-  notifyError: vi.fn<(title: string, message: string) => void>(),
   removeImage: vi.fn<Management['removeImage']>(),
-  show: vi.fn(),
   uploadImage: vi.fn<Management['uploadImage']>(),
 }));
 
@@ -33,18 +31,10 @@ vi.mock('@/modules/locations/use-location-management', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
-}));
-
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): Record<string, unknown> => ({ notifyError }),
-}));
-
 const BigDialogStub = defineComponent({
   emits: ['cancel', 'confirm'],
-  props: { loading: { default: false, type: Boolean } },
-  setup: (props, { slots }) => (): VNode => h('div', { 'data-loading': String(props.loading) }, slots.default?.()),
+  props: { action: { default: undefined, type: Object }, loading: { default: false, type: Boolean } },
+  setup: (props, { slots }) => (): VNode => h('div', { 'data-loading': String(props.loading), 'data-primary': props.action?.primary }, slots.default?.()),
 });
 
 const LocationSelectorStub = defineComponent({
@@ -64,7 +54,11 @@ describe('locationFormDialog', () => {
   let pinia: Pinia;
   let wrapper: VueWrapper<InstanceType<typeof LocationFormDialog>>;
 
-  function createWrapper(modelValue: LocationFormData): VueWrapper<InstanceType<typeof LocationFormDialog>> {
+  /**
+   * Mounts the dialog; with `synced` the parent's `v-model` follows its updates, as when the
+   * dialog switches itself from adding to editing.
+   */
+  function createWrapper(modelValue: LocationFormData, synced = false): VueWrapper<InstanceType<typeof LocationFormDialog>> {
     return mount(LocationFormDialog, {
       global: {
         plugins: [pinia],
@@ -74,7 +68,12 @@ describe('locationFormDialog', () => {
           LocationSelector: LocationSelectorStub,
         },
       },
-      props: { modelValue },
+      props: {
+        modelValue,
+        'onUpdate:modelValue': synced
+          ? async (value: LocationFormData | undefined): Promise<void> => wrapper.setProps({ modelValue: value })
+          : undefined,
+      },
     });
   }
 
@@ -147,42 +146,34 @@ describe('locationFormDialog', () => {
     expect(editLocation).toHaveBeenCalledExactlyOnceWith('custom:ing', { name: 'ING DiBa' });
   });
 
-  it('should only move a location once the new path is confirmed', async () => {
+  it('should show a move in the form and only save it on a second save', async () => {
     previewEdit.mockResolvedValue(ok({ location: ing, newPath: ['Total', 'Other', 'ING'], oldPath: ['Total', 'Banks', 'ING'] }));
     wrapper = createWrapper({ location: ing, mode: 'edit' });
     await chooseParent('other');
     await confirm();
 
     expect(previewEdit).toHaveBeenCalledExactlyOnceWith('custom:ing', { parentIdentifier: 'other' });
-    expect(show).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('Banks › ING'), type: 'info' }),
-      expect.any(Function),
-    );
+    expect(wrapper.find('[data-testid=location-form-move]').text()).toContain('location_manager.move.message::Other › ING, Banks › ING');
+    expect(wrapper.findComponent(BigDialogStub).attributes('data-primary')).toBe('location_manager.move.confirm');
     expect(editLocation).not.toHaveBeenCalled();
-    await show.mock.calls[0][1]();
+
+    await confirm();
+    expect(previewEdit).toHaveBeenCalledOnce();
     expect(editLocation).toHaveBeenCalledExactlyOnceWith('custom:ing', { parentIdentifier: 'other' });
+    expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
 
-  it('should show the dialog as busy while a confirmed move saves', async () => {
+  it('should check the move again when the parent changes after it was shown', async () => {
     previewEdit.mockResolvedValue(ok({ location: ing, newPath: ['Total', 'Other', 'ING'], oldPath: ['Total', 'Banks', 'ING'] }));
-    let resolve: (value: Awaited<ReturnType<Management['editLocation']>>) => void = () => {};
-    editLocation.mockReturnValue(new Promise((done) => {
-      resolve = done;
-    }));
     wrapper = createWrapper({ location: ing, mode: 'edit' });
     await chooseParent('other');
     await confirm();
-    const dialog = (): string | undefined => wrapper.findComponent(BigDialogStub).attributes('data-loading');
-    expect(dialog()).toBe('false');
+    await chooseParent('total');
 
-    const saving = show.mock.calls[0][1]();
-    await flushPromises();
-    expect(dialog()).toBe('true');
-
-    resolve(ok({ location: ing, newPath: [], oldPath: [] }));
-    await saving;
-    await flushPromises();
-    expect(wrapper.emitted('saved')).toEqual([['custom:ing']]);
+    expect(wrapper.find('[data-testid=location-form-move]').exists()).toBe(false);
+    await confirm();
+    expect(previewEdit).toHaveBeenLastCalledWith('custom:ing', { parentIdentifier: 'total' });
+    expect(editLocation).not.toHaveBeenCalled();
   });
 
   it('should upload a chosen image only once the new location exists', async () => {
@@ -225,7 +216,7 @@ describe('locationFormDialog', () => {
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
 
-  it('should keep a created location and close when only its image upload fails', async () => {
+  it('should keep a created location and go on editing it when only its image upload fails', async () => {
     const created = node('custom:dkb', 'banks', 'DKB', { isBuiltin: false });
     createLocation.mockResolvedValue(ok(created));
     uploadImage.mockResolvedValue(err('Unsupported image type'));
@@ -235,13 +226,51 @@ describe('locationFormDialog', () => {
 
     await confirm();
 
-    expect(notifyError).toHaveBeenCalledExactlyOnceWith('location_manager.image.error', 'Unsupported image type');
-    expect(wrapper.emitted('saved')).toEqual([[created.identifier]]);
+    expect(wrapper.find('[data-testid=location-form-image-error]').text()).toContain('Unsupported image type');
     expect(wrapper.emitted('saved')).toEqual([['custom:dkb']]);
+    expect(wrapper.emitted('update:modelValue')).toEqual([[{ location: created, mode: 'edit' }]]);
+  });
+
+  it('should keep the chosen image of a created location for the retry', async () => {
+    const created = node('custom:dkb', 'banks', 'DKB', { isBuiltin: false });
+    const file = new File(['gif'], 'dkb.gif');
+    createLocation.mockResolvedValue(ok(created));
+    uploadImage.mockResolvedValueOnce(err('Unsupported image type')).mockResolvedValueOnce(ok('dkb.png'));
+    wrapper = createWrapper({ mode: 'add', parentIdentifier: 'banks' }, true);
+    await wrapper.find('[data-testid=location-form-name] input').setValue('DKB');
+    await chooseImage(file);
+    await confirm();
+    useLocationTreeStore().upsertNode(created);
+
+    expect(wrapper.find('[data-testid=location-form-image-error]').exists()).toBe(true);
+    await confirm();
+    expect(createLocation).toHaveBeenCalledOnce();
+    expect(uploadImage).toHaveBeenLastCalledWith('custom:dkb', file);
+    expect(uploadImage).toHaveBeenCalledTimes(2);
+  });
+
+  it('should retry only the image of a saved edit on the next save', async () => {
+    const file = new File(['gif'], 'ing.gif');
+    const renamed = { ...ing, name: 'ING DiBa' };
+    editLocation.mockResolvedValue(ok({ location: renamed, newPath: [], oldPath: [] }));
+    uploadImage.mockResolvedValueOnce(err('Unsupported image type')).mockResolvedValueOnce(ok('ing.png'));
+    wrapper = createWrapper({ location: ing, mode: 'edit' });
+    await wrapper.find('[data-testid=location-form-name] input').setValue('ING DiBa');
+    await chooseImage(file);
+    await confirm();
+
+    expect(wrapper.find('[data-testid=location-form-image-error]').exists()).toBe(true);
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+
+    useLocationTreeStore().upsertNode(renamed);
+    await confirm();
+    expect(editLocation).toHaveBeenCalledOnce();
+    expect(uploadImage).toHaveBeenCalledTimes(2);
+    expect(wrapper.find('[data-testid=location-form-image-error]').exists()).toBe(false);
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
 
-  it('should not ask to confirm a move whose preview was refused', async () => {
+  it('should not show a move whose check was refused', async () => {
     previewEdit.mockResolvedValue(err('Location custom:ing can not be moved below itself'));
     wrapper = createWrapper({ location: ing, mode: 'edit' });
     await chooseParent('other');
@@ -249,7 +278,7 @@ describe('locationFormDialog', () => {
     await confirm();
 
     expect(wrapper.find('[data-testid=location-form-error]').text()).toContain('Location custom:ing can not be moved below itself');
-    expect(show).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid=location-form-move]').exists()).toBe(false);
     expect(editLocation).not.toHaveBeenCalled();
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
