@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ComponentExposed } from 'vue-component-type-helpers';
 import { assert, NotificationKind, Severity } from '@rotki/common';
 import { RuiFileUpload } from '@rotki/ui-library';
 import { assetExportActivity } from '@/modules/assets/assets.activity';
@@ -9,7 +10,7 @@ import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
-const uploader = useTemplateRef<InstanceType<typeof RuiFileUpload>>('uploader');
+const uploader = useTemplateRef<ComponentExposed<typeof RuiFileUpload>>('uploader');
 const zip = ref<File>();
 const importError = ref<string>('');
 const uploading = ref<boolean>(false);

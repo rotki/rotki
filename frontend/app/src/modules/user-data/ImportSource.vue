@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ImportSourceType } from '@/modules/core/common/upload-types';
 import type { ImportLocationResolution } from '@/modules/user-data/import-location-types';
 import { RuiFileUpload } from '@rotki/ui-library';
@@ -35,7 +36,7 @@ interface ImportState {
   dateInputFormat: string | undefined;
 }
 
-const uploader = useTemplateRef<InstanceType<typeof RuiFileUpload>>('uploader');
+const uploader = useTemplateRef<ComponentExposed<typeof RuiFileUpload>>('uploader');
 const useCustomTimezone = ref<boolean>(false);
 const optionsOpen = ref<boolean>(false);
 const optionsId = useId();
