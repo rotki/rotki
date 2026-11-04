@@ -147,7 +147,7 @@ describe('the event kind a location implies', () => {
     { kind: HistoryEventEntryType.EVM_EVENT, location: 'optimism' },
     { kind: HistoryEventEntryType.SOLANA_EVENT, location: SOLANA_CHAIN },
     { kind: HistoryEventEntryType.BITCOIN_EVENT, location: 'bitcoin' },
-    { kind: HistoryEventEntryType.BITCOIN_EVENT, location: 'bitcoin_cash' },
+    { kind: HistoryEventEntryType.BITCOIN_EVENT, location: 'bitcoin cash' },
     { kind: HistoryEventEntryType.HISTORY_EVENT, location: 'kraken' },
     { kind: HistoryEventEntryType.HISTORY_EVENT, location: '' },
   ])('should make an event on "$location" a $kind', ({ kind, location }) => {
