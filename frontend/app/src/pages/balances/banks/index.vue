@@ -31,7 +31,7 @@ const router = useRouter();
 
 const search = ref<string>('');
 
-const { connections, connectionsError } = storeToRefs(useBankConnectionsStore());
+const { canAddBank, connections, connectionsError } = storeToRefs(useBankConnectionsStore());
 const { refreshBankConnections, refreshSupportedBanks, syncBanks, fetchBankBalances } = useBanks();
 const failureMessage = useFailureMessage();
 
@@ -85,6 +85,7 @@ onBeforeMount(() => {
       <RuiButton
         color="primary"
         data-testid="add-bank-connection"
+        :disabled="!canAddBank"
         @click="connect()"
       >
         <template #prepend>

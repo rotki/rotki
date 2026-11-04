@@ -2,7 +2,7 @@ import type { BankAccountBalance } from '@/modules/banks/types';
 import { useScramble } from '@/modules/settings/use-scramble';
 
 /** How an account reads in a list: its name, with its IBAN under it when the name is not the IBAN. */
-interface BankAccountLabel {
+export interface BankAccountLabel {
   readonly title: string;
   readonly subtitle?: string;
 }

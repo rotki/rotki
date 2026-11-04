@@ -7,13 +7,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import BankAccountsTable from '@/modules/banks/components/BankAccountsTable.vue';
 
 const stubs = {
+  AssetAmountDisplay: { props: ['asset', 'amount', 'decimals'], template: '<span data-testid="amount" :data-decimals="decimals">{{ amount.toFixed() }} {{ asset }}</span>' },
   AssetDetails: { props: ['asset'], template: '<span data-testid="asset">{{ asset }}</span>' },
   FiatDisplay: { props: ['value'], template: '<span data-testid="value">{{ value.toFixed() }}</span>' },
   RuiDataTable: {
-    props: ['rows'],
-    template: '<div><div v-for="row in rows" :key="row.identifier" data-testid="row"><slot name="item.name" :row="row" /><slot name="item.asset" :row="row" /><slot name="item.amount" :row="row" /><slot name="item.value" :row="row" /></div></div>',
+    props: ['cols', 'rows'],
+    template: '<div><span data-testid="cols">{{ cols.map(col => col.key).join(",") }}</span><div v-for="row in rows" :key="row.identifier" data-testid="row"><slot name="item.name" :row="row" /><slot name="item.amount" :row="row" /><slot name="item.value" :row="row" /></div></div>',
   },
-  ValueDisplay: { props: ['value', 'format'], template: '<span data-testid="amount" :data-format="JSON.stringify(format)">{{ value.toFixed() }}</span>' },
 };
 
 function account(identifier: string, name: string, iban: string | null, amount: number, asset = 'EUR'): BankAccountBalance {
@@ -40,24 +40,30 @@ describe('modules/banks/components/BankAccountsTable', () => {
     setActivePinia(createCustomPinia());
   });
 
-  it('should list every account with its currency, amount to the cent and value', () => {
+  it('should list every account with its currency icon, balance in that currency to the cent and value', () => {
     const wrapper = createWrapper();
     const row = wrapper.findAll('[data-testid=row]')[0];
 
     expect(accountIds(wrapper)).toEqual(['b', 'a', 'c']);
-    expect(row.find('[data-testid=asset]').text()).toBe('EUR');
-    expect(row.find('[data-testid=amount]').text()).toBe('900.5');
-    expect(JSON.parse(row.find('[data-testid=amount]').attributes('data-format') ?? '')).toEqual({ decimals: 2 });
+    expect(row.find('[data-testid=bank-account] [data-testid=asset]').text()).toBe('EUR');
+    expect(row.find('[data-testid=amount]').text()).toBe('900.5 EUR');
+    expect(row.find('[data-testid=amount]').attributes('data-decimals')).toBe('2');
     expect(row.find('[data-testid=value]').text()).toBe('900.5');
+  });
+
+  it('should show the currency inside the account and balance cells instead of a column of its own', () => {
+    const wrapper = createWrapper();
+
+    expect(wrapper.find('[data-testid=cols]').text()).toBe('name,amount,value');
   });
 
   it('should name an account by its IBAN once, and put the IBAN under an account with a name of its own', () => {
     const wrapper = createWrapper();
     const [named, byIban] = wrapper.findAll('[data-testid=bank-account]');
 
-    expect(named.text()).toContain('Tagesgeld');
+    expect(named.find('[data-testid=bank-account-name]').text()).toBe('Tagesgeld');
     expect(named.find('[data-testid=bank-account-iban]').text()).toBe('DE02 1203 0000 0000 2020 52');
-    expect(byIban.text()).toBe('DE02 1203 0000 0000 2020 51');
+    expect(byIban.find('[data-testid=bank-account-name]').text()).toBe('DE02 1203 0000 0000 2020 51');
     expect(byIban.find('[data-testid=bank-account-iban]').exists()).toBe(false);
   });
 

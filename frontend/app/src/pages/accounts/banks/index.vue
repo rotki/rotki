@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { BankAuthenticationRequest, BankConnection, BankConnectionIdentity, BankFormData } from '@/modules/banks/types';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
+import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { emptyCredentials } from '@/modules/banks/bank-connection-form';
 import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticationDialog.vue';
+import BankBalancesEmpty from '@/modules/banks/components/BankBalancesEmpty.vue';
 import BankConnectionActions from '@/modules/banks/components/BankConnectionActions.vue';
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
 import BankConnectorIcon from '@/modules/banks/components/BankConnectorIcon.vue';
+import BankSyncStatus from '@/modules/banks/components/BankSyncStatus.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
+import { useBankConnectionsTable } from '@/modules/banks/use-bank-connections-table';
 import { useBanks } from '@/modules/banks/use-banks';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
-import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
-import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -29,13 +29,8 @@ definePage({
 const bank = ref<BankFormData>();
 const authentication = ref<BankAuthenticationRequest>();
 const requestedAuthentication = ref<BankConnectionIdentity>();
-const syncing = ref<string[]>([]);
-const sort = ref<DataTableSortColumn<BankConnection>>({
-  column: 'name',
-  direction: 'asc',
-});
 
-const { connections: rows, connectionsError, manifests, manifestsError } = storeToRefs(useBankConnectionsStore());
+const { canAddBank, connections: rows, connectionsError, manifests, manifestsError } = storeToRefs(useBankConnectionsStore());
 const { manifestFor } = useBankConnectionsStore();
 const { refreshBankConnections, refreshSupportedBanks, removeBank, syncBanks } = useBanks();
 const { show } = useConfirmStore();
@@ -46,38 +41,7 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute('/accounts/banks/');
 
-const cols = computed<DataTableColumn<BankConnection>[]>(() => [{
-  cellClass: 'w-48',
-  key: 'connector',
-  label: t('bank_settings.form.bank'),
-  sortable: true,
-}, {
-  key: 'name',
-  label: t('common.name'),
-  sortable: true,
-}, {
-  key: 'syncStatus',
-  label: t('bank_settings.header.last_sync'),
-}, {
-  align: 'center',
-  cellClass: 'w-40',
-  key: 'actions',
-  label: t('common.actions_text'),
-}]);
-
-useRememberTableSorting<BankConnection>(TableId.BANKS, sort, cols);
-
-const { highlight, rowClass } = useRowHighlight<{ connector: string; name: string }>(
-  ({ connector, name }) => `${connector}#${name}`,
-);
-
-function rowKey(row: BankConnection): string {
-  return `${row.connector}#${row.name}`;
-}
-
-function isSyncing(row: BankConnection): boolean {
-  return get(syncing).includes(rowKey(row)) || row.syncStatus.running;
-}
+const { balanceOf, cols, highlight, isSyncing, modelSort: sort, rowClass, whileSyncing } = useBankConnectionsTable();
 
 function createNewBank(requested?: string): BankFormData {
   const connector = (requested && manifestFor(requested)) ? requested : get(manifests)[0]?.connector ?? '';
@@ -132,13 +96,7 @@ function openRequestedAuthentication([requested, connections]: [BankConnectionId
 }
 
 async function sync(row: BankConnection): Promise<void> {
-  set(syncing, [...get(syncing), rowKey(row)]);
-  try {
-    await syncBanks({ connector: row.connector, name: row.name });
-  }
-  finally {
-    set(syncing, get(syncing).filter(key => key !== rowKey(row)));
-  }
+  await whileSyncing(row, async () => syncBanks({ connector: row.connector, name: row.name }));
 }
 
 function showRemoveConfirmation(row: BankConnection): void {
@@ -182,13 +140,13 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
       <RuiButton
         color="primary"
         data-testid="add-bank"
-        :disabled="manifests.length === 0"
+        :disabled="!canAddBank"
         @click="addBank()"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
         </template>
-        {{ t('bank_settings.dialog.add.title') }}
+        {{ t('bank_balances.add_bank') }}
       </RuiButton>
     </template>
 
@@ -201,7 +159,12 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
       @retry="refreshSupportedBanks()"
     />
 
-    <TableFrame>
+    <BankBalancesEmpty
+      v-if="rows.length === 0 && !connectionsError"
+      @connect="addBank($event)"
+    />
+
+    <TableFrame v-else>
       <template #toolbar>
         <p class="text-sm text-rui-text-secondary m-0">
           {{ t('bank_settings.subtitle') }}
@@ -214,7 +177,7 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
         :rows="rows"
         :cols="cols"
         :item-class="rowClass"
-        :empty="connectionsError ? { label: t('data_table.fetch_failed') } : { description: t('bank_settings.empty') }"
+        :empty="{ label: t('data_table.fetch_failed') }"
       >
         <template
           v-if="connectionsError"
@@ -250,53 +213,18 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
             <span>{{ row.displayName }}</span>
           </div>
         </template>
+        <template #item.name="{ row }">
+          <span class="font-medium">{{ row.name }}</span>
+        </template>
         <template #item.syncStatus="{ row }">
-          <div class="flex flex-col items-start gap-1">
-            <TimeAgoDisplay
-              v-if="row.syncStatus.lastSyncTs"
-              :timestamp="row.syncStatus.lastSyncTs"
-            />
-            <span
-              v-else
-              class="text-rui-text-secondary"
-            >
-              {{ t('bank_settings.sync.never') }}
-            </span>
-            <RuiChip
-              v-if="row.syncStatus.authChallenge"
-              color="error"
-              variant="tonal"
-              size="sm"
-              data-testid="bank-auth-required"
-            >
-              {{ t('bank_settings.sync.authentication_required') }}
-            </RuiChip>
-            <RuiChip
-              v-else-if="row.syncStatus.authExpired"
-              color="warning"
-              variant="tonal"
-              size="sm"
-              data-testid="bank-auth-expired"
-            >
-              {{ t('bank_settings.sync.authentication_expired') }}
-            </RuiChip>
-            <template v-else-if="row.syncStatus.lastError">
-              <RuiChip
-                color="error"
-                variant="tonal"
-                size="sm"
-                data-testid="bank-sync-error"
-              >
-                {{ t('bank_settings.sync.failed') }}
-              </RuiChip>
-              <span
-                class="text-caption text-rui-text-secondary whitespace-normal"
-                data-testid="bank-sync-error-message"
-              >
-                {{ row.syncStatus.lastError }}
-              </span>
-            </template>
-          </div>
+          <BankSyncStatus :status="row.syncStatus" />
+        </template>
+        <template #item.balance="{ row }">
+          <FiatDisplay
+            :value="balanceOf(row)"
+            class="font-medium tabular-nums"
+            data-testid="bank-balance"
+          />
         </template>
         <template #item.actions="{ row }">
           <BankConnectionActions

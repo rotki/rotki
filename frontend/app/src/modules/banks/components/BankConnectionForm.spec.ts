@@ -93,6 +93,14 @@ describe('bankConnectionForm', () => {
     expect(wrapper.find('[data-testid=bank-connection-notes]').text()).toContain('Only one key per organization');
   });
 
+  it('should say the credentials stay on this machine when adding a bank, but not when editing one', () => {
+    wrapper = createWrapper(ref(createForm('add')));
+    expect(wrapper.find('[data-testid=bank-connection-privacy]').text()).toBe('bank_settings.form.privacy');
+
+    wrapper = createWrapper(ref(createForm('edit')));
+    expect(wrapper.find('[data-testid=bank-connection-privacy]').exists()).toBe(false);
+  });
+
   it('should write typed credentials into the model under the secret slot', async () => {
     const model = ref(createForm('add'));
     wrapper = createWrapper(model);

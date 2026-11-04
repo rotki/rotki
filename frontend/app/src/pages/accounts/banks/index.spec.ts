@@ -1,9 +1,11 @@
 import type { BankAuthChallenge, BankConnection, BankManifest } from '@/modules/banks/types';
+import { createTestBalance } from '@test/utils/create-data';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, type Ref, ref } from 'vue';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticationDialog.vue';
 import BankConnectionActions from '@/modules/banks/components/BankConnectionActions.vue';
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
@@ -64,14 +66,16 @@ describe('banks page', () => {
       global: {
         plugins: [pinia],
         stubs: {
+          BankBalancesEmpty: { emits: ['connect'], template: `<button data-testid="bank-balances-empty" @click="$emit('connect', 'qonto')" />` },
           BankConnectionFormDialog: true,
           BankAuthenticationDialog: true,
           DateDisplay: true,
+          FiatDisplay: { props: ['value'], template: '<span>{{ value.toFixed() }}</span>' },
           LocationDisplay: true,
           RouterLink: true,
           RuiDataTable: {
             props: ['rows', 'empty'],
-            template: `<div><slot name="body.prepend" /><div v-if="rows.length === 0" data-testid="table-empty">{{ empty?.label }}|<slot name="empty-description">{{ empty?.description }}</slot></div><div v-for="row in rows" :key="row.name" data-testid="row"><slot name="item.syncStatus" :row="row" /><slot name="item.actions" :row="row" /></div></div>`,
+            template: `<div><slot name="body.prepend" /><div v-if="rows.length === 0" data-testid="table-empty">{{ empty?.label }}|<slot name="empty-description">{{ empty?.description }}</slot></div><div v-for="row in rows" :key="row.name" data-testid="row"><slot name="item.syncStatus" :row="row" /><slot name="item.balance" :row="row" /><slot name="item.actions" :row="row" /></div></div>`,
           },
           TablePageLayout: { template: '<div><slot name="buttons" /><slot /></div>' },
           Teleport: { template: '<span><slot /></span>' },
@@ -158,13 +162,31 @@ describe('banks page', () => {
       expect(refreshBankConnections).toHaveBeenCalledOnce();
     });
 
-    it('should show the plain empty text while nothing failed', async () => {
+    it('should show the connect-a-bank empty state instead of an empty table while nothing failed', async () => {
       useBankConnectionsStore().setConnections([]);
       wrapper = createWrapper();
       await flushPromises();
 
-      expect(wrapper.find('[data-testid=table-empty]').text()).toBe('|bank_settings.empty');
+      expect(wrapper.find('[data-testid=bank-balances-empty]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=table-empty]').exists()).toBe(false);
     });
+
+    it('should open the add dialog on the bank picked in the empty state', async () => {
+      useBankConnectionsStore().setConnections([]);
+      wrapper = createWrapper();
+      await flushPromises();
+
+      await wrapper.find('[data-testid=bank-balances-empty]').trigger('click');
+      expect(wrapper.findComponent(BankConnectionFormDialog).props('modelValue')).toMatchObject({ connector: 'qonto', mode: 'add' });
+    });
+  });
+
+  it('should show what each connection holds in its row', async () => {
+    useBalancesStore().bankBalances = [{ accounts: [], balances: { EUR: createTestBalance(120, 120) }, connector: 'qonto', name: 'Qonto main' }];
+    wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=bank-balance]').text()).toBe('120');
   });
 
   it('should load the supported banks and the connections when it mounts', async () => {

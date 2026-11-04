@@ -2013,7 +2013,7 @@
     "accounts": {
       "account": "Account"
     },
-    "add_bank": "Add a bank connection",
+    "add_bank": "Add bank",
     "cards": {
       "all": "All banks",
       "label": "Banks",
@@ -2022,7 +2022,7 @@
     "connections": "Bank connections",
     "connections_failed": "Could not load the bank connections",
     "empty": {
-      "description": "Connect a bank account and rotki reads its balances and transactions directly from this machine. It never moves money.",
+      "description": "Add a bank and rotki reads its balances and transactions directly from this machine. It never moves money.",
       "supported": "Supported banks",
       "title": "No bank connected yet"
     },
@@ -2068,7 +2068,7 @@
     },
     "dialog": {
       "add": {
-        "title": "Add a bank connection"
+        "title": "Add a bank"
       },
       "added": {
         "message": "The bank connection “{name}” was added successfully.",
@@ -2081,7 +2081,6 @@
     "edit": {
       "tooltip": "Edit the bank connection"
     },
-    "empty": "No bank connections yet",
     "errors": {
       "remove_message": "Could not remove the bank connection {name}: {error}",
       "remove_title": "Bank connection removal",
@@ -2101,6 +2100,7 @@
       "docs": "Bank API documentation",
       "name": "Connection name",
       "name_hint": "A name to tell this connection apart, e.g. the organization",
+      "privacy": "rotki talks to the bank directly from this machine and keeps the credentials you enter here in your encrypted user database.",
       "validation": {
         "required": "This field is required"
       }
@@ -2112,7 +2112,7 @@
       "message": "This bank makes transactions available automatically only from {date}. rotki will retrieve all available history and keep it updated from now on. Earlier transactions cannot be retrieved from the bank and must be added manually if needed.",
       "title": "Limited bank history"
     },
-    "subtitle": "rotki talks to each bank directly from this machine with the credentials you enter here. Transactions are pulled into your history and balances into your net worth.",
+    "subtitle": "Each connected bank's transactions are pulled into your history and its balances into your net worth.",
     "supported_failed": "Could not load the supported banks, so no bank can be added yet",
     "sync": {
       "authentication_expired": "Authentication expired, sync again",

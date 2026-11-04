@@ -1759,7 +1759,6 @@
     "edit": {
       "tooltip": "编辑银行连接"
     },
-    "empty": "暂无银行连接",
     "errors": {
       "remove_message": "无法移除银行连接 {name}：{error}",
       "remove_title": "移除银行连接",

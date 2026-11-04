@@ -6,7 +6,7 @@ import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 const emit = defineEmits<{ connect: [connector?: string] }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { manifests } = storeToRefs(useBankConnectionsStore());
+const { canAddBank, manifests } = storeToRefs(useBankConnectionsStore());
 </script>
 
 <template>
@@ -22,6 +22,7 @@ const { manifests } = storeToRefs(useBankConnectionsStore());
       <RuiButton
         color="primary"
         data-testid="bank-balances-empty-connect"
+        :disabled="!canAddBank"
         @click="emit('connect')"
       >
         <template #prepend>
