@@ -2,12 +2,8 @@
 import type { StyleValue } from 'vue';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+import { useNftDomainWhitelist } from '@/modules/balances/nft/use-nft-domain-whitelist';
 import { useNftImage } from '@/modules/balances/nft/use-nft-image';
-import { uniqueStrings } from '@/modules/core/common/data/data';
-import { getDomain } from '@/modules/core/common/helpers/url';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useSetting } from '@/modules/settings/use-setting';
-import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
@@ -19,9 +15,6 @@ const { identifier, size = '50px', styled } = defineProps<{
 
 const { useAssetInfo } = useAssetInfoRetrieval();
 
-const whitelistedDomainsForNftImages = useSetting('whitelistedDomainsForNftImages');
-const { updateFrontendSetting } = useSettingsOperations();
-
 const balanceData = useAssetInfo(() => identifier);
 
 const { t } = useI18n({ useScope: 'global' });
@@ -29,37 +22,7 @@ const { t } = useI18n({ useScope: 'global' });
 const imageUrlSource = computed<string | null>(() => get(balanceData)?.imageUrl || null);
 
 const { isVideo, renderedMedia, shouldRender } = useNftImage(imageUrlSource);
-
-const domain = computed<string | null>(() => getDomain(get(imageUrlSource) || ''));
-
-const { show } = useConfirmStore();
-
-function showAllowDomainConfirmation() {
-  show(
-    {
-      message: t(
-        'general_settings.nft_setting.update_whitelist_confirmation.message',
-        {
-          domain: get(domain),
-        },
-        2,
-      ),
-      title: t('general_settings.nft_setting.update_whitelist_confirmation.title'),
-    },
-    allowDomain,
-  );
-}
-
-function allowDomain() {
-  const domainVal = get(domain);
-
-  if (!domainVal)
-    return;
-
-  const newWhitelisted = [...get(whitelistedDomainsForNftImages), domainVal].filter(uniqueStrings);
-
-  updateFrontendSetting({ whitelistedDomainsForNftImages: newWhitelisted });
-}
+const { confirmAllowDomain, domain } = useNftDomainWhitelist(imageUrlSource);
 
 const collectionName = computed<string | null>(() => {
   const data = get(balanceData);
@@ -102,7 +65,7 @@ const fallbackData = computed(() => {
             <div
               class="my-2 bg-rui-grey-200 rounded-sm flex items-center justify-center"
               :style="[styled, { width: size, height: size, maxWidth: size, minWidth: size }]"
-              @click="!shouldRender ? showAllowDomainConfirmation() : null"
+              @click="!shouldRender ? confirmAllowDomain() : null"
             >
               <video
                 v-if="isVideo"
