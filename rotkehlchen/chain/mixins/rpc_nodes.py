@@ -57,7 +57,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 RATE_LIMIT_COOLDOWN_SECS: Final = 300  # 5 minutes before retrying a rate-limited node
 # Patterns indicating a rate-limit response in a provider's error message
-RATE_LIMIT_PATTERNS: Final = ('rate limit', 'too many requests', 'rate_limit', '429')
+RATE_LIMIT_PATTERNS: Final = (
+    'rate limit', 'too many requests', 'rate_limit', '429', 'request rate exceeded',
+)
 
 
 class NodeStatus(StrEnum):

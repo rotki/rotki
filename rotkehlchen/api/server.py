@@ -1,10 +1,12 @@
 import json
 import logging
+import re
 import sys
 import time
 import traceback
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
+from urllib.parse import urlsplit
 
 import uvicorn
 from flask import Blueprint, Flask, Response, abort, g, jsonify, request
@@ -501,6 +503,47 @@ def endpoint_not_found(e: NotFound) -> Response:
     return api_response(wrap_in_fail_result(msg), HTTPStatus.NOT_FOUND)
 
 
+CORS_REGEX_ONLY_CHARS: Final = frozenset('\\^$()+?[]{}|')
+CORS_IPV6_HOST_RE: Final = re.compile(r'\[[0-9a-f:.]*\]', re.IGNORECASE)
+CORS_ANY_PORT_RE: Final = '(?::[0-9]+)?'
+
+
+def cors_origin_regex(pattern: str) -> re.Pattern[str]:
+    """Compile one `--api-cors` glob into a matcher for a whole `Origin` value.
+
+    Only `*` is a wildcard. A browser `Origin` is `scheme://host[:port]` with no
+    path, so anything after the authority (`/*`, `/`) is dropped, and a trailing
+    `:*` port wildcard also accepts an origin on the scheme's default port, which
+    carries no port at all. The brackets of an IPv6 host such as `[::1]` match
+    literally and are not mistaken for regex syntax.
+    """
+    pattern = pattern.strip()
+    if CORS_REGEX_ONLY_CHARS.intersection(CORS_IPV6_HOST_RE.sub('', pattern)):
+        log.warning(
+            'CORS pattern contains regex syntax, which is not supported. '
+            'Only * is a wildcard, every other character matches literally',
+            pattern=pattern,
+        )
+    scheme, separator, rest = pattern.partition('://')
+    if separator:
+        pattern = f'{scheme}://{rest.split("/", 1)[0]}'
+    port = CORS_ANY_PORT_RE if pattern.endswith(':*') else ''
+    return re.compile(
+        '.*'.join(map(re.escape, pattern.removesuffix(':*').split('*'))) + port + r'\Z',
+        re.IGNORECASE,
+    )
+
+
+def cors_origin_patterns(cors_domain_list: list[str]) -> list[re.Pattern[str]]:
+    """Compile the `--api-cors` list for flask-cors.
+
+    flask-cors runs any string containing `*` through `re.match`, so a glob such
+    as `http://localhost:*/*` would act as an unanchored regex prefix and accept
+    `http://localhost.evil.com`. Compiled patterns are used as they are.
+    """
+    return [cors_origin_regex(pattern) for pattern in cors_domain_list]
+
+
 @parser.error_handler  # type: ignore
 @resource_parser.error_handler
 @ignore_kwarg_parser.error_handler
@@ -556,8 +599,9 @@ class APIServer:
             cors_domain_list: list[str] | None = None,
     ) -> None:
         flask_app = Flask(__name__)
-        if cors_domain_list:
-            CORS(flask_app, origins=cors_domain_list)
+        self.cors_origins = cors_origin_patterns(cors_domain_list or [])
+        if self.cors_origins:
+            CORS(flask_app, origins=self.cors_origins)
         blueprint = create_blueprint(self._api_prefix)
         setup_urls(
             blueprint=blueprint,
@@ -596,9 +640,19 @@ class APIServer:
     def before_request_callback(self) -> Response | None:
         """Function that runs before each request.
 
-        Returning a Response short-circuits the request (the session-cookie gate
-        rejecting with 401); returning None lets it proceed as normal.
+        Returning a Response short-circuits the request; returning None lets it
+        proceed as normal.
         """
+        if (
+                request.method not in ('GET', 'HEAD', 'OPTIONS') and
+                (origin := request.headers.get('Origin')) is not None and
+                not self._is_allowed_origin(origin)
+        ):
+            return api_response(
+                wrap_in_fail_result('Cross-origin requests are not allowed'),
+                HTTPStatus.FORBIDDEN,
+            )
+
         # Session-cookie gate (Docker). Inert without a key; otherwise deny-by-default
         # against `_cookie_less_rules`, rejecting with a plain 401 so the frontend
         # routes to login. The cookie's `sid` must be the user's active session, so a
@@ -674,6 +728,35 @@ class APIServer:
             json_data=request.json if request.is_json else None,
         )
         return None
+
+    def _is_allowed_origin(self, origin: str) -> bool:
+        """Return whether a request's origin can access this API.
+
+        An origin passes when it matches the same `--api-cors` patterns flask-cors
+        uses, or when it names the API's own host and port.
+        """
+        if any(pattern.match(origin) for pattern in self.cors_origins):
+            return True
+
+        parsed_origin = urlsplit(origin)
+        if (
+                parsed_origin.scheme.casefold() not in ('http', 'https') or
+                parsed_origin.path or
+                parsed_origin.query or
+                parsed_origin.fragment
+        ):
+            return False
+
+        parsed_host = urlsplit(f'//{request.host}')
+        is_https = parsed_origin.scheme.casefold() == 'https'
+        origin_port = parsed_origin.port or (443 if is_https else 80)
+        host_port = parsed_host.port or (443 if is_https else 80)
+        origin_host = (parsed_origin.hostname or '').casefold()
+        request_host = (parsed_host.hostname or '').casefold()
+        return (
+            origin_host == request_host and
+            origin_port == host_port
+        )
 
     def after_request_callback(self, response: Response) -> Response:
         """Function that runs after each completed request

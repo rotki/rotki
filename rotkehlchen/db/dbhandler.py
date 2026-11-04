@@ -685,6 +685,23 @@ class DBHandler:
             )
             if result is True:
                 self.password = new_password
+                # Backups made before are encrypted with the old password, so the rekey counts
+                # as a write. The DB is then newer than them and a premium backup is due.
+                with self.conn.write_ctx() as write_cursor:
+                    password_change_ts = Timestamp(max(
+                        ts_now(),
+                        self.get_setting(write_cursor, name='last_write_ts') + 1,
+                    ))
+                    self.set_setting(
+                        write_cursor,
+                        name='last_write_ts',
+                        value=password_change_ts,
+                    )
+                    self.set_static_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
+                        value=password_change_ts,
+                    )
         finally:  # re-enable even if the rekey raised, else all reads stay serialized
             try:
                 self.conn.enable_read_pool(reader_setup=self._setup_read_pool_connection)
@@ -725,6 +742,10 @@ class DBHandler:
         closed when we detach which will result in DB plaintext locked.
 
         Returns the Path of the new temp DB file
+
+        May raise:
+        - sqlcipher.OperationalError if the export fails, for example on a full disk. The
+        plaintext DB is detached in that case too.
         """
         tempdbpath = Path(tempdbfile.name)
         tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051
@@ -732,11 +753,11 @@ class DBHandler:
         # flush the wal file to have up to date information when exporting data
         self.conn.wal_checkpoint()
         with self.conn.write_ctx() as write_cursor:
-            write_cursor.executescript(
-                f"ATTACH DATABASE '{tempdbpath}' AS plaintext KEY '';"
-                "SELECT sqlcipher_export('plaintext');"
-                "DETACH DATABASE plaintext;",
-            )
+            write_cursor.executescript(f"ATTACH DATABASE '{tempdbpath}' AS plaintext KEY '';")
+            try:
+                write_cursor.executescript("SELECT sqlcipher_export('plaintext');")
+            finally:  # left attached, the file stays open and every later export fails
+                write_cursor.executescript('DETACH DATABASE plaintext;')
         return tempdbpath
 
     def import_unencrypted(self, unencrypted_db_data: bytes) -> None:
@@ -939,6 +960,7 @@ class DBHandler:
                 DBCacheStatic.LAST_BALANCE_SAVE,
                 DBCacheStatic.LAST_DATA_UPLOAD_TS,
                 DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
+                DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_TS,
                 DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
                 DBCacheStatic.LAST_OWNED_ASSETS_UPDATE,

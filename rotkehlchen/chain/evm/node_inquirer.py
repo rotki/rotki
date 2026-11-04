@@ -9,12 +9,20 @@ from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeVar, overload
 
 import requests
+from eth_utils import is_hexstr
 from eth_utils.abi import get_abi_output_types
 from web3 import Web3
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
-from web3.exceptions import InvalidAddress, TransactionNotFound, Web3Exception
+from web3.exceptions import (
+    ContractCustomError,
+    ContractLogicError,
+    ContractPanicError,
+    InvalidAddress,
+    TransactionNotFound,
+    Web3Exception,
+)
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN, token_normalized_value_decimals
@@ -62,6 +70,7 @@ from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     BlockscoutIncompleteResponse,
     ChainNotSupported,
+    ContractReverted,
     EventNotInABI,
     IndexerRangeNotCovered,
     InputError,
@@ -114,6 +123,28 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+MIN_NODES_CONFIRMING_REVERT: Final = 2
+GAS_LIMIT_ERROR_PATTERNS: Final = ('out of gas', 'exceeds block gas limit')
+
+
+def _is_contract_revert(error: ContractLogicError) -> bool:
+    """Tell an on-chain revert from a provider error that web3 reports as a revert.
+
+    web3 raises these errors for any response with dict data or a long data string, whatever
+    the error was, so rate limits and missing state must be excluded. Nodes agree on the
+    'execution reverted' message but not on the data, which is '0x', absent or the encoded
+    error, so only custom errors and panics can be recognized by their data.
+    """
+    if isinstance(error, ContractCustomError | ContractPanicError):
+        return is_hexstr(error.data)
+    return (
+        not isinstance(error.data, dict) and
+        error.message is not None and
+        error.message.startswith('execution reverted') and
+        # gas limits differ per node and call size, so these must keep reaching the chunked retry
+        not any(x in error.message.lower() for x in GAS_LIMIT_ERROR_PATTERNS)
+    )
+
 
 # Indexers that could not resolve the block range currently being queried. Scoped to the
 # body of block_range_skipping_stale_indexers, since an indexer being behind is a property
@@ -541,6 +572,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         The first node in the call order that gets a successful response returns.
         May raise:
         - RemoteError if none of the RPC nodes can get a result
+        - ContractReverted (a RemoteError) if two distinct endpoints report a revert, or if
+          one does and no other node gets a result.
         - RequestTooLargeError if we encounter a 414 error from etherscan-like
           indexers or gas limit errors from RPC nodes.
         """
@@ -548,6 +581,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             call_order = self.default_call_order()
         gas_limit_error_seen = False
         transaction_not_found_seen = False
+        revert_error: ContractReverted | None = None
+        reverted_nodes: set[str] = set()
         for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
             if node_info in self._removed_nodes:
@@ -592,6 +627,14 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'Failed to query {node_info.name} for {method!s}: '
                     f'non-checksum address {e.args[1]}',
                 ) from e
+            except ContractReverted as e:
+                # A single endpoint's verdict is not trusted, including its configured aliases.
+                # Keep known gas-limit errors eligible for retry with smaller multicall chunks.
+                revert_error = e
+                reverted_nodes.add(self._endpoint_key(node_info))
+                if len(reverted_nodes) >= MIN_NODES_CONFIRMING_REVERT and not gas_limit_error_seen:
+                    raise
+                continue
             except RequestTooLargeError:
                 gas_limit_error_seen = True
                 continue
@@ -620,7 +663,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'Failed to query {node_info.name} with position on the query list {node_idx} '
                     f'for {method.__name__} due to {e!s}',
                 )
-                if any(x in str(e).lower() for x in ('out of gas', 'exceeds block gas limit')):
+                error_str = str(e).lower()
+                if any(x in error_str for x in GAS_LIMIT_ERROR_PATTERNS):
                     gas_limit_error_seen = True
                 elif _is_rate_limit_error(e):
                     self.mark_node_rate_limited(node_info, str(e))
@@ -643,6 +687,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             )
         if transaction_not_found_seen:
             raise InputError(f'Transaction {kwargs["tx_hash"]!s} was not found on {self.chain_name}')  # noqa: E501
+        # unconfirmed by a second node, but more informative than the generic error below
+        if revert_error is not None:
+            raise revert_error
 
         raise RemoteError(f'Error querying information from {self.blockchain!s}. Check logs for more information')  # noqa: E501
 
@@ -805,7 +852,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         May raise:
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result
-        - BlockchainQueryError if web3 is used and there is a VM execution error
+        - ContractReverted if web3 is used and the call reverted
+        - BlockchainQueryError if web3 is used and there is another VM execution error
         """
         if web3 is None:
             return self._call_contract_indexers(
@@ -822,6 +870,14 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             result = method(*arguments or [])
         except InvalidAddress:
             raise  # propagate to _query() where it's handled properly
+        except ContractLogicError as e:
+            if _is_contract_revert(e):
+                raise ContractReverted(
+                    f'Contract {contract_address} call reverted: {e!s}',
+                ) from e
+            raise BlockchainQueryError(
+                f'Error doing call on contract {contract_address}: {e!s}',
+            ) from e
         except (Web3Exception, ValueError) as e:
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address}: {e!s}',

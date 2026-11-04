@@ -19,6 +19,9 @@ class DBCacheStatic(Enum):
     # When this device last uploaded or restored a premium backup in the current format.
     # Once set, a legacy format backup from the server is refused.
     LAST_PREMIUM_BACKUP_V1_SYNC_TS: Final = 'last_premium_backup_v1_sync_ts'
+    # When the user password was last changed, while the server backup still uses the old
+    # password. Reset to zero after a successful premium backup upload.
+    PREMIUM_BACKUP_PASSWORD_CHANGE_TS: Final = 'premium_backup_password_change_ts'
     LAST_DATA_UPDATES_TS: Final = 'last_data_updates_ts'
     LAST_DATA_UPDATES_FAILED_TS: Final = 'last_data_updates_failed_ts'
     LAST_OWNED_ASSETS_UPDATE: Final = 'last_owned_assets_update'
