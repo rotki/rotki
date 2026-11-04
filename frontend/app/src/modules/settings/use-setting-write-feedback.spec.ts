@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { resolveSettingMessage, useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
 
 describe('useSettingWriteFeedback', () => {
   let model: Ref<string[]>;
@@ -78,5 +78,37 @@ describe('useSettingWriteFeedback', () => {
 
     expect(get(feedback.success)).toContain('saved the order');
     expect(get(feedback.error)).toBe('');
+  });
+
+  it('should prefix the write error when a prefix is given', async () => {
+    const feedback = useSettingWriteFeedback({ error, model, success }, () => '', { errorPrefix: () => 'could not save' });
+
+    set(error, 'the backend said no');
+    await nextTick();
+
+    expect(get(feedback.error)).toContain('could not save: the backend said no');
+  });
+
+  it('should announce the save only after it lands', async () => {
+    const onSaved = vi.fn<() => void>();
+    useSettingWriteFeedback({ error, model, success }, () => '', { onSaved });
+
+    set(error, 'the backend said no');
+    await nextTick();
+    expect(onSaved).not.toHaveBeenCalled();
+
+    set(success, true);
+    await nextTick();
+    expect(onSaved).toHaveBeenCalledOnce();
+  });
+});
+
+describe('resolveSettingMessage', () => {
+  it('should return static text as is', () => {
+    expect(resolveSettingMessage('saved', 3)).toBe('saved');
+  });
+
+  it('should hand the value to a callback message', () => {
+    expect(resolveSettingMessage((value: number) => `saved ${value}`, 3)).toBe('saved 3');
   });
 });

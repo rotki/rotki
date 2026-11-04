@@ -1,7 +1,8 @@
 <script setup lang="ts" generic="TOption = string">
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
-import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
+import { useSettingOptions } from '@/modules/settings/controls/use-setting-options';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
+import { useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
 
 /**
  * Generic owning component for an array (multi-select) setting. Manages its own draft and persistence
@@ -46,25 +47,13 @@ const slots = defineSlots<{
 }>();
 
 const { error: writeError, model, pending, success: writeSuccess } = useSettingModel(setting, { debounce });
-const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
-
-function optionValue(option: TOption): string {
-  return keyAttr ? String(Reflect.get(new Object(option), keyAttr)) : String(option);
-}
-
-function optionLabel(option: TOption): string {
-  return textAttr ? String(Reflect.get(new Object(option), textAttr)) : String(option);
-}
-
-interface NormalisedOption {
-  value: string;
-  label: string;
-  raw: TOption;
-}
-
-const normalised = computed<NormalisedOption[]>(() =>
-  options.map(option => ({ label: optionLabel(option), raw: option, value: optionValue(option) })),
+const { error, success } = useSettingWriteFeedback(
+  { error: writeError, model, success: writeSuccess },
+  () => successMessage,
+  { errorPrefix: () => errorMessage },
 );
+
+const normalised = useSettingOptions<TOption>({ keyAttr: () => keyAttr, options: () => options, textAttr: () => textAttr });
 
 const selected = computed<string[]>({
   get: () => get(model) ?? [],
@@ -83,20 +72,6 @@ function selectAll(): void {
 function clearSelection(): void {
   set(selected, []);
 }
-
-watch(model, () => {
-  clearAll();
-});
-
-watch(writeSuccess, (saved) => {
-  if (saved)
-    setSuccess(successMessage, true);
-});
-
-watch(writeError, (message) => {
-  if (message)
-    setError(errorMessage ? `${errorMessage}: ${message}` : message, true);
-});
 </script>
 
 <template>

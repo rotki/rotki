@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
-import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
+import { resolveSettingMessage, useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
 
 /**
  * Generic owning component for a boolean setting. Given a registry key it manages its own local draft
@@ -41,7 +41,6 @@ const emit = defineEmits<{
 }>();
 
 const { error: writeError, model, success: writeSuccess } = useSettingModel(setting, { debounce });
-const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
 
 /**
  * The switch position, as the plain boolean the control needs.
@@ -60,21 +59,11 @@ const enabled = computed<boolean>({
   },
 });
 
-watch(model, () => {
-  clearAll();
-});
-
-watch(writeSuccess, (saved) => {
-  if (saved) {
-    setSuccess(typeof successMessage === 'function' ? successMessage(get(enabled)) : successMessage, true);
-    emit('updated', get(enabled));
-  }
-});
-
-watch(writeError, (message) => {
-  if (message)
-    setError(errorMessage ? `${errorMessage}: ${message}` : message, true);
-});
+const { error, success } = useSettingWriteFeedback(
+  { error: writeError, model, success: writeSuccess },
+  () => resolveSettingMessage(successMessage, get(enabled)),
+  { errorPrefix: () => errorMessage, onSaved: () => emit('updated', get(enabled)) },
+);
 </script>
 
 <template>

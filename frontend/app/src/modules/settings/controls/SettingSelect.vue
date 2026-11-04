@@ -1,7 +1,8 @@
 <script setup lang="ts" generic="TOption = string">
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
-import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
+import { useSettingOptions } from '@/modules/settings/controls/use-setting-options';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
+import { resolveSettingMessage, useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
 
 /**
  * Generic owning component for a single-choice setting. Given a registry key it manages its own draft
@@ -54,7 +55,11 @@ defineSlots<{
 }>();
 
 const { error: writeError, model, success: writeSuccess } = useSettingModel(setting, { debounce });
-const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
+const { error, success } = useSettingWriteFeedback(
+  { error: writeError, model, success: writeSuccess },
+  () => resolveSettingMessage(successMessage, get(model)),
+  { errorPrefix: () => resolveSettingMessage(errorMessage, get(model)), onSaved: () => emit('updated', get(model)) },
+);
 
 /**
  * The draft the control binds to, as a concrete string rather than the setting's own type.
@@ -70,41 +75,7 @@ const selected = computed<string>({
   },
 });
 
-function optionValue(option: TOption): string {
-  return keyAttr ? String(Reflect.get(new Object(option), keyAttr)) : String(option);
-}
-
-function optionLabel(option: TOption): string {
-  return textAttr ? String(Reflect.get(new Object(option), textAttr)) : String(option);
-}
-
-interface NormalisedOption {
-  value: string;
-  label: string;
-  raw: TOption;
-}
-
-const normalised = computed<NormalisedOption[]>(() =>
-  options.map(option => ({ label: optionLabel(option), raw: option, value: optionValue(option) })),
-);
-
-watch(model, () => {
-  clearAll();
-});
-
-watch(writeSuccess, (saved) => {
-  if (saved) {
-    setSuccess(typeof successMessage === 'function' ? successMessage(get(model)) : successMessage, true);
-    emit('updated', get(model));
-  }
-});
-
-watch(writeError, (message) => {
-  if (message) {
-    const prefix = typeof errorMessage === 'function' ? errorMessage(get(model)) : errorMessage;
-    setError(prefix ? `${prefix}: ${message}` : message, true);
-  }
-});
+const normalised = useSettingOptions<TOption>({ keyAttr: () => keyAttr, options: () => options, textAttr: () => textAttr });
 </script>
 
 <template>
