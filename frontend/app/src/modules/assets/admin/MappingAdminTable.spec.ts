@@ -83,7 +83,15 @@ describe('modules/assets/admin/MappingAdminTable', () => {
 
       expect(table.props('cols').map((col: { key: string }) => col.key)).toEqual(['location', 'locationSymbol', 'asset', 'actions']);
       expect(table.props('cols')[0].label).toBe('common.exchange');
-      expect(table.props('rowAttr')).toBe('location');
+    });
+
+    it('should key every row uniquely, including several mappings for all exchanges', () => {
+      const SECOND_ALL: CexMapping = { asset: 'USDC', location: null, locationSymbol: 'USDC.E' };
+      const table = mountCex([KRAKEN, ALL_EXCHANGES, SECOND_ALL]).findComponent(TableStub);
+      const rowAttr: string = table.props('rowAttr');
+      const keys = table.props('rows').map((row: Record<string, unknown>) => row[rowAttr]);
+
+      expect(new Set(keys).size).toBe(3);
     });
 
     it('should render the exchange through the source slot', () => {
@@ -135,12 +143,11 @@ describe('modules/assets/admin/MappingAdminTable', () => {
   });
 
   describe('with the counterparty mapping', () => {
-    it('should key the source column and rows on the counterparty', () => {
+    it('should lead with the counterparty as the source column', () => {
       const table = mountCounterparty().findComponent(TableStub);
 
       expect(table.props('cols').map((col: { key: string }) => col.key)).toEqual(['counterparty', 'counterpartySymbol', 'asset', 'actions']);
       expect(table.props('cols')[0].label).toBe('common.counterparty');
-      expect(table.props('rowAttr')).toBe('counterparty');
     });
 
     it('should render the counterparty through the source slot', () => {
