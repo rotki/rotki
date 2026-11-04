@@ -3,8 +3,8 @@ import type { ZodType } from 'zod';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
 import { useForm } from '@/modules/core/form/use-form';
 import { numberSettingSchema, SETTING_FIELD, type SettingFieldState } from '@/modules/settings/controls/setting-field-schemas';
-import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
+import { useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
 
 /**
  * Owning component for a setting that pairs an enable switch with a numeric field on a **single** key.
@@ -63,7 +63,6 @@ const {
 }>();
 
 const { error: writeError, flush, model, success: writeSuccess } = useSettingModel(setting, { debounce });
-const { clearAll, error, setError, setSuccess, success: successMessage } = useClearableMessages();
 
 function fieldFor(value: number | null | undefined): string {
   return value && value > 0 ? toField(value) : '';
@@ -72,6 +71,12 @@ function fieldFor(value: number | null | undefined): string {
 const initial = get(model);
 const enabled = ref<boolean>(!!initial && initial > 0);
 const pendingSuccess = ref<string>('');
+
+const { clearAll, error, success: successMessage } = useSettingWriteFeedback(
+  { error: writeError, model, success: writeSuccess },
+  () => get(pendingSuccess),
+  { errorPrefix: () => errorMessage },
+);
 
 /**
  * The value is only required while the toggle is on, and the toggle is not part of the field state,
@@ -103,16 +108,6 @@ const form = useForm<SettingFieldState, SettingFieldState>({
 watch(model, (value) => {
   set(enabled, !!value && value > 0);
   form.state.value = fieldFor(value);
-});
-
-watch(writeSuccess, (saved) => {
-  if (saved)
-    setSuccess(get(pendingSuccess), true);
-});
-
-watch(writeError, (message) => {
-  if (message)
-    setError(errorMessage ? `${errorMessage}: ${message}` : message, true);
 });
 
 async function toggle(value: boolean): Promise<void> {

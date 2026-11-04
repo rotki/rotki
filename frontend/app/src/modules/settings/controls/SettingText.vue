@@ -4,8 +4,8 @@ import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
 import { useForm } from '@/modules/core/form/use-form';
 import { SETTING_FIELD, type SettingFieldState, textSettingSchema } from '@/modules/settings/controls/setting-field-schemas';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
+import { resolveSettingMessage, useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
 
 /**
  * Generic owning component for a string setting. Bakes in optional `required` + `maxLength` validation
@@ -52,7 +52,11 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { error: writeError, flush, model, success: writeSuccess } = useSettingModel(setting, { debounce });
-const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
+const { clearAll, error, success } = useSettingWriteFeedback(
+  { error: writeError, model, success: writeSuccess },
+  () => resolveSettingMessage(successMessage, get(model)),
+  { errorPrefix: () => errorMessage, onSaved: () => emit('updated', get(model)) },
+);
 
 const bakedSchema = computed<ZodType>(() => textSettingSchema({
   maxLength,
@@ -77,18 +81,6 @@ const hasDefault = computed<boolean>(() => defaultValue !== undefined);
 
 watch(model, (value) => {
   form.state.value = value;
-});
-
-watch(writeSuccess, (saved) => {
-  if (saved) {
-    setSuccess(typeof successMessage === 'function' ? successMessage(get(model)) : successMessage, true);
-    emit('updated', get(model));
-  }
-});
-
-watch(writeError, (message) => {
-  if (message)
-    setError(errorMessage ? `${errorMessage}: ${message}` : message, true);
 });
 
 /** Submitting is the persist: the core runs it only when the field parses, as `callIfValid` did. */
