@@ -1,5 +1,5 @@
 import csv
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.converters import asset_from_kraken
@@ -47,6 +47,11 @@ REQUIRED_COLUMNS: Final = (
     'Date (UTC)', 'Type', 'Subtype', 'Asset', 'Wallet', 'Amount', 'Counter party', 'Reference',
 )
 TRADE_TYPE: Final = 'Trade'
+CARD_TYPE: Final = 'Krak Card'
+CARD_PAYMENT_SUBTYPE: Final = 'Card Payment'
+CASHBACK_SUBTYPE: Final = 'Cashback Reward'
+CASHBACK_WINDOW_MS: Final = 60000  # Krak pays the cashback seconds after the card payment
+CASHBACK_SEQUENCE_INDEX: Final = 2  # after the card payment and its fee
 PENDING_COLUMN_PREFIXES: Final = ('Price', 'Fee', 'Value')  # columns Krak fills on settlement
 
 
@@ -68,19 +73,13 @@ class KrakRow:
         - DeserializationError
         - UnknownAsset
         - KeyError
-        - SkippedCSVEntry if the row is still pending
         """
         self.index = index
         self.raw = raw
-        if any(
+        self.is_pending = any(
             value == KRAK_PLACEHOLDER for column, value in raw.items()
             if column.startswith(PENDING_COLUMN_PREFIXES)
-        ):
-            raise SkippedCSVEntry(
-                f'Skipped pending {raw["Type"]} activity {raw["Reference"]}. '
-                'Import a later Krak export once it has settled',
-            )
-
+        )
         self.type: str = raw['Type']
         self.subtype: str = raw['Subtype']
         self.reference: str = raw['Reference']
@@ -94,7 +93,7 @@ class KrakRow:
         ))
         self.asset: AssetWithOracles = asset_from_kraken(raw['Asset'])
         self.amount = _deserialize_krak_number(raw['Amount'])
-        self.fee = self._deserialize_fee(fiat_fee_column=fiat_fee_column, price_column=price_column)  # noqa: E501
+        self.fee = ZERO if self.is_pending else self._deserialize_fee(fiat_fee_column=fiat_fee_column, price_column=price_column)  # noqa: E501
 
     def _deserialize_fee(self, fiat_fee_column: str | None, price_column: str | None) -> FVal:
         """Read the fee in the row's asset. Exports before November 2026 only carry the fee in
@@ -115,6 +114,14 @@ class KrakRow:
 
         return round(abs(fiat_fee / price), KRAK_MAX_DECIMALS)
 
+    def ensure_settled(self) -> None:
+        """May raise SkippedCSVEntry if the row is still pending"""
+        if self.is_pending:
+            raise SkippedCSVEntry(
+                f'Skipped pending {self.type} activity {self.reference}. '
+                'Import a later Krak export once it has settled',
+            )
+
     def group_identifier(self) -> str:
         return f'{KRAK_EVENT_PREFIX}_{self.reference}'
 
@@ -132,20 +139,59 @@ def _find_fiat_column(header: Sequence[str], prefix: str) -> str | None:
     return next((column for column in header if column.startswith(prefix)), None)
 
 
+def _match_cashbacks_to_payments(rows: Sequence[KrakRow]) -> dict[int, KrakRow]:
+    """Find the card payment of each cashback row. The result is keyed by the cashback row index.
+
+    Krak gives the two rows unrelated references, so they are matched by wallet and counterparty,
+    with the cashback following the payment within CASHBACK_WINDOW_MS. A burst of payments to one
+    merchant is matched oldest first.
+
+    Pending rows take part so that a cashback ends up in the same group whether or not its payment
+    has settled, since that group is what deduplicates a later import.
+    """
+    open_payments: defaultdict[tuple[str | None, str], deque[KrakRow]] = defaultdict(deque)
+    payments: dict[int, KrakRow] = {}
+    for row in sorted(rows, key=lambda x: x.timestamp):  # stable, so ties keep the file order
+        if row.type != CARD_TYPE:
+            continue
+
+        merchant_payments = open_payments[row.wallet, row.counterparty]
+        if row.subtype == CARD_PAYMENT_SUBTYPE and row.amount < ZERO:
+            merchant_payments.append(row)
+        elif row.subtype == CASHBACK_SUBTYPE and row.amount > ZERO:
+            while (
+                len(merchant_payments) != 0 and
+                row.timestamp - merchant_payments[0].timestamp > CASHBACK_WINDOW_MS
+            ):
+                merchant_payments.popleft()
+
+            if len(merchant_payments) != 0:
+                payments[row.index] = merchant_payments.popleft()
+
+    return payments
+
+
 class KrakImporter(BaseExchangeImporter):
     """Importer for the activity CSV exported from the Krak app"""
 
     def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Krak')
 
-    def _fee_event(self, row: KrakRow, event_type: HistoryEventType) -> list[HistoryBaseEntry]:
+    def _fee_event(
+            self,
+            row: KrakRow,
+            event_type: HistoryEventType,
+            group_row: KrakRow | None = None,
+            sequence_index: int = 1,
+    ) -> list[HistoryBaseEntry]:
         if row.fee == ZERO:
             return []
 
+        group_row = group_row or row
         return [HistoryEvent(
-            group_identifier=row.group_identifier(),
-            sequence_index=1,
-            timestamp=row.timestamp,
+            group_identifier=group_row.group_identifier(),
+            sequence_index=sequence_index,
+            timestamp=group_row.timestamp,
             location=LOCATION_KRAK,
             event_type=event_type,
             event_subtype=HistoryEventSubType.FEE,
@@ -196,11 +242,16 @@ class KrakImporter(BaseExchangeImporter):
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             notes: str,
+            group_row: KrakRow | None = None,
+            sequence_index: int = 0,
     ) -> list[HistoryBaseEntry]:
+        """Create the event of a row and its fee. They take the group and timestamp of group_row
+        when given, since events of one group are sorted by timestamp before sequence index."""
+        anchor = group_row or row
         return [HistoryEvent(
-            group_identifier=row.group_identifier(),
-            sequence_index=0,
-            timestamp=row.timestamp,
+            group_identifier=anchor.group_identifier(),
+            sequence_index=sequence_index,
+            timestamp=anchor.timestamp,
             location=LOCATION_KRAK,
             event_type=event_type,
             event_subtype=event_subtype,
@@ -208,13 +259,24 @@ class KrakImporter(BaseExchangeImporter):
             amount=abs(row.amount),
             location_label=row.wallet,
             notes=notes,
-        ), *self._fee_event(row=row, event_type=HistoryEventType.SPEND)]
+        ), *self._fee_event(
+            row=row,
+            event_type=HistoryEventType.SPEND,
+            group_row=group_row,
+            sequence_index=sequence_index + 1,
+        )]
 
-    def _events_for_row(self, row: KrakRow) -> list[HistoryBaseEntry]:
-        """Turn a single, non trade, Krak row into events.
+    def _events_for_row(
+            self,
+            row: KrakRow,
+            cashback_payment: KrakRow | None = None,
+    ) -> list[HistoryBaseEntry]:
+        """Turn a single, non trade, Krak row into events. A cashback joins the group and takes
+        the timestamp of its card payment, given as cashback_payment, so it follows the payment.
 
         May raise:
         - UnsupportedCSVEntry if the type/subtype/sign combination is not known
+        - SkippedCSVEntry if the row is a cashback whose card payment is not in the file
         """
         amount_str = f'{abs(row.amount)} {row.asset.symbol_or_name()}'
         match (row.type, row.subtype):
@@ -258,11 +320,19 @@ class KrakImporter(BaseExchangeImporter):
                     notes=f'Pay {amount_str} with the Krak card to{row.counterparty_hint()}',
                 )
             case ('Krak Card', 'Cashback Reward') if row.amount > ZERO:
+                if cashback_payment is None:
+                    raise SkippedCSVEntry(
+                        f'Skipped Krak cashback {row.reference} since its card payment is not in '
+                        'this export. Import an export that contains both',
+                    )
+
                 return self._history_event(
                     row=row,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.CASHBACK,
                     notes=f'Receive {amount_str} as Krak card cashback for a payment to{row.counterparty_hint()}',  # noqa: E501
+                    group_row=cashback_payment,
+                    sequence_index=CASHBACK_SEQUENCE_INDEX,
                 )
             case ('Earn', 'Reward') if row.amount > ZERO:
                 return [HistoryEvent(
@@ -325,7 +395,7 @@ class KrakImporter(BaseExchangeImporter):
 
         May raise InputError if the file is not a Krak activity export.
         """
-        trades: defaultdict[str, list[KrakRow]] = defaultdict(list)
+        rows: list[KrakRow] = []
         with open(filepath, encoding='utf-8-sig') as csvfile:
             reader = csv.DictReader(csvfile)
             header = reader.fieldnames or []
@@ -337,20 +407,12 @@ class KrakImporter(BaseExchangeImporter):
             for index, raw_row in enumerate(reader, start=1):
                 self.total_entries += 1
                 try:
-                    row = KrakRow(
+                    rows.append(KrakRow(
                         index=index,
                         raw=raw_row,
                         fiat_fee_column=fiat_fee_column,
                         price_column=price_column,
-                    )
-                    if row.type == TRADE_TYPE:
-                        trades[row.reference].append(row)
-                        continue
-
-                    self.add_history_events(write_cursor, self._events_for_row(row))
-                    self.imported_entries += 1
-                except SkippedCSVEntry as e:
-                    self.send_message(row_index=index, csv_row=raw_row, msg=str(e), is_error=False)
+                    ))
                 except UnknownAsset as e:
                     self.send_message(
                         row_index=index,
@@ -358,10 +420,29 @@ class KrakImporter(BaseExchangeImporter):
                         msg=f'Unknown asset {e.identifier}.',
                         is_error=True,
                     )
-                except (DeserializationError, UnsupportedCSVEntry) as e:
+                except DeserializationError as e:
                     self.send_message(row_index=index, csv_row=raw_row, msg=str(e), is_error=True)
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {raw_row!s}') from e
+
+        trades: defaultdict[str, list[KrakRow]] = defaultdict(list)
+        cashback_payments = _match_cashbacks_to_payments(rows)
+        for row in rows:
+            try:
+                row.ensure_settled()
+                if row.type == TRADE_TYPE:
+                    trades[row.reference].append(row)
+                    continue
+
+                self.add_history_events(write_cursor, self._events_for_row(
+                    row=row,
+                    cashback_payment=cashback_payments.get(row.index),
+                ))
+                self.imported_entries += 1
+            except SkippedCSVEntry as e:
+                self.send_message(row_index=row.index, csv_row=row.raw, msg=str(e), is_error=False)
+            except UnsupportedCSVEntry as e:
+                self.send_message(row_index=row.index, csv_row=row.raw, msg=str(e), is_error=True)
 
         for legs in trades.values():
             try:

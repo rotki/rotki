@@ -124,9 +124,9 @@ def test_import_issue_sample(database: DBHandler) -> None:
         notes='Pay 9.35 EUR with the Krak card to Merchant 1',
     ), HistoryEvent(
         identifier=4,
-        group_identifier='KRK_PAYM85X-P6NNV6-MFRUB5',
-        sequence_index=0,
-        timestamp=TimestampMS(1783315439000),
+        group_identifier='KRK_PAY6J2M-5G3HAP-NUQ6MX',
+        sequence_index=2,
+        timestamp=TimestampMS(1783315437000),
         location=LOCATION_KRAK,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.CASHBACK,
@@ -265,6 +265,160 @@ def test_reimport_after_pending_rows_settle(database: DBHandler, tmp_path: Path)
 
     assert importer.import_csv(filepath=settled) == (True, '')  # importing it again adds nothing
     assert len(_get_events(database)) == 21
+
+
+def _card_csv(*rows: tuple[str, str, str, str, str, str, str]) -> str:
+    """Build a Krak export of card rows, each as (date, subtype, asset, amount, value,
+    merchant, reference). Rows with `-` as value are pending."""
+    return (
+        '"Date (UTC)","Type","Subtype","Asset","Asset Name","Wallet","Amount","Price (EUR)","Fee (EUR)","Value (EUR)","Counter party","Reference"\n' +  # noqa: E501
+        ''.join(
+            f'"{date}","Krak Card","{subtype}","{asset}","{asset}","Everyday","{amount}",'
+            f'"{"-" if value == "-" else "1"}","{"-" if value == "-" else "0"}","{value}",'
+            f'"{merchant}","{reference}"\n'
+            for date, subtype, asset, amount, value, merchant, reference in rows
+        )
+    )
+
+
+def _payment(date: str, amount: str, merchant: str, reference: str, value: str = '1') -> tuple[str, str, str, str, str, str, str]:  # noqa: E501
+    return (date, 'Card Payment', 'EUR', f'-{amount}', value, merchant, reference)
+
+
+def _cashback(date: str, amount: str, merchant: str, reference: str, value: str = '1') -> tuple[str, str, str, str, str, str, str]:  # noqa: E501
+    return (date, 'Cashback Reward', 'BTC', amount, value, merchant, reference)
+
+
+def _card_events(events: list[HistoryBaseEntry]) -> set[tuple[str, int, HistoryEventSubType, FVal]]:  # noqa: E501
+    return {(x.group_identifier, x.sequence_index, x.event_subtype, x.amount) for x in events}
+
+
+def test_cashback_joins_the_group_of_its_payment(database: DBHandler, tmp_path: Path) -> None:
+    """References are unrelated, so a cashback pairs with the oldest payment to the same merchant
+    that it follows within the window. Other merchants, a payment that gets no cashback and a
+    payment older than the window do not take part."""
+    (filepath := tmp_path / 'krak_card.csv').write_text(_card_csv(
+        _payment('2026-06-01 10:00:00', '50', 'Merchant A', 'PAYOLD'),
+        _payment('2026-06-01 10:05:00', '20', 'Merchant A', 'PAYA1'),
+        _payment('2026-06-01 10:05:01', '30', 'Merchant A', 'PAYA2'),
+        _payment('2026-06-01 10:05:01', '40', 'Merchant B', 'PAYB1'),
+        _cashback('2026-06-01 10:05:02', '0.004', 'Merchant B', 'CBB1'),
+        _cashback('2026-06-01 10:05:03', '0.002', 'Merchant A', 'CBA1'),
+        _cashback('2026-06-01 10:05:04', '0.003', 'Merchant A', 'CBA2'),
+    ))
+    importer = KrakImporter(db=database)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert importer.total_entries == importer.imported_entries == 7
+    assert importer.import_msgs == []
+    assert _card_events(_get_events(database)) == {
+        ('KRK_PAYOLD', 0, HistoryEventSubType.PAYMENT, FVal('50')),
+        ('KRK_PAYA1', 0, HistoryEventSubType.PAYMENT, FVal('20')),
+        ('KRK_PAYA1', 2, HistoryEventSubType.CASHBACK, FVal('0.002')),
+        ('KRK_PAYA2', 0, HistoryEventSubType.PAYMENT, FVal('30')),
+        ('KRK_PAYA2', 2, HistoryEventSubType.CASHBACK, FVal('0.003')),
+        ('KRK_PAYB1', 0, HistoryEventSubType.PAYMENT, FVal('40')),
+        ('KRK_PAYB1', 2, HistoryEventSubType.CASHBACK, FVal('0.004')),
+    }
+
+
+def test_cashback_comes_after_its_payment(database: DBHandler, tmp_path: Path) -> None:
+    """The history view sorts by newest timestamp and only then by sequence index, so a cashback
+    paid seconds after its payment must take the payment's timestamp to be shown below it."""
+    (filepath := tmp_path / 'krak_card.csv').write_text(_card_csv(
+        _payment('2026-06-01 10:00:00', '20', 'Merchant A', 'PAYA1'),
+        _cashback('2026-06-01 10:00:05', '0.002', 'Merchant A', 'CBA1'),
+    ))
+    assert KrakImporter(db=database).import_csv(filepath=filepath) == (True, '')
+    with database.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(order_by_rules=[
+                ('timestamp', False),
+                ('sequence_index', True),
+            ]),
+        )
+
+    assert [(x.event_subtype, x.timestamp) for x in events] == [
+        (HistoryEventSubType.PAYMENT, (timestamp := TimestampMS(1780308000000))),
+        (HistoryEventSubType.CASHBACK, timestamp),
+    ]
+
+
+def test_cashback_keeps_its_fee_after_the_payment_events(database: DBHandler, tmp_path: Path) -> None:  # noqa: E501
+    """A fee on both rows of a pair must not collide on the sequence index of the group,
+    and the cashback's fee stays below the payment like the cashback itself."""
+    (filepath := tmp_path / 'krak_fees.csv').write_text(
+        '"Date (UTC)","Type","Subtype","Asset","Asset Name","Wallet","Amount","Price (EUR)","Fee","Fee (EUR)","Value (EUR)","Counter party","Reference"\n'  # noqa: E501
+        '"2026-06-01 10:00:00","Krak Card","Card Payment","EUR","Euro","Everyday","-10","1","0.5","0.5","-10","Merchant A","PAYA1"\n'  # noqa: E501
+        '"2026-06-01 10:00:02","Krak Card","Cashback Reward","BTC","Bitcoin","Everyday","0.002","70000","0.001","70","140","Merchant A","CBA1"\n',  # noqa: E501
+    )
+    importer = KrakImporter(db=database)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert [(x.group_identifier, x.sequence_index, x.timestamp, x.event_subtype, x.amount) for x in sorted(_get_events(database), key=lambda x: x.sequence_index)] == [  # noqa: E501
+        ('KRK_PAYA1', 0, (timestamp := TimestampMS(1780308000000)), HistoryEventSubType.PAYMENT, FVal('10')),  # noqa: E501
+        ('KRK_PAYA1', 1, timestamp, HistoryEventSubType.FEE, FVal('0.5')),
+        ('KRK_PAYA1', 2, timestamp, HistoryEventSubType.CASHBACK, FVal('0.002')),
+        ('KRK_PAYA1', 3, timestamp, HistoryEventSubType.FEE, FVal('0.001')),
+    ]
+
+
+def test_cashback_without_payment_is_skipped_until_exported_with_it(database: DBHandler, tmp_path: Path) -> None:  # noqa: E501
+    """An export that cuts a pair in two must not import the cashback in a group of its own,
+    or the export with both rows would count it a second time."""
+    payment = _payment('2026-06-01 10:00:00', '20', 'Merchant A', 'PAYA1')
+    cashback = _cashback('2026-06-01 10:00:03', '0.002', 'Merchant A', 'CBA1')
+    (only_cashback := tmp_path / 'krak_only_cashback.csv').write_text(_card_csv(cashback))
+    importer = KrakImporter(db=database)
+    assert importer.import_csv(filepath=only_cashback) == (True, '')
+    assert importer.imported_entries == 0
+    assert importer.import_msgs == [{
+        'msg': 'Skipped Krak cashback CBA1 since its card payment is not in this export. Import an export that contains both',  # noqa: E501
+        'row': 1,
+    }]
+    assert _get_events(database) == []
+
+    (both := tmp_path / 'krak_both.csv').write_text(_card_csv(payment, cashback))
+    assert importer.import_csv(filepath=both) == (True, '')
+    assert importer.import_csv(filepath=both) == (True, '')
+    assert _card_events(_get_events(database)) == {
+        ('KRK_PAYA1', 0, HistoryEventSubType.PAYMENT, FVal('20')),
+        ('KRK_PAYA1', 2, HistoryEventSubType.CASHBACK, FVal('0.002')),
+    }
+
+
+def test_cashback_of_a_pending_payment_is_not_duplicated_on_settling(database: DBHandler, tmp_path: Path) -> None:  # noqa: E501
+    """A pending payment still claims its cashback, so a burst pairs the same way before and
+    after it settles and importing the settled export only adds the payment."""
+    settled_cashbacks = (
+        _cashback('2026-06-01 10:00:03', '0.002', 'Merchant A', 'CBA1'),
+        _cashback('2026-06-01 10:00:04', '0.003', 'Merchant A', 'CBA2'),
+    )
+    second_payment = _payment('2026-06-01 10:00:01', '30', 'Merchant A', 'PAYA2')
+    (pending := tmp_path / 'krak_pending.csv').write_text(_card_csv(
+        _payment('2026-06-01 10:00:00', '20', 'Merchant A', 'PAYA1', value='-'),
+        second_payment,
+        *settled_cashbacks,
+    ))
+    importer = KrakImporter(db=database)
+    assert importer.import_csv(filepath=pending) == (True, '')
+    assert importer.imported_entries == 3
+    assert [x['row'] for x in importer.import_msgs] == [1]
+    expected = {
+        ('KRK_PAYA1', 2, HistoryEventSubType.CASHBACK, FVal('0.002')),
+        ('KRK_PAYA2', 0, HistoryEventSubType.PAYMENT, FVal('30')),
+        ('KRK_PAYA2', 2, HistoryEventSubType.CASHBACK, FVal('0.003')),
+    }
+    assert _card_events(_get_events(database)) == expected
+
+    (settled := tmp_path / 'krak_settled.csv').write_text(_card_csv(
+        _payment('2026-06-01 10:00:00', '20', 'Merchant A', 'PAYA1'),
+        second_payment,
+        *settled_cashbacks,
+    ))
+    assert importer.import_csv(filepath=settled) == (True, '')
+    assert _card_events(_get_events(database)) == expected | {
+        ('KRK_PAYA1', 0, HistoryEventSubType.PAYMENT, FVal('20')),
+    }
 
 
 def test_import_other_fiat_and_unsupported_rows(database: DBHandler, tmp_path: Path) -> None:
