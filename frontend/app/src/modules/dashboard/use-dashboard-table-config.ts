@@ -2,6 +2,7 @@ import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { DashboardTableType } from '@/modules/settings/types/frontend-settings';
+import { useAssetBalanceColumns } from '@/modules/balances/use-asset-balance-columns';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -20,6 +21,7 @@ export function useDashboardTableConfig(
   totalNetWorth: MaybeRefOrGetter<BigNumber>,
 ): UseDashboardTableConfigReturn {
   const { t } = useI18n({ useScope: 'global' });
+  const { percentageColumn, valueColumns } = useAssetBalanceColumns();
 
   const modelSort = ref<DataTableSortData<AssetBalanceWithPrice>>({
     column: 'value',
@@ -67,50 +69,18 @@ export function useDashboardTableConfig(
       key: 'protocol',
       label: t('common.location'),
       sortable: true,
-    }, {
-      align: 'end',
-      cellClass: 'py-0 text-rui-text-secondary',
-      class: 'text-no-wrap',
-      key: 'price',
-      label: t('common.price'),
-      sortable: true,
-    }, {
-      align: 'end',
-      cellClass: 'py-0',
-      key: 'amount',
-      label: t('common.amount'),
-      sortable: true,
-    }, {
-      align: 'end',
-      cellClass: 'py-0 font-medium',
-      class: 'text-no-wrap',
-      key: 'value',
-      label: t('common.value'),
-      sortable: true,
-    }];
+    }, ...valueColumns()];
 
     if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
-      headers.push({
-        align: 'end',
-        cellClass: 'py-0 text-rui-text-secondary',
-        class: 'text-no-wrap',
-        key: 'percentageOfTotalNetValue',
-        label: toValue(totalNetWorth).gt(0)
-          ? t('dashboard_asset_table.headers.percentage_of_total_net_value')
-          : t('dashboard_asset_table.headers.percentage_total'),
-      });
+      headers.push(percentageColumn('percentageOfTotalNetValue', toValue(totalNetWorth).gt(0)
+        ? t('dashboard_asset_table.headers.percentage_of_total_net_value')
+        : t('dashboard_asset_table.headers.percentage_total')));
     }
 
     if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
-      headers.push({
-        align: 'end',
-        cellClass: 'py-0 text-rui-text-secondary',
-        class: 'text-no-wrap',
-        key: 'percentageOfTotalCurrentGroup',
-        label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
-          group: toValue(title),
-        }),
-      });
+      headers.push(percentageColumn('percentageOfTotalCurrentGroup', t('dashboard_asset_table.headers.percentage_of_total_current_group', {
+        group: toValue(title),
+      })));
     }
 
     return headers;
