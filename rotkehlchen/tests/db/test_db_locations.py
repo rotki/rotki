@@ -117,11 +117,11 @@ def test_custom_location_rules(database: DBHandler) -> None:
 
         with pytest.raises(InputError, match='cannot be assigned directly'):
             db_locations.validate_assignable(write_cursor, 'total')
-        assert db_locations.validate_assignable(write_cursor, 'banks', allow_category=True).identifier == 'banks'  # noqa: E501
-        for category in ('banks', 'evm chains', 'other'):  # imports, aliases and connections
+        assert db_locations.validate_assignable(write_cursor, 'exchanges', allow_category=True).identifier == 'exchanges'  # noqa: E501
+        for category in ('blockchain', 'evm chains', 'exchanges', 'other'):
             with pytest.raises(InputError, match='only groups other locations'):
                 db_locations.validate_assignable(write_cursor, category)
-        assert db_locations.validate_assignable(write_cursor, 'qonto').identifier == 'qonto'
+        assert db_locations.validate_assignable(write_cursor, 'banks').identifier == 'banks'
 
 
 def test_location_foreign_keys(database: DBHandler) -> None:
@@ -158,7 +158,7 @@ def test_legacy_locations_can_be_stored_and_read_back(database: DBHandler) -> No
 def test_location_resolution(database: DBHandler) -> None:
     """Imported values resolve by identifier, then alias, then a unique name. Ambiguous names,
     the total, archived locations and categories new with the tree never resolve; the old
-    banks and blockchain locations still do by identifier, as rotki's exports name them."""
+    blockchain location still does by identifier, as rotki's exports name it."""
     db_locations = DBLocations()
     with database.user_write() as write_cursor:
         ing = db_locations.add_custom(write_cursor, name='ING', parent_identifier='banks')
@@ -195,7 +195,7 @@ def test_location_resolution(database: DBHandler) -> None:
         for alias, target, message in (
             (' ', 'kraken', 'can not be empty'),
             ('Everything', 'total', 'is the total'),
-            ('All banks', 'banks', 'only groups other locations'),
+            ('All exchanges', 'exchanges', 'only groups other locations'),
             ('Chains', 'evm chains', 'only groups other locations'),
             ('Closed', closed.identifier, 'is archived'),
             ('Nowhere', 'custom:missing', 'does not exist'),

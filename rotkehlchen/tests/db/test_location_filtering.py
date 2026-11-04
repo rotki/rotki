@@ -18,7 +18,6 @@ from rotkehlchen.locations.constants import (
     LOCATION_EXTERNAL,
     LOCATION_KRAKEN,
     LOCATION_OPTIMISM,
-    LOCATION_QONTO,
     LOCATION_TOTAL,
 )
 from rotkehlchen.locations.types import LocationIdentifier, LocationScope
@@ -59,7 +58,6 @@ def test_history_events_location_scopes(database: DBHandler) -> None:
         'optimism': LOCATION_OPTIMISM,
         'blockchain': LOCATION_BLOCKCHAIN,  # a broad bucket for an unknown chain
         'kraken': LOCATION_KRAKEN,
-        'qonto': LOCATION_QONTO,
         'banks': LOCATION_BANKS,
         'ing': ing.identifier,
         'savings': savings.identifier,
@@ -82,7 +80,7 @@ def test_history_events_location_scopes(database: DBHandler) -> None:
                 entries_limit=None,
             )}
 
-    everything = {'ethereum', 'optimism', 'blockchain', 'kraken', 'qonto', 'banks', 'ing', 'savings', 'external'}  # noqa: E501
+    everything = {'ethereum', 'optimism', 'blockchain', 'kraken', 'banks', 'ing', 'savings', 'external'}  # noqa: E501
     for location, scope, expected in (
         (LOCATION_TOTAL, LocationScope.EXACT, set()),
         (LOCATION_TOTAL, LocationScope.SUBTREE, everything),
@@ -94,7 +92,7 @@ def test_history_events_location_scopes(database: DBHandler) -> None:
         (LOCATION_ETHEREUM, LocationScope.SUBTREE, {'ethereum'}),
         (LOCATION_EXCHANGES, LocationScope.SUBTREE, {'kraken'}),
         (LOCATION_BANKS, LocationScope.EXACT, {'banks'}),
-        (LOCATION_BANKS, LocationScope.SUBTREE, {'qonto', 'banks', 'ing', 'savings'}),
+        (LOCATION_BANKS, LocationScope.SUBTREE, {'banks', 'ing', 'savings'}),
         (ing.identifier, LocationScope.EXACT, {'ing'}),
         (ing.identifier, LocationScope.SUBTREE, {'ing', 'savings'}),
     ):

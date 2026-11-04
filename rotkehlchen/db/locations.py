@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Final
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.locations.catalog import load_builtin_catalog, validate_location_tree
-from rotkehlchen.locations.constants import LOCATION_BANKS, LOCATION_BLOCKCHAIN
+from rotkehlchen.locations.constants import LOCATION_BLOCKCHAIN
 from rotkehlchen.locations.legacy_chars import LEGACY_LOCATIONS_PARENT, V53_LEGACY_LOCATION_CHARS
 from rotkehlchen.locations.types import (
     CUSTOM_LOCATION_PREFIX,
@@ -42,7 +42,7 @@ LOCATION_REFERENCES: Final = (
     ('bucket_balance_checks', 'location'),
 )
 # Categories that were locations of their own before the tree, so old data may name them
-_PRE_TREE_CATEGORIES: Final = frozenset({LOCATION_BANKS, LOCATION_BLOCKCHAIN})
+_PRE_TREE_CATEGORIES: Final = frozenset({LOCATION_BLOCKCHAIN})
 _NODE_COLUMNS: Final = 'identifier, name, parent_identifier, is_builtin, is_active, icon, image'
 
 
@@ -213,7 +213,7 @@ class DBLocations:
     ) -> LocationNode:
         """Check that data can be assigned directly to the given location.
 
-        A category, a built-in location with built-in locations below it such as Banks, only
+        A category, a built-in location with built-in locations below it such as Blockchains, only
         groups others, so it is refused unless allow_category is True. Manual balances and
         history events pass it to keep accepting categories, as before the tree.
 
@@ -440,7 +440,7 @@ class DBLocations:
         """Find the location a value from imported data means, in order: an exact location
         identifier, a saved alias, then a unique case-insensitive name. Only locations data can
         be assigned to count, so the total and archived locations never match. A category matches
-        only by the exact identifier of a location from before the tree, such as banks, which
+        only by the exact identifier of a location from before the tree, such as blockchain, which
         rotki's own exports name for old data. A name several locations share stays ambiguous
         instead of picking one.
         """
