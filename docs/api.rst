@@ -11929,7 +11929,7 @@ Data imports
    :reqjson str filepath: The filepath to the data for importing
    :reqjson str timestamp_format: Optional. Custom format to use for dates in the CSV file. Should follow rules at `Datetime docs <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__.
    :reqjson str timezone: Optional. IANA timezone name to use for dates in the CSV file that do not include timezone information. Defaults to ``"UTC"``. Example: ``"Europe/Madrid"``.
-   :reqjson object location_mappings: Optional. Only for ``"rotki_events"`` and ``"rotki_trades"``, whose rows name their location. Maps values of the ``Location`` column to location identifiers, for values that do not resolve by themselves. A multipart POST sends it as a JSON string. See `Check the locations of an import`_ for how values resolve.
+   :reqjson object location_mappings: Optional. Only for ``"rotki_events"`` and ``"rotki_trades"``, whose rows name their location. Maps values of the ``Location`` column to location identifiers, for values that do not resolve by themselves. Keys are trimmed; use ``{"": "external"}`` to map empty or whitespace-only locations to External. Destinations must still be active, assignable locations. A multipart POST sends it as a JSON string. See `Check the locations of an import`_ for how values resolve.
 
    **Example Response**:
 

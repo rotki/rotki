@@ -1,7 +1,11 @@
+from functools import partial
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from tempfile import TemporaryDirectory
+from typing import TYPE_CHECKING, Any, Final
+from unittest.mock import patch
 
+import pytest
 import requests
 
 from rotkehlchen.constants import ONE
@@ -21,7 +25,7 @@ from rotkehlchen.types import TimestampMS
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
-PACKAGED_IMAGES_DIR = Path(__file__).resolve().parents[3] / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'protocols'  # noqa: E501
+PACKAGED_IMAGES_DIR: Final = Path(__file__).resolve().parents[3] / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'protocols'  # noqa: E501
 
 
 def _add_location(server: APIServer, **payload: str) -> dict:
@@ -188,3 +192,42 @@ def test_custom_location_image(rotkehlchen_api_server: APIServer) -> None:
     upload('kraken.svg')
     assert requests.delete(api_url_for(server, 'customlocationresource', identifier=identifier)).status_code == HTTPStatus.OK  # noqa: E501
     assert list(images_dir.iterdir()) == []
+
+
+@pytest.mark.parametrize('absolute_filename', [True, False])
+@pytest.mark.parametrize('existing_location', [True, False])
+def test_location_image_upload_confines_filename(
+        rotkehlchen_api_server: APIServer,
+        tmp_path: Path,
+        absolute_filename: bool,
+        existing_location: bool,
+) -> None:
+    """Multipart paths cannot overwrite files outside the temporary upload directory."""
+    server = rotkehlchen_api_server
+    identifier = (
+        _add_location(server, name='ING', parent_identifier='banks')['identifier']
+        if existing_location else 'custom:missing'
+    )
+    image_url = api_url_for(server, 'locationimageresource', identifier=identifier)
+    target = tmp_path / 'existing.svg'
+    target.write_bytes(original := b'keep this file')
+    filename = str(target) if absolute_filename else '../existing.svg'
+    image = (PACKAGED_IMAGES_DIR / 'kraken.svg').read_bytes()
+
+    with patch(
+        'rotkehlchen.api.v1.resources.TemporaryDirectory',
+        side_effect=partial(TemporaryDirectory, dir=tmp_path),
+    ):
+        response = requests.post(image_url, files={'file': (filename, image, 'image/svg+xml')})
+
+    assert target.read_bytes() == original
+    if existing_location:
+        stored_image = assert_proper_sync_response_with_result(response)['image']
+        assert stored_image.endswith('.svg')
+        assert requests.get(image_url).content == image
+    else:
+        assert_error_response(
+            response=response,
+            contained_in_msg='does not exist',
+            status_code=HTTPStatus.NOT_FOUND,
+        )

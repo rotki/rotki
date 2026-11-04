@@ -5162,6 +5162,8 @@ def test_upgrade_db_53_to_54(
             f'SELECT COUNT(*) FROM history_events WHERE identifier IN ({",".join("?" * len(bitcoin_event_ids))})',  # noqa: E501
             bitcoin_event_ids,
         ).fetchone()[0] == len(bitcoin_event_ids)
+        DBLocations().set_alias(cursor, 'Old Kraken', 'kraken')
+        assert DBLocations().resolve(cursor, 'old kraken').location == 'kraken'
         assert db.get_setting(cursor, 'version') == 54
 
     db.logout()

@@ -457,11 +457,13 @@ class DBLocations:
         ).fetchone()) is not None and (location := self._assignable(cursor, alias[0])) is not None:
             return LocationResolution(value=value, location=location)
 
+        matching_identifiers = cursor.execute(
+            'SELECT identifier FROM locations WHERE name=? COLLATE NOCASE ORDER BY identifier',
+            (value,),
+        ).fetchall()
         matches = tuple(
-            location for (identifier,) in cursor.execute(
-                'SELECT identifier FROM locations WHERE name=? COLLATE NOCASE ORDER BY identifier',
-                (value,),
-            ).fetchall() if (location := self._assignable(cursor, identifier)) is not None
+            location for (identifier,) in matching_identifiers
+            if (location := self._assignable(cursor, identifier)) is not None
         )
         if len(matches) == 1:
             return LocationResolution(value=value, location=matches[0])

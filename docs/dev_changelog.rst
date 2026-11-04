@@ -7,6 +7,31 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Custom Location API
+-------------------
+
+* **New Endpoints**: ``GET/POST /api/(version)/locations``, ``PATCH/DELETE /api/(version)/locations/(identifier)``, and ``GET /api/(version)/locations/(identifier)/usage``.
+
+  - List the complete location tree, create custom locations, and rename, move, archive, restore or delete them. Built-in locations remain immutable.
+  - A PATCH with ``dry_run: true`` validates the edit and returns the old and new display paths without persisting it. Omitting ``icon`` preserves it; ``icon: null`` removes it.
+  - Locations with children or data cannot be deleted. Archiving requires all children to be archived first.
+
+* **New Endpoints**: ``GET/POST/DELETE /api/(version)/locations/(identifier)/image``.
+
+  - Upload, retrieve or remove a custom location image. Uploads accept only multipart image files; client filenames are never used as filesystem paths.
+  - Uploaded images are stored per user outside the database and are not included in database backups or premium sync. GET supports conditional requests with ``ETag`` and ``If-None-Match``.
+
+Location Subtrees and CSV Imports
+---------------------------------
+
+* **Changed Endpoints**: History-event queries, exports, deletion and group positioning, data-issue queries, and historical-balance queries accept ``location_scope``: ``exact`` (the default) or ``subtree``. The latter includes the selected location and all descendants. A scope without a location is not a filter and cannot authorize bulk event deletion.
+* **Changed Endpoint**: ``GET /api/(version)/locations/associated`` now returns ``{"locations": [...], "ancestors": [...]}`` instead of a flat list. ``ancestors`` contains the ancestors not already listed as directly used locations.
+* **Changed Output**: Balance snapshots and balance location totals separate blockchains by chain instead of combining them under ``blockchain``. History-event, PnL and snapshot CSV exports include ``location_path``.
+* **New Endpoints**: ``GET/PUT/DELETE /api/(version)/locations/aliases`` manage case-insensitive aliases for location values in CSV imports.
+* **New Endpoint**: ``PUT/POST /api/(version)/import/preflight`` reports resolved, unresolved and ambiguous location values without importing data.
+* **Changed Endpoint**: ``PUT/POST /api/(version)/import`` accepts ``location_mappings`` and returns ``409`` without importing while any location value remains unresolved or ambiguous. Mappings override identifier, alias and unique-name resolution. Empty or whitespace-only CSV locations can be mapped with the empty-string key; multipart uploads encode mappings as JSON.
+* **User DB v54**: The unreleased v53-to-v54 upgrade and fresh database schema now include ``location_aliases``. No additional database version is introduced.
+
 Classified User Messages
 ------------------------
 

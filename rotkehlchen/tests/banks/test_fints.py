@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from datetime import timedelta
 from http import HTTPStatus
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -37,9 +36,6 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.tests.utils.banks import FinTSFixtureTransport
 from rotkehlchen.types import ExchangeApiCredentials
-
-if TYPE_CHECKING:
-    from rotkehlchen.locations.types import LocationIdentifier
 
 PRODUCT_ID = '0123456789012345678901234'
 FINTS_VALUES = {

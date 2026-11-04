@@ -826,7 +826,7 @@ class LocationImageResource(BaseMethodView):
     def post(self, identifier: LocationIdentifier, file: FileStorage) -> Response:
         """Only multipart uploads are accepted, never a path on the backend's filesystem"""
         with TemporaryDirectory() as temp_directory:
-            filepath = Path(temp_directory) / (file.filename or 'image.png')
+            filepath = Path(temp_directory) / f'image{Path(file.filename or "image.png").suffix}'
             file.save(str(filepath))
             return self.rest_api.upload_location_image(identifier=identifier, filepath=filepath)
 

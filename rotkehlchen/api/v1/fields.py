@@ -989,10 +989,10 @@ class LocationMappingsField(fields.Field):
 
         mappings = {}
         for raw_value, raw_location in value.items():
-            if not isinstance(raw_value, str) or (import_value := raw_value.strip()) == '':
+            if not isinstance(raw_value, str):
                 raise ValidationError(f'Invalid mapped location value {raw_value!r}')
             try:
-                mappings[import_value] = deserialize_location_identifier(raw_location)
+                mappings[raw_value.strip()] = deserialize_location_identifier(raw_location)
             except DeserializationError as e:
                 raise ValidationError(str(e)) from e
         return mappings

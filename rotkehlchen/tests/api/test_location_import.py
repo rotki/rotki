@@ -1,7 +1,8 @@
 import json
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
+import pytest
 import requests
 
 from rotkehlchen.tests.utils.api import (
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.api.server import APIServer
 
-EVENTS_HEADER = 'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp\n'
+EVENTS_HEADER: Final = 'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp\n'
 
 
 def _write_events_csv(directory: Path, locations: list[str]) -> Path:
@@ -114,3 +115,55 @@ def test_import_preflight_other_formats(rotkehlchen_api_server: APIServer, tmp_p
         api_url_for(rotkehlchen_api_server, 'dataimportpreflightresource'),
         json={'source': 'cointracking', 'file': str(filepath)},
     )) == {'locations': []}
+
+
+@pytest.mark.parametrize('mapping_key', ['', ' \t '])
+@pytest.mark.parametrize('multipart', [False, True])
+def test_import_blank_location_mapping(
+        rotkehlchen_api_server: APIServer,
+        tmp_path: Path,
+        mapping_key: str,
+        multipart: bool,
+) -> None:
+    """Empty CSV locations can be mapped without allowing invalid destinations."""
+    server = rotkehlchen_api_server
+    filepath = _write_events_csv(tmp_path, ['', '   '])
+    payload = {'source': 'rotki_events', 'file': str(filepath)}
+    preflight_url = api_url_for(server, 'dataimportpreflightresource')
+    assert assert_proper_sync_response_with_result(requests.put(
+        preflight_url, json=payload,
+    )) == {'locations': [{
+        'value': '', 'status': 'unresolved', 'location': None, 'candidates': [],
+    }]}
+
+    for destination, message in (
+        ('total', 'is the total'),
+        ('custom:missing', 'does not exist'),
+    ):
+        assert_error_response(
+            response=requests.put(
+                preflight_url,
+                json=payload | {'location_mappings': {mapping_key: destination}},
+            ),
+            contained_in_msg=message,
+        )
+
+    mappings = {mapping_key: 'external'}
+    assert assert_proper_sync_response_with_result(requests.put(
+        preflight_url, json=payload | {'location_mappings': mappings},
+    )) == {'locations': [{
+        'value': '', 'status': 'resolved', 'location': 'external', 'candidates': [],
+    }]}
+
+    import_url = api_url_for(server, 'dataimportresource')
+    if multipart:
+        with filepath.open('rb') as infile:
+            response = requests.post(
+                import_url,
+                files={'file': infile},
+                data={'source': 'rotki_events', 'location_mappings': json.dumps(mappings)},
+            )
+    else:
+        response = requests.put(import_url, json=payload | {'location_mappings': mappings})
+    assert assert_proper_sync_response_with_result(response) is True
+    assert _event_locations(server) == {'1': 'external', '2': 'external'}
