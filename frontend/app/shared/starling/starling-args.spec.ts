@@ -349,3 +349,31 @@ describe('buildStarlingInvocation (dev launchers)', () => {
     expect(flagValue(args, '--core-binary')).toBe('python');
   });
 });
+
+describe('buildStarlingInvocation (CORS origins)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    existsSyncMock.mockReturnValue(true);
+    statSyncMock.mockReturnValue({ isDirectory: () => true });
+    readdirSyncMock.mockReturnValue(['rotki-core-1.43.0-linux']);
+    execSyncMock.mockImplementation((cmd: string) => (cmd.includes('--version') ? '' : `${VENV_PYTHON}\n`));
+  });
+
+  async function corsFlag(input: Partial<typeof devInput> & { devServerUrl?: string }): Promise<string | undefined> {
+    vi.resetModules();
+    const { buildStarlingInvocation } = await import('./starling-args');
+    return flagValue(buildStarlingInvocation({ ...devInput, ...input }).args, '--api-cors');
+  }
+
+  it('should allow only the app://localhost renderer origin when packaged, never every app:// host', async () => {
+    expect(await corsFlag({ isDev: false })).toBe('app://localhost,http://localhost:*');
+  });
+
+  it('should allow the dev server origin without its trailing slash in dev', async () => {
+    expect(await corsFlag({ devServerUrl: 'http://localhost:5173/' })).toBe('http://localhost:5173,http://localhost:*');
+  });
+
+  it('should fall back to the loopback allowance in dev without a dev server', async () => {
+    expect(await corsFlag({})).toBe('http://localhost:*');
+  });
+});
