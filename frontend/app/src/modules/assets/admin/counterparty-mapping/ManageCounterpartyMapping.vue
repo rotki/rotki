@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import type { CounterpartyMapping, CounterpartyMappingRequestPayload } from '@/modules/assets/admin/counterparty-mapping/schema';
 import { omit } from 'es-toolkit';
-import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
 import { CounterpartyMappingFilterKeys, type Filters } from '@/modules/assets/admin/counterparty-mapping/counterparty-mapping-filter-keys';
 import ManageCounterpartyMappingFormDialog
   from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingFormDialog.vue';
 import ManageCounterpartyMappingTable from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingTable.vue';
 import { useCounterpartyMappingApi } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-api';
 import { useCounterpartyMappingFields } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-fields';
+import MappingAdminLayout from '@/modules/assets/admin/MappingAdminLayout.vue';
 import { useMappingAdmin } from '@/modules/assets/admin/use-mapping-admin';
 import { fromRequest } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
-import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -71,34 +70,12 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
 </script>
 
 <template>
-  <TablePageLayout child>
-    <template #title>
-      <AssetManagerMoreTitle />
-    </template>
-    <template #buttons>
-      <RuiButton
-        color="primary"
-        variant="outlined"
-        :loading="loading"
-        @click="refetch()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-refresh-ccw" />
-        </template>
-        {{ t('common.refresh') }}
-      </RuiButton>
-
-      <RuiButton
-        data-testid="managed-counterparty-mapping-add-btn"
-        color="primary"
-        @click="add()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-plus" />
-        </template>
-        {{ t('asset_management.cex_mapping.add_mapping') }}
-      </RuiButton>
-    </template>
+  <MappingAdminLayout
+    :loading="loading"
+    add-test-id="managed-counterparty-mapping-add-btn"
+    @refresh="refetch()"
+    @add="add()"
+  >
     <ManageCounterpartyMappingTable
       v-model:filters="filter"
       v-model:pagination="pagination"
@@ -114,5 +91,5 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
       :edit-mode="editMode"
       @refresh="refetch()"
     />
-  </TablePageLayout>
+  </MappingAdminLayout>
 </template>

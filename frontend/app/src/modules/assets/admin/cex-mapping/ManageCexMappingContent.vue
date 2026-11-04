@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import type { CexMapping, CexMappingRequestPayload } from '@/modules/assets/types';
 import { omit } from 'es-toolkit';
-import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
 import { CexMappingFilterKeys, type Filters } from '@/modules/assets/admin/cex-mapping/cex-mapping-filter-keys';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
 import ManageCexMappingTable from '@/modules/assets/admin/cex-mapping/ManageCexMappingTable.vue';
 import { useCexMappingFields } from '@/modules/assets/admin/cex-mapping/use-cex-mapping-fields';
+import MappingAdminLayout from '@/modules/assets/admin/MappingAdminLayout.vue';
 import { useMappingAdmin } from '@/modules/assets/admin/use-mapping-admin';
 import { useAssetCexMappingApi } from '@/modules/assets/api/use-asset-cex-mapping-api';
 import { fromRequest } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
-import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -70,34 +69,12 @@ const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
 </script>
 
 <template>
-  <TablePageLayout child>
-    <template #title>
-      <AssetManagerMoreTitle />
-    </template>
-    <template #buttons>
-      <RuiButton
-        color="primary"
-        variant="outlined"
-        :loading="loading"
-        @click="refetch()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-refresh-ccw" />
-        </template>
-        {{ t('common.refresh') }}
-      </RuiButton>
-
-      <RuiButton
-        data-testid="managed-cex-mapping-add-btn"
-        color="primary"
-        @click="add()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-plus" />
-        </template>
-        {{ t('asset_management.cex_mapping.add_mapping') }}
-      </RuiButton>
-    </template>
+  <MappingAdminLayout
+    :loading="loading"
+    add-test-id="managed-cex-mapping-add-btn"
+    @refresh="refetch()"
+    @add="add()"
+  >
     <ManageCexMappingTable
       v-model:filters="filter"
       v-model:pagination="pagination"
@@ -113,5 +90,5 @@ const { showDeleteConfirmation } = useTableRowDeletion<CexMapping>({
       :edit-mode="editMode"
       @refresh="refetch()"
     />
-  </TablePageLayout>
+  </MappingAdminLayout>
 </template>
