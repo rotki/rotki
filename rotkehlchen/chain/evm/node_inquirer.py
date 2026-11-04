@@ -911,13 +911,18 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         """Read the raw 32-byte storage word at the given slot of an address.
 
         May raise:
-        - RemoteError if web3 is None, since indexers can't read raw storage and we need to
-          fail over to an rpc node
+        - RemoteError if an indexer is used and there is a problem querying it or
+          parsing its response
         - Web3Exception/ValueError propagated by web3 if the rpc call itself fails, which
           _query() turns into a RemoteError so the next node is tried
         """
-        if web3 is None:  # indexers can't read raw storage, fail over to an rpc node
-            raise RemoteError('Reading contract storage requires an rpc node')
+        if web3 is None:
+            return self._try_indexers(func=lambda indexer: indexer.get_storage_at(
+                chain_id=self.chain_id,
+                account=account_address,
+                position=position,
+            ))
+
         return bytes(web3.eth.get_storage_at(account_address, position))
 
     def _get_transaction_receipt(

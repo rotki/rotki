@@ -608,6 +608,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             method: Literal[
                 'eth_blockNumber',
                 'eth_getCode',
+                'eth_getStorageAt',
                 'eth_call',
             ],
             options: dict[str, Any] | None = None,
