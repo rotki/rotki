@@ -21,7 +21,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.exchanges'), icon: 'lu-coins-exchange', parent: '/accounts/', order: 60, drawer: 'accounts-exchanges', addAction: { labelKey: msg.$t('exchange_settings.dialog.add.title') } },
+    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.exchanges'), icon: 'lu-coins-exchange', parent: '/accounts/', heading: msg.$t('navigation_menu.accounts_sub.heading.exchanges_and_banks'), order: 60, drawer: 'accounts-exchanges', addAction: { labelKey: msg.$t('exchange_settings.dialog.add.title') } },
   },
 });
 

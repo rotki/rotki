@@ -16,6 +16,8 @@ export interface MenuNavItem {
   readonly labelKey: string;
   readonly icon?: RuiIcons;
   readonly testId: string;
+  /** Set on the first child of a run of siblings sharing a `nav.heading`: the heading to show above it. */
+  readonly headingKey?: string;
 }
 
 export interface MenuNavGroup {
@@ -60,7 +62,7 @@ export function useNavigationMenu(): UseNavigationMenuReturn {
   const toItem = (entry: MenuEntry): MenuNavItem => ({
     type: 'item',
     path: pathOf(entry.name),
-    labelKey: entry.nav.labelKey,
+    labelKey: entry.nav.drawerLabelKey ?? entry.nav.labelKey,
     icon: entry.nav.icon,
     testId: entry.nav.drawer ?? '',
   });
@@ -108,8 +110,14 @@ export function useNavigationMenu(): UseNavigationMenuReturn {
     if (children.length === 0)
       return toItem(entry);
 
-    const items = [...children].sort((a, b) => (a.nav.order ?? 0) - (b.nav.order ?? 0)).map(toItem);
+    const sorted = [...children].sort((a, b) => (a.nav.order ?? 0) - (b.nav.order ?? 0));
+    const items = sorted.map((child, i) => withHeading(toItem(child), child.nav.heading, sorted[i - 1]?.nav.heading));
     return { ...toItem(entry), type: 'group', items };
+  }
+
+  /** Marks `item` as the start of a heading run when its heading differs from the previous sibling's. */
+  function withHeading(item: MenuNavItem, heading: string | undefined, previousHeading: string | undefined): MenuNavItem {
+    return heading && heading !== previousHeading ? { ...item, headingKey: heading } : item;
   }
 
   const menuItems = computed<MenuItem[]>(() => {

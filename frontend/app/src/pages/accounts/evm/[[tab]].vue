@@ -20,7 +20,7 @@ import { useEthStakingAccess } from '@/modules/staking/eth/use-eth-staking-acces
 
 definePage({
   meta: {
-    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.evm'), icon: 'lu-evm-accounts', parent: '/accounts/', order: 10, drawer: 'accounts-evm', addAction: { labelKey: msg.$t('blockchain_balances.form_dialog.add_title') } },
+    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.evm'), drawerLabelKey: msg.$t('navigation_menu.accounts_sub.short.evm'), heading: msg.$t('navigation_menu.accounts_sub.heading.blockchain'), icon: 'lu-evm-accounts', parent: '/accounts/', order: 10, drawer: 'accounts-evm', addAction: { labelKey: msg.$t('blockchain_balances.form_dialog.add_title') } },
     canNavigateBack: true,
     noteLocation: NoteLocation.ACCOUNTS_EVM,
   },

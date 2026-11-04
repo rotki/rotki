@@ -5305,6 +5305,17 @@
       "dogecoin": "Dogecoin @:navigation_menu.accounts",
       "evm": "EVM @:navigation_menu.accounts",
       "exchanges": "Exchanges",
+      "heading": {
+        "blockchain": "Blockchain",
+        "exchanges_and_banks": "Exchanges and banks"
+      },
+      "short": {
+        "bitcoin": "Bitcoin",
+        "dogecoin": "Dogecoin",
+        "evm": "EVM",
+        "solana": "Solana",
+        "substrate": "Substrate"
+      },
       "solana": "Solana @:navigation_menu.accounts",
       "substrate": "Substrate @:navigation_menu.accounts"
     },

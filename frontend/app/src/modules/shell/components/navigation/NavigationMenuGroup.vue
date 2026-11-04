@@ -28,13 +28,29 @@ const { t } = useI18n({ useScope: 'global' });
         parent
       >
         <div :class="{ 'bg-rui-surface-muted rounded-rui-control': mini }">
-          <NavigationMenuLink
+          <template
             v-for="(child, i) in group.items"
             :key="i"
-            :item="child"
-            :mini="mini"
-            sub-menu
-          />
+          >
+            <RuiDivider
+              v-if="mini && child.headingKey && i > 0"
+              class="my-1"
+              data-testid="navigation-heading-divider"
+            />
+            <div
+              v-else-if="!mini && child.headingKey"
+              class="pl-11 pr-3 pb-1 text-xs font-medium uppercase tracking-wider text-rui-text-secondary"
+              :class="i > 0 ? 'pt-3' : 'pt-2'"
+              data-testid="navigation-heading"
+            >
+              {{ t(child.headingKey) }}
+            </div>
+            <NavigationMenuLink
+              :item="child"
+              :mini="mini"
+              sub-menu
+            />
+          </template>
         </div>
       </NavigationMenuItem>
     </template>

@@ -21,6 +21,11 @@ export type RouteName = keyof RouteNamedMap;
 export interface RouteNavMeta {
   /** i18n key for the label, resolved at render time (meta cannot hold reactive translations). */
   readonly labelKey: MessageKey;
+  /**
+   * Shorter label for the drawer only, for an entry whose heading already says part of the full
+   * label (EVM under a Blockchain heading, instead of EVM Accounts). Search keeps `labelKey`.
+   */
+  readonly drawerLabelKey?: MessageKey;
   readonly icon: RuiIcons;
   /** Extra i18n keys matched by the search palette, for aliases beyond the label. */
   readonly keywords?: readonly MessageKey[];
@@ -30,6 +35,11 @@ export interface RouteNavMeta {
   readonly order?: number;
   /** Drawer top-level section; dividers separate sections. Sub-items omit it. */
   readonly section?: number;
+  /**
+   * Subheading a sub-item sits under inside its drawer group. The drawer shows the heading above the
+   * first child of each run of siblings sharing it, so every child of the run declares the same key.
+   */
+  readonly heading?: MessageKey;
   /** When set, the route shows in the drawer; the value is the entry's `data-key` test selector. */
   readonly drawer?: string;
   /** Set false to exclude the route from the otherwise default-on search palette. */

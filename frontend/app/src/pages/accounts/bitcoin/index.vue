@@ -5,7 +5,7 @@ import { NoteLocation } from '@/modules/core/common/notes';
 
 definePage({
   meta: {
-    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.bitcoin'), icon: 'lu-bitcoin-accounts', parent: '/accounts/', order: 20, drawer: 'accounts-bitcoin' },
+    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.bitcoin'), drawerLabelKey: msg.$t('navigation_menu.accounts_sub.short.bitcoin'), heading: msg.$t('navigation_menu.accounts_sub.heading.blockchain'), icon: 'lu-bitcoin-accounts', parent: '/accounts/', order: 20, drawer: 'accounts-bitcoin' },
     noteLocation: NoteLocation.ACCOUNTS_BITCOIN,
   },
 });
