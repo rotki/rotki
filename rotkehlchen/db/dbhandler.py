@@ -679,6 +679,10 @@ class DBHandler:
         closed when we detach which will result in DB plaintext locked.
 
         Returns the Path of the new temp DB file
+
+        May raise:
+        - sqlcipher.OperationalError if the export fails, for example on a full disk. The
+        plaintext DB is detached in that case too.
         """
         tempdbpath = Path(tempdbfile.name)
         tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051
@@ -686,11 +690,11 @@ class DBHandler:
         # flush the wal file to have up to date information when exporting data
         self.conn.wal_checkpoint()
         with self.conn.write_ctx() as write_cursor:
-            write_cursor.executescript(
-                f"ATTACH DATABASE '{tempdbpath}' AS plaintext KEY '';"
-                "SELECT sqlcipher_export('plaintext');"
-                "DETACH DATABASE plaintext;",
-            )
+            write_cursor.executescript(f"ATTACH DATABASE '{tempdbpath}' AS plaintext KEY '';")
+            try:
+                write_cursor.executescript("SELECT sqlcipher_export('plaintext');")
+            finally:  # left attached, the file stays open and every later export fails
+                write_cursor.executescript('DETACH DATABASE plaintext;')
         return tempdbpath
 
     def import_unencrypted(self, unencrypted_db_data: bytes) -> None:

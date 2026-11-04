@@ -3,12 +3,13 @@ import logging
 import sqlite3
 import tempfile
 import time
-from contextlib import suppress
+from contextlib import closing, suppress
 from copy import deepcopy
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
@@ -401,6 +402,32 @@ def test_compress_and_encrypt_db_too_large(data_dir, username, sql_vm_instructio
 
     assert not encrypt_mock.called
     assert not tempdbpath.exists()
+    data.logout()
+
+
+def test_export_unencrypted_failure_detaches_export_db(
+        data_dir: Path,
+        username: str,
+        sql_vm_instructions_cb: int,
+) -> None:
+    """Test that a failed plaintext export does not leave the export DB attached, which
+    would keep the file open and make every later export fail"""
+    data = DataHandler(data_dir, MessagesAggregator(), sql_vm_instructions_cb)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
+    with tempfile.NamedTemporaryFile(suffix='.db', delete_on_close=False) as tempdbfile:
+        # a table the export also creates makes sqlcipher_export fail midway
+        with closing(sqlite3.connect(tempdbfile.name)) as conn:
+            conn.execute('CREATE TABLE settings(name TEXT)')
+            conn.commit()
+        with pytest.raises(sqlcipher.OperationalError, match='table settings already exists'):  # pylint: disable=no-member
+            data.db.export_unencrypted(tempdbfile)
+
+    # not read_ctx(), which may read on a pooled connection instead of the one exporting
+    with data.db.conn.cursor() as cursor:
+        assert [row[1] for row in cursor.execute('PRAGMA database_list')] == ['main']
+
+    with tempfile.NamedTemporaryFile(suffix='.db', delete_on_close=False) as tempdbfile:
+        assert plaintext_db_integrity_check(data.db.export_unencrypted(tempdbfile)) == (True, None)
     data.logout()
 
 
