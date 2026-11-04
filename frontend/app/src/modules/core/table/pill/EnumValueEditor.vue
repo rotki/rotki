@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ActiveFilter, FieldDef, FilterOp } from '@/modules/core/table/pill/core/types';
-import { hasOperatorChoice } from '@/modules/core/table/pill/core/operators';
 import PillOperatorToggle from '@/modules/core/table/pill/PillOperatorToggle.vue';
 import PillValueIcon from '@/modules/core/table/pill/PillValueIcon.vue';
 import ValueSelectList, { type SelectOption } from '@/modules/core/table/pill/ValueSelectList.vue';
@@ -52,16 +51,12 @@ function setOperator(op: FilterOp): void {
 
 <template>
   <div class="flex flex-col min-w-64">
-    <div
-      v-if="hasOperatorChoice(field)"
-      class="p-3 pb-2"
-    >
-      <PillOperatorToggle
-        :field="field"
-        :op="filter.op"
-        @update:op="setOperator($event)"
-      />
-    </div>
+    <PillOperatorToggle
+      class="m-3 mb-2 self-start"
+      :field="field"
+      :op="filter.op"
+      @update:op="setOperator($event)"
+    />
 
     <ValueSelectList
       v-model="selected"

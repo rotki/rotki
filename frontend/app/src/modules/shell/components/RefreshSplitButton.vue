@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { createReusableTemplate } from '@vueuse/core';
+
 /**
  * A refresh button with a chevron that opens a menu of narrower refresh actions.
  *
@@ -40,36 +42,43 @@ const { t } = useI18n({ useScope: 'global' });
 
 const menuOpen = ref<boolean>(false);
 
+/** The main button, rendered bare when there is no tooltip so the group keeps buttons as direct children. */
+const [DefineRefreshButton, ReuseRefreshButton] = createReusableTemplate();
+
 function close(): void {
   set(menuOpen, false);
 }
 </script>
 
 <template>
+  <DefineRefreshButton>
+    <RuiButton
+      :data-testid="testId"
+      :disabled="disabled"
+      :loading="loading"
+      @click="emit('refresh')"
+    >
+      <template #prepend>
+        <RuiIcon name="lu-refresh-ccw" />
+      </template>
+      {{ t('common.refresh') }}
+    </RuiButton>
+  </DefineRefreshButton>
   <RuiButtonGroup
     variant="outlined"
     color="primary"
   >
     <RuiTooltip
-      :disabled="!tooltip"
+      v-if="tooltip"
       :open-delay="400"
       :class-names="{ root: 'flex' }"
     >
       <template #activator>
-        <RuiButton
-          :data-testid="testId"
-          :disabled="disabled"
-          :loading="loading"
-          @click="emit('refresh')"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-refresh-ccw" />
-          </template>
-          {{ t('common.refresh') }}
-        </RuiButton>
+        <ReuseRefreshButton />
       </template>
       {{ tooltip }}
     </RuiTooltip>
+    <ReuseRefreshButton v-else />
     <RuiMenu
       v-if="!hideMenu"
       v-model="menuOpen"

@@ -5,7 +5,7 @@ import { startPromise } from '@shared/utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
-import { useSelectedAssetActions } from '@/modules/assets/use-selected-asset-actions';
+import { useSelectedAssetIgnoring } from '@/modules/assets/use-selected-asset-actions';
 
 interface UseNftAssetIgnoringReturn {
   modelSelected: Ref<string[]>;
@@ -20,7 +20,7 @@ export function useNftAssetIgnoring(
 ): UseNftAssetIgnoringReturn {
   const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
   const { unignoreAsset } = useIgnoredAssetOperations();
-  const { ignoreSelected } = useSelectedAssetActions();
+  const { ignoreSelected } = useSelectedAssetIgnoring();
   const { isAssetIgnored } = useAssetsStore();
 
   const modelSelected = ref<string[]>([]);

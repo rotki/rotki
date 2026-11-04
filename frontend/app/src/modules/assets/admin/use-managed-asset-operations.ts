@@ -5,7 +5,7 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
-import { useSelectedAssetActions } from '@/modules/assets/use-selected-asset-actions';
+import { useSelectedAssetIgnoring, useSelectedAssetSpam } from '@/modules/assets/use-selected-asset-actions';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 import { nonEmptyOr } from '@/modules/core/common/data/data';
@@ -30,7 +30,8 @@ export function useManagedAssetOperations(
 ): UseManagedAssetOperationsReturn {
   const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
   const { unignoreAsset } = useIgnoredAssetOperations();
-  const { ignoreSelected, markSelectedAsSpam } = useSelectedAssetActions();
+  const { ignoreSelected } = useSelectedAssetIgnoring();
+  const { markSelectedAsSpam } = useSelectedAssetSpam();
   const { isAssetIgnored, isAssetWhitelisted, useIsAssetWhitelisted } = useAssetsStore();
   const { unWhitelistAsset, whitelistAsset } = useWhitelistedAssetOperations();
   const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
