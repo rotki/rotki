@@ -5,9 +5,10 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
-from rotkehlchen.chain.ethereum.modules.kiln.constants import CPT_KILN, KILN_VPOOL_BEACON
+from rotkehlchen.chain.ethereum.modules.kiln.constants import KILN_VPOOL_BEACON
 from rotkehlchen.chain.ethereum.modules.kiln.decoder import KilnDecoder
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.kiln.constants import CPT_KILN
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.misc import ONE

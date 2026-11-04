@@ -20,7 +20,6 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
-from rotkehlchen.chain.ethereum.modules.kiln.constants import CPT_KILN
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V3
 from rotkehlchen.chain.evm.contracts import find_matching_event_abi
@@ -34,6 +33,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE, CURVE_CHAI
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
 )
+from rotkehlchen.chain.evm.decoding.kiln.constants import CPT_KILN
 from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.quickswap.constants import (
@@ -794,6 +794,26 @@ def test_find_kiln_receipt_token_price(database: DBHandler, inquirer_defi: Inqui
         protocol=CPT_KILN,
     ))
     assert FVal('1.05') < pseth_price / inquirer_defi.find_usd_price(A_ETH) < FVal('1.5')
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_kiln_vault_token_price(database: DBHandler, inquirer_defi: Inquirer) -> None:
+    """Kiln DeFi vault shares (here Ledger Live cwAaveUSDT) are priced at the amount of
+    the underlying asset one share converts to, which only grows from 1 with interest."""
+    vault_price = inquirer_defi.find_usd_price(asset=get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x924e38bdFDa04990Fc78FEc258E8B83B3478B1Af'),
+        chain_id=ChainID.ETHEREUM,
+        evm_inquirer=inquirer_defi.get_evm_manager(ChainID.ETHEREUM).node_inquirer,
+        protocol=CPT_KILN,
+        underlying_tokens=[UnderlyingToken(
+            address=A_USDT.resolve_to_evm_token().evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    ))
+    assert ONE < vault_price / inquirer_defi.find_usd_price(A_USDT) < FVal('1.5')
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

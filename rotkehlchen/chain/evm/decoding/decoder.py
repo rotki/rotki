@@ -59,6 +59,8 @@ from rotkehlchen.chain.evm.decoding.frankencoin.savings.decoder import (
     FrankencoinSavingsCommonDecoder,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.kiln.constants import KILN_DEFI_VAULT_BEACONS
+from rotkehlchen.chain.evm.decoding.kiln.decoder import KilnDefiCommonDecoder
 from rotkehlchen.chain.evm.decoding.lifi.decoder import LifiDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.oneinch.v6.decoder import Oneinchv6Decoder
@@ -325,6 +327,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self._add_single_decoder(class_name='FlyingTulipLend', decoder_class=FlyingTulipLendCommonDecoder, rules=rules)  # noqa: E501
         if self.evm_inquirer.chain_id in FLYING_TULIP_PUT_DEPLOYMENTS:
             self._add_single_decoder(class_name='FlyingTulipPut', decoder_class=FlyingTulipPutCommonDecoder, rules=rules)  # noqa: E501
+        if self.evm_inquirer.chain_id in KILN_DEFI_VAULT_BEACONS:
+            self._add_single_decoder(class_name='KilnDefi', decoder_class=KilnDefiCommonDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)
         if self.evm_inquirer.chain_id in CFA_V1_ADDRESSES:
             self._add_single_decoder(class_name='Superfluid', decoder_class=SuperfluidCommonDecoder, rules=rules)  # noqa: E501

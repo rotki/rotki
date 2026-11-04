@@ -1,6 +1,5 @@
 from typing import Final, Literal
 
-from rotkehlchen.chain.ethereum.modules.kiln.constants import CPT_KILN
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V2
 from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
@@ -8,6 +7,7 @@ from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINAN
 from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
+from rotkehlchen.chain.evm.decoding.kiln.constants import CPT_KILN
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.quickswap.constants import (
     CPT_QUICKSWAP_V2,
