@@ -6,6 +6,8 @@ from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
+from rotkehlchen.chain.evm.decoding.kiln.constants import CPT_KILN, KILN_CPT_DETAILS
+from rotkehlchen.chain.evm.decoding.kiln.utils import has_beacon
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
     DecoderContext,
@@ -19,11 +21,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 from .constants import (
-    CPT_KILN,
-    EIP1967_BEACON_SLOT,
     EXIT_TOPIC,
     FILLED_TICKET_TOPIC,
-    KILN_CPT_DETAILS,
     KILN_EXIT_QUEUE_BEACON,
     KILN_EXIT_QUEUES,
     KILN_INTEGRATION_ABI,
@@ -79,17 +78,6 @@ class KilnDecoder(EvmDecoderInterface):
         self.integration_checks: dict[ChecksumEvmAddress, bool] = {}
         self.exit_queue_checks: dict[ChecksumEvmAddress, bool] = {}
 
-    def _has_beacon(self, address: ChecksumEvmAddress, beacon: ChecksumEvmAddress) -> bool:
-        """Whether the given beacon proxy uses the given beacon.
-
-        May raise:
-        - RemoteError if the storage could not be read
-        """
-        return bytes_to_address(self.node_inquirer.get_storage_at(
-            account_address=address,
-            position=EIP1967_BEACON_SLOT,
-        )) == beacon
-
     def _is_kiln_integration(self, address: ChecksumEvmAddress) -> bool:
         """Check whether an unknown contract is a Kiln integration contract by
         checking that it deposits into a Kiln vPool. The result is cached unless
@@ -113,7 +101,8 @@ class KilnDecoder(EvmDecoderInterface):
             pools = []
 
         try:
-            is_kiln = len(pools) != 0 and self._has_beacon(
+            is_kiln = len(pools) != 0 and has_beacon(
+                evm_inquirer=self.node_inquirer,
                 address=pools[0],
                 beacon=KILN_VPOOL_BEACON,
             )
@@ -134,7 +123,11 @@ class KilnDecoder(EvmDecoderInterface):
             return is_kiln
 
         try:
-            is_kiln = self._has_beacon(address=address, beacon=KILN_EXIT_QUEUE_BEACON)
+            is_kiln = has_beacon(
+                evm_inquirer=self.node_inquirer,
+                address=address,
+                beacon=KILN_EXIT_QUEUE_BEACON,
+            )
         except RemoteError as e:
             log.error('Failed to query the beacon of possible Kiln exit queue', address=address, error=str(e))  # noqa: E501
             return False

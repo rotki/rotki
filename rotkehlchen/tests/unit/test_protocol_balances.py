@@ -46,7 +46,6 @@ from rotkehlchen.chain.ethereum.modules.gearbox.constants import GEAR_TOKEN
 from rotkehlchen.chain.ethereum.modules.hedgey.balances import HedgeyBalances
 from rotkehlchen.chain.ethereum.modules.hedgey.constants import CPT_HEDGEY
 from rotkehlchen.chain.ethereum.modules.kiln.balances import KilnBalances
-from rotkehlchen.chain.ethereum.modules.kiln.constants import CPT_KILN
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.octant.constants import CPT_OCTANT
 from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
@@ -86,6 +85,7 @@ from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_GIVETH
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
+from rotkehlchen.chain.evm.decoding.kiln.constants import CPT_KILN
 from rotkehlchen.chain.evm.decoding.morpho_blue.constants import CPT_MORPHO_BLUE, MORPHO_BLUE
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH

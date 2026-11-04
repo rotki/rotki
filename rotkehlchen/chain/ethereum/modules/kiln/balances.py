@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.decoding.kiln.constants import CPT_KILN
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -12,7 +13,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import from_wei
 
-from .constants import CPT_KILN, KILN_EXIT_QUEUE_ABI
+from .constants import KILN_EXIT_QUEUE_ABI
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset

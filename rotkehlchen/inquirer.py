@@ -31,7 +31,6 @@ from rotkehlchen.chain.arbitrum_one.modules.umami.constants import CPT_UMAMI
 from rotkehlchen.chain.arbitrum_one.modules.umami.utils import get_umami_vault_token_price
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.modules.across.constants import ACROSS_HUB_POOL_ABI, HUB_POOL
-from rotkehlchen.chain.ethereum.modules.kiln.constants import CPT_KILN
 from rotkehlchen.chain.ethereum.modules.kiln.utils import get_kiln_receipt_token_price
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_STAKING,
@@ -66,6 +65,8 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     read_gearbox_farming_token_to_pool_addresses,
 )
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
+from rotkehlchen.chain.evm.decoding.kiln.constants import CPT_KILN
+from rotkehlchen.chain.evm.decoding.kiln.utils import get_kiln_vault_token_price
 from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
 from rotkehlchen.chain.evm.decoding.morpho.utils import get_morpho_vault_token_price
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
@@ -330,11 +331,18 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
         )
     elif token.protocol == CPT_KILN:
-        price = get_kiln_receipt_token_price(
-            token=token,
-            evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
-            price_func=Inquirer.find_usd_price,
-        )
+        if len(token.underlying_tokens) != 0:  # DeFi vault share
+            price = get_kiln_vault_token_price(
+                inquirer=Inquirer(),  # Initialize here to avoid a circular import
+                vault_token=token,
+                evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
+            )
+        else:  # pooled staking receipt token
+            price = get_kiln_receipt_token_price(
+                token=token,
+                evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
+                price_func=Inquirer.find_usd_price,
+            )
     elif token.protocol == CPT_WOO_FI:
         price = query_woo_fi_token_price(
             token=token,

@@ -1,18 +1,9 @@
 from typing import TYPE_CHECKING, Final
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
     from eth_typing.abi import ABI
-
-CPT_KILN: Final = 'kiln'
-KILN_CPT_DETAILS: Final = CounterpartyDetails(
-    identifier=CPT_KILN,
-    label='Kiln',
-    image='kiln.svg',
-    darkmode_image='kiln_dark.svg',
-)
 
 # Pooled staking integration contracts. Each partner (wallet/custodian) gets its own one,
 # which mints its own receipt token at the same address. Integration contracts that are not
@@ -41,7 +32,6 @@ KILN_EXIT_QUEUES: Final = {
 
 # Every vPool and vExitQueue is a beacon proxy spawned by the Kiln Nexus and they all share
 # the same two beacons. Reading the beacon slot is how unknown contracts are verified as Kiln.
-EIP1967_BEACON_SLOT: Final = 0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50
 KILN_VPOOL_BEACON: Final = string_to_evm_address('0x1D6103243d0507a9d1314bAC09379Bf57a5CF155')
 KILN_EXIT_QUEUE_BEACON: Final = string_to_evm_address('0x24a1DFEbAEc4e501c2152a5E4A434B236FCE3D3B')
 

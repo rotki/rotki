@@ -104,6 +104,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Hedgey',
         'Juicebox',
         'Kiln',
+        'KilnDefi',
         'Kyber',
         'Lido',
         'Lifi',
