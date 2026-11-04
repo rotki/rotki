@@ -3,7 +3,7 @@ import { LOCATION_PATH_SEPARATOR } from '@/modules/locations/location-path';
 
 export const ROOT_LOCATION = 'total';
 
-/** The location tree, with the lookups views need. */
+/** The location tree the backend serves at `GET /locations`, with the lookups views need. */
 export const useLocationTreeStore = defineStore('locations/tree', () => {
   const nodes = ref<LocationNode[]>([]);
 
@@ -92,6 +92,23 @@ export const useLocationTreeStore = defineStore('locations/tree', () => {
     return pathLabelOf(identifier);
   };
 
+  /** Orders locations the way the tree lists them: each one after its ancestors, siblings by name. */
+  const sortByTree = (identifiers: readonly string[]): string[] => {
+    const paths = new Map(identifiers.map(identifier => [identifier, pathOf(identifier).map(node => node.name)]));
+    const comparePaths = (a: readonly string[], b: readonly string[]): number => {
+      for (const [index, name] of a.entries()) {
+        const other = b[index];
+        if (other === undefined)
+          return 1;
+        const order = name.localeCompare(other, undefined, { sensitivity: 'base' });
+        if (order !== 0)
+          return order;
+      }
+      return a.length - b.length;
+    };
+    return [...identifiers].sort((a, b) => comparePaths(paths.get(a) ?? [], paths.get(b) ?? []));
+  };
+
   const setNodes = (value: LocationNode[]): void => {
     set(nodes, value);
   };
@@ -102,6 +119,7 @@ export const useLocationTreeStore = defineStore('locations/tree', () => {
     pathIfNameShared,
     pathOf,
     setNodes,
+    sortByTree,
   };
 });
 

@@ -2,9 +2,11 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { Filters } from '@/modules/history/events/history-event-filter-keys';
 import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
 import { HistoryEventEntryType } from '@rotki/common';
+import { createLocationNode as node } from '@test/utils/location-tree';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
 import { useHistoryEventFields } from '@/modules/history/events/use-history-event-fields';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 
 const {
   accountOptions,
@@ -279,6 +281,19 @@ describe('useHistoryEventFields', () => {
     set(associatedLocations, ['kraken', 'ethereum']);
 
     expect(field(fields(), 'location').suggest?.()).toEqual(['kraken', 'ethereum']);
+  });
+
+  it('should offer the used locations in tree order, each after its ancestors', () => {
+    useLocationTreeStore().setNodes([
+      node('total', null, 'Total'),
+      node('banks', 'total', 'Banks'),
+      node('exchanges', 'total', 'Exchanges'),
+      node('kraken', 'exchanges', 'Kraken'),
+      node('qonto', 'banks', 'Qonto'),
+    ]);
+    set(associatedLocations, ['kraken', 'qonto', 'exchanges', 'banks']);
+
+    expect(field(fields(), 'location').suggest?.()).toEqual(['banks', 'qonto', 'exchanges', 'kraken']);
   });
 
   it('should offer the known counterparties', () => {
