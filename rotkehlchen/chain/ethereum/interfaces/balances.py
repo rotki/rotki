@@ -64,6 +64,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'hedgey',
     'hyperliquid',
     'kinetiq',
+    'kiln',
     'pendle',
     'runmoney',
     'lido-csm',

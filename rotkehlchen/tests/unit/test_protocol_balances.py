@@ -45,6 +45,8 @@ from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.gearbox.constants import GEAR_TOKEN
 from rotkehlchen.chain.ethereum.modules.hedgey.balances import HedgeyBalances
 from rotkehlchen.chain.ethereum.modules.hedgey.constants import CPT_HEDGEY
+from rotkehlchen.chain.ethereum.modules.kiln.balances import KilnBalances
+from rotkehlchen.chain.ethereum.modules.kiln.constants import CPT_KILN
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.octant.constants import CPT_OCTANT
 from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
@@ -2377,3 +2379,36 @@ def test_protocol_balance_activity_contract_filter(
     assert {event.address for event in result.get(wallet, [])} == {
         contracts[idx] for idx in expected_indices
     }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xaebF8c5b3E89369e3819B8F307A0b628994E2020',
+    '0x9Da0F59EdF6A88ED3AFb4d21e3373199757eB90B',
+]])
+def test_kiln_exit_ticket_balances(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """Check that the ETH locked in unclaimed Kiln exit tickets is detected and that
+    fully claimed tickets are not counted"""
+    _, tx_decoder = get_decoded_events_of_transaction(  # exit request with a still open ticket
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x04d9c648cf7239957c891a3d3de752165477bd8964247644475d8d3e3c11253d'),
+    )
+    get_decoded_events_of_transaction(  # exit request whose ticket was fully claimed
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x882e21ae447e001f42acdc28708f2094a58d0123a141fdaae2581576b2018208'),
+        evm_decoder=tx_decoder,
+    )
+    protocol_balances = KilnBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=tx_decoder,
+    ).query_balances(addresses=ethereum_accounts)
+    expected_balance = Balance(  # a walrus inside the assert hits an UnboundLocalError under pytest's assertion rewriting  # noqa: E501
+        amount=(amount := FVal('1.014990779364175186')),
+        value=amount * FVal(1.5),
+    )
+    assert set(protocol_balances) == {ethereum_accounts[0]}
+    assert protocol_balances[ethereum_accounts[0]].assets[A_ETH][CPT_KILN] == expected_balance
