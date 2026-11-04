@@ -15,6 +15,11 @@ const { accounts, search = '', loading = false } = defineProps<{
   loading?: boolean;
 }>();
 
+/** An account with how it reads in the list, worked out once per account. */
+interface AccountRow extends BankAccountBalance {
+  readonly label: BankAccountLabel;
+}
+
 /** The currency icon beside each account: decoration, so it carries no asset menu. */
 const ICON_DISPLAY: AssetDisplay = { iconOnly: true, size: '28px' };
 const ICON_ACTIONS: AssetActions = { hideMenu: true };
@@ -22,9 +27,9 @@ const ICON_ACTIONS: AssetActions = { hideMenu: true };
 const { t } = useI18n({ useScope: 'global' });
 const { accountLabel } = useBankAccountLabel();
 
-const sort = ref<DataTableSortData<BankAccountBalance>>({ column: 'value', direction: 'desc' });
+const sort = ref<DataTableSortData<AccountRow>>({ column: 'value', direction: 'desc' });
 
-const cols = computed<DataTableColumn<BankAccountBalance>[]>(() => [{
+const cols = computed<DataTableColumn<AccountRow>[]>(() => [{
   cellClass: 'h-15',
   key: 'name',
   label: t('bank_balances.accounts.account'),
@@ -42,19 +47,14 @@ const cols = computed<DataTableColumn<BankAccountBalance>[]>(() => [{
   sortable: true,
 }]);
 
-const rows = computed<BankAccountBalance[]>(() => {
+const rows = computed<AccountRow[]>(() => {
   const needle = search.trim().toLowerCase().replaceAll(/\s/g, '');
-  if (needle === '')
-    return accounts;
-  return accounts.filter(({ asset, iban, name }) =>
-    [name, iban ?? '', asset].some(field => field.toLowerCase().replaceAll(/\s/g, '').includes(needle)));
+  const shown = needle === ''
+    ? accounts
+    : accounts.filter(({ asset, iban, name }) =>
+        [name, iban ?? '', asset].some(field => field.toLowerCase().replaceAll(/\s/g, '').includes(needle)));
+  return shown.map(account => ({ ...account, label: accountLabel(account) }));
 });
-
-const labels = computed<Map<string, BankAccountLabel>>(() => new Map(accounts.map(account => [account.identifier, accountLabel(account)])));
-
-function labelOf(account: BankAccountBalance): BankAccountLabel {
-  return get(labels).get(account.identifier) ?? accountLabel(account);
-}
 </script>
 
 <template>
@@ -86,14 +86,14 @@ function labelOf(account: BankAccountBalance): BankAccountLabel {
             class="text-body-2 font-medium truncate"
             data-testid="bank-account-name"
           >
-            {{ labelOf(row).title }}
+            {{ row.label.title }}
           </span>
           <span
-            v-if="labelOf(row).subtitle"
+            v-if="row.label.subtitle"
             class="text-xs text-rui-text-secondary tabular-nums tracking-wide truncate"
             data-testid="bank-account-iban"
           >
-            {{ labelOf(row).subtitle }}
+            {{ row.label.subtitle }}
           </span>
         </div>
       </div>

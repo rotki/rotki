@@ -1,17 +1,19 @@
-import type { BankConnection } from '@/modules/banks/types';
+import type { BankConnection, BankManifest } from '@/modules/banks/types';
 import { bigNumberify } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import BankBalances from '@/pages/balances/banks/index.vue';
 import '@test/i18n';
 
-const { fetchBankBalances, refreshBankConnections, refreshSupportedBanks, syncBanks } = vi.hoisted(() => ({
+const { fetchBankBalances, push, refreshBankConnections, refreshSupportedBanks, syncBanks } = vi.hoisted(() => ({
   fetchBankBalances: vi.fn(),
+  push: vi.fn(),
   refreshBankConnections: vi.fn(),
   refreshSupportedBanks: vi.fn(),
   syncBanks: vi.fn(),
@@ -24,7 +26,7 @@ const route = vi.hoisted(() => {
 
 vi.mock('vue-router', () => ({
   useRoute: (): Record<string, unknown> => route,
-  useRouter: (): Record<string, unknown> => ({ push: vi.fn() }),
+  useRouter: (): Record<string, unknown> => ({ push }),
 }));
 
 vi.mock('@/modules/banks/use-banks', () => ({
@@ -58,7 +60,7 @@ describe('bank balances page', () => {
           AssetBalances: { props: ['balances', 'display'], template: '<div data-testid="bank-asset-balances" :data-rows="balances.length"><span v-for="row in balances" :key="row.asset" data-testid="bank-amount" :data-format="JSON.stringify(display.amountFormat(row.asset))" /></div>' },
           BankAccountsTable: { props: ['accounts', 'search'], template: '<div data-testid="bank-accounts" :data-accounts="accounts.map(a => a.identifier).join()" :data-search="search" />' },
           BankBalanceCards: { props: ['selected'], template: '<div data-testid="bank-balance-cards" :data-selected="selected" />' },
-          BankBalancesEmpty: { template: '<div data-testid="bank-balances-empty" />' },
+          BankBalancesEmpty: { emits: ['connect'], template: `<button data-testid="bank-balances-empty" @click="$emit('connect', 'qonto')" />` },
           BankBalancesRefreshButton: true,
           BankConnectionItem: { props: ['connection'], template: '<li data-testid="bank-balances-connection" :data-connection="connection.name" />' },
           ValueDisplay: { props: ['value', 'format'], template: '<span data-testid="bank-amount" :data-format="JSON.stringify(format)">{{ value.toFixed() }}</span>' },
@@ -84,6 +86,24 @@ describe('bank balances page', () => {
 
     expect(wrapper.find('[data-testid=bank-balances-empty]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=bank-connections-error]').exists()).toBe(false);
+  });
+
+  it('should send adding a bank to Accounts > Banks, on the bank picked in the empty state', async () => {
+    const store = useBankConnectionsStore();
+    store.setConnections([]);
+    wrapper = createWrapper();
+    await flushPromises();
+    expect(wrapper.find('[data-testid=add-bank-connection]').attributes('disabled')).toBeDefined();
+
+    store.setManifests([createMock<BankManifest>({ connector: 'qonto', displayName: 'Qonto' })]);
+    await nextTick();
+    await wrapper.find('[data-testid=add-bank-connection]').trigger('click');
+    await wrapper.find('[data-testid=bank-balances-empty]').trigger('click');
+
+    expect(push.mock.calls).toEqual([
+      [{ name: '/accounts/banks/', query: { add: 'true' } }],
+      [{ name: '/accounts/banks/', query: { add: 'true', connector: 'qonto' } }],
+    ]);
   });
 
   it('should say the connections could not be loaded instead of offering to connect one, and retry', async () => {

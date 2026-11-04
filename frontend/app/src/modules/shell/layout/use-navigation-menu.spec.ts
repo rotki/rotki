@@ -103,18 +103,20 @@ describe('modules::shell::use-navigation-menu', () => {
     expect(get(menuItems).map(item => item.type)).toStrictEqual(['item', 'divider', 'item']);
   });
 
-  it('should group children under their parent, ordered by order', () => {
+  it('should group children under their parent, ordered by order, children without one first', () => {
     set(routes, [
       route('/balances/', { labelKey: 'balances', order: 30, section: 1, drawer: 'balances' }),
+      route('/balances/nft/', { labelKey: 'nft', parent: '/balances/', drawer: 'balances-nft' }),
       route('/balances/exchange/', { labelKey: 'exchange', order: 20, parent: '/balances/', drawer: 'balances-exchange' }),
       route('/balances/blockchain/', { labelKey: 'blockchain', order: 10, parent: '/balances/', drawer: 'balances-blockchain' }),
+      route('/balances/manual/', { labelKey: 'manual', parent: '/balances/', drawer: 'balances-manual' }),
     ]);
 
     const { menuItems } = useNavigationMenu();
     const group = groupAt(get(menuItems), 0);
 
     expect(group.testId).toBe('balances');
-    expect(group.items.map(item => item.testId)).toStrictEqual(['balances-blockchain', 'balances-exchange']);
+    expect(group.items.map(item => item.testId)).toStrictEqual(['balances-nft', 'balances-manual', 'balances-blockchain', 'balances-exchange']);
   });
 
   it('should mark the first child of each heading run with its heading', () => {
