@@ -212,6 +212,7 @@ export const backendMappingKeys = [
   'backend_mappings.trade_location.iconomi',
   'backend_mappings.trade_location.independentreserve',
   'backend_mappings.trade_location.ink',
+  'backend_mappings.trade_location.krak',
   'backend_mappings.trade_location.kraken',
   'backend_mappings.trade_location.kucoin',
   'backend_mappings.trade_location.kusama',

@@ -170,13 +170,13 @@ def test_import_with_fee_column(database: DBHandler) -> None:
     must leave nothing behind."""
     importer = KrakImporter(db=database)
     assert importer.import_csv(filepath=DATA_DIR / 'krak_sample_with_fee_column.csv') == (True, '')
-    assert importer.total_entries == 12
-    assert importer.imported_entries == 11
+    assert importer.total_entries == 13
+    assert importer.imported_entries == 12
     assert [x['row'] for x in importer.import_msgs] == [12]
 
     events = _get_events(database)
     assert _balances(events) == {
-        A_EUR: FVal('14.35'),  # 1250 in, 1200 to the bank, 25.4 card, 0.25 cashback, 10.5 to a Krak user  # noqa: E501
+        A_EUR: FVal('19.35'),  # 1250 in, 1200 to the bank, 25.4 card, 0.25 cashback, 10.5 to and 5 from a Krak user  # noqa: E501
         A_CRV: FVal(0),
         A_ETH: FVal(0),
         A_HYPE: FVal('0.3607'),  # 0.36 bought and 0.001 of reward minus its 0.0003 fee
@@ -217,6 +217,19 @@ def test_import_with_fee_column(database: DBHandler) -> None:
         amount=FVal('10.5'),
         location_label=WALLET,
         notes='Send 10.5 EUR to another Krak user',
+    )
+    assert events[-1] == HistoryEvent(  # an incoming one is a payment from a Krak user
+        identifier=9,
+        group_identifier='KRK_TRP3X8D-N6QKW-Z4VJ2R',
+        sequence_index=0,
+        timestamp=TimestampMS(1778265000000),
+        location=LOCATION_KRAK,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_EUR,
+        amount=FVal('5'),
+        location_label=WALLET,
+        notes='Receive 5 EUR from another Krak user',
     )
 
 

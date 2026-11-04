@@ -224,12 +224,19 @@ class KrakImporter(BaseExchangeImporter):
                     notes=f'Krak {row.subtype.lower()} {"to" if row.amount < ZERO else "from"}{row.counterparty_hint()}' if row.counterparty != '' else None,  # noqa: E501
                 )
             case ('Transfer', ''):
-                if row.amount < ZERO and row.counterparty == '':
-                    return self._history_event(  # Krak payments to other Krak users
+                if row.counterparty == '':  # payments between Krak users, not movements
+                    if row.amount < ZERO:
+                        return self._history_event(
+                            row=row,
+                            event_type=HistoryEventType.SPEND,
+                            event_subtype=HistoryEventSubType.NONE,
+                            notes=f'Send {amount_str} to another Krak user',
+                        )
+                    return self._history_event(
                         row=row,
-                        event_type=HistoryEventType.SPEND,
+                        event_type=HistoryEventType.RECEIVE,
                         event_subtype=HistoryEventSubType.NONE,
-                        notes=f'Send {amount_str} to another Krak user',
+                        notes=f'Receive {amount_str} from another Krak user',
                     )
                 return self._asset_movement(
                     row=row,
