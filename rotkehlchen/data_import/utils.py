@@ -193,8 +193,8 @@ def resolve_csv_locations(
     """
     with open(filepath, encoding='utf-8-sig') as csvfile:
         values = sorted({
-            value.strip() for row in csv.DictReader(csvfile)
-            if (value := row.get('Location')) is not None
+            (row['Location'] or '').strip() for row in csv.DictReader(csvfile)
+            if 'Location' in row
         })
 
     mappings = location_mappings or {}
@@ -244,7 +244,7 @@ def process_rotki_generic_import_csv_fields(
 ) -> tuple[AssetWithOracles, FVal | None, Asset | None, LocationIdentifier, TimestampMS]:
     """Process the imported csv for generic rotki trades and events. `locations` are the
     resolved values of the location column."""
-    location = locations[csv_row['Location'].strip()]
+    location = locations[(csv_row['Location'] or '').strip()]
     timestamp = TimestampMS(deserialize_timestamp(csv_row['Timestamp']))
     fee = deserialize_fval(csv_row['Fee']) if csv_row['Fee'] else None
     asset_mapping = LOCATION_TO_ASSET_MAPPING.get(location, asset_from_common_identifier)

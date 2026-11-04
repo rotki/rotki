@@ -88,7 +88,7 @@ class DBLocations:
         )
 
     @staticmethod
-    def add_legacy_location(write_cursor: DBCursor, char: str) -> str:
+    def add_legacy_location(write_cursor: DBCursor, char: str) -> LocationIdentifier:
         """Add the inactive node of a protocol-labelled location from its pre-v54 character,
         with the legacy parent above it, unless they exist already. Returns its identifier.
 
@@ -106,7 +106,7 @@ class DBLocations:
             'is_active, icon, image) VALUES (?, ?, ?, 1, 0, NULL, ?)',
             (identifier, name, parent_id, image),
         )
-        return identifier
+        return LocationIdentifier(identifier)
 
     @staticmethod
     def get_all(cursor: DBCursor) -> list[LocationNode]:
