@@ -13,6 +13,7 @@ from rotkehlchen.data_import.importers.coinbasepro import CoinbaseProImporter
 from rotkehlchen.data_import.importers.coinledger import CoinledgerImporter
 from rotkehlchen.data_import.importers.cointracking import CointrackingImporter
 from rotkehlchen.data_import.importers.cryptocom import CryptocomImporter
+from rotkehlchen.data_import.importers.krak import KrakImporter
 from rotkehlchen.data_import.importers.kucoin import KucoinImporter
 from rotkehlchen.data_import.importers.nexo import NexoImporter
 from rotkehlchen.data_import.importers.rotki_events import RotkiGenericEventsImporter
@@ -51,6 +52,7 @@ class DataImportSource(SerializableEnumNameMixin):
     BLOCKPIT = 17
     COINLEDGER = 18
     COINBASEPRO = 19
+    KRAK = 20
 
 
 # The formats naming the location of each row in a Location column. The others know the
@@ -132,6 +134,8 @@ class CSVDataImporter:
             importer = CoinledgerImporter(db=self.db)
         elif source == DataImportSource.COINBASEPRO:
             importer = CoinbaseProImporter(db=self.db)
+        elif source == DataImportSource.KRAK:
+            importer = KrakImporter(db=self.db)
         else:
             raise AssertionError(f'Unknown DataImportSource value {source}')
 

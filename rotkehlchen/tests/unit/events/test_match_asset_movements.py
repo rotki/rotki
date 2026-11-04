@@ -17,6 +17,7 @@ from rotkehlchen.constants.assets import (
     A_BTC,
     A_DAI,
     A_ETH,
+    A_EUR,
     A_GLM,
     A_GNO,
     A_MKR,
@@ -60,6 +61,7 @@ from rotkehlchen.locations.constants import (
     LOCATION_ETHEREUM,
     LOCATION_GEMINI,
     LOCATION_HYPERLIQUID,
+    LOCATION_KRAK,
     LOCATION_KRAKEN,
     LOCATION_OPTIMISM,
     LOCATION_POLONIEX,
@@ -1929,3 +1931,116 @@ def test_deposit_to_anon(database: DBHandler) -> None:
 
     assert deposit_match == group_id_to_identifier[spend_event.group_identifier]  # outgoing_event_id  # noqa: E501
     assert withdrawal_match == group_id_to_identifier[receive_event.group_identifier]  # incoming_event_id  # noqa: E501
+
+
+def test_match_krak_transfer_with_kraken(database: DBHandler) -> None:
+    """Krak transfers are matched with the Kraken side of the move even though they are in fiat,
+    and only with Kraken. Krak's other fiat movements, which go to banks, are still ignored."""
+    with database.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(  # what the Kraken ledger has for the move to Krak
+                identifier=1,
+                group_identifier='kraken_transfer_1',
+                sequence_index=0,
+                timestamp=TimestampMS((krak_ts := 1777713011000) - 3000),
+                location=LOCATION_KRAKEN,
+                event_type=HistoryEventType.TRANSFER,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_EUR,
+                amount=FVal(amount_str := '1250'),
+            ), AssetMovement(
+                identifier=2,
+                group_identifier='KRK_TRK4D2M-7QPLA-W8ZN3E',
+                location=LOCATION_KRAK,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                timestamp=TimestampMS(krak_ts),
+                asset=A_EUR,
+                amount=FVal(amount_str),
+                extra_data={'reference': 'TRK4D2M-7QPLA-W8ZN3E', 'krak_transfer': True},
+            ), AssetMovement(  # a withdrawal to a bank, not a transfer
+                identifier=3,
+                group_identifier='KRK_FTQ8x2K-LmN4pRs7Tu1Vw3Xy5Za9Bc',
+                location=LOCATION_KRAK,
+                event_subtype=HistoryEventSubType.SPEND,
+                timestamp=TimestampMS(krak_ts + 300000),
+                asset=A_EUR,
+                amount=FVal('1200'),
+                extra_data={'reference': 'FTQ8x2K-LmN4pRs7Tu1Vw3Xy5Za9Bc'},
+            ), AssetMovement(  # a transfer without a Kraken counterpart in the window
+                identifier=4,
+                group_identifier='KRK_TRB7Y4N-K2QXM-H9D3PL',
+                location=LOCATION_KRAK,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                timestamp=TimestampMS(krak_ts + 86400000),
+                asset=A_EUR,
+                amount=FVal('100'),
+                extra_data={'reference': 'TRB7Y4N-K2QXM-H9D3PL', 'krak_transfer': True},
+            ), HistoryEvent(  # same amount but an hour before, outside the Krak transfer window
+                identifier=5,
+                group_identifier='kraken_transfer_2',
+                sequence_index=0,
+                timestamp=TimestampMS(krak_ts + 86400000 - 3600000),
+                location=LOCATION_KRAKEN,
+                event_type=HistoryEventType.TRANSFER,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_EUR,
+                amount=FVal('100'),
+            )],
+        )
+
+    _match_and_check(database=database, expected_matches=[(2, 1)])
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT event_id FROM history_event_link_ignores WHERE link_type=?',
+            (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),),
+        ).fetchall() == [(3,)]
+        kraken_event = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(identifiers=[1]),
+        )[0]
+
+    assert kraken_event.event_type == HistoryEventType.EXCHANGE_TRANSFER
+    assert kraken_event.event_subtype == HistoryEventSubType.SPEND
+    assert kraken_event.notes == f'Send {amount_str} EUR to Krak'
+    assert [x.identifier for x in task_events.get_unmatched_asset_movements(database)[0]] == [4]  # kept for a later Kraken sync  # noqa: E501
+
+
+def test_krak_transfer_is_not_matched_outside_kraken(database: DBHandler) -> None:
+    """A Krak crypto transfer is not paired with an onchain event or another exchange's
+    movement of the same amount, from either side."""
+    with database.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                identifier=1,
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS((krak_ts := 1777713011000) - 60000),
+                location=LOCATION_ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_USDC,
+                amount=FVal(amount_str := '405.550602'),
+                location_label=make_evm_address(),
+            ), AssetMovement(
+                identifier=2,
+                group_identifier='KRK_TRCMM99-2QLAH-XA38J9',
+                location=LOCATION_KRAK,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                timestamp=TimestampMS(krak_ts),
+                asset=A_USDC,
+                amount=FVal(amount_str),
+                extra_data={'reference': 'TRCMM99-2QLAH-XA38J9', 'krak_transfer': True},
+            ), AssetMovement(
+                identifier=3,
+                location=LOCATION_COINBASE,
+                event_subtype=HistoryEventSubType.SPEND,
+                timestamp=TimestampMS(krak_ts - 120000),
+                asset=A_USDC,
+                amount=FVal(amount_str),
+                unique_id='coinbase_withdrawal',
+            )],
+        )
+
+    _match_and_check(database=database, expected_matches=[])

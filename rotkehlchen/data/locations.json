@@ -162,6 +162,12 @@
     "image": "kraken.svg"
   },
   {
+    "identifier": "krak",
+    "name": "Krak",
+    "parent_identifier": "exchanges",
+    "image": "krak.svg"
+  },
+  {
     "identifier": "poloniex",
     "name": "Poloniex",
     "parent_identifier": "exchanges",

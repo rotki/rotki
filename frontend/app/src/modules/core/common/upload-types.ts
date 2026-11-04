@@ -22,6 +22,7 @@ export type ImportSourceType =
   | 'rotki_events'
   | 'rotki_trades'
   | 'bittrex'
+  | 'krak'
   | 'kucoin'
   | 'blockpit';
 

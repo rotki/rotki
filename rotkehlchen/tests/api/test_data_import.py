@@ -40,6 +40,7 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_cryptocom_import_results,
     assert_cryptocom_special_events_import_results,
     assert_custom_cointracking,
+    assert_krak_import_results,
     assert_kucoin_import_results,
     assert_nexo_results,
     assert_rotki_generic_events_import_results,
@@ -129,6 +130,7 @@ def test_data_import_cointracking(
     ('bitstamp', 'bitstamp.csv', assert_bitstamp_trades_import_results),
     ('blockpit', 'blockpit_transactions.csv', assert_blockpit_import_results),
     ('coinbasepro', 'coinbasepro.csv', assert_coinbasepro_import_results),
+    ('krak', 'krak_sample.csv', assert_krak_import_results),
 ])
 def test_data_import_simple(
         rotkehlchen_api_server: APIServer,

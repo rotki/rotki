@@ -51,6 +51,7 @@ from rotkehlchen.locations.constants import (
     LOCATION_COINBASEPRO,
     LOCATION_CRYPTOCOM,
     LOCATION_EXTERNAL,
+    LOCATION_KRAK,
     LOCATION_KRAKEN,
     LOCATION_KUCOIN,
     LOCATION_NEXO,
@@ -4108,3 +4109,18 @@ def assert_coinbasepro_import_results(rotki: Rotkehlchen) -> None:
 
     for actual, expected in zip(history_events, expected_history_events, strict=True):
         assert_is_equal_history_event(actual=actual, expected=expected)
+
+
+def assert_krak_import_results(rotki: Rotkehlchen) -> None:
+    """Check the Krak import through the API. The events themselves are checked in
+    test_krak_import.py, so this only checks that the import reached the DB."""
+    with rotki.data.db.conn.read_ctx() as cursor:
+        history_events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+
+    assert len(consume_errors(rotki.msg_aggregator)) == 0
+    assert len(consume_warnings(rotki.msg_aggregator)) == 0
+    assert len(history_events) == 14  # the 5 pending rows of the sample are skipped
+    assert {x.location for x in history_events} == {LOCATION_KRAK}

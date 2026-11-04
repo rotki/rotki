@@ -6,6 +6,7 @@ from rotkehlchen.locations.types import LocationIdentifier
 
 LOCATION_EXTERNAL: Final = LocationIdentifier('external')
 LOCATION_KRAKEN: Final = LocationIdentifier('kraken')
+LOCATION_KRAK: Final = LocationIdentifier('krak')
 LOCATION_POLONIEX: Final = LocationIdentifier('poloniex')
 LOCATION_BITTREX: Final = LocationIdentifier('bittrex')
 LOCATION_BINANCE: Final = LocationIdentifier('binance')
