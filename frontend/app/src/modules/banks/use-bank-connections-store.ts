@@ -9,6 +9,9 @@ export const useBankConnectionsStore = defineStore('banks/connections', () => {
   /** Why the connections could not be loaded, until a later load succeeds. */
   const connectionsError = shallowRef<unknown>();
 
+  /** A bank can be added once rotki knows at least one bank it supports. */
+  const canAddBank = computed<boolean>(() => get(manifests).length > 0);
+
   const manifestFor = (connector: string): BankManifest | undefined =>
     get(manifests).find(manifest => manifest.connector === connector);
 
@@ -36,6 +39,7 @@ export const useBankConnectionsStore = defineStore('banks/connections', () => {
 
   return {
     bankNameFor,
+    canAddBank,
     connections,
     connectionsError,
     manifestFor,

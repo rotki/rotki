@@ -47,6 +47,11 @@ export function isSameConnection(a: BankConnectionIdentity, b: BankConnectionIde
   return a.connector === b.connector && a.name === b.name;
 }
 
+/** One string per connection, for a row key or a lookup: two connections share it only when {@link isSameConnection}. */
+export function connectionKey({ connector, name }: BankConnectionIdentity): string {
+  return `${connector}#${name}`;
+}
+
 /**
  * The stored connection balances with the freshly queried ones in their place.
  *

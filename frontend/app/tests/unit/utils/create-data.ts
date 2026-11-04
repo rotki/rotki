@@ -1,5 +1,6 @@
 import type { AssetPrice } from '@/modules/assets/prices/price-types';
 import type { ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
+import type { BankConnection } from '@/modules/banks/types';
 import { type Balance, bigNumberify, type ProtocolBalance } from '@rotki/common';
 import { BalanceType } from '@/modules/balances/types/balances';
 
@@ -7,6 +8,21 @@ export function createTestBalance(amount: number, value: number): Balance {
   return {
     amount: bigNumberify(amount),
     value: bigNumberify(value),
+  };
+}
+
+/** A connection that synced cleanly and was never synced, unless `syncStatus` says otherwise. */
+export function createTestBankConnection(
+  connector: string,
+  name: string,
+  syncStatus: Partial<BankConnection['syncStatus']> = {},
+): BankConnection {
+  return {
+    bankCode: null,
+    connector,
+    displayName: connector,
+    name,
+    syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false, ...syncStatus },
   };
 }
 

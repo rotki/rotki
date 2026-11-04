@@ -75,6 +75,13 @@ defineExpose({
     class="flex flex-col gap-4"
     data-testid="bank-connection-form"
   >
+    <p
+      v-if="!editMode"
+      class="m-0 text-body-2 text-rui-text-secondary"
+      data-testid="bank-connection-privacy"
+    >
+      {{ t('bank_settings.form.privacy') }}
+    </p>
     <BankConnectionPicker
       v-if="!editMode"
       v-model="selectedOption"

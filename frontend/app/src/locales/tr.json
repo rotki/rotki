@@ -1778,7 +1778,6 @@
     "edit": {
       "tooltip": "Banka bağlantısını düzenle"
     },
-    "empty": "Henüz banka bağlantısı yok",
     "errors": {
       "remove_message": "{name} adlı banka bağlantısı kaldırılamadı: {error}",
       "remove_title": "Banka bağlantısını kaldırma",
