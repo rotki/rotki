@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13546` Reverting contract calls now stop after confirmation from two distinct RPC endpoints instead of retrying every node. Rate limits and missing chain data still fall back to other nodes or indexers, and known gas-limit errors still allow multicalls to retry with smaller chunks.
 * :bug:`-` Fixed missing profile images for ENS names migrated to v2.
 * :bug:`13520` Disabling balance queries for a chain now removes its stale last refresh time even when a refresh is already running. Excluding individual Ethereum staking validators preserves enabled validators' cached balances. API balance reads no longer trigger repeated refreshes when Ethereum staking queries are fully disabled.
 * :bug:`13514` Profit and loss reports no longer crash while refreshing Kraken history containing two receive or two spend ledger entries with the same transaction reference.
