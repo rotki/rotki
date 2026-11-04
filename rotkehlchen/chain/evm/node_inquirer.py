@@ -9,6 +9,7 @@ from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeVar, overload
 
 import requests
+from eth_utils import is_hexstr
 from eth_utils.abi import get_abi_output_types
 from web3 import Web3
 from web3._utils.contracts import find_matching_event_abi
@@ -123,6 +124,27 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 MIN_NODES_CONFIRMING_REVERT: Final = 2
+GAS_LIMIT_ERROR_PATTERNS: Final = ('out of gas', 'exceeds block gas limit')
+
+
+def _is_contract_revert(error: ContractLogicError) -> bool:
+    """Tell an on-chain revert from a provider error that web3 reports as a revert.
+
+    web3 raises these errors for any response with dict data or a long data string, whatever
+    the error was, so rate limits and missing state must be excluded. Nodes agree on the
+    'execution reverted' message but not on the data, which is '0x', absent or the encoded
+    error, so only custom errors and panics can be recognized by their data.
+    """
+    if isinstance(error, ContractCustomError | ContractPanicError):
+        return is_hexstr(error.data)
+    return (
+        not isinstance(error.data, dict) and
+        error.message is not None and
+        error.message.startswith('execution reverted') and
+        # gas limits differ per node and call size, so these must keep reaching the chunked retry
+        not any(x in error.message.lower() for x in GAS_LIMIT_ERROR_PATTERNS)
+    )
+
 
 # Indexers that could not resolve the block range currently being queried. Scoped to the
 # body of block_range_skipping_stale_indexers, since an indexer being behind is a property
@@ -550,6 +572,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         The first node in the call order that gets a successful response returns.
         May raise:
         - RemoteError if none of the RPC nodes can get a result
+        - ContractReverted (a RemoteError) if two distinct endpoints report a revert, or if
+          one does and no other node gets a result.
         - RequestTooLargeError if we encounter a 414 error from etherscan-like
           indexers or gas limit errors from RPC nodes.
         """
@@ -558,7 +582,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         gas_limit_error_seen = False
         transaction_not_found_seen = False
         revert_error: ContractReverted | None = None
-        revert_count = 0
+        reverted_nodes: set[str] = set()
         for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
             if node_info in self._removed_nodes:
@@ -604,10 +628,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'non-checksum address {e.args[1]}',
                 ) from e
             except ContractReverted as e:
-                # A revert is deterministic so more nodes only repeat it. But a single node's
-                # verdict is not trusted: stop only once a second node agrees.
+                # A single endpoint's verdict is not trusted, including its configured aliases.
+                # Keep known gas-limit errors eligible for retry with smaller multicall chunks.
                 revert_error = e
-                if (revert_count := revert_count + 1) >= MIN_NODES_CONFIRMING_REVERT:
+                reverted_nodes.add(self._endpoint_key(node_info))
+                if len(reverted_nodes) >= MIN_NODES_CONFIRMING_REVERT and not gas_limit_error_seen:
                     raise
                 continue
             except RequestTooLargeError:
@@ -639,7 +664,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'for {method.__name__} due to {e!s}',
                 )
                 error_str = str(e).lower()
-                if any(x in error_str for x in ('out of gas', 'exceeds block gas limit')):
+                if any(x in error_str for x in GAS_LIMIT_ERROR_PATTERNS):
                     gas_limit_error_seen = True
                 elif _is_rate_limit_error(e):
                     self.mark_node_rate_limited(node_info, str(e))
@@ -846,12 +871,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         except InvalidAddress:
             raise  # propagate to _query() where it's handled properly
         except ContractLogicError as e:
-            # Nodes agree on the 'execution reverted' message but not on the revert data: it
-            # is '0x', absent (web3 then reports 'no data') or the encoded error, depending
-            # on the node. So the data can't be used to tell a revert from another error.
-            if isinstance(e, ContractCustomError | ContractPanicError) or (
-                e.message is not None and e.message.startswith('execution reverted')
-            ):
+            if _is_contract_revert(e):
                 raise ContractReverted(
                     f'Contract {contract_address} call reverted: {e!s}',
                 ) from e
