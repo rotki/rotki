@@ -3,7 +3,7 @@ import type { HistoryEventEntryType } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import { checkIfDevelopment } from '@shared/utils';
 import { kebabCase } from 'es-toolkit';
-import { type HighlightSegment, splitHighlight } from '@/modules/history/events/action-picker/highlight-match';
+import { type HighlightSegment, splitHighlight } from '@/modules/core/common/highlight-match';
 import HistoryEventActionDirectionBadge from '@/modules/history/events/action-picker/HistoryEventActionDirectionBadge.vue';
 import { useEventActionDescriptions } from '@/modules/history/events/action-picker/use-event-action-descriptions';
 import { type EventActionRow, useEventActionPicker } from '@/modules/history/events/action-picker/use-event-action-picker';
