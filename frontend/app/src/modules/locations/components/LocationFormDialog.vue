@@ -24,7 +24,6 @@ import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 const modelValue = defineModel<LocationFormData | undefined>({ required: true });
 
 const emit = defineEmits<{
-  created: [location: LocationNode];
   /** A location was created or changed, so its row can be brought into view. */
   saved: [identifier: string];
 }>();
@@ -40,7 +39,7 @@ const treeStore = useLocationTreeStore();
 const { nodes } = storeToRefs(treeStore);
 const { show } = useConfirmStore();
 const { notifyError } = useNotifications();
-const { batch, createLocation, editLocation, previewEdit, removeImage, uploadImage } = useLocationManagement();
+const { createLocation, editLocation, previewEdit, removeImage, uploadImage } = useLocationManagement();
 
 const form = useForm<LocationFormState, LocationFormState>({
   initial: (): LocationFormState => {
@@ -52,7 +51,7 @@ const form = useForm<LocationFormState, LocationFormState>({
   transform: (state): LocationFormState => ({ ...state }),
 });
 
-const editedLocation = computed(() => {
+const editedLocation = computed<LocationNode | undefined>(() => {
   const data = get(modelValue);
   return data?.mode === 'edit' ? treeStore.getNode(data.location.identifier) ?? data.location : undefined;
 });
@@ -61,7 +60,7 @@ const dirty = computed<boolean>(() => get(form.dirty) || get(pendingImage) !== u
 
 const parents = computed<string[]>(() => {
   const location = get(editedLocation);
-  return parentCandidates(get(nodes), location ? treeStore.subtreeOf(location.identifier) : new Set());
+  return treeStore.sortByTree(parentCandidates(get(nodes), location ? treeStore.subtreeOf(location.identifier) : new Set()));
 });
 
 watch(modelValue, (data) => {
@@ -73,10 +72,6 @@ watch(modelValue, (data) => {
 
 function close(): void {
   set(modelValue, undefined);
-}
-
-function reportFailure(message: string): void {
-  set(saveFailure, message);
 }
 
 /**
@@ -95,36 +90,25 @@ async function saveImage(identifier: string): Promise<void> {
 
 async function create(): Promise<void> {
   const { icon, name, parentIdentifier } = form.state;
-  const created = await batch(async (): Promise<LocationNode | undefined> => {
-    const outcome = await createLocation({ icon, name: name.trim(), parentIdentifier });
-    if (!outcome.ok) {
-      reportFailure(outcome.error);
-      return undefined;
-    }
-    await saveImage(outcome.value.identifier);
-    return outcome.value;
-  });
-  if (!created)
+  const outcome = await createLocation({ icon, name: name.trim(), parentIdentifier });
+  if (!outcome.ok) {
+    set(saveFailure, outcome.error);
     return;
-  emit('created', created);
-  emit('saved', created.identifier);
+  }
+  await saveImage(outcome.value.identifier);
+  emit('saved', outcome.value.identifier);
   close();
 }
 
 async function saveEdit(identifier: string, payload: ReturnType<typeof locationEditPayload>): Promise<void> {
-  const saved = await batch(async (): Promise<boolean> => {
-    if (Object.keys(payload).length > 0) {
-      const outcome = await editLocation(identifier, payload);
-      if (!outcome.ok) {
-        reportFailure(outcome.error);
-        return false;
-      }
+  if (Object.keys(payload).length > 0) {
+    const outcome = await editLocation(identifier, payload);
+    if (!outcome.ok) {
+      set(saveFailure, outcome.error);
+      return;
     }
-    await saveImage(identifier);
-    return true;
-  });
-  if (!saved)
-    return;
+  }
+  await saveImage(identifier);
   emit('saved', identifier);
   close();
 }
@@ -142,8 +126,10 @@ async function edit(identifier: string): Promise<void> {
     return saveEdit(identifier, payload);
 
   const preview = await previewEdit(identifier, payload);
-  if (!preview.ok)
-    return reportFailure(preview.error);
+  if (!preview.ok) {
+    set(saveFailure, preview.error);
+    return;
+  }
   show({
     message: t('location_manager.move.message', {
       new: preview.value.newPath.slice(1).join(LOCATION_PATH_SEPARATOR),
@@ -152,24 +138,26 @@ async function edit(identifier: string): Promise<void> {
     primaryAction: t('location_manager.move.confirm'),
     title: t('location_manager.move.title'),
     type: DialogType.INFO,
-  }, async () => saveEdit(identifier, payload));
+  }, async () => saving(async () => saveEdit(identifier, payload)));
+}
+
+/** Shows the dialog as busy while a save runs, including one the user confirmed in a second step. */
+async function saving(run: () => Promise<void>): Promise<void> {
+  set(submitting, true);
+  try {
+    await run();
+  }
+  finally {
+    set(submitting, false);
+  }
 }
 
 async function save(): Promise<void> {
   const data = get(modelValue);
   if (!data || !form.validate())
     return;
-  set(submitting, true);
   set(saveFailure, undefined);
-  try {
-    if (data.mode === 'add')
-      await create();
-    else
-      await edit(data.location.identifier);
-  }
-  finally {
-    set(submitting, false);
-  }
+  await saving(async () => (data.mode === 'add' ? create() : edit(data.location.identifier)));
 }
 </script>
 

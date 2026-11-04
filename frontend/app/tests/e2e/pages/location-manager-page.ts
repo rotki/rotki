@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM } from '../helpers/constants';
-import { discardChanges } from '../helpers/utils';
+import { confirmDialog, discardChanges } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
 /**
@@ -92,20 +92,6 @@ export class LocationManagerPage {
     await selectLocationOption(this.page, this.formDialog().getByTestId('location-form-parent'), name, identifier);
   }
 
-  async waitForForm(): Promise<void> {
-    await this.formDialog().waitFor({ state: 'visible' });
-  }
-
-  async chooseImage(filePath: string): Promise<void> {
-    await this.formDialog().locator('[data-testid=location-image-upload] input[type=file]').setInputFiles(filePath);
-    await expect(this.formDialog().getByTestId('location-image-preview')).toBeVisible();
-  }
-
-  async removeImage(): Promise<void> {
-    await this.formDialog().getByTestId('location-image-remove').click();
-    await expect(this.formDialog().getByTestId('location-image-preview')).toHaveCount(0);
-  }
-
   async saveForm(): Promise<void> {
     await this.formDialog().getByTestId('confirm').click();
   }
@@ -124,7 +110,7 @@ export class LocationManagerPage {
   }
 
   async confirm(): Promise<void> {
-    await this.confirmDialog().getByTestId('button-confirm').click();
+    await confirmDialog(this.page);
     await this.confirmDialog().waitFor({ state: 'detached' });
   }
 
@@ -140,10 +126,6 @@ export class LocationManagerPage {
   async openUsageLink(label: string): Promise<void> {
     await this.usageDialog().getByTestId('location-usage-link').filter({ hasText: label }).click();
     await this.usageDialog().waitFor({ state: 'detached' });
-  }
-
-  async toggleArchive(identifier: string): Promise<void> {
-    await this.row(identifier).getByTestId('location-toggle-archive').click();
   }
 
   async archiveFromUsage(): Promise<void> {

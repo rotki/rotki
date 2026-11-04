@@ -13,8 +13,7 @@ import '@test/i18n';
 
 type Management = ReturnType<typeof useLocationManagement>;
 
-const { batch, createLocation, editLocation, notifyError, previewEdit, removeImage, show, uploadImage } = vi.hoisted(() => ({
-  batch: vi.fn<() => void>(),
+const { createLocation, editLocation, notifyError, previewEdit, removeImage, show, uploadImage } = vi.hoisted(() => ({
   createLocation: vi.fn<Management['createLocation']>(),
   editLocation: vi.fn<Management['editLocation']>(),
   previewEdit: vi.fn<Management['previewEdit']>(),
@@ -26,10 +25,6 @@ const { batch, createLocation, editLocation, notifyError, previewEdit, removeIma
 
 vi.mock('@/modules/locations/use-location-management', () => ({
   useLocationManagement: (): Partial<Management> => ({
-    batch: async <T>(changes: () => Promise<T>): Promise<T> => {
-      batch();
-      return changes();
-    },
     createLocation,
     editLocation,
     previewEdit,
@@ -48,7 +43,8 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
 
 const BigDialogStub = defineComponent({
   emits: ['cancel', 'confirm'],
-  setup: (_props, { slots }) => (): VNode => h('div', slots.default?.()),
+  props: { loading: { default: false, type: Boolean } },
+  setup: (props, { slots }) => (): VNode => h('div', { 'data-loading': String(props.loading) }, slots.default?.()),
 });
 
 const LocationSelectorStub = defineComponent({
@@ -120,7 +116,7 @@ describe('locationFormDialog', () => {
     await confirm();
 
     expect(createLocation).toHaveBeenCalledExactlyOnceWith({ icon: 'lu-vault', name: 'DKB', parentIdentifier: 'banks' });
-    expect(wrapper.emitted('created')).toEqual([[ing]]);
+    expect(wrapper.emitted('saved')).toEqual([[ing.identifier]]);
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
 
@@ -133,6 +129,13 @@ describe('locationFormDialog', () => {
   it('should not offer the location itself or its descendants as parent', () => {
     wrapper = createWrapper({ location: ing, mode: 'edit' });
     expect(wrapper.find('[data-testid=location-form-parent]').attributes('data-items')).toBe('total,banks,other');
+  });
+
+  it('should offer the parents in tree order, each below its own parent', () => {
+    useLocationTreeStore().setNodes([...useLocationTreeStore().nodes, node('custom:amex', 'other', 'Amex', { isBuiltin: false })]);
+    wrapper = createWrapper({ mode: 'add', parentIdentifier: 'banks' });
+    expect(wrapper.find('[data-testid=location-form-parent]').attributes('data-items'))
+      .toBe('total,banks,custom:ing,custom:savings,other,custom:amex');
   });
 
   it('should save a rename directly, sending only what changed', async () => {
@@ -160,6 +163,28 @@ describe('locationFormDialog', () => {
     expect(editLocation).toHaveBeenCalledExactlyOnceWith('custom:ing', { parentIdentifier: 'other' });
   });
 
+  it('should show the dialog as busy while a confirmed move saves', async () => {
+    previewEdit.mockResolvedValue(ok({ location: ing, newPath: ['Total', 'Other', 'ING'], oldPath: ['Total', 'Banks', 'ING'] }));
+    let resolve: (value: Awaited<ReturnType<Management['editLocation']>>) => void = () => {};
+    editLocation.mockReturnValue(new Promise((done) => {
+      resolve = done;
+    }));
+    wrapper = createWrapper({ location: ing, mode: 'edit' });
+    await chooseParent('other');
+    await confirm();
+    const dialog = (): string | undefined => wrapper.findComponent(BigDialogStub).attributes('data-loading');
+    expect(dialog()).toBe('false');
+
+    const saving = show.mock.calls[0][1]();
+    await flushPromises();
+    expect(dialog()).toBe('true');
+
+    resolve(ok({ location: ing, newPath: [], oldPath: [] }));
+    await saving;
+    await flushPromises();
+    expect(wrapper.emitted('saved')).toEqual([['custom:ing']]);
+  });
+
   it('should upload a chosen image only once the new location exists', async () => {
     const created = node('custom:dkb', 'banks', 'DKB', { isBuiltin: false });
     const file = new File(['png'], 'dkb.png');
@@ -174,7 +199,6 @@ describe('locationFormDialog', () => {
 
     expect(uploadImage).toHaveBeenCalledExactlyOnceWith('custom:dkb', file);
     expect(createLocation.mock.invocationCallOrder[0]).toBeLessThan(uploadImage.mock.invocationCallOrder[0]);
-    expect(batch).toHaveBeenCalledOnce();
     expect(wrapper.emitted('saved')).toEqual([['custom:dkb']]);
   });
 
@@ -212,7 +236,7 @@ describe('locationFormDialog', () => {
     await confirm();
 
     expect(notifyError).toHaveBeenCalledExactlyOnceWith('location_manager.image.error', 'Unsupported image type');
-    expect(wrapper.emitted('created')).toEqual([[created]]);
+    expect(wrapper.emitted('saved')).toEqual([[created.identifier]]);
     expect(wrapper.emitted('saved')).toEqual([['custom:dkb']]);
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
