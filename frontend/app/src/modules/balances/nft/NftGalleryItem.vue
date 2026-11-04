@@ -2,12 +2,8 @@
 import type { StyleValue } from 'vue';
 import type { GalleryNft } from '@/modules/assets/nfts';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
+import { useNftDomainWhitelist } from '@/modules/balances/nft/use-nft-domain-whitelist';
 import { useNftImage } from '@/modules/balances/nft/use-nft-image';
-import { uniqueStrings } from '@/modules/core/common/data/data';
-import { getDomain } from '@/modules/core/common/helpers/url';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useSetting } from '@/modules/settings/use-setting';
-import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import IconLink from '@/modules/shell/components/IconLink.vue';
@@ -16,47 +12,14 @@ const { item } = defineProps<{
   item: GalleryNft;
 }>();
 
-const whitelistedDomainsForNftImages = useSetting('whitelistedDomainsForNftImages');
-const { updateFrontendSetting } = useSettingsOperations();
-
 const imageUrlSource = computed<string | null>(() => item.imageUrl);
 
 const { isVideo, renderedMedia, shouldRender } = useNftImage(imageUrlSource);
+const { confirmAllowDomain, domain } = useNftDomainWhitelist(imageUrlSource);
 
 const name = computed(() => (item.name ? item.name : item.collection?.name));
 
 const { t } = useI18n({ useScope: 'global' });
-
-const domain = computed<string | null>(() => getDomain(get(imageUrlSource) ?? ''));
-
-const { show } = useConfirmStore();
-
-function showAllowDomainConfirmation() {
-  show(
-    {
-      message: t(
-        'general_settings.nft_setting.update_whitelist_confirmation.message',
-        {
-          domain: get(domain),
-        },
-        2,
-      ),
-      title: t('general_settings.nft_setting.update_whitelist_confirmation.title'),
-    },
-    allowDomain,
-  );
-}
-
-function allowDomain() {
-  const domainVal = get(domain);
-
-  if (!domainVal)
-    return;
-
-  const newWhitelisted = [...get(whitelistedDomainsForNftImages), domainVal].filter(uniqueStrings);
-
-  updateFrontendSetting({ whitelistedDomainsForNftImages: newWhitelisted });
-}
 
 const mediaStyle = computed<StyleValue>(() => {
   const backgroundColor = item.backgroundColor;
@@ -118,7 +81,7 @@ const mediaStyle = computed<StyleValue>(() => {
           <RuiButton
             class="p-2!"
             icon
-            @click="showAllowDomainConfirmation()"
+            @click="confirmAllowDomain()"
           >
             <RuiIcon
               name="lu-lock-keyhole-open"
