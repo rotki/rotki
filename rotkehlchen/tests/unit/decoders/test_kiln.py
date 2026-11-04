@@ -16,10 +16,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import LOCATION_ETHEREUM
-from rotkehlchen.tests.utils.ethereum import (
-    PRUNED_AND_NOT_ARCHIVED_NODE,
-    get_decoded_events_of_transaction,
-)
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
@@ -276,7 +273,6 @@ def test_kiln_partial_claim_via_helper(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0xC89B0dD4d20febdBFeD2f733B5687780AebcD42E',
     '0x9Da0F59EdF6A88ED3AFb4d21e3373199757eB90B',
@@ -308,8 +304,7 @@ def test_kiln_unlisted_contracts(
     assert kiln_decoder.exit_queue_checks == {KILN_EXIT_QUEUE: True}
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['match_rpc_calls'], before_record_response=None)  # noqa: E501
-@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC89B0dD4d20febdBFeD2f733B5687780AebcD42E']])
 def test_kiln_contract_verification(
         ethereum_inquirer: EthereumInquirer,

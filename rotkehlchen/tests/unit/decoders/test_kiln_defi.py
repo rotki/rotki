@@ -7,42 +7,19 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.kiln.constants import CPT_KILN
 from rotkehlchen.chain.evm.decoding.kiln.decoder import KilnDefiCommonDecoder
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.constants import ONE
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import LOCATION_ARBITRUM_ONE, LOCATION_ETHEREUM
-from rotkehlchen.tests.utils.ethereum import (
-    PRUNED_AND_NOT_ARCHIVED_NODE,
-    get_decoded_events_of_transaction,
-)
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-    SupportedBlockchain,
-    TimestampMS,
-    deserialize_evm_tx_hash,
-)
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.types import ChecksumEvmAddress, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
-# Checking that a vault is behind the Kiln vault beacon reads contract storage, which
-# indexers can't do, so these tests need an rpc node.
-ETHEREUM_RPC_NODE = pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])  # noqa: E501
-ARBITRUM_PUBLICNODE = WeightedNode(
-    node_info=NodeName(
-        name='publicnode',
-        endpoint='https://arbitrum-one-rpc.publicnode.com',
-        owned=True,
-        blockchain=SupportedBlockchain.ARBITRUM_ONE,
-    ),
-    active=True,
-    weight=ONE,
-)
-ARBITRUM_RPC_NODE = pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(ARBITRUM_PUBLICNODE,)])  # noqa: E501
 CW_AAVE_USDT_VAULT = string_to_evm_address('0x924e38bdFDa04990Fc78FEc258E8B83B3478B1Af')
 A_CW_AAVE_USDT = Asset(f'eip155:1/erc20:{CW_AAVE_USDT_VAULT}')
 BN_COMP_USDC_VAULT = string_to_evm_address('0x19A0F016Ac3989e754ab8216810beD8503bDA37e')
@@ -50,7 +27,6 @@ A_BN_COMP_USDC = Asset(f'eip155:42161/erc20:{BN_COMP_USDC_VAULT}')
 A_ARB_USDC = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
 
 
-@ETHEREUM_RPC_NODE
 @pytest.mark.parametrize('ethereum_accounts', [['0x5Bc69a1180F450Eeec975BD1A8A6c1a87a214ed0']])
 def test_kiln_defi_deposit(
         ethereum_inquirer: EthereumInquirer,
@@ -105,7 +81,6 @@ def test_kiln_defi_deposit(
     assert kiln_decoder.vault_checks == {CW_AAVE_USDT_VAULT: True}
 
 
-@ETHEREUM_RPC_NODE
 @pytest.mark.parametrize('ethereum_accounts', [['0x5Bc69a1180F450Eeec975BD1A8A6c1a87a214ed0']])
 def test_kiln_defi_redeem(
         ethereum_inquirer: EthereumInquirer,
@@ -155,7 +130,6 @@ def test_kiln_defi_redeem(
     )]
 
 
-@ARBITRUM_RPC_NODE
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xAC3D21866c459E0E6bb3FEd1C12Ecb812CD035E7']])
 def test_kiln_defi_deposit_arbitrum(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
@@ -205,7 +179,6 @@ def test_kiln_defi_deposit_arbitrum(
     )]
 
 
-@ARBITRUM_RPC_NODE
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xAC3D21866c459E0E6bb3FEd1C12Ecb812CD035E7']])
 def test_kiln_defi_withdraw_arbitrum(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
@@ -255,7 +228,6 @@ def test_kiln_defi_withdraw_arbitrum(
     )]
 
 
-@ETHEREUM_RPC_NODE
 @pytest.mark.parametrize('ethereum_accounts', [['0x2e2aB1C1383c7Be56ffb8c9039E2d85681C936FD']])
 def test_kiln_defi_ignores_other_erc4626_vaults(
         ethereum_inquirer: EthereumInquirer,
