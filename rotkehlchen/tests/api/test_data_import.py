@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 import pytest
 import requests
 
+from rotkehlchen.api.server import cors_origin_patterns
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -175,6 +176,33 @@ def test_data_import_allows_same_origin(
         )
 
     assert_proper_sync_response_with_result(response)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize(('origin', 'expected_status'), [
+    ('app://localhost', HTTPStatus.OK),  # the packaged desktop app
+    ('http://localhost:5173', HTTPStatus.OK),  # the dev server
+    ('http://localhost', HTTPStatus.OK),  # a frontend on the default port
+    ('app://evil', HTTPStatus.FORBIDDEN),
+    ('http://localhost.evil.com', HTTPStatus.FORBIDDEN),
+])
+def test_data_import_follows_configured_cors_origins(
+        rotkehlchen_api_server: APIServer,
+        origin: str,
+        expected_status: HTTPStatus,
+) -> None:
+    """Cross-origin writes pass exactly when the origin matches the packaged app's CORS list."""
+    rotkehlchen_api_server.cors_origins = cors_origin_patterns(['app://localhost', 'http://localhost:*'])
+    filepath = Path(__file__).resolve().parent.parent / 'data' / 'cointracking_trades_list.csv'
+    with filepath.open('rb') as infile:
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'dataimportresource'),
+            files={'file': infile},
+            data={'source': 'cointracking'},
+            headers={'Origin': origin},
+        )
+
+    assert response.status_code == expected_status
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
