@@ -40,3 +40,24 @@ export function sortKeyOf<T extends object>(row: T, attribute: string): keyof T 
   const converted = camelCase(attribute);
   return objectKeys(row).find(candidate => candidate === converted);
 }
+
+/**
+ * Compares two rows by each table sort attribute in turn, so a tie on one falls through to the next.
+ *
+ * @remarks
+ * `attributes` are the sort attributes as the table sent them, in snake_case, and `ascending` holds
+ * the direction of each by position. An attribute the rows have no property for is skipped, as
+ * {@link sortKeyOf} describes.
+ */
+export function compareByAttributes<T extends object>(a: T, b: T, attributes: string[], ascending: boolean[]): number {
+  for (const [i, attribute] of attributes.entries()) {
+    const key = sortKeyOf(a, attribute);
+    if (!key)
+      continue;
+
+    const order = sortBy(a[key], b[key], ascending[i]);
+    if (order)
+      return order;
+  }
+  return 0;
+}
