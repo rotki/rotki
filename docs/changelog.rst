@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The backend API now only accepts cross-origin requests from origins that fully match its configured CORS patterns. Lookalike domains such as ``localhost.example.com`` and pages of other desktop apps are no longer allowed to read API responses. ``--api-cors`` entries are plain patterns where only ``*`` is a wildcard, so an entry written as a regular expression needs to be rewritten (a warning is logged for it).
 * :bug:`13546` Reverting contract calls now stop after confirmation from two distinct RPC endpoints instead of retrying every node. Rate limits and missing chain data still fall back to other nodes or indexers, and known gas-limit errors still allow multicalls to retry with smaller chunks.
 * :bug:`-` Fixed missing profile images for ENS names migrated to v2.
 * :bug:`13520` Disabling balance queries for a chain now removes its stale last refresh time even when a refresh is already running. Excluding individual Ethereum staking validators preserves enabled validators' cached balances. API balance reads no longer trigger repeated refreshes when Ethereum staking queries are fully disabled.

@@ -104,10 +104,15 @@ export interface StarlingLaunchInput {
  * The CORS origins the backends must accept. The renderer is served from
  * `app://localhost` (packaged) or the Vite dev server (dev); `localhost:*` keeps
  * loopback tooling working. starling forwards this to both core and colibri.
+ *
+ * @remarks
+ * The packaged origin is named exactly rather than as `app://*`: other Electron
+ * apps on the machine can register the same `app` scheme, and a wildcard host
+ * would let their pages read the API.
  */
 function corsOrigins(isDev: boolean, devServerUrl: string | undefined): string {
   if (!isDev)
-    return 'app://*,http://localhost:*';
+    return 'app://localhost,http://localhost:*';
   if (!devServerUrl)
     return 'http://localhost:*';
   const trimmed = devServerUrl.endsWith('/') ? devServerUrl.slice(0, -1) : devServerUrl;

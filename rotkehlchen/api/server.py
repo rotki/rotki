@@ -1,10 +1,11 @@
 import json
 import logging
+import re
 import sys
 import time
 import traceback
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 import uvicorn
 from flask import Blueprint, Flask, Response, abort, g, jsonify, request
@@ -468,6 +469,47 @@ def endpoint_not_found(e: NotFound) -> Response:
     return api_response(wrap_in_fail_result(msg), HTTPStatus.NOT_FOUND)
 
 
+CORS_REGEX_ONLY_CHARS: Final = frozenset('\\^$()+?[]{}|')
+CORS_IPV6_HOST_RE: Final = re.compile(r'\[[0-9a-f:.]*\]', re.IGNORECASE)
+CORS_ANY_PORT_RE: Final = '(?::[0-9]+)?'
+
+
+def cors_origin_regex(pattern: str) -> re.Pattern[str]:
+    """Compile one `--api-cors` glob into a matcher for a whole `Origin` value.
+
+    Only `*` is a wildcard. A browser `Origin` is `scheme://host[:port]` with no
+    path, so anything after the authority (`/*`, `/`) is dropped, and a trailing
+    `:*` port wildcard also accepts an origin on the scheme's default port, which
+    carries no port at all. The brackets of an IPv6 host such as `[::1]` match
+    literally and are not mistaken for regex syntax.
+    """
+    pattern = pattern.strip()
+    if CORS_REGEX_ONLY_CHARS.intersection(CORS_IPV6_HOST_RE.sub('', pattern)):
+        log.warning(
+            'CORS pattern contains regex syntax, which is not supported. '
+            'Only * is a wildcard, every other character matches literally',
+            pattern=pattern,
+        )
+    scheme, separator, rest = pattern.partition('://')
+    if separator:
+        pattern = f'{scheme}://{rest.split("/", 1)[0]}'
+    port = CORS_ANY_PORT_RE if pattern.endswith(':*') else ''
+    return re.compile(
+        '.*'.join(map(re.escape, pattern.removesuffix(':*').split('*'))) + port + r'\Z',
+        re.IGNORECASE,
+    )
+
+
+def cors_origin_patterns(cors_domain_list: list[str]) -> list[re.Pattern[str]]:
+    """Compile the `--api-cors` list for flask-cors.
+
+    flask-cors runs any string containing `*` through `re.match`, so a glob such
+    as `http://localhost:*/*` would act as an unanchored regex prefix and accept
+    `http://localhost.evil.com`. Compiled patterns are used as they are.
+    """
+    return [cors_origin_regex(pattern) for pattern in cors_domain_list]
+
+
 @parser.error_handler  # type: ignore
 @resource_parser.error_handler
 @ignore_kwarg_parser.error_handler
@@ -524,7 +566,7 @@ class APIServer:
     ) -> None:
         flask_app = Flask(__name__)
         if cors_domain_list:
-            CORS(flask_app, origins=cors_domain_list)
+            CORS(flask_app, origins=cors_origin_patterns(cors_domain_list))
         blueprint = create_blueprint(self._api_prefix)
         setup_urls(
             blueprint=blueprint,
