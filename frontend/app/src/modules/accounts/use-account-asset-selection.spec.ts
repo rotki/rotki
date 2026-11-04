@@ -4,6 +4,7 @@ import '@test/i18n';
 
 const h = vi.hoisted(() => ({
   ignoreAsset: vi.fn(),
+  isAssetIgnored: vi.fn<(identifier: string) => boolean>(() => false),
   markAssetsAsSpam: vi.fn(),
   showErrorMessage: vi.fn(),
   unignoreAsset: vi.fn(),
@@ -11,6 +12,10 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/modules/assets/use-ignored-asset-operations', () => ({
   useIgnoredAssetOperations: vi.fn(() => ({ ignoreAsset: h.ignoreAsset, unignoreAsset: h.unignoreAsset })),
+}));
+
+vi.mock('@/modules/assets/use-assets-store', () => ({
+  useAssetsStore: vi.fn(() => ({ isAssetIgnored: h.isAssetIgnored })),
 }));
 
 vi.mock('@/modules/assets/use-spam-asset', () => ({
@@ -26,6 +31,7 @@ describe('useAccountAssetSelection', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    h.isAssetIgnored.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -74,8 +80,20 @@ describe('useAccountAssetSelection', () => {
       expect(get(selectionMode)).toBe(false);
     });
 
+    it('should skip assets that are already ignored', async () => {
+      h.ignoreAsset.mockResolvedValue({ success: true });
+      h.isAssetIgnored.mockImplementation(identifier => identifier === 'DAI');
+      const { handleIgnoreSelected, selectedAssets, toggleSelectionMode } = useAccountAssetSelection(onRefresh);
+      toggleSelectionMode();
+      set(selectedAssets, ['ETH', 'DAI']);
+
+      await handleIgnoreSelected(true);
+      expect(h.ignoreAsset).toHaveBeenCalledWith(['ETH']);
+    });
+
     it('should unignore the selected assets when ignored is false', async () => {
       h.unignoreAsset.mockResolvedValue({ success: true });
+      h.isAssetIgnored.mockReturnValue(true);
       const { handleIgnoreSelected, selectedAssets, toggleSelectionMode } = useAccountAssetSelection(onRefresh);
       toggleSelectionMode();
       set(selectedAssets, ['ETH']);

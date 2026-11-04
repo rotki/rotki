@@ -22,6 +22,9 @@ vi.mock('@/modules/assets/use-ignored-asset-confirmation', () => ({
 vi.mock('@/modules/assets/use-ignored-asset-operations', () => ({
   useIgnoredAssetOperations: (): object => ({ ignoreAsset: spies.ignoreAsset, unignoreAsset: spies.unignoreAsset }),
 }));
+vi.mock('@/modules/assets/use-spam-asset', () => ({
+  useSpamAsset: (): object => ({ markAssetsAsSpam: vi.fn() }),
+}));
 vi.mock('@/modules/assets/use-assets-store', () => ({
   useAssetsStore: (): object => ({ isAssetIgnored: spies.isAssetIgnored }),
 }));

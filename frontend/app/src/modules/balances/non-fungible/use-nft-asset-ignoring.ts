@@ -1,13 +1,11 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
-import type { ActionStatus } from '@/modules/core/common/action';
 import { startPromise } from '@shared/utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
-import { uniqueStrings } from '@/modules/core/common/data/data';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { useSelectedAssetActions } from '@/modules/assets/use-selected-asset-actions';
 
 interface UseNftAssetIgnoringReturn {
   modelSelected: Ref<string[]>;
@@ -20,10 +18,9 @@ export function useNftAssetIgnoring(
   fetchData: () => Promise<void>,
   ignoredAssetsHandling: MaybeRefOrGetter<IgnoredAssetsHandlingType>,
 ): UseNftAssetIgnoringReturn {
-  const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage } = useNotifications();
   const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
-  const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
+  const { unignoreAsset } = useIgnoredAssetOperations();
+  const { ignoreSelected } = useSelectedAssetActions();
   const { isAssetIgnored } = useAssetsStore();
 
   const modelSelected = ref<string[]>([]);
@@ -48,26 +45,7 @@ export function useNftAssetIgnoring(
   }
 
   async function massIgnore(ignored: boolean): Promise<void> {
-    const ids = get(modelSelected)
-      .filter((item) => {
-        const isItemIgnored = isAssetIgnored(item);
-        return ignored ? !isItemIgnored : isItemIgnored;
-      })
-      .filter(uniqueStrings);
-
-    let status: ActionStatus;
-
-    if (ids.length === 0) {
-      const choice = ignored ? 1 : 2;
-      showErrorMessage(t('ignore.no_items.title', choice), t('ignore.no_items.description', choice));
-      return;
-    }
-
-    if (ignored)
-      status = await ignoreAsset(ids);
-    else status = await unignoreAsset(ids);
-
-    if (status.success) {
+    if (await ignoreSelected(get(modelSelected), ignored)) {
       set(modelSelected, []);
       if (toValue(ignoredAssetsHandling) !== 'none')
         await fetchData();
