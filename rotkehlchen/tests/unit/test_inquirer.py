@@ -796,6 +796,7 @@ def test_find_kiln_receipt_token_price(database: DBHandler, inquirer_defi: Inqui
     assert FVal('1.05') < pseth_price / inquirer_defi.find_usd_price(A_ETH) < FVal('1.5')
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_kiln_vault_token_price(database: DBHandler, inquirer_defi: Inquirer) -> None:

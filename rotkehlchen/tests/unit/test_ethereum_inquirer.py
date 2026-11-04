@@ -250,6 +250,7 @@ def test_call_contract(ethereum_inquirer, ethereum_manager_connect_at_start):
     assert result >= 0
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize(*ETHEREUM_WEB3_AND_ETHERSCAN_TEST_PARAMETERS)
 def test_get_storage_at(
         ethereum_inquirer: EthereumInquirer,

@@ -27,6 +27,7 @@ A_BN_COMP_USDC = Asset(f'eip155:42161/erc20:{BN_COMP_USDC_VAULT}')
 A_ARB_USDC = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5Bc69a1180F450Eeec975BD1A8A6c1a87a214ed0']])
 def test_kiln_defi_deposit(
         ethereum_inquirer: EthereumInquirer,
@@ -79,8 +80,12 @@ def test_kiln_defi_deposit(
     assert [x.address for x in vault_token.underlying_tokens] == [A_USDT.resolve_to_evm_token().evm_address]  # noqa: E501
     assert isinstance(kiln_decoder := decoder.decoders['KilnDefi'], KilnDefiCommonDecoder)
     assert kiln_decoder.vault_checks == {CW_AAVE_USDT_VAULT: True}
+    usdt_address = A_USDT.resolve_to_evm_token().evm_address  # a contract not behind the beacon
+    assert kiln_decoder._is_kiln_vault(usdt_address) is False
+    assert kiln_decoder.vault_checks == {CW_AAVE_USDT_VAULT: True, usdt_address: False}
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5Bc69a1180F450Eeec975BD1A8A6c1a87a214ed0']])
 def test_kiln_defi_redeem(
         ethereum_inquirer: EthereumInquirer,
@@ -130,6 +135,7 @@ def test_kiln_defi_redeem(
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xAC3D21866c459E0E6bb3FEd1C12Ecb812CD035E7']])
 def test_kiln_defi_deposit_arbitrum(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
@@ -179,6 +185,7 @@ def test_kiln_defi_deposit_arbitrum(
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xAC3D21866c459E0E6bb3FEd1C12Ecb812CD035E7']])
 def test_kiln_defi_withdraw_arbitrum(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
@@ -228,17 +235,19 @@ def test_kiln_defi_withdraw_arbitrum(
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2e2aB1C1383c7Be56ffb8c9039E2d85681C936FD']])
 def test_kiln_defi_ignores_other_erc4626_vaults(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
-    """A deposit in an ERC4626 vault that is not a Kiln one (Spark sUSDC) is left to its
-    own decoder and the vault is remembered as not being a Kiln vault"""
+    """A deposit in an ERC4626 vault of another protocol (Spark sUSDC) is left to that
+    protocol's decoder, which claims the share transfer first, so the vault is not even
+    queried for being a Kiln vault"""
     events, decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=deserialize_evm_tx_hash('0xf6cbd0040b8ba30e9eea85358c1d99e2e7105aac919e2f5964786129d508f6f9'),
     )
     assert all(event.counterparty != CPT_KILN for event in events)
     assert isinstance(kiln_decoder := decoder.decoders['KilnDefi'], KilnDefiCommonDecoder)
-    assert list(kiln_decoder.vault_checks.values()) == [False]
+    assert kiln_decoder.vault_checks == {}
