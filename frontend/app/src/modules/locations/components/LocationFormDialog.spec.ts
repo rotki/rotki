@@ -106,6 +106,18 @@ describe('locationFormDialog', () => {
     editLocation.mockResolvedValue(ok({ location: ing, newPath: [], oldPath: [] }));
   });
 
+  it('should only show the name rule while the name is being typed', async () => {
+    wrapper = createWrapper({ mode: 'add', parentIdentifier: 'banks' });
+    const name = wrapper.find('[data-testid=location-form-name]');
+    expect(name.text()).not.toContain('location_manager.form.name_hint');
+
+    await name.find('input').trigger('focusin');
+    expect(wrapper.find('[data-testid=location-form-name]').text()).toContain('location_manager.form.name_hint');
+
+    await name.find('input').trigger('focusout');
+    expect(wrapper.find('[data-testid=location-form-name]').text()).not.toContain('location_manager.form.name_hint');
+  });
+
   it('should create the location below the chosen parent with the picked icon', async () => {
     createLocation.mockResolvedValue(ok(ing));
     wrapper = createWrapper({ mode: 'add', parentIdentifier: 'banks' });

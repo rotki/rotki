@@ -33,6 +33,13 @@ const LocationUsage = z.object({
 
 export type LocationUsage = z.infer<typeof LocationUsage>;
 
+const LocationAliases = z.array(z.object({
+  alias: z.string(),
+  locationIdentifier: z.string(),
+}));
+
+export type LocationAliases = z.infer<typeof LocationAliases>;
+
 export interface LocationCreatePayload {
   readonly name: string;
   readonly parentIdentifier: string;
@@ -59,6 +66,9 @@ interface UseLocationTreeApiReturn {
   fetchLocationUsage: (identifier: string) => Promise<LocationUsage>;
   uploadLocationImage: (identifier: string, file: File) => Promise<string>;
   deleteLocationImage: (identifier: string) => Promise<boolean>;
+  fetchLocationAliases: () => Promise<LocationAliases>;
+  setLocationAlias: (alias: string, locationIdentifier: string) => Promise<boolean>;
+  deleteLocationAlias: (alias: string) => Promise<boolean>;
 }
 
 function locationPath(identifier: string, suffix = ''): string {
@@ -104,13 +114,25 @@ export function useLocationTreeApi(): UseLocationTreeApiReturn {
   const deleteLocationImage = async (identifier: string): Promise<boolean> =>
     api.delete<boolean>(locationPath(identifier, '/image'));
 
+  const fetchLocationAliases = async (): Promise<LocationAliases> =>
+    LocationAliases.parse(await api.get<LocationAliases>('/locations/aliases'));
+
+  const setLocationAlias = async (alias: string, locationIdentifier: string): Promise<boolean> =>
+    api.put<boolean>('/locations/aliases', { alias, locationIdentifier });
+
+  const deleteLocationAlias = async (alias: string): Promise<boolean> =>
+    api.delete<boolean>('/locations/aliases', { body: { alias } });
+
   return {
     addLocation,
     deleteLocation,
+    deleteLocationAlias,
     deleteLocationImage,
     editLocation,
+    fetchLocationAliases,
     fetchLocationTree,
     fetchLocationUsage,
+    setLocationAlias,
     uploadLocationImage,
   };
 }

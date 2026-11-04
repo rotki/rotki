@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM } from '../helpers/constants';
 import { confirmDialog, discardChanges } from '../helpers/utils';
+import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
 /**
@@ -51,8 +52,21 @@ export class LocationManagerPage {
     return this.table().getByTestId('location-row-name');
   }
 
+  async openTab(tab: 'locations' | 'aliases'): Promise<void> {
+    await this.page.getByTestId('location-manager-tabs').getByRole('tab', { name: tab === 'aliases' ? 'Aliases' : 'Locations' }).click();
+  }
+
+  /** Filters the tree by a name through the pill bar; an empty term removes the filter. */
   async search(term: string): Promise<void> {
-    await this.page.getByTestId('location-manager-search').locator('input').fill(term);
+    const bar = new PillFilterBar(this.page);
+    if (await bar.pill('name').isVisible())
+      await bar.removePill('name');
+    if (term === '')
+      return;
+    await bar.addField('name');
+    await bar.typeTextValue(term);
+    await bar.closeEditor('name');
+    await bar.expectPillVisible('name');
   }
 
   async setShowArchived(show: boolean): Promise<void> {
@@ -136,5 +150,26 @@ export class LocationManagerPage {
   async archiveFromUsage(): Promise<void> {
     await this.usageNotice().getByTestId('location-usage-archive').click();
     await this.usageNotice().waitFor({ state: 'detached' });
+  }
+
+  /** Adds an alias through the page's add button and its form. */
+  async addAlias(alias: string, name: string, identifier: string): Promise<void> {
+    await this.page.getByTestId('location-manager-add').click();
+    const form = this.page.getByTestId('location-alias-form');
+    await form.waitFor({ state: 'visible' });
+    await form.getByTestId('location-alias-name').locator('input').fill(alias);
+    await selectLocationOption(this.page, form.getByTestId('location-alias-target'), name, identifier);
+    await this.page.locator('[data-testid=bottom-dialog]').filter({ has: form }).getByTestId('confirm').click();
+    await form.waitFor({ state: 'detached' });
+  }
+
+  aliasRow(alias: string): Locator {
+    return this.page.getByTestId('location-aliases-table').locator('tbody tr').filter({ has: this.page.getByText(alias, { exact: true }) });
+  }
+
+  /** Deletes an alias, confirming in its row. */
+  async deleteAlias(alias: string): Promise<void> {
+    await this.aliasRow(alias).getByTestId('location-alias-delete').click();
+    await this.aliasRow(alias).getByTestId('location-alias-confirm-delete').click();
   }
 }

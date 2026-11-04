@@ -10,8 +10,8 @@ const landmark: LocationIcon = 'lu-landmark';
 
 const RuiFileUpload = {
   emits: ['update:modelValue'],
-  props: ['modelValue', 'accept'],
-  template: '<div data-testid="location-image-upload" :data-accept="accept" :data-file="modelValue?.name" />',
+  props: ['modelValue', 'accept', 'hint'],
+  template: '<div data-testid="location-image-upload" :data-accept="accept" :data-file="modelValue?.name" :data-hint="hint" />',
 };
 
 function createWrapper(props: { pending: Pending; image: string | null; identifier?: string }): VueWrapper<InstanceType<typeof LocationImageField>> {
@@ -34,6 +34,14 @@ function createWrapper(props: { pending: Pending; image: string | null; identifi
 }
 
 describe('locationImageField', () => {
+  it('should only explain where an image is kept once one is chosen', async () => {
+    const wrapper = createWrapper({ image: null, pending: undefined });
+    expect(wrapper.find('[data-testid=location-image-upload]').attributes('data-hint')).toBeUndefined();
+
+    await wrapper.findComponent(RuiFileUpload).vm.$emit('update:modelValue', new File(['png'], 'logo.png'));
+    expect(wrapper.find('[data-testid=location-image-upload]').attributes('data-hint')).toBe('location_manager.image.hint');
+  });
+
   it('should hold a file chosen in the dropzone for the form instead of uploading it', async () => {
     const wrapper = createWrapper({ image: null, pending: undefined });
     const file = new File(['png'], 'logo.png', { type: 'image/png' });

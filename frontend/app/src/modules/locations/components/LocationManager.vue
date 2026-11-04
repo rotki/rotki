@@ -2,11 +2,14 @@
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { LocationFormData } from '@/modules/locations/location-form';
 import type { LocationNode } from '@/modules/locations/use-location-tree-api';
+import { startPromise } from '@shared/utils';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
+import LocationAliasesCard from '@/modules/locations/components/LocationAliasesCard.vue';
 import LocationFormDialog from '@/modules/locations/components/LocationFormDialog.vue';
+import LocationTreeFilter from '@/modules/locations/components/LocationTreeFilter.vue';
 import LocationTreeRowActions from '@/modules/locations/components/LocationTreeRowActions.vue';
 import LocationTreeRowName from '@/modules/locations/components/LocationTreeRowName.vue';
 import LocationUsageNotice from '@/modules/locations/components/LocationUsageNotice.vue';
@@ -17,22 +20,35 @@ import { ROOT_LOCATION, useLocationTreeStore } from '@/modules/locations/use-loc
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
+type ManagerTab = 'locations' | 'aliases';
+
 const search = ref<string>('');
 const showArchived = ref<boolean>(false);
 /** Locations archived on this visit, which stay listed so that restoring one is a click away. */
 const archivedHere = ref<Set<string>>(new Set());
 const formData = ref<LocationFormData>();
+const addingAlias = ref<boolean>(false);
 const blockedDeletion = ref<{ location: LocationNode; usage: Record<string, number> }>();
 /** Why the last archive, restore or deletion failed, until the next one. */
 const actionFailure = shallowRef<string>();
 
 const { t } = useI18n({ useScope: 'global' });
+const route = useRoute();
+const router = useRouter();
 
 const treeStore = useLocationTreeStore();
 const { show } = useConfirmStore();
 const { deleteLocation, editLocation, fetchUsage } = useLocationManagement();
 const { isExpanded, reveal, toggle } = useLocationTreeExpansion();
 const { highlight, rowClass } = useRowHighlight<LocationRow>(row => row.node.identifier);
+
+/** The open tab, kept in the url so a link can open the aliases directly. */
+const tab = computed<ManagerTab>({
+  get: () => (get(route).query.tab === 'aliases' ? 'aliases' : 'locations'),
+  set: (value) => {
+    startPromise(router.replace({ query: { ...get(route).query, tab: value === 'aliases' ? value : undefined } }));
+  },
+});
 
 const rows = computed<LocationRow[]>(() => locationRows({
   childrenOf: treeStore.childrenOf,
@@ -132,28 +148,35 @@ onMounted(async () => {
       <RuiButton
         color="primary"
         size="lg"
-        data-testid="add-location"
-        @click="addBelow(ROOT_LOCATION)"
+        data-testid="location-manager-add"
+        @click="tab === 'locations' ? addBelow(ROOT_LOCATION) : addingAlias = true"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
         </template>
-        {{ t('location_manager.actions.add') }}
+        {{ tab === 'locations' ? t('location_manager.actions.add') : t('location_manager.aliases.add') }}
       </RuiButton>
     </template>
 
-    <TableFrame>
+    <RuiTabs
+      v-model="tab"
+      color="primary"
+      class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
+      data-testid="location-manager-tabs"
+    >
+      <RuiTab value="locations">
+        {{ t('location_manager.tabs.locations') }}
+      </RuiTab>
+      <RuiTab value="aliases">
+        {{ t('location_manager.tabs.aliases') }}
+      </RuiTab>
+    </RuiTabs>
+
+    <TableFrame v-if="tab === 'locations'">
       <template #toolbar>
-        <RuiTextField
-          v-model="search"
-          class="grow"
-          color="primary"
-          dense
-          clearable
-          prepend-icon="lu-search"
-          :label="t('common.actions.search')"
-          hide-details
-          data-testid="location-manager-search"
+        <LocationTreeFilter
+          v-model:name="search"
+          class="flex-1 min-w-64"
         />
         <RuiSwitch
           v-model="showArchived"
@@ -235,6 +258,11 @@ onMounted(async () => {
         </template>
       </RuiDataTable>
     </TableFrame>
+
+    <LocationAliasesCard
+      v-else
+      v-model:adding="addingAlias"
+    />
 
     <LocationFormDialog
       v-model="formData"

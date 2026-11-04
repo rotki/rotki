@@ -26,6 +26,8 @@ const emit = defineEmits<{
 }>();
 
 const submitting = ref<boolean>(false);
+/** The name rule is only read while the name is being typed, so it shows only then. */
+const nameFocused = ref<boolean>(false);
 const pendingImage = ref<File | null>();
 /** Why the last save was refused; the dialog stays open, so it is named there. */
 const saveFailure = shallowRef<string>();
@@ -206,9 +208,11 @@ async function save(): Promise<void> {
         v-model="form.state.name"
         color="primary"
         :label="t('common.name')"
-        :hint="t('location_manager.form.name_hint')"
+        :hint="nameFocused ? t('location_manager.form.name_hint') : undefined"
         :error-messages="form.errors('name')"
         data-testid="location-form-name"
+        @focusin="nameFocused = true"
+        @focusout="nameFocused = false"
         @update:model-value="form.touch('name')"
       />
       <LocationSelector
