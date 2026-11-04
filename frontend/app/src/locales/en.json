@@ -2186,6 +2186,7 @@
     },
     "last_refresh_tooltip": "Last time blockchain balances were refreshed",
     "refresh_menu": {
+      "label": "More refresh options",
       "prices": "Refresh prices only",
       "prices_description": "Fetch the latest prices without querying the chains"
     },

@@ -5,10 +5,9 @@ import BlockchainBalanceRefreshBehaviourMenu from '@/modules/balances/Blockchain
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
+import RefreshSplitButton from '@/modules/shell/components/RefreshSplitButton.vue';
 
 const { t } = useI18n({ useScope: 'global' });
-
-const menuOpen = ref<boolean>(false);
 
 const { isRefreshing } = useBalanceStatus();
 const { isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading();
@@ -23,53 +22,27 @@ async function refresh(): Promise<void> {
   await refreshBlockchainAndPrices();
 }
 
-async function refreshOnlyPrices(): Promise<void> {
-  set(menuOpen, false);
+async function refreshOnlyPrices(close: () => void): Promise<void> {
+  close();
   await refreshPrices(true);
 }
 </script>
 
 <template>
-  <RuiButtonGroup
-    variant="outlined"
-    color="primary"
+  <RefreshSplitButton
+    test-id="blockchain-balances-refresh"
+    :menu-label="t('blockchain_balances.refresh_menu.label')"
+    :loading="loading"
+    :disabled="refreshDisabled"
+    @refresh="refresh()"
   >
-    <RuiButton
-      data-testid="blockchain-balances-refresh"
-      :disabled="refreshDisabled"
-      :loading="loading"
-      @click="refresh()"
-    >
-      <template #prepend>
-        <RuiIcon name="lu-refresh-ccw" />
-      </template>
-      {{ t('common.refresh') }}
-    </RuiButton>
-    <RuiMenu
-      v-model="menuOpen"
-      :options="{ placement: 'bottom-end' }"
-      :class-names="{ root: 'flex' }"
-    >
-      <template #activator="{ attrs }">
-        <RuiButton
-          v-bind="{
-            ...attrs,
-            'data-testid': 'blockchain-balances-refresh-menu',
-          }"
-          color="primary"
-          variant="outlined"
-          class="px-2"
-        >
-          <RuiIcon name="lu-chevron-down" />
-        </RuiButton>
-      </template>
-
+    <template #default="{ close }">
       <div class="w-80 max-w-full py-1">
         <RuiButton
           variant="list"
           :disabled="pricesDisabled"
           data-testid="price-refresh"
-          @click="refreshOnlyPrices()"
+          @click="refreshOnlyPrices(close)"
         >
           <template #prepend>
             <RuiIcon
@@ -87,6 +60,6 @@ async function refreshOnlyPrices(): Promise<void> {
         <RuiDivider class="my-1" />
         <BlockchainBalanceRefreshBehaviourMenu />
       </div>
-    </RuiMenu>
-  </RuiButtonGroup>
+    </template>
+  </RefreshSplitButton>
 </template>
