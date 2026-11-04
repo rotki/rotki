@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BankConnectionIdentity } from '@/modules/banks/types';
 import BankLabel from '@/modules/banks/components/BankLabel.vue';
+import RefreshSplitButton from '@/modules/shell/components/RefreshSplitButton.vue';
 
 const { banks, selected, loading = false, isBankLoading } = defineProps<{
   banks: BankConnectionIdentity[];
@@ -19,76 +20,30 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const menuOpen = ref<boolean>(false);
-
 const buttonLoading = computed<boolean>(() => (selected ? isBankLoading(selected) : loading));
 
 const tooltip = computed<string>(() => selected
   ? t('bank_balances.refresh_menu.bank', { bank: selected })
   : t('bank_balances.refresh_menu.all'));
-
-function refreshAll(): void {
-  set(menuOpen, false);
-  emit('refresh-all');
-}
-
-function refreshBank(bank: BankConnectionIdentity): void {
-  set(menuOpen, false);
-  emit('refresh-bank', bank);
-}
 </script>
 
 <template>
-  <RuiButtonGroup
-    variant="outlined"
-    color="primary"
+  <RefreshSplitButton
+    test-id="refresh-bank-balances"
+    :menu-label="t('bank_balances.refresh_menu.title')"
+    :tooltip="tooltip"
+    :loading="buttonLoading"
+    :disabled="banks.length === 0"
+    :menu-disabled="banks.length === 0"
+    @refresh="emit('refresh')"
   >
-    <RuiTooltip
-      :open-delay="400"
-      :class-names="{ root: 'flex' }"
-    >
-      <template #activator>
-        <RuiButton
-          data-testid="refresh-bank-balances"
-          :disabled="banks.length === 0"
-          :loading="buttonLoading"
-          @click="emit('refresh')"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-refresh-ccw" />
-          </template>
-          {{ t('common.refresh') }}
-        </RuiButton>
-      </template>
-      {{ tooltip }}
-    </RuiTooltip>
-    <RuiMenu
-      v-model="menuOpen"
-      :options="{ placement: 'bottom-end' }"
-      :class-names="{ root: 'flex' }"
-    >
-      <template #activator="{ attrs }">
-        <RuiButton
-          v-bind="{
-            ...attrs,
-            'data-testid': 'refresh-bank-balances-menu',
-          }"
-          color="primary"
-          variant="outlined"
-          class="px-2"
-          :disabled="banks.length === 0"
-          :aria-label="t('bank_balances.refresh_menu.title')"
-        >
-          <RuiIcon name="lu-chevron-down" />
-        </RuiButton>
-      </template>
-
+    <template #default="{ close }">
       <div class="w-72 max-w-full py-1">
         <RuiButton
           variant="list"
           :disabled="loading"
           data-testid="refresh-bank-menu-all"
-          @click="refreshAll()"
+          @click="close(); emit('refresh-all')"
         >
           <template #prepend>
             <RuiIcon
@@ -110,7 +65,7 @@ function refreshBank(bank: BankConnectionIdentity): void {
           :aria-label="t('bank_balances.refresh_menu.bank', { bank: bank.name })"
           data-testid="refresh-bank-menu-item"
           :data-bank="bank.name"
-          @click="refreshBank(bank)"
+          @click="close(); emit('refresh-bank', bank)"
         >
           <BankLabel
             :connector="bank.connector"
@@ -118,6 +73,6 @@ function refreshBank(bank: BankConnectionIdentity): void {
           />
         </RuiButton>
       </div>
-    </RuiMenu>
-  </RuiButtonGroup>
+    </template>
+  </RefreshSplitButton>
 </template>

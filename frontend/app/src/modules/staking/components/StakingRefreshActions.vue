@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import RefreshSplitButton from '@/modules/shell/components/RefreshSplitButton.vue';
+
 /**
  * A staking page's actions, as on the balances pages: one Refresh for the page's figures and its
  * events, with the full history sync in its menu, then the page's settings in the default slot.
@@ -24,65 +26,24 @@ defineSlots<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const menuOpen = ref<boolean>(false);
-
-function syncHistory(): void {
-  set(menuOpen, false);
-  emit('sync-history');
-}
 </script>
 
 <template>
   <div class="flex items-center gap-2">
-    <RuiButtonGroup
-      variant="outlined"
-      color="primary"
+    <RefreshSplitButton
+      :test-id="`${testIdPrefix}-refresh`"
+      :menu-label="t('staking_page.refresh_menu.title')"
+      :tooltip="tooltip"
+      :loading="refreshing"
+      @refresh="emit('refresh')"
     >
-      <RuiTooltip
-        :open-delay="400"
-        :class-names="{ root: 'flex' }"
-      >
-        <template #activator>
-          <RuiButton
-            :data-testid="`${testIdPrefix}-refresh`"
-            :loading="refreshing"
-            @click="emit('refresh')"
-          >
-            <template #prepend>
-              <RuiIcon name="lu-refresh-ccw" />
-            </template>
-            {{ t('common.refresh') }}
-          </RuiButton>
-        </template>
-        {{ tooltip }}
-      </RuiTooltip>
-      <RuiMenu
-        v-model="menuOpen"
-        :options="{ placement: 'bottom-end' }"
-        :class-names="{ root: 'flex' }"
-      >
-        <template #activator="{ attrs }">
-          <RuiButton
-            v-bind="{
-              ...attrs,
-              'data-testid': `${testIdPrefix}-refresh-menu`,
-            }"
-            color="primary"
-            variant="outlined"
-            class="px-2"
-            :aria-label="t('staking_page.refresh_menu.title')"
-          >
-            <RuiIcon name="lu-chevron-down" />
-          </RuiButton>
-        </template>
-
+      <template #default="{ close }">
         <div class="w-80 max-w-full py-1">
           <RuiButton
             variant="list"
             :disabled="syncingHistory"
             :data-testid="`${testIdPrefix}-sync-history`"
-            @click="syncHistory()"
+            @click="close(); emit('sync-history')"
           >
             <template #prepend>
               <RuiIcon
@@ -98,8 +59,8 @@ function syncHistory(): void {
             </span>
           </RuiButton>
         </div>
-      </RuiMenu>
-    </RuiButtonGroup>
+      </template>
+    </RefreshSplitButton>
 
     <slot />
   </div>

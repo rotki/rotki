@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ExchangeRefreshMenuItem from '@/modules/balances/exchanges/ExchangeRefreshMenuItem.vue';
 import { useLocations } from '@/modules/core/common/use-locations';
+import RefreshSplitButton from '@/modules/shell/components/RefreshSplitButton.vue';
 
 const { exchanges, selected, loading = false } = defineProps<{
   exchanges: string[];
@@ -18,74 +19,28 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const { getExchangeName } = useLocations();
 
-const menuOpen = ref<boolean>(false);
-
 const tooltip = computed<string>(() => selected
   ? t('exchange_balances.refresh_menu.exchange', { exchange: getExchangeName(selected) })
   : t('exchange_balances.refresh_menu.all'));
-
-function refreshAll(): void {
-  set(menuOpen, false);
-  emit('refresh-all');
-}
-
-function refreshExchange(exchange: string): void {
-  set(menuOpen, false);
-  emit('refresh-exchange', exchange);
-}
 </script>
 
 <template>
-  <RuiButtonGroup
-    variant="outlined"
-    color="primary"
+  <RefreshSplitButton
+    test-id="refresh-exchange-balances"
+    :menu-label="t('exchange_balances.refresh_menu.title')"
+    :tooltip="tooltip"
+    :loading="loading"
+    :disabled="exchanges.length === 0"
+    :menu-disabled="exchanges.length === 0"
+    @refresh="emit('refresh')"
   >
-    <RuiTooltip
-      :open-delay="400"
-      :class-names="{ root: 'flex' }"
-    >
-      <template #activator>
-        <RuiButton
-          data-testid="refresh-exchange-balances"
-          :disabled="exchanges.length === 0"
-          :loading="loading"
-          @click="emit('refresh')"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-refresh-ccw" />
-          </template>
-          {{ t('common.refresh') }}
-        </RuiButton>
-      </template>
-      {{ tooltip }}
-    </RuiTooltip>
-    <RuiMenu
-      v-model="menuOpen"
-      :options="{ placement: 'bottom-end' }"
-      :class-names="{ root: 'flex' }"
-    >
-      <template #activator="{ attrs }">
-        <RuiButton
-          v-bind="{
-            ...attrs,
-            'data-testid': 'refresh-exchange-balances-menu',
-          }"
-          color="primary"
-          variant="outlined"
-          class="px-2"
-          :disabled="exchanges.length === 0"
-          :aria-label="t('exchange_balances.refresh_menu.title')"
-        >
-          <RuiIcon name="lu-chevron-down" />
-        </RuiButton>
-      </template>
-
+    <template #default="{ close }">
       <div class="w-72 max-w-full py-1">
         <RuiButton
           variant="list"
           :disabled="loading"
           data-testid="refresh-exchange-menu-all"
-          @click="refreshAll()"
+          @click="close(); emit('refresh-all')"
         >
           <template #prepend>
             <RuiIcon
@@ -103,9 +58,9 @@ function refreshExchange(exchange: string): void {
           v-for="exchange in exchanges"
           :key="exchange"
           :exchange="exchange"
-          @refresh="refreshExchange($event)"
+          @refresh="close(); emit('refresh-exchange', $event)"
         />
       </div>
-    </RuiMenu>
-  </RuiButtonGroup>
+    </template>
+  </RefreshSplitButton>
 </template>
