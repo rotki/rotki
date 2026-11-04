@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
-import { useForm } from '@/modules/core/form/use-form';
-import { numberSettingSchema, SETTING_FIELD, type SettingFieldState } from '@/modules/settings/controls/setting-field-schemas';
+import { numberSettingSchema, SETTING_FIELD } from '@/modules/settings/controls/setting-field-schemas';
+import { useSettingField } from '@/modules/settings/controls/use-setting-field';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 import { resolveSettingMessage, useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
@@ -73,28 +73,15 @@ const bakedSchema = computed<ZodType>(() => numberSettingSchema({
   required,
 }));
 
-const form = useForm<SettingFieldState, SettingFieldState>({
-  initial: (): SettingFieldState => ({ value: String(get(model)) }),
+const { form, onInput } = useSettingField({
+  fromField: transform,
+  model,
+  onEdit: clearAll,
   schema: () => schema ?? get(bakedSchema),
-  submit: async (payload: SettingFieldState): Promise<{ success: boolean }> => {
-    set(model, transform(payload.value));
-    return Promise.resolve({ success: true });
-  },
-  transform: (state): SettingFieldState => ({ value: state.value }),
+  toField: String,
 });
 
 const hasDefault = computed<boolean>(() => defaultValue !== undefined);
-
-watch(model, (value) => {
-  form.state.value = String(value);
-});
-
-/** Submitting is the persist: the core runs it only when the field parses, as `callIfValid` did. */
-async function onInput(value: string): Promise<void> {
-  clearAll();
-  form.state.value = value;
-  await form.submit();
-}
 
 async function reset(): Promise<void> {
   if (defaultValue === undefined)
