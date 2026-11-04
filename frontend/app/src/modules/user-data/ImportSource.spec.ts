@@ -311,6 +311,24 @@ describe('importSource', () => {
     expect(wrapper.find('[data-testid=import-complete]').exists()).toBe(true);
   });
 
+  it('should send a packaged file preflight only the fields its endpoint accepts', async () => {
+    submitTask.mockImplementation(async (spec: NativeActivitySpec<boolean>) => spec.run(createMock<ActivityContext>({
+      cancelled: () => false,
+      runTask: vi.fn().mockResolvedValue(ok(true)),
+    })));
+    getPath.mockReturnValue('/tmp/a.csv');
+    wrapper = createWrapper();
+    await wrapper.setProps({ source: 'rotki_events' });
+    await attachFile();
+    await submit();
+
+    expect(checkImportLocations).toHaveBeenCalledExactlyOnceWith({
+      file: '/tmp/a.csv',
+      locationMappings: {},
+      source: 'rotki_events',
+    });
+  });
+
   it('should mark the upload done only when the task reports a completed import', async () => {
     submitTask.mockResolvedValue(ok(true));
     wrapper = createWrapper();

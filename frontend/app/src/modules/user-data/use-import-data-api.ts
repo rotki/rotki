@@ -16,6 +16,9 @@ interface ImportDataFromPayload {
   locationMappings?: Record<string, string>;
 }
 
+/** The keys of `locationMappings` are values from the user's file, which the backend must get verbatim. */
+const SKIP_SNAKE_CASE_MAPPINGS = ['locationMappings'];
+
 interface UseImportDataApiReturn {
   checkImportLocations: (payload: ImportLocationPreflightPayload) => Promise<ImportLocationResolution[]>;
   checkImportFileLocations: (data: FormData) => Promise<ImportLocationResolution[]>;
@@ -25,7 +28,7 @@ interface UseImportDataApiReturn {
 
 export function useImportDataApi(): UseImportDataApiReturn {
   const checkImportLocations = async (payload: ImportLocationPreflightPayload): Promise<ImportLocationResolution[]> => {
-    const response = await api.put('/import/preflight', payload);
+    const response = await api.put('/import/preflight', payload, { skipSnakeCase: SKIP_SNAKE_CASE_MAPPINGS });
     return ImportLocationPreflightSchema.parse(response).locations;
   };
 
@@ -41,6 +44,7 @@ export function useImportDataApi(): UseImportDataApiReturn {
         asyncQuery: true,
         ...payload,
       },
+      { skipSnakeCase: SKIP_SNAKE_CASE_MAPPINGS },
     );
 
     return PendingTaskSchema.parse(response);

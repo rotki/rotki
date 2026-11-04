@@ -41,6 +41,29 @@ describe('composables/api/import/index', () => {
       expect(result).toEqual(locations);
     });
 
+    it('should send location mapping keys exactly as they appear in the file', async () => {
+      let capturedBody: DefaultBodyType = null;
+
+      server.use(
+        http.put(`${backendUrl}/api/1/import/preflight`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ result: { locations: [] }, message: '' });
+        }),
+      );
+
+      await useImportDataApi().checkImportLocations({
+        file: '/path/to/file.csv',
+        source: 'rotki_events',
+        locationMappings: { myBank: 'kraken' },
+      });
+
+      expect(capturedBody).toEqual({
+        file: '/path/to/file.csv',
+        source: 'rotki_events',
+        location_mappings: { myBank: 'kraken' },
+      });
+    });
+
     it('should reject malformed preflight responses', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/import/preflight`, () => HttpResponse.json({
@@ -104,6 +127,34 @@ describe('composables/api/import/index', () => {
         timezone: 'Europe/Madrid',
       });
       expect(result.taskId).toBe(123);
+    });
+
+    it('should send location mapping keys exactly as they appear in the file', async () => {
+      let capturedBody: DefaultBodyType = null;
+
+      server.use(
+        http.put(`${backendUrl}/api/1/import`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ result: { task_id: 789 }, message: '' });
+        }),
+      );
+
+      await useImportDataApi().importDataFrom({
+        file: '/path/to/file.csv',
+        source: 'rotki_events',
+        timestampFormat: null,
+        timezone: null,
+        locationMappings: { myBank: 'kraken' },
+      });
+
+      expect(capturedBody).toEqual({
+        async_query: true,
+        file: '/path/to/file.csv',
+        source: 'rotki_events',
+        timestamp_format: null,
+        timezone: null,
+        location_mappings: { myBank: 'kraken' },
+      });
     });
 
     it('should handle null timestamp format', async () => {

@@ -149,7 +149,7 @@ async function uploadFile(): Promise<boolean> {
     run: async ({ cancelled, runTask }): Promise<Result<boolean, TaskError>> => {
       if (source === 'rotki_events' || source === 'rotki_trades') {
         const locations = path
-          ? await checkImportLocations({ ...payload, file: path })
+          ? await checkImportLocations({ file: path, locationMappings: payload.locationMappings, source })
           : await checkImportFileLocations(formData);
         set(locationResolutions, locations);
         if (locations.some(entry => entry.status !== 'resolved'))
