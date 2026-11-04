@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
+import { discardChanges } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
 async function confirmDialog(page: Page): Promise<void> {
@@ -42,6 +43,10 @@ export class CalendarPage {
     const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.locator('[data-testid=cancel]').click();
     await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+  }
+
+  async discardDialog(): Promise<void> {
+    await discardChanges(this.page, this.page.locator('[data-testid=bottom-dialog]'));
   }
 
   async clickToday(): Promise<void> {

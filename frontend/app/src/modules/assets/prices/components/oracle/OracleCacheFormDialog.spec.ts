@@ -1,6 +1,6 @@
 import type { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import OracleCacheFormDialog from '@/modules/assets/prices/components/oracle/OracleCacheFormDialog.vue';
 
 const valueField = {
@@ -35,6 +35,7 @@ interface Models {
   fromAsset?: string;
   toAsset?: string;
   loading?: boolean;
+  onConfirm?: () => Promise<void>;
 }
 
 function createWrapper(models: Models = {}): VueWrapper<InstanceType<typeof OracleCacheFormDialog>> {
@@ -62,18 +63,20 @@ describe('modules/assets/prices/components/oracle/OracleCacheFormDialog', () => 
   });
 
   it('should ask to create the cache on confirm', async () => {
-    const wrapper = createWrapper();
+    const onConfirm = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    const wrapper = createWrapper({ onConfirm });
     await wrapper.find('[data-testid=dialog-confirm]').trigger('click');
 
-    expect(wrapper.emitted('confirm')).toEqual([[]]);
+    expect(onConfirm).toHaveBeenCalledOnce();
   });
 
   it('should close on cancel', async () => {
-    const wrapper = createWrapper();
+    const onConfirm = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    const wrapper = createWrapper({ onConfirm });
     await wrapper.find('[data-testid=dialog-cancel]').trigger('click');
 
     expect(wrapper.emitted('update:open')).toEqual([[false]]);
-    expect(wrapper.emitted('confirm')).toBeUndefined();
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 
   it.each([

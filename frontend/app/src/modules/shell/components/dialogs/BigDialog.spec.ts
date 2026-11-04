@@ -1,7 +1,7 @@
 import { resetOverlayStack, useOverlayStack } from '@rotki/ui-library';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import BigDialog from './BigDialog.vue';
 
@@ -30,6 +30,7 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
             ? false
             : { template: '<div data-testid="bottom-sheet"><slot /></div>' },
           RuiButton: {
+            emits: ['click'],
             inheritAttrs: false,
             template: '<button v-bind="$attrs" @click="$emit(\'click\')"><slot /><slot name="append" /></button>',
           },
@@ -67,21 +68,100 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
     wrapper?.unmount();
   });
 
-  it('should emit confirm when the form is submitted and not loading', async () => {
-    wrapper = createWrapper({ loading: false });
+  it('should hand the save to its owner when the form is submitted and not loading', async () => {
+    const onConfirm = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    wrapper = createWrapper({ loading: false, onConfirm });
 
     await wrapper.find('form').trigger('submit');
 
-    expect(wrapper.emitted('confirm')).toHaveLength(1);
+    expect(onConfirm).toHaveBeenCalledOnce();
   });
 
-  it('should not emit confirm again while a submit is in flight', async () => {
-    wrapper = createWrapper({ loading: true });
+  it('should not hand the save over while the owner reports one in flight', async () => {
+    const onConfirm = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    wrapper = createWrapper({ loading: true, onConfirm });
 
     await wrapper.find('form').trigger('submit');
-    await wrapper.find('form').trigger('submit');
 
-    expect(wrapper.emitted('confirm')).toBeUndefined();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  describe('while the save it handed over is still running', () => {
+    function pendingSave(): { finish: () => void; onConfirm: () => Promise<void> } {
+      let finish = (): void => {};
+      const promise = new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      return { finish: (): void => finish(), onConfirm: vi.fn<() => Promise<void>>(async () => promise) };
+    }
+
+    it('should not hand it over a second time', async () => {
+      const { finish, onConfirm } = pendingSave();
+      wrapper = createWrapper({ onConfirm });
+
+      await wrapper.find('form').trigger('submit');
+      await wrapper.find('form').trigger('submit');
+      finish();
+      await flushPromises();
+
+      expect(onConfirm).toHaveBeenCalledOnce();
+    });
+
+    it('should disable the confirm button until it settles', async () => {
+      const { finish, onConfirm } = pendingSave();
+      wrapper = createWrapper({ onConfirm });
+
+      await wrapper.find('form').trigger('submit');
+      expect(wrapper.find('[data-testid="confirm"]').attributes('disabled')).toBeDefined();
+
+      finish();
+      await flushPromises();
+      expect(wrapper.find('[data-testid="confirm"]').attributes('disabled')).toBeUndefined();
+    });
+
+    it('should start a reopened dialog with the confirm button enabled', async () => {
+      const { finish, onConfirm } = pendingSave();
+      wrapper = createWrapper({ onConfirm });
+
+      await wrapper.find('form').trigger('submit');
+      await wrapper.setProps({ display: false });
+      await wrapper.setProps({ display: true });
+
+      expect(wrapper.find('[data-testid="confirm"]').attributes('disabled')).toBeUndefined();
+      finish();
+      await flushPromises();
+    });
+
+    it('should keep a save started after reopening in flight when the earlier one settles', async () => {
+      const first = pendingSave();
+      const second = pendingSave();
+      wrapper = createWrapper({ onConfirm: first.onConfirm });
+
+      await wrapper.find('form').trigger('submit');
+      await wrapper.setProps({ display: false });
+      await wrapper.setProps({ display: true, onConfirm: second.onConfirm });
+      await wrapper.find('form').trigger('submit');
+      first.finish();
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid="confirm"]').attributes('disabled')).toBeDefined();
+      second.finish();
+      await flushPromises();
+    });
+
+    it('should focus a field the save marked invalid once it settles', async () => {
+      const { finish, onConfirm } = pendingSave();
+      wrapper = createWrapper({ onConfirm }, { default: '<input data-testid="rejected" />' });
+      const rejected = wrapper.find('[data-testid="rejected"]').element;
+
+      await wrapper.find('form').trigger('submit');
+      await flushPromises();
+      rejected.setAttribute('aria-invalid', 'true');
+      finish();
+      await flushPromises();
+
+      expect(document.activeElement).toBe(rejected);
+    });
   });
 
   it('should disable the confirm button while loading', () => {
@@ -205,6 +285,44 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
     wrapper.unmount();
     wrapper = createWrapper({ layout: { autoHeight: true } });
     expect(wrapper.find('.min-h-\\[50vh\\]').exists()).toBe(false);
+  });
+
+  describe('cancel button', () => {
+    it('should cancel straight away when the caller did not ask to be prompted', async () => {
+      wrapper = createWrapper();
+
+      await wrapper.find('[data-testid="cancel"]').trigger('click');
+
+      expect(wrapper.emitted('cancel')).toHaveLength(1);
+      expect(get(useConfirmStore().visible)).toBe(false);
+    });
+
+    it('should raise the discard prompt rather than cancel when the caller asked to be prompted', async () => {
+      wrapper = createWrapper({ promptOnClose: true });
+
+      await wrapper.find('[data-testid="cancel"]').trigger('click');
+
+      expect(wrapper.emitted('cancel')).toBeUndefined();
+      expect(get(useConfirmStore().visible)).toBe(true);
+    });
+
+    it('should cancel once the discard prompt is accepted', async () => {
+      wrapper = createWrapper({ promptOnClose: true });
+
+      await wrapper.find('[data-testid="cancel"]').trigger('click');
+      await useConfirmStore().confirm();
+
+      expect(wrapper.emitted('cancel')).toHaveLength(1);
+    });
+
+    it('should stay open when the discard prompt is dismissed', async () => {
+      wrapper = createWrapper({ promptOnClose: true });
+
+      await wrapper.find('[data-testid="cancel"]').trigger('click');
+      await useConfirmStore().dismiss();
+
+      expect(wrapper.emitted('cancel')).toBeUndefined();
+    });
   });
 
   describe('dismissed from the overlay stack, as the back gesture does', () => {

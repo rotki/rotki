@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_DIALOG, TIMEOUT_MEDIUM } from '../helpers/constants';
+import { discardChanges } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
 /** The bank surfaces: the connections page under API keys, the bank balances page and the dashboard card. */
@@ -40,9 +41,8 @@ export class BanksPage {
     await this.dialog().waitFor({ state: 'detached', timeout: TIMEOUT_DIALOG });
   }
 
-  async cancel(): Promise<void> {
-    await this.dialog().locator('[data-testid=cancel]').click();
-    await this.dialog().waitFor({ state: 'detached', timeout: TIMEOUT_DIALOG });
+  async discard(): Promise<void> {
+    await discardChanges(this.page, this.dialog(), TIMEOUT_DIALOG);
   }
 
   dialog(): Locator {

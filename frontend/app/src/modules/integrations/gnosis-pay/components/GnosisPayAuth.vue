@@ -254,13 +254,12 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
     <ServiceKeyCard
       ref="serviceKeyCard"
       :feature-gate="featureGate"
-      rounded-icon
       :name="name"
       :action="cardAction"
       :key-set="!!key"
       :title="t('external_services.gnosispay.title')"
       :subtitle="t('external_services.gnosispay.description')"
-      :image-src="getPublicServiceImagePath('gnosispay.png')"
+      :image="{ rounded: true, src: getPublicServiceImagePath('gnosispay.png') }"
     >
       <template
         v-if="key && hasUntrackedSafe"

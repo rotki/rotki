@@ -59,6 +59,7 @@ const {
   errors,
   layout,
   loading = false,
+  onConfirm,
   persistent = false,
   promptOnClose = false,
   subtitle = '',
@@ -73,10 +74,17 @@ const {
   errors?: BigDialogErrors;
   persistent?: boolean;
   promptOnClose?: boolean;
+  /**
+   * The save, bound as `@confirm`. A prop rather than an emit so the dialog can wait for it.
+   *
+   * @remarks
+   * Returning the save's promise is what lets the dialog reveal the errors the backend reports
+   * against a field, and keeps the confirm button disabled until the save settles.
+   */
+  onConfirm?: () => unknown;
 }>();
 
 const emit = defineEmits<{
-  confirm: [];
   cancel: [];
 }>();
 
@@ -91,6 +99,9 @@ defineSlots<{
 }>();
 
 const wrapper = useTemplateRef('wrapper');
+const confirming = ref<boolean>(false);
+/** Bumped each time the dialog closes, so a save from an earlier opening cannot touch this one. */
+let opening = 0;
 
 const { show } = useConfirmStore();
 const { t } = useI18n({ useScope: 'global' });
@@ -119,6 +130,13 @@ const cardClassNames = computed<RuiCardClassNames>(() => (get(fixedHeight)
 
 const hasErrors = computed<boolean>(() => get(errorCount) > 0);
 
+const busy = computed<boolean>(() => loading || get(confirming));
+
+watch(() => display, (shown) => {
+  if (!shown)
+    forgetPendingSave();
+});
+
 watch(errorCount, async (newCount, oldCount) => {
   if (errors?.autoFocus && newCount > 0 && oldCount === 0)
     await focusFirstError();
@@ -138,23 +156,53 @@ const displayModel = computed({
 });
 
 /**
- * Hands the save to the owner of the dialog, then reveals whatever it rejected.
+ * Hands the save to the owner of the dialog, waits for it, then reveals whatever it rejected.
  *
  * @remarks
- * The form's own validation reveals its errors while the confirm handler runs, so the first
- * invalid field is in the DOM a tick later. Doing it here rather than behind the error count is
- * what gives every dialog the behaviour, including the ones that report no count at all.
+ * Waiting covers both kinds of rejection: the form's own validation, marked while the save runs,
+ * and the field errors the backend reports once the request comes back. Doing it here rather than
+ * behind the error count is what gives every dialog the behaviour, including the ones that report
+ * no count at all.
  */
 async function confirm(): Promise<void> {
-  if (loading)
+  if (get(busy))
     return;
 
-  emit('confirm');
-  await focusFirstError();
+  const started = opening;
+  set(confirming, true);
+  try {
+    await onConfirm?.();
+  }
+  finally {
+    if (started === opening)
+      set(confirming, false);
+  }
+  if (started === opening)
+    await focusFirstError();
+}
+
+/**
+ * Forgets a save still running when the dialog closes.
+ *
+ * @remarks
+ * The user may cancel while a save is in flight. Without this, reopening the dialog before that
+ * request returns would show a disabled confirm button with nothing on screen to explain it.
+ */
+function forgetPendingSave(): void {
+  opening += 1;
+  set(confirming, false);
 }
 
 function cancel() {
   return emit('cancel');
+}
+
+/** The Cancel button, which asks before discarding edits the same way closing the sheet does. */
+function cancelClicked(): void {
+  if (promptOnClose)
+    promptClose();
+  else
+    cancel();
 }
 
 function promptClose() {
@@ -244,7 +292,7 @@ function promptClose() {
               color="primary"
               variant="outlined"
               data-testid="cancel"
-              @click="cancel()"
+              @click="cancelClicked()"
             >
               {{ secondary }}
             </RuiButton>
@@ -259,7 +307,7 @@ function promptClose() {
                   :primary="primary"
                   :has-errors="hasErrors"
                   :action-disabled="actionDisabled"
-                  :loading="loading"
+                  :loading="busy"
                   :error-count="errorCount"
                 />
               </template>

@@ -51,7 +51,7 @@ test.describe.serial('bank connections', () => {
       await banksPage.save();
       await banksPage.expectSetupError('Qonto rejected the credentials');
       await expect(ctx.sharedPage.locator('[data-testid=message-dialog-description]')).toHaveCount(0);
-      await banksPage.cancel();
+      await banksPage.discard();
     }
     finally {
       setup.rejectCredentials = undefined;
