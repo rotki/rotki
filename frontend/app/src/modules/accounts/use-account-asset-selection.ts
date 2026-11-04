@@ -1,8 +1,6 @@
 import type { DeepReadonly, Ref } from 'vue';
 import { get } from '@vueuse/core';
-import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
-import { useSpamAsset } from '@/modules/assets/use-spam-asset';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { useSelectedAssetActions } from '@/modules/assets/use-selected-asset-actions';
 
 interface UseAccountAssetSelectionReturn {
   handleIgnoreSelected: (ignored: boolean) => Promise<void>;
@@ -15,14 +13,10 @@ interface UseAccountAssetSelectionReturn {
 export function useAccountAssetSelection(
   onRefresh: () => Promise<void>,
 ): UseAccountAssetSelectionReturn {
-  const { t } = useI18n({ useScope: 'global' });
-
   const selectionMode = shallowRef<boolean>(false);
   const selectedAssets = ref<string[]>([]);
 
-  const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
-  const { markAssetsAsSpam } = useSpamAsset();
-  const { showErrorMessage } = useNotifications();
+  const { ignoreSelected, markSelectedAsSpam } = useSelectedAssetActions();
 
   function toggleSelectionMode(): void {
     set(selectionMode, !get(selectionMode));
@@ -30,43 +24,20 @@ export function useAccountAssetSelection(
       set(selectedAssets, []);
   }
 
+  async function finishSelection(): Promise<void> {
+    set(selectedAssets, []);
+    await onRefresh();
+    toggleSelectionMode();
+  }
+
   async function handleIgnoreSelected(ignored: boolean): Promise<void> {
-    const ids = get(selectedAssets);
-
-    if (ids.length === 0) {
-      const choice = ignored ? 1 : 2;
-      showErrorMessage(t('ignore.no_items.title', choice), t('ignore.no_items.description', choice));
-      return;
-    }
-
-    let status;
-    if (ignored)
-      status = await ignoreAsset(ids);
-    else
-      status = await unignoreAsset(ids);
-
-    if (status.success) {
-      set(selectedAssets, []);
-      await onRefresh();
-      toggleSelectionMode();
-    }
+    if (await ignoreSelected(get(selectedAssets), ignored))
+      await finishSelection();
   }
 
   async function handleMarkSelectedAsSpam(): Promise<void> {
-    const ids = get(selectedAssets);
-
-    if (ids.length === 0) {
-      showErrorMessage(t('ignore.spam.no_items.title'), t('ignore.spam.no_items.description'));
-      return;
-    }
-
-    const status = await markAssetsAsSpam(ids);
-
-    if (status.success) {
-      set(selectedAssets, []);
-      await onRefresh();
-      toggleSelectionMode();
-    }
+    if (await markSelectedAsSpam(get(selectedAssets)))
+      await finishSelection();
   }
 
   const computedSelectedAssets = computed<string[] | undefined>({

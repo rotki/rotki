@@ -1,15 +1,14 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
-import type { ActionStatus } from '@/modules/core/common/action';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
+import { useSelectedAssetActions } from '@/modules/assets/use-selected-asset-actions';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
-import { nonEmptyOr, uniqueStrings } from '@/modules/core/common/data/data';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { nonEmptyOr } from '@/modules/core/common/data/data';
 
 interface UseManagedAssetOperationsReturn {
   isAssetWhitelisted: (identifier: string) => boolean;
@@ -29,11 +28,9 @@ export function useManagedAssetOperations(
   ignoredHandling: MaybeRefOrGetter<IgnoredAssetsHandlingType>,
   selected: Ref<string[]>,
 ): UseManagedAssetOperationsReturn {
-  const { t } = useI18n({ useScope: 'global' });
-
-  const { showErrorMessage } = useNotifications();
   const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
-  const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
+  const { unignoreAsset } = useIgnoredAssetOperations();
+  const { ignoreSelected, markSelectedAsSpam } = useSelectedAssetActions();
   const { isAssetIgnored, isAssetWhitelisted, useIsAssetWhitelisted } = useAssetsStore();
   const { unWhitelistAsset, whitelistAsset } = useWhitelistedAssetOperations();
   const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
@@ -100,46 +97,16 @@ export function useManagedAssetOperations(
   };
 
   const massIgnore = async (ignored: boolean): Promise<void> => {
-    const ids = get(selected)
-      .filter((identifier) => {
-        const isItemIgnored = isAssetIgnored(identifier);
-        return ignored ? !isItemIgnored : isItemIgnored;
-      })
-      .filter(uniqueStrings);
-
-    let status: ActionStatus;
-
-    if (ids.length === 0) {
-      const choice = ignored ? 1 : 2;
-      showErrorMessage(t('ignore.no_items.title', choice), t('ignore.no_items.description', choice));
-      return;
-    }
-
-    if (ignored)
-      status = await ignoreAsset(ids);
-    else
-      status = await unignoreAsset(ids);
-
-    if (status.success) {
+    if (await ignoreSelected(get(selected), ignored)) {
       set(selected, []);
       refreshAssetsConditionally();
     }
   };
 
   const massSpam = async (): Promise<void> => {
-    const ids = get(selected).filter(uniqueStrings);
-
-    if (ids.length === 0) {
-      showErrorMessage(t('ignore.spam.no_items.title'), t('ignore.spam.no_items.description'));
-      return;
-    }
-
-    const status: ActionStatus = await markAssetsAsSpam(ids);
-
-    if (status.success) {
+    if (await markSelectedAsSpam(get(selected))) {
       set(selected, []);
-      if (toValue(ignoredHandling) !== 'none')
-        onRefresh();
+      refreshAssetsConditionally();
     }
   };
 
