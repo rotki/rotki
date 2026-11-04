@@ -2,18 +2,22 @@
 import type { ZodType } from 'zod';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { Defaults } from '@/modules/core/common/defaults';
-import { useForm } from '@/modules/core/form/use-form';
 import DateFormatHelp from '@/modules/settings/controls/DateFormatHelp.vue';
-import { SETTING_FIELD, type SettingFieldState } from '@/modules/settings/controls/setting-field-schemas';
+import { SETTING_FIELD } from '@/modules/settings/controls/setting-field-schemas';
+import { useSettingField } from '@/modules/settings/controls/use-setting-field';
 import { dateFormatSchema } from '@/modules/settings/general/date-format-schema';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
+import { useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { error: writeError, flush, model, success: writeSuccess } = useSettingModel('dateDisplayFormat', { debounce: 1500 });
-const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
+const { clearAll, error, success } = useSettingWriteFeedback(
+  { error: writeError, model, success: writeSuccess },
+  () => t('general_settings.validation.date_display_format.success', { dateFormat: get(model) }),
+  { errorPrefix: () => t('general_settings.validation.date_display_format.error') },
+);
 
 const formatHelp = ref<boolean>(false);
 const now = new Date();
@@ -24,50 +28,21 @@ const schema = computed<ZodType>(() => dateFormatSchema({
   invalid: t('general_settings.date_display.validation.invalid'),
 }));
 
-/** Submitting is the persist: the core runs it only when the field parses, as `callIfValid` did. */
-const form = useForm<SettingFieldState, SettingFieldState>({
-  initial: (): SettingFieldState => ({ value: get(model) }),
+const { form, onInput } = useSettingField({
+  fromField: (field: string): string => field,
+  model,
+  onEdit: clearAll,
   schema,
-  submit: async (payload: SettingFieldState): Promise<{ success: boolean }> => {
-    set(model, payload.value);
-    return Promise.resolve({ success: true });
-  },
-  transform: (state): SettingFieldState => ({ value: state.value }),
+  toField: (value: string): string => value,
 });
 
 const dateDisplayFormatExample = computed<string>(() => displayDateFormatter.format(now, form.state.value));
-
-function successMessage(dateFormat: string): string {
-  return t('general_settings.validation.date_display_format.success', {
-    dateFormat,
-  });
-}
-
-async function onInput(value: string): Promise<void> {
-  clearAll();
-  form.state.value = value;
-  await form.submit();
-}
 
 async function reset(): Promise<void> {
   form.state.value = defaultDateDisplayFormat;
   set(model, defaultDateDisplayFormat);
   await flush();
 }
-
-watch(model, (value) => {
-  form.state.value = value;
-});
-
-watch(writeSuccess, (saved) => {
-  if (saved)
-    setSuccess(successMessage(get(model)), true);
-});
-
-watch(writeError, (message) => {
-  if (message)
-    setError(`${t('general_settings.validation.date_display_format.error')}: ${message}`, true);
-});
 </script>
 
 <template>
