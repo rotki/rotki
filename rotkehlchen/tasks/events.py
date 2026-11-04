@@ -54,6 +54,8 @@ from rotkehlchen.locations.constants import (
     LOCATION_BITCOIN_CASH,
     LOCATION_COINBASE,
     LOCATION_COINBASEPRO,
+    LOCATION_KRAK,
+    LOCATION_KRAKEN,
 )
 from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -94,6 +96,8 @@ TIMESTAMP_TOLERANCE: Final = HOUR_IN_SECONDS
 TIMESTAMP_TOLERANCE_MS: Final = ts_sec_to_ms(Timestamp(TIMESTAMP_TOLERANCE))
 LEGACY_EXCHANGE_MATCH_CUTOFF_TS: Final = Timestamp(1514764800)  # 2018-01-01 00:00:00 UTC
 LEGACY_EXCHANGE_MATCH_WINDOW: Final = HOUR_IN_SECONDS * 100
+# Transfers between the Krak and Kraken balances of an account settle instantly
+KRAK_TRANSFER_MATCH_WINDOW: Final = 15 * 60
 OLD_REP_ASSET: Final = Asset('eip155:1/erc20:0x48c80F1f4D53D5951e5D5438B54Cba84f29F32a5')
 REP_UPGRADED_ASSET: Final = Asset('eip155:1/erc20:0xE94327D07Fc17907b4DB788E5aDf2ed424adDff6')
 REP_V2_OLD: Final = Asset('eip155:1/erc20:0x1985365e9f78359a9B6AD760e32412f4a445E862')
@@ -408,13 +412,27 @@ def find_customized_event_duplicate_groups(
     )
 
 
+def is_krak_transfer(asset_movement: AssetMovement) -> bool:
+    """Whether the movement is a Krak transfer. Those move funds between the Krak and Kraken
+    balances of an account, so they are matched only against Kraken events, fiat included."""
+    return (
+        asset_movement.location == LOCATION_KRAK and
+        asset_movement.extra_data is not None and
+        asset_movement.extra_data.get('krak_transfer') is True
+    )
+
+
 def _should_auto_ignore_movement(asset_movement: AssetMovement) -> bool:
     """Check if the given asset movement should be auto ignored.
     Returns True if the asset movement has a fiat asset, or if it is a movement to/from a
     blockchain that we will not have txs for. Otherwise returns False.
     To determine if the chain is supported, first check if it is specified in the extra data.
     If not, check if the event's asset (or any asset in its collection) is from a supported chain.
+    Krak transfers are never auto ignored since their counterpart is a Kraken event.
     """
+    if is_krak_transfer(asset_movement):
+        return False
+
     if asset_movement.location == LOCATION_COINBASEPRO:
         return True
 
@@ -470,7 +488,10 @@ def _get_assets_in_collection(
 
 
 def _get_movement_match_window(asset_movement: AssetMovement, default_match_window: int) -> int:
-    """Get match window for movement, with legacy exchange override."""
+    """Get match window for movement, with legacy exchange and Krak transfer overrides."""
+    if is_krak_transfer(asset_movement):
+        return KRAK_TRANSFER_MATCH_WINDOW
+
     if (
         default_match_window < LEGACY_EXCHANGE_MATCH_WINDOW and
         ts_ms_to_sec(asset_movement.timestamp) < LEGACY_EXCHANGE_MATCH_CUTOFF_TS
@@ -767,7 +788,7 @@ def _process_movement_candidate_set(
                 )
         return
 
-    if _assets_are_only_unsupported_chains(assets_in_collection):
+    if not is_krak_transfer(asset_movement) and _assets_are_only_unsupported_chains(assets_in_collection):  # noqa: E501
         _remove_unresolved_movement(
             movement_id=movement_id,
             unresolved_ambiguous_movements=matching_state.unresolved_ambiguous_movements,
@@ -1283,6 +1304,16 @@ def should_exclude_possible_match(
     - Gas events
     """
     if isinstance(event, AssetMovement) and _should_auto_ignore_movement(asset_movement=event):
+        return True
+
+    if is_krak_transfer(asset_movement) and event.location != LOCATION_KRAKEN:
+        return True
+
+    if (
+        isinstance(event, AssetMovement) and
+        is_krak_transfer(event) and
+        asset_movement.location != LOCATION_KRAKEN
+    ):
         return True
 
     if event.location == asset_movement.location:

@@ -4827,6 +4827,11 @@
       "name": "Custom Import"
     },
     "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
+    "krak": {
+      "line_one": "Export your activity from the Krak app as a CSV file. An export that overlaps an earlier one can be imported too: activities that were already imported are skipped.",
+      "line_two": "Pending activities are skipped, so import a later export once they have settled. Transfers between Krak and Kraken are matched with your Kraken history.",
+      "name": "Krak"
+    },
     "kucoin": {
       "import": "Import {0} from Kucoin",
       "import_types": "trades",

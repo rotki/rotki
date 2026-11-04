@@ -89,6 +89,12 @@ const sources = computed<ImportSource[]>(() => [
     logo: getPublicProtocolImagePath('bitstamp.svg'),
   },
   {
+    form: markRaw(defineAsyncComponent(() => import('@/modules/user-data/KrakImport.vue'))),
+    key: 'krak',
+    label: t('import_data.krak.name'),
+    logo: getPublicProtocolImagePath('krak.svg'),
+  },
+  {
     form: markRaw(defineAsyncComponent(() => import('@/modules/user-data/KucoinImport.vue'))),
     key: 'kucoin',
     label: t('import_data.kucoin.name'),

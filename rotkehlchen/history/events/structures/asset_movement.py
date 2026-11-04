@@ -54,6 +54,8 @@ class AssetMovementExtraData(TypedDict):
     blockchain: NotRequired[str]
     # Used when an asset movement is matched with another asset movement in exchange to exchange transfers.  # noqa: E501
     matched_asset_movement: NotRequired[dict[str, Any]]
+    # Set on Krak transfers, which can only be matched against Kraken events.
+    krak_transfer: NotRequired[bool]
 
 
 AssetMovementSubtype = Literal[
