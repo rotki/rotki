@@ -4,7 +4,6 @@ import re
 import sys
 import time
 import traceback
-from fnmatch import fnmatchcase
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
 from urllib.parse import urlsplit
@@ -567,8 +566,9 @@ class APIServer:
             cors_domain_list: list[str] | None = None,
     ) -> None:
         flask_app = Flask(__name__)
-        if cors_domain_list:
-            CORS(flask_app, origins=cors_origin_patterns(cors_domain_list))
+        self.cors_origins = cors_origin_patterns(cors_domain_list or [])
+        if self.cors_origins:
+            CORS(flask_app, origins=self.cors_origins)
         blueprint = create_blueprint(self._api_prefix)
         setup_urls(
             blueprint=blueprint,
@@ -580,7 +580,6 @@ class APIServer:
         self.rotki_notifier = ws_notifier
         self.flask_app = flask_app
         self.blueprint = blueprint
-        self.cors_domain_list = tuple(cors_domain_list or ())
 
         self.uvicorn_server: uvicorn.Server | None = None
         self.uvicorn_task: Task | None = None
@@ -698,12 +697,12 @@ class APIServer:
         return None
 
     def _is_allowed_origin(self, origin: str) -> bool:
-        """Return whether a request's origin can access this API."""
-        if any(
-                fnmatchcase(candidate.casefold(), pattern.casefold())
-                for pattern in self.cors_domain_list
-                for candidate in (origin, f'{origin}/')
-        ):
+        """Return whether a request's origin can access this API.
+
+        An origin passes when it matches the same `--api-cors` patterns flask-cors
+        uses, or when it names the API's own host and port.
+        """
+        if any(pattern.match(origin) for pattern in self.cors_origins):
             return True
 
         parsed_origin = urlsplit(origin)
