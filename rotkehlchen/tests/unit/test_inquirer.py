@@ -20,6 +20,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.chain.ethereum.modules.kiln.constants import CPT_KILN
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V3
 from rotkehlchen.chain.evm.contracts import find_matching_event_abi
@@ -778,6 +779,21 @@ def test_zero_supply_curve_lp_price(inquirer_defi: Inquirer):
         assert inquirer_defi.find_usd_price(
             asset=Asset('eip155:1/erc20:0xdBE35AAD9f07c631ECD29d72b9D1c226D099729e'),
         ) == ZERO_PRICE
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_kiln_receipt_token_price(database: DBHandler, inquirer_defi: Inquirer) -> None:
+    """Kiln pooled staking receipt tokens (here Ledger Live psETH) are priced at their
+    ETH exchange rate, which only grows from 1 as staking rewards accrue."""
+    pseth_price = inquirer_defi.find_usd_price(asset=get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x5DB5235b5C7e247488784986e58019fFFd98FdA4'),
+        chain_id=ChainID.ETHEREUM,
+        protocol=CPT_KILN,
+    ))
+    assert FVal('1.05') < pseth_price / inquirer_defi.find_usd_price(A_ETH) < FVal('1.5')
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
