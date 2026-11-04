@@ -3,7 +3,7 @@ import { createLocationNode as node } from '@test/utils/location-tree';
 import { mount } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, type VNode } from 'vue';
+import { defineComponent, h, nextTick, type VNode } from 'vue';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
@@ -114,7 +114,7 @@ describe('locationSelector', () => {
 
     it('should use the dense single-line height when no option has a path', () => {
       useSingleLocationTree();
-      expect(itemHeight({ dense: true })).toBe(36);
+      expect(itemHeight({ dense: true })).toBe(44);
     });
 
     it('should make every row tall enough for a path line when one option has a path', () => {
@@ -122,7 +122,23 @@ describe('locationSelector', () => {
     });
 
     it('should make every dense row tall enough for a path line when one option has a path', () => {
-      expect(itemHeight({ dense: true })).toBe(48);
+      expect(itemHeight({ dense: true })).toBe(56);
+    });
+
+    it('should rebuild the menu when a path line appears after it was built, since it takes its row height once', async () => {
+      useSingleLocationTree();
+      const wrapper = mount(LocationSelector, {
+        global: { plugins: [pinia], stubs: { LocationIcon: true, RuiAutoComplete: AutoCompleteStub } },
+        props: { modelValue: '' },
+      });
+      const before = wrapper.findComponent(AutoCompleteStub).vm;
+
+      useLocationTreeStore().setNodes([node('total', null, 'Total'), node('exchanges', 'total', 'Exchanges'), node('kraken', 'exchanges', 'Kraken')]);
+      await nextTick();
+
+      const after = wrapper.findComponent(AutoCompleteStub);
+      expect(after.props('itemHeight')).toBe(64);
+      expect(after.vm).not.toBe(before);
     });
   });
 

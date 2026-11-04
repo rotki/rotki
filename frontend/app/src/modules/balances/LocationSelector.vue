@@ -19,21 +19,22 @@ const { dense, excludes = [], items = [] } = defineProps<{
 
 /**
  * The height of an option when at least one option in the list shows a path line: its fixed 40px
- * content plus the vertical padding of the menu's list button, 12px a side or 4px when dense.
+ * content plus the vertical padding of the menu's list button, 12px a side or 8px when dense (the
+ * small button size).
  *
  * @remarks
  * The menu is a virtual list that places every option at a multiple of this height, so each
  * option has to render exactly this tall, with or without a path line of its own.
  */
 const PATH_ITEM_HEIGHT = 64;
-const DENSE_PATH_ITEM_HEIGHT = 48;
+const DENSE_PATH_ITEM_HEIGHT = 56;
 
 /**
  * The height of an option when no option in the list has a path: its fixed 28px content, a
  * single line, plus the same padding.
  */
 const ITEM_HEIGHT = 52;
-const DENSE_ITEM_HEIGHT = 36;
+const DENSE_ITEM_HEIGHT = 44;
 
 const { getLocationData, tradeLocations } = useLocations();
 const treeStore = useLocationTreeStore();
@@ -74,6 +75,13 @@ const locations = computed<LocationOption[]>(() => locationOptions({
 /** Whether any option shows a path line, which makes every row tall enough to hold one. */
 const hasPaths = computed<boolean>(() => get(locations).some(location => location.parentPath !== ''));
 
+/**
+ * The row height the menu lays its options out at.
+ *
+ * @remarks
+ * The autocomplete reads its item height once, when it is built, so the menu is keyed on this
+ * value: a path line that appears later, as the tree loads or a location is added, rebuilds it.
+ */
 const itemHeight = computed<number>(() => {
   if (get(hasPaths))
     return dense ? DENSE_PATH_ITEM_HEIGHT : PATH_ITEM_HEIGHT;
@@ -100,6 +108,7 @@ watch([locations, model], ([locations, value]) => clearUnoffered(locations, valu
 
 <template>
   <RuiAutoComplete
+    :key="itemHeight"
     v-model="model"
     data-testid="location-input"
     :options="locations"
