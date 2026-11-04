@@ -134,6 +134,18 @@ export const useLocationTreeStore = defineStore('locations/tree', () => {
     set(nodes, value);
   };
 
+  /** Stores a created or changed location, replacing the one with its identifier. */
+  const upsertNode = (node: LocationNode): void => {
+    const current = get(nodes);
+    set(nodes, current.some(item => item.identifier === node.identifier)
+      ? current.map(item => (item.identifier === node.identifier ? node : item))
+      : [...current, node]);
+  };
+
+  const removeNode = (identifier: string): void => {
+    set(nodes, get(nodes).filter(node => node.identifier !== identifier));
+  };
+
   return {
     assignableIdentifiers,
     childrenOf,
@@ -142,9 +154,11 @@ export const useLocationTreeStore = defineStore('locations/tree', () => {
     pathIfNameShared,
     pathLabelOf,
     pathOf,
+    removeNode,
     setNodes,
     sortByTree,
     subtreeOf,
+    upsertNode,
   };
 });
 

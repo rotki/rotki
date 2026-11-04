@@ -1,7 +1,5 @@
 import { fromAsync, type ResultAsync } from 'plainfp/result-async';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { logger } from '@/modules/core/common/logging/logging';
-import { useLocationTree } from '@/modules/locations/use-location-tree';
+import { toRequestError } from '@/modules/core/api/request-result';
 import {
   type LocationCreatePayload,
   type LocationEditPayload,
@@ -10,6 +8,7 @@ import {
   type LocationUsage,
   useLocationTreeApi,
 } from '@/modules/locations/use-location-tree-api';
+import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 
 interface UseLocationManagementReturn {
   createLocation: (payload: LocationCreatePayload) => ResultAsync<LocationNode, string>;
@@ -20,80 +19,74 @@ interface UseLocationManagementReturn {
   deleteLocation: (identifier: string) => ResultAsync<boolean, string>;
   uploadImage: (identifier: string, file: File) => ResultAsync<string, string>;
   removeImage: (identifier: string) => ResultAsync<boolean, string>;
-  /** Runs several changes, such as a save and its image, and reloads the tree once after them. */
-  batch: <T>(changes: () => Promise<T>) => Promise<T>;
+}
+
+/** Runs a request, handing back the backend's message when it fails. */
+async function request<T>(call: () => Promise<T>): ResultAsync<T, string> {
+  return fromAsync(call, cause => toRequestError(cause).message);
 }
 
 /**
- * Changes to custom locations. Every change that succeeds reloads the location tree, so that
- * every view shows the new state; a failure hands back the backend's message.
+ * Changes to custom locations. Every change that succeeds is applied to the location tree store
+ * from the backend's answer, so every view shows the new state without reloading the tree; a
+ * failure hands back the backend's message.
+ *
+ * @remarks
+ * Each change touches one location: a move only changes its parent, and the paths below it follow
+ * from the tree.
  */
 export function useLocationManagement(): UseLocationManagementReturn {
   const api = useLocationTreeApi();
-  const { refreshLocationTree } = useLocationTree();
+  const treeStore = useLocationTreeStore();
 
-  /** How many batches are running; changes inside one leave the reload to the last to end. */
-  let openBatches = 0;
-  let changedInBatch = false;
-
-  async function changing<T>(change: () => Promise<T>): ResultAsync<T, string> {
-    return fromAsync(async () => {
-      const result = await change();
-      if (openBatches > 0)
-        changedInBatch = true;
-      else
-        await refreshLocationTree();
-      return result;
-    }, cause => getErrorMessage(cause));
-  }
-
-  /**
-   * Runs the changes and reloads the tree once after them, if any of them was saved.
-   *
-   * @remarks
-   * Batches that overlap or nest share one reload, run when the last of them ends. The changes
-   * are already saved when it runs, so a failed reload is only logged: the tree catches up with
-   * the next reload.
-   */
-  async function batch<T>(changes: () => Promise<T>): Promise<T> {
-    openBatches += 1;
-    try {
-      return await changes();
-    }
-    finally {
-      openBatches -= 1;
-      if (openBatches === 0 && changedInBatch) {
-        changedInBatch = false;
-        await refreshLocationTree().catch((error: unknown) => {
-          logger.error('Could not reload the location tree', error);
-        });
-      }
-    }
-  }
+  const withImage = (identifier: string, image: string | null): void => {
+    const node = treeStore.getNode(identifier);
+    if (node)
+      treeStore.upsertNode({ ...node, image });
+  };
 
   const createLocation = async (payload: LocationCreatePayload): ResultAsync<LocationNode, string> =>
-    changing(async () => api.addLocation(payload));
+    request(async () => {
+      const created = await api.addLocation(payload);
+      treeStore.upsertNode(created);
+      return created;
+    });
 
   const editLocation = async (identifier: string, payload: LocationEditPayload): ResultAsync<LocationEditResult, string> =>
-    changing(async () => api.editLocation(identifier, { ...payload, dryRun: false }));
+    request(async () => {
+      const result = await api.editLocation(identifier, { ...payload, dryRun: false });
+      treeStore.upsertNode(result.location);
+      return result;
+    });
 
   const previewEdit = async (identifier: string, payload: LocationEditPayload): ResultAsync<LocationEditResult, string> =>
-    fromAsync(async () => api.editLocation(identifier, { ...payload, dryRun: true }), cause => getErrorMessage(cause));
+    request(async () => api.editLocation(identifier, { ...payload, dryRun: true }));
 
   const fetchUsage = async (identifier: string): ResultAsync<LocationUsage, string> =>
-    fromAsync(async () => api.fetchLocationUsage(identifier), cause => getErrorMessage(cause));
+    request(async () => api.fetchLocationUsage(identifier));
 
   const deleteLocation = async (identifier: string): ResultAsync<boolean, string> =>
-    changing(async () => api.deleteLocation(identifier));
+    request(async () => {
+      const deleted = await api.deleteLocation(identifier);
+      treeStore.removeNode(identifier);
+      return deleted;
+    });
 
   const uploadImage = async (identifier: string, file: File): ResultAsync<string, string> =>
-    changing(async () => api.uploadLocationImage(identifier, file));
+    request(async () => {
+      const image = await api.uploadLocationImage(identifier, file);
+      withImage(identifier, image);
+      return image;
+    });
 
   const removeImage = async (identifier: string): ResultAsync<boolean, string> =>
-    changing(async () => api.deleteLocationImage(identifier));
+    request(async () => {
+      const removed = await api.deleteLocationImage(identifier);
+      withImage(identifier, null);
+      return removed;
+    });
 
   return {
-    batch,
     createLocation,
     deleteLocation,
     editLocation,

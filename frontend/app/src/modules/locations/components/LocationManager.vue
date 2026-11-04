@@ -67,10 +67,6 @@ const empty = computed<{ label: string }>(() => {
   return { label: term === '' ? t('location_manager.empty.label') : t('location_manager.empty.search_label', { search: term }) };
 });
 
-function reportFailure(message: string): void {
-  set(actionFailure, message);
-}
-
 /** Opens the branch holding a location, marks its row and scrolls it into view. */
 async function bringIntoView(identifier: string): Promise<void> {
   reveal(identifier);
@@ -89,12 +85,12 @@ function addBelow(parentIdentifier: string, name?: string): void {
 async function setArchived(location: LocationNode, archived: boolean): Promise<void> {
   set(actionFailure, undefined);
   const outcome = await editLocation(location.identifier, { isActive: !archived });
-  if (!outcome.ok)
-    return reportFailure(outcome.error);
-  const kept = new Set(get(archivedHere));
+  if (!outcome.ok) {
+    set(actionFailure, outcome.error);
+    return;
+  }
   if (archived)
-    kept.add(location.identifier);
-  set(archivedHere, kept);
+    set(archivedHere, new Set(get(archivedHere)).add(location.identifier));
   await bringIntoView(location.identifier);
 }
 
@@ -102,8 +98,10 @@ async function setArchived(location: LocationNode, archived: boolean): Promise<v
 async function requestDeletion(location: LocationNode): Promise<void> {
   set(actionFailure, undefined);
   const usage = await fetchUsage(location.identifier);
-  if (!usage.ok)
-    return reportFailure(usage.error);
+  if (!usage.ok) {
+    set(actionFailure, usage.error);
+    return;
+  }
   if (!usage.value.deletable) {
     set(blockedDeletion, { location, usage: usage.value.usage });
     return;
@@ -115,7 +113,7 @@ async function requestDeletion(location: LocationNode): Promise<void> {
   }, async () => {
     const outcome = await deleteLocation(location.identifier);
     if (!outcome.ok)
-      reportFailure(outcome.error);
+      set(actionFailure, outcome.error);
   });
 }
 
