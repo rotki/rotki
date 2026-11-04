@@ -1293,7 +1293,7 @@ describe('forms/HistoryEventEntryForm.vue, a bitcoin event', () => {
         identifier: 'bitcoin',
         name: 'Bitcoin',
       }, {
-        identifier: 'bitcoin_cash',
+        identifier: 'bitcoin cash',
         name: 'Bitcoin Cash',
       }]),
     }));
@@ -1554,7 +1554,7 @@ describe('forms/HistoryEventEntryForm.vue, a bitcoin event', () => {
             ...group,
             asset: 'BCH',
             groupIdentifier: `bch_${group.txRef}`,
-            location: 'bitcoin_cash',
+            location: 'bitcoin cash',
           },
           nextSequenceId: '1',
           type: 'edit',
@@ -1569,7 +1569,7 @@ describe('forms/HistoryEventEntryForm.vue, a bitcoin event', () => {
     expect(await wrapper.vm.save()).toBe(true);
     expect(editHistoryEventMock).toHaveBeenCalledWith(expect.objectContaining({
       asset: 'BCH',
-      location: 'bitcoin_cash',
+      location: 'bitcoin cash',
     }));
   });
 

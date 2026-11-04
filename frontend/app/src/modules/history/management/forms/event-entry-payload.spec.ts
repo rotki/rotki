@@ -195,7 +195,7 @@ describe('bitcoin events', () => {
 
   it('should derive the asset from the location', () => {
     expect(toEventEntryPayload(validState(), noGroupIdentifier).asset).toBe('BTC');
-    expect(toEventEntryPayload({ ...validState(), location: 'bitcoin_cash' }, noGroupIdentifier).asset).toBe('BCH');
+    expect(toEventEntryPayload({ ...validState(), location: 'bitcoin cash' }, noGroupIdentifier).asset).toBe('BCH');
   });
 
   it('should send a blank counterparty as null, as every chain does', () => {

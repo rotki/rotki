@@ -10,7 +10,7 @@ describe('chainFamilyAt', () => {
     { chain: ChainFamily.EVM, location: 'optimism' },
     { chain: ChainFamily.SOLANA, location: SOLANA_CHAIN },
     { chain: ChainFamily.BITCOIN, location: 'bitcoin' },
-    { chain: ChainFamily.BITCOIN, location: 'bitcoin_cash' },
+    { chain: ChainFamily.BITCOIN, location: 'bitcoin cash' },
     { chain: undefined, location: 'kraken' },
     { chain: undefined, location: '' },
   ])('should put "$location" on the $chain chain', ({ chain, location }) => {

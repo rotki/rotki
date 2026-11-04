@@ -12,7 +12,7 @@ export type ChainFamily = (typeof ChainFamily)[keyof typeof ChainFamily];
 /** The chains a swap can be recorded on: a bitcoin transaction is never a swap. */
 export type SwapChainFamily = Exclude<ChainFamily, typeof ChainFamily.BITCOIN>;
 
-export const BITCOIN_LOCATIONS = ['bitcoin', 'bitcoin_cash'] as const;
+export const BITCOIN_LOCATIONS = ['bitcoin', 'bitcoin cash'] as const;
 
 /**
  * The chain a location is on, if it is a chain at all: Solana, a bitcoin chain, or one of the EVM
