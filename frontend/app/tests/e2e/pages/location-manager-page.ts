@@ -88,6 +88,18 @@ export class LocationManagerPage {
     await selectLocationOption(this.page, this.formDialog().getByTestId('location-form-parent'), name, identifier);
   }
 
+  /** Picks an image for the open location form and waits for its preview. */
+  async chooseImage(filePath: string): Promise<void> {
+    await this.formDialog().locator('[data-testid=location-image-upload] input[type=file]').setInputFiles(filePath);
+    await expect(this.formDialog().getByTestId('location-image-preview')).toBeVisible();
+  }
+
+  /** Removes the image of the open location form and waits for its preview to go. */
+  async removeImage(): Promise<void> {
+    await this.formDialog().getByTestId('location-image-remove').click();
+    await expect(this.formDialog().getByTestId('location-image-preview')).toHaveCount(0);
+  }
+
   async saveForm(): Promise<void> {
     await this.formDialog().getByTestId('confirm').click();
   }
