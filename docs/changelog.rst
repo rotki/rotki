@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`-` Lido CSM 0x02 node operators can now be tracked. Pick the staking module when adding a node operator, and its bond, required bond, claimable bond, validators and pending rewards are shown next to those of the original CSM.
 * :feature:`-` Blockchain addresses can now be added while balances are refreshing.
+* :feature:`13552` Accounts > Exchanges now shows the value held by each connected exchange account separately. Balances > Exchanges continues to show the combined balances for each exchange.
 * :feature:`13355` rotki now supports Kiln pooled staking (used by Ledger Live, Coinbase Wallet, Crypto.com DeFi Wallet and others): stakes, exit requests and claims are decoded, and staked positions and pending exit tickets appear in balances. Kiln DeFi vault deposits and withdrawals are also decoded on Ethereum, BNB Chain, Arbitrum, Polygon, Optimism and Base.
 * :bug:`13421` Taproot xpubs now keep finding the new addresses your wallet starts using. Before, only the addresses in use when the xpub was added were found. A Taproot xpub with none of its addresses saved needs to be removed and added again.
 * :feature:`13542` Activity exported from the Krak app can now be imported as a CSV file, including card payments, cashback, earn rewards, converts, deposits, withdrawals and transfers. Transfers between Krak and Kraken are matched with your Kraken history.
