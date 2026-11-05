@@ -7,18 +7,11 @@ import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-
 import { useSetting } from '@/modules/settings/use-setting';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
-const emit = defineEmits<{
-  'update:selection': [modules: Module[]];
-}>();
+const enabledModules = defineModel<Module[]>('selection', { required: true });
 
-const enabledModules = ref<Module[]>([]);
 const activeModules = useSetting('activeModules');
 const { queriedAddresses } = storeToRefs(useSessionMetadataStore());
 const { fetchQueriedAddresses } = useQueriedAddressOperations();
-
-function updateSelection(modules: Module[]) {
-  emit('update:selection', modules);
-}
 
 function hasAddresses(module: Module) {
   const index = transformCase(module, true);
@@ -59,11 +52,12 @@ const loading = isAccountOperationRunning();
       variant="outlined"
       color="primary"
       :disabled="loading"
-      @change="updateSelection($event)"
     >
       <RuiButton
         v-for="module in visibleModules"
         :key="module.identifier"
+        data-testid="module-activator-module"
+        :data-module="module.identifier"
         icon
         type="button"
         :disabled="loading"
