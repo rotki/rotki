@@ -22,6 +22,18 @@ vi.mock('@/modules/settings/use-setting', () => ({
   useSetting: (): Ref<boolean> => showSummary,
 }));
 
+/** The ids the dock told the orchestrator to forget; forgetting also drops the activity, as the orchestrator does. */
+const forgotten: ActivityId[] = [];
+
+vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
+  useTaskOrchestrator: (): { forget: (id: ActivityId) => void } => ({
+    forget: (id: ActivityId): void => {
+      forgotten.push(id);
+      set(activities, get(activities).filter(activity => activity.id !== id));
+    },
+  }),
+}));
+
 vi.mock('@/modules/task-center/use-task-center', () => ({
   useTaskCenter: (): { isActive: ComputedRef<boolean>; model: ComputedRef<ActivityModel> } => {
     const model = computed<ActivityModel>(() => assembleActivityModel(get(activities), (key: string): string => key));
@@ -80,6 +92,7 @@ describe('useTaskDock', () => {
   beforeEach(() => {
     set(activities, []);
     set(showSummary, false);
+    forgotten.length = 0;
   });
 
   afterEach(() => {
@@ -561,6 +574,7 @@ describe('useTaskDock', () => {
       await transition([receipts(3, 'eth', 500), receipts(4, 'optimism', 20), receipts(9, 'eth', 512)]);
 
       expect(get(failed).map(root => root.id)).toEqual([receipts(4, 'optimism', 20).id, receipts(9, 'eth', 512).id]);
+      expect(forgotten).toEqual([receipts(3, 'eth', 500).id]);
     });
 
     it('should keep the later of two failures of one task that arrive together, as a held one and a live one can', async () => {
