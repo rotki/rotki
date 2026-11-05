@@ -1528,9 +1528,13 @@ class EvmTransactions(ABC):  # noqa: B024
                             # since we don't track the token, check if the logs after this
                             # log event are transfer log events only.
                             for following_log_entry in raw_receipt_data['logs'][idx:]:
-                                if hexstring_to_bytes(following_log_entry['topics'][0]) == ERC20_OR_ERC721_TRANSFER:  # noqa: E501
-                                    detected_transfers += 1
+                                if (
+                                    len(following_log_entry['topics']) == 0 or
+                                    hexstring_to_bytes(following_log_entry['topics'][0]) != ERC20_OR_ERC721_TRANSFER  # noqa: E501
+                                ):
+                                    continue
 
+                                detected_transfers += 1
                                 if detected_transfers > MULTISEND_SPAM_THRESHOLD:
                                     break  # break this inner loop. Spam detected
                             else:  # if we didn't break we mark it as not spammed

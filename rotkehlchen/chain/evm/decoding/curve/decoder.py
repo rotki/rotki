@@ -420,6 +420,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             withdrawn_assets = [event.asset for event in withdrawal_events] + [
                 withdrawn_asset
                 for i_log in all_logs[all_logs.index(tx_log) + 1:] if (
+                    (len(i_log.topics) > 0) and
                     (i_log.topics[0] == ERC20_OR_ERC721_TRANSFER) and
                     (bytes_to_address(i_log.topics[1]) == return_event.address) and
                     self.base.is_tracked(bytes_to_address(i_log.topics[2])) and
@@ -497,11 +498,14 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             # AddLiquidityInDepositAndStake for the terminal metapool.
             for i_log in all_logs[all_logs.index(tx_log) + 1:]:
                 if (
-                    i_log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE and
-                    i_log.address in self.pools
+                    len(i_log.topics) == 0 or
+                    i_log.topics[0] != ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE or
+                    i_log.address not in self.pools
                 ):
-                    display_pool_address = i_log.address
-                    break
+                    continue
+
+                display_pool_address = i_log.address
+                break
 
         deposit_events: list[EvmEvent] = []
         receive_event: EvmEvent | None = None
@@ -542,6 +546,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 is_deposit_and_stake = (
                     transaction.to_address == DEPOSIT_AND_STAKE_ZAP and
                     any(
+                        len(i_log.topics) > 0 and
                         i_log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE
                         for i_log in all_logs
                     )
@@ -611,6 +616,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                         event.location_label == transaction.from_address and
                         event.asset.is_evm_token() and
                         any(
+                            len(i_log.topics) > 0 and
                             i_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
                             i_log.address == event.asset.resolve_to_evm_token().evm_address and
                             bytes_to_address(i_log.topics[1]) == event.address and
@@ -632,13 +638,16 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                     # example: https://gnosisscan.io/tx/0xcbeaaee59405d5f7fd456dc510f1b841cc1329cd9624255ce64c894ac6643bd7
                     for i_log in all_logs:
                         if (
-                            i_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                            bytes_to_address(i_log.topics[1]) == ZERO_ADDRESS and
-                            bytes_to_address(i_log.topics[2]) == user_or_contract_address and
-                            i_log.log_index < tx_log.log_index
+                            len(i_log.topics) == 0 or
+                            i_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
+                            bytes_to_address(i_log.topics[1]) != ZERO_ADDRESS or
+                            bytes_to_address(i_log.topics[2]) != user_or_contract_address or
+                            i_log.log_index >= tx_log.log_index
                         ):
-                            event.extra_data = {'address_pool_tokens_received': i_log.address}
-                            break
+                            continue
+
+                        event.extra_data = {'address_pool_tokens_received': i_log.address}
+                        break
             elif (
                 event.event_type == HistoryEventType.DEPOSIT and
                 event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED and
@@ -657,7 +666,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             lp_and_gauge_token_addresses = None
             for x_log in all_logs:
                 # first search for the pool address, because it may come after the receive event
-                if x_log.topics[0] in ADD_LIQUIDITY_EVENTS:
+                if len(x_log.topics) > 0 and x_log.topics[0] in ADD_LIQUIDITY_EVENTS:
                     lp_and_gauge_token_addresses = get_lp_and_gauge_token_addresses(
                         pool_address=x_log.address,
                         chain_id=self.node_inquirer.chain_id,
@@ -666,6 +675,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             deposit_addresses = {event.address for event in deposit_events} | {ZERO_ADDRESS}
             for i_log in all_logs[all_logs.index(tx_log) + 1:]:
                 if (  # find the first log after deposit, where user receives the token from a deposit address  # noqa: E501
+                    (len(i_log.topics) > 0) and
                     (i_log.topics[0] == ERC20_OR_ERC721_TRANSFER) and
                     (bytes_to_address(i_log.topics[1]) in deposit_addresses) and
                     self.base.is_tracked(bytes_to_address(i_log.topics[2])) and
@@ -906,12 +916,15 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             # the deposit.
             for tx_log in context.all_logs:
                 if (
-                    tx_log.log_index > context.tx_log.log_index and
-                    tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                    bytes_to_address(tx_log.topics[1]) == provider
+                    len(tx_log.topics) == 0 or
+                    tx_log.log_index <= context.tx_log.log_index or
+                    tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
+                    bytes_to_address(tx_log.topics[1]) != provider
                 ):
-                    gauge_tokens = int.from_bytes(tx_log.data[0:32])
-                    break
+                    continue
+
+                gauge_tokens = int.from_bytes(tx_log.data[0:32])
+                break
             else:
                 log.error(f'Could not find transfer of gauge tokens in {context.transaction}. Skipping...')  # noqa: E501
                 continue
