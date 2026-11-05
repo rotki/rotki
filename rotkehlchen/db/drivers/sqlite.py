@@ -112,7 +112,11 @@ class DBCursor:
             try:
                 with self.connection.statement_lock:
                     if __debug__:
-                        logger.trace('Prefetching up to %s rows for cursor %s', CURSOR_PREFETCH_ROWS, id(self))
+                        logger.trace(
+                            'Prefetching up to %s rows for cursor %s',
+                            CURSOR_PREFETCH_ROWS,
+                            id(self),
+                        )
                     self._prefetched_rows.extend(self._cursor.fetchmany(CURSOR_PREFETCH_ROWS))
             except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
                 _maybe_raise_cancelled(e)
@@ -142,7 +146,9 @@ class DBCursor:
 
     def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
         if __debug__:
-            logger.trace('EXECUTE %s with bindings %s for cursor %s', statement, bindings, id(self))
+            logger.trace(
+                'EXECUTE %s with bindings %s for cursor %s', statement, bindings, id(self),
+            )
         self._prefetched_rows.clear()  # a new statement discards the previous result set
         try:
             with self.connection.statement_lock:
