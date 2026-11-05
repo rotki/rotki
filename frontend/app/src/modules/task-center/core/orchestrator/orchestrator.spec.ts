@@ -1491,4 +1491,54 @@ describe('createTaskOrchestrator', () => {
       expect(byId(orchestrator, queuedId)?.waiting).toBeUndefined();
     });
   });
+
+  describe('forget', () => {
+    it('should drop a settled activity with its detail and completion', async () => {
+      const drop = vi.fn<(id: ActivityId) => void>();
+      const orchestrator = createTaskOrchestrator({ detail: { clear: vi.fn<() => void>(), drop } });
+      const work = controllable('settled');
+      const id = orchestrator.submit(work.spec);
+      work.settle(ok(undefined));
+      await flush();
+
+      orchestrator.forget(id);
+
+      expect(byId(orchestrator, id)).toBeUndefined();
+      expect(orchestrator.statusOf(Kind.OTHER, 'settled').everCompleted).toBe(false);
+      expect(drop).toHaveBeenCalledWith(id);
+    });
+
+    it('should leave a live activity alone', () => {
+      const orchestrator = createTaskOrchestrator();
+      const id = orchestrator.submit(controllable('live').spec);
+
+      orchestrator.forget(id);
+
+      expect(byId(orchestrator, id)?.status).toBe(Status.RUNNING);
+    });
+
+    it.each([
+      ['completes', ok(undefined)],
+      ['is cancelled by the backend', err(BackendCancelled({ message: 'stopped' }))],
+    ] as const)('should forget a forgetUnlessFailed activity that %s', async (_case, outcome) => {
+      const orchestrator = createTaskOrchestrator();
+      const work = controllable('mirror', { forgetUnlessFailed: true });
+      const id = orchestrator.submit(work.spec);
+      work.settle(outcome);
+      await flush();
+
+      expect(byId(orchestrator, id)).toBeUndefined();
+      expect(orchestrator.statusOf(Kind.OTHER, 'mirror').everCompleted).toBe(false);
+    });
+
+    it('should keep a forgetUnlessFailed activity that fails, for the user to see', async () => {
+      const orchestrator = createTaskOrchestrator();
+      const work = controllable('mirror', { forgetUnlessFailed: true });
+      const id = orchestrator.submit(work.spec);
+      work.settle(err(TaskFailed({ message: 'boom' })));
+      await flush();
+
+      expect(byId(orchestrator, id)?.status).toBe(Status.FAILED);
+    });
+  });
 });
