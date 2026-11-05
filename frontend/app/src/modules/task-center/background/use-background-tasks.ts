@@ -62,14 +62,21 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
     if (mirrors.has(task.id))
       return;
 
-    let finish: (outcome: MirrorOutcome) => void = () => {};
-    const outcome = new Promise<MirrorOutcome>((resolve) => {
-      finish = resolve;
+    let resolve: (outcome: MirrorOutcome) => void = () => {};
+    const outcome = new Promise<MirrorOutcome>((resolver) => {
+      resolve = resolver;
     });
+    const entry: Mirror = {
+      finish: (result) => {
+        forget(task.id, entry);
+        resolve(result);
+      },
+      since: Date.now(),
+    };
     if (settled === undefined)
-      mirrors.set(task.id, { finish, since: Date.now() });
+      mirrors.set(task.id, entry);
     else
-      finish(settled);
+      resolve(settled);
 
     startPromise((async (): Promise<void> => {
       await submitTask({
@@ -82,8 +89,18 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
         subtitle: backgroundTaskLabel(task, getChainName),
         title: t(backgroundTaskTitle(task)),
       });
-      mirrors.delete(task.id);
+      forget(task.id, entry);
     })());
+  }
+
+  /**
+   * Drops a settled mirror at once, so a failure that arrives right after a resync settled its row
+   * starts a failed row instead of settling the already settled one. Only drops this entry, never a
+   * later mirror of the same task.
+   */
+  function forget(id: number, entry: Mirror): void {
+    if (mirrors.get(id) === entry)
+      mirrors.delete(id);
   }
 
   function failureOf(error: string): MirrorOutcome {
