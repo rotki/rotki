@@ -193,7 +193,6 @@ onMounted(async () => {
         :loading="isLoading"
         :rows="collection.data"
         :hide-pagination="singlePage"
-        disable-floating-header
         :mobile-breakpoint="0"
         outlined
         row-attr="localId"

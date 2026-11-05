@@ -133,6 +133,14 @@ const apiKeyModel = createRefWithAsterisk(toRef(form.state, 'apiKey'), editKeys)
 const apiSecretModel = createRefWithAsterisk(apiSecret, editKeys);
 const sensitiveInputComponent = createSensitiveInputComponent(editKeys);
 
+/** The passphrase is optional in the form state, while its input always holds text. */
+const passphrase = computed<string>({
+  get: () => form.state.passphrase ?? '',
+  set: (value: string): void => {
+    form.state.passphrase = value;
+  },
+});
+
 /**
  * The connection's name, which an edit writes to a second field so that the name it is currently
  * stored under stays readable while the new one is being typed.
@@ -427,7 +435,7 @@ defineExpose({
 
     <ExchangeKeysFormStructure :location="modelValue.location">
       <template #apiKey="{ label, hint, className }">
-        <Component
+        <component
           :is="sensitiveInputComponent"
           v-model.trim="apiKeyModel"
           :text-color="editMode && !editKeys && form.errors('apiKey').length === 0 ? 'success' : undefined"
@@ -443,7 +451,7 @@ defineExpose({
       </template>
 
       <template #apiSecret="{ label, hint, className }">
-        <Component
+        <component
           :is="sensitiveInputComponent"
           v-if="requiresApiSecret"
           v-model.trim="apiSecretModel"
@@ -460,10 +468,10 @@ defineExpose({
       </template>
 
       <template #passphrase="{ label, hint, className }">
-        <Component
+        <component
           :is="sensitiveInputComponent"
           v-if="requiresPassphrase"
-          v-model.trim="form.state.passphrase"
+          v-model.trim="passphrase"
           :disabled="editMode && !editKeys"
           color="primary"
           :error-messages="form.errors('passphrase')"
