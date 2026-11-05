@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.data_import.importers.bittrex import BittrexImporter
+from rotkehlchen.data_import.importers.kucoin import KucoinImporter
 from rotkehlchen.data_import.importers.rotki_events import RotkiGenericEventsImporter
 from rotkehlchen.data_import.importers.rotki_trades import RotkiGenericTradesImporter
 from rotkehlchen.data_import.utils import BaseExchangeImporter, detect_duplicate_event
@@ -98,6 +100,48 @@ def test_rotki_generic_events_unknown_asset(database, tmp_path) -> None:
     )
 
     importer = RotkiGenericEventsImporter(db=database)
+    success, msg = importer.import_csv(filepath=filepath)
+    assert success is True
+    assert msg == ''
+    assert importer.total_entries == 2
+    assert importer.imported_entries == 1
+    error_msgs = [m for m in importer.import_msgs if m.get('is_error')]
+    assert len(error_msgs) == 1
+    assert 'ZZZFAKE' in error_msgs[0]['msg']
+    assert 'Unknown asset' in error_msgs[0]['msg']
+
+
+def test_kucoin_unknown_asset(database, tmp_path) -> None:
+    """Same regression for the kucoin importer."""
+    filepath = tmp_path / 'kucoin_order_history.csv'
+    filepath.write_text(
+        'tradeCreatedAt,symbol,side,price,size,funds,fee,feeCurrency\n'
+        '2022-04-28 12:36:00,ZZZFAKE-USDT,sell,0.1025,36.4479,3.7359,0.0037,USDT\n'
+        '2022-04-28 15:46:07,XRP-USDT,buy,0.64924,432.5918,280.8559,0.2808,USDT\n',
+    )
+
+    importer = KucoinImporter(db=database)
+    success, msg = importer.import_csv(filepath=filepath)
+    assert success is True
+    assert msg == ''
+    assert importer.total_entries == 2
+    assert importer.imported_entries == 1
+    error_msgs = [m for m in importer.import_msgs if m.get('is_error')]
+    assert len(error_msgs) == 1
+    assert 'ZZZFAKE' in error_msgs[0]['msg']
+    assert 'Unknown asset' in error_msgs[0]['msg']
+
+
+def test_bittrex_unknown_asset(database, tmp_path) -> None:
+    """Same regression for the bittrex importer."""
+    filepath = tmp_path / 'bittrex_tx_history.csv'
+    filepath.write_text(
+        'Date,Currency,Type,Address,Memo/Tag,TxId,Amount\n'
+        '2023-03-07 07:51:43.043,ZZZFAKE,DEPOSIT,"","","0x01",+100\n'
+        '2023-03-08 07:51:43.043,ETH,DEPOSIT,"","","0x02",+0.5\n',
+    )
+
+    importer = BittrexImporter(db=database)
     success, msg = importer.import_csv(filepath=filepath)
     assert success is True
     assert msg == ''
