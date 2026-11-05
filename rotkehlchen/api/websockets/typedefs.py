@@ -61,7 +61,9 @@ class BackgroundTaskKind(StrEnum):
     EVM_RECEIPTS = auto()
     EVM_TRANSACTIONS = auto()
     EXCHANGE_HISTORY = auto()
+    GNOSIS_PAY_EVENTS = auto()
     HISTORICAL_BALANCES = auto()
+    MONERIUM_ORDERS = auto()
     OTHER = auto()
     SNAPSHOT_BALANCES = auto()
     TRANSACTION_DECODING = auto()
@@ -162,7 +164,6 @@ class UserMessageOperation(StrEnum):
     migration that failed would collapse together, though they are different reports to
     file. An enum for the same reason as UserMessageRecord.
     """
-    BACKGROUND_TASK = auto()
     DATA_MIGRATION = auto()
     DECODER_INITIALIZATION = auto()
     TRANSACTION_DECODING = auto()
@@ -245,11 +246,13 @@ class Delivery:
 
     `key_fields` are the data fields that tell two STATE or REPORT messages of one type
     apart, and none means one entry for the whole type. `whole_payload` keys on every
-    field instead, so only exact repeats collapse.
+    field instead, so only exact repeats collapse. `key_ignored_subfields` are left out of
+    a key field that holds a dict, for values that change between repeats of one problem.
     """
     policy: DeliveryPolicy
     key_fields: tuple[str, ...] = ()
     whole_payload: bool = False
+    key_ignored_subfields: tuple[str, ...] = ()
 
 
 LIVE: Final = Delivery(DeliveryPolicy.LIVE)
@@ -279,8 +282,14 @@ def delivery_of(message_type: WSMessageType, data: dict[str, Any] | list[Any]) -
         case WSMessageType.BACKGROUND_TASK_STATUS:  # an absent client must still learn of it
             if not isinstance(data, dict) or 'error' not in data:
                 return LIVE
-            # the subject too, since connections of different locations can share a task name
-            return Delivery(DeliveryPolicy.REPORT, key_fields=('name', 'subject'))
+            # the name since tasks of one kind can share a subject, and the subject since
+            # connections of different locations can share a name. The count moves with the
+            # pending work, while repeated failures of a chain are still one problem.
+            return Delivery(
+                policy=DeliveryPolicy.REPORT,
+                key_fields=('name', 'subject'),
+                key_ignored_subfields=('count',),
+            )
         case WSMessageType.PROGRESS_UPDATES:  # a CSV import reports its outcome as its last frame
             is_import_result = (
                 isinstance(data, dict) and

@@ -871,7 +871,7 @@ Sent when a price oracle is set aside for the oracle penalty duration. Price que
 Background task status
 ======================
 
-Sent when a task of the background task manager starts or ends. Tasks started by an API request are not reported. Upkeep tasks, which have the kind ``other``, are only reported if they fail with an ``error``. The message is only sent to clients that are connected at that moment, so a client that reconnects should read the ``running_tasks`` of the periodic data endpoint to learn what is currently running. The exception is a failure with an ``error``, which is held for the next client, with repeats of a task name and subject held once with a count.
+Sent when a task of the background task manager starts or ends. Tasks started by an API request are not reported. Upkeep tasks, which have the kind ``other``, are only reported if they fail with an ``error``. The message is only sent to clients that are connected at that moment, so a client that reconnects should read the ``running_tasks`` of the periodic data endpoint to learn what is currently running. The exception is a failure with an ``error``, which is held for the next client, with repeats of a task name and subject held once with a count, whatever the ``count`` in their subject.
 
 ::
 
@@ -890,7 +890,7 @@ Sent when a task of the background task manager starts or ends. Tasks started by
 
 
 - ``id``: Identifies the task, since two tasks can share a name and start time. Restarts when the backend does and wraps around at 2**32.
-- ``kind``: What the task works on. One of ``calendar_sync``, ``data_updates``, ``db_upload``, ``eth_staking``, ``evm_accounts_detection``, ``evm_receipts``, ``evm_transactions``, ``exchange_history``, ``historical_balances``, ``snapshot_balances``, ``transaction_decoding``, ``xpub_derivation`` or ``other``.
+- ``kind``: What the task works on. One of ``calendar_sync``, ``data_updates``, ``db_upload``, ``eth_staking``, ``evm_accounts_detection``, ``evm_receipts``, ``evm_transactions``, ``exchange_history``, ``gnosis_pay_events``, ``historical_balances``, ``monerium_orders``, ``snapshot_balances``, ``transaction_decoding``, ``xpub_derivation`` or ``other``.
 - ``name``: The name of the task, in English and only meant for logs and tasks of kind ``other``
 - ``started_at``: Unix timestamp at which the task was spawned
 - ``status``: One of ``started``, ``finished``, ``failed`` or ``cancelled``

@@ -63,7 +63,7 @@ class TaskSupervisor:
         task.subject = subject if subject is not None else {}
         task.add_done_callback(self._handle_finished_task)
         with self.lock:
-            self._last_task_id = (self._last_task_id + 1) % TASK_ID_MODULUS
+            self._last_task_id = self._last_task_id % TASK_ID_MODULUS + 1  # 0 means not registered
             task.supervisor_id = self._last_task_id
             self.tasks.append(task)
             if self.stop_reason is not None:
@@ -169,11 +169,13 @@ class TaskSupervisor:
         if self.stop_reason is not None:
             return
 
-        data = self._task_info(task) | {'status': status}
-        if status == 'failed' and task.exception_is_error and task.exception is not None:
-            data['error'] = str(task.exception) or type(task.exception).__name__
-        elif task.kind == BackgroundTaskKind.OTHER:
+        has_error = status == 'failed' and task.exception_is_error and task.exception is not None
+        if task.kind == BackgroundTaskKind.OTHER and not has_error:
             return
+
+        data = self._task_info(task) | {'status': status}
+        if has_error:
+            data['error'] = str(task.exception) or type(task.exception).__name__
 
         self.msg_aggregator.add_message(
             message_type=WSMessageType.BACKGROUND_TASK_STATUS,

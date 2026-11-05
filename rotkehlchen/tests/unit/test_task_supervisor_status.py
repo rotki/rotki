@@ -128,7 +128,8 @@ def test_ids_stay_unique_across_logins_and_wrap() -> None:
     assert (first.supervisor_id, second.supervisor_id, spawn().supervisor_id) == (1, 2, 3)
 
     supervisor._last_task_id = TASK_ID_MODULUS - 1
-    assert spawn().supervisor_id == 0
+    assert spawn().supervisor_id == TASK_ID_MODULUS
+    assert spawn().supervisor_id == 1  # not 0, which every unregistered task has
 
 
 def test_only_failures_with_an_error_are_held_and_repeats_collapse() -> None:
@@ -176,6 +177,44 @@ def test_held_failures_of_same_named_connections_stay_apart() -> None:
     assert sorted((x['data']['subject']['location'], x['count']) for x in held) == [
         ('binance', 1),
         ('kraken', 2),
+    ]
+
+
+def test_held_failures_of_one_chain_collapse_whatever_their_count() -> None:
+    supervisor = TaskSupervisor(msg_aggregator=(msg_aggregator := MessagesAggregator()))
+    for chain, count in (('eth', 812), ('optimism', 3), ('eth', 815)):
+        supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name=f'Query {chain} transactions receipts',
+            exception_is_error=True,
+            method=_fail,
+            kind=BackgroundTaskKind.EVM_RECEIPTS,
+            subject={'chain': chain, 'count': count},
+        ).join()
+    held, dropped = msg_aggregator.consume_held()
+    assert dropped == 0
+    assert sorted(
+        (x['data']['subject']['chain'], x['data']['subject']['count'], x['count']) for x in held
+    ) == [('eth', 815, 2), ('optimism', 3, 1)]
+
+
+@pytest.mark.parametrize('kind', [BackgroundTaskKind.OTHER, BackgroundTaskKind.ETH_STAKING])
+def test_held_failures_of_tasks_without_a_subject_stay_apart(kind: BackgroundTaskKind) -> None:
+    """The name is what tells these apart, and the held status is all that reports them."""
+    supervisor = TaskSupervisor(msg_aggregator=(msg_aggregator := MessagesAggregator()))
+    for task_name in ('Update ilk cache', 'Detect spam assets in globaldb'):
+        supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name=task_name,
+            exception_is_error=True,
+            method=_fail,
+            kind=kind,
+        ).join()
+    held, dropped = msg_aggregator.consume_held()
+    assert dropped == 0
+    assert sorted(x['data']['name'] for x in held) == [
+        'Detect spam assets in globaldb',
+        'Update ilk cache',
     ]
 
 

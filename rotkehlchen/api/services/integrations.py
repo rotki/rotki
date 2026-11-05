@@ -2,6 +2,7 @@ import logging
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.api.websockets.typedefs import BackgroundTaskKind
 from rotkehlchen.chain.evm.types import ChainID
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
@@ -215,6 +216,7 @@ class IntegrationsService:
             after_seconds=None,
             task_name='Query monerium orders after oauth',
             exception_is_error=True,
+            kind=BackgroundTaskKind.MONERIUM_ORDERS,
             method=self._query_monerium_orders,
         )
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
@@ -321,6 +323,7 @@ class IntegrationsService:
                     after_seconds=None,
                     task_name='Backfill gnosis pay events',
                     exception_is_error=True,
+                    kind=BackgroundTaskKind.GNOSIS_PAY_EVENTS,
                     method=gnosispay_decoder.gnosispay_api.backfill_missing_events,  # type: ignore
                 )
 
