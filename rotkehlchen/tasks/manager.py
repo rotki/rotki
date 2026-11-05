@@ -480,7 +480,7 @@ class TaskManager:
 
             evm_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
             task_name = f'Query {blockchain!s} transactions receipts'
-            log.debug(f'Scheduling task to {task_name} for {len(hash_results)} transactions')
+            log.debug('Scheduling task to %s for %s transactions', task_name, len(hash_results))
             # Since this task is heavy we spawn it only for one chain at a time.
             return [self.task_supervisor.spawn_and_track(
                 after_seconds=None,
@@ -550,7 +550,11 @@ class TaskManager:
 
             tx_to_decode = min(number_of_tx_to_decode, TX_DECODING_LIMIT)
             task_name = f'decode {blockchain!s} transactions'
-            log.debug(f'Scheduling periodic task to {task_name} for {tx_to_decode} transactions')
+            log.debug(
+                'Scheduling periodic task to %s for %s transactions',
+                task_name,
+                tx_to_decode,
+            )
             # Since this task is heavy we spawn it only for one chain at a time.
             return [self.task_supervisor.spawn_and_track(
                 after_seconds=None,
