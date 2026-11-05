@@ -75,6 +75,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
     EthSyncError,
     InputError,
+    PnlReportAlreadyRunning,
     RemoteError,
     SystemPermissionError,
 )
@@ -186,6 +187,8 @@ class Rotkehlchen:
             )
         self.main_loop_spawned = False
         self.api_tasks: list[Task] = []
+        # report runs share the single accountant and history querying manager
+        self.pnl_report_lock = threading.Lock()
         self.msg_aggregator = MessagesAggregator()
         self.task_supervisor = TaskSupervisor(msg_aggregator=self.msg_aggregator)
         self.rotki_notifier = RotkiNotifier()
@@ -1138,6 +1141,9 @@ class Rotkehlchen:
             self.data.db.remove_single_blockchain_accounts(write_cursor, blockchain, accounts)
 
     def get_history_query_status(self) -> dict[str, str]:
+        if not self.pnl_report_lock.locked():
+            return {'processing_state': '', 'total_progress': '0'}
+
         if self.history_querying_manager.progress < FVal('100'):
             processing_state = self.history_querying_manager.processing_state_name
             progress = self.history_querying_manager.progress / 2
@@ -1164,16 +1170,26 @@ class Rotkehlchen:
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> tuple[int, str]:
-        error_or_empty, events = self.history_querying_manager.get_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            has_premium=has_premium_check(self.premium),
-        )
-        report_id = self.accountant.process_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            events=events,
-        )
+        """May raise:
+        - PnlReportAlreadyRunning if another report is being generated
+        - AccountingError if a fatal error stopped processing
+        """
+        if not self.pnl_report_lock.acquire(blocking=False):
+            raise PnlReportAlreadyRunning('A PnL report is already being generated')
+
+        try:
+            error_or_empty, events = self.history_querying_manager.get_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                has_premium=has_premium_check(self.premium),
+            )
+            report_id = self.accountant.process_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                events=events,
+            )
+        finally:
+            self.pnl_report_lock.release()
         return report_id, error_or_empty
 
     def query_balances(

@@ -7495,7 +7495,7 @@ Querying complete action history
    :statuscode 200: History processed and returned successfully
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 401: No user is currently logged in.
-   :statuscode 409: Fatal accounting error while processing the report.
+   :statuscode 409: Fatal accounting error while processing the report. Another report is already being generated.
    :statuscode 500: Internal rotki error.
 
 

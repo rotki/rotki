@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13354` Generating a PnL report while another one is running is now refused instead of corrupting both, and a cancelled report no longer stays in the reports list as an empty entry. The report progress no longer goes past 100%.
 * :bug:`13530` The desktop app's local API now only answers requests addressed to ``localhost``, ``127.0.0.1`` or ``[::1]``, so a web page cannot reach it through DNS rebinding. Docker is unchanged.
 * :bug:`-` Lido CSM node operator metrics refresh again after the CSM v3 upgrade, and pending rewards are no longer shown as zero. Operators on the new Identified DVT Cluster curve are labelled as such, and permissionless and early adopter operators are no longer labelled as each other.
 * :bug:`13531` Web pages on other sites can no longer import files or change data in an unlocked account by sending forms to the local API. Requests that change data are now refused unless they come from the rotki app itself or a configured CORS origin. Docker users behind a reverse proxy need it to forward the original ``Host`` header (for nginx, ``proxy_set_header Host $host;``), otherwise logging in and saving changes are refused.

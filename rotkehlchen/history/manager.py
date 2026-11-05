@@ -176,6 +176,7 @@ class HistoryQueryingManager:
 
         for exchange in self.exchange_manager.iterate_exchanges():
             self.processing_state_name = f'Querying {exchange.name} exchange history'
+            exchange_start_step = step
             exchange.query_history_with_callbacks(
                 # We need to have history of exchanges since before the range
                 start_ts=Timestamp(0),
@@ -183,8 +184,8 @@ class HistoryQueryingManager:
                 fail_callback=fail_history_cb,
                 new_step_data=(new_step_cb, exchange.name),
             )
-            # each exchange instance executes STEPS_PER_CEX steps out of the total_steps
-            step = self._increase_progress(step, total_steps, step_by=STEPS_PER_CEX)
+            # each exchange owns STEPS_PER_CEX steps, its own callbacks advance within them
+            step = self._increase_progress(exchange_start_step, total_steps, step_by=STEPS_PER_CEX)
 
         # Query all trades, asset movements and margin positions from the DB for all
         # possible locations.

@@ -34,7 +34,12 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
-from rotkehlchen.errors.misc import AccountingError, APIKeyNotAvailable, RemoteError
+from rotkehlchen.errors.misc import (
+    AccountingError,
+    APIKeyNotAvailable,
+    PnlReportAlreadyRunning,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
@@ -152,6 +157,8 @@ class HistoryService:
                 'message': str(e),
                 'status_code': HTTPStatus.CONFLICT,
             }
+        except PnlReportAlreadyRunning as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
         return {'result': report_id, 'message': error_or_empty}
 
