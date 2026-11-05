@@ -293,18 +293,55 @@ def _rebuild_location_table(
         write_cursor.execute(index_sql)
 
 
-# Tails, after `{location}_{name}_`, of every v53 key_value_cache key of one exchange or bank
-# connection. Each placeholder is one underscore-free segment, so that the keys of `main` are
-# not confused with those of `main_backup`.
-_V53_CONNECTION_CACHE_TAILS: Final = tuple(re.compile(pattern) for pattern in (
-    'last_cryptotx_offset',
-    'bank_session',
-    '[^_]+_last_query_ts',  # a per account cursor or binance pair progress
-    '[^_]+_last_query_id',
-    '[^_]+',  # binance pair progress
-))
+# Tails, after `{location}_{name}_`, of the v53 key_value_cache keys of each connector. They are
+# per connector, since a connection named `main_last_cryptotx` would otherwise claim the
+# `bitstamp_main_last_cryptotx_offset` key of `main` through a generic tail. Each placeholder is
+# one underscore-free segment, so that the keys of `main` are not confused with `main_backup`.
+_V53_BINANCE_CACHE_TAILS: Final = ('[^_]+', '[^_]+_last_query_ts')  # pair progress
+_V53_ACCOUNT_CACHE_TAILS: Final = ('[^_]+_last_query_ts', '[^_]+_last_query_id')  # per account cursors  # noqa: E501
+_V53_BANK_CACHE_TAILS: Final = ('bank_session', '[^_]+_last_query_ts')  # session and per account cursors  # noqa: E501
+_V53_CONNECTOR_CACHE_TAILS: Final = {
+    'bitstamp': ('last_cryptotx_offset',),
+    'binance': _V53_BINANCE_CACHE_TAILS,
+    'binanceus': _V53_BINANCE_CACHE_TAILS,
+    'qonto': _V53_BANK_CACHE_TAILS,
+    'fints': _V53_BANK_CACHE_TAILS,
+}
 _V53_CONNECTION_RANGE_KINDS: Final = ('history_events', 'history_events_futures', 'margins', 'lending_history')  # noqa: E501
 _V53_BANK_CONNECTORS: Final = ('qonto', 'fints')
+
+
+def _key_suppressed_binance_accounts_by_connection(
+        write_cursor: DBCursor,
+        identifiers: dict[tuple[str, str], str],
+) -> None:
+    """Replace the `{connector}:{name}` entries of suppress_binance_pairs_missing with connection
+    identifiers, dropping those of connections that do not exist.
+
+    v53 stored frontend_settings without validating it, so a value that does not parse is left
+    as it is, since it must not abort the whole upgrade.
+    """
+    if (row := write_cursor.execute(
+        "SELECT value FROM settings WHERE name='frontend_settings'",
+    ).fetchone()) is None:
+        return
+
+    try:
+        frontend_settings = json.loads(row[0])
+    except (TypeError, json.JSONDecodeError) as e:
+        log.warning('Leaving frontend settings that can not be parsed as they are: %s', e)
+        return
+
+    if isinstance(frontend_settings, dict) and isinstance(suppressed := frontend_settings.get('suppress_binance_pairs_missing'), list):  # noqa: E501
+        frontend_settings['suppress_binance_pairs_missing'] = sorted(
+            identifiers[connector, name] for entry in suppressed
+            if isinstance(entry, str) and len(parts := entry.split(':', 1)) == 2
+            and ((connector := parts[0]), (name := parts[1])) in identifiers
+        )
+        write_cursor.execute(
+            "UPDATE settings SET value=? WHERE name='frontend_settings'",
+            (json.dumps(frontend_settings),),
+        )
 
 
 def _move_credentials_to_connections(write_cursor: DBCursor) -> None:
@@ -371,7 +408,7 @@ CREATE TABLE IF NOT EXISTS integration_connection_settings (
                     'SELECT name FROM key_value_cache WHERE substr(name, 1, ?)=?',
                     (len(old_prefix), old_prefix),
                 ).fetchall()
-                if any(x.fullmatch(key.removeprefix(old_prefix)) for x in _V53_CONNECTION_CACHE_TAILS)  # noqa: E501
+                if any(re.fullmatch(x, key.removeprefix(old_prefix)) for x in _V53_CONNECTOR_CACHE_TAILS.get(connector, _V53_ACCOUNT_CACHE_TAILS))  # noqa: E501
             ],
         )
 
@@ -386,6 +423,7 @@ CREATE TABLE IF NOT EXISTS integration_connection_settings (
             )),),
         )
 
+    _key_suppressed_binance_accounts_by_connection(write_cursor, identifiers)
     write_cursor.execute("DELETE FROM user_credentials WHERE name != 'rotkehlchen'")
     write_cursor.execute('DROP TABLE user_credentials_mappings')
     if len(violations := write_cursor.execute('PRAGMA foreign_key_check(integration_connections)').fetchall()) != 0:  # noqa: E501

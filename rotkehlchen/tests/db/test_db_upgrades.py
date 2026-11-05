@@ -5307,7 +5307,18 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
         )
         write_cursor.executemany(
             'INSERT INTO key_value_cache(name, value) VALUES (?, ?)',
-            [('kraken_kr_acc1_last_query_ts', '5'), ('kraken_kr_2_acc1_last_query_ts', '6')],
+            [
+                ('kraken_kr_acc1_last_query_ts', '5'), ('kraken_kr_2_acc1_last_query_ts', '6'),
+                ('bitstamp_main_last_cryptotx_offset', '7'),
+            ],
+        )
+        write_cursor.executemany(
+            'INSERT INTO user_credentials(name, location, api_key, api_secret) VALUES (?, ?, ?, ?)',  # noqa: E501
+            [('main', 'R', 'k', 's'), ('main_last_cryptotx', 'R', 'k', 's')],
+        )
+        write_cursor.execute(
+            "INSERT OR REPLACE INTO settings(name, value) VALUES ('frontend_settings', ?)",
+            ('{"suppress_binance_pairs_missing": ["kraken:kr", "kraken:gone"], "other": 1}',),
         )
         write_cursor.execute(
             "INSERT OR REPLACE INTO settings(name, value) VALUES ('non_syncing_exchanges', ?)",
@@ -5367,6 +5378,9 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
             f'{kr_id}_acc1_last_query_ts': '5',
             f'{kr2_id}_acc1_last_query_ts': '6',
         }
+        bitstamp_ids = dict(cursor.execute("SELECT name, identifier FROM integration_connections WHERE connector_identifier='bitstamp'"))  # noqa: E501
+        assert cursor.execute('SELECT value FROM key_value_cache WHERE name=?', (f'{bitstamp_ids["main"]}_last_cryptotx_offset',)).fetchone() == ('7',)  # noqa: E501
+        assert json.loads(cursor.execute("SELECT value FROM settings WHERE name='frontend_settings'").fetchone()[0]) == {'suppress_binance_pairs_missing': [kr_id], 'other': 1}  # noqa: E501
         assert cursor.execute("SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE 'kraken_history_events_kr%'").fetchone()[0] == 0  # noqa: E501
         assert db.get_settings(cursor).non_syncing_exchanges == {kr2_id}
         assert cursor.execute(
@@ -5387,6 +5401,35 @@ def test_upgrade_db_53_to_54_locations(user_data_dir, messages_aggregator, legac
         for table in (*_LOCATION_ROW_INSERTS, 'integration_connections'):
             assert cursor.execute(f'PRAGMA foreign_key_check({table})').fetchall() == []
         DBLocations().validate_tree(cursor)
+
+    db.logout()
+
+
+@pytest.mark.parametrize('frontend_settings', ['', '{not json', None])
+def test_upgrade_db_53_to_54_unparsable_frontend_settings(user_data_dir, messages_aggregator, frontend_settings):  # noqa: E501
+    """Frontend settings that do not parse stay as they are and do not abort the upgrade"""
+    _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
+    db_v53 = _init_db_with_target_version(
+        target_version=53,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v53.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            "INSERT OR REPLACE INTO settings(name, value) VALUES ('frontend_settings', ?)",
+            (frontend_settings,),
+        )
+    db_v53.logout()
+
+    db = _init_db_with_target_version(
+        target_version=54,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db.conn.read_ctx() as cursor:
+        assert cursor.execute("SELECT value FROM settings WHERE name='frontend_settings'").fetchone() == (frontend_settings,)  # noqa: E501
 
     db.logout()
 
