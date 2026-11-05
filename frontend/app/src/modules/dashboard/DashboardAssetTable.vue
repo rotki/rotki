@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
+import type { HTMLAttributes } from 'vue';
 import { useTrackedAccountsRow } from '@/modules/accounts/use-tracked-accounts-row';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
@@ -19,12 +20,14 @@ import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 
-const { balances, loading = false, tableType, title } = defineProps<{
+interface Props {
   title: string;
   balances: AssetBalanceWithPrice[];
   tableType: DashboardTableType;
   loading?: boolean;
-}>();
+}
+
+const { balances, loading = false, tableType, title } = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props>>();
 
 const { t } = useI18n({ useScope: 'global' });
 

@@ -1,11 +1,30 @@
 <script setup lang="ts">
+import type { RuiTextField } from '@rotki/ui-library';
 import type { ZodType } from 'zod';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
 import { SETTING_FIELD, textSettingSchema } from '@/modules/settings/controls/setting-field-schemas';
 import { useSettingField } from '@/modules/settings/controls/use-setting-field';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 import { resolveSettingMessage, useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
+
+interface Props {
+  setting: WritableSettingKeyOf<string>;
+  label?: string;
+  /** When provided, shows a reset-to-default button that writes this value immediately. */
+  default?: string;
+  required?: boolean;
+  maxLength?: number;
+  /** Escape hatch: a zod schema addressing the field under `SETTING_FIELD`, replacing the baked one. */
+  schema?: ZodType;
+  /** Maps the field string to the stored value. Defaults to identity. */
+  transform?: (value: string) => string;
+  /** Static text, or a callback given the persisted value. */
+  successMessage?: string | ((value: string) => string);
+  errorMessage?: string;
+  debounce?: number;
+}
 
 /**
  * Generic owning component for a string setting. Bakes in optional `required` + `maxLength` validation
@@ -27,22 +46,7 @@ const {
   successMessage = '',
   errorMessage = '',
   debounce = 1500,
-} = defineProps<{
-  setting: WritableSettingKeyOf<string>;
-  label?: string;
-  /** When provided, shows a reset-to-default button that writes this value immediately. */
-  default?: string;
-  required?: boolean;
-  maxLength?: number;
-  /** Escape hatch: a zod schema addressing the field under `SETTING_FIELD`, replacing the baked one. */
-  schema?: ZodType;
-  /** Maps the field string to the stored value. Defaults to identity. */
-  transform?: (value: string) => string;
-  /** Static text, or a callback given the persisted value. */
-  successMessage?: string | ((value: string) => string);
-  errorMessage?: string;
-  debounce?: number;
-}>();
+} = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiTextField, Props>>();
 
 const emit = defineEmits<{
   /** Fired after a successful persist, mirroring the old `SettingsOption` `@finished` hook. */

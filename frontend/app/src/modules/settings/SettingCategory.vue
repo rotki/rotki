@@ -1,5 +1,10 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
+
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 defineSlots<{
   title?: () => any;

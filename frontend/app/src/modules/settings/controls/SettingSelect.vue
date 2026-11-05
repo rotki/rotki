@@ -1,4 +1,6 @@
 <script setup lang="ts" generic="TOption = string">
+import type { RuiMenuSelect, RuiRadioGroup } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
 import { useSettingOptions } from '@/modules/settings/controls/use-setting-options';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
@@ -41,7 +43,7 @@ const {
   /** Static prefix, or a callback given the persisted value. Prefixed before the writer error. */
   errorMessage?: string | ((value: string) => string);
   debounce?: number;
-}>();
+} & /* @vue-ignore */ ForwardedProps<typeof RuiRadioGroup, Record<'setting' | 'options' | 'keyAttr' | 'textAttr' | 'label' | 'control' | 'successMessage' | 'errorMessage' | 'debounce', unknown>> & /* @vue-ignore */ ForwardedProps<typeof RuiMenuSelect, Record<'setting' | 'options' | 'keyAttr' | 'textAttr' | 'label' | 'control' | 'successMessage' | 'errorMessage' | 'debounce', unknown>>>();
 
 const emit = defineEmits<{
   /** Fired after a successful persist, mirroring the old `SettingsOption` `@finished` hook. */

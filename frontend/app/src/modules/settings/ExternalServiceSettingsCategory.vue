@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import ConnectTimeoutSetting from '@/modules/settings/general/external-services/ConnectTimeoutSetting.vue';
 import QueryRetryLimitSetting from '@/modules/settings/general/external-services/QueryRetryLimitSetting.vue';
 import ReadTimeoutSetting from '@/modules/settings/general/external-services/ReadTimeoutSetting.vue';
 import SuppressMissingKeyServicesSetting
   from '@/modules/settings/general/external-services/SuppressMissingKeyServicesSetting.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

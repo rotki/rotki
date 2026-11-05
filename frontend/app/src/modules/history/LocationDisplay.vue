@@ -1,8 +1,20 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { useLocations } from '@/modules/core/common/use-locations';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import NavigatorLink from '@/modules/shell/components/NavigatorLink.vue';
+
+interface Props {
+  identifier: string;
+  icon?: boolean;
+  size?: string;
+  openDetails?: boolean;
+  detailPath?: string;
+  horizontal?: boolean;
+  /** Shows the horizontal label as a small secondary caption, for metadata lines next to other details. */
+  dense?: boolean;
+}
 
 const {
   identifier,
@@ -12,16 +24,7 @@ const {
   detailPath = '',
   horizontal,
   dense,
-} = defineProps<{
-  identifier: string;
-  icon?: boolean;
-  size?: string;
-  openDetails?: boolean;
-  detailPath?: string;
-  horizontal?: boolean;
-  /** Shows the horizontal label as a small secondary caption, for metadata lines next to other details. */
-  dense?: boolean;
-}>();
+} = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props>>();
 
 const { useLocationData } = useLocations();
 const location = useLocationData(() => identifier);

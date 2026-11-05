@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import type { RuiTextField } from '@rotki/ui-library';
 import type { ZodType } from 'zod';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+
 import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import { EXPLORER_URL_FIELD, explorerUrlSchema, type ExplorerUrlState } from '@/modules/settings/explorers/explorer-url-schema';
 
@@ -8,6 +11,10 @@ defineOptions({
 });
 
 const url = defineModel<string>({ required: true });
+
+defineProps<
+  /* @vue-ignore */ ForwardedProps<typeof RuiTextField>
+>();
 
 const emit = defineEmits<{
   'save-data': [value?: string];

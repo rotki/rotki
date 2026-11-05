@@ -3,7 +3,7 @@ import type { NftAsset } from '@/modules/assets/nfts';
 import type { AssetActions, AssetDisplay, AssetResolution } from '@/modules/assets/types';
 import { startPromise } from '@shared/utils';
 import { omit } from 'es-toolkit';
-import { useTemplateRef } from 'vue';
+import { type HTMLAttributes, useTemplateRef } from 'vue';
 import AssetDetailsMenuContent from '@/modules/assets/AssetDetailsMenuContent.vue';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetPageNavigation } from '@/modules/assets/use-asset-page-navigation';
@@ -11,6 +11,13 @@ import { useSetting } from '@/modules/settings/use-setting';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import ListItem from '@/modules/shell/components/ListItem.vue';
+
+interface Props {
+  asset: NftAsset;
+  display?: AssetDisplay;
+  actions?: AssetActions;
+  resolution?: AssetResolution;
+}
 
 defineOptions({
   inheritAttrs: false,
@@ -21,12 +28,7 @@ const {
   asset,
   display,
   resolution,
-} = defineProps<{
-  asset: NftAsset;
-  display?: AssetDisplay;
-  actions?: AssetActions;
-  resolution?: AssetResolution;
-}>();
+} = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props>>();
 
 const emit = defineEmits<{
   refresh: [];

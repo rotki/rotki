@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
 import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
 import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
@@ -11,6 +12,9 @@ import { PrioritizedListData } from '@/modules/settings/types/prioritized-list-d
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 import PrioritizedList from '@/modules/shell/components/PrioritizedList.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { error: currentWriteError, model: currentOracles, success: currentWriteSuccess } = useSettingModel('currentPriceOracles', { debounce: 0 });
 const { error: historicWriteError, model: historicOracles, success: historicWriteSuccess } = useSettingModel('historicalPriceOracles', { debounce: 0 });

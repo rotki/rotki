@@ -1,12 +1,18 @@
 <script setup lang="ts">
+import type { RuiMenu } from '@rotki/ui-library';
+
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+
+interface Props {
+  /** A short heading over the explanation; most hints are a sentence or two and go without. */
+  title?: string;
+}
+
 defineOptions({
   inheritAttrs: false,
 });
 
-const { title } = defineProps<{
-  /** A short heading over the explanation; most hints are a sentence or two and go without. */
-  title?: string;
-}>();
+const { title } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiMenu, Props>>();
 
 defineSlots<{
   default: () => any;

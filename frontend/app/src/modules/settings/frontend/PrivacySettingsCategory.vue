@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import PersistPrivacySettings from '@/modules/settings/frontend/PersistPrivacySettings.vue';
 import ScrambleDataSetting from '@/modules/settings/frontend/ScrambleDataSetting.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

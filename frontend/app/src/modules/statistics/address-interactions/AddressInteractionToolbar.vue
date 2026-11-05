@@ -1,16 +1,13 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import type { LocationLabel } from '@/modules/core/common/location';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import LocationLabelSelector from '@/modules/history/LocationLabelSelector.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
+
 import { useChainColors } from './use-chain-colors';
 
-const address = defineModel<string>('address', { required: true });
-const bridgesOnly = defineModel<boolean>('bridgesOnly', { required: true });
-const chain = defineModel<string>('chain', { required: true });
-const minTransactions = defineModel<number>('minTransactions', { required: true });
-
-const { addressOptions, chains, hasBridges = false, maxTransactions, hasFilters = false } = defineProps<{
+interface Props {
   addressOptions: LocationLabel[];
   chains: readonly string[];
   maxTransactions: number;
@@ -18,7 +15,14 @@ const { addressOptions, chains, hasBridges = false, maxTransactions, hasFilters 
   hasFilters?: boolean;
   /** Offers the bridges-only switch; hidden while no pair is linked by a bridge. */
   hasBridges?: boolean;
-}>();
+}
+
+const address = defineModel<string>('address', { required: true });
+const bridgesOnly = defineModel<boolean>('bridgesOnly', { required: true });
+const chain = defineModel<string>('chain', { required: true });
+const minTransactions = defineModel<number>('minTransactions', { required: true });
+
+const { addressOptions, chains, hasBridges = false, maxTransactions, hasFilters = false } = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props | 'onReset'>>();
 
 const emit = defineEmits<{
   reset: [];
@@ -44,7 +48,6 @@ function chipClass(selected: boolean): string {
         v-model="address"
         :options="addressOptions"
         :label="t('address_interactions.search')"
-        variant="outlined"
         dense
         hide-details
         class="w-full sm:w-64"

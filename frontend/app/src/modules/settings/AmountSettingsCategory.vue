@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import { bigNumberify } from '@rotki/common';
 import { FiatDisplay } from '@/modules/assets/amount-display';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
@@ -13,7 +14,11 @@ import DateDisplayFormatSetting from '@/modules/settings/general/DateDisplayForm
 import DateInputFormatSetting from '@/modules/settings/general/DateInputFormatSetting.vue';
 import DisplayDateInLocaltimeSetting from '@/modules/settings/general/DisplayDateInLocaltimeSetting.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+
 import SubscriptToggle from './general/amount/SubscriptToggle.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 

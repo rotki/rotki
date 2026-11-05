@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import ShowGraphRangeSelectorSetting from '@/modules/settings/frontend/ShowGraphRangeSelectorSetting.vue';
 import TimeFrameSetting from '@/modules/settings/frontend/TimeFrameSetting.vue';
 import ZeroBasedGraphSetting from '@/modules/settings/frontend/ZeroBasedGraphSetting.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

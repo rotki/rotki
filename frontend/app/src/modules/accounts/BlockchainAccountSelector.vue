@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { FormDetails } from '@rotki/ui-library';
+import type { FormDetails, RuiAutoComplete } from '@rotki/ui-library';
 import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { type Account, Blockchain } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { matchesAccountQuery, selectableAccounts } from '@/modules/accounts/account-selection';
@@ -10,6 +11,13 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { getNonRootAttrs, getRootAttrs } from '@/modules/core/common/helpers/attrs';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
+
+interface Props {
+  source?: AccountSelectorSource;
+  field?: AccountSelectorField;
+  loading?: boolean;
+  hideChainIcon?: boolean;
+}
 
 type AccountWithExtra = AddressAccount & { key: string };
 
@@ -44,12 +52,7 @@ const {
   hideChainIcon = false,
   loading = false,
   source,
-} = defineProps<{
-  source?: AccountSelectorSource;
-  field?: AccountSelectorField;
-  loading?: boolean;
-  hideChainIcon?: boolean;
-}>();
+} = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete, Props>>();
 
 const { t } = useI18n({ useScope: 'global' });
 

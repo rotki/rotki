@@ -1,14 +1,18 @@
 <script setup lang="ts">
+import type { RuiButton } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { useReportsApi } from '@/modules/reports/use-reports-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
-const { list = false, reportId } = defineProps<{
+interface Props {
   list?: boolean;
   reportId: number;
-}>();
+}
+
+const { list = false, reportId } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiButton, Props>>();
 
 const { createCsv } = useReportOperations();
 const { setMessage } = useMessageStore();

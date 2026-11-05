@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
+
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 
-const { count } = defineProps<{
+interface Props {
   /** Rows the table holds, shown beside the title. */
   count?: number;
-}>();
+}
+
+const { count } = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props>>();
 
 defineSlots<{
   title: () => any;

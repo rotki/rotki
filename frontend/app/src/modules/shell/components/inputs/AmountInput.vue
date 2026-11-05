@@ -11,6 +11,9 @@ interface AmountInputProps {
   rawInput?: boolean;
 }
 
+/** What the input forwards to its RuiTextField through `$attrs`: the field's props, its events and the input's attributes. */
+type TextFieldAttributes = Omit<InstanceType<typeof RuiTextField>['$props'], keyof AmountInputProps | 'modelValue' | 'onUpdate:modelValue' | 'modelModifiers'>;
+
 interface MaskConfig {
   mask: NumberConstructor;
   radix: string;
@@ -28,7 +31,7 @@ const {
   details,
   integer = false,
   rawInput = false,
-} = defineProps<AmountInputProps>();
+} = defineProps<AmountInputProps & /* @vue-ignore */ TextFieldAttributes>();
 const decimalSeparator = useSetting('decimalSeparator');
 const thousandSeparator = useSetting('thousandSeparator');
 

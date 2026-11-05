@@ -1,16 +1,20 @@
 <script setup lang="ts">
+import type { RuiChip } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { Tag } from '@/modules/tags/tags';
 import { useSetting } from '@/modules/settings/use-setting';
+
+interface Props {
+  tag: Tag;
+  small?: boolean;
+  showDescription?: boolean;
+}
 
 defineOptions({
   inheritAttrs: false,
 });
 
-const { tag, small = false, showDescription = false } = defineProps<{
-  tag: Tag;
-  small?: boolean;
-  showDescription?: boolean;
-}>();
+const { tag, small = false, showDescription = false } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiChip, Props>>();
 
 const shouldShowAmount = useSetting('shouldShowAmount');
 </script>

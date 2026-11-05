@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import type { RuiAutoComplete } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { TradeLocationData } from '@/modules/core/common/location';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { type LocationOption, locationOptions } from '@/modules/locations/location-options';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
+
+interface Props {
+  items?: readonly string[];
+  excludes?: readonly string[];
+  dense?: boolean;
+}
 
 defineOptions({
   inheritAttrs: false,
@@ -11,11 +19,7 @@ defineOptions({
 
 const model = defineModel<string>({ default: '', required: true });
 
-const { dense, excludes = [], items = [] } = defineProps<{
-  items?: readonly string[];
-  excludes?: readonly string[];
-  dense?: boolean;
-}>();
+const { dense, excludes = [], items = [] } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, LocationOption>, Props>>();
 
 /**
  * The height of an option when at least one option in the list shows a path line: its fixed 40px

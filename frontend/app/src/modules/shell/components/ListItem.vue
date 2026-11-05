@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const { size = 'sm', title = '', subtitle = '', noPadding = false, noHover = false, loading = false, blurContent = false, inline = false } = defineProps<{
+import type { HTMLAttributes } from 'vue';
+
+interface Props {
   size?: 'sm' | 'md' | 'lg';
   /** Title and subtitle on one line, for rows that must stay a single line tall. */
   inline?: boolean;
@@ -10,7 +12,9 @@ const { size = 'sm', title = '', subtitle = '', noPadding = false, noHover = fal
   noHover?: boolean;
   loading?: boolean;
   blurContent?: boolean;
-}>();
+}
+
+const { size = 'sm', title = '', subtitle = '', noPadding = false, noHover = false, loading = false, blurContent = false, inline = false } = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props>>();
 
 defineSlots<{
   default: () => any;

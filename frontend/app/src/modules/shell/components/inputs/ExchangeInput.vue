@@ -1,6 +1,15 @@
 <script lang="ts" setup>
+import type { RuiAutoComplete } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import ExchangeDisplay from '@/modules/shell/components/display/ExchangeDisplay.vue';
+
+interface Props {
+  dense?: boolean;
+  showWithKeyOnly?: boolean;
+  excludes?: string[];
+}
 
 defineOptions({
   inheritAttrs: false,
@@ -8,11 +17,7 @@ defineOptions({
 
 const model = defineModel<string | undefined>({ required: true });
 
-const { showWithKeyOnly, excludes = [] } = defineProps<{
-  dense?: boolean;
-  showWithKeyOnly?: boolean;
-  excludes?: string[];
-}>();
+const { showWithKeyOnly, excludes = [] } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete, Props>>();
 
 const { allExchanges, exchangesWithKey } = storeToRefs(useLocationStore());
 

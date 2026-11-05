@@ -1,11 +1,32 @@
 <script setup lang="ts">
+import type { RuiTextField } from '@rotki/ui-library';
 import type { ZodType } from 'zod';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
 import { numberSettingSchema, SETTING_FIELD } from '@/modules/settings/controls/setting-field-schemas';
 import { useSettingField } from '@/modules/settings/controls/use-setting-field';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 import { resolveSettingMessage, useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
+
+interface Props {
+  setting: WritableSettingKeyOf<number>;
+  label?: string;
+  min?: number;
+  max?: number;
+  /** When provided, shows a reset-to-default button that writes this value immediately. */
+  default?: number;
+  required?: boolean;
+  /** Escape hatch: a zod schema addressing the field under `SETTING_FIELD`, replacing the baked one. */
+  schema?: ZodType;
+  /** Maps the field string to the stored number. Defaults to `Number.parseInt`; override for floats. */
+  transform?: (value: string) => number;
+  /** Static text, or a callback given the persisted value. */
+  successMessage?: string | ((value: number) => string);
+  /** Static prefix, or a callback given the persisted value. Prefixed before the writer error. */
+  errorMessage?: string | ((value: number) => string);
+  debounce?: number;
+}
 
 /**
  * Generic owning component for a numeric setting. Bakes in the common `required` + `between`/`min`/`max`
@@ -28,24 +49,7 @@ const {
   successMessage = '',
   errorMessage = '',
   debounce = 1500,
-} = defineProps<{
-  setting: WritableSettingKeyOf<number>;
-  label?: string;
-  min?: number;
-  max?: number;
-  /** When provided, shows a reset-to-default button that writes this value immediately. */
-  default?: number;
-  required?: boolean;
-  /** Escape hatch: a zod schema addressing the field under `SETTING_FIELD`, replacing the baked one. */
-  schema?: ZodType;
-  /** Maps the field string to the stored number. Defaults to `Number.parseInt`; override for floats. */
-  transform?: (value: string) => number;
-  /** Static text, or a callback given the persisted value. */
-  successMessage?: string | ((value: number) => string);
-  /** Static prefix, or a callback given the persisted value. Prefixed before the writer error. */
-  errorMessage?: string | ((value: number) => string);
-  debounce?: number;
-}>();
+} = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiTextField, Props>>();
 
 const emit = defineEmits<{
   /** Fired after a successful persist, mirroring the old `SettingsOption` `@finished` hook. */

@@ -1,7 +1,16 @@
 <script setup lang="ts">
+import type { RuiMenuSelect } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { CostBasisMethod } from '@/modules/settings/types/user-settings';
+
 import { useCostBasisMethod } from '@/modules/reports/use-reports';
 import ListItem from '@/modules/shell/components/ListItem.vue';
+
+interface Props {
+  label: string;
+  successMessages: string[];
+  errorMessages: string[];
+}
 
 defineOptions({
   inheritAttrs: false,
@@ -9,11 +18,7 @@ defineOptions({
 
 const modelValue = defineModel<CostBasisMethod>({ required: true });
 
-defineProps<{
-  label: string;
-  successMessages: string[];
-  errorMessages: string[];
-}>();
+defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiMenuSelect, Props>>();
 
 const { costBasisMethodData } = useCostBasisMethod();
 </script>

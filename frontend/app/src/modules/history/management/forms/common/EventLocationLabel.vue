@@ -1,16 +1,20 @@
 <script setup lang="ts">
+import type { RuiAutoComplete } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { isValidEthAddress } from '@rotki/common';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 
-const modelValue = defineModel<string>({ required: true });
-
-const { location } = defineProps<{
+interface Props {
   location: string;
   errorMessages: string[];
-}>();
+}
+
+const modelValue = defineModel<string>({ required: true });
+
+const { location } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete, Props, 'blur'>>();
 
 const emit = defineEmits<{
   blur: [];
