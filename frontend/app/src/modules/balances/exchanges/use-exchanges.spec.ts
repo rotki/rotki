@@ -90,7 +90,7 @@ describe('useExchanges', () => {
     it('should keep a new connection under the identifier the backend gave it, without its secrets', async () => {
       callSetupExchange.mockResolvedValue('c1');
 
-      expect(await exchanges.setupExchange(form)).toBe(true);
+      await exchanges.setupExchange(form);
 
       expect(get(storeToRefs(useConnectedExchangesStore()).connectedExchanges)).toEqual([
         { connector: 'kraken', identifier: 'c1', location: 'kraken', name: 'main' },

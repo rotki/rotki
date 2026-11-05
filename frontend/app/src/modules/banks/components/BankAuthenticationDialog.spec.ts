@@ -23,7 +23,6 @@ const BigDialogStub = defineComponent({
 
 const otp: BankAuthChallenge = {
   challenge: 'Enter TAN',
-  identifier: 'c1',
   challengeData: null,
   challengeHtml: null,
   challengeMimeType: null,

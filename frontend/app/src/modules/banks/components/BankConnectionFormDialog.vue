@@ -6,7 +6,7 @@ import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import BankAuthChallengeFields from '@/modules/banks/components/BankAuthChallengeFields.vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
-import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, type BankSetupResult, type BankSetupSuccess, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
+import { type BankConnectionIdentity, type BankFormData, type BankSetupChallenge, type BankSetupError, type BankSetupResult, type BankSetupSuccess, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
 import { useBankAuthenticationPolling } from '@/modules/banks/use-bank-authentication-polling';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
@@ -23,7 +23,7 @@ const emit = defineEmits<{
 const submitting = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
 const errorMessages = ref<ValidationErrors>({});
-const authChallenge = ref<BankAuthChallenge>();
+const authChallenge = ref<BankSetupChallenge>();
 const authResponse = ref<string>('');
 const setupSuccess = ref<BankSetupSuccess>();
 /** why the backend refused the last save or answer, shown until the next attempt */
@@ -97,9 +97,9 @@ function showSetupError(error: BankSetupError, payload: BankFormData): void {
 
 /** Answers the pending challenge of the connection being set up, or starts the setup. */
 async function submit(payload: BankFormData): ResultAsync<BankSetupResult, BankSetupError> {
-  const identifier = get(authChallenge)?.identifier;
-  return identifier
-    ? answerBankAuthentication({ identifier }, get(authResponse).trim() || undefined)
+  const challenge = get(authChallenge);
+  return challenge
+    ? answerBankAuthentication({ identifier: challenge.identifier }, get(authResponse).trim() || undefined)
     : setupBank(payload);
 }
 
@@ -157,9 +157,9 @@ async function confirm(): Promise<void> {
 /** Closing an add at its TAN step drops the setup, so the next add of that name starts clean. */
 function cancel(): void {
   const payload = get(modelValue);
-  const identifier = get(authChallenge)?.identifier;
-  if (payload && payload.mode !== 'edit' && identifier)
-    startPromise(cancelBankSetup({ identifier }));
+  const challenge = get(authChallenge);
+  if (payload && payload.mode !== 'edit' && challenge)
+    startPromise(cancelBankSetup({ identifier: challenge.identifier }));
   set(modelValue, undefined);
 }
 

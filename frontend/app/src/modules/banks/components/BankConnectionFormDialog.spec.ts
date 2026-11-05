@@ -1,4 +1,4 @@
-import type { BankAuthChallenge, BankFormData, BankManifest, BankSetupError } from '@/modules/banks/types';
+import type { BankFormData, BankManifest, BankSetupChallenge, BankSetupError } from '@/modules/banks/types';
 import type { useBanks } from '@/modules/banks/use-banks';
 import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
@@ -22,7 +22,7 @@ vi.mock('@/modules/banks/use-banks', () => ({
   useBanks: (): Record<string, unknown> => ({ answerBankAuthentication, cancelBankSetup, setupBank }),
 }));
 
-const otp: BankAuthChallenge = {
+const otp: BankSetupChallenge = {
   challenge: 'Enter TAN',
   identifier: 'c1',
   challengeData: null,

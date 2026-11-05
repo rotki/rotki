@@ -25,7 +25,7 @@ interface UseExchangesReturn {
   addExchange: (exchange: Exchange) => void;
   editExchange: (payload: EditExchange) => void;
   removeExchange: (exchange: Exchange) => Promise<boolean>;
-  setupExchange: (exchange: ExchangeFormData) => Promise<boolean>;
+  setupExchange: (exchange: ExchangeFormData) => Promise<void>;
 }
 
 export function useExchanges(): UseExchangesReturn {
@@ -159,7 +159,7 @@ export function useExchanges(): UseExchangesReturn {
     }
   };
 
-  const setupExchange = async (exchange: ExchangeFormData): Promise<boolean> => {
+  const setupExchange = async (exchange: ExchangeFormData): Promise<void> => {
     const { binanceHistoryStartTs, gateLocation, krakenAccountType, krakenFuturesApiKey, krakenFuturesApiSecret, location, mode, newName, okxLocation } = exchange;
 
     const filteredPayload: ExchangeFormData = {
@@ -194,8 +194,6 @@ export function useExchanges(): UseExchangesReturn {
         location,
       }),
     );
-
-    return true;
   };
 
   return {

@@ -53,11 +53,10 @@ async function save(): Promise<void> {
 
   let success = false;
   try {
-    success = await setupExchange(payload);
-    if (success) {
-      settleSaved(payload);
-      settleSavedKey(payload);
-    }
+    await setupExchange(payload);
+    success = true;
+    settleSaved(payload);
+    settleSavedKey(payload);
   }
   catch (error: unknown) {
     let errors: string | ValidationErrors = getErrorMessage(error);

@@ -245,7 +245,6 @@ describe('banks page', () => {
   describe('a connection with a pending challenge', () => {
     const challenge: BankAuthChallenge = {
       challenge: 'Approve access',
-      identifier: 'c1',
       challengeData: null,
       challengeHtml: null,
       challengeMimeType: null,

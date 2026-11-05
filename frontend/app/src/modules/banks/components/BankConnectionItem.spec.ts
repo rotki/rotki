@@ -11,7 +11,6 @@ vi.mock('vue-router', () => ({
 
 const challenge: BankAuthChallenge = {
   challenge: null,
-  identifier: 'c1',
   challengeData: null,
   challengeHtml: null,
   challengeMimeType: null,

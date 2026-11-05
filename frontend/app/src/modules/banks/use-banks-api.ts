@@ -2,11 +2,11 @@ import type { ConnectionRef } from '@/modules/core/common/connection';
 import { FetchError } from 'ofetch';
 import { fromAsync, type ResultAsync } from 'plainfp/result-async';
 import {
-  BankAuthChallenge,
   type BankConnectionEditPayload,
   type BankConnectionPayload,
   BankConnections,
   BankManifests,
+  BankSetupChallenge,
   type BankSetupError,
   type BankSetupResult,
   BankSetupSuccess,
@@ -93,7 +93,7 @@ export function useBanksApi(): UseBanksApiReturn {
     if (result === true)
       return true;
     const success = BankSetupSuccess.safeParse(result);
-    return success.success ? success.data : BankAuthChallenge.parse(result);
+    return success.success ? success.data : BankSetupChallenge.parse(result);
   };
 
   const authStatuses = [HTTPStatus.OK, HTTPStatus.ACCEPTED, HTTPStatus.BAD_REQUEST, HTTPStatus.CONFLICT];

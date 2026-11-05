@@ -41,8 +41,6 @@ export const BankManifests = z.array(BankManifest);
 export type BankManifests = z.infer<typeof BankManifests>;
 
 export const BankAuthChallenge = z.object({
-  /** The connection the challenge is answered for, also before a new connection is saved. */
-  identifier: z.string().nullish(),
   primitive: z.enum(['otp input', 'app approval poll', 'challenge display']),
   prompt: z.string(),
   challenge: z.string().nullable(),
@@ -53,6 +51,13 @@ export const BankAuthChallenge = z.object({
 });
 
 export type BankAuthChallenge = z.infer<typeof BankAuthChallenge>;
+
+/** A challenge raised while adding, editing or answering, named by the connection it is answered for, also before a new connection is saved. */
+export const BankSetupChallenge = BankAuthChallenge.extend({
+  identifier: z.string(),
+});
+
+export type BankSetupChallenge = z.infer<typeof BankSetupChallenge>;
 
 /** Every challenge but an app approval is answered by typing what the bank generated. */
 export function challengeNeedsResponse(challenge: BankAuthChallenge): boolean {
@@ -67,7 +72,7 @@ export const BankSetupSuccess = z.object({
 
 export type BankSetupSuccess = z.infer<typeof BankSetupSuccess>;
 
-export type BankSetupResult = true | BankSetupSuccess | BankAuthChallenge;
+export type BankSetupResult = true | BankSetupSuccess | BankSetupChallenge;
 
 export function isBankSetupComplete(result: BankSetupResult): result is true | BankSetupSuccess {
   return result === true || 'success' in result;

@@ -48,7 +48,7 @@ describe('useBankBalancesPage', () => {
     const store = useBankConnectionsStore();
     store.setConnections([
       connection('DKB', { lastError: 'boom' }),
-      connection('ING', { authChallenge: { challenge: null, challengeData: null, challengeHtml: null, challengeMimeType: null, identifier: 'id-ING', primitive: 'otp input', prompt: 'TAN' } }),
+      connection('ING', { authChallenge: { challenge: null, challengeData: null, challengeHtml: null, challengeMimeType: null, primitive: 'otp input', prompt: 'TAN' } }),
       connection('Comdirect'),
     ]);
     useBalancesStore().bankBalances = [

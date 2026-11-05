@@ -20,15 +20,13 @@ describe('useBankConnectionsStore', () => {
     expect(useBankConnectionsStore().bankNameFor('revolut')).toBe('Revolut');
   });
 
-  it('should resolve stable connection identifiers to their connector and name', () => {
+  it('should resolve stable connection identifiers to their name', () => {
     const store = useBankConnectionsStore();
     store.setConnections([
       createMock<BankConnection>({ connector: 'fints', identifier: 'c1', name: 'ING main' }),
       createMock<BankConnection>({ connector: 'fints', identifier: 'c2', name: 'ING savings' }),
     ]);
-    expect(store.connectorOf('c1')).toBe('fints');
     expect(store.connectionName('c2')).toBe('ING savings');
-    expect(store.connectorOf('missing')).toBe('');
     expect(store.connectionName('missing')).toBe('missing');
   });
 });

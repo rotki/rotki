@@ -1,7 +1,7 @@
 import type { ComputedRef } from 'vue';
 import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
-import { type BinanceAccount, isConnectedConnection, savesMissingPairs } from '@/modules/balances/exchanges/binance-pairs-condition';
+import { type BinanceAccount, isConnected, savesMissingPairs } from '@/modules/balances/exchanges/binance-pairs-condition';
 import { logger } from '@/modules/core/common/logging/logging';
 import { isConditionOf, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
@@ -44,7 +44,7 @@ export function useBinancePairsConditions(): UseBinancePairsConditionsReturn {
   }
 
   function settleDisconnected(connected: readonly BinanceAccount[]): void {
-    settle(account => !isConnectedConnection(account, connected));
+    settle(account => !isConnected(account, connected));
   }
 
   /** Whether the account has pairs now; a failed read keeps it listed. */
@@ -62,7 +62,7 @@ export function useBinancePairsConditions(): UseBinancePairsConditionsReturn {
     const settled = await Promise.all(get(accounts).map(async account => ({ account, done: await hasPairs(account) })));
     const done = settled.filter(({ done }) => done).map(({ account }) => account);
     if (done.length > 0)
-      settle(account => isConnectedConnection(account, done));
+      settle(account => isConnected(account, done));
   }
 
   return { accounts, recheck, settleDisconnected, settleSaved };

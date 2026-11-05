@@ -1,6 +1,7 @@
 import type { ResultAsync } from 'plainfp/result-async';
 import type { ConnectionRef } from '@/modules/core/common/connection';
 import type { TaskError } from '@/modules/core/tasks/task-result';
+import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { isOk, map as mapResult, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
@@ -159,14 +160,21 @@ export function useBanks(): UseBanksReturn {
   const filledCredentials = (credentials: Record<string, string>): Record<string, string> =>
     Object.fromEntries(Object.entries(credentials).filter(([, value]) => value.trim() !== ''));
 
+  /** Adds a new connection, or edits an existing one by the identifier an edit must carry. */
+  const saveConnection = async (
+    { connector, credentials, identifier, mode, name, newName }: BankFormData,
+  ): ResultAsync<BankSetupResult, BankSetupError> => {
+    if (mode !== 'edit')
+      return api.addBank({ connector, credentials, name });
+    assert(identifier !== undefined, 'editing a bank needs its connection identifier');
+    return mapResult(
+      await api.editBank({ credentials: filledCredentials(credentials), identifier, newName: newName === name ? undefined : newName }),
+      (): true => true,
+    );
+  };
+
   const setupBank = async (form: BankFormData): ResultAsync<BankSetupResult, BankSetupError> => {
-    const { connector, credentials, identifier, mode, name, newName } = form;
-    const outcome = mode === 'edit' && identifier !== undefined
-      ? mapResult(
-          await api.editBank({ credentials: filledCredentials(credentials), identifier, newName: newName === name ? undefined : newName }),
-          (): true => true,
-        )
-      : await api.addBank({ connector, credentials, name });
+    const outcome = await saveConnection(form);
     if (outcome.ok && isBankSetupComplete(outcome.value)) {
       await refreshBankConnections();
       startPromise(fetchBankBalances());

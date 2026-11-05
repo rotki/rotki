@@ -105,7 +105,7 @@ describe('modules/banks/components/BankBalanceCards', () => {
   it('should show what a bank needs instead of when it synced', () => {
     const wrapper = createWrapper({
       banks: [
-        bank('DKB', 0, { authChallenge: { challenge: null, challengeData: null, challengeHtml: null, challengeMimeType: null, identifier: 'id-DKB', primitive: 'otp input', prompt: 'TAN' } }),
+        bank('DKB', 0, { authChallenge: { challenge: null, challengeData: null, challengeHtml: null, challengeMimeType: null, primitive: 'otp input', prompt: 'TAN' } }),
         bank('ING', 0, { authExpired: true }),
         bank('Qonto', 0, { lastError: 'boom' }),
       ],

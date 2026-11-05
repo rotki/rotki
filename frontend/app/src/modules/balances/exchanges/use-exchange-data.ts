@@ -23,7 +23,6 @@ export function useExchangeData(): UseExchangeDataReturn {
   const exchanges = computed<ExchangeInfo[]>(() => {
     const balances = get(exchangeBalances);
     return Object.keys(balances)
-
       .map(value => ({
         balances: balances[value],
         location: value,

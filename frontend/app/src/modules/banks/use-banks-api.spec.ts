@@ -160,6 +160,15 @@ describe('useBanksApi', () => {
       expect(outcome.value).toMatchObject({ challengeData: null, pollDelaySeconds: 7, primitive: 'app approval poll', prompt: 'Enter the TAN' });
     });
 
+    it('should reject a challenge that does not name the connection it is answered for', async () => {
+      answerWith(202, wireChallenge, []);
+
+      const outcome = await useBanksApi().answerAuthentication({ identifier: 'c1' });
+
+      assert(!outcome.ok);
+      expect(outcome.error.type).toBe('rejected');
+    });
+
     it('should hand back a completed setup with its history start', async () => {
       answerWith(200, { history_start_ts: 1_700_000_000, identifier: 'c1', success: true }, []);
 

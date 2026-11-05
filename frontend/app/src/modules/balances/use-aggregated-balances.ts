@@ -42,7 +42,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { manualBalanceByLocation } = useManualBalanceData();
   const { tradeLocations } = useLocations();
-
   const { matchChain } = useSupportedChains();
 
   const context = useAggregationContext();

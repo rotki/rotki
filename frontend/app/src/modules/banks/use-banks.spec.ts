@@ -182,6 +182,14 @@ describe('useBanks', () => {
     expect(queryAllBankEvents).toHaveBeenCalledOnce();
   });
 
+  it('should refuse an edit without a connection identifier instead of adding a new connection', async () => {
+    await expect(useBanks().setupBank({ connector: 'qonto', credentials: {}, mode: 'edit', name: 'Qonto main', newName: 'Qonto main' }))
+      .rejects
+      .toThrow('editing a bank needs its connection identifier');
+    expect(addBank).not.toHaveBeenCalled();
+    expect(editBank).not.toHaveBeenCalled();
+  });
+
   describe('answering an authentication request', () => {
     const challenge = { challenge: null, challengeData: null, challengeHtml: null, challengeMimeType: null, primitive: 'otp input' as const, prompt: 'Enter TAN' };
 
