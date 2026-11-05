@@ -1,5 +1,5 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue';
+import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { WritableRef } from '@/modules/core/common/common-types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
@@ -64,7 +64,7 @@ interface UseHistoryEventsFiltersReturn {
   locationLabels: Readonly<Ref<string[]>>;
   groupIdentifiers: ComputedRef<string[] | undefined>;
   refetch: () => Promise<void>;
-  filters: ComputedRef<Filters>;
+  filters: WritableComputedRef<Filters>;
   groupLoading: Ref<boolean>;
   groups: Ref<Collection<HistoryEventRow>>;
   hasActiveFilters: ComputedRef<boolean>;
@@ -76,9 +76,9 @@ interface UseHistoryEventsFiltersReturn {
   locations: ComputedRef<string[]>;
   onLocationLabelsChanged: (locationLabels: string[]) => void;
   requestPayload: ComputedRef<HistoryEventRequestPayload>;
-  pagination: ComputedRef<TablePaginationData>;
+  pagination: WritableComputedRef<TablePaginationData>;
   setPage: (page: number, source?: ChangeSource) => void;
-  sort: ComputedRef<DataTableSortData<HistoryEventRow>>;
+  sort: WritableComputedRef<DataTableSortData<HistoryEventRow>>;
   setFilter: (newFilter: Filters) => void;
   usedLocationLabels: ComputedRef<string[]>;
 }

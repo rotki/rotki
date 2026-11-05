@@ -14,7 +14,7 @@ import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
-const pagination = defineModel<TablePaginationData>('pagination');
+const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 
 const { emptyDescription, loading = false, rows, showClearFilters = false } = defineProps<{
   rows: DataIssue[];
@@ -74,7 +74,6 @@ const headers = computed<DataTableColumn<DataIssue>[]>(() => [
       row-attr="id"
       :empty="emptyState"
       data-testid="data-issues-table"
-      @click:row="emit('open', $event)"
     >
       <template #item.kind="{ row }">
         <DataIssueKindChip :kind="row.kind" />

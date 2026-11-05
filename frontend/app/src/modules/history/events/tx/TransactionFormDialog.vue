@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddTransactionHashPayload, LocationAndTxRef } from '@/modules/history/events/event-payloads';
 import { useTemplateRef } from 'vue';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
@@ -19,7 +20,7 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const submitting = ref<boolean>(false);
-const errorMessages = ref<Record<string, string[]>>({});
+const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<InstanceType<typeof TransactionForm>>('form');
 const stateUpdated = ref<boolean>(false);
 

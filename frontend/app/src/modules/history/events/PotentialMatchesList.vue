@@ -190,7 +190,7 @@ watchDebounced(onlyExpectedAssets, () => {
         @widen="widenSearch()"
       />
 
-      <Component
+      <component
         :is="isPinned ? PotentialMatchesCards : PotentialMatchesTable"
         v-if="matches.length > 0 || loading"
         v-model:selected-ids="selectedMatchIds"

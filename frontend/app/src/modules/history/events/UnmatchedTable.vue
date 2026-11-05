@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="TItem">
+<script setup lang="ts" generic="TRow extends UnmatchedRow<unknown>">
 import type { DataTableColumn } from '@rotki/ui-library';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
@@ -17,9 +17,9 @@ import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const selected = defineModel<string[]>('selected', { required: true });
 
-const { highlightedGroupIdentifier, variant } = defineProps<UnmatchedTableProps<TItem>>();
+const { highlightedGroupIdentifier, variant } = defineProps<UnmatchedTableProps<TRow>>();
 
-const emit = defineEmits<UnmatchedPresentationEmits<TItem>>();
+const emit = defineEmits<UnmatchedPresentationEmits<TRow['original']>>();
 
 defineSlots<{
   alert?: () => unknown;
@@ -29,7 +29,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const isBridge = computed<boolean>(() => variant === UnmatchedVariant.BRIDGE);
 
-const columns = computed<DataTableColumn<UnmatchedRow<TItem>>[]>(() => [
+const columns = computed<DataTableColumn<TRow>[]>(() => [
   {
     key: 'timestamp',
     label: t('common.datetime'),
@@ -53,7 +53,7 @@ const columns = computed<DataTableColumn<UnmatchedRow<TItem>>[]>(() => [
   },
 ]);
 
-function getRowClass(row: UnmatchedRow<TItem>): string {
+function getRowClass(row: TRow): string {
   const classes = ['transition-all'];
   if (row.groupIdentifier === highlightedGroupIdentifier) {
     classes.push('bg-rui-warning/15!');

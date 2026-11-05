@@ -2,7 +2,6 @@ import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { defineComponent, h, type VNode } from 'vue';
 import DataIssuesTable from '@/modules/history/data-issues/components/DataIssuesTable.vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
@@ -45,6 +44,7 @@ function createWrapper(rows: DataIssue[]): VueWrapper<InstanceType<typeof DataIs
     },
     props: {
       emptyDescription: 'empty',
+      pagination: { limit: 10, page: 1, total: rows.length },
       rows,
     },
   });
@@ -93,34 +93,6 @@ describe('data-issues table', () => {
     const wrapper = createWrapper([issue]);
 
     await wrapper.find('[data-testid="data-issues-view-details"]').trigger('click');
-
-    expect(wrapper.emitted('open')?.[0]?.[0]).toStrictEqual(issue);
-  });
-
-  it('should emit open with the row when a row is clicked', async () => {
-    const RuiDataTableStub = defineComponent({
-      emits: ['click:row'],
-      props: { rows: { default: () => [], type: Array } },
-      setup(props, { emit }): () => VNode {
-        return () => h('button', { onClick: () => emit('click:row', props.rows[0]) });
-      },
-    });
-    const issue = createIssue({ id: 42 });
-    const wrapper = mount(DataIssuesTable, {
-      global: {
-        plugins: [createPinia()],
-        stubs: {
-          CounterpartyDisplay: true,
-          RuiDataTable: RuiDataTableStub,
-        },
-      },
-      props: {
-        emptyDescription: 'empty',
-        rows: [issue],
-      },
-    });
-
-    await wrapper.find('button').trigger('click');
 
     expect(wrapper.emitted('open')?.[0]?.[0]).toStrictEqual(issue);
   });
