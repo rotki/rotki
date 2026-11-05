@@ -186,6 +186,20 @@ describe('useBackgroundTasks', () => {
     expect(await outcomeOf(0)).toEqual({ ok: true, value: undefined });
   });
 
+  it('should show a failure that arrives right after the periodic data settled its row', async () => {
+    vi.useFakeTimers({ now: 1_000 });
+    const { onStatus, resync } = await setup();
+    onStatus(status(transactions, { status: 'started' }));
+    resync([], 2_000);
+    onStatus(status(transactions, { error: 'indexer down', status: 'failed' }));
+    vi.useRealTimers();
+
+    expect(specs).toHaveLength(2);
+    const outcome = await outcomeOf(1);
+    assert(outcome && !outcome.ok);
+    expect(outcome.error.message).toBe('indexer down');
+  });
+
   it('should leave a mirror created after the periodic request was sent', async () => {
     vi.useFakeTimers({ now: 3_000 });
     const { onStatus, resync } = await setup();
