@@ -72,7 +72,7 @@ defineExpose({
 </script>
 
 <template>
-  <Component
+  <component
     :is="formComponents[entryType]"
     ref="form"
     v-model:state-updated="stateUpdated"

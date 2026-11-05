@@ -73,10 +73,9 @@ const { description, emptyDescription, failure, rows, specFor } = kind.useRows({
       </RuiButton>
     </div>
 
-    <Component
-      :is="isPinned ? UnmatchedCards : UnmatchedTable"
+    <UnmatchedCards
+      v-if="isPinned"
       v-model:selected="selected"
-      :variant="isPinned ? undefined : kind.variant"
       :rows="rows"
       :spec-for="specFor"
       :empty-description="emptyDescription"
@@ -97,6 +96,31 @@ const { description, emptyDescription, failure, rows, specFor } = kind.useRows({
           :match-minimum-tier="autoMatchMinimumTier"
         />
       </template>
-    </Component>
+    </UnmatchedCards>
+    <UnmatchedTable
+      v-else
+      v-model:selected="selected"
+      :variant="kind.variant"
+      :rows="rows"
+      :spec-for="specFor"
+      :empty-description="emptyDescription"
+      :failure="failure"
+      :highlighted-group-identifier="highlightedGroupIdentifier"
+      :ignore-loading="ignoreLoading"
+      :loading="loading"
+      @action="emit('action', $event)"
+      @retry="emit('retry')"
+    >
+      <template
+        v-if="matchDisabled"
+        #alert
+      >
+        <UnmatchedMatchDisabledAlert
+          :variant="kind.variant"
+          :count="showRestore ? 0 : items.length"
+          :match-minimum-tier="autoMatchMinimumTier"
+        />
+      </template>
+    </UnmatchedTable>
   </div>
 </template>

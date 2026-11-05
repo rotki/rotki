@@ -98,7 +98,6 @@ provideHistoryEventsRowContext(rowContext);
       v-model:sort="sort"
       v-model:pagination="pagination"
       :loading="loading"
-      :found="found"
     />
 
     <UpgradeRow

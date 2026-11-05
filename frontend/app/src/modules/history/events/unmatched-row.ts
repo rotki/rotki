@@ -39,9 +39,9 @@ export interface UnmatchedRow<TItem> {
 }
 
 /** What the table and the cards both take: the same rows, shown as a dialog table or as pinned cards. */
-export interface UnmatchedPresentationProps<TItem> {
-  rows: UnmatchedRow<TItem>[];
-  specFor: (row: UnmatchedRow<TItem>) => UnmatchedRowActionSpec;
+export interface UnmatchedPresentationProps<TRow extends UnmatchedRow<unknown>> {
+  rows: TRow[];
+  specFor: (row: TRow) => UnmatchedRowActionSpec;
   emptyDescription: string;
   /** Why the last load failed, shown in place of the empty text or above the rows it left. */
   failure?: UnmatchedFailure;
@@ -51,7 +51,7 @@ export interface UnmatchedPresentationProps<TItem> {
 }
 
 /** The table also names its location column, which reads as the exchange for asset movements. */
-export interface UnmatchedTableProps<TItem> extends UnmatchedPresentationProps<TItem> {
+export interface UnmatchedTableProps<TRow extends UnmatchedRow<unknown>> extends UnmatchedPresentationProps<TRow> {
   variant: UnmatchedVariant;
 }
 

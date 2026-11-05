@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="TItem">
+<script setup lang="ts" generic="TRow extends UnmatchedRow<unknown>">
 import type { UnmatchedPresentationEmits, UnmatchedPresentationProps, UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
@@ -12,23 +12,23 @@ import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const selected = defineModel<string[]>('selected', { required: true });
 
-const { highlightedGroupIdentifier } = defineProps<UnmatchedPresentationProps<TItem>>();
+const { highlightedGroupIdentifier } = defineProps<UnmatchedPresentationProps<TRow>>();
 
-const emit = defineEmits<UnmatchedPresentationEmits<TItem>>();
+const emit = defineEmits<UnmatchedPresentationEmits<TRow['original']>>();
 
 defineSlots<{
   alert?: () => unknown;
 }>();
 
-function rowKey(row: UnmatchedRow<TItem>): string {
+function rowKey(row: TRow): string {
   return row.id;
 }
 
-function isHighlighted(row: UnmatchedRow<TItem>): boolean {
+function isHighlighted(row: TRow): boolean {
   return row.groupIdentifier === highlightedGroupIdentifier;
 }
 
-function isUntracked(row: UnmatchedRow<TItem>): boolean {
+function isUntracked(row: TRow): boolean {
   return row.untracked;
 }
 </script>
