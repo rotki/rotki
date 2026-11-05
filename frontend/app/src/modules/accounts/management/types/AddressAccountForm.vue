@@ -26,7 +26,6 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const address = useTemplateRef<InstanceType<typeof AddressInput>>('address');
-const selectedModules = ref<Module[]>([]);
 
 const { isEvm } = useSupportedChains();
 const { addressCheck } = useAddressCheck();
@@ -125,6 +124,19 @@ const showWalletImport = computed<boolean>(() => {
   return isEvm(model.chain) || model.chain === 'all';
 });
 
+/** The modules the addition enables once it lands; an edit has none to pick. */
+const selectedModules = computed<Module[]>({
+  get() {
+    const model = get(modelValue);
+    return model.mode === 'add' ? model.modules ?? [] : [];
+  },
+  set(modules: Module[]) {
+    const model = get(modelValue);
+    if (model.mode === 'add')
+      set(modelValue, { ...model, modules });
+  },
+});
+
 /** The input validates synchronously now; the account form still awaits every child alike. */
 async function validate(): Promise<boolean> {
   assert(isDefined(address));
@@ -140,7 +152,7 @@ defineExpose({
   <div class="flex flex-col gap-6">
     <ModuleActivator
       v-if="[Blockchain.ETH, 'all'].includes(modelValue.chain) && !editMode"
-      @update:selection="selectedModules = $event"
+      v-model:selection="selectedModules"
     />
 
     <div class="flex flex-col gap-2">

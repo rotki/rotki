@@ -4,6 +4,8 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
 import AddressAccountForm from '@/modules/accounts/management/types/AddressAccountForm.vue';
+import ModuleActivator from '@/modules/accounts/ModuleActivator.vue';
+import { Module } from '@/modules/core/common/modules';
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): Record<string, unknown> => ({ isEvm: (): boolean => true }),
@@ -30,6 +32,18 @@ function createWrapper(modelValue: AccountManage): VueWrapper<InstanceType<typeo
 }
 
 describe('addressAccountForm', () => {
+  describe('the module activator', () => {
+    it('should carry the picked modules into the account being added', async () => {
+      const wrapper = createWrapper(createNewBlockchainAccount());
+
+      await wrapper.findComponent(ModuleActivator).vm.$emit('update:selection', [Module.LIQUITY]);
+
+      const updates = wrapper.emitted('update:modelValue');
+      expect(updates).toHaveLength(1);
+      expect(updates?.[0]).toEqual([expect.objectContaining({ mode: 'add', modules: [Module.LIQUITY] })]);
+    });
+  });
+
   describe('the CSV import link', () => {
     it('should ask for the CSV import when clicked', async () => {
       const wrapper = createWrapper(createNewBlockchainAccount());
