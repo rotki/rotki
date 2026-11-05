@@ -465,6 +465,31 @@ class DBFilterQuery(ABC):
     order_by: DBFilterOrder | None = None
     pagination: DBFilterPagination | None = None
 
+    def prepare_conditions(
+            self,
+            without_ignored_asset_filter: bool = False,
+    ) -> tuple[list[str], list[str], list[Any]]:
+        """Prepare the join and filter predicates for reuse within a query flow."""
+        query_parts: list[str] = []
+        filterstrings: list[str] = []
+        bindings: list[Any] = []
+        if self.join_clause is not None:
+            join_querystr, single_bindings = self.join_clause.prepare()
+            query_parts.append(join_querystr[0])
+            bindings.extend(single_bindings)
+
+        for fil in self.filters:
+            if without_ignored_asset_filter and isinstance(fil, DBIgnoredAssetsFilter):
+                continue
+            filters, single_bindings = fil.prepare()
+            if len(filters) == 0:
+                continue
+            operator = ' AND ' if fil.and_op else ' OR '
+            filterstrings.append(f'({operator.join(filters)})')
+            bindings.extend(single_bindings)
+
+        return query_parts, filterstrings, bindings
+
     def prepare(
             self,
             with_pagination: bool = True,
@@ -472,6 +497,7 @@ class DBFilterQuery(ABC):
             with_group_by: bool = False,
             without_ignored_asset_filter: bool = False,
             extra_conditions: list[tuple[str, list[Any]]] | None = None,
+            prepared_conditions: tuple[list[str], list[str], list[Any]] | None = None,
     ) -> tuple[str, list[Any]]:
         """Prepares a filter by converting the filters to a query string
 
@@ -488,26 +514,14 @@ class DBFilterQuery(ABC):
         WHERE clause. Each entry is a (sql_fragment, bindings) tuple. These are appended
         after the normal filters but before GROUP BY / ORDER BY / PAGINATION.
         """
-        query_parts = []
-        bindings: list[Any] = []
-        filterstrings = []
-
-        if self.join_clause is not None:
-            join_querystr, single_bindings = self.join_clause.prepare()
-            query_parts.append(join_querystr[0])
-            bindings.extend(single_bindings)
-
-        for fil in self.filters:
-            if without_ignored_asset_filter and isinstance(fil, DBIgnoredAssetsFilter):
-                continue  # skip subtable select filter as it's already applied
-
-            filters, single_bindings = fil.prepare()
-            if len(filters) == 0:
-                continue
-
-            operator = ' AND ' if fil.and_op else ' OR '
-            filterstrings.append(f'({operator.join(filters)})')
-            bindings.extend(single_bindings)
+        if prepared_conditions is None:
+            query_parts, filterstrings, bindings = self.prepare_conditions(
+                without_ignored_asset_filter=without_ignored_asset_filter,
+            )
+        else:
+            query_parts = prepared_conditions[0].copy()
+            filterstrings = prepared_conditions[1].copy()
+            bindings = prepared_conditions[2].copy()
 
         if extra_conditions is not None:
             for condition_sql, condition_bindings in extra_conditions:
@@ -2944,6 +2958,7 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             with_group_by: bool = False,
             without_ignored_asset_filter: bool = False,
             extra_conditions: list[tuple[str, list[Any]]] | None = None,
+            prepared_conditions: tuple[list[str], list[str], list[Any]] | None = None,
     ) -> tuple[str, list[Any]]:
         """Prepare filters for the event_metrics query.
 
@@ -2956,6 +2971,7 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             with_group_by=with_group_by,
             without_ignored_asset_filter=without_ignored_asset_filter,
             extra_conditions=extra_conditions,
+            prepared_conditions=prepared_conditions,
         )
         if filter_str.startswith('WHERE '):
             filter_str = 'AND ' + filter_str[6:]
