@@ -231,7 +231,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     const response = await api.post<PendingTask>(
       '/history/events/query/exchange/range',
       {
-        ...payload,
+        ...omit(payload, ['label']),
         asyncQuery: true,
       },
     );

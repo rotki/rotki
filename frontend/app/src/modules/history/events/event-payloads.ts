@@ -129,8 +129,9 @@ export interface RepullingEthStakingResponse {
 }
 
 export interface RepullingExchangeEventsPayload extends TimeRange {
-  location: string;
-  name: string;
+  identifier: string;
+  /** Names the connection in task messages; never sent to the backend. */
+  label: string;
 }
 
 export interface RepullingExchangeEventsResponse {

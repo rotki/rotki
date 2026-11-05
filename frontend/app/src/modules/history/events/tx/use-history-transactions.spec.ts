@@ -354,7 +354,7 @@ describe('useHistoryTransactions', () => {
   });
 
   describe('repullingExchangeEvents', () => {
-    const payload = { location: 'kraken', name: 'my kraken' };
+    const payload = { identifier: 'conn-1', label: 'my kraken (kraken)' };
 
     beforeEach(() => {
       reset();

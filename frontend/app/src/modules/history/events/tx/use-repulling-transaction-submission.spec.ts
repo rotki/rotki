@@ -220,8 +220,8 @@ describe('modules/history/events/tx/useRepullingTransactionSubmission', () => {
 
       expect(repullingExchangeEvents).toHaveBeenCalledExactlyOnceWith({
         fromTimestamp: 500,
-        location: 'kraken',
-        name: 'Kraken 1',
+        identifier: exchange.identifier,
+        label: 'Kraken 1 (kraken)',
         toTimestamp: 600,
       });
       expect(repullingTransactions).not.toHaveBeenCalled();
@@ -234,7 +234,7 @@ describe('modules/history/events/tx/useRepullingTransactionSubmission', () => {
 
       await submit();
 
-      expect(repullingExchangeEvents).toHaveBeenCalledWith(expect.objectContaining({ location: '', name: '' }));
+      expect(repullingExchangeEvents).toHaveBeenCalledWith(expect.objectContaining({ identifier: '', label: '' }));
     });
 
     it('should hand the caller the exchange when new events were found', async () => {

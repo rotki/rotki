@@ -2071,7 +2071,8 @@ class DBHandler:
 
         Currently possible names are:
         - {connection identifier}_margins
-        - {location}_history_events_{optional_label}
+        - {connection identifier}_history_events
+        - {connection identifier}_history_events_futures
         - {connection identifier}_lending_history
         - gnosisbridge_{address}
         """
@@ -2097,7 +2098,11 @@ class DBHandler:
         if data_type == ExchangePurgeType.ALL:
             DBConnections.delete_progress(write_cursor, connection_ids)
         elif data_type == ExchangePurgeType.OTHER:
-            DBConnections.delete_progress(write_cursor, connection_ids, kinds=['history_events'])
+            DBConnections.delete_progress(
+                write_cursor,
+                connection_ids,
+                kinds=['history_events', 'history_events_futures'],
+            )
         events_db = DBHistoryEvents(database=self)
         if data_type in (ExchangePurgeType.ALL, ExchangePurgeType.ASSET_MOVEMENTS):
             events_db.restore_matched_events_before_purge(

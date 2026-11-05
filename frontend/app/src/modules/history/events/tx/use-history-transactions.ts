@@ -126,7 +126,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     const dateRange = buildDateRange(payload.fromTimestamp, payload.toTimestamp);
     const messagePayload = {
       dateRange,
-      exchange: `${payload.name} (${payload.location})`,
+      exchange: payload.label,
     };
 
     const subtitle = t('actions.repulling_exchange_events.task.description', messagePayload);

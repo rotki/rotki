@@ -22,8 +22,8 @@ export const repullTransactionsActivity = defineActivity<RepullingTransactionPay
 });
 
 /** Re-pulling one exchange's events over a range, keyed the same way. */
-export const repullExchangeEventsActivity = defineActivity<RepullingExchangeEventsPayload, readonly [string, string, number, number]>({
-  key: subject => [subject.location, subject.name, subject.fromTimestamp ?? 0, subject.toTimestamp ?? 0],
+export const repullExchangeEventsActivity = defineActivity<RepullingExchangeEventsPayload, readonly [string, number, number]>({
+  key: subject => [subject.identifier, subject.fromTimestamp ?? 0, subject.toTimestamp ?? 0],
   kind: ActivityKind.REPULLING,
   part: ActivityPart.EXCHANGE,
 });

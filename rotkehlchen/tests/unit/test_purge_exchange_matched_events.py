@@ -2,7 +2,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.connections.types import ConnectorIdentifier
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HistoryEventLinkType,
@@ -20,7 +22,7 @@ from rotkehlchen.locations.constants import (
 )
 from rotkehlchen.tasks.events import match_asset_movements
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import TimestampMS
+from rotkehlchen.types import ApiKey, ApiSecret, ExchangePurgeType, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -172,3 +174,32 @@ def test_purge_exchange_with_adjustment_event(database: DBHandler) -> None:
         )
         onchain_receive.identifier = remaining[0].identifier
         assert remaining == [onchain_receive]
+
+
+@pytest.mark.parametrize('purge_type', [ExchangePurgeType.OTHER, ExchangePurgeType.ALL])
+def test_purge_forgets_futures_query_range(
+        database: DBHandler,
+        purge_type: ExchangePurgeType,
+) -> None:
+    """Kraken Futures events are 'other' events, so their query range has to be forgotten too"""
+    with database.user_write() as write_cursor:
+        identifier = DBConnections.add(
+            write_cursor=write_cursor,
+            name='kraken1',
+            connector=ConnectorIdentifier(LOCATION_KRAKEN),
+            location=LOCATION_KRAKEN,
+            api_key=ApiKey('key'),
+            api_secret=ApiSecret(b'secret'),
+        ).identifier
+        write_cursor.executemany(
+            'INSERT INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, 0, 100)',
+            [(f'{identifier}_history_events',), (f'{identifier}_history_events_futures',)],
+        )
+        database.purge_exchange_data(
+            write_cursor=write_cursor,
+            location=LOCATION_KRAKEN,
+            data_type=purge_type,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE ?', (f'{identifier}_%',)).fetchone()[0] == 0  # noqa: E501

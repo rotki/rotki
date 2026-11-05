@@ -23,6 +23,7 @@ from rotkehlchen.api.rest_helpers.downloads import (
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants import HOUR_IN_SECONDS, ZERO
 from rotkehlchen.db.accounting_rules import query_missing_accounting_rules
 from rotkehlchen.db.constants import HistoryEventLinkType
@@ -37,7 +38,6 @@ from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import AccountingError, APIKeyNotAvailable, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -48,7 +48,6 @@ from rotkehlchen.history.events.utils import (
 )
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.locations.constants import (
-    LOCATION_BANKS,
     LOCATION_KRAKEN,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -278,29 +277,25 @@ class HistoryService:
             f'{blockchain.to_range_prefix("txs")}_%'
             for blockchain in EVM_CHAINS_WITH_TRANSACTIONS
         ]
-        synced_locations = SUPPORTED_EXCHANGES + (LOCATION_BANKS,)
-        exchanges_where_str = ' OR '.join(['name LIKE ?'] * len(synced_locations))
-        exchanges_bindings = [
-            f'{location!s}_history_events_%'
-            for location in synced_locations
-        ]
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             evm_last_queried_ts = cursor.execute(
                 f'SELECT MAX(end_ts) FROM used_query_ranges WHERE {evm_where_str}',
                 evm_bindings,
             ).fetchone()[0] or Timestamp(0)
             exchanges_last_queried_ts = cursor.execute(
-                f'SELECT MAX(end_ts) FROM used_query_ranges WHERE {exchanges_where_str}',
-                exchanges_bindings,
+                'SELECT MAX(u.end_ts) FROM used_query_ranges u JOIN integration_connections c '
+                'ON u.name IN (c.identifier || ?, c.identifier || ?)',
+                (
+                    connection_range_name('', 'history_events'),
+                    connection_range_name('', 'history_events_futures'),
+                ),
             ).fetchone()[0] or Timestamp(0)
             has_evm_accounts = cursor.execute(
                 f'SELECT COUNT(*) FROM blockchain_accounts WHERE blockchain IN ({",".join(["?"] * len(EVM_CHAINS_WITH_TRANSACTIONS))})',  # noqa: E501
                 [blockchain.value for blockchain in EVM_CHAINS_WITH_TRANSACTIONS],
             ).fetchone()[0] > 0
-            exchanges_bindings_with_rotkehlchen = list(synced_locations) + ['rotkehlchen']
             has_exchanges_accounts = cursor.execute(
-                f'SELECT COUNT(*) FROM user_credentials WHERE location IN ({",".join(["?"] * len(synced_locations))}) AND name != ?',  # noqa: E501
-                exchanges_bindings_with_rotkehlchen,
+                'SELECT COUNT(*) FROM integration_connections',
             ).fetchone()[0] > 0
 
         undecoded_count = DBEvmTx(self.rotkehlchen.data.db).count_hashes_not_decoded(

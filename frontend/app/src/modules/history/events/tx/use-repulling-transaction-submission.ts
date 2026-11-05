@@ -118,8 +118,8 @@ export function useRepullingTransactionSubmission(
     const exchange = toValue(form)?.getExchangeData();
     const exchangePayload: RepullingExchangeEventsPayload = {
       fromTimestamp: data.fromTimestamp,
-      location: exchange?.location ?? '',
-      name: exchange?.name ?? '',
+      identifier: exchange?.identifier ?? '',
+      label: exchange ? `${exchange.name} (${exchange.location})` : '',
       toTimestamp: data.toTimestamp,
     };
 
