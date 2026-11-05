@@ -1792,7 +1792,6 @@
     },
     "more": "+{count} more not shown",
     "operation": {
-      "background_task": "Background task",
       "balance_query": "Balance query",
       "data_migration": "Data migration",
       "decoder_initialization": "Decoder startup",
