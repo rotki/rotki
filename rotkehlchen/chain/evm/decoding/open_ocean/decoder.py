@@ -136,7 +136,7 @@ class OpenOceanDecoder(EvmDecoderInterface, ABC):
         """Handle post decoding for OpenOcean.
         Decodes swaps that used uniswap and have no SWAPPED_TOPIC tx_log.
         """
-        if SWAPPED_TOPIC in (topics := {tx_log.topics[0] for tx_log in all_logs}):
+        if SWAPPED_TOPIC in (topics := {tx_log.topics[0] for tx_log in all_logs if len(tx_log.topics) != 0}):  # noqa: E501
             return decoded_events  # Prevent re-decoding if tx with SWAPPED_TOPIC tx_log also used uniswap  # noqa: E501
         elif UNISWAP_V2_SWAP_SIGNATURE in topics or UNISWAP_V3_SWAP_SIGNATURE in topics:
             # No SWAPPED_TOPIC txlog so can't specify assets and amounts to check in _decode_swap.
