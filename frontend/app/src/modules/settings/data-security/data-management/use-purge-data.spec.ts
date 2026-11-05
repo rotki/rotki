@@ -191,6 +191,19 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
       expect(fetchCsvImportedEventsSummary).toHaveBeenCalledTimes(3);
     });
 
+    it('should run a CSV purge at a location named like a purgeable-only module through the activity', async () => {
+      const { modelCsvImportLocation, showConfirmation } = purge();
+      set(modelCsvImportLocation, PurgeableOnlyModule.LOOPRING);
+
+      showConfirmation(Purgeable.CSV_IMPORTS);
+      await vi.waitFor(() => expect(show).toHaveBeenCalledOnce());
+      await accept();
+
+      expect(purgeData).toHaveBeenCalledOnce();
+      expect(deleteCsvImportedEvents).toHaveBeenCalledExactlyOnceWith(PurgeableOnlyModule.LOOPRING);
+      expect(fetchCsvImportedEventsSummary).toHaveBeenCalledTimes(3);
+    });
+
     it('should route a decentralized exchange to the module endpoint and nothing else', async () => {
       const { modelDecentralizedExchange, showConfirmation } = purge();
       set(modelDecentralizedExchange, Module.UNISWAP);

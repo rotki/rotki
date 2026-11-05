@@ -210,7 +210,7 @@ export function usePurgeData(): UsePurgeDataReturn {
   async function purgeSource(source: Purgeable): Promise<boolean> {
     const value = selectedValue(source);
 
-    if (purgeableOnlyModules.includes(value)) {
+    if (source === Purgeable.DEFI_MODULES && purgeableOnlyModules.includes(value)) {
       await deleteSourceData(source, value);
       return true;
     }

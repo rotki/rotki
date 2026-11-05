@@ -2301,8 +2301,14 @@ def test_get_counterparties_at_location_scopes_by_location_and_entry_type(
         ) == set()
 
 
-def test_purge_csv_import_restores_surviving_match(database: DBHandler) -> None:
+@pytest.mark.parametrize('purge_all', [False, True])
+def test_purge_csv_import_restores_surviving_match(database: DBHandler, purge_all: bool) -> None:
+    """Purging a CSV import undoes its asset movement matches. The match adjustment in the
+    purged movement's group goes with it, and a surviving matched event that was itself
+    CSV-imported keeps its import marker. When both matched sides are purged, nothing of
+    the match is left behind."""
     events_db = DBHistoryEvents(database)
+    matched_db = HistoryMappingState.MATCHED.serialize_for_db()
     with database.user_write() as write_cursor:
         imported_id = events_db.add_history_event(
             write_cursor=write_cursor,
@@ -2318,6 +2324,20 @@ def test_purge_csv_import_restores_surviving_match(database: DBHandler) -> None:
                 HISTORY_MAPPING_KEY_STATE: HistoryMappingState.IMPORTED_FROM_CSV,
             },
         )
+        adjustment_id = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='csv_movement',
+                sequence_index=1,
+                timestamp=TimestampMS(1000),
+                location=LOCATION_KRAKEN,
+                event_type=HistoryEventType.EXCHANGE_ADJUSTMENT,
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_ETH,
+                amount=FVal('0.01'),
+            ),
+            mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.MATCHED},
+        )
         surviving_id = events_db.add_history_event(
             write_cursor=write_cursor,
             event=HistoryEvent(
@@ -2328,23 +2348,30 @@ def test_purge_csv_import_restores_surviving_match(database: DBHandler) -> None:
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
-                amount=ONE,
+                amount=FVal('0.99'),
                 notes='original',
             ),
+            mapping_values={
+                HISTORY_MAPPING_KEY_STATE: HistoryMappingState.IMPORTED_FROM_CSV,
+            },
         )
         assert imported_id is not None and surviving_id is not None
+        assert adjustment_id is not None
         events_db.save_history_event_backup(write_cursor, surviving_id)
         write_cursor.execute(
             'UPDATE history_events SET notes=? WHERE identifier=?',
             ('matched', surviving_id),
         )
-        write_cursor.execute(
+        write_cursor.executemany(
             'INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES(?, ?, ?)',
-            (
-                surviving_id,
-                HISTORY_MAPPING_KEY_STATE,
-                HistoryMappingState.MATCHED.serialize_for_db(),
-            ),
+            [
+                (surviving_id, HISTORY_MAPPING_KEY_STATE, matched_db),
+                (
+                    adjustment_id,
+                    HISTORY_MAPPING_KEY_STATE,
+                    HistoryMappingState.SYNTHETIC.serialize_for_db(),
+                ),
+            ],
         )
         write_cursor.execute(
             'INSERT INTO history_event_links(left_event_id, right_event_id, link_type) '
@@ -2356,21 +2383,32 @@ def test_purge_csv_import_restores_surviving_match(database: DBHandler) -> None:
             ),
         )
 
-    assert events_db.purge_csv_imported_events(location=LOCATION_KRAKEN) == 1
+    assert events_db.purge_csv_imported_events(
+        location=None if purge_all else LOCATION_KRAKEN,
+    ) == (2 if purge_all else 1)
     with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT identifier FROM history_events WHERE identifier IN (?, ?)',
+            (imported_id, adjustment_id),
+        ).fetchall() == []
+        if purge_all:
+            assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0
+            return
+
         assert cursor.execute(
             'SELECT notes FROM history_events WHERE identifier=?',
             (surviving_id,),
         ).fetchone() == ('original',)
         assert cursor.execute(
-            'SELECT COUNT(*) FROM history_events_mappings WHERE parent_identifier=? '
-            'AND name=? AND value=?',
-            (
-                surviving_id,
-                HISTORY_MAPPING_KEY_STATE,
-                HistoryMappingState.MATCHED.serialize_for_db(),
-            ),
-        ).fetchone()[0] == 0
+            'SELECT value FROM history_events_mappings WHERE parent_identifier=? AND name=?',
+            (surviving_id, HISTORY_MAPPING_KEY_STATE),
+        ).fetchall() == [(HistoryMappingState.IMPORTED_FROM_CSV.serialize_for_db(),)]
+
+    assert events_db.get_csv_imported_events_summary() == [{
+        'location': LOCATION_ETHEREUM,
+        'events_count': 1,
+        'customized_events_count': 0,
+    }]
 
 
 def test_csv_import_purge_rolls_back_on_failure(database: DBHandler) -> None:

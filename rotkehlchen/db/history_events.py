@@ -707,12 +707,25 @@ class DBHistoryEvents:
         Events without a backup are silently skipped.
         """
         for chunk, placeholders in get_query_chunks(identifiers):
+            # Replacing an event deletes its row first, which cascades all its mappings away.
+            # Keep them so that state such as the CSV import marker survives the restore.
+            # Callers drop the mappings the restore is meant to undo (e.g. MATCHED).
+            mappings = write_cursor.execute(
+                'SELECT parent_identifier, name, value FROM history_events_mappings '
+                f'WHERE parent_identifier IN ({placeholders})',
+                chunk,
+            ).fetchall()
             for table in ('history_events', 'chain_events_info'):
                 write_cursor.execute(
                     f'INSERT OR REPLACE INTO {table} '
                     f'SELECT * FROM {table}_backup WHERE identifier IN ({placeholders})',
                     chunk,
                 )
+            write_cursor.executemany(
+                'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
+                'VALUES (?, ?, ?)',
+                mappings,
+            )
             # Delete backup entries (also deletes backup chain info via foreign key)
             write_cursor.execute(
                 f'DELETE FROM history_events_backup WHERE identifier IN ({placeholders})',
@@ -752,6 +765,7 @@ class DBHistoryEvents:
 
         link_type_db = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
         matched_db = HistoryMappingState.MATCHED.serialize_for_db()
+        linked_events: set[int] = set()
         events_to_restore: set[int] = set()
 
         for chunk, placeholders in get_query_chunks(list(identifiers)):
@@ -761,17 +775,19 @@ class DBHistoryEvents:
                     f'WHERE link_type=? AND {linked_column} IN ({placeholders})',
                     (link_type_db, *chunk),
                 ):
+                    linked_events.update((left_id, right_id))
                     if left_id in identifiers and right_id not in identifiers:
                         events_to_restore.add(right_id)
                     elif right_id in identifiers and left_id not in identifiers:
                         events_to_restore.add(left_id)
 
-        if len(events_to_restore) == 0:
+        if len(linked_events) == 0:
             return
 
-        # clean up any adjustment events that were auto-created during matching
-        # on the surviving side (adjustments in the purged location get deleted with the purge)
-        for chunk, placeholders in get_query_chunks(list(events_to_restore)):
+        # clean up any adjustment events auto-created during matching on either side of the
+        # match. They are not necessarily part of the purge selection (a CSV purge only
+        # selects CSV-imported events), so they would otherwise outlive the purged match.
+        for chunk, placeholders in get_query_chunks(list(linked_events)):
             self.delete_events_and_track(
                 write_cursor=write_cursor,
                 where_clause=(
@@ -788,6 +804,9 @@ class DBHistoryEvents:
                     matched_db,
                 ),
             )
+
+        if len(events_to_restore) == 0:
+            return
 
         # put each surviving event back to its pre-match state
         self.maybe_restore_history_events_from_backup(
