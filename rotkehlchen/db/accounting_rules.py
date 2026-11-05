@@ -553,7 +553,8 @@ def _events_to_consume(
         cursor: DBCursor,
         callbacks: dict[int, tuple[int, EventsAccountantCallback]],
         events_iterator: peekable[tuple[tuple[Any, ...], HistoryBaseEntry]],
-        next_events: Sequence[HistoryBaseEntry],
+        related_events: Sequence[HistoryBaseEntry],
+        next_event_index: int,
         event: HistoryBaseEntry,
         pot: AccountingPot,
         event_specific_treatments: dict[int, str | None] | None = None,
@@ -617,7 +618,7 @@ def _events_to_consume(
     processed_events_num = callback(
         pot=pot,
         event=event,  # type: ignore[arg-type] # mypy doesn't recognize that this is an evm event
-        other_events=peekable(next_events),  # type: ignore[arg-type]  # mypy doesn't recognize that this is an evm event
+        other_events=peekable(related_events[next_event_index:]),  # type: ignore[arg-type]  # mypy doesn't recognize that this is an evm event
     )
 
     for _ in range(processed_events_num - 1):  # -1 because we exclude the current event here
@@ -838,7 +839,8 @@ def query_missing_accounting_rules(
                 cursor=cursor,
                 callbacks=callbacks,
                 events_iterator=bindings_and_events_iterator,
-                next_events=related_events[current_event_index + 1:],
+                related_events=related_events,
+                next_event_index=current_event_index + 1,
                 event=event,
                 pot=accounting_pot,
                 event_specific_treatments=event_specific_treatments,
