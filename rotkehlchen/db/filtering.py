@@ -301,18 +301,17 @@ class DBEvmTransactionJoinsFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBTransactionsPendingDecodingFilter(DBFilter):
-    """
-    This filter is used to find evm or solana transactions that have not been decoded yet.
-    It allows filtering by chain when used with the evm query.
-
-    Due to the joining we need to check for either value being NULL (meaning no entry
-    in evm_tx_mappings) or not having the DECODED value.
-    """
+    """Find EVM or Solana transactions without a decoded mapping, optionally by EVM chain."""
     mappings_table_name: str
     chain_id: ChainID | None = None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        query_filters = [f'(B.tx_id IS NULL OR B.tx_id NOT IN (SELECT tx_id FROM {self.mappings_table_name} WHERE value=?))']  # noqa: E501
+        query_filters = [
+            (
+                f'NOT EXISTS (SELECT 1 FROM {self.mappings_table_name} AS B '
+                'WHERE B.tx_id=C.identifier AND B.value=?)'
+            ),
+        ]
         bindings: list[int] = [TX_DECODED]
         if self.chain_id is not None:
             bindings.append(self.chain_id.serialize_for_db())
@@ -2598,7 +2597,7 @@ class EvmTransactionsNotDecodedFilterQuery(DBFilterQuery):
         filter_query = cls.create(
             and_op=True,
             limit=limit,
-            offset=None,
+            offset=0,
             order_by_rules=[('C.timestamp', True)],  # order by ascending timestamp
         )
         filter_query.filters = [DBTransactionsPendingDecodingFilter(
@@ -2619,8 +2618,8 @@ class SolanaTransactionsNotDecodedFilterQuery(DBFilterQuery):
         filter_query = cls.create(
             and_op=True,
             limit=limit,
-            offset=None,
-            order_by_rules=[('A.block_time', True)],  # order by ascending timestamp
+            offset=0,
+            order_by_rules=[('C.block_time', True)],  # order by ascending timestamp
         )
         filter_query.filters = [DBTransactionsPendingDecodingFilter(
             and_op=True,

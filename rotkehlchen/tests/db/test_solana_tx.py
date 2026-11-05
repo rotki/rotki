@@ -370,28 +370,35 @@ def test_query_txs_not_decoded(database: DBHandler) -> None:
             solana_transactions=txs,
             relevant_address=sol_address1,
         )
-
-    # All txs are not decoded
-    undecoded_sigs = dbsolanatx.get_transaction_hashes_not_decoded(
-        filter_query=(not_decoded_filter := SolanaTransactionsNotDecodedFilterQuery.make()),
-    )
-    undecoded_sig_count = dbsolanatx.count_hashes_not_decoded(filter_query=not_decoded_filter)
-    assert len(undecoded_sigs) == undecoded_sig_count == 3
-    assert all(x.signature in undecoded_sigs for x in txs)
-
-    # Mark one tx as decoded
-    with database.conn.write_ctx() as write_cursor:
-        tx0 = dbsolanatx.get_transactions(
-            cursor=write_cursor,
-            filter_=SolanaTransactionsFilterQuery.make(signature=undecoded_sigs[0]),
-        )[0]
         write_cursor.execute(
-            'INSERT OR IGNORE INTO solana_tx_mappings(tx_id, value) VALUES(?, ?)',
-            (tx0.db_id, TX_DECODED),
+            'INSERT INTO solana_tx_mappings(tx_id, value) '
+            'SELECT identifier, ? FROM solana_transactions WHERE signature=?',
+            (TX_DECODED + 1, bytes(txs[0].signature)),
+        )
+        write_cursor.execute(
+            'INSERT INTO solana_tx_mappings(tx_id, value) '
+            'SELECT identifier, ? FROM solana_transactions WHERE signature=?',
+            (TX_DECODED + 2, bytes(txs[0].signature)),
         )
 
-    # Only the remaining two txs are not decoded
-    undecoded_sigs = dbsolanatx.get_transaction_hashes_not_decoded(filter_query=not_decoded_filter)
-    undecoded_sig_count = dbsolanatx.count_hashes_not_decoded(filter_query=not_decoded_filter)
-    assert len(undecoded_sigs) == undecoded_sig_count == 2
-    assert all(x.signature in undecoded_sigs for x in [tx for tx in txs if tx.signature != tx0.signature])  # noqa: E501
+    # All txs are not decoded
+    not_decoded_filter = SolanaTransactionsNotDecodedFilterQuery.make()
+    assert dbsolanatx.get_transaction_hashes_not_decoded(
+        filter_query=not_decoded_filter,
+    ) == [tx.signature for tx in txs]
+    assert dbsolanatx.count_hashes_not_decoded(filter_query=not_decoded_filter) == 3
+    assert dbsolanatx.get_transaction_hashes_not_decoded(
+        filter_query=SolanaTransactionsNotDecodedFilterQuery.make(limit=2),
+    ) == [tx.signature for tx in txs[:2]]
+
+    with database.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO solana_tx_mappings(tx_id, value) '
+            'SELECT identifier, ? FROM solana_transactions WHERE signature=?',
+            (TX_DECODED, bytes(txs[0].signature)),
+        )
+
+    assert dbsolanatx.get_transaction_hashes_not_decoded(
+        filter_query=not_decoded_filter,
+    ) == [tx.signature for tx in txs[1:]]
+    assert dbsolanatx.count_hashes_not_decoded(filter_query=not_decoded_filter) == 2
