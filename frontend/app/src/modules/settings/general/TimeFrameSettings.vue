@@ -133,7 +133,6 @@ async function removeVisibleTimeframe(timeframe: TimeFrameSetting) {
           close-icon="lu-circle-plus"
           closeable
           clickable
-          :close="isTimeframesToggleable(timeframe)"
           :disabled="isTimeframeDisabled(timeframe)"
           @click:close="addVisibleTimeframe(timeframe)"
           @click="addVisibleTimeframe(timeframe)"

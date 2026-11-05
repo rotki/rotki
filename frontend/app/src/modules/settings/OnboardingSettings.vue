@@ -240,7 +240,6 @@ function showResetConfirmation() {
       <RuiTextField
         v-model="userDataDirectory"
         data-testid="user-data-directory-input"
-        :loading="!userDataDirectory"
         class="pt-2"
         color="primary"
         :disabled="!!fileConfig.dataDirectory || !userDataDirectory"
@@ -305,7 +304,6 @@ function showResetConfirmation() {
           v-model:log-from-other-modules="logFromOtherModules"
           :at-defaults="atDefaults"
           :file-config="fileConfig"
-          :loading="!configuration || !defaultBackendArguments"
           :max-log-files="form.state.maxLogFiles"
           :max-log-files-errors="form.errors('maxLogFiles')"
           :max-log-size="form.state.maxLogSize"

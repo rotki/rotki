@@ -73,7 +73,7 @@ function toggle(): void {
     </RuiTooltip>
   </div>
 
-  <Component
+  <component
     :is="inputComponent"
     v-model.trim="keyModel"
     color="primary"
@@ -83,7 +83,7 @@ function toggle(): void {
     prepend-icon="lu-key"
     :label="t('exchange_settings.inputs.futures_api_key')"
   />
-  <Component
+  <component
     :is="inputComponent"
     v-model.trim="secretModel"
     color="primary"

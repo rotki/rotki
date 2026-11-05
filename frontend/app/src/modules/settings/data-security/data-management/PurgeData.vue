@@ -51,7 +51,6 @@ const {
         v-if="modelSource === Purgeable.TRANSACTIONS"
         v-model="modelChain"
         clearable
-        persistent-hint
         :items="chainsSelection"
         :label="t('purge_selector.chain_to_clear.label')"
         :hint="t('purge_selector.chain_to_clear.hint')"
@@ -60,7 +59,6 @@ const {
         v-else-if="modelSource === Purgeable.CENTRALIZED_EXCHANGES"
         v-model="modelCentralizedExchange"
         clearable
-        persistent-hint
         :items="exchanges"
         :label="t('purge_selector.centralized_exchange_to_clear.label')"
         :hint="t('purge_selector.centralized_exchange_to_clear.hint')"
@@ -81,7 +79,6 @@ const {
         v-else-if="modelSource === Purgeable.DECENTRALIZED_EXCHANGES"
         v-model="modelDecentralizedExchange"
         clearable
-        persistent-hint
         :items="DECENTRALIZED_EXCHANGES"
         :label="t('purge_selector.decentralized_exchange_to_clear.label')"
         :hint="t('purge_selector.decentralized_exchange_to_clear.hint')"

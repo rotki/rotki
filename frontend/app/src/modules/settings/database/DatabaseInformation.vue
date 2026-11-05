@@ -114,7 +114,6 @@ onMounted(loadInfo);
 <template>
   <DefineRow #default="{ details }">
     <RuiCard
-      outlined
       no-padding
     >
       <div

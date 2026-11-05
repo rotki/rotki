@@ -11,14 +11,12 @@ const logFromOtherModules = defineModel<boolean>('logFromOtherModules', { requir
 const {
   atDefaults,
   fileConfig,
-  loading = false,
   maxLogFilesErrors = [],
   maxLogSizeErrors = [],
   sqliteInstructionsErrors = [],
 } = defineProps<{
   atDefaults: { maxLogFiles: boolean; maxLogSize: boolean; sqliteInstructions: boolean };
   fileConfig: Partial<BackendOptions>;
-  loading?: boolean;
   maxLogFilesErrors?: string[];
   maxLogSizeErrors?: string[];
   sqliteInstructionsErrors?: string[];
@@ -45,7 +43,6 @@ const { t } = useI18n({ useScope: 'global' });
       "
       :label="t('backend_settings.max_log_size.label')"
       :disabled="!!fileConfig.maxSizeInMbAllLogs"
-      :loading="loading"
       :error-messages="maxLogSizeErrors"
       type="number"
     >
@@ -69,7 +66,6 @@ const { t } = useI18n({ useScope: 'global' });
           : t('backend_settings.max_log_files.label')
       "
       :disabled="!!fileConfig.maxLogfilesNum"
-      :loading="loading"
       :error-messages="maxLogFilesErrors"
       type="number"
     >
@@ -94,7 +90,6 @@ const { t } = useI18n({ useScope: 'global' });
       "
       :label="t('backend_settings.sqlite_instructions.label')"
       :disabled="!!fileConfig.sqliteInstructions"
-      :loading="loading"
       :error-messages="sqliteInstructionsErrors"
       type="number"
     >

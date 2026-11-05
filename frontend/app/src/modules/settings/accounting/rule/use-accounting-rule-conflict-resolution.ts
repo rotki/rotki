@@ -1,3 +1,4 @@
+import type { Writeable } from '@rotki/common';
 import type { TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { ConflictResolution } from '@/modules/assets/types';
@@ -28,7 +29,7 @@ interface UseAccountingRuleConflictResolutionReturn {
   /** Whether a resolution is being submitted. */
   loading: Readonly<Ref<boolean>>;
   /** The per-conflict choices the user has made so far, keyed by local id. */
-  modelResolution: Ref<ConflictResolution>;
+  modelResolution: Ref<Writeable<ConflictResolution>>;
   /**
    * One strategy applied to every conflict at once.
    *
@@ -64,7 +65,7 @@ export function useAccountingRuleConflictResolution(
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const modelResolution = ref<ConflictResolution>({});
+  const modelResolution = ref<Writeable<ConflictResolution>>({});
   const modelSolveAllUsing = ref<ConflictResolutionStrategy>();
   const loading = shallowRef<boolean>(false);
 

@@ -162,7 +162,7 @@ onMounted(async () => {
               v-if="'service' in entry"
               :service="entry.service"
             />
-            <Component
+            <component
               :is="entry.component"
               v-else
             />
