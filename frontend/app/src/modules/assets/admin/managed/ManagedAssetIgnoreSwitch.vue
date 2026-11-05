@@ -52,7 +52,6 @@ const tooltipMessage = computed<string>(() =>
         <RuiSwitch
           color="primary"
           details="hidden"
-          :loading="loading"
           :disabled="isIgnoringDisabled"
           :model-value="isIgnored"
           data-testid="managed-asset-ignore-switch"

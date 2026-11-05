@@ -10,7 +10,7 @@ const sort = defineModel<DataTableSortData<SnapshotListRow>>('sort', {
 });
 
 /** Two-way bound so the caller can persist the page across navigation. */
-const pagination = defineModel<TablePaginationData | undefined>('pagination', { default: undefined });
+const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 
 const { emptyDescription, exporting, loading = false, rows } = defineProps<{
   rows: SnapshotListRow[];

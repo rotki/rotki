@@ -203,7 +203,6 @@ defineExpose({
             v-model="form.state.address"
             class="flex-1"
             color="primary"
-            :loading="fetching"
             :error-messages="form.errors('address')"
             :label="t('common.address')"
             :disabled="loading || fetching || editMode"
@@ -260,7 +259,6 @@ defineExpose({
           <RuiTextField
             v-model="form.state.address"
             color="primary"
-            :loading="fetching"
             :error-messages="form.errors('address')"
             :label="t('common.address')"
             :disabled="loading || fetching || editMode"

@@ -6,7 +6,7 @@ import { uniqueStrings } from '@/modules/core/common/data/data';
 
 const NFT_SORT_KEYS = ['name', 'price', 'collection'] as const;
 
-type NftSortKey = (typeof NFT_SORT_KEYS)[number];
+export type NftSortKey = (typeof NFT_SORT_KEYS)[number];
 
 type NftSortValue = string | BigNumber | null;
 
@@ -39,7 +39,7 @@ interface UseNftGalleryFiltersReturn {
   items: ComputedRef<GalleryNft[]>;
   modelSelectedAccounts: Ref<AddressAccount[]>;
   modelSelectedCollection: Ref<string | undefined>;
-  modelSortBy: Ref<'name' | 'price' | 'collection'>;
+  modelSortBy: Ref<NftSortKey>;
   modelSortDescending: Ref<boolean>;
   updateSortBy: (value: string) => void;
 }
@@ -50,7 +50,7 @@ export function useNftGalleryFilters(
 ): UseNftGalleryFiltersReturn {
   const modelSelectedAccounts = ref<AddressAccount[]>([]);
   const modelSelectedCollection = ref<string | undefined>();
-  const modelSortBy = shallowRef<'name' | 'price' | 'collection'>('name');
+  const modelSortBy = shallowRef<NftSortKey>('name');
   const modelSortDescending = shallowRef<boolean>(false);
 
   const availableAddresses = computed<string[]>(() => {

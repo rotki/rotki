@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { BalanceSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
+import type { Snapshot } from '@/modules/dashboard/snapshots';
 import type { BalanceMutation, LocationAttribution } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { toSentenceCase } from '@rotki/common';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
@@ -44,7 +44,7 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const pillLabels = usePillBarLabels();
 
-const sort = ref<DataTableSortData<BalanceSnapshot>>({
+const sort = ref<DataTableSortData<IndexedBalanceSnapshot>>({
   column: 'usdValue',
   direction: 'desc',
 });
@@ -122,7 +122,7 @@ const tableHeaders = computed<DataTableColumn<IndexedBalanceSnapshot>[]>(() => [
   },
 ]);
 
-useRememberTableSorting<BalanceSnapshot>(TableId.EDIT_BALANCE_SNAPSHOT, sort, tableHeaders);
+useRememberTableSorting<IndexedBalanceSnapshot>(TableId.EDIT_BALANCE_SNAPSHOT, sort, tableHeaders);
 
 function add(): void {
   get(entryDialog)?.openAdd();

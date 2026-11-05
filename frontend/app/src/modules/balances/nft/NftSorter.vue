@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const sortByModel = defineModel<string>('sortBy', { required: true });
+import type { NftSortKey } from '@/modules/balances/nft/use-nft-gallery-filters';
+
+const sortByModel = defineModel<NftSortKey>('sortBy', { required: true });
 const sortDescModel = defineModel<boolean>('sortDesc', { required: true });
 
 function toggleSortDesc(): void {
@@ -8,7 +10,7 @@ function toggleSortDesc(): void {
 
 const { t } = useI18n({ useScope: 'global' });
 
-const sortProperties = [
+const sortProperties: { text: string; value: NftSortKey }[] = [
   {
     text: t('common.name'),
     value: 'name',

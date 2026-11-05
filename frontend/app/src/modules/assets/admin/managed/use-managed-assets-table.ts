@@ -1,6 +1,6 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
+import type { MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PillParams } from '@/modules/core/table/param-refs';
 import { keyBy } from 'es-toolkit';
@@ -32,7 +32,7 @@ interface UseManagedAssetsTableReturn {
   /** The pill bar's state. */
   modelPillParams: WritableComputedRef<PillParams>;
   /** Current page and size. */
-  pagination: ComputedRef<TablePaginationData>;
+  pagination: WritableComputedRef<TablePaginationData>;
   /** Refetches the current page. */
   refetch: () => Promise<void>;
   /**

@@ -180,7 +180,7 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
       </HintMenuIcon>
     </template>
 
-    <Component
+    <component
       :is="selectedSource.form"
       v-if="selectedSource"
     />

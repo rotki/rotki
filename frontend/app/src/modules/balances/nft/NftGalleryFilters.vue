@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
+import type { NftSortKey } from '@/modules/balances/nft/use-nft-gallery-filters';
 import { Blockchain } from '@rotki/common';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import NftCollectionSelector from '@/modules/balances/nft/NftCollectionSelector.vue';
@@ -14,7 +15,7 @@ const selectedAccounts = defineModel<AddressAccount[]>('selectedAccounts', { req
 
 const selectedCollection = defineModel<string | undefined>('selectedCollection', { required: true });
 
-const sortBy = defineModel<'name' | 'price' | 'collection'>('sortBy', { required: true });
+const sortBy = defineModel<NftSortKey>('sortBy', { required: true });
 
 const sortDescending = defineModel<boolean>('sortDescending', { required: true });
 

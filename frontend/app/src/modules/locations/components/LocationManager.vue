@@ -212,7 +212,6 @@ onMounted(async () => {
         :global-items-per-page="false"
         :item-class="rowClass"
         :empty="empty"
-        hide-default-header
         hide-pagination
         row-attr="path"
         data-testid="location-manager-table"
