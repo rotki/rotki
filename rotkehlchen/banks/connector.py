@@ -15,11 +15,6 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.api.websockets.typedefs import (
-    HistoryEventsQueryType,
-    HistoryEventsStep,
-    WSMessageType,
-)
 from rotkehlchen.banks.errors import (
     BankAuthChallenge,
     BankAuthExpired,
@@ -110,25 +105,10 @@ class BankConnector(ExchangeInterface, ABC):
     def connector(self) -> str:
         return self.manifest.connector.serialize()
 
-    def send_history_events_status_msg(
-            self,
-            step: HistoryEventsStep,
-            period: list[Timestamp] | None = None,
-            name: str | None = None,
-    ) -> None:
+    @property
+    def status_location(self) -> str:
         """Identify sync progress by connector while persisted events use the banks location."""
-        data: dict[str, Any] = {
-            'status': str(step),
-            'location': self.connector,
-            'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
-            'name': name or self.name,
-        }
-        if period is not None:
-            data['period'] = period
-        self.msg_aggregator.add_message(
-            message_type=WSMessageType.HISTORY_EVENTS_STATUS,
-            data=data,
-        )
+        return self.connector
 
     @classmethod
     def api_credentials_from_values(

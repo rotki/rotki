@@ -286,6 +286,11 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         """The location of the events, balances and snapshots this connection produces"""
         return self.location
 
+    @property
+    def status_location(self) -> str:
+        """The location clients identify this connection's sync progress by"""
+        return str(self.location)
+
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         """Edits the exchange object with new credentials given from the API
         Returns true if an edit happened and false otherwise.
@@ -496,7 +501,7 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         """
         data: dict[str, Any] = {
             'status': str(step),
-            'location': str(self.location),
+            'location': self.status_location,
             'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
             'name': name or self.name,
         }

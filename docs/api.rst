@@ -8643,7 +8643,7 @@ Querying periodic data
               "failed_to_connect": {
                   "eth": ["nodeZ"]
               },
-              "running_tasks": [{"name": "Query EVM transactions for 0x...", "started_at": 1572345800}],
+              "running_tasks": [{"id": 1, "kind": "evm_transactions", "name": "Query ethereum transactions for 0x...", "started_at": 1572345800, "subject": {"chain": "eth", "address": "0x..."}}],
               "last_data_upload_ts": 0
           }
           "message": ""
@@ -8653,7 +8653,7 @@ Querying periodic data
    :resjson int last_data_upload_ts: The last time (unix timestamp) at which a new DB was pushed to the remote as backup.
    :resjson object connected_nodes: A dictionary containing the chain and a list of connected nodes.
    :resjson object failed_to_connect [Optional]: A dictionary containing the chain and the nodes that rotki couldn't connect with. If nothing failed for a chain we don't include it in the mapping.
-   :resjson list running_tasks: The tasks currently running in the background task manager, each with its ``name`` and the unix timestamp ``started_at`` at which it was spawned. Tasks started by an API request are not included. The same tasks are announced live through the ``background_task_status`` websocket message.
+   :resjson list running_tasks: The tasks currently running in the background task manager, each with its ``id``, ``kind``, ``name``, ``subject`` and the unix timestamp ``started_at`` at which it was spawned. Tasks started by an API request and upkeep tasks of kind ``other`` are not included. The fields and the same tasks are described in the ``background_task_status`` websocket message.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.

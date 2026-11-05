@@ -86,6 +86,13 @@ def test_manifest_serializes_to_plain_json_types(kit: BankConnectorKit):
 
 
 @KITS
+def test_status_location_is_the_connector(kit: BankConnectorKit, database, function_scope_messages_aggregator):  # noqa: E501
+    connector = kit.create(database, function_scope_messages_aggregator)
+    assert connector.location == LOCATION_BANKS
+    assert connector.status_location == connector.connector != LOCATION_BANKS
+
+
+@KITS
 def test_validate_api_key(kit: BankConnectorKit, database, function_scope_messages_aggregator):
     connector = kit.create(database, function_scope_messages_aggregator)
     transport = kit.create_transport()

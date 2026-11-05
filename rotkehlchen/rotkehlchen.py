@@ -13,7 +13,11 @@ from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
-from rotkehlchen.api.websockets.typedefs import UserMessageEntry, WSMessageType
+from rotkehlchen.api.websockets.typedefs import (
+    BackgroundTaskKind,
+    UserMessageEntry,
+    WSMessageType,
+)
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, Nft
 from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
@@ -736,6 +740,7 @@ class Rotkehlchen:
             after_seconds=None,
             task_name='Check data updates',
             exception_is_error=False,
+            kind=BackgroundTaskKind.DATA_UPDATES,
             method=self.data_updater.check_for_updates,
         )
 

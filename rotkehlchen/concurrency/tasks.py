@@ -19,6 +19,7 @@ import time
 from types import TracebackType
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.api.websockets.typedefs import BackgroundTaskKind
 from rotkehlchen.concurrency.cancellation import (
     CancellationToken,
     TaskCancelledError,
@@ -67,6 +68,9 @@ class Task:
         self.api_command: Callable[..., Any] | None = None  # the REST command, inspected by cancellation paths  # noqa: E501
         self.started_at = ts_now()  # unix seconds at which the task was spawned
         self.exception_is_error: bool = True  # whether the task supervisor logs a death as error
+        self.supervisor_id: int = 0  # the task supervisor's id for clients, not the REST task_id
+        self.kind = BackgroundTaskKind.OTHER  # what the task supervisor reports it working on
+        self.subject: dict[str, str | int] = {}  # the structured values of what it works on
         self._target = target
         self._args = args
         self._delay = delay

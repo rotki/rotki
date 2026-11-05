@@ -459,7 +459,7 @@ def test_failed_broadcast_falls_back_by_message_class() -> None:
     # missing prices stay per asset, so each one that needs a price stays visible
     (MissingPrice(asset='ETH', timestamp=1), LOCATION_KRAKEN, ['error', 'price', 'kraken', 'ETH']),
     (Unsupported(feature=UserMessageFeature.ASSET), LOCATION_KRAKEN, ['error', 'unsupported', 'kraken', 'asset']),  # noqa: E501
-    (Internal(operation=UserMessageOperation.BACKGROUND_TASK), None, ['error', 'internal', None, 'background_task']),  # noqa: E501
+    (Internal(operation=UserMessageOperation.DATA_MIGRATION), None, ['error', 'internal', None, 'data_migration']),  # noqa: E501
 ])
 def test_each_family_declares_its_identity(
         classification: MessageClassification,

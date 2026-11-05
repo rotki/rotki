@@ -317,7 +317,9 @@ class MessagesAggregator:
         """The key two messages share when the later one replaces or repeats the earlier."""
         data = envelope['data']
         identity = data if delivery.whole_payload else [
-            data.get(field) for field in delivery.key_fields
+            {k: v for k, v in value.items() if k not in delivery.key_ignored_subfields}
+            if isinstance(value := data.get(field), dict) else value
+            for field in delivery.key_fields
         ]
         return json.dumps([envelope['type'], identity], sort_keys=True)
 

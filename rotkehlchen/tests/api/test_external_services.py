@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.api.websockets.typedefs import BackgroundTaskKind
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheStatic
@@ -341,6 +342,7 @@ def test_complete_monerium_oauth_triggers_background_refresh(
     spawned_fn = spawn_mock.call_args.kwargs['method']
     # queries the orders and matches any bridge legs that run creates
     assert spawned_fn.__name__ == '_query_monerium_orders'
+    assert spawn_mock.call_args.kwargs['kind'] == BackgroundTaskKind.MONERIUM_ORDERS
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
