@@ -41,7 +41,7 @@ use axum::http::header;
 use axum::{
     body::Body,
     extract::{ConnectInfo, Request, State},
-    http::{HeaderMap, HeaderName, HeaderValue, StatusCode, Uri},
+    http::{uri::Authority, HeaderMap, HeaderName, HeaderValue, StatusCode, Uri},
     middleware::{from_fn, from_fn_with_state, Next},
     response::{IntoResponse, Response},
     routing::{any, get},
@@ -162,6 +162,13 @@ pub struct ProxyConfig {
     pub mcp_port: u16,
     /// Whether the externally reachable MCP route is enabled.
     pub mcp_enabled: bool,
+    /// Whether the data routes (`/api`, `/colibri`, `/ws`) only answer requests
+    /// whose `Host` names the loopback interface; anything else gets a 403. `true`
+    /// in embedded mode, where the only legitimate caller is the local renderer
+    /// and a foreign `Host` means a DNS-rebinding page is talking to the desktop
+    /// API as same-origin. `false` in docker, which operators reach under their
+    /// own hostnames and which has the session cookie to authorize callers.
+    pub loopback_hosts_only: bool,
     /// Directory holding the built SPA (served by `ServeDir`). `Some` in docker
     /// mode, where starling replaces nginx and serves the bundle; `None` in
     /// embedded mode, where Electron loads the SPA itself and the proxy is a
@@ -205,11 +212,20 @@ pub(crate) struct ProxyState {
     colibri_addr: String,
     mcp_addr: String,
     mcp_enabled: bool,
+    loopback_hosts_only: bool,
     health: Option<HealthProbe>,
     pub(crate) control: Option<ControlDispatch>,
     /// Whose `X-Forwarded-*` we believe. Shared with the access log so an
     /// operator has one `--trusted-proxy` knob rather than two.
     trusted_proxies: Arc<Vec<access_log::Cidr>>,
+}
+
+impl ProxyState {
+    /// Whether a request may reach a data route, given its `Host`. Always true
+    /// unless [`ProxyConfig::loopback_hosts_only`] is set.
+    fn admits_host(&self, headers: &HeaderMap) -> bool {
+        !self.loopback_hosts_only || host_is_loopback(headers)
+    }
 }
 
 /// Bind the proxy listener on `host`. Done before serving so a bind failure
@@ -345,6 +361,7 @@ fn router(config: &ProxyConfig) -> Router {
         colibri_addr: format!("127.0.0.1:{}", config.colibri_port),
         mcp_addr: format!("127.0.0.1:{}", config.mcp_port),
         mcp_enabled: config.mcp_enabled,
+        loopback_hosts_only: config.loopback_hosts_only,
         health: config.health.clone(),
         control: config.control.clone(),
         trusted_proxies: Arc::new(config.access_log.trusted_proxies.clone()),
@@ -582,6 +599,9 @@ async fn health(State(state): State<ProxyState>) -> Response {
 /// `/api/1/*` → core, path preserved. Goes to `api_addr`, which is core unless a
 /// dev upstream was configured.
 async fn proxy_core(State(state): State<ProxyState>, mut req: Request) -> Response {
+    if !state.admits_host(req.headers()) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
     req.headers_mut().remove(MCP_BACKEND_PROOF_HEADER);
     let target = format!("http://{}{}", state.api_addr, path_and_query(&req));
     let peer = peer_addr(&req);
@@ -591,6 +611,9 @@ async fn proxy_core(State(state): State<ProxyState>, mut req: Request) -> Respon
 
 /// `/colibri/*` → colibri, with the `/colibri` prefix stripped.
 async fn proxy_colibri(State(state): State<ProxyState>, req: Request) -> Response {
+    if !state.admits_host(req.headers()) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
     let stripped = strip_colibri_prefix(&path_and_query(&req));
     let target = format!("http://{}{}", state.colibri_addr, stripped);
     let peer = peer_addr(&req);
@@ -650,8 +673,34 @@ pub(crate) fn origin_matches_host(headers: &HeaderMap) -> bool {
         .is_some_and(|authority| authority.as_str().eq_ignore_ascii_case(host))
 }
 
+/// Whether `Host` names the loopback interface: `localhost`, `127.0.0.1` or
+/// `[::1]`, with or without a port. A missing or unparsable `Host` is not.
+///
+/// The port is deliberately not compared. A DNS-rebinding page can only send its
+/// own hostname, so the name alone is what tells the two apart, while a
+/// forwarding hop on this machine (the e2e preview server) keeps the `Host` it
+/// was addressed by, which carries its own port rather than ours.
+fn host_is_loopback(headers: &HeaderMap) -> bool {
+    let Some(host) = headers
+        .get(header::HOST)
+        .and_then(|value| value.to_str().ok())
+    else {
+        return false;
+    };
+    let Ok(authority) = host.parse::<Authority>() else {
+        return false;
+    };
+    let host = authority.host();
+    ["localhost", "127.0.0.1", "[::1]"]
+        .iter()
+        .any(|loopback| host.eq_ignore_ascii_case(loopback))
+}
+
 /// `/ws/*` → core, preserving the path and bridging the WebSocket upgrade.
 async fn proxy_ws(State(state): State<ProxyState>, req: Request) -> Response {
+    if !state.admits_host(req.headers()) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
     let target = format!("http://{}{}", state.core_addr, path_and_query(&req));
     let peer = peer_addr(&req);
     let req = req_with_target(req, target, peer, &state.trusted_proxies);
@@ -1070,6 +1119,7 @@ mod tests {
             colibri_port: upstream,
             mcp_port: upstream,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: access_log::AccessLog {
@@ -1242,6 +1292,7 @@ mod tests {
             colibri_port: port,
             mcp_port: port,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1329,6 +1380,7 @@ mod tests {
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1476,6 +1528,7 @@ mod tests {
             colibri_port: port,
             mcp_port: port,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1505,6 +1558,7 @@ mod tests {
             colibri_port: port,
             mcp_port: port,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1562,6 +1616,7 @@ mod tests {
             colibri_port: 1,
             mcp_port: port,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1599,6 +1654,7 @@ mod tests {
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1630,6 +1686,7 @@ mod tests {
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: false,
+            loopback_hosts_only: false,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1661,6 +1718,7 @@ mod tests {
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: Some(dir.clone()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1737,6 +1795,7 @@ mod tests {
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: Some(dir.clone()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1770,6 +1829,7 @@ mod tests {
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1786,6 +1846,116 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn only_loopback_hosts_count_as_loopback() {
+        let is_loopback = |host: Option<&str>| {
+            let mut headers = HeaderMap::new();
+            if let Some(host) = host {
+                headers.insert(header::HOST, HeaderValue::from_str(host).unwrap());
+            }
+            host_is_loopback(&headers)
+        };
+        for host in [
+            "127.0.0.1:4242",
+            "localhost:4242",
+            "LocalHost:4242",
+            "[::1]:4242",
+            "127.0.0.1",
+            "localhost",
+            "[::1]",
+        ] {
+            assert!(is_loopback(Some(host)), "{host} names the loopback");
+        }
+        for host in [
+            "example.com",
+            "example.com:4242",
+            "localhost.example.com:4242",
+            "127.0.0.1.nip.io:4242",
+            "127.0.0.2:4242",
+            "0.0.0.0:4242",
+            "192.168.1.10:4242",
+            "[::2]:4242",
+            "",
+            "not a host",
+        ] {
+            assert!(
+                !is_loopback(Some(host)),
+                "{host} does not name the loopback"
+            );
+        }
+        assert!(
+            !is_loopback(None),
+            "a missing Host does not name the loopback"
+        );
+    }
+
+    /// Send `path` with `host` (if any) through a router to the echo upstream
+    /// listening on `port`.
+    async fn proxied_with_host(
+        port: u16,
+        loopback_hosts_only: bool,
+        path: &str,
+        host: Option<&str>,
+    ) -> Response {
+        let app = router(&ProxyConfig {
+            port: 0,
+            core_port: port,
+            api_upstream_port: None,
+            colibri_port: port,
+            mcp_port: port,
+            mcp_enabled: false,
+            loopback_hosts_only,
+            frontend_dir: None,
+            max_body_bytes: 50 * 1024 * 1024,
+            access_log: Default::default(),
+            health: None,
+            control: None,
+        });
+        let mut builder = Request::builder().uri(path);
+        if let Some(host) = host {
+            builder = builder.header(header::HOST, host);
+        }
+        app.oneshot(builder.body(Body::empty()).unwrap())
+            .await
+            .unwrap()
+    }
+
+    /// Negative control: dropping the `admits_host` check from any one of
+    /// `proxy_core`, `proxy_colibri` or `proxy_ws` fails this test for that path.
+    #[tokio::test]
+    async fn embedded_data_routes_refuse_a_foreign_host() {
+        let port = spawn_echo_upstream().await;
+        for (path, upstream_path) in [
+            ("/api/1/ping", "/api/1/ping"),
+            ("/colibri/info", "/info"),
+            ("/ws/", "/ws/"),
+        ] {
+            for host in [Some("example.com"), Some("example.com:4242"), None] {
+                let resp = proxied_with_host(port, true, path, host).await;
+                assert_eq!(resp.status(), StatusCode::FORBIDDEN, "{path} with {host:?}");
+            }
+            for host in ["127.0.0.1:4242", "localhost:4242", "[::1]:4242"] {
+                let resp = proxied_with_host(port, true, path, Some(host)).await;
+                assert_eq!(resp.status(), StatusCode::OK, "{path} with {host}");
+                assert_eq!(body_string(resp).await, upstream_path);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn docker_data_routes_accept_any_host() {
+        let port = spawn_echo_upstream().await;
+        for (path, upstream_path) in [
+            ("/api/1/ping", "/api/1/ping"),
+            ("/colibri/info", "/info"),
+            ("/ws/", "/ws/"),
+        ] {
+            let resp = proxied_with_host(port, false, path, Some("rotki.example:8084")).await;
+            assert_eq!(resp.status(), StatusCode::OK, "{path}");
+            assert_eq!(body_string(resp).await, upstream_path);
+        }
     }
 
     #[tokio::test]
@@ -1806,6 +1976,7 @@ mod tests {
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: Some(dir.clone()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1841,6 +2012,7 @@ mod tests {
             colibri_port: 9,
             mcp_port: 9,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 16,
             access_log: Default::default(),
@@ -1871,6 +2043,7 @@ mod tests {
             colibri_port: 9,
             mcp_port: 9,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1941,6 +2114,7 @@ mod tests {
             colibri_port: upstream_port,
             mcp_port: upstream_port,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -1983,6 +2157,7 @@ mod tests {
             colibri_port: 9,
             mcp_port: 9,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: Some(unique_temp_dir()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -2055,6 +2230,7 @@ mod tests {
             colibri_port: core_port,
             mcp_port: core_port,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -2115,6 +2291,7 @@ mod tests {
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -2172,6 +2349,7 @@ mod tests {
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: None,
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
@@ -2235,6 +2413,7 @@ mod tests {
             colibri_port: 1,
             mcp_port: 1,
             mcp_enabled: true,
+            loopback_hosts_only: false,
             frontend_dir: Some(dir.clone()),
             max_body_bytes: 50 * 1024 * 1024,
             access_log: Default::default(),
