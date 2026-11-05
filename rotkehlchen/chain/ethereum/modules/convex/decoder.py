@@ -209,7 +209,10 @@ class ConvexDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
         that don't relock from the log event data and then match them against
         the receive events of CVX.
         """
-        withdrawals_log_entries = filter(lambda x: x.topics[0] == CVX_LOCK_WITHDRAWN, all_logs)
+        withdrawals_log_entries = filter(
+            lambda x: len(x.topics) != 0 and x.topics[0] == CVX_LOCK_WITHDRAWN,
+            all_logs,
+        )
         amounts_withdrawn = [
             asset_normalized_value(int.from_bytes(tx_log.data[0:32]), self.cvx)
             for tx_log in withdrawals_log_entries

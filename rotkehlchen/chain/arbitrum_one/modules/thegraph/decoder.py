@@ -100,7 +100,7 @@ class ThegraphDecoder(ThegraphCommonDecoder):
                     from_address=l2_wallet,
                     to_address=l1_wallet,
                     transfer_id=next(  # position of the L2 to L1 message, matching the L1 outbox execution  # noqa: E501
-                        (str(int.from_bytes(tx_log.topics[3])) for tx_log in context.all_logs if tx_log.topics[0] == L2_TO_L1_TX),  # noqa: E501
+                        (str(int.from_bytes(tx_log.topics[3])) for tx_log in context.all_logs if len(tx_log.topics) != 0 and tx_log.topics[0] == L2_TO_L1_TX),  # noqa: E501
                         None,
                     ),
                 )
