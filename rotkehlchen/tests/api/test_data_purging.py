@@ -40,6 +40,7 @@ from rotkehlchen.locations.constants import (
     LOCATION_BITCOIN_CASH,
     LOCATION_ETHEREUM,
     LOCATION_FTX,
+    LOCATION_KRAKEN,
     LOCATION_POLONIEX,
 )
 from rotkehlchen.tests.db.test_solana_tx import create_test_solana_transactions
@@ -82,6 +83,74 @@ def _poloniex_id(rotki: Rotkehlchen) -> str:
     poloniex = rotki.exchange_manager.get_exchange_by_name(LOCATION_POLONIEX, 'poloniex')
     assert poloniex is not None
     return poloniex.connection_identifier
+
+
+def test_csv_imported_events_purge(rotkehlchen_api_server: APIServer) -> None:
+    """CSV purge is location-scoped, includes edits, and leaves API state untouched."""
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        identifiers = []
+        for idx, (location, mapping_values) in enumerate((
+            (LOCATION_BINANCE, {
+                HISTORY_MAPPING_KEY_STATE: HistoryMappingState.IMPORTED_FROM_CSV,
+            }),
+            (LOCATION_KRAKEN, {
+                HISTORY_MAPPING_KEY_STATE: HistoryMappingState.IMPORTED_FROM_CSV,
+            }),
+            (LOCATION_BINANCE, None),
+        )):
+            identifiers.append(events_db.add_history_event(
+                write_cursor=write_cursor,
+                event=HistoryEvent(
+                    timestamp=TimestampMS((idx + 1) * 1000),
+                    sequence_index=0,
+                    location=location,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_BTC,
+                    amount=ONE,
+                    group_identifier=f'event_{idx}',
+                ),
+                mapping_values=mapping_values,
+            ))
+        write_cursor.execute(
+            'INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES(?, ?, ?)',
+            (
+                identifiers[0],
+                HISTORY_MAPPING_KEY_STATE,
+                HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+            ),
+        )
+        database.update_used_query_range(
+            write_cursor=write_cursor,
+            name='binance_history_events_binance',
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(999),
+        )
+
+    endpoint = api_url_for(rotkehlchen_api_server, 'csvimportedeventsresource')
+    summary = assert_proper_sync_response_with_result(requests.get(endpoint))
+    assert summary == [
+        {'location': 'binance', 'events_count': 1, 'customized_events_count': 1},
+        {'location': 'kraken', 'events_count': 1, 'customized_events_count': 0},
+    ]
+
+    assert_simple_ok_response(requests.delete(endpoint, json={'location': 'binance'}))
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT identifier FROM history_events ORDER BY identifier',
+        ).fetchall() == [(identifiers[1],), (identifiers[2],)]
+        assert database.get_used_query_range(
+            cursor=cursor,
+            name='binance_history_events_binance',
+        ) == (Timestamp(0), Timestamp(999))
+
+    assert_simple_ok_response(requests.delete(endpoint, json={}))
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT identifier FROM history_events ORDER BY identifier',
+        ).fetchall() == [(identifiers[2],)]
 
 
 @pytest.mark.parametrize('added_exchanges', [(LOCATION_BINANCE, LOCATION_POLONIEX)])

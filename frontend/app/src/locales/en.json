@@ -3186,6 +3186,13 @@
         "message_all": "Are you sure you want to purge the cached data for all {source}?",
         "title": "Confirm cached data purge"
       },
+      "csv_imports_confirm": {
+        "all_locations": "all locations",
+        "binance_warning": "Binance API synchronization will not restore the purged period. Reimport the CSV to recover this history.",
+        "customized_warning": "This selection contains {count} CSV-imported event that you edited. These edited events will also be permanently deleted. | This selection contains {count} CSV-imported events that you edited. These edited events will also be permanently deleted.",
+        "message": "Are you sure you want to permanently delete all CSV-imported events from {location}? Events synchronized through APIs will remain. You must import the CSV again to recover the deleted events.",
+        "version_warning": "Only imports performed with rotki v1.42.0 or newer can be identified and purged. Upgrading does not retroactively mark earlier imports."
+      },
       "error": "Purging the cached data for {source} failed: {message}",
       "subtitle": "Allows you to purge data cached by rotki",
       "success": "Data was successfully deleted",
@@ -6391,6 +6398,11 @@
       "hint": "Empty this field to remove the transaction data for all chains",
       "label": "Chain to clear"
     },
+    "csv_import_location_to_clear": {
+      "hint": "Empty this field to remove CSV-imported events from all locations",
+      "label": "CSV import location to clear"
+    },
+    "csv_imports": "CSV Imports",
     "decentralized_exchange": "Decentralized Exchange",
     "decentralized_exchange_to_clear": {
       "hint": "Empty this field to remove the data for all decentralized exchanges",

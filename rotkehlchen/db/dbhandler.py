@@ -2103,13 +2103,6 @@ class DBHandler:
                 connection_ids,
                 kinds=['history_events', 'history_events_futures'],
             )
-        events_db = DBHistoryEvents(database=self)
-        if data_type in (ExchangePurgeType.ALL, ExchangePurgeType.ASSET_MOVEMENTS):
-            events_db.restore_matched_events_before_purge(
-                write_cursor=write_cursor,
-                location=location,
-            )
-
         where_clause = 'WHERE location = ?'
         where_bindings: tuple[str, ...] = (location,)
         if data_type == ExchangePurgeType.TRADES:
@@ -2126,6 +2119,18 @@ class DBHandler:
             )
             where_clause += f' AND type NOT IN ({",".join("?" for _ in excluded_types)})'
             where_bindings += excluded_types
+
+        events_db = DBHistoryEvents(database=self)
+        if data_type in (ExchangePurgeType.ALL, ExchangePurgeType.ASSET_MOVEMENTS):
+            events_db.restore_matched_events_before_purge(
+                write_cursor=write_cursor,
+                identifiers={
+                    row[0] for row in write_cursor.execute(
+                        f'SELECT identifier FROM history_events {where_clause}',
+                        where_bindings,
+                    )
+                },
+            )
 
         events_db.delete_events_and_track(
             write_cursor=write_cursor,

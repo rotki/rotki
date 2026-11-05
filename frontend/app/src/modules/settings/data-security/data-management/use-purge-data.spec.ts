@@ -1,6 +1,6 @@
 import { invalid } from '@test/utils/invalid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope } from 'vue';
+import { effectScope, nextTick } from 'vue';
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/modules/core/common/modules';
 import { Purgeable } from '@/modules/session/purge';
 import { usePurgeData } from './use-purge-data';
@@ -9,9 +9,11 @@ const {
   allExchanges,
   allTxChainsInfo,
   deleteExchangeData,
+  deleteCsvImportedEvents,
   deleteModuleData,
   deleteStakeEvents,
   deleteTransactions,
+  fetchCsvImportedEventsSummary,
   purgeData,
   show,
 } = await vi.hoisted(async () => {
@@ -20,9 +22,11 @@ const {
     allExchanges: ref<string[]>(['kraken', 'poloniex']),
     allTxChainsInfo: ref<Array<{ id: string }>>([{ id: 'ethereum' }, { id: 'optimism' }]),
     deleteExchangeData: vi.fn(),
+    deleteCsvImportedEvents: vi.fn(),
     deleteModuleData: vi.fn(),
     deleteStakeEvents: vi.fn(),
     deleteTransactions: vi.fn(),
+    fetchCsvImportedEventsSummary: vi.fn(),
     purgeData: vi.fn(),
     show: vi.fn(),
   };
@@ -48,8 +52,18 @@ vi.mock('@/modules/balances/api/use-exchange-api', () => ({
   useExchangeApi: (): Record<string, unknown> => ({ deleteExchangeData }),
 }));
 
+vi.mock('@/modules/history/api/events/use-csv-imported-events-api', () => ({
+  useCsvImportedEventsApi: (): Record<string, unknown> => ({
+    deleteCsvImportedEvents,
+    fetchCsvImportedEventsSummary,
+  }),
+}));
+
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
-  useHistoryEventsApi: (): Record<string, unknown> => ({ deleteStakeEvents, deleteTransactions }),
+  useHistoryEventsApi: (): Record<string, unknown> => ({
+    deleteStakeEvents,
+    deleteTransactions,
+  }),
 }));
 
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
@@ -76,6 +90,7 @@ function everyDeleteCall(): number {
   return deleteTransactions.mock.calls.length
     + deleteModuleData.mock.calls.length
     + deleteExchangeData.mock.calls.length
+    + deleteCsvImportedEvents.mock.calls.length
     + deleteStakeEvents.mock.calls.length;
 }
 
@@ -86,8 +101,15 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
       _source: Purgeable,
       _value: string,
       deleteData: () => Promise<void>,
-    ) => deleteData());
+    ) => {
+      await deleteData();
+      return true;
+    });
     set(allExchanges, ['kraken', 'poloniex']);
+    fetchCsvImportedEventsSummary.mockResolvedValue([
+      { customizedEventsCount: 2, eventsCount: 3, location: 'binance' },
+      { customizedEventsCount: 0, eventsCount: 1, location: 'kraken' },
+    ]);
   });
 
   afterEach(() => {
@@ -155,6 +177,18 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
 
       expect(deleteExchangeData).toHaveBeenCalledExactlyOnceWith('kraken', 'all');
       expect(everyDeleteCall()).toBe(1);
+    });
+
+    it('should route CSV imports to their endpoint and refresh the available locations', async () => {
+      const { modelCsvImportLocation, showConfirmation } = purge();
+      set(modelCsvImportLocation, 'kraken');
+
+      showConfirmation(Purgeable.CSV_IMPORTS);
+      await vi.waitFor(() => expect(show).toHaveBeenCalledOnce());
+      await accept();
+
+      expect(deleteCsvImportedEvents).toHaveBeenCalledExactlyOnceWith('kraken');
+      expect(fetchCsvImportedEventsSummary).toHaveBeenCalledTimes(3);
     });
 
     it('should route a decentralized exchange to the module endpoint and nothing else', async () => {
@@ -319,6 +353,19 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
       expect(confirmationMessage().message).toContain('180');
     });
 
+    it('should warn about edited CSV events and Binance API history', async () => {
+      const { modelCsvImportLocation, showConfirmation } = purge();
+      await nextTick();
+      set(modelCsvImportLocation, 'binance');
+
+      showConfirmation(Purgeable.CSV_IMPORTS);
+      await vi.waitFor(() => expect(show).toHaveBeenCalledOnce());
+
+      expect(confirmationMessage().message).toContain('customized_warning');
+      expect(confirmationMessage().message).toContain('binance_warning');
+      expect(confirmationMessage().message).toContain('version_warning');
+    });
+
     it('should not add the retention warning for an exchange that can', () => {
       const { modelCentralizedExchange, showConfirmation } = purge();
       set(modelCentralizedExchange, 'kraken');
@@ -334,6 +381,7 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
       expect(purge().purgeable.map(item => item.id)).toEqual([
         Purgeable.CENTRALIZED_EXCHANGES,
         Purgeable.DECENTRALIZED_EXCHANGES,
+        Purgeable.CSV_IMPORTS,
         Purgeable.DEFI_MODULES,
         Purgeable.TRANSACTIONS,
         Purgeable.ETH_WITHDRAWAL_EVENT,
@@ -356,6 +404,13 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
 
     it('should offer the chains that can hold transactions', () => {
       expect(get(purge().chainsSelection)).toEqual(['ethereum', 'optimism']);
+    });
+
+    it('should offer only locations containing CSV-imported events', async () => {
+      const { csvImportLocations } = purge();
+      await nextTick();
+
+      expect(get(csvImportLocations)).toEqual(['binance', 'kraken']);
     });
 
     it('should start on transactions, the least destructive default', () => {

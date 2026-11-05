@@ -78,6 +78,7 @@ from rotkehlchen.api.v1.schemas import (
     CounterpartyAssetMappingUpdateEntrySchema,
     CreateAccountingRuleSchema,
     CreateHistoryEventSchema,
+    CsvImportedEventsSchema,
     CurrentAssetsPriceSchema,
     CurrentHistoricalBalanceSchema,
     CustomAssetsQuerySchema,
@@ -1687,6 +1688,20 @@ class HistoryEventResource(BaseMethodView):
             force_delete=force_delete,
             requested_identifiers=requested_identifiers,
         )
+
+
+class CsvImportedEventsResource(BaseMethodView):
+    schema = CsvImportedEventsSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(schema, location='query')
+    def get(self, location: LocationIdentifier | None) -> Response:
+        return self.rest_api.get_csv_imported_events_summary(location=location)
+
+    @require_loggedin_user()
+    @use_kwargs(schema, location='json')
+    def delete(self, location: LocationIdentifier | None) -> Response:
+        return self.rest_api.purge_csv_imported_events(location=location)
 
 
 class UsersResource(BaseMethodView):

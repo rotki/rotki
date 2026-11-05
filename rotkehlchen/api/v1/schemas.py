@@ -3782,6 +3782,10 @@ class HistoryEventsDeletionSchema(HistoryEventFilterSchema):
             )
 
 
+class CsvImportedEventsSchema(Schema):
+    location = LocationField(load_default=None)
+
+
 class AssetsExportingSchema(AsyncQueryArgumentSchema):
     destination = DirectoryField(load_default=None)
 

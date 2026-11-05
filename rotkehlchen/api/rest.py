@@ -1259,6 +1259,21 @@ class RestAPI:
         )
         return make_response_from_dict(response_data)
 
+    def get_csv_imported_events_summary(
+            self,
+            location: LocationIdentifier | None,
+    ) -> Response:
+        return api_response(
+            result=_wrap_in_ok_result(DBHistoryEvents(
+                self.rotkehlchen.data.db,
+            ).get_csv_imported_events_summary(location=location)),
+            status_code=HTTPStatus.OK,
+        )
+
+    def purge_csv_imported_events(self, location: LocationIdentifier | None) -> Response:
+        DBHistoryEvents(self.rotkehlchen.data.db).purge_csv_imported_events(location=location)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
     def get_tags(self) -> Response:
         response_data = self.user_data_service.get_tags()
         return make_response_from_dict(response_data)
