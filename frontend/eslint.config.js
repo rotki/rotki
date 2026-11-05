@@ -104,6 +104,12 @@ export default rotki({
     'unicorn/prefer-iterator-helpers': 'off',
   },
 }, {
+  // Wrappers type forwarded attributes behind a `@vue-ignore` block, which must stay a plain comment.
+  files: ['app/src/**/*.vue'],
+  rules: {
+    'jsdoc/no-bad-blocks': ['error', { ignore: ['ts-check', 'ts-expect-error', 'ts-ignore', 'ts-nocheck', 'vue-ignore'] }],
+  },
+}, {
   /*
    * A looser cap for presentational primitives, which are configured by many call sites; feature
    * components keep the project-wide cap, where a high prop count is a decomposition signal.

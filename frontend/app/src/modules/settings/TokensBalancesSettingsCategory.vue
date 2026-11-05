@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import AutoDetectTokensCooldownSetting from '@/modules/settings/general/AutoDetectTokensCooldownSetting.vue';
 import AutoDetectTokensOnLoginSetting from '@/modules/settings/general/AutoDetectTokensOnLoginSetting.vue';
@@ -7,6 +8,9 @@ import BalanceSaveFrequencySetting from '@/modules/settings/general/BalanceSaveF
 import BtcDerivationGapLimitSetting from '@/modules/settings/general/BtcDerivationGapLimitSetting.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 import { useSetting } from '@/modules/settings/use-setting';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 

@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import AnimationsEnabledSetting from '@/modules/settings/frontend/AnimationsEnabledSetting.vue';
 import DockShowSummarySetting from '@/modules/settings/frontend/DockShowSummarySetting.vue';
 import PersistTableSortingSetting from '@/modules/settings/frontend/PersistTableSortingSetting.vue';
 import LanguageSetting from '@/modules/settings/general/language/LanguageSetting.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

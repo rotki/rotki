@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import { externalLinks } from '@shared/external-links';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import NftImageRenderingSetting from '@/modules/settings/general/nft/NftImageRenderingSetting.vue';
 import NftsInNetValueSetting from '@/modules/settings/general/nft/NftsInNetValueSetting.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

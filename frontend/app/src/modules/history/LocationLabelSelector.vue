@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { RuiAutoComplete } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { LocationLabel } from '@/modules/core/common/location';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useLocationLabels } from '@/modules/history/use-location-labels';
@@ -6,6 +8,10 @@ import { useScramble } from '@/modules/settings/use-scramble';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
+
+interface Props {
+  options?: LocationLabel[];
+}
 
 defineOptions({
   name: 'LocationLabelSelector',
@@ -17,9 +23,7 @@ const modelValue = defineModel<string[] | string>({
   set: (val: string[] | string | undefined) => val ?? '',
 });
 
-const { options } = defineProps<{
-  options?: LocationLabel[];
-}>();
+const { options } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete, Props>>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { scrambleAddress } = useScramble();

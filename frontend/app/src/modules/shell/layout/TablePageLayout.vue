@@ -1,5 +1,9 @@
 <script setup lang="ts">
-const { hideHeader, child, title } = defineProps<{ hideHeader?: boolean; child?: boolean; title?: string[] }>();
+import type { HTMLAttributes } from 'vue';
+
+interface Props { hideHeader?: boolean; child?: boolean; title?: string[] }
+
+const { hideHeader, child, title } = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props>>();
 
 defineSlots<{
   default?: () => unknown;

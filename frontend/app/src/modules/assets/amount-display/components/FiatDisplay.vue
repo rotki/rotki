@@ -20,6 +20,7 @@
  */
 import type { BigNumber } from '@rotki/common';
 import type { SymbolDisplay, Timestamp } from '@/modules/assets/amount-display/types';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { createReusableTemplate } from '@vueuse/core';
 import { useAmountDisplaySettings, useFiatConversion, useOracleInfo, useScrambledValue } from '@/modules/assets/amount-display';
 import { type Currency, useCurrencies } from '@/modules/assets/amount-display/currencies';
@@ -61,7 +62,7 @@ const {
   priceAsset,
   currency: currencyProp,
   symbol: symbolProp = 'symbol',
-} = defineProps<Props>();
+} = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof AmountDisplayBase, Props>>();
 
 const [DefineAmountDisplay, ReuseAmountDisplay] = createReusableTemplate();
 

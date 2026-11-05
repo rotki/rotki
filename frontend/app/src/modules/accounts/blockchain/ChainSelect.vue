@@ -1,9 +1,19 @@
 <script setup lang="ts" generic="T extends string | string[]">
+import type { RuiAutoComplete } from '@rotki/ui-library';
 import type { ChainInfo } from '@/modules/core/api/types/chains';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { Blockchain } from '@rotki/common';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getModuleEnabled, Module } from '@/modules/session/use-module-enabled';
+
+interface Props {
+  disabled?: boolean;
+  dense?: boolean;
+  evmOnly?: boolean;
+  excludeEthStaking?: boolean;
+  items?: string[];
+}
 
 defineOptions({
   inheritAttrs: false,
@@ -17,13 +27,7 @@ const {
   evmOnly = false,
   excludeEthStaking = false,
   items = [],
-} = defineProps<{
-  disabled?: boolean;
-  dense?: boolean;
-  evmOnly?: boolean;
-  excludeEthStaking?: boolean;
-  items?: string[];
-}>();
+} = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, ChainInfo>, Props>>();
 
 const { isEvm, supportedChains } = useSupportedChains();
 

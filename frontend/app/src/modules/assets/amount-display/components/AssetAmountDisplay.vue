@@ -13,8 +13,10 @@
  * ```
  */
 import type { BigNumber } from '@rotki/common';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { useScrambledValue } from '@/modules/assets/amount-display';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+
 import AmountDisplayBase from './AmountDisplayBase.vue';
 
 interface Props {
@@ -38,7 +40,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const { amount, asset = '', decimals, noCollectionParent, noScramble } = defineProps<Props>();
+const { amount, asset = '', decimals, noCollectionParent, noScramble } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof AmountDisplayBase, Props>>();
 
 const { useAssetInfo } = useAssetInfoRetrieval();
 const resolutionOptions = computed(() => ({ collectionParent: !noCollectionParent }));

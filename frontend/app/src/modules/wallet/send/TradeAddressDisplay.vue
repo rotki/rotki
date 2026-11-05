@@ -1,14 +1,17 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
 
-const { address, chain, name, readonly, dense } = defineProps<{
+interface Props {
   address: string;
   chain?: string;
   name?: string;
   readonly?: boolean;
   dense?: boolean;
-}>();
+}
+
+const { address, chain, name, readonly, dense } = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props>>();
 
 const { useAddressName } = useAddressNameResolution();
 

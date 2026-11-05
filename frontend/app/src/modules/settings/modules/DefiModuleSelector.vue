@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { RuiAutoComplete } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import {
   type PurgeableModule,
@@ -8,6 +10,10 @@ import {
 } from '@/modules/core/common/modules';
 import DefiIcon from '@/modules/settings/modules/DefiIcon.vue';
 
+interface Props {
+  items?: PurgeableModule[];
+}
+
 type PurgeableModuleEntry = Omit<SupportedModule, 'identifier'> & { identifier: PurgeableModule };
 
 defineOptions({
@@ -16,9 +22,7 @@ defineOptions({
 
 const model = defineModel<string | undefined>({ required: true });
 
-const { items = [] } = defineProps<{
-  items?: PurgeableModule[];
-}>();
+const { items = [] } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete, Props>>();
 
 const modules = computed<PurgeableModuleEntry[]>(() => {
   const modules: PurgeableModuleEntry[] = [...SUPPORTED_MODULES, {

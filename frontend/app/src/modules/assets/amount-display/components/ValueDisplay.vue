@@ -13,7 +13,9 @@
  */
 import type { BigNumber } from '@rotki/common';
 import type { FormatOptions } from '@/modules/assets/amount-display/types';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { useScrambledValue } from '@/modules/assets/amount-display';
+
 import AmountDisplayBase from './AmountDisplayBase.vue';
 
 interface Props {
@@ -33,7 +35,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const { value, noScramble, format } = defineProps<Props>();
+const { value, noScramble, format } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof AmountDisplayBase, Props>>();
 
 const { scrambledValue } = useScrambledValue({ value: () => value, noScramble: () => noScramble });
 

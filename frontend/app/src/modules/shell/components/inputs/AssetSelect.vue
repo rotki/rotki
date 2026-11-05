@@ -1,13 +1,35 @@
 <script setup lang="ts">
-import type { FormDetails } from '@rotki/ui-library';
+import type { FormDetails, RuiAutoComplete } from '@rotki/ui-library';
 import type { NftAsset } from '@/modules/assets/nfts';
 import type { AssetActions, AssetDisplay } from '@/modules/assets/types';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { type AssetInfoWithId, getValidSelectorFromEvmAddress } from '@rotki/common';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { NftHandling } from '@/modules/assets/nft-handling';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import { type AssetSearchSource, useAssetSearch } from '@/modules/shell/components/inputs/use-asset-search';
+
+interface Props {
+  /**
+   * Which assets may be picked, as one object rather than five loose props.
+   *
+   * These are the five the search itself consumes, and it already took them as a single argument;
+   * stating them together is also what keeps this component's prop list inside the lint ceiling,
+   * which matters here because it is registered globally for the premium bundle, so every prop is
+   * part of an external API.
+   */
+  source?: AssetSearchSource;
+  hint?: string;
+  successMessages?: string;
+  errorMessages?: string[];
+  label?: string;
+  disabled?: boolean;
+  clearable?: boolean;
+  required?: boolean;
+  details?: FormDetails;
+  dense?: boolean;
+}
 
 defineOptions({
   inheritAttrs: false,
@@ -33,26 +55,7 @@ const {
   required = false,
   source,
   successMessages = '',
-} = defineProps<{
-  /**
-   * Which assets may be picked, as one object rather than five loose props.
-   *
-   * These are the five the search itself consumes, and it already took them as a single argument;
-   * stating them together is also what keeps this component's prop list inside the lint ceiling,
-   * which matters here because it is registered globally for the premium bundle, so every prop is
-   * part of an external API.
-   */
-  source?: AssetSearchSource;
-  hint?: string;
-  successMessages?: string;
-  errorMessages?: string[];
-  label?: string;
-  disabled?: boolean;
-  clearable?: boolean;
-  required?: boolean;
-  details?: FormDetails;
-  dense?: boolean;
-}>();
+} = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, AssetInfoWithId>, Props>>();
 
 defineSlots<{
   prepend: () => any;

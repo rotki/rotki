@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import DatabaseInformation from '@/modules/settings/database/DatabaseInformation.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

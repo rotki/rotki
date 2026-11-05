@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import CryptoToCryptoTradeSetting from '@/modules/settings/accounting/CryptoToCryptoTradeSetting.vue';
 import EthStakingTaxableAfterWithdrawalSetting from '@/modules/settings/accounting/EthStakingTaxableAfterWithdrawalSetting.vue';
 import GasCostSetting from '@/modules/settings/accounting/GasCostSetting.vue';
 import TaxFreeSetting from '@/modules/settings/accounting/TaxFreeSetting.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

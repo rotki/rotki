@@ -1,4 +1,6 @@
 <script setup lang="ts" generic="TOption = string">
+import type { RuiAutoComplete } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
 import { useSettingOptions } from '@/modules/settings/controls/use-setting-options';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
@@ -37,7 +39,7 @@ const {
   /** When provided, renders select-all / clear-all buttons above the field with these labels. */
   bulkActions?: { selectLabel: string; clearLabel: string };
   debounce?: number;
-}>();
+} & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete, Record<'setting' | 'options' | 'keyAttr' | 'textAttr' | 'label' | 'successMessage' | 'errorMessage' | 'bulkActions' | 'debounce', unknown>>>();
 
 const slots = defineSlots<{
   'selection': (props: { item: TOption }) => any;

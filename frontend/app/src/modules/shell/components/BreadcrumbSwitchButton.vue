@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
+
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
+
 /**
  * The activator for a breadcrumb crumb that opens a menu of sibling pages.
  *

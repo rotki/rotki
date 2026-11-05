@@ -1,19 +1,22 @@
 <script setup lang="ts">
-import type { ButtonProps } from '@rotki/ui-library';
+import type { ButtonProps, RuiButton } from '@rotki/ui-library';
 
-defineOptions({
-  inheritAttrs: false,
-});
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 
-const { tooltip, retainFocusOnClick = false, className = '', href, variant = 'text', size, customColor = false } = defineProps<{
+interface Props {
   tooltip: string;
-  retainFocusOnClick?: boolean;
   className?: string;
   href?: string;
   variant?: ButtonProps['variant'];
   size?: ButtonProps['size'];
   customColor?: boolean;
-}>();
+}
+
+defineOptions({
+  inheritAttrs: false,
+});
+
+const { tooltip, className = '', href, variant = 'text', size, customColor = false } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiButton, Props>>();
 
 defineSlots<{
   default: () => any;
@@ -35,7 +38,6 @@ defineSlots<{
         target="_blank"
         :class="[className, !size && 'w-12! h-12!', !customColor && 'text-rui-text-secondary!']"
         :size="size"
-        :retain-focus-on-click="retainFocusOnClick"
         v-bind="$attrs"
       >
         <slot />

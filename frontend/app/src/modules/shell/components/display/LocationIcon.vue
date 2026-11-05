@@ -1,16 +1,19 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSetting } from '@/modules/settings/use-setting';
 import IconMark from '@/modules/shell/components/IconMark.vue';
 
-const { item, horizontal, icon, size = '24px', dense } = defineProps<{
+interface Props {
   item: string;
   horizontal?: boolean;
   icon?: boolean;
   size?: string;
   /** Shows the horizontal label as a small secondary caption, for metadata lines next to other details. */
   dense?: boolean;
-}>();
+}
+
+const { item, horizontal, icon, size = '24px', dense } = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props>>();
 
 const emit = defineEmits<{
   click: [location: string];

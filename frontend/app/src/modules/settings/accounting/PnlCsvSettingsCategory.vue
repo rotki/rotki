@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import PnlCsvSummarySetting from '@/modules/settings/accounting/PnlCsvSummarySetting.vue';
 import PnlCsvWithFormulasSetting from '@/modules/settings/accounting/PnlCsvWithFormulasSetting.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

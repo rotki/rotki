@@ -1,7 +1,14 @@
 <script setup lang="ts">
+import type { TransitionGroup } from 'vue';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+
 defineOptions({
   inheritAttrs: false,
 });
+
+defineProps<
+  /* @vue-ignore */ ForwardedProps<typeof TransitionGroup>
+>();
 
 defineSlots<{
   default: () => any;

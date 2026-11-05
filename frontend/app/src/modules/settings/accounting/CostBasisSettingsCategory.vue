@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import CalculatePastCostBasisSetting from '@/modules/settings/accounting/CalculatePastCostBasisSetting.vue';
 import CostBasisFeesSetting from '@/modules/settings/accounting/CostBasisFeesSetting.vue';
 import CostBasisMethodSetting from '@/modules/settings/accounting/CostBasisMethodSetting.vue';
 import UseAssetCollectionsInCostBasisSetting from '@/modules/settings/accounting/UseAssetCollectionsInCostBasisSetting.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

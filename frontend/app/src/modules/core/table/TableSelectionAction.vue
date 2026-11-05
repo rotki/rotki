@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
+import type { ContextColorsType, RuiButton, RuiIcons } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+
 import { useTableSelectionCollapsed } from '@/modules/core/table/table-selection-collapse';
 
-const { color, disabled = false, loading = false } = defineProps<{
+interface Props {
   icon: RuiIcons;
   color?: ContextColorsType;
   disabled?: boolean;
   loading?: boolean;
-}>();
+}
+
+const { color, disabled = false, loading = false } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiButton, Props, 'click'>>();
 
 const emit = defineEmits<{
   click: [];

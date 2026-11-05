@@ -1,7 +1,13 @@
 <script lang="ts" setup>
+import type { RuiAutoComplete } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
+
+interface Props {
+  excludeExchanges?: boolean;
+}
 
 defineOptions({
   inheritAttrs: false,
@@ -9,9 +15,7 @@ defineOptions({
 
 const modelValue = defineModel<string | undefined>({ required: true });
 
-const { excludeExchanges = false } = defineProps<{
-  excludeExchanges?: boolean;
-}>();
+const { excludeExchanges = false } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, string>, Props>>();
 
 const { counterparties } = useHistoryEventCounterpartyMappings();
 const { allExchanges } = storeToRefs(useLocationStore());

@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import QueryPeriodSetting from '@/modules/settings/general/QueryPeriodSetting.vue';
 import RefreshSetting from '@/modules/settings/general/RefreshSetting.vue';
 import HistoryQueryIndicatorSettings from '@/modules/settings/interface/HistoryQueryIndicatorSettings.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

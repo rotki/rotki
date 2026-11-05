@@ -1,18 +1,24 @@
 <script setup lang="ts">
+import type { RuiAutoComplete } from '@rotki/ui-library';
+
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+
+interface Props {
+  items: string[];
+}
+
 defineOptions({
   inheritAttrs: false,
 });
 
-const model = defineModel<string>({
+const model = defineModel<string, 'trim'>({
   required: true,
   set(value) {
     return value === undefined ? '' : value;
   },
 });
 
-const { items } = defineProps<{
-  items: string[];
-}>();
+const { items } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, string>, Props>>();
 
 const search = ref<string>('');
 

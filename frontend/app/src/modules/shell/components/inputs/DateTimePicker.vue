@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import type { RuiDateTimePicker } from '@rotki/ui-library';
 import type { RuiDateTimePickerProps } from '@rotki/ui-library/components';
+
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import dayjs, { type ManipulateType } from 'dayjs';
 
 interface QuickOption {
@@ -26,7 +29,7 @@ const {
   required,
   successMessages,
   type,
-} = defineProps<RuiDateTimePickerProps>();
+} = defineProps<RuiDateTimePickerProps & /* @vue-ignore */ ForwardedProps<typeof RuiDateTimePicker, RuiDateTimePickerProps>>();
 
 const { t } = useI18n({ useScope: 'global' });
 

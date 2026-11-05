@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 import NewlyDetectedTokensMaxCountSetting from './NewlyDetectedTokensMaxCountSetting.vue';
 import NewlyDetectedTokensTtlSetting from './NewlyDetectedTokensTtlSetting.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

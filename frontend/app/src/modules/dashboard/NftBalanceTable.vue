@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
@@ -16,6 +17,10 @@ import RowAppend from '@/modules/shell/components/RowAppend.vue';
  * a comment root, which vue cannot inherit onto and warns about.
  */
 defineOptions({ inheritAttrs: false });
+
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const nonFungibleRoute: RouteLocationRaw = { name: '/balances/non-fungible/' };
 const group = DashboardTableType.NFT;

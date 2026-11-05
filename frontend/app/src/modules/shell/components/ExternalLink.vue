@@ -1,9 +1,19 @@
 <script setup lang="ts">
 import type { ContextColorsType } from '@rotki/ui-library';
+import type { HTMLAttributes } from 'vue';
 import { externalLinks } from '@shared/external-links';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 import { useLinks } from '@/modules/shell/layout/use-links';
+
+interface Props {
+  url?: string;
+  text?: string;
+  custom?: boolean;
+  premium?: boolean;
+  confirm?: boolean;
+  color?: ContextColorsType;
+}
 
 defineOptions({
   inheritAttrs: false,
@@ -16,14 +26,7 @@ const {
   premium = false,
   text = '',
   url,
-} = defineProps<{
-  url?: string;
-  text?: string;
-  custom?: boolean;
-  premium?: boolean;
-  confirm?: boolean;
-  color?: ContextColorsType;
-}>();
+} = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props>>();
 
 defineSlots<{
   default: () => any;

@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
 import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
 import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 import DatabaseBackups from '@/modules/settings/data-security/backups/DatabaseBackups.vue';
 import { useDatabaseBackups } from '@/modules/settings/data-security/backups/use-database-backups';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
 
 const { t } = useI18n({ useScope: 'global' });
 

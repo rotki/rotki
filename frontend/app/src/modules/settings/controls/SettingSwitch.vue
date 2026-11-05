@@ -1,7 +1,22 @@
 <script setup lang="ts">
+import type { RuiSwitch } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
+
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 import { resolveSettingMessage, useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';
+
+interface Props {
+  setting: WritableSettingKeyOf<boolean | null | undefined>;
+  label?: string;
+  /** Show and write the negation of the stored value. */
+  inverted?: boolean;
+  control?: 'switch' | 'checkbox';
+  /** Static text, or a callback given the displayed value (e.g. distinct enabled/disabled copy). */
+  successMessage?: string | ((value: boolean) => string);
+  errorMessage?: string;
+  debounce?: number;
+}
 
 /**
  * Generic owning component for a boolean setting. Given a registry key it manages its own local draft
@@ -23,17 +38,7 @@ const {
   successMessage = '',
   errorMessage = '',
   debounce = 0,
-} = defineProps<{
-  setting: WritableSettingKeyOf<boolean | null | undefined>;
-  label?: string;
-  /** Show and write the negation of the stored value. */
-  inverted?: boolean;
-  control?: 'switch' | 'checkbox';
-  /** Static text, or a callback given the displayed value (e.g. distinct enabled/disabled copy). */
-  successMessage?: string | ((value: boolean) => string);
-  errorMessage?: string;
-  debounce?: number;
-}>();
+} = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiSwitch, Props>>();
 
 const emit = defineEmits<{
   /** Fired after a successful persist, mirroring the old `SettingsOption` `@finished` hook. */

@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue';
+
+defineProps<
+  /* @vue-ignore */ HTMLAttributes
+>();
+
 /**
  * The frame of the address interactions card, shared by the graph and its premium placeholder so the
  * placeholder follows any change to the layout.

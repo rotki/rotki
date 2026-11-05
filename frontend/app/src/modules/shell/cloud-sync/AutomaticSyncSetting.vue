@@ -1,16 +1,20 @@
 <script setup lang="ts">
+import type { RuiSwitch } from '@rotki/ui-library';
+import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
+
+interface Props {
+  disabled?: boolean;
+  dense?: boolean;
+}
 
 defineOptions({
   inheritAttrs: false,
 });
 
-const { disabled = false, dense = false } = defineProps<{
-  disabled?: boolean;
-  dense?: boolean;
-}>();
+const { disabled = false, dense = false } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiSwitch, Props>>();
 
 const { t } = useI18n({ useScope: 'global' });
 
