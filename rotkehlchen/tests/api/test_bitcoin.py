@@ -72,7 +72,6 @@ EXPECTED_XPUB_ADDRESSES = [
     '1PUrJgftNnHvvqVyEsm9DiCDQuZHCn47fQ',
     '1Ps7bkbAfcEFKsUvFTNu61vNTGqTY25Lpz',
     '1Q61WZ6sixTvd8JaH2qimkXAWFBR2MdBwu',
-    '1DNg5csVnUkheYczaBECsfby8ZcmZkYnJK',
 ]
 
 TEST_BITCOIN_XPUB_1 = 'xpub6DCi5iJ57ZPd5qPzvTm5hUt6X23TJdh9H4NjNsNbt7t7UuTMJfawQWsdWRFhfLwkiMkB1rQ4ZJWLB9YBnzR7kbs9N8b2PsKZgKUHQm1X4or'  # noqa: E501
@@ -97,6 +96,10 @@ def _check_xpub_addition_outcome(outcome: dict[str, Any], xpub: str) -> None:
         assert address in xpub_data['addresses']
         assert xpub_data['addresses'][address]['amount'] is not None
         assert xpub_data['addresses'][address]['value'] is not None
+    # This is the first change address after the last used change index and has no
+    # transactions. It used to be added only because the gap fill took the first address
+    # of every batch instead of the ones before the last used index
+    assert '1DNg5csVnUkheYczaBECsfby8ZcmZkYnJK' not in xpub_data['addresses']
 
     totals = outcome['totals']['assets']
     assert totals['BTC'][DEFAULT_BALANCE_LABEL]['amount'] is not None
@@ -439,7 +442,7 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server: APIServer) -> N
     result = cursor.execute('SELECT * from xpub_mappings WHERE xpub=?', (xpub,)).fetchall()
     assert len(rotki.chains_aggregator.accounts.bch) == 0
     # Check that we still have derived BTC addresses
-    assert len(result) >= 23
+    assert len(result) == len(rotki.chains_aggregator.accounts.btc) != 0
     for address, xpub_result, _, _, _, blockchain in result:
         assert address in rotki.chains_aggregator.accounts.btc
         assert xpub == xpub_result
