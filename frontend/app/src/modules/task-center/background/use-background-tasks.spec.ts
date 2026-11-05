@@ -130,6 +130,14 @@ describe('useBackgroundTasks', () => {
     expect(submitTask).toHaveBeenCalledOnce();
   });
 
+  it.each(['gnosis_pay_events', 'monerium_orders'])('should mirror a started %s import while it runs', async (kind) => {
+    const { onStatus } = await setup();
+    onStatus(status({ id: 11, kind, name: 'Backfill', startedAt: 1, subject: {} }, { status: 'started' }));
+
+    expect(specs).toHaveLength(1);
+    expect(specs[0]).toMatchObject({ id: `background-task:${kind}:11`, title: `task_center.background_task.${kind}` });
+  });
+
   it('should give upkeep of kind other no row while it runs, and a failed row named by the backend when it fails', async () => {
     const upkeep: BackgroundTask = { id: 9, kind: 'other', name: 'Update ilk cache', startedAt: 1, subject: {} };
     const { onStatus } = await setup();
