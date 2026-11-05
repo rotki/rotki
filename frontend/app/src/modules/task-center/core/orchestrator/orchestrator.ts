@@ -20,7 +20,7 @@ import { AlreadyTerminal, type ControlError, NotCancellable, NotFound, NotRerunn
 import { dropCompletions, markStaleAfter, recordCompletion, recordSettlement } from './ledger';
 import { endedIncomplete, liveChildrenOf, runActivity, terminalAttention, terminalReason, terminalStatus } from './lifecycle';
 import { aggregateStatus, childProgress, projectActivity, statusForId } from './projection';
-import { type ActivityRecord, pendingRecord } from './record';
+import { abandonLive, type ActivityRecord, pendingRecord } from './record';
 import { DEFAULT_RULES } from './rules';
 import { createScheduler, type ScheduledJob } from './scheduler';
 import { type ActivitySpec, DEFAULT_LANE, DEFAULT_PRIORITY, type ReportProgress, type StaleAfterEdge } from './spec';
@@ -91,6 +91,19 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
 
     if (status !== Status.COMPLETE)
       cancelDescendantsOf(record.spec.id);
+
+    if (record.spec.forgetUnlessFailed && status !== Status.FAILED)
+      forget(record.spec.id);
+  }
+
+  function forget(id: ActivityId): void {
+    const record = records.get(id);
+    if (!record || !isTerminalStatus(record.status))
+      return;
+    records.delete(id);
+    ledger.delete(id);
+    dropDetail(id);
+    emit();
   }
 
   /**
@@ -335,6 +348,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     cancelByPrefix: (kind: ActivityKind, ...parts: (string | number)[]) =>
       cancelMatching(record => activityIdHasPrefix(record.spec.id, kind, ...parts)),
     cancelGroup: (group: GroupId) => cancelMatching(record => record.spec.group === group),
+    forget,
     clearTerminal(): void {
       for (const [id, record] of records) {
         if (isTerminalStatus(record.status)) {
@@ -363,13 +377,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
      * `settleTerminal`, whose ledger write is cleared on the next line anyway.
      */
     reset(): void {
-      for (const record of records.values()) {
-        if (isTerminalStatus(record.status) || record.cleanedUp)
-          continue;
-        record.status = Status.CANCELLED;
-        record.cleanedUp = true;
-        record.spec.cleanup?.();
-      }
+      abandonLive(records.values());
       emit();
 
       records.clear();

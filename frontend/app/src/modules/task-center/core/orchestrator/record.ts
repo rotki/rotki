@@ -1,5 +1,6 @@
 import type { ScheduledJob } from './scheduler';
 import type { ActivitySpec } from './spec';
+import { isTerminalStatus } from '../status';
 import { type ActivityStatus, type ActivitySteps, ActivityStatus as Status } from '../types';
 
 /**
@@ -32,4 +33,18 @@ export interface ActivityRecord {
 /** A record for a run that has not started yet, for a first submit and for a re-run alike. */
 export function pendingRecord(spec: ActivitySpec): ActivityRecord {
   return { cancelRequested: false, cleanedUp: false, spec, status: Status.PENDING };
+}
+
+/**
+ * Cancels every run still going and fires its cleanup, for a session ending. A run already settled,
+ * or already cleaned up, is left as it is.
+ */
+export function abandonLive(records: Iterable<ActivityRecord>): void {
+  for (const record of records) {
+    if (isTerminalStatus(record.status) || record.cleanedUp)
+      continue;
+    record.status = Status.CANCELLED;
+    record.cleanedUp = true;
+    record.spec.cleanup?.();
+  }
 }

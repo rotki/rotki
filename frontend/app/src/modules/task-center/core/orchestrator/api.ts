@@ -69,6 +69,11 @@ export interface TaskOrchestrator {
   readonly onChange: (listener: () => void) => () => void;
   /** Drop finished activities (the UI keeps a short tail; this prunes the rest). Keeps the ledger. */
   readonly clearTerminal: () => void;
+  /**
+   * Forget one settled activity as if it never ran: its record, detail and completion. A live one
+   * is left alone. For work whose settled record nobody reads again, so it does not pile up.
+   */
+  readonly forget: (id: ActivityId) => void;
   /** Session boundary: wipe live records, the queue and the completion ledger (logout). */
   readonly reset: () => void;
 }

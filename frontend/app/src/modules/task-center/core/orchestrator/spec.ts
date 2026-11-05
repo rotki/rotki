@@ -258,6 +258,12 @@ export interface ActivitySpec<T = unknown> {
    */
   readonly ephemeral?: boolean;
   /**
+   * Forget the activity (see `TaskOrchestrator.forget`) once it settles without failing. For a
+   * mirror of work the frontend does not own, whose clean end nobody reads, so a session of such
+   * runs does not pile up settled records. A failure stays, for the user to see.
+   */
+  readonly forgetUnlessFailed?: boolean;
+  /**
    * This activity only *groups* other work and produces no data of its own, so it writes no
    * completion-ledger entry.
    *
