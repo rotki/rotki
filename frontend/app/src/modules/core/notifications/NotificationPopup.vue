@@ -17,6 +17,12 @@ function dismiss(id: number) {
   set(visibleNotification, { ...get(visibleNotification), display: false });
 }
 
+/** Mirrors the popup's own open state back, and marks the shown notification as seen. */
+function setDisplay(display: boolean): void {
+  set(visibleNotification, { ...get(visibleNotification), display });
+  displayed([get(visibleNotification).id]);
+}
+
 function dismissAll() {
   displayed(get(queue).map(({ id }) => id));
   set(visibleNotification, { ...get(visibleNotification), display: false });
@@ -48,11 +54,11 @@ watch(showNotificationBar, (showNotificationBar) => {
 
 <template>
   <RuiNotification
-    v-model="visibleNotification.display"
+    :model-value="visibleNotification.display"
     :timeout="visibleNotification.duration"
     width="400px"
     class="top-14 z-10000"
-    @update:model-value="displayed([visibleNotification.id])"
+    @update:model-value="setDisplay($event)"
   >
     <Notification
       popup

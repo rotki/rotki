@@ -24,12 +24,12 @@ async function navigate(): Promise<void> {
 </script>
 
 <template>
-  <Component
+  <component
     :is="tag"
     :class="{ 'cursor-pointer': enabled }"
     v-bind="$attrs"
     @click="navigate()"
   >
     <slot />
-  </Component>
+  </component>
 </template>

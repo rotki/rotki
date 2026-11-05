@@ -40,7 +40,7 @@ const filtered = computed<StakingInfo[]>(() => {
       v-if="page"
       data-testid="staking-page"
     >
-      <Component :is="page" />
+      <component :is="page" />
     </div>
     <TablePageLayout
       v-else

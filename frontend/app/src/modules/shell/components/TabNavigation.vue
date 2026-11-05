@@ -32,7 +32,6 @@ function getTabKey(route: RouteLocationRaw): string {
       <RuiTab
         v-for="tab in tabs"
         :key="tab.route.toString()"
-        :model-value="tab.route"
         link
         :to="tab.route"
         data-testid="nav-tab"

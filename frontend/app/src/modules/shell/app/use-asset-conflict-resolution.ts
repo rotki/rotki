@@ -17,7 +17,7 @@ interface UseAssetConflictResolutionReturn {
   /** Whether the per-asset table is showing rather than the two bulk choices. */
   manualResolution: Readonly<Ref<boolean>>;
   /** The strategy chosen per asset identifier; each row binds one entry with `v-model`. */
-  modelResolution: Ref<ConflictResolution>;
+  modelResolution: Ref<Writeable<ConflictResolution>>;
   /** Whether every conflict has been given a strategy, which is what enables confirming. */
   valid: ComputedRef<boolean>;
   /** Whether anything has been chosen yet, which is when the dialog stops being dismissable. */
@@ -80,7 +80,7 @@ export function useAssetConflictResolution(
   conflicts: MaybeRefOrGetter<AssetUpdateConflictResult[]>,
 ): UseAssetConflictResolutionReturn {
   const manualResolution = shallowRef<boolean>(false);
-  const modelResolution = ref<ConflictResolution>({});
+  const modelResolution = ref<Writeable<ConflictResolution>>({});
   const strategyModeForAll = shallowRef<ConflictResolutionStrategy>();
 
   const identifiers = computed<string[]>(() => toValue(conflicts).map(({ identifier }) => identifier));
