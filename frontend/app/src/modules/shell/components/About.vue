@@ -140,7 +140,7 @@ const { copied, copy } = useClipboard({ source: versionText });
         </dt>
         <dd class="min-w-0 -my-1">
           <AboutDataDirectory
-            :data-directory="dataDirectory"
+            :directory="dataDirectory"
             :is-packaged="isPackaged"
             @open-path="openPath(dataDirectory)"
           />

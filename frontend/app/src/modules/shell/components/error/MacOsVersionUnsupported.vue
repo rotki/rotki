@@ -14,7 +14,6 @@ const { closeApp } = useInterop();
   >
     <template #bottom>
       <RuiButton
-        depressed
         color="primary"
         @click="closeApp()"
       >

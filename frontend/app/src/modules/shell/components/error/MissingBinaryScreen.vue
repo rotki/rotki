@@ -53,7 +53,6 @@ const copy = useMissingBinaryCopy(() => binary);
 
     <template #bottom>
       <RuiButton
-        depressed
         color="primary"
         data-testid="missing-binary-terminate"
         @click="closeApp()"

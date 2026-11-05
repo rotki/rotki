@@ -4,13 +4,13 @@ import AboutDataDirectory from '@/modules/shell/components/AboutDataDirectory.vu
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 
 interface Props {
-  dataDirectory?: string;
+  directory?: string;
   isPackaged?: boolean;
 }
 
 function mountDataDirectory(props: Props = {}): VueWrapper<InstanceType<typeof AboutDataDirectory>> {
   return mount(AboutDataDirectory, {
-    props: { dataDirectory: '/home/user/.rotki', ...props },
+    props: { directory: '/home/user/.rotki', ...props },
   });
 }
 

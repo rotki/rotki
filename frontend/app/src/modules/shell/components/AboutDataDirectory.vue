@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 
-const { dataDirectory, isPackaged = false } = defineProps<{
-  dataDirectory: string;
+const { directory, isPackaged = false } = defineProps<{
+  directory: string;
   isPackaged?: boolean;
 }>();
 
@@ -22,11 +22,11 @@ const { t } = useI18n({ useScope: 'global' });
     >
       <template #activator>
         <div class="truncate">
-          {{ dataDirectory }}
+          {{ directory }}
         </div>
       </template>
       <span class="max-w-70 break-all">
-        {{ dataDirectory }}
+        {{ directory }}
       </span>
     </RuiTooltip>
     <div
@@ -56,7 +56,7 @@ const { t } = useI18n({ useScope: 'global' });
     <div v-else>
       <CopyButton
         size="sm"
-        :value="dataDirectory"
+        :value="directory"
         :tooltip="t('about.copy_data_directory_tooltip')"
       />
     </div>

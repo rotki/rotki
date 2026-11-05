@@ -21,7 +21,6 @@ const icon = computed<RuiIcons>(() => (message.success ? 'lu-circle-check' : 'lu
     max-width="500"
     persistent
     z-index="calc(var(--rui-z-dialog) + 1)"
-    @close="emit('dismiss')"
     @keydown.esc="emit('dismiss')"
     @keydown.enter="emit('dismiss')"
     @dismiss="emit('dismiss')"

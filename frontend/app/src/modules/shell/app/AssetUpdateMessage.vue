@@ -121,7 +121,6 @@ const { t } = useI18n({ useScope: 'global' });
         <div v-if="headless">
           <RuiCheckbox
             v-model="skipUpdate"
-            dense
             color="primary"
             details="hidden"
           >

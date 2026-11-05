@@ -148,7 +148,7 @@ function collapse(): void {
           </div>
 
           <div class="flex items-center shrink-0 border-l border-default px-1 gap-0.5">
-            <Component
+            <component
               :is="activeActions"
               v-if="activeActions"
             />
@@ -168,7 +168,7 @@ function collapse(): void {
 
         <PinnedPanelBody>
           <KeepAlive :max="PINNED_CAP">
-            <Component
+            <component
               :is="activeComponent"
               v-if="activePanel && activeComponent"
               :key="activePinnedId"
