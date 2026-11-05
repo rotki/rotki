@@ -1,6 +1,8 @@
 import pytest
 
-from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubDerivedAddressData
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.types import SupportedBlockchain
 
@@ -17,6 +19,28 @@ def test_get_last_consecutive_xpub_derived_indices(setup_db_for_xpub_tests):
         receiving_idx, change_idx = db.get_last_consecutive_xpub_derived_indices(cursor, xpub3)
         assert receiving_idx == 0
         assert change_idx == 0
+    db.logout()
+
+
+def test_get_last_consecutive_xpub_derived_indices_ignores_insertion_order(setup_db_for_xpub_tests):  # noqa: E501
+    """Test that mappings stored out of derived index order still count as consecutive"""
+    db, _, _, xpub3, _ = setup_db_for_xpub_tests
+    addresses = [xpub3.xpub.derive_child(0).derive_child(idx).address() for idx in range(4)]
+    with db.user_write() as write_cursor:
+        db.add_blockchain_accounts(
+            write_cursor,
+            account_data=[BlockchainAccountData(chain=xpub3.blockchain, address=x) for x in addresses],  # noqa: E501
+        )
+        db.ensure_xpub_mappings_exist(
+            write_cursor,
+            xpub_data=xpub3,
+            derived_addresses_data=[
+                XpubDerivedAddressData(0, idx, addresses[idx], ZERO) for idx in (1, 3, 0, 2)
+            ],
+        )
+
+    with db.conn.read_ctx() as cursor:
+        assert db.get_last_consecutive_xpub_derived_indices(cursor, xpub3) == (3, 0)
     db.logout()
 
 

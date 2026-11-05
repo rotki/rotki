@@ -35,12 +35,21 @@ class FakeChainsAggregator:
 
 
 @pytest.mark.parametrize('start_index', [0, 5])
-def test_derive_addresses_loop_fills_gaps_up_to_max_derived_index(start_index):
+@pytest.mark.parametrize(('used_offsets', 'last_used_offset'), [
+    pytest.param((1, 3), 3, id='same_batch'),
+    pytest.param((1, 7), 7, id='across_batches'),
+])
+def test_derive_addresses_loop_fills_gaps_up_to_max_derived_index(
+        start_index,
+        used_offsets,
+        last_used_offset,
+):
     """Test that all addresses without transactions up to the last derived index with a
-    transaction are also returned, so that later derivation can resume from that index
+    transaction are also returned, in derived index order, so that later derivation can
+    resume from that index. That needs to hold when the used indices are in different batches.
     """
     root = HDKey.from_xpub(xpub=XPUB, path='m')
-    indices_with_tx = {start_index + 1, start_index + 3}
+    indices_with_tx = {start_index + offset for offset in used_offsets}
     manager = XpubManager(chains_aggregator=FakeChainsAggregator(root, indices_with_tx))
 
     derived = manager._derive_addresses_loop(
@@ -51,9 +60,10 @@ def test_derive_addresses_loop_fills_gaps_up_to_max_derived_index(start_index):
         blockchain=SupportedBlockchain.BITCOIN,
     )
 
-    assert {entry.derived_index for entry in derived} == set(range(start_index, start_index + 4))
-    assert {entry.address for entry in derived} == {
-        root.derive_child(idx).address() for idx in range(start_index, start_index + 4)
-    }
+    expected_indices = list(range(start_index, start_index + last_used_offset + 1))
+    assert [entry.derived_index for entry in derived] == expected_indices
+    assert [entry.address for entry in derived] == [
+        root.derive_child(idx).address() for idx in expected_indices
+    ]
     assert {entry.balance for entry in derived} == {FVal('1.5')}
     assert all(entry.account_index == 0 for entry in derived)
