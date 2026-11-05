@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { Exchange, ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { externalLinks } from '@shared/external-links';
 import { msg } from '@/message-key';
+import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalancesEmpty.vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
+import { useExchangeConnectionsTable } from '@/modules/balances/exchanges/use-exchange-connections-table';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useNonSyncingExchanges } from '@/modules/balances/exchanges/use-non-syncing-exchanges';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
-import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
@@ -27,10 +26,6 @@ definePage({
 });
 
 const exchange = ref<ExchangeFormData>();
-const sort = ref<DataTableSortColumn<Exchange>>({
-  column: 'name',
-  direction: 'asc',
-});
 
 const { exchangesWithKey } = storeToRefs(useLocationStore());
 const { removeExchange } = useExchanges();
@@ -42,28 +37,7 @@ const route = useRoute('/accounts/exchanges/');
 const { getExchangeName } = useLocations();
 const { isNonSyncExchange, resetNonSyncingExchanges, toggleSync } = useNonSyncingExchanges();
 
-// the exchange reads as logo and name on one line, like the balances pages, and the row ends on its actions
-const cols = computed<DataTableColumn<Exchange>[]>(() => [{
-  cellClass: 'py-0 w-48',
-  key: 'location',
-  label: t('common.exchange'),
-  sortable: true,
-}, {
-  key: 'name',
-  label: t('common.name'),
-  sortable: true,
-}, {
-  cellClass: 'py-0 w-36',
-  key: 'syncEnabled',
-  label: t('exchange_settings.header.sync_enabled'),
-}, {
-  align: 'end',
-  cellClass: 'py-0 w-28',
-  key: 'actions',
-  label: t('common.actions_text'),
-}]);
-
-useRememberTableSorting<Exchange>(TableId.EXCHANGE, sort, cols);
+const { balanceOf, cols, highlight: highlightExchange, modelSort: sort, rowClass } = useExchangeConnectionsTable();
 
 /**
  * A blank form, on the given exchange when it is one rotki can connect, otherwise on the first.
@@ -89,10 +63,6 @@ function createNewExchange(location?: string): ExchangeFormData {
     passphrase: '',
   };
 }
-
-const { highlight: highlightExchange, rowClass } = useRowHighlight<{ location: string; name: string }>(
-  ({ location, name }) => `${location}#${name}`,
-);
 
 const showSetupHint = ref<boolean>(false);
 const { start: startHintTimeout, stop: stopHintTimeout } = useTimeoutFn(() => {
@@ -261,6 +231,13 @@ watch(route, async (route) => {
             :model-value="!isNonSyncExchange(row)"
             details="hidden"
             @update:model-value="toggleSync(row)"
+          />
+        </template>
+        <template #item.balance="{ row }">
+          <FiatDisplay
+            :value="balanceOf(row)"
+            class="font-medium tabular-nums"
+            data-testid="exchange-balance"
           />
         </template>
         <template #item.actions="{ row }">

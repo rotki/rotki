@@ -1,12 +1,15 @@
-import { createTestExchange } from '@test/utils/create-data';
+import { createTestBalance, createTestExchange } from '@test/utils/create-data';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, nextTick, type Ref, ref } from 'vue';
+import { nextTick, type Ref, ref } from 'vue';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalancesEmpty.vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import Exchanges from '@/pages/accounts/exchanges/index.vue';
@@ -48,10 +51,10 @@ vi.mock('@/modules/settings/use-setting', () => ({
 
 const HINT = '[data-testid=exchange-setup-hint]';
 
-/** Renders each row's actions cell, which is all these tests reach into. */
+/** Renders every cell slot of each row. */
 const RuiDataTable = defineComponent({
   props: ['rows', 'cols', 'sort', 'itemClass', 'rowAttr'],
-  template: '<div><div v-for="row in rows" :key="row.name"><slot name="item.actions" :row="row" /></div></div>',
+  template: `<div><div v-for="row in rows" :key="row.location + '#' + row.identifier"><div v-for="col in cols" :key="col.key"><slot :name="'item.' + col.key" :row="row">{{ row[col.key] }}</slot></div></div></div>`,
 });
 
 describe('exchanges page', () => {
@@ -69,6 +72,7 @@ describe('exchanges page', () => {
           TablePageLayout: { template: '<div><slot name="buttons" /><slot /></div>' },
           ExchangeBalancesEmpty: true,
           ExternalLink: true,
+          FiatDisplay: { props: ['value'], template: '<span>{{ value.toFixed() }}</span>' },
           LocationDisplay: true,
           RowActions: true,
           RuiDataTable,
@@ -98,7 +102,6 @@ describe('exchanges page', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    wrapper?.unmount();
   });
 
   it('should show the empty state, with its shortcuts, while no exchange is connected', async () => {
@@ -120,6 +123,76 @@ describe('exchanges page', () => {
     await flushPromises();
 
     expect(wrapper.findComponent(ExchangeKeysFormDialog).props('modelValue')).toMatchObject({ identifier: 'kraken-main', mode: 'edit', name: 'renamed' });
+  });
+
+  it('should show each connection value by location and stable identifier, not its name or the exchange total', async () => {
+    const exchangeStore = useConnectedExchangesStore();
+    exchangeStore.connectedExchanges = [
+      createTestExchange('kraken', 'main', { identifier: 'connection-1' }),
+      createTestExchange('kraken', 'savings', { identifier: 'connection-2' }),
+      createTestExchange('binance', 'main', { identifier: 'connection-1' }),
+    ];
+    const balancesStore = useBalancesStore();
+    balancesStore.exchangeBalances = { kraken: { ETH: createTestBalance(10, 9999) } };
+    balancesStore.exchangeAccountBalances = {
+      binance: { 'connection-1': { BTC: createTestBalance(1, 300) } },
+      kraken: {
+        'connection-1': { ETH: createTestBalance(1, 120), USD: createTestBalance(5, 5) },
+        'connection-2': { ETH: createTestBalance(2, 45) },
+        'main': { ETH: createTestBalance(1, 999) },
+      },
+    };
+    wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.findAll('[data-testid=exchange-balance]').map(balance => balance.text())).toEqual(['125', '45', '300']);
+
+    exchangeStore.connectedExchanges = exchangeStore.connectedExchanges.map(exchange => ({
+      ...exchange,
+      name: `${exchange.name} renamed`,
+    }));
+    await nextTick();
+
+    expect(wrapper.findAll('[data-testid=exchange-balance]').map(balance => balance.text())).toEqual(['125', '45', '300']);
+  });
+
+  it('should leave ignored assets out of the connection value when ignored assets change', async () => {
+    useBalancesStore().exchangeAccountBalances = {
+      kraken: {
+        'kraken-main': { ETH: createTestBalance(1, 150), SPAM: createTestBalance(100, 5000) },
+      },
+    };
+    wrapper = createWrapper();
+    await flushPromises();
+    expect(wrapper.find('[data-testid=exchange-balance]').text()).toBe('5150');
+
+    useAssetsStore().ignoredAssets = ['SPAM'];
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=exchange-balance]').text()).toBe('150');
+  });
+
+  it('should show zero for a connection without balances, even when its exchange has a total', async () => {
+    useConnectedExchangesStore().connectedExchanges = [
+      createTestExchange('kraken', 'missing', { identifier: 'connection-missing' }),
+      createTestExchange('binance', 'missing', { identifier: 'connection-missing' }),
+    ];
+    const balancesStore = useBalancesStore();
+    balancesStore.exchangeBalances = { kraken: { ETH: createTestBalance(10, 9999) } };
+    balancesStore.exchangeAccountBalances = {
+      kraken: { 'connection-other': { ETH: createTestBalance(1, 150) } },
+    };
+    wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.findAll('[data-testid=exchange-balance]').map(balance => balance.text())).toEqual(['0', '0']);
+
+    balancesStore.exchangeAccountBalances = {
+      kraken: { 'connection-missing': { ETH: createTestBalance(1, 75) } },
+    };
+    await nextTick();
+
+    expect(wrapper.findAll('[data-testid=exchange-balance]').map(balance => balance.text())).toEqual(['75', '0']);
   });
 
   it('should not show the setup hint before an exchange is added', async () => {
