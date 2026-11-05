@@ -51,7 +51,6 @@ export type UserMessageEntry = (typeof UserMessageEntry)[keyof typeof UserMessag
 
 /** What rotki itself was doing when an invariant broke: the backend's `UserMessageOperation`. */
 export const UserMessageOperation = {
-  BACKGROUND_TASK: 'background_task',
   BALANCE_QUERY: 'balance_query',
   DATA_MIGRATION: 'data_migration',
   DECODER_INITIALIZATION: 'decoder_initialization',
@@ -110,7 +109,6 @@ export const ENTRY_LABELS: Record<UserMessageEntry, MessageKey> = {
 };
 
 export const OPERATION_LABELS: Record<UserMessageOperation, MessageKey> = {
-  [UserMessageOperation.BACKGROUND_TASK]: msg.$t('backend_problems.operation.background_task'),
   [UserMessageOperation.BALANCE_QUERY]: msg.$t('backend_problems.operation.balance_query'),
   [UserMessageOperation.DATA_MIGRATION]: msg.$t('backend_problems.operation.data_migration'),
   [UserMessageOperation.DECODER_INITIALIZATION]: msg.$t('backend_problems.operation.decoder_initialization'),
