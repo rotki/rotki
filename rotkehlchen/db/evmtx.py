@@ -440,8 +440,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
     def _get_txs_not_decoded_column_and_query(self) -> tuple[str, str]:
         return 'C.tx_hash', (
-            'evmtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B ON A.tx_id=B.tx_id '
-            'LEFT JOIN evm_transactions AS C ON A.tx_id=C.identifier '
+            'evmtx_receipts AS A LEFT JOIN evm_transactions AS C ON A.tx_id=C.identifier '
         )
 
     def add_or_ignore_receipt_data(

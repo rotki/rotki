@@ -64,8 +64,7 @@ class DBCommonTx[T_Address, T_Transaction: 'SolanaTransaction | EvmTransaction',
         column, base_query = self._get_txs_not_decoded_column_and_query()
         query, bindings = filter_query.prepare()
         with self.db.conn.read_ctx() as cursor:
-            # DISTINCT avoids duplicates when a tx has multiple non-decoded mapping rows.
-            cursor.execute(f'SELECT DISTINCT {column} FROM {base_query} {query}', bindings)
+            cursor.execute(f'SELECT {column} FROM {base_query} {query}', bindings)
             return [self.deserialize_tx_hash_from_db(x[0]) for x in cursor]
 
     def count_hashes_not_decoded(self, filter_query: T_TxNotDecodedFilterQuery) -> int:
@@ -73,6 +72,5 @@ class DBCommonTx[T_Address, T_Transaction: 'SolanaTransaction | EvmTransaction',
         column, base_query = self._get_txs_not_decoded_column_and_query()
         query, bindings = filter_query.prepare()
         with self.db.conn.read_ctx() as cursor:
-            # Match get_transaction_hashes_not_decoded() semantics and count unique txs.
-            cursor.execute(f'SELECT COUNT(DISTINCT {column}) FROM {base_query} {query}', bindings)
+            cursor.execute(f'SELECT COUNT({column}) FROM {base_query} {query}', bindings)
             return cursor.fetchone()[0]

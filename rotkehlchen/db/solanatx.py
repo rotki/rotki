@@ -251,10 +251,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
         return Signature(raw_tx_hash)
 
     def _get_txs_not_decoded_column_and_query(self) -> tuple[str, str]:
-        return (
-            'signature',
-            'solana_transactions AS A LEFT JOIN solana_tx_mappings AS B ON A.identifier = B.tx_id ',  # noqa: E501
-        )
+        return 'C.signature', 'solana_transactions AS C '
 
     def delete_transaction_data(
             self,

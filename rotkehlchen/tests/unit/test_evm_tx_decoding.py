@@ -249,7 +249,9 @@ def test_query_and_decode_transactions_works_with_different_chains(
     and the decoding of transactions using an instance of the EVMTransactionDecoder
     only decodes transactions from the correct chain.
     """
-    _, tx_hash_eth_yabir, tx_hash_opt = _add_transactions_to_db(database, ethereum_accounts)
+    tx_hash_eth, tx_hash_eth_yabir, tx_hash_opt = _add_transactions_to_db(
+        database, ethereum_accounts,
+    )
     dbevmtx = DBEvmTx(database)
     dbl2withl1feestx = DBL2WithL1FeesTx(database)
     assert len(dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None)) == 3
@@ -261,18 +263,25 @@ def test_query_and_decode_transactions_works_with_different_chains(
     hashes = dbl2withl1feestx.get_transaction_hashes_not_decoded(
         filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.OPTIMISM, limit=None),  # noqa: E501
     )
-    assert len(hashes) == 1
+    assert hashes == [tx_hash_opt]
     hashes = dbevmtx.get_transaction_hashes_not_decoded(
         filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
     )
-    assert len(hashes) == 1
+    assert hashes == [tx_hash_eth]
 
     # get the receipts for the last address, which should mark 1 more transaction as not decoded
     eth_transactions.get_receipts_for_transactions_missing_them(addresses=[ethereum_accounts[1]])
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'UPDATE evm_transactions SET timestamp=? WHERE tx_hash=?',
+            (1, tx_hash_eth_yabir),
+        )
     hashes = dbevmtx.get_transaction_hashes_not_decoded(
-        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(
+            chain_id=ChainID.ETHEREUM, limit=None,
+        ),
     )
-    assert len(hashes) == 2
+    assert hashes == [tx_hash_eth_yabir, tx_hash_eth]
 
     # see that setting the spam attribute alone does not count it as decoded
     with database.user_write() as write_cursor:
@@ -283,7 +292,7 @@ def test_query_and_decode_transactions_works_with_different_chains(
     hashes = dbevmtx.get_transaction_hashes_not_decoded(
         filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
     )
-    assert len(hashes) == 2
+    assert hashes == [tx_hash_eth_yabir, tx_hash_eth]
 
     # see that setting internals queried does not duplicate undecoded txs nor count as decoded
     with database.user_write() as write_cursor:
@@ -294,7 +303,13 @@ def test_query_and_decode_transactions_works_with_different_chains(
     hashes = dbevmtx.get_transaction_hashes_not_decoded(
         filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
     )
-    assert len(hashes) == 2
+    assert hashes == [tx_hash_eth_yabir, tx_hash_eth]
+    assert dbevmtx.count_hashes_not_decoded(
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM),
+    ) == 2
+    assert dbevmtx.get_transaction_hashes_not_decoded(
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=2),
+    ) == [tx_hash_eth_yabir, tx_hash_eth]
 
     # see that setting the decoded attribute counts properly
     with database.user_write() as write_cursor:
@@ -305,7 +320,10 @@ def test_query_and_decode_transactions_works_with_different_chains(
     hashes = dbevmtx.get_transaction_hashes_not_decoded(
         filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
     )
-    assert len(hashes) == 1
+    assert hashes == [tx_hash_eth]
+    assert dbevmtx.count_hashes_not_decoded(
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM),
+    ) == 1
 
 
 def _make_mock_receipt(tx_hash: EVMTxHash) -> dict[str, Any]:
