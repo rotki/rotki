@@ -128,8 +128,37 @@ class Accountant:
         taxable events into account. Not where processing starts from. Processing
         always starts from the very first event we find in the history.
 
+        A run that does not finish (cancelled, or failed) removes its report so it is
+        not listed empty. A fatal AccountingError keeps it, since its id is returned.
+
         Returns the id of the generated report
         """
+        unfinished_report: list[int] = []  # holds this run's report id until it is kept
+        try:
+            return self._process_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                events=events,
+                unfinished_report=unfinished_report,
+            )
+        finally:
+            for report_id in unfinished_report:
+                self._purge_unfinished_report(report_id)
+
+    def _purge_unfinished_report(self, report_id: int) -> None:
+        """Not cancellable, since it runs in the task being cancelled. Deleting a report
+        already deleted by the user is a no-op, so it can't mask the original error."""
+        conn = self.db.conn_transient
+        with conn.critical_section_and_transaction_lock(cancellable=False), conn.cursor() as cursor:  # noqa: E501
+            cursor.execute('DELETE FROM pnl_reports WHERE identifier=?', (report_id,))
+
+    def _process_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            events: Sequence[AccountingEventMixin],
+            unfinished_report: list[int],
+    ) -> int:
         active_premium = self.premium and self.premium.is_active()
         log.info(
             'Start of history processing',
@@ -152,6 +181,7 @@ class Accountant:
                 end_ts=end_ts,
                 settings=db_settings,
             )
+            unfinished_report.append(report_id)
             self.pots[0].reset(settings=db_settings, start_ts=start_ts, end_ts=end_ts, report_id=report_id)  # noqa: E501
             self.end_ts = end_ts
             self.csvexporter.reset(start_ts=start_ts, end_ts=end_ts)
@@ -209,6 +239,7 @@ class Accountant:
             except AccountingError as e:
                 log.error(f'Found critical error {e} when processing history. Stopping.')
                 e.report_id = report_id
+                unfinished_report.clear()
                 raise
 
             if processed_events_num == 0:
@@ -251,6 +282,7 @@ class Accountant:
             pot.events_accountant.rules_manager.clean_rules()
 
         self.ignored_asset_ids.clear()  # clean ignored assets from memory once PnL report run concludes  # noqa: E501
+        unfinished_report.clear()
         return report_id
 
     def _process_event(

@@ -7495,7 +7495,7 @@ Querying complete action history
    :statuscode 200: History processed and returned successfully
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 401: No user is currently logged in.
-   :statuscode 409: Fatal accounting error while processing the report.
+   :statuscode 409: Fatal accounting error while processing the report. Another report is already being generated.
    :statuscode 500: Internal rotki error.
 
 
@@ -7630,7 +7630,7 @@ Export PnL report debug data
 
    :statuscode 200: Debugging history data returned successfully
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. Error occurred when creating history events for pnl debug data.
+   :statuscode 409: No user is currently logged in. Error occurred when creating history events for pnl debug data. A PnL report is already being generated.
    :statuscode 500: Internal rotki error.
 
 
@@ -7680,7 +7680,7 @@ Import PnL report debug data
 
    :statuscode 200: Import of debug history data successfully
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. Import history data does not contain required keys. Import history data contains some invalid data types. Error importing history debug data.
+   :statuscode 409: No user is currently logged in. Import history data does not contain required keys. Import history data contains some invalid data types. Error importing history debug data. A PnL report is already being generated.
    :statuscode 500: Internal rotki error.
 
 
@@ -7901,6 +7901,9 @@ Querying history progress status
 
    :resjson str processing_state: The name of the task that is currently being executed for the history query and profit/loss report.
    :resjson str total_progress: A percentage showing the total progress of the profit/loss report.
+
+   When no report is being generated, ``processing_state`` is an empty string and ``total_progress`` is ``"0"``.
+
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.

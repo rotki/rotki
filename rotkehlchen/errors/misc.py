@@ -216,6 +216,10 @@ class AccountingError(Exception):
         self.report_id = report_id
 
 
+class PnlReportAlreadyRunning(Exception):
+    """A PnL report was asked for while another one is being generated"""
+
+
 class AddressNotSupported(Exception):
     """Used when we detect an address with a unknown format for the addressbook"""
 
