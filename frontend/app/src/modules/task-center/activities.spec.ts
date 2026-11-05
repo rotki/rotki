@@ -128,7 +128,7 @@ const samples = new Map<string, readonly unknown[]>([
   ['purgeActivity', [{ purgeable: 'transactions', value: '' }, { purgeable: 'transactions', value: 'eth' }]],
   ['redecodeActivity', [{}, { chains: ['optimism', 'eth'] }]],
   ['repullEthStakingActivity', [{ entryType: 'eth_withdrawal_event', fromTimestamp: 10, toTimestamp: 20, validatorIndices: [1, 2] }]],
-  ['repullExchangeEventsActivity', [{ fromTimestamp: 10, location: 'kraken', name: 'Main', toTimestamp: 20 }]],
+  ['repullExchangeEventsActivity', [{ fromTimestamp: 10, identifier: 'conn-1', label: 'Main', toTimestamp: 20 }]],
   ['repullTransactionsActivity', [{ address, chain: 'eth', fromTimestamp: 10, toTimestamp: 20 }]],
   ['sessionCreateActivity', [undefined]],
   ['sessionLoginActivity', [undefined]],
