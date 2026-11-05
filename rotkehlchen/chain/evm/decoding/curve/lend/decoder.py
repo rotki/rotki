@@ -339,19 +339,22 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
         # is being used. Both are being deposited for use as collateral in the leveraged position.
         for tx_log in context.all_logs:
             if (
-                tx_log.address == self.leverage_zap and
-                tx_log.topics[0] == STAKING_DEPOSIT and
-                self.base.is_tracked(bytes_to_address(tx_log.topics[1]))
+                len(tx_log.topics) == 0 or
+                tx_log.address != self.leverage_zap or
+                tx_log.topics[0] != STAKING_DEPOSIT or
+                not self.base.is_tracked(bytes_to_address(tx_log.topics[1]))
             ):
-                collateral_amount = token_normalized_value(
-                    token_amount=int.from_bytes(tx_log.data[0:32]),
-                    token=collateral_token,
-                )
-                borrowed_amount = token_normalized_value(
-                    token_amount=int.from_bytes(tx_log.data[32:64]),
-                    token=borrowed_token,
-                )
-                break
+                continue
+
+            collateral_amount = token_normalized_value(
+                token_amount=int.from_bytes(tx_log.data[0:32]),
+                token=collateral_token,
+            )
+            borrowed_amount = token_normalized_value(
+                token_amount=int.from_bytes(tx_log.data[32:64]),
+                token=borrowed_token,
+            )
+            break
         else:
             return None  # This is not a leveraged loan.
 
