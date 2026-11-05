@@ -68,12 +68,13 @@ describe('useBackgroundTasks', () => {
     submitTask.mockClear();
   });
 
-  it('should mirror a started task as a background activity that is not interruptible', async () => {
+  it('should mirror a started task as a background activity that is not interruptible and is forgotten unless it fails', async () => {
     const { onStatus } = await setup();
     onStatus(status(transactions, { status: 'started' }));
 
     expect(specs).toHaveLength(1);
     expect(specs[0]).toMatchObject({
+      forgetUnlessFailed: true,
       id: 'background-task:evm_transactions:7:eth:0xabc',
       interruptible: false,
       kind: ActivityKind.BACKGROUND_TASK,

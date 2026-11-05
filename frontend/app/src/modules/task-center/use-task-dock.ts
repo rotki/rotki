@@ -7,6 +7,7 @@ import { DISMISSED_HIDE_DELAY, DockState } from '@/modules/task-center/dock-stat
 import { useDockAutoOpen } from '@/modules/task-center/use-dock-auto-open';
 import { type PendingJob, usePendingJobs } from '@/modules/task-center/use-pending-jobs';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 /**
  * How long work has to stay idle before its batch counts as over. Work often goes idle for a moment
@@ -84,6 +85,7 @@ function isBackgroundTask(activity: Activity): boolean {
  */
 export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   const { isActive, model } = useTaskCenter();
+  const { forget } = useTaskOrchestrator();
   const { children, jobs } = usePendingJobs();
 
   const hasFailure = (root: Activity): boolean => someInSubtree(get(children), root, isFailed);
@@ -193,12 +195,14 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
     const superseded = supersededFailures(roots);
     set(tracked, new Set([...get(tracked), ...fresh].filter(id => !superseded.has(id))));
     set(acknowledged, new Set([...get(acknowledged)].filter(id => !superseded.has(id))));
+    for (const id of superseded)
+      forget(id);
   }
 
   /**
    * The background failures a later failure of the same row replaces. A task that keeps failing,
    * as an indexer that stays down does on every scheduler run, then shows one failed row with its
-   * latest error rather than one per run.
+   * latest error rather than one per run, and the replaced records are forgotten rather than kept.
    */
   function supersededFailures(roots: Activity[]): Set<ActivityId> {
     const latest = new Map<string, { id: ActivityId; run: number }>();

@@ -41,7 +41,9 @@ interface UseBackgroundTasksReturn {
  * @remarks
  * Each task becomes an activity whose run waits for the task's end message, so the orchestrator
  * owns the row's lifecycle like any other: it settles on logout with the rest of the session's
- * work, which matters because the backend sends nothing while it stops its tasks.
+ * work, which matters because the backend sends nothing while it stops its tasks. A run that ends
+ * without failing is forgotten as it settles, since nothing reports it and the task manager starts
+ * new runs all session.
  *
  * Start and end messages are dropped when no client is connected, so the periodic data fills the
  * gaps: a running task with no row gets one, and a row whose task is gone settles complete. Its
@@ -68,7 +70,7 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
     });
     const entry: Mirror = {
       finish: (result) => {
-        forget(task.id, entry);
+        dropMirror(task.id, entry);
         resolve(result);
       },
       since: Date.now(),
@@ -80,6 +82,7 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
 
     startPromise((async (): Promise<void> => {
       await submitTask({
+        forgetUnlessFailed: true,
         id: backgroundTaskActivity.id(task),
         interruptible: false,
         kind: backgroundTaskActivity.kind,
@@ -89,7 +92,7 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
         subtitle: backgroundTaskLabel(task, getChainName),
         title: t(backgroundTaskTitle(task)),
       });
-      forget(task.id, entry);
+      dropMirror(task.id, entry);
     })());
   }
 
@@ -98,7 +101,7 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
    * starts a failed row instead of settling the already settled one. Only drops this entry, never a
    * later mirror of the same task.
    */
-  function forget(id: number, entry: Mirror): void {
+  function dropMirror(id: number, entry: Mirror): void {
     if (mirrors.get(id) === entry)
       mirrors.delete(id);
   }
