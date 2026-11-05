@@ -62,7 +62,7 @@ const isEmpty = computed<boolean>(() => !get(isInitialLoading) && !get(hasRows))
         v-model:search="search"
         :balances="locationBreakdown"
         :breakdown="{ hide: true }"
-        sticky-header
+        :display="{ stickyHeader: true }"
       />
       <AssetBalancesSkeleton v-else />
     </TableFrame>

@@ -67,7 +67,7 @@ const value = computed<BigNumber>(() => sum(get(assets)));
         v-model:search="search"
         v-model:selected="selected"
         :balances="shownAssets"
-        show-per-protocol
+        :display="{ showPerProtocol: true }"
         layout="panel"
         :selection-mode="selectionMode"
         :breakdown="{ scope: { chains, groupId } }"
