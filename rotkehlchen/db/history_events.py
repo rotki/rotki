@@ -146,6 +146,7 @@ def get_bitcoin_counterparty_addresses(
 
 def _build_matched_movement_exclusion(
         filter_query: HistoryBaseEntryFilterQuery,
+        prepared_conditions: tuple[list[str], list[str], list[Any]],
 ) -> tuple[str, list[Any]]:
     """Exclude the non-movement side of matched pairs from aggregated pagination.
 
@@ -171,6 +172,7 @@ def _build_matched_movement_exclusion(
         with_order=False,
         with_group_by=False,
         without_ignored_asset_filter=True,
+        prepared_conditions=prepared_conditions,
     )
     if not base_filters:
         # Unfiltered: every movement is visible, so always exclude the non-movement side.
@@ -1502,13 +1504,20 @@ class DBHistoryEvents:
         # only for the group_identifiers that ended up in the current page.
         base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {chain_fields}, {staking_fields} {join_clause}'  # noqa: E501
         if aggregate_by_group_ids:
-            exclusion_sql, exclusion_bindings = _build_matched_movement_exclusion(filter_query)
+            prepared_conditions = filter_query.prepare_conditions(
+                without_ignored_asset_filter=True,
+            )
+            exclusion_sql, exclusion_bindings = _build_matched_movement_exclusion(
+                filter_query=filter_query,
+                prepared_conditions=prepared_conditions,
+            )
             filters, query_bindings = filter_query.prepare(
                 with_group_by=True,
                 with_pagination=False,
                 with_order=match_exact_events is True and include_order is True,  # skip order when we want the whole group of events since we order in an outer part of the query later  # noqa: E501
                 without_ignored_asset_filter=True,
                 extra_conditions=[(exclusion_sql, exclusion_bindings)],
+                prepared_conditions=prepared_conditions,
             )
             prefix = 'SELECT COUNT(*), *'
         else:
@@ -1615,17 +1624,26 @@ class DBHistoryEvents:
             filter_query: HistoryBaseEntryFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: bool = False,
+            prepared_conditions: tuple[list[str], list[str], list[Any]] | None = None,
     ) -> tuple[str, list]:
         """Returns a lightweight sql query for counting history events."""
         base_suffix = f'{filter_query.get_columns()} {filter_query.get_join_query()}'
         if aggregate_by_group_ids:
-            exclusion_sql, exclusion_bindings = _build_matched_movement_exclusion(filter_query)
+            if prepared_conditions is None:
+                prepared_conditions = filter_query.prepare_conditions(
+                    without_ignored_asset_filter=True,
+                )
+            exclusion_sql, exclusion_bindings = _build_matched_movement_exclusion(
+                filter_query=filter_query,
+                prepared_conditions=prepared_conditions,
+            )
             # Check if there are actual user filters (location, asset, etc.)
             base_filters, _ = filter_query.prepare(
                 with_group_by=False,
                 with_pagination=False,
                 with_order=False,
                 without_ignored_asset_filter=True,
+                prepared_conditions=prepared_conditions,
             )
             if not base_filters and entries_limit is None:
                 # Unfiltered: query group_identifier directly so SQLite can use the
@@ -1641,11 +1659,13 @@ class DBHistoryEvents:
                 with_order=False,
                 without_ignored_asset_filter=True,
                 extra_conditions=[(exclusion_sql, exclusion_bindings)],
+                prepared_conditions=prepared_conditions,
             )
         else:
             filters, query_bindings = filter_query.prepare(
                 with_order=False,
                 with_pagination=False,
+                prepared_conditions=prepared_conditions,
             )
 
         if entries_limit is None:
@@ -2372,12 +2392,16 @@ class DBHistoryEvents:
         the number of events if any limit is applied, otherwise the second value matches
         the first.
         """
+        prepared_conditions = query_filter.prepare_conditions(
+            without_ignored_asset_filter=aggregate_by_group_ids,
+        )
         if need_count_without_limit:
             query_without_limit, query_without_limit_bindings = (
                 self._create_history_events_count_query(
                     filter_query=query_filter,
                     aggregate_by_group_ids=aggregate_by_group_ids,
                     entries_limit=None,
+                    prepared_conditions=prepared_conditions,
                 )
             )
             count_without_limit = cursor.execute(
@@ -2395,6 +2419,7 @@ class DBHistoryEvents:
             filter_query=query_filter,
             aggregate_by_group_ids=aggregate_by_group_ids,
             entries_limit=entries_limit,
+            prepared_conditions=prepared_conditions,
         )
         count_with_limit = cursor.execute(
             f'SELECT COUNT(*) FROM ({query_with_limit})',
