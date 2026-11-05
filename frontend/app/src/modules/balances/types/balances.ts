@@ -22,6 +22,7 @@ export type AssetBalances = z.infer<typeof AssetBalances>;
 
 export const ExchangeBalancesResponse = z.object({
   failedAccounts: z.record(z.string(), z.record(z.string(), z.string())).optional(),
+  perAccount: z.record(z.string(), z.record(z.string(), AssetBalances)),
   totals: z.record(z.string(), AssetBalances),
 });
 

@@ -33,7 +33,7 @@ export function useExchanges(): UseExchangesReturn {
 
   const { submitTask } = useNativeTask();
   const { showErrorMessage } = useNotifications();
-  const { exchangeBalances } = storeToRefs(useBalancesStore());
+  const { exchangeAccountBalances, exchangeBalances } = storeToRefs(useBalancesStore());
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { setConnectedExchanges } = useConnectedExchangesStore();
   const { queryExchangeBalances } = useExchangeApi();
@@ -65,7 +65,7 @@ export function useExchanges(): UseExchangesReturn {
           async () => queryExchangeBalances(location, ignoreCache, threshold),
         ),
         (result): Result<void, TaskError> => {
-          const { failedAccounts, totals } = ExchangeBalancesResponse.parse(result);
+          const { failedAccounts, perAccount, totals } = ExchangeBalancesResponse.parse(result);
           const failures = Object.values(failedAccounts?.[location] ?? {});
           if (failures.length > 0)
             return err(TaskFailed({ message: failures.join(' ') }));
@@ -73,6 +73,10 @@ export function useExchanges(): UseExchangesReturn {
           set(exchangeBalances, {
             ...get(exchangeBalances),
             [location]: totals[location] ?? {},
+          });
+          set(exchangeAccountBalances, {
+            ...get(exchangeAccountBalances),
+            [location]: perAccount[location] ?? {},
           });
           return ok(undefined);
         },
@@ -134,6 +138,13 @@ export function useExchanges(): UseExchangesReturn {
 
         const exchanges = [...connected];
         const balances = { ...get(exchangeBalances) };
+        const accountBalances = { ...get(exchangeAccountBalances) };
+        const locationAccounts = { ...accountBalances[exchange.location] };
+        delete locationAccounts[exchange.identifier];
+        if (Object.keys(locationAccounts).length > 0)
+          accountBalances[exchange.location] = locationAccounts;
+        else
+          delete accountBalances[exchange.location];
         const index = exchanges.findIndex(
           ({ location, name }) => name === exchange.name && location === exchange.location,
         );
@@ -142,6 +153,7 @@ export function useExchanges(): UseExchangesReturn {
         delete balances[exchange.location];
         setConnectedExchanges(exchanges);
         set(exchangeBalances, balances);
+        set(exchangeAccountBalances, accountBalances);
 
         // if multiple keys exist for the deleted exchange, re-fetch and update the balances for the location
         if (exchanges.some(exch => exch.location === exchange.location)) {
