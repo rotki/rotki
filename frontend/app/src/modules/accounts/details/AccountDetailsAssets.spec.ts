@@ -21,7 +21,7 @@ vi.mock('@/modules/balances/use-aggregated-balances', async () => {
 
 const stubs = {
   AccountAssetBalances: true,
-  AssetBalances: { name: 'AssetBalances', props: ['search', 'balances'], template: '<div data-testid="asset-balances-stub" />' },
+  AssetBalances: { name: 'AssetBalances', props: ['search', 'balances', 'display'], template: '<div data-testid="asset-balances-stub" />' },
   TableSearchField: {
     emits: ['update:modelValue'],
     props: ['modelValue'],
@@ -60,6 +60,10 @@ describe('modules/accounts/details/AccountDetailsAssets', () => {
     await wrapper.find('[data-testid=account-details-assets-search]').setValue('arb');
 
     expect(wrapper.findComponent({ name: 'AssetBalances' }).props('search')).toBe('arb');
+  });
+
+  it('should ask the assets table for the location column', () => {
+    expect(createWrapper().findComponent({ name: 'AssetBalances' }).props('display')).toEqual({ showPerProtocol: true });
   });
 
   it('should show no search unless asked for one', () => {
