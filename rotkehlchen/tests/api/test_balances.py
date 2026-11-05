@@ -932,7 +932,7 @@ def test_multiple_balance_queries_not_concurrent(
         expected_data_in_db=True,
         setup=setup,
     )
-    assert_binance_balances_result(outcome_one_exchange['result'])
+    assert_binance_balances_result(outcome_one_exchange['result']['totals']['binance'])
     if not separate_blockchain_calls:
         outcome_eth = outcome_blockchain
         outcome_btc = outcome_blockchain
@@ -1633,11 +1633,15 @@ def test_query_balances_with_threshold(
                         assert balances['liabilies'] == {}  # value gets filtered
 
         # Assert exchange balances
-        assert len(exchange_result) != 0
-        for exchange in exchange_result:
-            assert len(exchange_result[exchange]) != 0
-            for balance in exchange_result[exchange].values():
+        assert len(exchange_result['totals']) != 0
+        for location_balances in exchange_result['totals'].values():
+            assert len(location_balances) != 0
+            for balance in location_balances.values():
                 assert FVal(balance['value']) > threshold
+        for location_accounts in exchange_result['per_account'].values():
+            for account_balances in location_accounts.values():
+                for balance in account_balances.values():
+                    assert FVal(balance['value']) > threshold
 
         # Assert manual balances
         assert len(manual_result['balances']) != 0
