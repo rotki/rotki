@@ -17,9 +17,6 @@
       "description_xpub": "Είστε σίγουροι οτι θέλτε να διαγράψετε {address}",
       "title": "Διαγραφή λογαριασμού"
     },
-    "data_table": {
-      "loading": "Παρακαλώ περιμένετε όσο το rotki ρωτάει το blockchain..."
-    },
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Τελευταία σάρωση: {time}",
@@ -86,9 +83,6 @@
   },
   "amount_display": {
     "manual_tooltip": "Χειροκίνητα ορισμένη τιμή"
-  },
-  "asset_balances": {
-    "loading": "Περιμένετε όσο η rotki ζητά τα υπόλοιπα..."
   },
   "asset_form": {
     "replaced": "Αυτό το εικονίδιο θα εφαρμοστεί αφού κάνετε κλικ στην επιλογή \"«Αποθήκευση»\"."

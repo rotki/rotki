@@ -89,8 +89,6 @@ defineExpose({
       :cols="cols"
       :rows="rows.data"
       sticky-header
-      show-select
-      return-object
       :empty="emptyState"
     >
       <template #empty-description>

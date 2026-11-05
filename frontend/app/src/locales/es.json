@@ -11,9 +11,6 @@
       "description_xpub": "¿Estás seguro de que quieres eliminar {address}?",
       "title": "Eliminar cuenta"
     },
-    "data_table": {
-      "loading": "Por favor, espera mientras rotki consulta la blockchain..."
-    },
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Última detección: : {time}",
@@ -186,9 +183,6 @@
   "airdrops": {
     "unknown_info": "Hay airdrops disponibles para estas direcciones, pero aún no podemos analizar si han sido reclamadas o no.",
     "unknown_tooltip": "La dirección es elegible para este lanzamiento aéreo, pero aún no podemos analizar si ha sido reclamada o no."
-  },
-  "asset_balances": {
-    "loading": "Espere mientras rotki consulta los saldos..."
   },
   "asset_form": {
     "optional": "Campos opcionales",

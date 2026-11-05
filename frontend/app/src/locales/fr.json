@@ -25,9 +25,6 @@
       "description_xpub": "Êtes-vous sûr de vouloir supprimer {address}",
       "title": "Suppression de compte"
     },
-    "data_table": {
-      "loading": "Veuillez patienter pendant que rotki interroge la blockchain..."
-    },
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Dernière détection : {time}",
@@ -465,9 +462,6 @@
   },
   "app": {
     "moto": "Le gestionnaire de portefeuille open source qui protège votre vie privée"
-  },
-  "asset_balances": {
-    "loading": "Veuillez attendre que rotki interroge les soldes..."
   },
   "asset_form": {
     "add_error": "Échec de la sauvegarde de l'actif",
