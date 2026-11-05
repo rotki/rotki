@@ -184,8 +184,13 @@ class HistoryQueryingManager:
                 fail_callback=fail_history_cb,
                 new_step_data=(new_step_cb, exchange.name),
             )
-            # each exchange owns STEPS_PER_CEX steps, its own callbacks advance within them
-            step = self._increase_progress(exchange_start_step, total_steps, step_by=STEPS_PER_CEX)
+            # each exchange owns STEPS_PER_CEX steps, its own callbacks advance within them.
+            # max() keeps progress from going back if an exchange fires more callbacks.
+            step = self._increase_progress(
+                step=max(step, exchange_start_step + STEPS_PER_CEX),
+                total_steps=total_steps,
+                step_by=0,
+            )
 
         # Query all trades, asset movements and margin positions from the DB for all
         # possible locations.

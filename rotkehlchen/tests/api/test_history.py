@@ -29,6 +29,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.history.manager import STEPS_PER_CEX
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.api import (
@@ -254,6 +255,7 @@ def test_fatal_error_during_query_history(rotkehlchen_api_server: APIServer) -> 
             'message': 'mocked error',
             'status_code': HTTPStatus.CONFLICT,
         }
+    assert _count_pnl_reports(rotkehlchen_api_server) == 1  # a fatal error keeps its report
 
 
 def _start_report(server: APIServer) -> int:
@@ -296,6 +298,21 @@ def test_overlapping_and_cancelled_report_runs(rotkehlchen_api_server: APIServer
             'message': 'A PnL report is already being generated',
             'status_code': HTTPStatus.CONFLICT,
         }
+        # the debug export and import share the same history manager and accountant
+        debug_url = api_url_for(rotkehlchen_api_server, 'historyprocessingdebugresource')
+        assert_error_response(
+            response=requests.post(debug_url, json={'from_timestamp': 0, 'to_timestamp': 1}),
+            contained_in_msg='A PnL report is already being generated',
+            status_code=HTTPStatus.CONFLICT,
+        )
+        assert_error_response(
+            response=requests.put(debug_url, json={'filepath': str(
+                Path(__file__).resolve().parent.parent / 'data' / 'pnl_debug.json',
+            )}),
+            contained_in_msg='A PnL report is already being generated',
+            status_code=HTTPStatus.CONFLICT,
+        )
+        assert _count_pnl_reports(rotkehlchen_api_server) == 1
 
         first_task = next(task for task in rotki.api_tasks if task.task_id == first_task_id)
         assert_proper_sync_response_with_result(requests.delete(api_url_for(
@@ -319,11 +336,14 @@ def test_overlapping_and_cancelled_report_runs(rotkehlchen_api_server: APIServer
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('callbacks_num', [2, STEPS_PER_CEX + 2])
 def test_history_query_progress_counts_exchange_steps_once(
         rotkehlchen_api_server: APIServer,
+        callbacks_num: int,
 ) -> None:
     """The steps an exchange reports through its callbacks fall within its own budget,
-    so the query progress ends at 100 instead of passing it"""
+    so the query progress ends at 100 instead of passing it. An exchange firing more
+    callbacks than its budget does not make the progress go back."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     manager = rotki.history_querying_manager
 
@@ -332,8 +352,8 @@ def test_history_query_progress_counts_exchange_steps_once(
 
         def query_history_with_callbacks(self, new_step_data: tuple, **kwargs: Any) -> None:  # pylint: disable=unused-argument
             new_step_callback, exchange_name = new_step_data
-            new_step_callback(f'{exchange_name} margin history')
-            new_step_callback(f'{exchange_name} events history')
+            for idx in range(callbacks_num):
+                new_step_callback(f'{exchange_name} step {idx}')
 
     exchanges = [FakeExchange(), FakeExchange()]
     seen_progress: list[FVal] = []
@@ -352,7 +372,8 @@ def test_history_query_progress_counts_exchange_steps_once(
         manager.get_history(start_ts=Timestamp(0), end_ts=Timestamp(1), has_premium=False)
 
     assert seen_progress == sorted(seen_progress)
-    assert seen_progress[-1] == FVal(100)
+    if callbacks_num <= STEPS_PER_CEX:
+        assert seen_progress[-1] == FVal(100)
 
 
 @pytest.mark.parametrize('have_decoders', [True])

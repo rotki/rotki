@@ -142,7 +142,7 @@ from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
     import argparse
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterator, Sequence
 
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.db.drivers.sqlite import DBConnection, DBCursor
@@ -1174,10 +1174,7 @@ class Rotkehlchen:
         - PnlReportAlreadyRunning if another report is being generated
         - AccountingError if a fatal error stopped processing
         """
-        if not self.pnl_report_lock.acquire(blocking=False):
-            raise PnlReportAlreadyRunning('A PnL report is already being generated')
-
-        try:
+        with self.pnl_report_run():
             error_or_empty, events = self.history_querying_manager.get_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
@@ -1188,9 +1185,21 @@ class Rotkehlchen:
                 end_ts=end_ts,
                 events=events,
             )
+        return report_id, error_or_empty
+
+    @contextlib.contextmanager
+    def pnl_report_run(self) -> Iterator[None]:
+        """Holds the PnL report lock for a report run or its debug export/import.
+
+        May raise:
+        - PnlReportAlreadyRunning if another run holds it
+        """
+        if not self.pnl_report_lock.acquire(blocking=False):
+            raise PnlReportAlreadyRunning('A PnL report is already being generated')
+        try:
+            yield
         finally:
             self.pnl_report_lock.release()
-        return report_id, error_or_empty
 
     def query_balances(
             self,
