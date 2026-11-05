@@ -1,5 +1,6 @@
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
+import { msg } from '@/message-key';
 import { type ActivityModel, assembleActivityModel } from '@/modules/task-center/core/model';
 import {
   type Activity,
@@ -8,6 +9,7 @@ import {
   ActivityPhase,
   ActivitySourceType,
   ActivityStatus,
+  type ActivityText,
   makeActivityId,
 } from '@/modules/task-center/core/types';
 import { DockState } from './dock-state';
@@ -540,6 +542,51 @@ describe('useTaskDock', () => {
       await transition([backgroundTask(ActivityStatus.FAILED), activity(ActivityKind.PRICES, 'latest', ActivityStatus.RUNNING)]);
 
       expect(get(failed)).toEqual([]);
+    });
+
+    /** A failed run of a background task, with the subtitle its row reads. */
+    function failedRun(key: string, subtitle: ActivityText): Activity {
+      return { ...activity(ActivityKind.BACKGROUND_TASK, key, ActivityStatus.FAILED), subtitle };
+    }
+
+    const receipts = (run: number, chain: string, count: number): Activity => failedRun(
+      `evm_receipts:${run}:${chain}`,
+      { key: msg.$t('task_center.activity.background_task.evm_receipts'), params: { chain, count }, plural: count },
+    );
+
+    it('should keep only the latest failure of a task that fails on every run, whatever count it names', async () => {
+      const { failed } = dock();
+
+      await transition([receipts(3, 'eth', 500), receipts(4, 'optimism', 20)]);
+      await transition([receipts(3, 'eth', 500), receipts(4, 'optimism', 20), receipts(9, 'eth', 512)]);
+
+      expect(get(failed).map(root => root.id)).toEqual([receipts(4, 'optimism', 20).id, receipts(9, 'eth', 512).id]);
+    });
+
+    it('should keep the later of two failures of one task that arrive together, as a held one and a live one can', async () => {
+      const upload = (run: number): Activity => failedRun(`db_upload:${run}`, { key: msg.$t('task_center.activity.background_task.db_upload') });
+      const { failed } = dock();
+
+      await transition([upload(12), upload(5)]);
+
+      expect(get(failed).map(root => root.id)).toEqual([upload(12).id]);
+    });
+
+    it('should keep apart the failures of upkeep tasks, which only their backend name tells apart', async () => {
+      const { failed } = dock();
+
+      await transition([failedRun('other:3', 'Attempt connection to eth node A'), failedRun('other:4', 'Attempt connection to gnosis node B')]);
+
+      expect(get(failed)).toHaveLength(2);
+    });
+
+    it('should keep apart the failures of two connections to one exchange', async () => {
+      const history = (run: number, name: string): Activity => failedRun(`exchange_history:${run}:kraken`, { key: msg.$t('task_center.activity.background_task.exchange_history'), params: { name } });
+      const { failed } = dock();
+
+      await transition([history(3, 'main'), history(4, 'savings')]);
+
+      expect(get(failed)).toHaveLength(2);
     });
 
     it('should not hold a user\'s batch open while it runs', async () => {
