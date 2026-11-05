@@ -152,13 +152,12 @@ function onSaved(identifier: string): void {
           label-placement="hidden"
           dense
           hide-details
-          variant="outlined"
           data-testid="import-location-choice"
           @update:model-value="updateMapping(entry.value, $event)"
         />
         <RuiTooltip
           :open-delay="400"
-          :popper="{ placement: 'top' }"
+          :options="{ placement: 'top' }"
         >
           <template #activator>
             <RuiButton

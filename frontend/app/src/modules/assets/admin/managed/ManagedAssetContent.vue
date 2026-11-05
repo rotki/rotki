@@ -33,7 +33,6 @@ const {
   modelSelectedRows,
   pagination,
   refetch,
-  setPage,
   showDeleteConfirmation,
   sort,
 } = useManagedAssetsTable(() => mainPage, assetTypes);
@@ -130,7 +129,6 @@ onMounted(async () => {
       @refresh="refetch()"
       @edit="edit($event)"
       @delete-asset="showDeleteConfirmation($event)"
-      @update:page="setPage($event)"
     />
 
     <MergeDialog v-model="mergeTool" />

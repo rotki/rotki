@@ -25,7 +25,7 @@ describe('modules/dashboard/snapshots/components/SnapshotListTable', () => {
         plugins: [createPinia()],
         provide: libraryDefaults,
       },
-      props: { rows },
+      props: { pagination: { limit: 10, page: 1, total: rows.length }, rows },
     });
   }
 

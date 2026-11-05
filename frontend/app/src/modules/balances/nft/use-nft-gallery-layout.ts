@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { GalleryNft } from '@/modules/assets/nfts';
 import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 
@@ -7,7 +7,7 @@ interface UseNftGalleryLayoutReturn {
   itemsPerPage: Readonly<Ref<number>>;
   limits: ComputedRef<number[]>;
   page: Readonly<Ref<number>>;
-  paginationData: ComputedRef<TablePaginationData>;
+  paginationData: WritableComputedRef<TablePaginationData>;
   visibleNfts: ComputedRef<GalleryNft[]>;
 }
 

@@ -34,7 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { show } = useConfirmStore();
 
-const sort = ref<DataTableSortData<LocationDataSnapshot>>({
+const sort = ref<DataTableSortData<IndexedLocationDataSnapshot>>({
   column: 'usdValue',
   direction: 'desc',
 });
@@ -95,7 +95,7 @@ const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(()
   },
 ]);
 
-useRememberTableSorting<LocationDataSnapshot>(TableId.EDIT_LOCATION_DATA_SNAPSHOT, sort, tableHeaders);
+useRememberTableSorting<IndexedLocationDataSnapshot>(TableId.EDIT_LOCATION_DATA_SNAPSHOT, sort, tableHeaders);
 
 function add(): void {
   get(entryDialog)?.openAdd();

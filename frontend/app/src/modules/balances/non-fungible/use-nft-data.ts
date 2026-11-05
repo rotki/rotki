@@ -1,5 +1,5 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/modules/balances/types/nfbalances';
 import type { Collection } from '@/modules/core/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
@@ -37,12 +37,12 @@ interface UseNftDataReturn {
   /** Entries matching the current filter, across all pages. Zero means there is nothing to show. */
   found: ComputedRef<number>;
   modelIgnoredAssetsHandling: Ref<IgnoredAssetsHandlingType>;
-  pagination: ComputedRef<TablePaginationData>;
+  pagination: WritableComputedRef<TablePaginationData>;
   percentageOfCurrentGroup: (value: BigNumber) => string;
   percentageOfTotalNetValue: (value: BigNumber) => string;
   refreshNonFungibleBalances: (ignoreCache?: boolean) => Promise<void>;
   sectionLoading: ComputedRef<boolean>;
-  sort: ComputedRef<DataTableSortData<NonFungibleBalance>>;
+  sort: WritableComputedRef<DataTableSortData<NonFungibleBalance>>;
   totalValue: ComputedRef<BigNumber | undefined | null>;
 }
 

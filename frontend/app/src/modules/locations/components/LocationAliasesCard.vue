@@ -106,7 +106,6 @@ onMounted(load);
       :pagination="allAliases"
       :global-items-per-page="false"
       :empty="empty"
-      hide-default-header
       hide-pagination
       row-attr="alias"
       data-testid="location-aliases-table"
