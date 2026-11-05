@@ -9,6 +9,8 @@ minimumReleaseAgeExclude:
   - '@rotki/eslint-plugin'
   - plainfp
   - electron@43.8.1
+  # Renovate security update: happy-dom@21.0.4
+  - happy-dom@21.0.4
 
 trustPolicy: no-downgrade
 trustPolicyExclude:
@@ -107,7 +109,7 @@ catalog:
   fake-indexeddb: 6.2.5
   flag-icons: 7.5.0
   flush-promises: 1.0.2
-  happy-dom: 20.14.6
+  happy-dom: 21.0.4
   httpxy: 0.5.5
   husky: 9.1.7
   imask: 7.6.1
