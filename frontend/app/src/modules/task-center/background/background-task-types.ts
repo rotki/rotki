@@ -16,7 +16,9 @@ export const BackgroundTaskKind = {
   EVM_RECEIPTS: 'evm_receipts',
   EVM_TRANSACTIONS: 'evm_transactions',
   EXCHANGE_HISTORY: 'exchange_history',
+  GNOSIS_PAY_EVENTS: 'gnosis_pay_events',
   HISTORICAL_BALANCES: 'historical_balances',
+  MONERIUM_ORDERS: 'monerium_orders',
   OTHER: 'other',
   SNAPSHOT_BALANCES: 'snapshot_balances',
   TRANSACTION_DECODING: 'transaction_decoding',
@@ -47,7 +49,7 @@ export const BackgroundTaskStatus = {
  * One running task manager task, as the periodic data lists it.
  *
  * @remarks
- * `id` tells two tasks with the same name apart and is only stable within one login. `subject`
+ * `id` tells two tasks with the same name apart. The backend keeps it unique across logins until it restarts. `subject`
  * depends on the kind: `chain` and `address` for EVM transactions, `chain` and `count` for receipts
  * and decoding, `location` and `name` for exchange history, `chain` for xpub derivation.
  */

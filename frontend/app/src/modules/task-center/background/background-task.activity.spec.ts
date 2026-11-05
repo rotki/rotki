@@ -56,6 +56,13 @@ describe('background task activity', () => {
     });
   });
 
+  it.each([
+    ['gnosis_pay_events', 'task_center.activity.background_task.gnosis_pay_events'],
+    ['monerium_orders', 'task_center.activity.background_task.monerium_orders'],
+  ])('should describe a %s import in its own words, not the backend\'s name', (kind, key) => {
+    expect(backgroundTaskLabel(task(kind, {}), chainName)).toStrictEqual({ key, params: undefined, plural: undefined });
+  });
+
   it('should fall back to the backend\'s own name for a kind this build does not know', () => {
     expect(backgroundTaskLabel(task('something_new', {}), chainName)).toBe('backend name of something_new');
   });
