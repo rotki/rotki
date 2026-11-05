@@ -104,6 +104,7 @@ class XpubManager:
                 blockchain=blockchain,
             ).have_transactions(accounts=[x[1] for x in batch_addresses])
             should_continue = False
+            last_used_index = None
             for idx, address in batch_addresses:
                 have_tx, balance = have_tx_mapping[address]
                 if have_tx:
@@ -114,12 +115,12 @@ class XpubManager:
                         balance=balance,
                     ))
                     should_continue = True
+                    last_used_index = idx
 
             # do one more pass and add any addresses with no transactions before the max index
             # this is so we can start new address generation from the max index later
-            if len(addresses) != 0:
-                max_index = max(x[0] for x in addresses)
-                for idx, address in batch_addresses[:max_index]:
+            if last_used_index is not None:
+                for idx, address in batch_addresses[:last_used_index - step_index + 1]:
                     have_tx, balance = have_tx_mapping[address]
                     if not have_tx:
                         addresses.append(XpubDerivedAddressData(
