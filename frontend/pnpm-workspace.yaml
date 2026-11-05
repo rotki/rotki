@@ -9,6 +9,8 @@ minimumReleaseAgeExclude:
   - '@rotki/eslint-plugin'
   - plainfp
   - electron@43.8.1
+  # Renovate security update: vue-i18n@11.4.14
+  - vue-i18n@11.4.14
 
 trustPolicy: no-downgrade
 trustPolicyExclude:
@@ -143,7 +145,7 @@ catalog:
   vue: 3.5.43
   vue-component-type-helpers: 3.3.12
   vue-echarts: 8.3.1
-  vue-i18n: 11.4.13
+  vue-i18n: 11.4.14
   vue-router: 5.4.0
   vue-tsc: 3.3.12
   ws: 8.22.0
