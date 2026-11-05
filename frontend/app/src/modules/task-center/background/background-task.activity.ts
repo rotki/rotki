@@ -2,7 +2,7 @@ import type { ActivitySubject } from '@/modules/task-center/activity-subject';
 import { type MessageKey, msg } from '@/message-key';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
-import { ActivityKind, type ActivityText } from '@/modules/task-center/core/types';
+import { type Activity, ActivityKind, activityParts, type ActivityText } from '@/modules/task-center/core/types';
 import { type BackgroundTask, BackgroundTaskKind, backgroundTaskKindOf } from './background-task-types';
 
 function subjectText(task: BackgroundTask, field: string): string | undefined {
@@ -40,14 +40,42 @@ function subjectParts(task: BackgroundTask): string[] {
  * One backend task manager task, mirrored as a dock row.
  *
  * @remarks
- * Keyed by the backend id, which alone is unique within a login. The kind and the subject follow
- * it so the row's chain or exchange icon and its address link can be read back from the id, the way
- * every other row's are.
+ * Keyed by the backend id, which is unique until the backend restarts. The kind and the subject
+ * follow it so the row's chain or exchange icon and its address link can be read back from the id,
+ * the way every other row's are.
  */
 export const backgroundTaskActivity = defineActivity({
   key: (task: BackgroundTask) => [backgroundTaskKindOf(task.kind), task.id, ...subjectParts(task)],
   kind: ActivityKind.BACKGROUND_TASK,
 });
+
+/** One run of a background task, read back from its activity. */
+export interface BackgroundTaskRun {
+  /** What the run's row reads, apart from a count, so runs whose rows read the same share it. */
+  readonly row: string;
+  /** The backend id of the run, which grows with each run. */
+  readonly run: number;
+}
+
+/** A subtitle without the count it names, which moves with the pending work between runs of one task. */
+function withoutCount(subtitle: ActivityText | undefined): ActivityText | undefined {
+  if (subtitle === undefined || typeof subtitle === 'string')
+    return subtitle;
+  const params = Object.fromEntries(Object.entries(subtitle.params ?? {}).filter(([name]) => name !== 'count'));
+  return { key: subtitle.key, params };
+}
+
+/**
+ * Splits a background task's activity into the row it shows as and its run.
+ *
+ * @remarks
+ * The row is the kind and subject the id carries plus the subtitle, since the id leaves out what
+ * only the subtitle names: an exchange connection's name, or an upkeep task's backend name.
+ */
+export function backgroundTaskRun({ id, subtitle }: Activity): BackgroundTaskRun {
+  const [kind = '', run = '', ...subject] = activityParts(id);
+  return { row: JSON.stringify([kind, subject, withoutCount(subtitle)]), run: Number(run) };
+}
 
 /** What a background task acts on, read back from its id parts: `[kind, id, ...subject]`. */
 export function backgroundTaskSubject([kind = '', , ...values]: string[]): ActivitySubject | undefined {

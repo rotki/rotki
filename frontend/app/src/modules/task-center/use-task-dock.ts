@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
+import { backgroundTaskRun } from '@/modules/task-center/background/background-task.activity';
 import { isTerminalStatus, needsAttention } from '@/modules/task-center/core/status';
 import { someInSubtree } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, ActivityKind, ActivityStatus } from '@/modules/task-center/core/types';
@@ -78,7 +79,8 @@ function isBackgroundTask(activity: Activity): boolean {
  * A backend background task is shown while it runs, but is not part of a batch: it neither holds a
  * batch open nor opens the panel, and a clean finish is not reported, since the user did not ask
  * for it. Its failure is reported like any other, even one that arrives already failed, as a failure
- * the backend held while no client was connected does.
+ * the backend held while no client was connected does. A later failure of the same row replaces
+ * the earlier one, so a task that fails on every run shows one failed row.
  */
 export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   const { isActive, model } = useTaskCenter();
@@ -188,7 +190,34 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
       return;
     for (const id of fresh)
       trackedBackgroundFailures.add(id);
-    set(tracked, new Set([...get(tracked), ...fresh]));
+    const superseded = supersededFailures(roots);
+    set(tracked, new Set([...get(tracked), ...fresh].filter(id => !superseded.has(id))));
+    set(acknowledged, new Set([...get(acknowledged)].filter(id => !superseded.has(id))));
+  }
+
+  /**
+   * The background failures a later failure of the same row replaces. A task that keeps failing,
+   * as an indexer that stays down does on every scheduler run, then shows one failed row with its
+   * latest error rather than one per run.
+   */
+  function supersededFailures(roots: Activity[]): Set<ActivityId> {
+    const latest = new Map<string, { id: ActivityId; run: number }>();
+    const superseded = new Set<ActivityId>();
+    for (const root of roots) {
+      if (!isBackgroundTask(root) || !isFailed(root))
+        continue;
+      const { row, run } = backgroundTaskRun(root);
+      const previous = latest.get(row);
+      if (previous === undefined || previous.run < run) {
+        if (previous)
+          superseded.add(previous.id);
+        latest.set(row, { id: root.id, run });
+      }
+      else {
+        superseded.add(root.id);
+      }
+    }
+    return superseded;
   }
 
   function acknowledgeAll(ids: ActivityId[]): void {
