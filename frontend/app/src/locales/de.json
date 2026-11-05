@@ -15,9 +15,6 @@
       "description_xpub": "Sind Sie sicher dass Sie {address} entfernen möchten",
       "title": "Konto entfernen"
     },
-    "data_table": {
-      "loading": "Bitte warten während rotki die Blockchain abfragt..."
-    },
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Zuletzt erfasst: {time}",

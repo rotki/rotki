@@ -115,7 +115,6 @@ defineExpose({
     :loading="(group && isInitialLoading) || (fetching && accounts.data.length === 0)"
     row-attr="id"
     :empty="emptyState"
-    :loading-text="t('account_balances.data_table.loading')"
     data-testid="account-table"
     single-expand
     :outlined="!framed"

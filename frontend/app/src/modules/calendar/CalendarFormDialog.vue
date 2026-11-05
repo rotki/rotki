@@ -24,7 +24,7 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const submitting = ref(false);
-const errorMessages = ref<Record<string, string[]>>({});
+const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<InstanceType<typeof CalendarForm>>('form');
 const stateUpdated = ref(false);
 

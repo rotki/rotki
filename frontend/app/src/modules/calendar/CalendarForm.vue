@@ -131,7 +131,6 @@ defineExpose({
         data-testid="counterparty"
         :error-messages="form.errors('counterparty')"
         :hint="t('common.optional')"
-        persistent-hint
         @blur="form.touch('counterparty')"
       />
     </div>

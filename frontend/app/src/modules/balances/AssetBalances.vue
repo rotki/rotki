@@ -167,7 +167,6 @@ const panelTableProps = computed<Record<string, unknown>>(() => get(fillsPanel)
     :rows="visibleRows"
     :loading="loading"
     :expanded="expanded"
-    :loading-text="t('asset_balances.loading')"
     :empty="{ description: t('data_table.no_data') }"
     :sticky-header="display?.stickyHeader ?? false"
     v-bind="panelTableProps"

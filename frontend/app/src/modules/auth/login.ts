@@ -13,9 +13,9 @@ export interface LoginCredentials extends BasicLoginCredentials {
 }
 
 export interface PremiumSetup {
-  readonly apiKey: string;
-  readonly apiSecret: string;
-  readonly syncDatabase: boolean;
+  apiKey: string;
+  apiSecret: string;
+  syncDatabase: boolean;
 }
 
 interface InitialSettings {

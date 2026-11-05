@@ -37,8 +37,7 @@
       "title": "删除账户"
     },
     "data_table": {
-      "group": "{type} 账户",
-      "loading": "rotki 正在查询区块链，请稍候..."
+      "group": "{type} 账户"
     },
     "detect_tokens": {
       "confirmation": {
@@ -1019,9 +1018,6 @@
     "quitting": {
       "message": "正在关闭..."
     }
-  },
-  "asset_balances": {
-    "loading": "rotki 正在查询余额，请稍候..."
   },
   "asset_details_layout": {
     "tab": {

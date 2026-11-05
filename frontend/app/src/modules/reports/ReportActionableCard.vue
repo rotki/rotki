@@ -163,7 +163,7 @@ function close() {
         v-for="(content, index) of stepperContents"
         :key="content.key"
       >
-        <Component
+        <component
           :is="content.selector"
           v-if="step === index + 1"
           :items="content.items"
@@ -182,7 +182,7 @@ function close() {
               @finish="submitActionableItems(items)"
             />
           </template>
-        </Component>
+        </component>
       </template>
     </div>
   </RuiCard>

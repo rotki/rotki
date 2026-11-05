@@ -18,7 +18,7 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const loading = ref(false);
-const errorMessages = ref<Record<string, string[]>>({});
+const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<InstanceType<typeof ManualBalancesForm>>('form');
 const stateUpdated = ref(false);
 

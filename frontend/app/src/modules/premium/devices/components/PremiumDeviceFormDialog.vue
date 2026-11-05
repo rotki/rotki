@@ -17,7 +17,7 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const newDeviceName = ref<string>('');
-const errorMessages = ref<Record<string, string[]>>({});
+const errorMessages = ref<ValidationErrors>({});
 const loading = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
 

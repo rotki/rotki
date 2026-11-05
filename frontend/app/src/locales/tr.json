@@ -37,8 +37,7 @@
       "title": "Hesap silme"
     },
     "data_table": {
-      "group": "{type} hesapları",
-      "loading": "rotki blokzinciri sorgularken lütfen bekleyin..."
+      "group": "{type} hesapları"
     },
     "detect_tokens": {
       "confirmation": {
@@ -1018,9 +1017,6 @@
     "quitting": {
       "message": "Kapatılıyor..."
     }
-  },
-  "asset_balances": {
-    "loading": "rotki bakiyeleri sorgularken lütfen bekleyin..."
   },
   "asset_details_layout": {
     "tab": {

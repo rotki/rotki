@@ -43,8 +43,7 @@
       "title": "Account delete"
     },
     "data_table": {
-      "group": "{type} accounts",
-      "loading": "Please wait while rotki queries the blockchain..."
+      "group": "{type} accounts"
     },
     "details_of": "Details of {account}",
     "detect_tokens": {
@@ -1185,7 +1184,6 @@
     }
   },
   "asset_balances": {
-    "loading": "Please wait while rotki queries the balances...",
     "no_match": {
       "clear": "Clear search",
       "description": "Nothing here matches \"{search}\". Try another name or symbol.",

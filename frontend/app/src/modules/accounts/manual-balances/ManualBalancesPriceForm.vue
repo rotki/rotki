@@ -57,7 +57,6 @@ defineExpose({
       <AmountInput
         v-model="price"
         :disabled="fetchingPrice || !isCustomPrice || pending"
-        :loading="fetchingPrice"
         :label="t('common.price')"
       />
       <AssetSelect
