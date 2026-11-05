@@ -1,12 +1,16 @@
 import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { bigNumberify } from '@rotki/common';
 import { createTestExchange } from '@test/utils/create-data';
+import { flushPromises } from '@vue/test-utils';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { exchangeBalancesActivity } from '@/modules/balances/balances.activity';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
+import { ActivityStatus } from '@/modules/task-center/core/types';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 const runTaskMock = vi.fn();
 const notifyError = vi.fn();
@@ -57,7 +61,7 @@ describe('useExchanges', () => {
 
   describe('fetchExchangeBalances', () => {
     it('should store the balances for the location on success', async () => {
-      runTaskMock.mockResolvedValue(ok({ BTC: { amount: '1', value: '50000' } }));
+      runTaskMock.mockResolvedValue(ok({ totals: { kraken: { BTC: { amount: '1', value: '50000' } } } }));
 
       await exchanges.fetchExchangeBalances({ ignoreCache: false, location: 'kraken' });
 
@@ -66,6 +70,44 @@ describe('useExchanges', () => {
       expect(get(exchangeBalances).kraken).toMatchObject({
         BTC: { amount: bigNumberify(1), value: bigNumberify(50000) },
       });
+    });
+
+    it('should keep the last balances when a connection of the location failed', async () => {
+      const { exchangeBalances } = storeToRefs(store);
+      set(exchangeBalances, { kraken: { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } } });
+      runTaskMock.mockResolvedValue(ok({
+        failedAccounts: { kraken: { 'kraken-main': 'API request failed' } },
+        totals: { kraken: { BTC: { amount: '1', value: '50000' } } },
+      }));
+
+      await exchanges.fetchExchangeBalances({ ignoreCache: true, location: 'kraken' });
+
+      expect(get(exchangeBalances).kraken).toMatchObject({ BTC: { amount: bigNumberify(2) } });
+    });
+
+    it('should fail the task with the connection errors when a connection of the location failed', async () => {
+      runTaskMock.mockResolvedValue(ok({
+        failedAccounts: { kraken: { 'kraken-a': 'first failed', 'kraken-b': 'second failed' } },
+        totals: {},
+      }));
+
+      await exchanges.fetchExchangeBalances({ ignoreCache: true, location: 'kraken' });
+      await flushPromises();
+
+      const activity = get(useTaskOrchestrator().activities).find(({ id }) => id === exchangeBalancesActivity.id({ location: 'kraken' }));
+      expect(activity?.status).toBe(ActivityStatus.FAILED);
+      expect(activity?.reason).toContain('first failed second failed');
+    });
+
+    it('should store the balances when only another location failed', async () => {
+      runTaskMock.mockResolvedValue(ok({
+        failedAccounts: { binance: { 'binance-main': 'API request failed' } },
+        totals: { kraken: { BTC: { amount: '1', value: '50000' } } },
+      }));
+
+      await exchanges.fetchExchangeBalances({ ignoreCache: true, location: 'kraken' });
+
+      expect(get(storeToRefs(store).exchangeBalances).kraken).toMatchObject({ BTC: { amount: bigNumberify(1) } });
     });
 
     it('should leave an actionable failure to its dock row', async () => {

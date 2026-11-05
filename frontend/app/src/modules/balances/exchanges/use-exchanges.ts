@@ -1,19 +1,19 @@
 import type { ExchangeBalancePayload } from '@/modules/accounts/blockchain-accounts';
-import type { TaskError } from '@/modules/core/tasks/task-result';
 import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { map as mapResult, type Result } from 'plainfp/result';
+import { err, flatMap as flatMapResult, ok, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { exchangeBalancesActivity } from '@/modules/balances/balances.activity';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
-import { AssetBalances } from '@/modules/balances/types/balances';
+import { ExchangeBalancesResponse } from '@/modules/balances/types/balances';
 import { type EditExchange, Exchange, type ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
@@ -47,6 +47,9 @@ export function useExchanges(): UseExchangesReturn {
    * @remarks
    * One native activity per location, {@link exchangeBalancesActivity}, so liveness and freshness
    * are read off the orchestrator: by its kind for all of them, or by its parts for one.
+   *
+   * A connection that failed is missing from the location's totals, which would then understate
+   * the holdings. The task fails with the connection errors and the last balances stay in place.
    */
   const fetchExchangeBalances = async (payload: ExchangeBalancePayload): Promise<void> => {
     const { ignoreCache, location } = payload;
@@ -57,15 +60,21 @@ export function useExchanges(): UseExchangesReturn {
       kind: exchangeBalancesActivity.kind,
       lane: exchangeBalancesActivity.laneOf?.({ location }),
       rerunnable: true,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<AssetBalances>(
+      run: async ({ runTask }): Promise<Result<void, TaskError>> => flatMapResult(
+        await runTask<ExchangeBalancesResponse>(
           async () => queryExchangeBalances(location, ignoreCache, threshold),
         ),
-        (result) => {
+        (result): Result<void, TaskError> => {
+          const { failedAccounts, totals } = ExchangeBalancesResponse.parse(result);
+          const failures = Object.values(failedAccounts?.[location] ?? {});
+          if (failures.length > 0)
+            return err(TaskFailed({ message: failures.join(' ') }));
+
           set(exchangeBalances, {
             ...get(exchangeBalances),
-            [location]: AssetBalances.parse(result),
+            [location]: totals[location] ?? {},
           });
+          return ok(undefined);
         },
       ),
       subtitle: activityLabelFor(msg.$t('task_center.activity.exchange_balances.query'), { location: toSentenceCase(location) }),

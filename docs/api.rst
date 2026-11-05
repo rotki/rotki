@@ -2807,7 +2807,7 @@ Querying the balances of exchanges
 
 .. http:get:: /api/(version)/exchanges/balances/(location)
 
-   Doing a GET on the appropriate exchanges balances endpoint will return the balances of all assets currently held in that exchange. If no name is provided then the balance of all exchanges is returned. If a USD value threshold is provided, only balances with USD value greater than the threshold are returned.
+   Doing a GET on the appropriate exchanges balances endpoint will return the balances of each exchange connection of that location, along with the location's total. The response has the same format as querying all exchanges, limited to that location. If a value threshold is provided, only balances with value greater than the threshold are returned.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
@@ -2837,22 +2837,34 @@ Querying the balances of exchanges
 
       {
           "result": {
-              "BTC": {"amount": "1", "usd_value": "7540.15"},
-              "ETH": {"amount": "10", "usd_value": "1650.53"}
+              "per_account": {
+                  "binance": {
+                      "c3a1b2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d": {
+                          "BTC": {"amount": "1", "value": "7540.15"},
+                          "ETH": {"amount": "10", "value": "1650.53"}
+                      }
+                  }
+              },
+              "totals": {
+                  "binance": {
+                      "BTC": {"amount": "1", "value": "7540.15"},
+                      "ETH": {"amount": "10", "value": "1650.53"}
+                  }
+              }
           },
           "message": ""
       }
 
-   :resjson object result: If successful contains the balances of each asset held in the exchange. Each key of the object is an asset's symbol. Then the value is another object.  In the ``"amount"`` key of that object is the amount held in the asset. And in the ``"usd_value"`` key is the equivalent $ value as of this moment.
-   :statuscode 200: Balances successfully queried.
+   :resjson object result: The balances of the location's exchange connections. See `the query of all exchanges <balances_result_>`_ for each key.
+   :statuscode 200: Balances successfully queried, for at least one of the location's connections.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: User is not logged in.
-   :statuscode 409: Exchange is not registered or some other exchange query error. Check error message for details.
+   :statuscode 409: Exchange is not registered or none of its connections could be queried. Check error message for details.
    :statuscode 500: Internal rotki error
 
 .. http:get:: /api/(version)/exchanges/balances/
 
-   Doing a GET on the exchanges balances endpoint will return the balances of all assets currently held in all exchanges. If a value threshold is provided, only balances with value greater than the threshold are returned.
+   Doing a GET on the exchanges balances endpoint will return the balances of each exchange connection, along with the total of each location. If a value threshold is provided, only balances with value greater than the threshold are returned.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -2879,22 +2891,37 @@ Querying the balances of exchanges
 
       {
           "result": {
-              "kraken": {
-                  "BTC": {"amount": "1", "usd_value": "7540.15"},
-                  "ETH": {"amount": "10", "usd_value": "1650.53"}
+              "per_account": {
+                  "kraken": {
+                      "0b6f5c1e-3f2a-4a4e-8d1c-5e7a9b2c4d6f": {
+                          "BTC": {"amount": "1", "value": "7540.15"}
+                      },
+                      "e5f7a9c1-2b4d-4f6a-8c0e-1a3b5d7f9e2c": {
+                          "BTC": {"amount": "0.5", "value": "3770.07"},
+                          "ETH": {"amount": "10", "value": "1650.53"}
+                      }
+                  }
               },
-              "binance": {
-                  "ETH": {"amount": "20", "usd_value": "3301.06"},
+              "totals": {
+                  "kraken": {
+                      "BTC": {"amount": "1.5", "value": "11310.22"},
+                      "ETH": {"amount": "10", "value": "1650.53"}
+                  }
+              },
+              "failed_accounts": {
+                  "binance": {"c3a1b2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d": "Binance API request failed"}
               }
           },
-          "message": ""
+          "message": "Binance API request failed"
       }
 
-   :resjson object result: If successful contains the balances of each asset held in the exchange. Each key of the object is an asset's symbol. Then the value is another object.  In the ``"amount"`` key of that object is the amount held in the asset. And in the ``"usd_value"`` key is the equivalent $ value as of this moment.
-   :statuscode 200: Balances successfully queried.
+   :resjson object per_account: The balances of each connection, keyed by location and then by the connection's ``identifier`` from ``GET /exchanges``. Each balance is keyed by asset identifier and has the ``amount`` held and its ``value``. A connection that holds nothing above the threshold has an empty object.
+   :resjson object totals: The balances of each location, adding up its connections. The threshold is applied to the added up value, so an asset below the threshold in every connection can still be above it here.
+   :resjson object failed_accounts: Only present when some connections could not be queried. Maps each location to its failed connections and their error. They are not part of ``per_account`` and ``totals``. The response ``message`` also describes the failures.
+   :statuscode 200: Balances successfully queried, for at least one connection.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: User is not logged in.
-   :statuscode 409: Some exchange query error. Check error message for details.
+   :statuscode 409: No connection could be queried. Check error message for details.
    :statuscode 500: Internal rotki error
 
 
