@@ -1,6 +1,7 @@
 import type { AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
+import type { BankConnection } from '@/modules/banks/types';
+import type { ConnectionRef } from '@/modules/core/common/connection';
 import { BankConnectionState, bankConnectionState } from '@/modules/banks/bank-connection-state';
 import { type BankBalanceData, useBankData } from '@/modules/banks/use-bank-data';
 import { useBanks } from '@/modules/banks/use-banks';
@@ -20,7 +21,7 @@ interface UseBankBalancesPageReturn {
   loading: ComputedRef<boolean>;
   isBankLoading: (identifier: string) => boolean;
   refreshAll: () => Promise<void>;
-  refreshBank: (connection: Pick<BankConnectionIdentity, 'identifier'>) => Promise<void>;
+  refreshBank: (connection: ConnectionRef) => Promise<void>;
   /** The page's Refresh: the bank in view, or every bank when the page shows them all. */
   refreshInView: () => Promise<void>;
 }
@@ -76,7 +77,7 @@ export function useBankBalancesPage(selected: MaybeRefOrGetter<string | undefine
     await fetchBankBalances(true);
   }
 
-  async function refreshBank({ identifier }: Pick<BankConnectionIdentity, 'identifier'>): Promise<void> {
+  async function refreshBank({ identifier }: ConnectionRef): Promise<void> {
     set(refreshing, new Set([...get(refreshing), identifier]));
     try {
       await fetchBankBalances(true, { identifier });

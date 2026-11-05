@@ -1,3 +1,4 @@
+import type { ConnectionRef } from '@/modules/core/common/connection';
 import { FetchError } from 'ofetch';
 import { fromAsync, type ResultAsync } from 'plainfp/result-async';
 import {
@@ -59,9 +60,9 @@ interface UseBanksApiReturn {
   addBank: (payload: BankConnectionPayload) => ResultAsync<BankSetupResult, BankSetupError>;
   answerAuthentication: (payload: { identifier: string; response?: string }) => ResultAsync<BankSetupResult, BankSetupError>;
   editBank: (payload: BankConnectionEditPayload) => ResultAsync<boolean, BankSetupError>;
-  removeBank: (payload: { identifier: string }) => Promise<boolean>;
+  removeBank: (payload: ConnectionRef) => Promise<boolean>;
   /** Drops the challenge a connection waits on, so its next query asks the bank for a fresh one. */
-  cancelAuthentication: (payload: { identifier: string }) => Promise<boolean>;
+  cancelAuthentication: (payload: ConnectionRef) => Promise<boolean>;
   /** Starts a backend task that pulls new transactions; the caller awaits it through the task center. */
   syncBanks: (payload: BankSyncPayload) => Promise<PendingTask>;
   /**
@@ -120,10 +121,10 @@ export function useBanksApi(): UseBanksApiReturn {
       cause => toBankSetupError(cause, payload),
     );
 
-  const cancelAuthentication = async ({ identifier }: { identifier: string }): Promise<boolean> =>
+  const cancelAuthentication = async ({ identifier }: ConnectionRef): Promise<boolean> =>
     api.delete<boolean>('/banks/auth', { body: { identifier } });
 
-  const removeBank = async ({ identifier }: { identifier: string }): Promise<boolean> =>
+  const removeBank = async ({ identifier }: ConnectionRef): Promise<boolean> =>
     api.delete<boolean>('/banks', { body: { identifier } });
 
   const syncBanks = async (payload: BankSyncPayload): Promise<PendingTask> => {

@@ -1,5 +1,6 @@
 import type { ComputedRef } from 'vue';
 import type { Exchange, ExchangeInfo } from '@/modules/balances/types/exchanges';
+import type { ConnectionRef } from '@/modules/core/common/connection';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -10,7 +11,7 @@ import { useSetting } from '@/modules/settings/use-setting';
 interface UseExchangeDataReturn {
   exchanges: ComputedRef<ExchangeInfo[]>;
   syncingExchanges: ComputedRef<Exchange[]>;
-  isSameExchange: (a: { identifier: string }, b: { identifier: string }) => boolean;
+  isSameExchange: (a: ConnectionRef, b: ConnectionRef) => boolean;
 }
 
 export function useExchangeData(): UseExchangeDataReturn {
@@ -32,7 +33,7 @@ export function useExchangeData(): UseExchangeDataReturn {
   });
 
   /** Connections are the same when their identifiers are, whatever they are named now. */
-  function isSameExchange(a: { identifier: string }, b: { identifier: string }): boolean {
+  function isSameExchange(a: ConnectionRef, b: ConnectionRef): boolean {
     return a.identifier === b.identifier;
   }
 

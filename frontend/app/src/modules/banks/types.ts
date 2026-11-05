@@ -1,4 +1,5 @@
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import type { ConnectionRef } from '@/modules/core/common/connection';
 import { Balance } from '@rotki/common';
 import { z } from 'zod';
 import { AssetBalances } from '@/modules/balances/types/balances';
@@ -132,8 +133,7 @@ export type BankBalancesResponse = z.infer<typeof BankBalancesResponse>;
  * frames name its connector as `location`, together with its name, so those travel along to
  * match them.
  */
-export interface BankConnectionIdentity {
-  readonly identifier: string;
+export interface BankConnectionIdentity extends ConnectionRef {
   readonly connector: string;
   readonly name: string;
 }
@@ -149,8 +149,7 @@ export interface BankConnectionPayload {
   readonly credentials: Record<string, string>;
 }
 
-export interface BankConnectionEditPayload {
-  readonly identifier: string;
+export interface BankConnectionEditPayload extends ConnectionRef {
   readonly credentials: Record<string, string>;
   readonly newName?: string;
 }

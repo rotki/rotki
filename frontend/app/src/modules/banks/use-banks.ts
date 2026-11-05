@@ -1,4 +1,5 @@
 import type { ResultAsync } from 'plainfp/result-async';
+import type { ConnectionRef } from '@/modules/core/common/connection';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import { startPromise } from '@shared/utils';
 import { isOk, map as mapResult, type Result } from 'plainfp/result';
@@ -46,8 +47,8 @@ interface UseBanksReturn {
    * Every outcome re-reads the connections: the backend records a further challenge, and drops a
    * TAN the bank rejected or let expire, which the connection then reports as expired.
    */
-  answerBankAuthentication: (connection: { identifier: string }, response?: string) => ResultAsync<BankSetupResult, BankSetupError>;
-  removeBank: (connection: { identifier: string }) => Promise<boolean>;
+  answerBankAuthentication: (connection: ConnectionRef, response?: string) => ResultAsync<BankSetupResult, BankSetupError>;
+  removeBank: (connection: ConnectionRef) => Promise<boolean>;
   /**
    * Drops the challenge a connection waits on and syncs it again, so the bank sends a fresh one.
    *
@@ -63,7 +64,7 @@ interface UseBanksReturn {
    * @remarks
    * A failure is only logged: the backend also discards it when the same name is added again.
    */
-  cancelBankSetup: (setup: { identifier: string }) => Promise<void>;
+  cancelBankSetup: (setup: ConnectionRef) => Promise<void>;
   /** Pulls new transactions of one connection, of one bank, or of every connection. */
   syncBanks: (payload?: BankSyncPayload) => Promise<boolean>;
   /**
@@ -73,7 +74,7 @@ interface UseBanksReturn {
    * Each connection in the result replaces its own entry. The others keep their last known
    * balances, so a bank waiting on a TAN still counts what it last reported.
    */
-  fetchBankBalances: (ignoreCache?: boolean, connection?: Pick<BankConnectionIdentity, 'identifier'>) => Promise<void>;
+  fetchBankBalances: (ignoreCache?: boolean, connection?: ConnectionRef) => Promise<void>;
 }
 
 /**
@@ -109,7 +110,7 @@ export function useBanks(): UseBanksReturn {
     }
   };
 
-  const fetchBankBalances = async (ignoreCache = false, connection?: Pick<BankConnectionIdentity, 'identifier'>): Promise<void> => {
+  const fetchBankBalances = async (ignoreCache = false, connection?: ConnectionRef): Promise<void> => {
     if (get(store.connections).length === 0) {
       set(bankBalances, []);
       return;
@@ -177,7 +178,7 @@ export function useBanks(): UseBanksReturn {
   };
 
   const answerBankAuthentication = async (
-    { identifier }: { identifier: string },
+    { identifier }: ConnectionRef,
     response?: string,
   ): ResultAsync<BankSetupResult, BankSetupError> => {
     const outcome = await api.answerAuthentication({ identifier, response });
@@ -191,7 +192,7 @@ export function useBanks(): UseBanksReturn {
     return outcome;
   };
 
-  const removeBank = async (connection: { identifier: string }): Promise<boolean> => {
+  const removeBank = async (connection: ConnectionRef): Promise<boolean> => {
     try {
       const success = await api.removeBank(connection);
       if (success) {
@@ -226,7 +227,7 @@ export function useBanks(): UseBanksReturn {
     await syncBanks({ identifier: connection.identifier });
   };
 
-  const cancelBankSetup = async (setup: { identifier: string }): Promise<void> => {
+  const cancelBankSetup = async (setup: ConnectionRef): Promise<void> => {
     try {
       await api.cancelAuthentication({ identifier: setup.identifier });
     }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BankConnection } from '@/modules/banks/types';
+import type { ConnectionRef } from '@/modules/core/common/connection';
 import {
   BankConnectionState,
   bankConnectionState,
@@ -13,7 +14,7 @@ const { connection } = defineProps<{ connection: BankConnection }>();
 
 const emit = defineEmits<{
   /** syncing again is the way out of an expired TAN; the page that lists the connections runs it */
-  sync: [connection: { identifier: string }];
+  sync: [connection: ConnectionRef];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

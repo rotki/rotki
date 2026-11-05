@@ -1,4 +1,5 @@
 import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
+import type { ConnectionRef } from '@/modules/core/common/connection';
 
 /** The Binance account a missing-pairs condition is about. */
 export interface BinanceAccount {
@@ -23,7 +24,7 @@ export function savesMissingPairs(account: BinanceAccount, form: ExchangeFormDat
 }
 
 /** Whether a connection is still among the connected ones, also when it was renamed since. */
-export function isConnectedConnection(account: { identifier: string }, connected: readonly { identifier: string }[]): boolean {
+export function isConnectedConnection(account: ConnectionRef, connected: readonly ConnectionRef[]): boolean {
   return connected.some(other => other.identifier === account.identifier);
 }
 
