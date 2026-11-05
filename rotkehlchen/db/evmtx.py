@@ -490,6 +490,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
         # a new receipt was just added, so this tx is now pending decoding
         self.db.pending_txs_tracker.mark_decoding_dirty(chain_id.to_blockchain())
+        topic_tuples = []
         for log_entry in data['logs']:
             write_cursor.execute(
                 'INSERT INTO evmtx_receipt_logs (tx_id, log_index, data, address) '
@@ -502,19 +503,18 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                 ),
             )
             log_id = write_cursor.lastrowid
-            topic_tuples = []
             for idx, topic in enumerate(log_entry['topics']):
                 topic_tuples.append((
                     log_id,
                     hexstring_to_bytes(topic),
                     idx,
                 ))
-            if len(topic_tuples) != 0:
-                write_cursor.executemany(
-                    'INSERT INTO evmtx_receipt_log_topics (log, topic, topic_index) '
-                    'VALUES(? ,? ,?)',
-                    topic_tuples,
-                )
+        if len(topic_tuples) != 0:
+            write_cursor.executemany(
+                'INSERT INTO evmtx_receipt_log_topics (log, topic, topic_index) '
+                'VALUES(? ,? ,?)',
+                topic_tuples,
+            )
 
         return tx_id
 
