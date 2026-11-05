@@ -13,9 +13,11 @@ const { t } = useI18n({ useScope: 'global' });
 const {
   centralizedExchangePurgeTypeOptions,
   chainsSelection,
+  csvImportLocations,
   exchanges,
   modelCentralizedExchange,
   modelCentralizedExchangeDataType,
+  modelCsvImportLocation,
   modelChain,
   modelDecentralizedExchange,
   modelModule,
@@ -54,6 +56,16 @@ const {
         :items="chainsSelection"
         :label="t('purge_selector.chain_to_clear.label')"
         :hint="t('purge_selector.chain_to_clear.hint')"
+      />
+      <LocationSelector
+        v-else-if="modelSource === Purgeable.CSV_IMPORTS"
+        v-model="modelCsvImportLocation"
+        clearable
+        persistent-hint
+        :items="csvImportLocations"
+        :label="t('purge_selector.csv_import_location_to_clear.label')"
+        :hint="t('purge_selector.csv_import_location_to_clear.hint')"
+        data-testid="purge-csv-location"
       />
       <LocationSelector
         v-else-if="modelSource === Purgeable.CENTRALIZED_EXCHANGES"

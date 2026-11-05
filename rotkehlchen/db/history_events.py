@@ -707,12 +707,25 @@ class DBHistoryEvents:
         Events without a backup are silently skipped.
         """
         for chunk, placeholders in get_query_chunks(identifiers):
+            # Replacing an event deletes its row first, which cascades all its mappings away.
+            # Keep them so that state such as the CSV import marker survives the restore.
+            # Callers drop the mappings the restore is meant to undo (e.g. MATCHED).
+            mappings = write_cursor.execute(
+                'SELECT parent_identifier, name, value FROM history_events_mappings '
+                f'WHERE parent_identifier IN ({placeholders})',
+                chunk,
+            ).fetchall()
             for table in ('history_events', 'chain_events_info'):
                 write_cursor.execute(
                     f'INSERT OR REPLACE INTO {table} '
                     f'SELECT * FROM {table}_backup WHERE identifier IN ({placeholders})',
                     chunk,
                 )
+            write_cursor.executemany(
+                'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
+                'VALUES (?, ?, ?)',
+                mappings,
+            )
             # Delete backup entries (also deletes backup chain info via foreign key)
             write_cursor.execute(
                 f'DELETE FROM history_events_backup WHERE identifier IN ({placeholders})',
@@ -740,41 +753,41 @@ class DBHistoryEvents:
     def restore_matched_events_before_purge(
             self,
             write_cursor: DBCursor,
-            location: LocationIdentifier,
+            identifiers: set[int],
     ) -> None:
-        """Undo asset movement matching for events linked to the purged location.
+        """Undo asset movement matching for events linked to the purged events.
 
         Matched events on the other side still carry modified fields from the matching process.
         This restores them from backup and removes any auto-created adjustment events.
         """
-        link_type_db = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
-        matched_db = HistoryMappingState.MATCHED.serialize_for_db()
-        location_db = location
-        events_to_restore: set[int] = set()
-
-        # grab all matched pairs that touch this location, along with each side's location
-        # so we can figure out which side survives the purge and needs restoration
-        for left_id, right_id, left_loc, right_loc in write_cursor.execute(
-            'SELECT L.left_event_id, L.right_event_id, '
-            'HL.location, HR.location '
-            'FROM history_event_links L '
-            'INNER JOIN history_events HL ON HL.identifier = L.left_event_id '
-            'INNER JOIN history_events HR ON HR.identifier = L.right_event_id '
-            'WHERE L.link_type = ? AND (HL.location = ? OR HR.location = ?)',
-            (link_type_db, location_db, location_db),
-        ):
-            if left_loc == location_db and right_loc != location_db:
-                events_to_restore.add(right_id)
-            elif right_loc == location_db and left_loc != location_db:
-                events_to_restore.add(left_id)
-            # both sides belong to the purged location, nothing to restore
-
-        if len(events_to_restore) == 0:
+        if len(identifiers) == 0:
             return
 
-        # clean up any adjustment events that were auto-created during matching
-        # on the surviving side (adjustments in the purged location get deleted with the purge)
-        for chunk, placeholders in get_query_chunks(list(events_to_restore)):
+        link_type_db = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
+        matched_db = HistoryMappingState.MATCHED.serialize_for_db()
+        linked_events: set[int] = set()
+        events_to_restore: set[int] = set()
+
+        for chunk, placeholders in get_query_chunks(list(identifiers)):
+            for linked_column in ('left_event_id', 'right_event_id'):
+                for left_id, right_id in write_cursor.execute(
+                    'SELECT left_event_id, right_event_id FROM history_event_links '
+                    f'WHERE link_type=? AND {linked_column} IN ({placeholders})',
+                    (link_type_db, *chunk),
+                ):
+                    linked_events.update((left_id, right_id))
+                    if left_id in identifiers and right_id not in identifiers:
+                        events_to_restore.add(right_id)
+                    elif right_id in identifiers and left_id not in identifiers:
+                        events_to_restore.add(left_id)
+
+        if len(linked_events) == 0:
+            return
+
+        # clean up any adjustment events auto-created during matching on either side of the
+        # match. They are not necessarily part of the purge selection (a CSV purge only
+        # selects CSV-imported events), so they would otherwise outlive the purged match.
+        for chunk, placeholders in get_query_chunks(list(linked_events)):
             self.delete_events_and_track(
                 write_cursor=write_cursor,
                 where_clause=(
@@ -792,6 +805,9 @@ class DBHistoryEvents:
                 ),
             )
 
+        if len(events_to_restore) == 0:
+            return
+
         # put each surviving event back to its pre-match state
         self.maybe_restore_history_events_from_backup(
             write_cursor=write_cursor,
@@ -805,6 +821,74 @@ class DBHistoryEvents:
                 f'WHERE parent_identifier IN ({placeholders}) '
                 f'AND name = ? AND value = ?',
                 (*chunk, HISTORY_MAPPING_KEY_STATE, matched_db),
+            )
+
+    def get_csv_imported_events_summary(
+            self,
+            location: LocationIdentifier | None = None,
+    ) -> list[dict[str, int | LocationIdentifier]]:
+        """Return CSV-imported event and customized-event counts grouped by location."""
+        location_filter = '' if location is None else ' AND H.location=?'
+        bindings: tuple[str | int, ...] = (
+            HISTORY_MAPPING_KEY_STATE,
+            HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+            HISTORY_MAPPING_KEY_STATE,
+            HistoryMappingState.IMPORTED_FROM_CSV.serialize_for_db(),
+            *((location,) if location is not None else ()),
+        )
+        with self.db.conn.read_ctx() as cursor:
+            rows = cursor.execute(
+                'SELECT H.location, COUNT(*), SUM(EXISTS('
+                'SELECT 1 FROM history_events_mappings C '
+                'WHERE C.parent_identifier=H.identifier AND C.name=? AND C.value=?)) '
+                'FROM history_events H INNER JOIN history_events_mappings M '
+                'ON M.parent_identifier=H.identifier '
+                'WHERE M.name=? AND M.value=?' + location_filter + ' GROUP BY H.location '
+                'ORDER BY H.location',
+                bindings,
+            ).fetchall()
+
+        return [
+            {
+                'location': LocationIdentifier(row[0]),
+                'events_count': row[1],
+                'customized_events_count': row[2],
+            }
+            for row in rows
+        ]
+
+    def purge_csv_imported_events(
+            self,
+            location: LocationIdentifier | None = None,
+    ) -> int:
+        """Atomically purge CSV-imported events, optionally limited to one location."""
+        where_clause = (
+            'WHERE identifier IN (SELECT parent_identifier FROM history_events_mappings '
+            'WHERE name=? AND value=?)'
+        )
+        bindings: tuple[str | int, ...] = (
+            HISTORY_MAPPING_KEY_STATE,
+            HistoryMappingState.IMPORTED_FROM_CSV.serialize_for_db(),
+        )
+        if location is not None:
+            where_clause += ' AND location=?'
+            bindings += (location,)
+
+        with self.db.user_write() as write_cursor:
+            identifiers = {
+                row[0] for row in write_cursor.execute(
+                    f'SELECT identifier FROM history_events {where_clause}',
+                    bindings,
+                )
+            }
+            self.restore_matched_events_before_purge(
+                write_cursor=write_cursor,
+                identifiers=identifiers,
+            )
+            return self.delete_events_and_track(
+                write_cursor=write_cursor,
+                where_clause=where_clause,
+                where_bindings=bindings,
             )
 
     def edit_history_event(

@@ -41,6 +41,7 @@ export interface RefreshTargets {
 export const HISTORY_STALE_AFTER: readonly StaleAfterEdge[] = [
   { kind: purgeActivity.kind, parts: purgeActivity.partsWithin([Purgeable.TRANSACTIONS]) },
   { kind: purgeActivity.kind, parts: purgeActivity.partsWithin([Purgeable.CENTRALIZED_EXCHANGES]) },
+  { kind: purgeActivity.kind, parts: purgeActivity.partsWithin([Purgeable.CSV_IMPORTS]) },
 ];
 
 interface ResolvedTargets {

@@ -1,12 +1,14 @@
 import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
 import { pluralize, toSentenceCase } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { isOfEnum } from '@/modules/core/common/helpers/is-of-enum';
 import { DECENTRALIZED_EXCHANGES, Module, type PurgeableModule, PurgeableOnlyModule } from '@/modules/core/common/modules';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { type CsvImportedEventSummary, useCsvImportedEventsApi } from '@/modules/history/api/events/use-csv-imported-events-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { Purgeable } from '@/modules/session/purge';
 import { useCacheClear } from '@/modules/session/use-cache-clear';
@@ -38,9 +40,13 @@ interface UsePurgeDataReturn {
   chainsSelection: ComputedRef<string[]>;
   /** Every exchange the user has configured, for the centralized-exchange picker. */
   exchanges: Readonly<Ref<string[]>>;
+  /** Locations currently holding CSV-imported events. */
+  csvImportLocations: ComputedRef<string[]>;
   /** Empty means every centralized exchange. */
   modelCentralizedExchange: Ref<string>;
   modelCentralizedExchangeDataType: Ref<CentralizedExchangePurgeType>;
+  /** Empty means CSV imports from every location. */
+  modelCsvImportLocation: Ref<string>;
   /** Empty means every chain. */
   modelChain: Ref<string>;
   /** Empty means every decentralized exchange. */
@@ -94,15 +100,34 @@ export function usePurgeData(): UsePurgeDataReturn {
 
   const { purgeData } = useSessionPurge();
   const { deleteModuleData } = useBlockchainBalancesApi();
+  const { deleteCsvImportedEvents, fetchCsvImportedEventsSummary } = useCsvImportedEventsApi();
   const { deleteStakeEvents, deleteTransactions } = useHistoryEventsApi();
   const { deleteExchangeData } = useExchangeApi();
 
   const modelSource = shallowRef<Purgeable>(Purgeable.TRANSACTIONS);
   const modelCentralizedExchange = shallowRef<string>('');
   const modelCentralizedExchangeDataType = shallowRef<CentralizedExchangePurgeType>('all');
+  const modelCsvImportLocation = shallowRef<string>('');
   const modelDecentralizedExchange = shallowRef<string>('');
   const modelChain = shallowRef<string>('');
   const modelModule = shallowRef<string>('');
+  const csvImportedEventsSummary = shallowRef<CsvImportedEventSummary[]>([]);
+  const csvPreflightPending = shallowRef<boolean>(false);
+
+  const csvImportLocations = computed<string[]>(() => get(csvImportedEventsSummary).map(({ location }) => location));
+
+  async function refreshCsvImportedEventsSummary(): Promise<void> {
+    set(csvImportedEventsSummary, await fetchCsvImportedEventsSummary());
+  }
+
+  async function deleteDecentralizedExchange(value: string): Promise<void> {
+    if (!value) {
+      await Promise.all(DECENTRALIZED_EXCHANGES.map(deleteModuleData));
+      return;
+    }
+    if (isModule(value))
+      await deleteModuleData(value);
+  }
 
   const centralizedExchangePurgeTypeOptions = computed<Array<{ id: CentralizedExchangePurgeType; text: string }>>(() => [
     { id: 'all', text: 'All' },
@@ -121,6 +146,11 @@ export function usePurgeData(): UsePurgeDataReturn {
       id: Purgeable.DECENTRALIZED_EXCHANGES,
       text: t('purge_selector.decentralized_exchange'),
       value: modelDecentralizedExchange,
+    },
+    {
+      id: Purgeable.CSV_IMPORTS,
+      text: t('purge_selector.csv_imports'),
+      value: modelCsvImportLocation,
     },
     {
       id: Purgeable.DEFI_MODULES,
@@ -158,18 +188,18 @@ export function usePurgeData(): UsePurgeDataReturn {
       return;
     }
 
+    if (source === Purgeable.CSV_IMPORTS) {
+      await deleteCsvImportedEvents(value || undefined);
+      return;
+    }
+
     if (source === Purgeable.CENTRALIZED_EXCHANGES) {
       await deleteExchangeData(value, get(modelCentralizedExchangeDataType));
       return;
     }
 
     if (source === Purgeable.DECENTRALIZED_EXCHANGES) {
-      if (!value) {
-        await Promise.all(DECENTRALIZED_EXCHANGES.map(deleteModuleData));
-        return;
-      }
-      if (isModule(value))
-        await deleteModuleData(value);
+      await deleteDecentralizedExchange(value);
       return;
     }
 
@@ -180,12 +210,36 @@ export function usePurgeData(): UsePurgeDataReturn {
   async function purgeSource(source: Purgeable): Promise<boolean> {
     const value = selectedValue(source);
 
-    if (purgeableOnlyModules.includes(value)) {
+    if (source === Purgeable.DEFI_MODULES && purgeableOnlyModules.includes(value)) {
       await deleteSourceData(source, value);
       return true;
     }
 
-    return purgeData(source, value, async () => deleteSourceData(source, value));
+    const purged = await purgeData(source, value, async () => deleteSourceData(source, value));
+    if (purged && source === Purgeable.CSV_IMPORTS)
+      await refreshCsvImportedEventsSummary();
+    return purged;
+  }
+
+  function csvImportsConfirmText(value: string): string {
+    const selectedSummaries = value
+      ? get(csvImportedEventsSummary).filter(summary => summary.location === value)
+      : get(csvImportedEventsSummary);
+    let message = t('data_management.purge_data.csv_imports_confirm.message', {
+      location: value ? toSentenceCase(value) : t('data_management.purge_data.csv_imports_confirm.all_locations'),
+    });
+    const customizedEventsCount = selectedSummaries.reduce(
+      (total, summary) => total + summary.customizedEventsCount,
+      0,
+    );
+    if (customizedEventsCount > 0) {
+      message += `\n\n${t('data_management.purge_data.csv_imports_confirm.customized_warning', {
+        count: customizedEventsCount,
+      })}`;
+    }
+    if (selectedSummaries.some(summary => ['binance', 'binanceus'].includes(summary.location)))
+      message += `\n\n${t('data_management.purge_data.csv_imports_confirm.binance_warning')}`;
+    return `${message}\n\n${t('data_management.purge_data.csv_imports_confirm.version_warning')}`;
   }
 
   function confirmText(textSource: string, source: Purgeable): { message: string; title: string } {
@@ -194,6 +248,9 @@ export function usePurgeData(): UsePurgeDataReturn {
     let message = '';
     if (source === Purgeable.TRANSACTIONS) {
       message = t('data_management.purge_data.transaction_purge_confirm.message');
+    }
+    else if (source === Purgeable.CSV_IMPORTS) {
+      message = csvImportsConfirmText(value);
     }
     else if (value) {
       message = t('data_management.purge_data.confirm.message', {
@@ -220,7 +277,7 @@ export function usePurgeData(): UsePurgeDataReturn {
     };
   }
 
-  const { pending, showConfirmation, status } = useCacheClear<Purgeable>(
+  const { pending: purgePending, showConfirmation: showPurgeConfirmation, status } = useCacheClear<Purgeable>(
     purgeable,
     purgeSource,
     {
@@ -229,13 +286,37 @@ export function usePurgeData(): UsePurgeDataReturn {
     },
     confirmText,
   );
+  const pending = computed<boolean>(() => get(purgePending) || get(csvPreflightPending));
+
+  async function showCsvPurgeConfirmation(): Promise<void> {
+    set(csvPreflightPending, true);
+    try {
+      await refreshCsvImportedEventsSummary();
+      showPurgeConfirmation(Purgeable.CSV_IMPORTS);
+    }
+    finally {
+      set(csvPreflightPending, false);
+    }
+  }
+
+  function showConfirmation(source: Purgeable): void {
+    if (source === Purgeable.CSV_IMPORTS) {
+      startPromise(showCsvPurgeConfirmation());
+      return;
+    }
+    showPurgeConfirmation(source);
+  }
+
+  startPromise(refreshCsvImportedEventsSummary());
 
   return {
     centralizedExchangePurgeTypeOptions,
     chainsSelection: useArrayMap(allTxChainsInfo, item => item.id),
+    csvImportLocations,
     exchanges: allExchanges,
     modelCentralizedExchange,
     modelCentralizedExchangeDataType,
+    modelCsvImportLocation,
     modelChain,
     modelDecentralizedExchange,
     modelModule,
