@@ -11,9 +11,11 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.connections.types import ConnectorIdentifier
 from rotkehlchen.constants import DAY_IN_SECONDS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.constants import CHAIN_EVENT_FIELDS, TX_INTERNALS_QUERIED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EVENTS_WITH_COUNTERPARTY_JOIN, EvmTransactionsFilterQuery
@@ -25,6 +27,7 @@ from rotkehlchen.locations.constants import (
     LOCATION_BITCOIN,
     LOCATION_BITCOIN_CASH,
     LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
 )
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tests.utils.api import (
@@ -44,6 +47,8 @@ from rotkehlchen.tests.utils.ethereum import (
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     CHAINS_WITH_TRANSACTIONS,
+    ApiKey,
+    ApiSecret,
     ChainID,
     ChecksumEvmAddress,
     SolanaAddress,
@@ -451,6 +456,29 @@ def test_history_status_summary(
         'has_evm_accounts': False,
         'has_exchanges_accounts': False,
     }
+
+    # a connection counts as an account and its progress is stored under its identifier
+    with rotki.data.db.user_write() as write_cursor:
+        connection = DBConnections.add(
+            write_cursor=write_cursor,
+            name='kraken1',
+            connector=ConnectorIdentifier(LOCATION_KRAKEN),
+            location=LOCATION_KRAKEN,
+            api_key=ApiKey('key'),
+            api_secret=ApiSecret(b'secret'),
+        )
+        write_cursor.execute(
+            'INSERT INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, ?, ?)',
+            (f'{connection.identifier}_history_events', 0, last_queried_ts),
+        )
+
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server, 'historystatussummaryresource'),
+        json={'async_query': async_query},
+    )
+    result = assert_proper_response_with_result(response, rotkehlchen_api_server, async_query)
+    assert result['exchanges_last_queried_ts'] == last_queried_ts
+    assert result['has_exchanges_accounts'] is True
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])

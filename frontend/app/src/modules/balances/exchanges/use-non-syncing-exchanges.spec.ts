@@ -1,9 +1,10 @@
-import type { Exchange, QueryExchangeEventsPayload } from '@/modules/balances/types/exchanges';
+import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ActionStatus } from '@/modules/core/common/action';
+import { createTestExchange } from '@test/utils/create-data';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { toggleNonSyncingExchange, useNonSyncingExchanges } from '@/modules/balances/exchanges/use-non-syncing-exchanges';
 
-const stored = ref<QueryExchangeEventsPayload[]>([]);
+const stored = ref<string[]>([]);
 
 const { spies } = vi.hoisted(() => ({
   spies: {
@@ -13,7 +14,7 @@ const { spies } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/modules/settings/use-setting', () => ({
-  useSetting: (): Ref<QueryExchangeEventsPayload[]> => stored,
+  useSetting: (): Ref<string[]> => stored,
 }));
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({
@@ -24,51 +25,56 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: (): object => ({ notifyInfo: spies.notifyInfo }),
 }));
 
-const kraken: Exchange = { location: 'kraken', name: 'main' };
-const binance: Exchange = { location: 'binance', name: 'main' };
-const coinbase: Exchange = { location: 'coinbase', name: 'savings' };
+const kraken: Exchange = createTestExchange('kraken', 'main');
+const binance: Exchange = createTestExchange('binance', 'main');
+const coinbase: Exchange = createTestExchange('coinbase', 'savings');
+
+function ids(...exchanges: Exchange[]): string[] {
+  return exchanges.map(exchange => exchange.identifier);
+}
 
 describe('toggleNonSyncingExchange', () => {
   it('should resume syncing only the toggled exchange and keep the others paused', () => {
-    const result = toggleNonSyncingExchange([kraken, binance, coinbase], kraken);
+    const result = toggleNonSyncingExchange(ids(kraken, binance, coinbase), kraken);
 
-    expect(result.nonSyncingExchanges).toEqual([binance, coinbase]);
+    expect(result.nonSyncingExchanges).toEqual(ids(binance, coinbase));
     expect(result.enable).toBe(true);
   });
 
   it('should keep the exchanges on both sides of the toggled one paused', () => {
-    const result = toggleNonSyncingExchange([kraken, binance, coinbase], binance);
+    const result = toggleNonSyncingExchange(ids(kraken, binance, coinbase), binance);
 
-    expect(result.nonSyncingExchanges).toEqual([kraken, coinbase]);
+    expect(result.nonSyncingExchanges).toEqual(ids(kraken, coinbase));
   });
 
   it('should pause an exchange that is syncing', () => {
-    const result = toggleNonSyncingExchange([kraken], binance);
+    const result = toggleNonSyncingExchange(ids(kraken), binance);
 
-    expect(result.nonSyncingExchanges).toEqual([kraken, binance]);
+    expect(result.nonSyncingExchanges).toEqual(ids(kraken, binance));
     expect(result.enable).toBe(false);
   });
 
-  it('should match on location and name together', () => {
-    const krakenSecond: Exchange = { location: 'kraken', name: 'second' };
+  it('should match on the connection identifier, not the location or name', () => {
+    const krakenSecond: Exchange = createTestExchange('kraken', 'second');
+    const renamedKraken: Exchange = { ...kraken, name: 'renamed' };
 
-    expect(toggleNonSyncingExchange([kraken], krakenSecond).nonSyncingExchanges).toEqual([kraken, krakenSecond]);
-    expect(toggleNonSyncingExchange([kraken], binance).nonSyncingExchanges).toEqual([kraken, binance]);
+    expect(toggleNonSyncingExchange(ids(kraken), krakenSecond).nonSyncingExchanges).toEqual(ids(kraken, krakenSecond));
+    expect(toggleNonSyncingExchange(ids(kraken), renamedKraken).nonSyncingExchanges).toEqual([]);
   });
 
-  it('should store only the location and name of a paused exchange', () => {
-    const result = toggleNonSyncingExchange([], { krakenAccountType: 'pro', location: 'kraken', name: 'main' });
+  it('should store only the identifier of a paused exchange', () => {
+    const result = toggleNonSyncingExchange([], { ...kraken, krakenAccountType: 'pro' });
 
-    expect(result.nonSyncingExchanges).toEqual([{ location: 'kraken', name: 'main' }]);
+    expect(result.nonSyncingExchanges).toEqual([kraken.identifier]);
   });
 
   it('should leave the given list unchanged', () => {
-    const current = [kraken, binance];
+    const current = ids(kraken, binance);
 
     toggleNonSyncingExchange(current, kraken);
     toggleNonSyncingExchange(current, coinbase);
 
-    expect(current).toEqual([kraken, binance]);
+    expect(current).toEqual(ids(kraken, binance));
   });
 });
 
@@ -79,7 +85,7 @@ describe('useNonSyncingExchanges', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    set(stored, [kraken, binance, coinbase]);
+    set(stored, ids(kraken, binance, coinbase));
     spies.update.mockResolvedValue(succeed());
   });
 
@@ -91,7 +97,7 @@ describe('useNonSyncingExchanges', () => {
     resetNonSyncingExchanges();
 
     expect(isNonSyncExchange(kraken)).toBe(true);
-    expect(isNonSyncExchange({ location: 'kraken', name: 'second' })).toBe(false);
+    expect(isNonSyncExchange(createTestExchange('kraken', 'second'))).toBe(false);
   });
 
   it('should save the list minus only the exchange being resumed', async () => {
@@ -100,14 +106,14 @@ describe('useNonSyncingExchanges', () => {
 
     await toggleSync(kraken);
 
-    expect(spies.update).toHaveBeenCalledExactlyOnceWith({ nonSyncingExchanges: [binance, coinbase] });
+    expect(spies.update).toHaveBeenCalledExactlyOnceWith({ nonSyncingExchanges: ids(binance, coinbase) });
     expect(spies.notifyInfo).not.toHaveBeenCalled();
   });
 
   it('should show the saved setting after the toggle', async () => {
     const { isNonSyncExchange, resetNonSyncingExchanges, toggleSync } = useNonSyncingExchanges();
     resetNonSyncingExchanges();
-    spies.update.mockImplementation(async ({ nonSyncingExchanges }: { nonSyncingExchanges: QueryExchangeEventsPayload[] }) => {
+    spies.update.mockImplementation(async ({ nonSyncingExchanges }: { nonSyncingExchanges: string[] }) => {
       set(stored, nonSyncingExchanges);
       return succeed();
     });

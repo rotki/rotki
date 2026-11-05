@@ -21,6 +21,7 @@ function bank(name: string, total: number, syncStatus: Partial<BankBalanceData['
     connector: 'fints',
     bankCode: null,
     displayName: 'FinTS/HBCI',
+    identifier: `id-${name}`,
     name,
     syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: 100, running: false, ...syncStatus },
     total: bigNumberify(total),
@@ -45,7 +46,7 @@ describe('modules/banks/components/BankBalanceCards', () => {
 
     expect(cards.map(item => item.attributes('data-bank'))).toEqual(['all', 'DKB', 'ING']);
     expect(JSON.parse(cards[0].attributes('data-to') ?? '')).toEqual({ name: '/balances/banks/', query: {} });
-    expect(JSON.parse(cards[1].attributes('data-to') ?? '')).toEqual({ name: '/balances/banks/', query: { bank: 'DKB' } });
+    expect(JSON.parse(cards[1].attributes('data-to') ?? '')).toEqual({ name: '/balances/banks/', query: { bank: 'id-DKB' } });
   });
 
   it('should show each bank with the logo of its bank code', () => {
@@ -59,9 +60,23 @@ describe('modules/banks/components/BankBalanceCards', () => {
     expect(card(all, 'all').attributes('aria-current')).toBe('page');
     expect(card(all, 'DKB').attributes('aria-current')).toBeUndefined();
 
-    const one = createWrapper({ banks: [bank('DKB', 200)], selected: 'DKB' });
+    const one = createWrapper({ banks: [bank('DKB', 200)], selected: 'id-DKB' });
     expect(card(one, 'all').attributes('aria-current')).toBeUndefined();
     expect(card(one, 'DKB').attributes('aria-current')).toBe('page');
+  });
+
+  it('should address same-named connections independently by identifier', () => {
+    const wrapper = createWrapper({
+      banks: [
+        { ...bank('Checking', 200), identifier: 'c1' },
+        { ...bank('Checking', 100), identifier: 'c2' },
+      ],
+      selected: 'c2',
+    });
+    const cards = wrapper.findAll('[data-testid=bank-balance-card]').slice(1);
+
+    expect(cards.map(item => JSON.parse(item.attributes('data-to') ?? '').query.bank)).toEqual(['c1', 'c2']);
+    expect(cards.map(item => item.attributes('aria-current'))).toEqual([undefined, 'page']);
   });
 
   it('should show each bank total, its share of all banks and the total of all banks', () => {
@@ -102,7 +117,7 @@ describe('modules/banks/components/BankBalanceCards', () => {
   });
 
   it('should spin only the card of a bank being queried', () => {
-    const wrapper = createWrapper({ banks: [bank('DKB', 200), bank('ING', 100)], isBankLoading: name => name === 'ING' });
+    const wrapper = createWrapper({ banks: [bank('DKB', 200), bank('ING', 100)], isBankLoading: identifier => identifier === 'id-ING' });
 
     expect(card(wrapper, 'DKB').find('[data-testid=fiat]').attributes('data-loading')).toBe('false');
     expect(card(wrapper, 'ING').find('[data-testid=fiat]').attributes('data-loading')).toBe('true');

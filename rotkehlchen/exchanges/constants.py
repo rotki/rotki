@@ -1,3 +1,5 @@
+from typing import Any
+
 from rotkehlchen.locations.constants import (
     LOCATION_BINANCE,
     LOCATION_BINANCEUS,
@@ -27,6 +29,7 @@ from rotkehlchen.locations.constants import (
     LOCATION_POLONIEX,
     LOCATION_WOO,
 )
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.types import EXTERNAL_EXCHANGES
 
 EXCHANGES_WITH_PASSPHRASE = (LOCATION_KUCOIN, LOCATION_OKX, LOCATION_COINBASEPRIME)
@@ -65,3 +68,20 @@ DEAD_EXCHANGES = (
 )
 # Exchanges for which we allow import via CSV
 ALL_SUPPORTED_EXCHANGES = SUPPORTED_EXCHANGES + EXTERNAL_EXCHANGES + DEAD_EXCHANGES
+
+
+def exchange_location(connector: str) -> LocationIdentifier:
+    """The location an exchange connector's connections put their data in. Every exchange
+    connector reads its own exchange, whose location is spelled like the connector."""
+    return LocationIdentifier(connector)
+
+
+def serialize_exchange_connectors() -> list[dict[str, Any]]:
+    """What the setup of each supported exchange connector needs"""
+    return [{
+        'connector': connector,
+        'location': exchange_location(connector),
+        'is_exchange_with_passphrase': connector in EXCHANGES_WITH_PASSPHRASE,
+        'is_exchange_without_api_secret': connector in EXCHANGES_WITHOUT_API_SECRET,
+        'experimental': connector in EXPERIMENTAL_EXCHANGES,
+    } for connector in SUPPORTED_EXCHANGES]

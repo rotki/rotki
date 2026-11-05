@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { ResultAsync } from 'plainfp/result-async';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import BankAuthChallengeFields from '@/modules/banks/components/BankAuthChallengeFields.vue';
 import BankConnectionForm from '@/modules/banks/components/BankConnectionForm.vue';
-import { type BankAuthChallenge, type BankConnectionIdentity, type BankFormData, type BankSetupError, type BankSetupSuccess, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
+import { type BankConnectionIdentity, type BankFormData, type BankSetupChallenge, type BankSetupError, type BankSetupResult, type BankSetupSuccess, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
 import { useBankAuthenticationPolling } from '@/modules/banks/use-bank-authentication-polling';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
@@ -22,7 +23,7 @@ const emit = defineEmits<{
 const submitting = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
 const errorMessages = ref<ValidationErrors>({});
-const authChallenge = ref<BankAuthChallenge>();
+const authChallenge = ref<BankSetupChallenge>();
 const authResponse = ref<string>('');
 const setupSuccess = ref<BankSetupSuccess>();
 /** why the backend refused the last save or answer, shown until the next attempt */
@@ -94,6 +95,14 @@ function showSetupError(error: BankSetupError, payload: BankFormData): void {
   }
 }
 
+/** Answers the pending challenge of the connection being set up, or starts the setup. */
+async function submit(payload: BankFormData): ResultAsync<BankSetupResult, BankSetupError> {
+  const challenge = get(authChallenge);
+  return challenge
+    ? answerBankAuthentication({ identifier: challenge.identifier }, get(authResponse).trim() || undefined)
+    : setupBank(payload);
+}
+
 async function save(): Promise<void> {
   assert(isDefined(modelValue));
   if (get(missingResponse) || (!isDefined(authChallenge) && !get(form)?.validate()))
@@ -103,12 +112,7 @@ async function save(): Promise<void> {
   set(errorMessages, {});
   set(setupError, undefined);
   const payload = get(modelValue);
-  const outcome = isDefined(get(authChallenge))
-    ? await answerBankAuthentication(
-        { connector: payload.connector, name: payload.name },
-        get(authResponse).trim() || undefined,
-      )
-    : await setupBank(payload);
+  const outcome = await submit(payload);
   set(submitting, false);
 
   if (!outcome.ok) {
@@ -129,13 +133,15 @@ function completeSetup(payload: BankFormData, result: true | BankSetupSuccess): 
     set(modelValue, undefined);
     return;
   }
-  emit('added', { connector: payload.connector, name: payload.name });
-  if (result !== true && result.historyStartTs !== null) {
-    set(setupSuccess, result);
-    set(stateUpdated, false);
-    set(authChallenge, undefined);
-    set(authResponse, '');
-    return;
+  if (result !== true) {
+    emit('added', { connector: payload.connector, identifier: result.identifier, name: payload.name });
+    if (result.historyStartTs !== null) {
+      set(setupSuccess, result);
+      set(stateUpdated, false);
+      set(authChallenge, undefined);
+      set(authResponse, '');
+      return;
+    }
   }
   set(modelValue, undefined);
 }
@@ -151,8 +157,9 @@ async function confirm(): Promise<void> {
 /** Closing an add at its TAN step drops the setup, so the next add of that name starts clean. */
 function cancel(): void {
   const payload = get(modelValue);
-  if (payload && payload.mode !== 'edit' && isDefined(authChallenge))
-    startPromise(cancelBankSetup({ connector: payload.connector, name: payload.name }));
+  const challenge = get(authChallenge);
+  if (payload && payload.mode !== 'edit' && challenge)
+    startPromise(cancelBankSetup({ identifier: challenge.identifier }));
   set(modelValue, undefined);
 }
 

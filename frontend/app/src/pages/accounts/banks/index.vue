@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { BankAuthenticationRequest, BankConnection, BankConnectionIdentity, BankFormData } from '@/modules/banks/types';
+import type { BankAuthenticationRequest, BankConnection, BankFormData } from '@/modules/banks/types';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { emptyCredentials } from '@/modules/banks/bank-connection-form';
+import { createNewBank, emptyCredentials } from '@/modules/banks/bank-connection-form';
 import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticationDialog.vue';
 import BankBalancesEmpty from '@/modules/banks/components/BankBalancesEmpty.vue';
 import BankConnectionActions from '@/modules/banks/components/BankConnectionActions.vue';
@@ -28,7 +28,8 @@ definePage({
 
 const bank = ref<BankFormData>();
 const authentication = ref<BankAuthenticationRequest>();
-const requestedAuthentication = ref<BankConnectionIdentity>();
+/** The identifier of the connection a link asked to authenticate. */
+const requestedAuthentication = ref<string>();
 
 const { canAddBank, connections: rows, connectionsError, manifests, manifestsError } = storeToRefs(useBankConnectionsStore());
 const { manifestFor } = useBankConnectionsStore();
@@ -43,25 +44,15 @@ const route = useRoute('/accounts/banks/');
 
 const { balanceOf, cols, highlight, isSyncing, modelSort: sort, rowClass, whileSyncing } = useBankConnectionsTable();
 
-function createNewBank(requested?: string): BankFormData {
-  const connector = (requested && manifestFor(requested)) ? requested : get(manifests)[0]?.connector ?? '';
-  return {
-    connector,
-    credentials: emptyCredentials(manifestFor(connector)),
-    mode: 'add',
-    name: '',
-    newName: '',
-  };
-}
-
 function addBank(connector?: string): void {
-  set(bank, createNewBank(connector));
+  set(bank, createNewBank(get(manifests), connector));
 }
 
 function editBank(row: BankConnection): void {
   set(bank, {
     connector: row.connector,
     credentials: emptyCredentials(manifestFor(row.connector)),
+    identifier: row.identifier,
     mode: 'edit',
     name: row.name,
     newName: row.name,
@@ -73,6 +64,7 @@ function authenticate(row: BankConnection): void {
     set(authentication, {
       challenge: row.syncStatus.authChallenge,
       connector: row.connector,
+      identifier: row.identifier,
       name: row.name,
     });
   }
@@ -85,10 +77,10 @@ function authenticate(row: BankConnection): void {
  * The link can arrive before the connection list has loaded, so the request is held until the row
  * exists. A connection whose challenge was already answered opens nothing.
  */
-function openRequestedAuthentication([requested, connections]: [BankConnectionIdentity | undefined, BankConnection[]]): void {
+function openRequestedAuthentication([requested, connections]: [string | undefined, BankConnection[]]): void {
   if (!requested)
     return;
-  const row = connections.find(connection => connection.connector === requested.connector && connection.name === requested.name);
+  const row = connections.find(connection => connection.identifier === requested);
   if (!row)
     return;
   authenticate(row);
@@ -96,7 +88,7 @@ function openRequestedAuthentication([requested, connections]: [BankConnectionId
 }
 
 async function sync(row: BankConnection): Promise<void> {
-  await whileSyncing(row, async () => syncBanks({ connector: row.connector, name: row.name }));
+  await whileSyncing(row, async () => syncBanks({ identifier: row.identifier }));
 }
 
 function showRemoveConfirmation(row: BankConnection): void {
@@ -119,8 +111,8 @@ watch(route, async (route) => {
     addBank(typeof query.connector === 'string' ? query.connector : undefined);
     await router.replace({ query: {} });
   }
-  else if (typeof query.authenticate === 'string' && typeof query.connector === 'string') {
-    set(requestedAuthentication, { connector: query.connector, name: query.authenticate });
+  else if (typeof query.authenticate === 'string') {
+    set(requestedAuthentication, query.authenticate);
     await router.replace({ query: {} });
   }
 }, { immediate: true });
@@ -172,7 +164,7 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
       </template>
       <RuiDataTable
         v-model:sort="sort"
-        row-attr="name"
+        row-attr="identifier"
         data-testid="bank-table"
         :rows="rows"
         :cols="cols"

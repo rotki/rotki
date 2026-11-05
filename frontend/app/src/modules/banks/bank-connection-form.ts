@@ -15,8 +15,8 @@ export function isEditing(mode: BankFormData['mode']): boolean {
 
 export function toBankConnectionFormState(data: BankFormData): BankConnectionFormState {
   return {
-    credentials: { ...data.credentials },
     connector: data.connector,
+    credentials: { ...data.credentials },
     name: data.name,
     newName: data.newName,
   };
@@ -35,13 +35,13 @@ function isPresent(value: string | undefined): boolean {
  * Validation rules of a bank connection form.
  *
  * @remarks
- * Adding needs a name and every credential the manifest declares. Editing needs the new name; the
- * credentials are optional there, an empty one means "keep the stored one".
+ * Adding needs a connector, a name and every credential the manifest declares. Editing needs
+ * the new name; credentials are optional, with empty values keeping the stored ones.
  */
 export function bankConnectionSchema(mode: BankFormData['mode'], manifest: BankManifest | undefined): ZodType<BankConnectionFormState> {
   return z.object({
-    credentials: z.record(z.string(), z.string()),
     connector: z.string(),
+    credentials: z.record(z.string(), z.string()),
     name: z.string(),
     newName: z.string(),
   }).superRefine((state, ctx) => {
@@ -57,4 +57,16 @@ export function bankConnectionSchema(mode: BankFormData['mode'], manifest: BankM
         ctx.addIssue({ code: 'custom', message: required, path: ['credentials', secret.slot] });
     }
   });
+}
+
+/** A new connection, preselecting the requested connector when available. */
+export function createNewBank(available: BankManifest[], requestedConnector?: string): BankFormData {
+  const manifest = available.find(manifest => manifest.connector === requestedConnector) ?? available[0];
+  return {
+    connector: manifest?.connector ?? '',
+    credentials: emptyCredentials(manifest),
+    mode: 'add',
+    name: '',
+    newName: '',
+  };
 }

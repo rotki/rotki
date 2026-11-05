@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { bankAmountFormat, bankLocationBalances, mergeConnectionBalances } from '@/modules/banks/bank-balances';
 
 function holding(connector: string, name: string, eur: number): BankConnectionBalances {
-  return { accounts: [], balances: { EUR: { amount: bigNumberify(eur), value: bigNumberify(eur) } }, connector, name };
+  return { accounts: [], balances: { EUR: { amount: bigNumberify(eur), value: bigNumberify(eur) } }, connector, identifier: `${connector}:${name}`, name };
 }
 
 describe('bank balances', () => {
@@ -19,9 +19,10 @@ describe('bank balances', () => {
     ]);
   });
 
-  it('should tell connections apart by connector as well as name', () => {
-    const merged = mergeConnectionBalances([holding('qonto', 'Main', 1)], [holding('fints', 'Main', 2)]);
-    expect(merged.map(({ connector }) => connector)).toEqual(['qonto', 'fints']);
+  it('should replace a renamed connection by stable identifier', () => {
+    const renamed = { ...holding('qonto', 'Main', 2), name: 'Renamed' };
+    const merged = mergeConnectionBalances([holding('qonto', 'Main', 1)], [renamed]);
+    expect(merged.map(({ name }) => name)).toEqual(['Renamed']);
   });
 
   it('should sum every connection under the one banks location', () => {

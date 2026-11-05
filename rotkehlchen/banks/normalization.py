@@ -103,6 +103,7 @@ def bank_transaction_to_event(
         location: LocationIdentifier,
         location_label: str,
         source_label: str,
+        connection_identifier: str,
 ) -> BankTransactionEvent:
     """Map a normalized bank transaction onto rotki history events.
 
@@ -126,6 +127,8 @@ def bank_transaction_to_event(
 
     extra_data: BankTransactionExtraData = {
         'bank_account_id': transaction.account_id,
+        'source_id': transaction.source_id,
+        'connection_identifier': connection_identifier,
         'kind': transaction.kind.serialize(),
     }
     if transaction.counterparty_account is not None:

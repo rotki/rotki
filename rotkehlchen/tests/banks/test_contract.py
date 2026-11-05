@@ -14,8 +14,10 @@ from rotkehlchen.banks.manager import BankManager
 from rotkehlchen.banks.manifest import BankConnectorType
 from rotkehlchen.banks.manifests import BANK_MANIFESTS
 from rotkehlchen.banks.normalization import BankAccount
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_EUR, A_USD
+from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
@@ -39,6 +41,7 @@ ALLOWED_EVENT_TYPES = {
     (HistoryEventType.SPEND, HistoryEventSubType.NONE),
     (HistoryEventType.SPEND, HistoryEventSubType.FEE),
 }
+
 KITS = pytest.mark.parametrize('kit', BANK_KITS, ids=[str(kit.connector) for kit in BANK_KITS])
 
 
@@ -187,7 +190,7 @@ def test_cursor_dedup_and_full_resync(kit: BankConnectorKit, database, function_
         transport.requests.clear()
         queue = HistoryEventQueue(
             database=database,
-            location_string=f'banks_history_events_{connector.name}',
+            location_string=connection_range_name(connector.connection_identifier, 'history_events'),  # noqa: E501
             query_start_ts=Timestamp(0),
         )
         connector.requery_online_history_events_into_queue(Timestamp(0), ts_now(), queue)
@@ -201,7 +204,7 @@ def test_cursor_dedup_and_full_resync(kit: BankConnectorKit, database, function_
             transaction['label'] = 'Updated counterparty'
             queue = HistoryEventQueue(
                 database=database,
-                location_string=f'banks_history_events_{connector.name}',
+                location_string=connection_range_name(connector.connection_identifier, 'history_events'),  # noqa: E501
                 query_start_ts=Timestamp(0),
             )
             connector.requery_online_history_events_into_queue(Timestamp(0), ts_now(), queue)
@@ -281,11 +284,12 @@ def test_purge_local_state_on_removal(kit: BankConnectorKit, database, function_
     with database.user_write() as write_cursor:
         connector.save_session(write_cursor, 'opaque-session-blob')
     assert connector.load_session() == 'opaque-session-blob'
-    with database.user_write() as write_cursor:
-        connector.purge_local_state(write_cursor)
+    with database.user_write() as write_cursor:  # what removing the connection does
+        DBConnections.delete_progress(write_cursor, [connector.connection_identifier])
     assert connector.load_session() is None
     with database.conn.read_ctx() as cursor:
         assert all(connector.get_cursor(cursor, a.identifier) is None for a in accounts)
+        assert database.get_used_query_range(cursor, connection_range_name(connector.connection_identifier, 'history_events')) is None  # noqa: E501
 
 
 def test_connector_is_registered_only_once():

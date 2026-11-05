@@ -115,7 +115,7 @@ describe('composables/api/history/index', () => {
   });
 
   describe('fetchAllLocations', () => {
-    it('should fetch all locations with exchange details', async () => {
+    it('should fetch all locations with their display details', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/all`, () =>
           HttpResponse.json({
@@ -125,11 +125,6 @@ describe('composables/api/history/index', () => {
                   label: 'Binance',
                   icon: 'binance.svg',
                   isExchange: true,
-                  exchangeDetails: {
-                    isExchangeWithKey: true,
-                    isExchangeWithPassphrase: false,
-                    isExchangeWithoutApiSecret: false,
-                  },
                 },
                 blockchain: {
                   label: 'Blockchain',
@@ -147,7 +142,6 @@ describe('composables/api/history/index', () => {
 
       expect(result.locations.binance.label).toBe('Binance');
       expect(result.locations.binance.isExchange).toBe(true);
-      expect(result.locations.binance.exchangeDetails?.isExchangeWithKey).toBe(true);
       expect(result.locations.blockchain.isExchange).toBe(false);
     });
 

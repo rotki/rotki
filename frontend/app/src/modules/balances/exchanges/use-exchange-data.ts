@@ -1,5 +1,6 @@
 import type { ComputedRef } from 'vue';
 import type { Exchange, ExchangeInfo } from '@/modules/balances/types/exchanges';
+import type { ConnectionRef } from '@/modules/core/common/connection';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -10,7 +11,7 @@ import { useSetting } from '@/modules/settings/use-setting';
 interface UseExchangeDataReturn {
   exchanges: ComputedRef<ExchangeInfo[]>;
   syncingExchanges: ComputedRef<Exchange[]>;
-  isSameExchange: (a: Exchange, b: Exchange) => boolean;
+  isSameExchange: (a: ConnectionRef, b: ConnectionRef) => boolean;
 }
 
 export function useExchangeData(): UseExchangeDataReturn {
@@ -30,14 +31,13 @@ export function useExchangeData(): UseExchangeDataReturn {
       .sort((a, b) => sortDesc(a.total, b.total));
   });
 
-  function isSameExchange(a: Exchange, b: Exchange): boolean {
-    return a.location === b.location && a.name === b.name;
+  /** Connections are the same when their identifiers are, whatever they are named now. */
+  function isSameExchange(a: ConnectionRef, b: ConnectionRef): boolean {
+    return a.identifier === b.identifier;
   }
 
   const syncingExchanges = computed<Exchange[]>(() => get(connectedExchanges).filter(
-    exchange => !get(nonSyncingExchanges).some(
-      excluded => isSameExchange(excluded, exchange),
-    ),
+    exchange => !get(nonSyncingExchanges).includes(exchange.identifier),
   ));
 
   return {

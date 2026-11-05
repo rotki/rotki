@@ -24,8 +24,8 @@ describe('repulling activity ids', () => {
       .toBe(repullTransactionsActivity.id({ fromTimestamp: 10, toTimestamp: 20 }));
   });
 
-  it('should key an exchange re-pull by location, name and range', () => {
-    expect(repullExchangeEventsActivity.id({ location: 'kraken', name: 'Main', toTimestamp: 20 })).toBe('repulling:exchange:kraken:Main:0:20');
+  it('should key an exchange re-pull by connection identifier and range', () => {
+    expect(repullExchangeEventsActivity.id({ identifier: 'conn-1', label: 'Main', toTimestamp: 20 })).toBe('repulling:exchange:conn-1:0:20');
   });
 
   it('should key an ETH staking re-pull by entry type, range and the digests of its filters', () => {

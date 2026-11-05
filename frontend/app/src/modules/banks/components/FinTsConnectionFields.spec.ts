@@ -33,6 +33,7 @@ function connection(name: string): BankConnection {
     bankCode: null,
     displayName: 'FinTS/HBCI',
     connector: 'fints',
+    identifier: `id-${name}`,
     name,
     syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false },
   };

@@ -30,6 +30,7 @@ function connection(syncStatus: Partial<BankConnection['syncStatus']> = {}): Ban
     bankCode: null,
     displayName: 'Sparkasse',
     connector: 'fints',
+    identifier: 'c1',
     name: 'main',
     syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false, ...syncStatus },
   };
@@ -81,7 +82,7 @@ describe('modules/banks/components/BankConnectionItem', () => {
 
     await wrapper.find('[data-testid=bank-balances-connection-action]').trigger('click');
 
-    expect(push).toHaveBeenCalledWith({ name: '/accounts/banks/', query: { authenticate: 'main', connector: 'fints' } });
+    expect(push).toHaveBeenCalledWith({ name: '/accounts/banks/', query: { authenticate: 'c1' } });
   });
 
   it('should say an expired TAN needs a new sync instead of showing the last sync time, and ask for that sync', async () => {
@@ -94,7 +95,7 @@ describe('modules/banks/components/BankConnectionItem', () => {
 
     await wrapper.find('[data-testid=bank-balances-connection-action]').trigger('click');
 
-    expect(wrapper.emitted('sync')).toEqual([[{ connector: 'fints', name: 'main' }]]);
+    expect(wrapper.emitted('sync')).toEqual([[{ identifier: 'c1' }]]);
     expect(push).not.toHaveBeenCalled();
   });
 

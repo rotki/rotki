@@ -1,9 +1,9 @@
 """The bank connector base class.
 
-A bank is registered, stored, balance-queried and history-synced through the exchange
-plumbing: same credential table, same manager, same API endpoints, same history event
-pipeline. What a connector adds on top is the manifest, the normalized transaction model
-with its cursor-based incremental sync, session persistence hooks and the error taxonomy.
+A bank shares the exchange connection storage and history event pipeline, with its own
+manager and API endpoints. What a connector adds on top is the manifest, the normalized
+transaction model with its cursor-based incremental sync, session persistence hooks and the
+error taxonomy.
 
 A connector implements `query_accounts` and `query_transactions`. Everything else is
 generic.
@@ -44,7 +44,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    ExchangeApiCredentials,
     ExchangeAuthCredentials,
     Timestamp,
 )
@@ -56,12 +55,12 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.banks.manifest import BankManifest
+    from rotkehlchen.connections.types import ConnectionIdentifier
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.exchanges.exchange import HistoryEventQueue
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
-    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -93,7 +92,9 @@ class BankConnector(ExchangeInterface, ABC):
             secret: ApiSecret,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
+            connection_identifier: ConnectionIdentifier | None = None,
     ) -> None:
+        """A saved connection's identifier is needed before restoring its session."""
         super().__init__(
             name=name,
             location=LOCATION_BANKS,
@@ -102,6 +103,8 @@ class BankConnector(ExchangeInterface, ABC):
             database=database,
             msg_aggregator=msg_aggregator,
         )
+        if connection_identifier is not None:
+            self.connection_identifier = connection_identifier
 
     @property
     def connector(self) -> str:
@@ -127,27 +130,12 @@ class BankConnector(ExchangeInterface, ABC):
             data=data,
         )
 
-    def reset_to_db_credentials(self) -> None:
-        with self.db.conn.read_ctx() as cursor:
-            credentials = self.db.get_bank_credentials(
-                cursor=cursor,
-                connector=self.manifest.connector,
-                name=self.name,
-            )[self.manifest.connector][0]
-        self.edit_exchange_credentials(ExchangeAuthCredentials(
-            api_key=credentials.api_key,
-            api_secret=credentials.api_secret,
-            passphrase=credentials.passphrase,
-        ))
-
     @classmethod
     def api_credentials_from_values(
             cls,
-            name: str,
-            location: LocationIdentifier,
             values: dict[str, str],
             current: ExchangeAuthCredentials | None = None,
-    ) -> ExchangeApiCredentials:
+    ) -> ExchangeAuthCredentials:
         """Pack manifest fields into the credential table's existing three columns."""
         api_key = values.get('api_key', current.api_key if current is not None else None)
         api_secret = values.get(
@@ -157,9 +145,7 @@ class BankConnector(ExchangeInterface, ABC):
         )
         passphrase = values.get('passphrase', current.passphrase if current is not None else None)
         assert api_key is not None and api_secret is not None, 'manifest validation guarantees these'  # noqa: E501
-        return ExchangeApiCredentials(
-            name=name,
-            location=location,
+        return ExchangeAuthCredentials(
             api_key=ApiKey(api_key),
             api_secret=ApiSecret(api_secret.encode()),
             passphrase=passphrase,
@@ -217,16 +203,12 @@ class BankConnector(ExchangeInterface, ABC):
     # it here so the user does not re-approve every sync. The user DB is encrypted at rest.
     # A static-secret connector never needs these.
 
-    def _cache_location_name(self) -> str:
-        return self.name.encode().hex()
-
     def load_session(self) -> str | None:
         with self.db.conn.read_ctx() as cursor:
             return self.db.get_dynamic_cache(
                 cursor=cursor,
                 name=DBCacheDynamic.BANK_SESSION,
-                location=str(self.location),
-                location_name=self._cache_location_name(),
+                connection=self.connection_identifier,
             )
 
     def save_session(self, write_cursor: DBCursor, session: str) -> None:
@@ -234,16 +216,14 @@ class BankConnector(ExchangeInterface, ABC):
             write_cursor=write_cursor,
             name=DBCacheDynamic.BANK_SESSION,
             value=session,
-            location=str(self.location),
-            location_name=self._cache_location_name(),
+            connection=self.connection_identifier,
         )
 
     def clear_session(self, write_cursor: DBCursor) -> None:
         self.db.delete_dynamic_cache(
             write_cursor=write_cursor,
             name=DBCacheDynamic.BANK_SESSION,
-            location=str(self.location),
-            location_name=self._cache_location_name(),
+            connection=self.connection_identifier,
         )
 
     def forget_session(self) -> None:
@@ -257,28 +237,18 @@ class BankConnector(ExchangeInterface, ABC):
     def get_cursor(self, cursor: DBCursor, account_id: str) -> Timestamp | None:
         return self.db.get_dynamic_cache(
             cursor=cursor,
-            name=DBCacheDynamic.LAST_QUERY_TS,
-            location=str(self.location),
-            location_name=self._cache_location_name(),
+            name=DBCacheDynamic.CONNECTION_LAST_QUERY_TS,
+            connection=self.connection_identifier,
             account_id=account_id,
         )
 
     def set_cursor(self, write_cursor: DBCursor, account_id: str, value: Timestamp) -> None:
         self.db.set_dynamic_cache(
             write_cursor=write_cursor,
-            name=DBCacheDynamic.LAST_QUERY_TS,
+            name=DBCacheDynamic.CONNECTION_LAST_QUERY_TS,
             value=value,
-            location=str(self.location),
-            location_name=self._cache_location_name(),
+            connection=self.connection_identifier,
             account_id=account_id,
-        )
-
-    def purge_local_state(self, write_cursor: DBCursor) -> None:
-        """Drop cursors and session when the connection is removed"""
-        prefix = f'{self.location!s}_{self._cache_location_name()}_'
-        write_cursor.execute(
-            'DELETE FROM key_value_cache WHERE substr(name, 1, ?) = ?',
-            (len(prefix), prefix),
         )
 
     # ---- exchange interface, generic for every bank ----
@@ -347,6 +317,7 @@ class BankConnector(ExchangeInterface, ABC):
                 location=self.data_location,
                 location_label=self.name,
                 source_label=self.connector,
+                connection_identifier=self.connection_identifier,
             ))
             if transaction.updated_at is not None and (newest is None or transaction.updated_at > newest):  # noqa: E501
                 newest = transaction.updated_at

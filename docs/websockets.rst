@@ -699,12 +699,14 @@ Trades were queried from a binance exchange, but no market pairs are selected to
     {
         "type": "binance_pairs_missing",
         "data": {
+            "identifier": "3f0c2b9e5d6a4c1b8e7f9a0d2c4b6e8f",
             "location": "binance",
             "name": "Binance 1"
         }
     }
 
 
+- ``identifier``: The identifier of the exchange connection, as ``/exchanges`` addresses it.
 - ``location``: Location of the binance exchange. Either ``binance`` or ``binanceus``
 - ``name``: Name of the exchange.
 

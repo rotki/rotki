@@ -37,7 +37,7 @@ describe('useExchangeData', () => {
 
   it('should not list the bank balances among the exchanges', () => {
     set(storeToRefs(store).exchangeBalances, mockBalances);
-    set(storeToRefs(store).bankBalances, [{ accounts: [], balances: { EUR: createTestBalance(500, 500) }, connector: 'qonto', name: 'Main' }]);
+    set(storeToRefs(store).bankBalances, [{ accounts: [], balances: { EUR: createTestBalance(500, 500) }, connector: 'qonto', identifier: 'c1', name: 'Main' }]);
 
     const { exchanges } = useExchangeData();
 

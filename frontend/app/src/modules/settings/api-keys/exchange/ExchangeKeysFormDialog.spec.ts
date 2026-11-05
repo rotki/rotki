@@ -69,7 +69,7 @@ describe('settings/api-keys/exchange/ExchangeKeysFormDialog.vue', () => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
     setMessage.mockReset();
-    setupExchange.mockReset().mockResolvedValue(true);
+    setupExchange.mockReset().mockResolvedValue(undefined);
     validate.mockReset().mockReturnValue(true);
   });
 
@@ -148,7 +148,7 @@ describe('settings/api-keys/exchange/ExchangeKeysFormDialog.vue', () => {
     });
 
     it('should keep the dialog open when the save failed', async () => {
-      setupExchange.mockResolvedValue(false);
+      setupExchange.mockRejectedValue(new Error('the key was refused'));
 
       await save(exchange());
 
@@ -156,7 +156,7 @@ describe('settings/api-keys/exchange/ExchangeKeysFormDialog.vue', () => {
     });
 
     it('should keep the refused key row of an account whose save failed', async () => {
-      setupExchange.mockResolvedValue(false);
+      setupExchange.mockRejectedValue(new Error('the key was refused'));
       const conditions = useRaisedConditionsStore();
       conditions.raise({ kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, location: 'kucoin', name: 'Kucoin 1' });
 

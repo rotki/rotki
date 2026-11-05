@@ -8,9 +8,9 @@ from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_submodules
 
+from rotkehlchen.banks.constants import SUPPORTED_BANK_CONNECTORS, bank_connector_module
 from rotkehlchen.constants.misc import GLOBALDB_NAME
-from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
-from rotkehlchen.locations.constants import LOCATION_BINANCEUS
+from rotkehlchen.exchanges.manager import EXCHANGE_CONNECTOR_CLASSES
 from rotkehlchen.types import CHAINS_WITH_TRANSACTION_DECODERS
 from rotkehlchen.utils.misc import get_system_spec
 
@@ -109,13 +109,13 @@ if platform.system() == 'Windows':
 hiddenimports = []
 # The MCP server is a separate module entrypoint and its tools are discovered dynamically.
 hiddenimports.extend(collect_submodules('rotkehlchen.mcp'))
-# Since the exchanges are loaded dynamically and some of them may not be detected
-# by pyinstaller (https://github.com/rotki/rotki/issues/602) make sure they are
-# all included as imports in the created executable
-for exchange_name in SUPPORTED_EXCHANGES:
-    if exchange_name == LOCATION_BINANCEUS:
-        continue
-    hiddenimports.append(f'rotkehlchen.exchanges.{exchange_name}')
+# Exchange and bank connectors are imported by module name from their registries, which
+# pyinstaller cannot detect (https://github.com/rotki/rotki/issues/602), so make sure they
+# are all included as imports in the created executable
+hiddenimports.extend(sorted(
+    {module_name for module_name, _ in EXCHANGE_CONNECTOR_CLASSES.values()} |
+    {bank_connector_module(connector) for connector in SUPPORTED_BANK_CONNECTORS},
+))
 
 for chain in CHAINS_WITH_TRANSACTION_DECODERS:  # load modules from the chains that have decoders
     hiddenimports.extend(collect_submodules(f'rotkehlchen.chain.{chain.name.lower()}.modules'))
@@ -129,6 +129,7 @@ a = Entrypoint(
     datas=[
         ('rotkehlchen/data/eth_abi.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/eth_contracts.json', 'rotkehlchen/data'),
+        ('rotkehlchen/data/locations.json', 'rotkehlchen/data'),
         (f'rotkehlchen/data/{GLOBALDB_NAME}', 'rotkehlchen/data'),
         ('rotkehlchen/data/globaldb_v2_v3_assets.sql', 'rotkehlchen/data'),
         ('rotkehlchen/data/locations.json', 'rotkehlchen/data'),

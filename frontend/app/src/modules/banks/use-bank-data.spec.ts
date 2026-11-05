@@ -15,6 +15,7 @@ function balance(amount: number): { amount: ReturnType<typeof bigNumberify>; val
 function connection(connector: string, name: string): BankConnection {
   return {
     connector,
+    identifier: `${connector}:${name}`,
     bankCode: null,
     displayName: connector,
     name,
@@ -28,8 +29,8 @@ describe('useBankData', () => {
     const store = useBankConnectionsStore();
     store.setConnections([connection('qonto', 'Business'), connection('fints', 'Checking')]);
     useBalancesStore().bankBalances = [
-      { accounts: [], balances: { EUR: balance(200), SPAM: balance(5000) }, connector: 'qonto', name: 'Business' },
-      { accounts: [], balances: { EUR: balance(300) }, connector: 'fints', name: 'Checking' },
+      { accounts: [], balances: { EUR: balance(200), SPAM: balance(5000) }, connector: 'qonto', identifier: 'qonto:Business', name: 'Business' },
+      { accounts: [], balances: { EUR: balance(300) }, connector: 'fints', identifier: 'fints:Checking', name: 'Checking' },
     ];
   });
 
@@ -97,6 +98,7 @@ describe('useBankData', () => {
       accounts: [account('checking', 'EUR', 50), account('spam', 'SPAM', 5000), account('savings', 'EUR', 150)],
       balances: { EUR: balance(200), SPAM: balance(5000) },
       connector: 'qonto',
+      identifier: 'qonto:Business',
       name: 'Business',
     }];
     const { banks } = useBankData();

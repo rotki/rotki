@@ -1,4 +1,7 @@
+import json
 import logging
+import re
+import uuid
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.db.cache import DBCacheStatic
@@ -182,7 +185,6 @@ CREATE TABLE {table} (
     api_key TEXT,
     api_secret TEXT,
     passphrase TEXT,
-    connector TEXT,
     PRIMARY KEY (name, location)
 );"""),
     ('user_credentials_mappings', 'credential_location', False, """
@@ -289,6 +291,143 @@ def _rebuild_location_table(
     write_cursor.execute(f'ALTER TABLE {table}_new RENAME TO {table}')
     for index_sql in indexes:
         write_cursor.execute(index_sql)
+
+
+# Tails, after `{location}_{name}_`, of the v53 key_value_cache keys of each connector. They are
+# per connector, since a connection named `main_last_cryptotx` would otherwise claim the
+# `bitstamp_main_last_cryptotx_offset` key of `main` through a generic tail. Each placeholder is
+# one underscore-free segment, so that the keys of `main` are not confused with `main_backup`.
+_V53_BINANCE_CACHE_TAILS: Final = ('[^_]+', '[^_]+_last_query_ts')  # pair progress
+_V53_ACCOUNT_CACHE_TAILS: Final = ('[^_]+_last_query_ts', '[^_]+_last_query_id')  # per account cursors  # noqa: E501
+_V53_BANK_CACHE_TAILS: Final = ('bank_session', '[^_]+_last_query_ts')  # session and per account cursors  # noqa: E501
+_V53_CONNECTOR_CACHE_TAILS: Final = {
+    'bitstamp': ('last_cryptotx_offset',),
+    'binance': _V53_BINANCE_CACHE_TAILS,
+    'binanceus': _V53_BINANCE_CACHE_TAILS,
+    'qonto': _V53_BANK_CACHE_TAILS,
+    'fints': _V53_BANK_CACHE_TAILS,
+}
+_V53_CONNECTION_RANGE_KINDS: Final = ('history_events', 'history_events_futures', 'margins', 'lending_history')  # noqa: E501
+_V53_BANK_CONNECTORS: Final = ('qonto', 'fints')
+
+
+def _key_suppressed_binance_accounts_by_connection(
+        write_cursor: DBCursor,
+        identifiers: dict[tuple[str, str], str],
+) -> None:
+    """Replace the `{connector}:{name}` entries of suppress_binance_pairs_missing with connection
+    identifiers, dropping those of connections that do not exist.
+
+    v53 stored frontend_settings without validating it, so a value that does not parse is left
+    as it is, since it must not abort the whole upgrade.
+    """
+    if (row := write_cursor.execute(
+        "SELECT value FROM settings WHERE name='frontend_settings'",
+    ).fetchone()) is None:
+        return
+
+    try:
+        frontend_settings = json.loads(row[0])
+    except (TypeError, json.JSONDecodeError) as e:
+        log.warning('Leaving frontend settings that can not be parsed as they are: %s', e)
+        return
+
+    if isinstance(frontend_settings, dict) and isinstance(suppressed := frontend_settings.get('suppress_binance_pairs_missing'), list):  # noqa: E501
+        frontend_settings['suppress_binance_pairs_missing'] = sorted(
+            identifiers[connector, name] for entry in suppressed
+            if isinstance(entry, str) and len(parts := entry.split(':', 1)) == 2
+            and ((connector := parts[0]), (name := parts[1])) in identifiers
+        )
+        write_cursor.execute(
+            "UPDATE settings SET value=? WHERE name='frontend_settings'",
+            (json.dumps(frontend_settings),),
+        )
+
+
+def _move_credentials_to_connections(write_cursor: DBCursor) -> None:
+    """Give every exchange and bank credential a stable connection identifier, and key its
+    settings, query ranges, caches and non-syncing entry by that identifier instead of by
+    location and name. Premium credentials stay in user_credentials.
+
+    Bank connectors put their data at the shared Banks location.
+    """
+    write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS integration_connections (
+    identifier TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    connector_identifier TEXT NOT NULL,
+    location_identifier TEXT NOT NULL REFERENCES locations(identifier),
+    api_key TEXT,
+    api_secret TEXT,
+    passphrase TEXT,
+    UNIQUE(connector_identifier, name)
+);""")
+    write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS integration_connection_settings (
+    connection_identifier TEXT NOT NULL REFERENCES integration_connections(identifier) ON DELETE CASCADE,
+    setting_name TEXT NOT NULL,
+    setting_value TEXT NOT NULL,
+    PRIMARY KEY (connection_identifier, setting_name)
+);""")  # noqa: E501
+    locations = {row[0] for row in write_cursor.execute('SELECT identifier FROM locations')}
+    credentials = write_cursor.execute(
+        'SELECT name, location, api_key, api_secret, passphrase FROM user_credentials '
+        "WHERE name != 'rotkehlchen'",
+    ).fetchall()
+    identifiers: dict[tuple[str, str], str] = {}
+    # longer names first, so that a name that prefixes another one never claims its caches
+    for name, connector, api_key, api_secret, passphrase in sorted(credentials, key=lambda x: -len(x[0])):  # noqa: E501
+        location = 'banks' if connector in _V53_BANK_CONNECTORS else connector
+        if location not in locations:
+            log.warning('Dropping %s credentials %s of an unknown connector', connector, name)
+            continue
+
+        identifiers[connector, name] = (identifier := str(uuid.uuid4()))
+        write_cursor.execute(
+            'INSERT INTO integration_connections(identifier, name, connector_identifier, '
+            'location_identifier, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (identifier, name, connector, location, api_key, api_secret, passphrase),
+        )
+        write_cursor.execute(
+            'INSERT INTO integration_connection_settings(connection_identifier, setting_name, '
+            'setting_value) SELECT ?, setting_name, setting_value FROM user_credentials_mappings '
+            'WHERE credential_name=? AND credential_location=?',
+            (identifier, name, connector),
+        )
+        write_cursor.executemany(
+            'UPDATE OR REPLACE used_query_ranges SET name=? WHERE name=?',
+            [(f'{identifier}_{kind}', f'{connector}_{kind}_{name}') for kind in _V53_CONNECTION_RANGE_KINDS],  # noqa: E501
+        )
+        cache_name = name.encode().hex() if connector in _V53_BANK_CONNECTORS else name
+        old_prefix = f'{connector}_{cache_name}_'
+        write_cursor.executemany(
+            'UPDATE OR REPLACE key_value_cache SET name=? WHERE name=?',
+            [
+                (f'{identifier}_{key.removeprefix(old_prefix)}', key)
+                for key, in write_cursor.execute(
+                    'SELECT name FROM key_value_cache WHERE substr(name, 1, ?)=?',
+                    (len(old_prefix), old_prefix),
+                ).fetchall()
+                if any(re.fullmatch(x, key.removeprefix(old_prefix)) for x in _V53_CONNECTOR_CACHE_TAILS.get(connector, _V53_ACCOUNT_CACHE_TAILS))  # noqa: E501
+            ],
+        )
+
+    if (row := write_cursor.execute(
+        "SELECT value FROM settings WHERE name='non_syncing_exchanges'",
+    ).fetchone()) is not None:
+        write_cursor.execute(
+            "UPDATE settings SET value=? WHERE name='non_syncing_exchanges'",
+            (json.dumps(sorted(
+                identifiers[key] for entry in json.loads(row[0])
+                if (key := (entry['location'], entry['name'])) in identifiers
+            )),),
+        )
+
+    _key_suppressed_binance_accounts_by_connection(write_cursor, identifiers)
+    write_cursor.execute("DELETE FROM user_credentials WHERE name != 'rotkehlchen'")
+    write_cursor.execute('DROP TABLE user_credentials_mappings')
+    if len(violations := write_cursor.execute('PRAGMA foreign_key_check(integration_connections)').fetchall()) != 0:  # noqa: E501
+        raise DBUpgradeError(f'Connections with unknown locations: {violations}')
 
 
 @enter_exit_debug_log(name='UserDB v53->v54 upgrade')
@@ -547,5 +686,9 @@ CREATE TABLE IF NOT EXISTS bucket_balance_checks (
             DBLocations().validate_tree(write_cursor)
         except LocationTreeError as e:
             raise DBUpgradeError(f'Invalid location tree after the upgrade: {e!s}') from e
+
+    @progress_step(description='Move exchange and bank credentials to connections.')
+    def _move_credentials(write_cursor: DBCursor) -> None:
+        _move_credentials_to_connections(write_cursor)
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

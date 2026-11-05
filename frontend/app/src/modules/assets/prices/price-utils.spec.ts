@@ -133,6 +133,7 @@ describe('utils/prices', () => {
         accounts: [{ amount: bigNumberify(10), asset: 'ETH', iban: null, identifier: 'a', name: 'Main', value: bigNumberify(1) }],
         balances: { ETH: createTestBalance(10, 1) },
         connector: 'fints',
+        identifier: 'c1',
         name: 'DKB',
       }], mockPrices);
 
@@ -142,7 +143,7 @@ describe('utils/prices', () => {
 
     it('should keep the value of an account whose asset has no price', () => {
       const account = { amount: bigNumberify(3), asset: 'UNKNOWN', iban: null, identifier: 'a', name: 'Main', value: bigNumberify(7) };
-      const [connection] = updateBankBalancesPrices([{ accounts: [account], balances: {}, connector: 'fints', name: 'DKB' }], mockPrices);
+      const [connection] = updateBankBalancesPrices([{ accounts: [account], balances: {}, connector: 'fints', identifier: 'c1', name: 'DKB' }], mockPrices);
       expect(connection.accounts[0]).toBe(account);
     });
   });

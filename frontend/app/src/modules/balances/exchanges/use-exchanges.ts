@@ -25,7 +25,7 @@ interface UseExchangesReturn {
   addExchange: (exchange: Exchange) => void;
   editExchange: (payload: EditExchange) => void;
   removeExchange: (exchange: Exchange) => Promise<boolean>;
-  setupExchange: (exchange: ExchangeFormData) => Promise<boolean>;
+  setupExchange: (exchange: ExchangeFormData) => Promise<void>;
 }
 
 export function useExchanges(): UseExchangesReturn {
@@ -93,10 +93,10 @@ export function useExchanges(): UseExchangesReturn {
     setConnectedExchanges([...get(connectedExchanges), exchange]);
   };
 
-  const editExchange = ({ exchange: { gateLocation, krakenAccountType, location, name: oldName, okxLocation }, newName }: EditExchange): void => {
+  const editExchange = ({ exchange: { gateLocation, identifier, krakenAccountType, location, name: oldName, okxLocation }, newName }: EditExchange): void => {
     const exchanges = [...get(connectedExchanges)];
     const name = newName ?? oldName;
-    const index = exchanges.findIndex(value => value.name === oldName && value.location === location);
+    const index = exchanges.findIndex(value => value.identifier === identifier);
     exchanges[index] = {
       ...exchanges[index],
       gateLocation,
@@ -159,7 +159,7 @@ export function useExchanges(): UseExchangesReturn {
     }
   };
 
-  const setupExchange = async (exchange: ExchangeFormData): Promise<boolean> => {
+  const setupExchange = async (exchange: ExchangeFormData): Promise<void> => {
     const { binanceHistoryStartTs, gateLocation, krakenAccountType, krakenFuturesApiKey, krakenFuturesApiSecret, location, mode, newName, okxLocation } = exchange;
 
     const filteredPayload: ExchangeFormData = {
@@ -174,10 +174,10 @@ export function useExchanges(): UseExchangesReturn {
       okxLocation: location === 'okx' ? okxLocation : undefined,
     };
 
-    const success = await callSetupExchange(filteredPayload);
+    const identifier = await callSetupExchange(filteredPayload);
 
     // Only get the essential exchange data to store in memory, excluding the api key and secret
-    const essentialExchangeData = Exchange.parse(filteredPayload);
+    const essentialExchangeData = Exchange.parse({ ...filteredPayload, connector: location, identifier });
 
     if (mode !== 'edit') {
       addExchange(essentialExchangeData);
@@ -194,8 +194,6 @@ export function useExchanges(): UseExchangesReturn {
         location,
       }),
     );
-
-    return success;
   };
 
   return {

@@ -30,7 +30,6 @@ from rotkehlchen.locations.constants import (
     LOCATION_SHAPESHIFT,
     LOCATION_UPHOLD,
 )
-from rotkehlchen.locations.types import LocationIdentifier, deserialize_location_identifier
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.mixins.enums import (
     DBCharEnumMixIn,
@@ -53,6 +52,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.locations.types import LocationIdentifier
 
 ModuleName = Literal[
     'makerdao_dsr',
@@ -809,18 +809,6 @@ class ExchangeAuthCredentials(NamedTuple):
     passphrase: str | None
 
 
-class ExchangeApiCredentials(NamedTuple):
-    """Represents Credentials for Exchanges
-
-    The Api in question must at least have an API key.
-    """
-    name: str  # A unique name to identify this particular Location credentials
-    location: LocationIdentifier
-    api_key: ApiKey
-    api_secret: ApiSecret | None
-    passphrase: str | None = None
-
-
 EXTERNAL_EXCHANGES = (
     LOCATION_CRYPTOCOM,
     LOCATION_BLOCKFI,
@@ -829,28 +817,6 @@ EXTERNAL_EXCHANGES = (
     LOCATION_UPHOLD,
     LOCATION_BISQ,
 )
-
-
-class ExchangeLocationID(NamedTuple):
-    name: str
-    location: LocationIdentifier
-
-    def serialize(self) -> dict:
-        return {'name': self.name, 'location': self.location}
-
-    @classmethod
-    def deserialize(
-            cls: type[ExchangeLocationID],
-            data: dict[str, Any],
-    ) -> ExchangeLocationID:
-        """May raise DeserializationError"""
-        try:
-            return cls(
-                name=data['name'],
-                location=deserialize_location_identifier(data['location']),
-            )
-        except KeyError as e:
-            raise DeserializationError(f'Missing key {e!s}') from e
 
 
 class EnsMapping(NamedTuple):
@@ -992,44 +958,45 @@ class AddressbookEntryWithSource(NamedTuple):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class LocationAssetMappingDeleteEntry:
-    location: LocationIdentifier | None
-    location_symbol: str
+class ConnectorAssetMappingDeleteEntry:
+    """A symbol of a connector, or of every connector when ``connector`` is None"""
+    connector: LocationIdentifier | None
+    connector_symbol: str
 
     @classmethod
-    def deserialize(cls: type[LocationAssetMappingDeleteEntry], data: dict[str, Any]) -> LocationAssetMappingDeleteEntry:  # noqa: E501
+    def deserialize(cls: type[ConnectorAssetMappingDeleteEntry], data: dict[str, Any]) -> ConnectorAssetMappingDeleteEntry:  # noqa: E501
         """May raise:
         -DeserializationError if required keys are missing
         """
         try:
             return cls(
-                location=data['location'],
-                location_symbol=data['location_symbol'],
+                connector=data['connector'],
+                connector_symbol=data['connector_symbol'],
             )
         except KeyError as e:
             raise DeserializationError(f'Missing key {e!s}') from e
 
     def serialize_for_db(self) -> tuple[Any, ...]:
-        return self.location_symbol, self.location
+        return self.connector_symbol, self.connector
 
     def __str__(self) -> str:
-        return f'{self.location_symbol} in {self.location}'
+        return f'{self.connector_symbol} in {self.connector}'
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class LocationAssetMappingUpdateEntry(LocationAssetMappingDeleteEntry):
+class ConnectorAssetMappingUpdateEntry(ConnectorAssetMappingDeleteEntry):
     asset: Asset
 
     @classmethod
-    def deserialize(cls: type[LocationAssetMappingUpdateEntry], data: dict[str, Any]) -> LocationAssetMappingUpdateEntry:  # noqa: E501
+    def deserialize(cls: type[ConnectorAssetMappingUpdateEntry], data: dict[str, Any]) -> ConnectorAssetMappingUpdateEntry:  # noqa: E501
         """May raise:
         -DeserializationError if required keys are missing
         """
         try:
             return cls(
                 asset=data['asset'],
-                location=data['location'],
-                location_symbol=data['location_symbol'],
+                connector=data['connector'],
+                connector_symbol=data['connector_symbol'],
             )
         except KeyError as e:
             raise DeserializationError(f'Missing key {e!s}') from e

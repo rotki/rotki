@@ -333,7 +333,6 @@ EMPTY_TRADES_RESPONSE = """{"count": 0, "data": []}"""
 def test_bit2me_location(bit2me):
     """Test that Bit2me has the correct location."""
     assert bit2me.location == LOCATION_BIT2ME
-    assert bit2me.location_id().location == LOCATION_BIT2ME
 
 
 def test_bit2me_name(bit2me):

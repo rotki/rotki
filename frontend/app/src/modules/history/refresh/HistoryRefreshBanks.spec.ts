@@ -7,8 +7,8 @@ import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-st
 import HistoryRefreshBanks from '@/modules/history/refresh/HistoryRefreshBanks.vue';
 import '@test/i18n';
 
-const main: BankConnectionIdentity = { connector: 'qonto', name: 'rotki Solutions GmbH' };
-const side: BankConnectionIdentity = { connector: 'qonto', name: 'Side organization' };
+const main: BankConnectionIdentity = { connector: 'qonto', identifier: 'c1', name: 'rotki Solutions GmbH' };
+const side: BankConnectionIdentity = { connector: 'qonto', identifier: 'c2', name: 'Side organization' };
 
 function connection(identity: BankConnectionIdentity): BankConnection {
   return { ...identity, bankCode: null, displayName: 'Qonto', syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false } };
@@ -49,6 +49,12 @@ describe('historyRefreshBanks', () => {
 
   it('should unselect a picked connection when its row is clicked again', async () => {
     const wrapper = createWrapper({ modelValue: [main, side] });
+    await wrapper.findAll('[data-testid=refresh-bank-row]')[0].trigger('click');
+    expect(wrapper.emitted('update:modelValue')).toEqual([[[side]]]);
+  });
+
+  it('should unselect a renamed connection by its stable identifier', async () => {
+    const wrapper = createWrapper({ modelValue: [{ ...main, name: 'Previous name' }, side] });
     await wrapper.findAll('[data-testid=refresh-bank-row]')[0].trigger('click');
     expect(wrapper.emitted('update:modelValue')).toEqual([[[side]]]);
   });

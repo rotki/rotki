@@ -9,7 +9,7 @@ const { banks, selected, loading = false, isBankLoading } = defineProps<{
   selected?: string;
   /** Whether every bank is being refreshed. */
   loading?: boolean;
-  isBankLoading: (name: string) => boolean;
+  isBankLoading: (identifier: string) => boolean;
 }>();
 
 const emit = defineEmits<{
@@ -23,7 +23,7 @@ const { t } = useI18n({ useScope: 'global' });
 const buttonLoading = computed<boolean>(() => (selected ? isBankLoading(selected) : loading));
 
 const tooltip = computed<string>(() => selected
-  ? t('bank_balances.refresh_menu.bank', { bank: selected })
+  ? t('bank_balances.refresh_menu.bank', { bank: banks.find(bank => bank.identifier === selected)?.name ?? '' })
   : t('bank_balances.refresh_menu.all'));
 </script>
 
@@ -59,9 +59,9 @@ const tooltip = computed<string>(() => selected
         </div>
         <RuiButton
           v-for="bank in banks"
-          :key="`${bank.connector}#${bank.name}`"
+          :key="bank.identifier"
           variant="list"
-          :disabled="isBankLoading(bank.name)"
+          :disabled="isBankLoading(bank.identifier)"
           :aria-label="t('bank_balances.refresh_menu.bank', { bank: bank.name })"
           data-testid="refresh-bank-menu-item"
           :data-bank="bank.name"

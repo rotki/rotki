@@ -80,7 +80,8 @@ const GeneralSettings = z.object({
     return findCurrency(currency);
   }),
   mcpPrivacyMode: McpPrivacyModeEnum.default('balanced'),
-  nonSyncingExchanges: z.array(Exchange),
+  /** The identifiers of the exchange connections that are not synced. */
+  nonSyncingExchanges: z.array(z.string()),
   oraclePenaltyDuration: z.number().min(1),
   oraclePenaltyThresholdCount: z.number().min(1),
   queryRetryLimit: z.number().min(1),

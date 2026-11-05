@@ -12,6 +12,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.locations.catalog import load_builtin_catalog
 from rotkehlchen.locations.legacy_chars import V53_LEGACY_LOCATION_CHARS
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
@@ -145,7 +146,8 @@ def test_legacy_locations_can_be_stored_and_read_back(database: DBHandler) -> No
             for char in V53_LEGACY_LOCATION_CHARS
         }
         database.add_multiple_location_data(write_cursor, [
-            LocationData(time=Timestamp(1), location=x, usd_value='5') for x in legacy_locations
+            LocationData(time=Timestamp(1), location=LocationIdentifier(x), usd_value='5')
+            for x in legacy_locations
         ])
 
     assert legacy_locations == {'legacy:uniswap', 'legacy:balancer', 'legacy:gitcoin', 'legacy:sushiswap'}  # noqa: E501

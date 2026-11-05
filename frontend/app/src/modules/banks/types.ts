@@ -1,4 +1,5 @@
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import type { ConnectionRef } from '@/modules/core/common/connection';
 import { Balance } from '@rotki/common';
 import { z } from 'zod';
 import { AssetBalances } from '@/modules/balances/types/balances';
@@ -51,6 +52,13 @@ export const BankAuthChallenge = z.object({
 
 export type BankAuthChallenge = z.infer<typeof BankAuthChallenge>;
 
+/** A challenge raised while adding, editing or answering, named by the connection it is answered for, also before a new connection is saved. */
+export const BankSetupChallenge = BankAuthChallenge.extend({
+  identifier: z.string(),
+});
+
+export type BankSetupChallenge = z.infer<typeof BankSetupChallenge>;
+
 /** Every challenge but an app approval is answered by typing what the bank generated. */
 export function challengeNeedsResponse(challenge: BankAuthChallenge): boolean {
   return challenge.primitive !== 'app approval poll';
@@ -58,12 +66,13 @@ export function challengeNeedsResponse(challenge: BankAuthChallenge): boolean {
 
 export const BankSetupSuccess = z.object({
   success: z.literal(true),
+  identifier: z.string(),
   historyStartTs: z.number().nullable(),
 });
 
 export type BankSetupSuccess = z.infer<typeof BankSetupSuccess>;
 
-export type BankSetupResult = true | BankSetupSuccess | BankAuthChallenge;
+export type BankSetupResult = true | BankSetupSuccess | BankSetupChallenge;
 
 export function isBankSetupComplete(result: BankSetupResult): result is true | BankSetupSuccess {
   return result === true || 'success' in result;
@@ -79,6 +88,7 @@ const BankSyncStatus = z.object({
 });
 
 export const BankConnection = z.object({
+  identifier: z.string(),
   name: z.string(),
   connector: z.string(),
   displayName: z.string(),
@@ -104,6 +114,7 @@ export const BankAccountBalance = Balance.extend({
 export type BankAccountBalance = z.infer<typeof BankAccountBalance>;
 
 export const BankConnectionBalances = z.object({
+  identifier: z.string(),
   connector: z.string(),
   name: z.string(),
   balances: AssetBalances,
@@ -119,7 +130,15 @@ export const BankBalancesResponse = z.object({
 
 export type BankBalancesResponse = z.infer<typeof BankBalancesResponse>;
 
-export interface BankConnectionIdentity {
+/**
+ * A bank connection as the sync machinery tracks it.
+ *
+ * @remarks
+ * Requests address the connection by its `identifier`, which never changes. The history status
+ * frames name its connector as `location`, together with its name, so those travel along to
+ * match them.
+ */
+export interface BankConnectionIdentity extends ConnectionRef {
   readonly connector: string;
   readonly name: string;
 }
@@ -128,12 +147,15 @@ export interface BankAuthenticationRequest extends BankConnectionIdentity {
   readonly challenge: BankAuthChallenge;
 }
 
-export interface BankConnectionPayload extends BankConnectionIdentity {
+export interface BankConnectionPayload {
+  readonly name: string;
+  readonly connector: string;
   /** Credentials keyed by the manifest secret slot they belong to. */
   readonly credentials: Record<string, string>;
 }
 
-export interface BankConnectionEditPayload extends BankConnectionPayload {
+export interface BankConnectionEditPayload extends ConnectionRef {
+  readonly credentials: Record<string, string>;
   readonly newName?: string;
 }
 
@@ -152,10 +174,15 @@ export type BankSetupError =
 
 export interface BankSyncPayload {
   readonly connector?: string;
-  readonly name?: string;
+  readonly identifier?: string;
 }
 
-export interface BankFormData extends BankConnectionPayload {
+export interface BankFormData {
   mode: 'add' | 'edit';
+  /** Set when editing an existing connection. */
+  identifier?: string;
+  name: string;
+  connector: string;
+  credentials: Record<string, string>;
   newName: string;
 }

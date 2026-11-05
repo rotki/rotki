@@ -1,3 +1,4 @@
+import { createTestExchange } from '@test/utils/create-data';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('useExchangesSummaryHandler', () => {
@@ -21,9 +22,9 @@ describe('useExchangesSummaryHandler', () => {
     const { connectedExchanges } = storeToRefs(store);
 
     set(connectedExchanges, [
-      { location: 'binance', name: 'binance1' },
-      { location: 'binance', name: 'binance2' },
-      { location: 'kraken', name: 'kraken1' },
+      createTestExchange('binance', 'binance1'),
+      createTestExchange('binance', 'binance2'),
+      createTestExchange('kraken', 'kraken1'),
     ]);
 
     const { useExchangesSummaryHandler } = await import('@/modules/core/sigil/handlers/exchanges-summary');

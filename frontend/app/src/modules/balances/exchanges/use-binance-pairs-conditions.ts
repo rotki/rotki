@@ -12,7 +12,7 @@ interface UseBinancePairsConditionsReturn {
   accounts: ComputedRef<BinanceAccount[]>;
   /** Settles an account that was just saved with pairs. */
   settleSaved: (form: ExchangeFormData) => void;
-  /** Settles every account that is no longer connected, removed or renamed. */
+  /** Settles every account that is no longer connected. */
   settleDisconnected: (connected: readonly BinanceAccount[]) => void;
   /** Re-reads each listed account's pairs, settling those that have some now. */
   recheck: () => Promise<void>;
@@ -23,7 +23,8 @@ interface UseBinancePairsConditionsReturn {
  *
  * @remarks
  * The backend reports an account whenever a trade history query finds no pairs selected. Saving
- * pairs, removing or renaming the account settles it; a re-check catches pairs saved elsewhere.
+ * pairs or removing the account settles it, a rename does not; a re-check catches pairs saved
+ * elsewhere.
  */
 export function useBinancePairsConditions(): UseBinancePairsConditionsReturn {
   const store = useRaisedConditionsStore();
@@ -31,7 +32,7 @@ export function useBinancePairsConditions(): UseBinancePairsConditionsReturn {
   const { queryBinanceUserMarkets } = useExchangeApi();
 
   const accounts = computed<BinanceAccount[]>(() =>
-    get(conditions).filter(isMissingPairs).map(({ location, name }) => ({ location, name })),
+    get(conditions).filter(isMissingPairs).map(({ identifier, location, name }) => ({ identifier, location, name })),
   );
 
   function settle(settles: (account: BinanceAccount) => boolean): void {
@@ -47,9 +48,9 @@ export function useBinancePairsConditions(): UseBinancePairsConditionsReturn {
   }
 
   /** Whether the account has pairs now; a failed read keeps it listed. */
-  async function hasPairs({ location, name }: BinanceAccount): Promise<boolean> {
+  async function hasPairs({ identifier }: BinanceAccount): Promise<boolean> {
     try {
-      return (await queryBinanceUserMarkets(name, location)).length > 0;
+      return (await queryBinanceUserMarkets(identifier)).length > 0;
     }
     catch (error: unknown) {
       logger.error(error);

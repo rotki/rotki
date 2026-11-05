@@ -9,7 +9,7 @@ import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-st
 import { useBankBalancesPage } from '@/pages/balances/banks/use-bank-balances-page';
 
 const { fetchBankBalances, refreshBankConnections } = vi.hoisted(() => ({
-  fetchBankBalances: vi.fn<(ignoreCache?: boolean, connection?: { connector: string; name: string }) => Promise<void>>(),
+  fetchBankBalances: vi.fn<(ignoreCache?: boolean, connection?: { identifier: string }) => Promise<void>>(),
   refreshBankConnections: vi.fn<() => Promise<void>>(),
 }));
 
@@ -29,6 +29,7 @@ function connection(name: string, syncStatus: Partial<BankConnection['syncStatus
     connector: 'fints',
     bankCode: null,
     displayName: 'FinTS/HBCI',
+    identifier: `id-${name}`,
     name,
     syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false, ...syncStatus },
   };
@@ -51,8 +52,8 @@ describe('useBankBalancesPage', () => {
       connection('Comdirect'),
     ]);
     useBalancesStore().bankBalances = [
-      { accounts: [], balances: eur(100), connector: 'fints', name: 'DKB' },
-      { accounts: [], balances: eur(2), connector: 'fints', name: 'ING' },
+      { accounts: [], balances: eur(100), connector: 'fints', identifier: 'id-DKB', name: 'DKB' },
+      { accounts: [], balances: eur(2), connector: 'fints', identifier: 'id-ING', name: 'ING' },
     ];
   });
 
@@ -64,10 +65,24 @@ describe('useBankBalancesPage', () => {
   });
 
   it('should list only the selected bank', () => {
-    const { balances, selectedBank } = useBankBalancesPage(() => 'ING');
+    const { balances, selectedBank } = useBankBalancesPage(() => 'id-ING');
 
     expect(get(selectedBank)?.name).toBe('ING');
     expect(get(balances).map(row => [row.asset, row.amount.toFixed()])).toEqual([['EUR', '2']]);
+  });
+
+  it('should keep the selected bank and its balances after its name changes', () => {
+    const store = useBankConnectionsStore();
+    const { balances, selectedBank } = useBankBalancesPage(() => 'id-ING');
+
+    store.setConnections([
+      { ...connection('Renamed'), identifier: 'id-ING' },
+      { ...connection('ING'), identifier: 'another-connection' },
+    ]);
+
+    expect(get(selectedBank)?.name).toBe('Renamed');
+    expect(get(selectedBank)?.identifier).toBe('id-ING');
+    expect(get(balances).map(row => row.amount.toFixed())).toEqual(['2']);
   });
 
   it('should fall back to every bank when the selected one is gone', () => {
@@ -79,14 +94,14 @@ describe('useBankBalancesPage', () => {
 
   it('should list the connections in view that need the user, a pending TAN first', () => {
     expect(get(useBankBalancesPage(() => undefined).issues).map(({ name }) => name)).toEqual(['ING', 'DKB']);
-    expect(get(useBankBalancesPage(() => 'DKB').issues).map(({ name }) => name)).toEqual(['DKB']);
-    expect(get(useBankBalancesPage(() => 'Comdirect').issues)).toEqual([]);
+    expect(get(useBankBalancesPage(() => 'id-DKB').issues).map(({ name }) => name)).toEqual(['DKB']);
+    expect(get(useBankBalancesPage(() => 'id-Comdirect').issues)).toEqual([]);
   });
 
   it('should refresh only the bank in view, bypassing the cache', async () => {
-    await useBankBalancesPage(() => 'ING').refreshInView();
+    await useBankBalancesPage(() => 'id-ING').refreshInView();
 
-    expect(fetchBankBalances).toHaveBeenCalledExactlyOnceWith(true, { connector: 'fints', name: 'ING' });
+    expect(fetchBankBalances).toHaveBeenCalledExactlyOnceWith(true, { identifier: 'id-ING' });
     expect(refreshBankConnections).not.toHaveBeenCalled();
   });
 
@@ -104,12 +119,12 @@ describe('useBankBalancesPage', () => {
     }));
     const { isBankLoading, refreshBank } = useBankBalancesPage(() => undefined);
 
-    const refreshing = refreshBank({ connector: 'fints', name: 'DKB' });
-    expect(isBankLoading('DKB')).toBe(true);
-    expect(isBankLoading('ING')).toBe(false);
+    const refreshing = refreshBank({ identifier: 'id-DKB' });
+    expect(isBankLoading('id-DKB')).toBe(true);
+    expect(isBankLoading('id-ING')).toBe(false);
 
     finish();
     await refreshing;
-    expect(isBankLoading('DKB')).toBe(false);
+    expect(isBankLoading('id-DKB')).toBe(false);
   });
 });

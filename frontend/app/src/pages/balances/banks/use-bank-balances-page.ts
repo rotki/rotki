@@ -1,6 +1,7 @@
 import type { AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
+import type { BankConnection } from '@/modules/banks/types';
+import type { ConnectionRef } from '@/modules/core/common/connection';
 import { BankConnectionState, bankConnectionState } from '@/modules/banks/bank-connection-state';
 import { type BankBalanceData, useBankData } from '@/modules/banks/use-bank-data';
 import { useBanks } from '@/modules/banks/use-banks';
@@ -18,9 +19,9 @@ interface UseBankBalancesPageReturn {
   total: ComputedRef<BigNumber>;
   /** Whether every bank is being queried; a bank refreshed on its own shows through {@link isBankLoading}. */
   loading: ComputedRef<boolean>;
-  isBankLoading: (name: string) => boolean;
+  isBankLoading: (identifier: string) => boolean;
   refreshAll: () => Promise<void>;
-  refreshBank: (connection: BankConnectionIdentity) => Promise<void>;
+  refreshBank: (connection: ConnectionRef) => Promise<void>;
   /** The page's Refresh: the bank in view, or every bank when the page shows them all. */
   refreshInView: () => Promise<void>;
 }
@@ -36,7 +37,7 @@ const STATE_RANK: Readonly<Record<BankConnectionState, number | undefined>> = {
 /**
  * The bank balances page: every bank connection together, or the one the route names.
  *
- * @param selected - the name of the connection in the route, if any; names are unique across banks
+ * @param selected - the stable identifier of the connection in the route, if any
  */
 export function useBankBalancesPage(selected: MaybeRefOrGetter<string | undefined>): UseBankBalancesPageReturn {
   const { allBalances, banks, total } = useBankData();
@@ -49,8 +50,8 @@ export function useBankBalancesPage(selected: MaybeRefOrGetter<string | undefine
   const loading = useIsActive(ActivityKind.BANK_BALANCES);
 
   const selectedBank = computed<BankBalanceData | undefined>(() => {
-    const name = toValue(selected);
-    return name === undefined ? undefined : get(banks).find(bank => bank.name === name);
+    const identifier = toValue(selected);
+    return identifier === undefined ? undefined : get(banks).find(bank => bank.identifier === identifier);
   });
 
   const balances = computed<AssetBalanceWithPriceAndChains[]>(() => get(selectedBank)?.balances ?? get(allBalances));
@@ -67,8 +68,8 @@ export function useBankBalancesPage(selected: MaybeRefOrGetter<string | undefine
   });
 
   /** A tile spins while every bank is queried, or while this page refreshes its bank alone. */
-  function isBankLoading(name: string): boolean {
-    return get(loading) || get(refreshing).has(name);
+  function isBankLoading(identifier: string): boolean {
+    return get(loading) || get(refreshing).has(identifier);
   }
 
   async function refreshAll(): Promise<void> {
@@ -76,13 +77,13 @@ export function useBankBalancesPage(selected: MaybeRefOrGetter<string | undefine
     await fetchBankBalances(true);
   }
 
-  async function refreshBank({ connector, name }: BankConnectionIdentity): Promise<void> {
-    set(refreshing, new Set([...get(refreshing), name]));
+  async function refreshBank({ identifier }: ConnectionRef): Promise<void> {
+    set(refreshing, new Set([...get(refreshing), identifier]));
     try {
-      await fetchBankBalances(true, { connector, name });
+      await fetchBankBalances(true, { identifier });
     }
     finally {
-      set(refreshing, new Set([...get(refreshing)].filter(entry => entry !== name)));
+      set(refreshing, new Set([...get(refreshing)].filter(entry => entry !== identifier)));
     }
   }
 

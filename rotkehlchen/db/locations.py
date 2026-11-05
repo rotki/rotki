@@ -40,6 +40,7 @@ LOCATION_REFERENCES: Final = (
     ('data_issues', 'location'),
     ('bucket_processing_stops', 'location'),
     ('bucket_balance_checks', 'location'),
+    ('integration_connections', 'location_identifier'),
 )
 # Categories that were locations of their own before the tree, so old data may name them
 _PRE_TREE_CATEGORIES: Final = frozenset({LOCATION_BLOCKCHAIN})

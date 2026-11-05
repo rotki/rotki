@@ -5,8 +5,8 @@ import { ActionUrgency } from '@/modules/core/action-center/types';
 import { useBankRows } from '@/modules/shell/action-center/use-bank-rows';
 
 const { startOverAuthentication, syncBanks } = vi.hoisted(() => ({
-  startOverAuthentication: vi.fn<(connection: { connector: string; name: string }) => Promise<void>>(),
-  syncBanks: vi.fn<(payload?: { connector?: string; name?: string }) => Promise<boolean>>(),
+  startOverAuthentication: vi.fn<(connection: BankConnection) => Promise<void>>(),
+  syncBanks: vi.fn<(payload?: { identifier?: string }) => Promise<boolean>>(),
 }));
 
 vi.mock('@/modules/banks/use-banks', () => ({
@@ -22,11 +22,17 @@ const challenge: BankAuthChallenge = {
   prompt: 'Enter the TAN',
 };
 
+/** A connection with a hex identifier derived from its name, as stable as a real one. */
+function identifierOf(name: string): string {
+  return Array.from(name, char => char.codePointAt(0)?.toString(16) ?? '').join('');
+}
+
 function connection(name: string, syncStatus: Partial<BankConnection['syncStatus']> = {}): BankConnection {
   return {
     bankCode: null,
-    displayName: 'FinTS',
     connector: 'fints',
+    displayName: 'FinTS',
+    identifier: identifierOf(name),
     name,
     syncStatus: { authChallenge: null, authExpired: false, lastError: null, lastSyncTs: null, running: false, ...syncStatus },
   };
@@ -54,8 +60,8 @@ describe('modules/shell/action-center/use-bank-rows', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       description: 'action_center.rows.integrations.bank_authentication.description::Fints, Main Account',
-      id: expect.stringMatching(/^bank-authentication-fints-main-account-[\da-z]+$/),
-      target: { kind: 'route', to: { name: '/accounts/banks/', query: { authenticate: 'Main Account', connector: 'fints' } } },
+      id: `bank-authentication-${identifierOf('Main Account')}`,
+      target: { kind: 'route', to: { name: '/accounts/banks/', query: { authenticate: identifierOf('Main Account') } } },
       urgency: ActionUrgency.BLOCKING,
     });
   });
@@ -68,10 +74,10 @@ describe('modules/shell/action-center/use-bank-rows', () => {
 
     assert(option?.target.kind === 'run');
     option.target.run();
-    expect(startOverAuthentication).toHaveBeenCalledExactlyOnceWith({ connector: 'fints', name: 'Main' });
+    expect(startOverAuthentication).toHaveBeenCalledExactlyOnceWith(connection('Main', { authChallenge: challenge }));
   });
 
-  it('should give connections whose names slug alike, or not at all, distinct and stable ids', () => {
+  it('should give connections whose names slug alike, or not at all, distinct and stable ids from their identifiers', () => {
     const names = ['Main Account', 'main-account', 'Main_Account', 'Конто', '账户'];
     useBankConnectionsStore().setConnections(names.map(name => connection(name, { authChallenge: challenge })));
 
@@ -80,6 +86,19 @@ describe('modules/shell/action-center/use-bank-rows', () => {
     expect(new Set(ids).size).toBe(names.length);
     expect(ids.every(id => /^[\da-z-]+$/.test(id))).toBe(true);
     expect(get(useBankRows()).map(row => row.id)).toEqual(ids);
+  });
+
+  it('should keep a row id when its connection is renamed', () => {
+    const store = useBankConnectionsStore();
+    const original = connection('Main', { authChallenge: challenge });
+    store.setConnections([original]);
+    const rows = useBankRows();
+    const originalId = get(rows)[0].id;
+
+    store.setConnections([{ ...original, name: 'Renamed' }]);
+
+    expect(get(rows)[0].id).toBe(originalId);
+    expect(get(rows)[0].description).toContain('Renamed');
   });
 
   it('should prefer a fresh challenge over an expired one', () => {
@@ -94,13 +113,13 @@ describe('modules/shell/action-center/use-bank-rows', () => {
     const [row] = get(useBankRows());
 
     expect(row).toMatchObject({
-      id: expect.stringMatching(/^bank-authentication-expired-fints-main-[\da-z]+$/),
+      id: `bank-authentication-expired-${identifierOf('Main')}`,
       snoozable: false,
       urgency: ActionUrgency.DECISION,
     });
     assert(row.target.kind === 'run');
     row.target.run();
-    expect(syncBanks).toHaveBeenCalledExactlyOnceWith({ connector: 'fints', name: 'Main' });
+    expect(syncBanks).toHaveBeenCalledExactlyOnceWith({ identifier: identifierOf('Main') });
   });
 
   it('should drop a row as soon as the connections report it answered', () => {

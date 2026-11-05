@@ -8,6 +8,7 @@ import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.chain.evm.node_inquirer import _connect_task_prefix
+from rotkehlchen.connections.types import ConnectorIdentifier
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.constants import LAST_USERDB_DATA_MIGRATION
 from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
@@ -934,9 +935,9 @@ def rotkehlchen_api_server_with_exchanges(
         )
         kraken_account_type = exchangeobj.account_type if exchange_location == LOCATION_KRAKEN else None  # type: ignore  # noqa: E501
         exchanges[exchange_location] = [exchangeobj]
-        rotki.data.db.add_exchange(  # also add credentials in the DB
+        exchangeobj.connection_identifier = rotki.data.db.add_exchange(  # also save it in the DB
             name=exchangeobj.name,
-            location=exchange_location,
+            connector=ConnectorIdentifier(exchange_location),
             api_key=exchangeobj.api_key,
             api_secret=exchangeobj.secret if exchange_location not in EXCHANGES_WITHOUT_API_SECRET else None,  # noqa: E501
             passphrase=passphrase,

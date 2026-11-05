@@ -35,6 +35,7 @@ describe('binance-pairs-selector', () => {
       getExchangeSavings: vi.fn<UseExchangeApiReturn['getExchangeSavings']>(),
       getExchangeSavingsTask: vi.fn<UseExchangeApiReturn['getExchangeSavingsTask']>(),
       getExchanges: vi.fn<UseExchangeApiReturn['getExchanges']>(),
+      getSupportedExchanges: vi.fn<UseExchangeApiReturn['getSupportedExchanges']>(),
       queryBinanceHistoryStartTimestamp: vi.fn<UseExchangeApiReturn['queryBinanceHistoryStartTimestamp']>(),
       queryBinanceMarkets: queryBinanceMarketsMock,
       queryBinanceUserMarkets: queryBinanceUserMarketsMock,
@@ -49,9 +50,7 @@ describe('binance-pairs-selector', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof BinancePairsSelector> = {}): VueWrapper<InstanceType<typeof BinancePairsSelector>> => mount(BinancePairsSelector, {
     props: {
-      edit: false,
       location: 'binance',
-      name: 'test-exchange',
     },
     ...options,
   });
@@ -224,22 +223,21 @@ describe('binance-pairs-selector', () => {
       expect(queryBinanceMarketsMock).toHaveBeenCalledWith('binance');
     });
 
-    it('should fetch user markets on mount when in edit mode', async () => {
+    it('should fetch the markets of the connection being edited on mount', async () => {
       wrapper = createWrapper({
         props: {
-          edit: true,
+          identifier: 'c1',
           location: 'binance',
-          name: 'test-exchange',
         },
       });
       await flushPromises();
 
-      expect(queryBinanceUserMarketsMock).toHaveBeenCalledWith('test-exchange', 'binance');
+      expect(queryBinanceUserMarketsMock).toHaveBeenCalledWith('c1');
     });
 
     it('should name a failed load of the markets on the field, in place of the form\'s own error', async () => {
       vi.mocked(queryBinanceMarketsMock).mockRejectedValue(new Error('binance unreachable'));
-      wrapper = createWrapper({ props: { edit: false, errorMessages: ['required'], location: 'binance', name: 'test-exchange' } });
+      wrapper = createWrapper({ props: { errorMessages: ['required'], location: 'binance' } });
       await flushPromises();
 
       const field = wrapper.findComponent<DefineComponent<{ errorMessages?: string[] }>>('[data-testid=binance-pairs-select]');
@@ -248,25 +246,23 @@ describe('binance-pairs-selector', () => {
 
     it('should name a failed load of the selected markets on the field', async () => {
       vi.mocked(queryBinanceUserMarketsMock).mockRejectedValue(new Error('no such exchange'));
-      wrapper = createWrapper({ props: { edit: true, location: 'binance', name: 'test-exchange' } });
+      wrapper = createWrapper({ props: { identifier: 'c1', location: 'binance' } });
       await flushPromises();
 
       expect(wrapper.find('[data-testid=binance-pairs-select]').text()).toContain('binance_market_selector.query_user.error::no such exchange');
     });
 
     it('should hand the form\'s own errors through while the markets loaded', async () => {
-      wrapper = createWrapper({ props: { edit: false, errorMessages: ['required'], location: 'binance', name: 'test-exchange' } });
+      wrapper = createWrapper({ props: { errorMessages: ['required'], location: 'binance' } });
       await flushPromises();
 
       expect(wrapper.find('[data-testid=binance-pairs-select]').text()).toContain('required');
     });
 
-    it('should not fetch user markets when not in edit mode', async () => {
+    it('should not fetch user markets while adding a connection', async () => {
       wrapper = createWrapper({
         props: {
-          edit: false,
           location: 'binance',
-          name: 'test-exchange',
         },
       });
       await flushPromises();

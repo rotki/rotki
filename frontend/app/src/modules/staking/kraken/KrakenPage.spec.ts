@@ -1,3 +1,4 @@
+import { createTestExchange } from '@test/utils/create-data';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
@@ -56,7 +57,7 @@ describe('krakenPage', () => {
     vi.clearAllMocks();
     fetchEvents.mockResolvedValue(undefined);
     refreshPrices.mockResolvedValue(undefined);
-    useConnectedExchangesStore().setConnectedExchanges([{ location: 'kraken', name: 'Kraken' }]);
+    useConnectedExchangesStore().setConnectedExchanges([createTestExchange('kraken', 'Kraken')]);
   });
 
   it('should show the events with no alert while the read succeeded', async () => {

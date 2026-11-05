@@ -21,7 +21,6 @@ from rotkehlchen.banks.manifest import BankConnectorType
 from rotkehlchen.banks.qonto import Qonto
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.fval import FVal
-from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.tests.utils.mock import MockResponse
 
 if TYPE_CHECKING:
@@ -203,13 +202,11 @@ class BankConnectorKit:
 
     def create(self, database: DBHandler, msg_aggregator: MessagesAggregator) -> BankConnector:
         credentials = self.connector_class.api_credentials_from_values(
-            name=f'{self.connector!s}1',
-            location=LOCATION_BANKS,
             values=self.credential_values,
         )
-        assert credentials.api_secret is not None
+        assert credentials.api_key is not None and credentials.api_secret is not None
         return self.connector_class(
-            name=credentials.name,
+            name=f'{self.connector!s}1',
             api_key=credentials.api_key,
             secret=credentials.api_secret,
             database=database,

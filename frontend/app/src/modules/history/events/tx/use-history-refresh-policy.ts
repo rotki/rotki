@@ -100,15 +100,13 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
   }
 
   const connectedBanks = (): BankConnectionIdentity[] =>
-    get(bankConnections).map(({ connector, name }) => ({ connector, name }));
+    get(bankConnections).map(({ connector, identifier, name }) => ({ connector, identifier, name }));
 
   /** Every bank connection syncs; there is no per-connection opt-out as there is for exchanges. */
   function filterSyncingBanks(banks: BankConnectionIdentity[] | undefined): BankConnectionIdentity[] {
     const connected = connectedBanks();
     return banks
-      ? banks.filter(bank => connected.some(candidate => (
-          candidate.connector === bank.connector && candidate.name === bank.name
-        )))
+      ? banks.filter(bank => connected.some(candidate => candidate.identifier === bank.identifier))
       : connected;
   }
 

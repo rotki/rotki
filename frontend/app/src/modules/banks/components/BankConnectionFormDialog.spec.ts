@@ -1,4 +1,4 @@
-import type { BankAuthChallenge, BankFormData, BankManifest, BankSetupError } from '@/modules/banks/types';
+import type { BankFormData, BankManifest, BankSetupChallenge, BankSetupError } from '@/modules/banks/types';
 import type { useBanks } from '@/modules/banks/use-banks';
 import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
@@ -22,8 +22,9 @@ vi.mock('@/modules/banks/use-banks', () => ({
   useBanks: (): Record<string, unknown> => ({ answerBankAuthentication, cancelBankSetup, setupBank }),
 }));
 
-const otp: BankAuthChallenge = {
+const otp: BankSetupChallenge = {
   challenge: 'Enter TAN',
+  identifier: 'c1',
   challengeData: null,
   challengeHtml: null,
   challengeMimeType: null,
@@ -53,8 +54,8 @@ const BigDialogStub = defineComponent({
 
 function createForm(): BankFormData {
   return {
-    credentials: { api_key: 'login', api_secret: 'secret' },
     connector: 'qonto',
+    credentials: { api_key: 'login', api_secret: 'secret' },
     mode: 'add',
     name: 'Qonto main',
     newName: '',
@@ -92,17 +93,17 @@ describe('bankConnectionFormDialog', () => {
     vi.useRealTimers();
   });
 
-  it('should save the entry and emit added with the connection identity', async () => {
-    setupBank.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+  it('should save the entry and emit added with the new connection identifier', async () => {
+    setupBank.mockResolvedValue(ok({ historyStartTs: null, identifier: 'c1', success: true }));
     wrapper = createWrapper(createForm());
     await confirm();
     expect(setupBank).toHaveBeenCalledWith(createForm());
-    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', name: 'Qonto main' }]]);
+    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', identifier: 'c1', name: 'Qonto main' }]]);
     expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
   });
 
   it('should show limited history as the final setup step until Done is selected', async () => {
-    setupBank.mockResolvedValue(ok({ historyStartTs: 1_700_000_000, success: true }));
+    setupBank.mockResolvedValue(ok({ historyStartTs: 1_700_000_000, identifier: 'c1', success: true }));
     wrapper = createWrapper(createForm());
 
     await confirm();
@@ -115,7 +116,7 @@ describe('bankConnectionFormDialog', () => {
       promptOnClose: false,
       title: 'bank_settings.dialog.added.title',
     });
-    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', name: 'Qonto main' }]]);
+    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', identifier: 'c1', name: 'Qonto main' }]]);
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
 
     await confirm();
@@ -137,7 +138,7 @@ describe('bankConnectionFormDialog', () => {
 
       await cancel();
 
-      expect(cancelBankSetup).toHaveBeenCalledExactlyOnceWith({ connector: 'qonto', name: 'Qonto main' });
+      expect(cancelBankSetup).toHaveBeenCalledExactlyOnceWith({ identifier: 'c1' });
       expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
     });
 
@@ -175,7 +176,7 @@ describe('bankConnectionFormDialog', () => {
     expect(wrapper.find('[data-testid=bank-setup-error]').text()).toBe('bank_settings.errors.setup_message::Qonto, Qonto rejected the credentials');
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
 
-    setupBank.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+    setupBank.mockResolvedValue(ok({ historyStartTs: null, identifier: 'c1', success: true }));
     await confirm();
     expect(wrapper.find('[data-testid=bank-setup-error]').exists()).toBe(false);
   });
@@ -234,13 +235,14 @@ describe('bankConnectionFormDialog', () => {
   it('should display and answer a TAN challenge without restarting setup', async () => {
     setupBank.mockResolvedValue(ok({
       challenge: 'Enter TAN',
+      identifier: 'c1',
       challengeData: null,
       challengeHtml: null,
       challengeMimeType: null,
       primitive: 'otp input',
       prompt: 'Enter TAN',
     }));
-    answerBankAuthentication.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+    answerBankAuthentication.mockResolvedValue(ok({ historyStartTs: null, identifier: 'c1', success: true }));
     wrapper = createWrapper(createForm());
 
     await confirm();
@@ -249,16 +251,13 @@ describe('bankConnectionFormDialog', () => {
     await confirm();
 
     expect(setupBank).toHaveBeenCalledOnce();
-    expect(answerBankAuthentication).toHaveBeenCalledWith(
-      { connector: 'qonto', name: 'Qonto main' },
-      '123456',
-    );
-    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', name: 'Qonto main' }]]);
+    expect(answerBankAuthentication).toHaveBeenCalledWith({ identifier: 'c1' }, '123456');
+    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', identifier: 'c1', name: 'Qonto main' }]]);
   });
 
   it('should show the final history step when authentication completes setup', async () => {
     setupBank.mockResolvedValue(ok(otp));
-    answerBankAuthentication.mockResolvedValue(ok({ historyStartTs: 1_700_000_000, success: true }));
+    answerBankAuthentication.mockResolvedValue(ok({ historyStartTs: 1_700_000_000, identifier: 'c1', success: true }));
     wrapper = createWrapper(createForm());
 
     await confirm();
@@ -276,7 +275,7 @@ describe('bankConnectionFormDialog', () => {
       pollDelaySeconds: 2,
       primitive: 'app approval poll',
     }));
-    answerBankAuthentication.mockResolvedValue(ok({ historyStartTs: null, success: true }));
+    answerBankAuthentication.mockResolvedValue(ok({ historyStartTs: null, identifier: 'c1', success: true }));
     wrapper = createWrapper(createForm());
 
     await confirm();
@@ -287,16 +286,14 @@ describe('bankConnectionFormDialog', () => {
     await vi.advanceTimersByTimeAsync(2000);
     await flushPromises();
 
-    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith(
-      { connector: 'qonto', name: 'Qonto main' },
-      undefined,
-    );
-    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', name: 'Qonto main' }]]);
+    expect(answerBankAuthentication).toHaveBeenCalledExactlyOnceWith({ identifier: 'c1' }, undefined);
+    expect(wrapper.emitted('added')).toEqual([[{ connector: 'qonto', identifier: 'c1', name: 'Qonto main' }]]);
   });
 
   it('should switch Save to Continue for a TAN and not answer until one is typed', async () => {
     setupBank.mockResolvedValue(ok({
       challenge: 'Enter TAN',
+      identifier: 'c1',
       challengeData: null,
       challengeHtml: null,
       challengeMimeType: null,
@@ -318,6 +315,7 @@ describe('bankConnectionFormDialog', () => {
   it('should discard a pending challenge when the dialog is cancelled', async () => {
     setupBank.mockResolvedValue(ok({
       challenge: 'Enter TAN',
+      identifier: 'c1',
       challengeData: null,
       challengeHtml: null,
       challengeMimeType: null,

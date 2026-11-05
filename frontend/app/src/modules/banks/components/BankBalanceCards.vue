@@ -16,7 +16,7 @@ const { banks, selected, total, loading = false } = defineProps<{
   selected?: string;
   total: BigNumber;
   loading?: boolean;
-  isBankLoading: (name: string) => boolean;
+  isBankLoading: (identifier: string) => boolean;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -79,11 +79,11 @@ function stateClass(active: boolean): string {
 
     <RouterLink
       v-for="{ bank, state, status } in tiles"
-      :key="`${bank.connector}#${bank.name}`"
-      :to="linkTo(bank.name)"
-      :class="[tileClass, stateClass(selected === bank.name)]"
+      :key="bank.identifier"
+      :to="linkTo(bank.identifier)"
+      :class="[tileClass, stateClass(selected === bank.identifier)]"
       class="shrink-0 w-52 sm:w-auto"
-      :aria-current="selected === bank.name ? 'page' : undefined"
+      :aria-current="selected === bank.identifier ? 'page' : undefined"
       data-testid="bank-balance-card"
       :data-bank="bank.name"
     >
@@ -104,7 +104,7 @@ function stateClass(active: boolean): string {
         <span class="min-w-0 truncate">
           <FiatDisplay
             :value="bank.total"
-            :loading="isBankLoading(bank.name)"
+            :loading="isBankLoading(bank.identifier)"
           />
         </span>
         <PercentageDisplay

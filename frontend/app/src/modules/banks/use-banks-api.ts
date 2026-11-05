@@ -1,12 +1,12 @@
+import type { ConnectionRef } from '@/modules/core/common/connection';
 import { FetchError } from 'ofetch';
 import { fromAsync, type ResultAsync } from 'plainfp/result-async';
 import {
-  BankAuthChallenge,
   type BankConnectionEditPayload,
-  type BankConnectionIdentity,
   type BankConnectionPayload,
   BankConnections,
   BankManifests,
+  BankSetupChallenge,
   type BankSetupError,
   type BankSetupResult,
   BankSetupSuccess,
@@ -36,7 +36,7 @@ function toCamelCase(slot: string): string {
  * @param payload - what was sent, which decides whether an error key names one of its fields
  * @returns the error the dialog branches on
  */
-function toBankSetupError(cause: unknown, payload: BankConnectionPayload): BankSetupError {
+function toBankSetupError(cause: unknown, payload: BankConnectionPayload | BankConnectionEditPayload): BankSetupError {
   if (!(cause instanceof ApiValidationError))
     return { message: getErrorMessage(cause), type: 'rejected' };
 
@@ -58,11 +58,11 @@ interface UseBanksApiReturn {
   getSupportedBanks: () => Promise<BankManifests>;
   getBanks: () => Promise<BankConnections>;
   addBank: (payload: BankConnectionPayload) => ResultAsync<BankSetupResult, BankSetupError>;
-  answerAuthentication: (payload: BankConnectionIdentity & { response?: string }) => ResultAsync<BankSetupResult, BankSetupError>;
+  answerAuthentication: (payload: { identifier: string; response?: string }) => ResultAsync<BankSetupResult, BankSetupError>;
   editBank: (payload: BankConnectionEditPayload) => ResultAsync<boolean, BankSetupError>;
-  removeBank: (payload: BankConnectionIdentity) => Promise<boolean>;
+  removeBank: (payload: ConnectionRef) => Promise<boolean>;
   /** Drops the challenge a connection waits on, so its next query asks the bank for a fresh one. */
-  cancelAuthentication: (payload: BankConnectionIdentity) => Promise<boolean>;
+  cancelAuthentication: (payload: ConnectionRef) => Promise<boolean>;
   /** Starts a backend task that pulls new transactions; the caller awaits it through the task center. */
   syncBanks: (payload: BankSyncPayload) => Promise<PendingTask>;
   /**
@@ -71,7 +71,7 @@ interface UseBanksApiReturn {
    * @remarks
    * Given a connection, only that connection is queried, and the aggregate covers it alone.
    */
-  queryBankBalances: (ignoreCache?: boolean, connection?: BankConnectionIdentity) => Promise<PendingTask>;
+  queryBankBalances: (ignoreCache?: boolean, connection?: BankSyncPayload) => Promise<PendingTask>;
 }
 
 /**
@@ -93,7 +93,7 @@ export function useBanksApi(): UseBanksApiReturn {
     if (result === true)
       return true;
     const success = BankSetupSuccess.safeParse(result);
-    return success.success ? success.data : BankAuthChallenge.parse(result);
+    return success.success ? success.data : BankSetupChallenge.parse(result);
   };
 
   const authStatuses = [HTTPStatus.OK, HTTPStatus.ACCEPTED, HTTPStatus.BAD_REQUEST, HTTPStatus.CONFLICT];
@@ -106,7 +106,7 @@ export function useBanksApi(): UseBanksApiReturn {
 
   /** A `410` means the bank dropped the challenge, so the answer cannot be sent again. */
   const answerAuthentication = async (
-    payload: BankConnectionIdentity & { response?: string },
+    payload: { identifier: string; response?: string },
   ): ResultAsync<BankSetupResult, BankSetupError> => fromAsync(
     async () => parseSetupResult(await api.post<unknown>('/banks/auth', payload, { validStatuses: authStatuses })),
     cause => ({
@@ -121,24 +121,24 @@ export function useBanksApi(): UseBanksApiReturn {
       cause => toBankSetupError(cause, payload),
     );
 
-  const cancelAuthentication = async ({ connector, name }: BankConnectionIdentity): Promise<boolean> =>
-    api.delete<boolean>('/banks/auth', { body: { connector, name } });
+  const cancelAuthentication = async ({ identifier }: ConnectionRef): Promise<boolean> =>
+    api.delete<boolean>('/banks/auth', { body: { identifier } });
 
-  const removeBank = async ({ connector, name }: BankConnectionIdentity): Promise<boolean> =>
-    api.delete<boolean>('/banks', { body: { connector, name } });
+  const removeBank = async ({ identifier }: ConnectionRef): Promise<boolean> =>
+    api.delete<boolean>('/banks', { body: { identifier } });
 
   const syncBanks = async (payload: BankSyncPayload): Promise<PendingTask> => {
     const response = await api.post<PendingTask>('/banks/sync', { ...payload, asyncQuery: true }, { filterEmptyProperties: true });
     return PendingTaskSchema.parse(response);
   };
 
-  const queryBankBalances = async (ignoreCache = false, connection?: BankConnectionIdentity): Promise<PendingTask> => {
+  const queryBankBalances = async (ignoreCache = false, connection?: BankSyncPayload): Promise<PendingTask> => {
     const response = await api.get<PendingTask>('/banks/balances', {
       query: {
         asyncQuery: true,
         connector: connection?.connector,
         ignoreCache: ignoreCache ? true : undefined,
-        name: connection?.name,
+        identifier: connection?.identifier,
       },
     });
     return PendingTaskSchema.parse(response);

@@ -1,5 +1,4 @@
 import type { ComputedRef } from 'vue';
-import { isConnected } from '@/modules/balances/exchanges/binance-pairs-condition';
 import { isConditionOf, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 /** A connected exchange account: `name` is the user's name for it on `location`. */
@@ -9,6 +8,18 @@ interface ExchangeAccount {
 }
 
 const isKeyRejected = isConditionOf(RaisedConditionKind.EXCHANGE_KEY_REJECTED);
+
+/**
+ * Whether two accounts are the same, compared by location and name.
+ *
+ * @remarks
+ * The backend reports a refused key by service and account name only, with no connection
+ * identifier, so a renamed account no longer matches. The next query reports it again under its
+ * new name if the key is still refused.
+ */
+function isSameAccount(account: ExchangeAccount, other: ExchangeAccount): boolean {
+  return account.location === other.location && account.name === other.name;
+}
 
 interface UseExchangeKeyConditionsReturn {
   /** The connected exchange accounts whose key the exchange refused. */
@@ -37,11 +48,11 @@ export function useExchangeKeyConditions(): UseExchangeKeyConditionsReturn {
   );
 
   function settleSaved(account: ExchangeAccount): void {
-    store.clear(condition => isKeyRejected(condition) && isConnected(condition, [account]));
+    store.clear(condition => isKeyRejected(condition) && isSameAccount(condition, account));
   }
 
   function settleDisconnected(connected: readonly ExchangeAccount[]): void {
-    store.clear(condition => isKeyRejected(condition) && !isConnected(condition, connected));
+    store.clear(condition => isKeyRejected(condition) && !connected.some(other => isSameAccount(condition, other)));
   }
 
   return { accounts, settleDisconnected, settleSaved };
