@@ -99,7 +99,7 @@ class DBCursor:
 
     def __iter__(self) -> DBCursor:
         if __debug__:
-            logger.trace(f'Getting iterator for cursor {id(self)}')
+            logger.trace('Getting iterator for cursor %s', id(self))
         return self
 
     def __next__(self) -> Any:
@@ -112,14 +112,14 @@ class DBCursor:
             try:
                 with self.connection.statement_lock:
                     if __debug__:
-                        logger.trace(f'Prefetching up to {CURSOR_PREFETCH_ROWS} rows for cursor {id(self)}')  # noqa: E501
+                        logger.trace('Prefetching up to %s rows for cursor %s', CURSOR_PREFETCH_ROWS, id(self))
                     self._prefetched_rows.extend(self._cursor.fetchmany(CURSOR_PREFETCH_ROWS))
             except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
                 _maybe_raise_cancelled(e)
                 raise
             if len(self._prefetched_rows) == 0:
                 if __debug__:
-                    logger.trace(f'Stopping iteration for cursor {id(self)}')
+                    logger.trace('Stopping iteration for cursor %s', id(self))
                 raise StopIteration
 
         return self._prefetched_rows.popleft()
@@ -142,7 +142,7 @@ class DBCursor:
 
     def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
         if __debug__:
-            logger.trace(f'EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')
+            logger.trace('EXECUTE %s with bindings %s for cursor %s', statement, bindings, id(self))
         self._prefetched_rows.clear()  # a new statement discards the previous result set
         try:
             with self.connection.statement_lock:
@@ -152,7 +152,7 @@ class DBCursor:
             raise
 
         if __debug__:
-            logger.trace(f'FINISH EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')  # noqa: E501
+            logger.trace('FINISH EXECUTE %s with bindings %s for cursor %s', statement, bindings, id(self))  # noqa: E501
         return self
 
     def executemany(
@@ -161,7 +161,7 @@ class DBCursor:
             *bindings: Sequence[Sequence] | Generator[Sequence],
     ) -> DBCursor:
         if __debug__:
-            logger.trace(f'EXECUTEMANY {statement} with bindings {bindings} for cursor {id(self)}')
+            logger.trace('EXECUTEMANY %s with bindings %s for cursor %s', statement, bindings, id(self))  # noqa: E501
         self._prefetched_rows.clear()  # a new statement discards the previous result set
         try:
             with self.connection.statement_lock:
@@ -170,7 +170,7 @@ class DBCursor:
             _maybe_raise_cancelled(e)
             raise
         if __debug__:
-            logger.trace(f'FINISH EXECUTEMANY {statement} with bindings {bindings} for cursor {id(self)}')  # noqa: E501
+            logger.trace('FINISH EXECUTEMANY %s with bindings %s for cursor %s', statement, bindings, id(self))  # noqa: E501
         return self
 
     def executescript(self, script: str) -> DBCursor:
@@ -178,7 +178,7 @@ class DBCursor:
         https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.executescript
         """
         if __debug__:
-            logger.trace(f'EXECUTESCRIPT {script} for cursor {id(self)}')
+            logger.trace('EXECUTESCRIPT %s for cursor %s', script, id(self))
         self._prefetched_rows.clear()  # a new statement discards the previous result set
         try:
             with self.connection.statement_lock:
@@ -187,7 +187,7 @@ class DBCursor:
             _maybe_raise_cancelled(e)
             raise
         if __debug__:
-            logger.trace(f'FINISH EXECUTESCRIPT {script} for cursor {id(self)}')
+            logger.trace('FINISH EXECUTESCRIPT %s for cursor %s', script, id(self))
         return self
 
     def switch_foreign_keys(
@@ -206,7 +206,7 @@ class DBCursor:
 
     def fetchone(self) -> Any:
         if __debug__:
-            logger.trace(f'CURSOR FETCHONE  for cursor {id(self)}')
+            logger.trace('CURSOR FETCHONE  for cursor %s', id(self))
         if len(self._prefetched_rows) != 0:
             return self._prefetched_rows.popleft()
         try:
@@ -216,12 +216,12 @@ class DBCursor:
             _maybe_raise_cancelled(e)
             raise
         if __debug__:
-            logger.trace(f'FINISH CURSOR FETCHONE for cursor {id(self)}')
+            logger.trace('FINISH CURSOR FETCHONE for cursor %s', id(self))
         return result
 
     def fetchmany(self, size: int | None = None) -> list[Any]:
         if __debug__:
-            logger.trace(f'CURSOR FETCHMANY with {size=} for cursor {id(self)}')
+            logger.trace('CURSOR FETCHMANY with size=%r for cursor %s', size, id(self))
         if size is None:
             size = self._cursor.arraysize
         if size <= 0:
@@ -240,12 +240,12 @@ class DBCursor:
             _maybe_raise_cancelled(e)
             raise
         if __debug__:
-            logger.trace(f'FINISH CURSOR FETCHMANY for cursor {id(self)}')
+            logger.trace('FINISH CURSOR FETCHMANY for cursor %s', id(self))
         return result
 
     def fetchall(self) -> list[Any]:
         if __debug__:
-            logger.trace(f'CURSOR FETCHALL for cursor {id(self)}')
+            logger.trace('CURSOR FETCHALL for cursor %s', id(self))
         try:
             with self.connection.statement_lock:
                 result = self._cursor.fetchall()
@@ -256,7 +256,7 @@ class DBCursor:
             result = list(self._prefetched_rows) + result
             self._prefetched_rows.clear()
         if __debug__:
-            logger.trace(f'FINISH CURSOR FETCHALL for cursor {id(self)}')
+            logger.trace('FINISH CURSOR FETCHALL for cursor %s', id(self))
         return result
 
     @property
