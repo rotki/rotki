@@ -47,6 +47,7 @@ def test_gnosis_pay_safe_admins_success(
 
             assert result == {
                 gnosis_accounts[0]: [
+                    '0x34f40d7BdbFC99d27B3a596F0D1F3891DB415B03',
                     '0x37f18A82493cdF80675fF01e58c1A1b39637cf50',
                     '0xc37b40ABdB939635068d3c5f13E7faF686F03B65',
                 ],
