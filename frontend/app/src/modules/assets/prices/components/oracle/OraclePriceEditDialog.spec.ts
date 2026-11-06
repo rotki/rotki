@@ -8,7 +8,6 @@ import '@test/i18n';
 
 const mockEditHistoricalPrice = vi.fn();
 const mockResetHistoricalPricesData = vi.fn();
-const mockShowErrorMessage = vi.fn();
 
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   useAssetPricesApi: vi.fn().mockReturnValue({
@@ -28,12 +27,7 @@ vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn().mockReturnValue({
-    showErrorMessage: (...args: unknown[]) => mockShowErrorMessage(...args),
-  }),
-}));
-
+const BigDialog = (await import('@/modules/shell/components/dialogs/BigDialog.vue')).default;
 const OraclePriceEditDialog = (await import('@/modules/assets/prices/components/oracle/OraclePriceEditDialog.vue')).default;
 
 function createEntry(overrides: Partial<OraclePriceEntry> = {}): OraclePriceEntry {
@@ -52,7 +46,6 @@ describe('oraclePriceEditDialog', () => {
     setActivePinia(createPinia());
     mockEditHistoricalPrice.mockClear().mockResolvedValue(true);
     mockResetHistoricalPricesData.mockClear();
-    mockShowErrorMessage.mockClear();
   });
 
   it('should invalidate the historic price cache after a successful edit', async () => {
@@ -81,8 +74,9 @@ describe('oraclePriceEditDialog', () => {
     expect(wrapper.emitted('refresh')).toHaveLength(1);
   });
 
-  it('should not invalidate the cache when the edit fails', async () => {
-    mockEditHistoricalPrice.mockRejectedValueOnce(new Error('boom'));
+  it('should name a failed edit in the dialog, keeping it open and the cache untouched', async () => {
+    const error = new Error('boom');
+    mockEditHistoricalPrice.mockRejectedValueOnce(error);
     const entry = createEntry();
     const wrapper = mount(OraclePriceEditDialog, {
       shallow: true,
@@ -96,7 +90,8 @@ describe('oraclePriceEditDialog', () => {
     await flushPromises();
 
     expect(mockResetHistoricalPricesData).not.toHaveBeenCalled();
-    expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+    expect(wrapper.findComponent(BigDialog).props('failure')).toBe(error);
     expect(wrapper.emitted('refresh')).toBeUndefined();
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
 });

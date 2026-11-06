@@ -4,7 +4,6 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import BlockchainRpcNodeManager from '@/modules/settings/general/rpc/BlockchainRpcNodeManager.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
@@ -111,14 +110,32 @@ describe('modules/settings/general/rpc/BlockchainRpcNodeManager.vue', () => {
     expect(wrapper.findComponent(RowActions).props('deleteDisabled')).toBe(false);
   });
 
-  it('should ask before deleting, and delete nothing until confirmed', async () => {
+  it('should have the row ask before deleting, naming the node', async () => {
+    const wrapper = await createWrapper([node({ identifier: 8, name: 'my node' })]);
+
+    expect(wrapper.findComponent(RowActions).props('deleteConfirm')).toMatchObject({
+      message: expect.stringContaining('my node'),
+    });
+    expect(deleteEvmNode).not.toHaveBeenCalled();
+  });
+
+  it('should delete the row once its question is confirmed', async () => {
     const wrapper = await createWrapper([node({ identifier: 8 })]);
 
     wrapper.findComponent(RowActions).vm.$emit('delete-click');
     await flushPromises();
 
-    expect(get(useConfirmStore().visible)).toBe(true);
-    expect(deleteEvmNode).not.toHaveBeenCalled();
+    expect(deleteEvmNode).toHaveBeenCalledWith(8);
+  });
+
+  it('should name a failed delete above the table', async () => {
+    deleteEvmNode.mockRejectedValueOnce(new Error('still in use'));
+    const wrapper = await createWrapper([node({ identifier: 8 })]);
+
+    wrapper.findComponent(RowActions).vm.$emit('delete-click');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=rpc-node-action-error]').text()).toContain('still in use');
   });
 
   it('should offer reconnect-all only while an active node is disconnected', async () => {

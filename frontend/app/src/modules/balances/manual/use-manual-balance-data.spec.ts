@@ -20,7 +20,7 @@ const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
 vi.mock('@/modules/balances/api/use-manual-balances-api', () => ({
   useManualBalancesApi: vi.fn().mockReturnValue({
     addManualBalances: vi.fn().mockResolvedValue(1),
-    deleteManualBalances: vi.fn().mockResolvedValue({}),
+    deleteManualBalances: vi.fn().mockResolvedValue({ balances: [] }),
     editManualBalances: vi.fn().mockResolvedValue(1),
     queryManualBalances: vi.fn().mockResolvedValue(1),
   }),

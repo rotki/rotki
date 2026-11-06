@@ -12,7 +12,6 @@ const neverShow = ref<boolean>(false);
 const addMissingSafe = vi.fn<() => Promise<void>>();
 const checkMigration = vi.fn<() => Promise<void>>();
 const updateFrontendSetting = vi.fn<(payload: object) => Promise<{ success: boolean }>>();
-const show = vi.fn<(message: { title: string; message: string }, onConfirm: () => Promise<void>) => void>();
 
 vi.mock('@/modules/integrations/gnosis-pay/use-gnosis-pay-safe-migration', () => ({
   useGnosisPaySafeMigration: (): object => ({ addMissingSafe, adding, checkMigration, untrackedSafe }),
@@ -24,10 +23,6 @@ vi.mock('@/modules/settings/use-setting', () => ({
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): object => ({ updateFrontendSetting }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({ show }),
 }));
 
 let scope: EffectScope | undefined;
@@ -104,16 +99,12 @@ describe('modules/shell/action-center/use-gnosis-pay-safe-rows', () => {
     expect(safeRow().checkTarget).toEqual({ kind: 'route', to: { name: '/api-keys/external/' } });
   });
 
-  it('should ask before suppressing, then write the setting that keeps it from being raised', async () => {
+  it('should have the row ask before suppressing, then write the setting that keeps it from being raised', () => {
     const option = safeRow().options.find(({ id }) => id === 'do-not-show-again');
     assert(option?.target.kind === 'run');
+    expect(option.confirm?.title).toBe('action_center.rows.integrations.gnosis_pay_safe_migration.suppress_confirm.title');
+
     option.target.run();
-
-    expect(updateFrontendSetting).not.toHaveBeenCalled();
-    const [message, onConfirm] = show.mock.calls[0];
-    expect(message.title).toBe('action_center.rows.integrations.gnosis_pay_safe_migration.suppress_confirm.title');
-
-    await onConfirm();
 
     expect(updateFrontendSetting).toHaveBeenCalledWith({ gnosisPaySafeMigrationNeverNotify: true });
   });

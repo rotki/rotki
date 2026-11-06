@@ -192,6 +192,14 @@ describe('modules/history/events/HistoryEventsTableActions', () => {
       expect(view.find('[data-testid="selection-unignore"]').attributes('disabled')).toBeDefined();
     });
 
+    it('should disable rule creation and name the reason when the selection cannot seed a rule', () => {
+      const view = mountActions({ ruleCreationBlocker: 'mixed types' });
+      const button = view.find('[data-testid="selection-create-rule"]');
+
+      expect(button.attributes('disabled')).toBeDefined();
+      expect(button.attributes('title')).toBe('mixed types');
+    });
+
     it('should drop the per-page controls once everything matching is selected', () => {
       const view = mountActions({
         ignoreStatus: { ignoredCount: 1, notIgnoredCount: 1 },

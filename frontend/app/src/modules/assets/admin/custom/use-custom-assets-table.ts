@@ -6,7 +6,6 @@ import type { Collection } from '@/modules/core/common/collection';
 import { useCustomAssetFields } from '@/modules/assets/admin/custom/use-custom-asset-fields';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { fromRequest } from '@/modules/core/api/request-result';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
@@ -33,8 +32,12 @@ interface UseCustomAssetsTableReturn {
   refetch: () => Promise<void>;
   /** Refetches the page and the custom asset types together. */
   refresh: () => Promise<void>;
-  /** Asks for confirmation, then deletes the asset and refreshes. */
-  showDeleteConfirmation: (item: CustomAsset) => void;
+  /** Deletes an asset the user already confirmed, then refreshes. */
+  deleteAsset: (item: CustomAsset) => Promise<void>;
+  /** What a row's delete button asks before deleting its asset. */
+  deleteConfirm: (item: CustomAsset) => { title: string; message: string };
+  /** Why the last delete failed, named above the table. */
+  deleteFailure: Readonly<Ref<{ title: string; error: unknown } | undefined>>;
   /** The table's sort state. */
   sort: WritableComputedRef<DataTableSortData<CustomAsset>>;
   /** The custom asset types, which the form offers as choices. */
@@ -90,18 +93,13 @@ export function useCustomAssetsTable(options: UseCustomAssetsTableOptions): UseC
     await Promise.all([refetch(), refreshTypes()]);
   }
 
-  const { showDeleteConfirmation } = useTableRowDeletion<CustomAsset>({
+  const { deleteConfirm, deleteRow: deleteAsset, failure: deleteFailure } = useTableRowDeletion<CustomAsset>({
     confirm: item => ({
       message: t('asset_management.confirm_delete.message', { asset: item.name }),
       title: t('asset_management.confirm_delete.title'),
     }),
     deleteItem: async item => deleteCustomAsset(item.identifier),
-    errorMessage: (item, error) => ({
-      description: t('asset_management.delete_error', {
-        address: item.identifier,
-        message: getErrorMessage(error),
-      }),
-    }),
+    failureTitle: item => t('asset_management.delete_error', { address: item.identifier }),
     onDeleted: refresh,
   });
 
@@ -114,7 +112,9 @@ export function useCustomAssetsTable(options: UseCustomAssetsTableOptions): UseC
     pagination,
     refetch,
     refresh,
-    showDeleteConfirmation,
+    deleteAsset,
+    deleteConfirm,
+    deleteFailure,
     sort,
     types: shallowReadonly(types),
   };

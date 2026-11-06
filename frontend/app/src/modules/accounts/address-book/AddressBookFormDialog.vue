@@ -4,9 +4,7 @@ import { useTemplateRef } from 'vue';
 import { type MessageKey, msg } from '@/message-key';
 import AddressBookForm from '@/modules/accounts/address-book/AddressBookForm.vue';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
-import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useSaveFailure } from '@/modules/core/form/use-save-failure';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const open = defineModel<boolean>('open', { required: true });
@@ -43,7 +41,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const modelValue = ref<AddressBookPayload>();
 const loading = ref(false);
-const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<InstanceType<typeof AddressBookForm>>('form');
 const stateUpdated = ref(false);
 
@@ -55,46 +52,22 @@ const emptyForm: () => AddressBookPayload = () => ({
 });
 
 const { addAddressBook, updateAddressBook } = useAddressBookOperations();
-const { setMessage } = useMessageStore();
+const { capture, clear, failure, modelFieldErrors } = useSaveFailure();
 
 /**
- * The message keys for a failed save, one entry per operation.
+ * The title of a failed save, one entry per operation.
  *
  * @remarks
  * Spelled out rather than interpolated. An inline template literal in `t()` makes the unused-key
  * lint rule treat its static prefix as used, which would exempt all of `address_book.actions.*`,
  * including the delete, fetch and tooltip keys this lookup never touches.
  */
-const SAVE_ERROR_KEYS: Record<'add' | 'edit', { description: MessageKey; title: MessageKey }> = {
-  add: {
-    description: msg.$t('address_book.actions.add.error.description'),
-    title: msg.$t('address_book.actions.add.error.title'),
-  },
-  edit: {
-    description: msg.$t('address_book.actions.edit.error.description'),
-    title: msg.$t('address_book.actions.edit.error.title'),
-  },
+const SAVE_ERROR_TITLES: Record<'add' | 'edit', MessageKey> = {
+  add: msg.$t('address_book.actions.add.error.title'),
+  edit: msg.$t('address_book.actions.edit.error.title'),
 };
 
-function handleSaveError(error: unknown, isEdit: boolean, payload: AddressBookPayload): void {
-  const message = getErrorMessage(error);
-  let errors: string | ValidationErrors = message;
-
-  if (error instanceof ApiValidationError)
-    errors = error.getValidationErrors(payload);
-
-  if (typeof errors === 'string') {
-    const keys = SAVE_ERROR_KEYS[isEdit ? 'edit' : 'add'];
-    setMessage({
-      description: t(keys.description, { message }),
-      success: false,
-      title: t(keys.title),
-    });
-  }
-  else {
-    set(errorMessages, errors);
-  }
-}
+const failureTitle = computed<string>(() => t(SAVE_ERROR_TITLES[editMode ? 'edit' : 'add']));
 
 async function save(): Promise<boolean> {
   if (!isDefined(modelValue))
@@ -114,6 +87,7 @@ async function save(): Promise<boolean> {
   };
 
   set(loading, true);
+  clear();
   let success;
   try {
     success = editMode
@@ -122,7 +96,7 @@ async function save(): Promise<boolean> {
   }
   catch (error: unknown) {
     success = false;
-    handleSaveError(error, editMode, formValue);
+    capture(error, formValue);
   }
 
   set(loading, false);
@@ -143,10 +117,11 @@ const dialogTitle = computed<string>(() =>
 
 watch(modelValue, (oldValue, currValue) => {
   if (currValue?.blockchain !== oldValue?.blockchain)
-    set(errorMessages, {});
+    set(modelFieldErrors, {});
 });
 
 watchImmediate([open, () => editableItem], ([open, editableItem]) => {
+  clear();
   if (!open) {
     set(modelValue, undefined);
   }
@@ -172,6 +147,8 @@ watchImmediate([open, () => editableItem], ([open, editableItem]) => {
     :layout="{ autoHeight: true, divide: true, maxWidth: '640px' }"
     :loading="loading"
     :prompt-on-close="stateUpdated"
+    :failure="failure"
+    :failure-title="failureTitle"
     @confirm="save()"
     @cancel="open = false"
   >
@@ -179,7 +156,7 @@ watchImmediate([open, () => editableItem], ([open, editableItem]) => {
       v-if="modelValue"
       ref="form"
       v-model="modelValue"
-      v-model:error-messages="errorMessages"
+      v-model:error-messages="modelFieldErrors"
       v-model:state-updated="stateUpdated"
       :edit-mode="editMode"
     />

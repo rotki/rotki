@@ -8,24 +8,28 @@ import { BalanceType } from '@/modules/balances/types/balances';
 
 const {
   dataSource,
+  deleteFailure,
+  deleteRow,
   fetch,
   prepareForEdit,
   pricesLoading,
   refetch,
   rows,
-  showDeleteConfirmation,
 } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
     dataSource: ref<unknown[]>([]),
+    deleteFailure: ref<{ title: string; error: unknown }>(),
+    deleteRow: vi.fn<(id: number) => Promise<void>>(async () => {}),
     fetch: vi.fn(async () => ({ data: [], found: 0, limit: 0, total: 0 })),
     prepareForEdit: vi.fn((balance: unknown) => balance),
     pricesLoading: ref<boolean>(false),
     refetch: vi.fn(async () => {}),
     rows: ref<unknown[]>([]),
-    showDeleteConfirmation: vi.fn(),
   };
 });
+
+const deleteConfirm = { message: 'delete it?', title: 'Delete balance' };
 
 vi.mock('@/modules/balances/manual/use-manual-balances-or-liabilities', async () => {
   const { computed } = await import('vue');
@@ -40,9 +44,11 @@ vi.mock('@/modules/balances/manual/use-manual-balances-or-liabilities', async ()
 
 vi.mock('@/modules/accounts/manual-balances/use-manual-balance-table-actions', () => ({
   useManualBalanceTableActions: (): Record<string, unknown> => ({
+    deleteConfirm,
+    deleteFailure,
+    deleteRow,
     prepareForEdit,
     pricesLoading,
-    showDeleteConfirmation,
   }),
 }));
 
@@ -87,6 +93,7 @@ const TableStub = defineComponent({
 });
 
 const RowActionsStub = defineComponent({
+  props: ['deleteConfirm'],
   emits: ['edit-click', 'delete-click'],
   template: '<div />',
 });
@@ -131,6 +138,7 @@ describe('manualBalanceTable', () => {
     vi.clearAllMocks();
     set(dataSource, []);
     set(pricesLoading, false);
+    set(deleteFailure, undefined);
     set(rows, [balance()]);
     prepareForEdit.mockImplementation((value: unknown) => value);
   });
@@ -148,13 +156,39 @@ describe('manualBalanceTable', () => {
       expect(wrapper.emitted('edit')?.at(-1)?.[0]).toEqual({ identifier: 1, label: 'savings' });
     });
 
-    it('should confirm before deleting', async () => {
+    it('should have its delete button ask before deleting', () => {
+      const wrapper = createWrapper();
+
+      expect(actions(wrapper).props('deleteConfirm')).toEqual(deleteConfirm);
+    });
+
+    it('should delete the balance behind the row once the delete is confirmed', async () => {
       const wrapper = createWrapper();
 
       actions(wrapper).vm.$emit('delete-click');
       await nextTick();
 
-      expect(showDeleteConfirmation).toHaveBeenCalledWith(1);
+      expect(deleteRow).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('a failed delete', () => {
+    it('should be named above the rows, without a retry', async () => {
+      const wrapper = createWrapper();
+
+      set(deleteFailure, { error: 'backend said no', title: 'Could not delete' });
+      await nextTick();
+
+      const strip = wrapper.find('[data-testid=manual-balances-delete-error]');
+      expect(strip.text()).toContain('Could not delete');
+      expect(strip.text()).toContain('backend said no');
+      expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
+    });
+
+    it('should show nothing while no delete has failed', () => {
+      const wrapper = createWrapper();
+
+      expect(wrapper.find('[data-testid=manual-balances-delete-error]').exists()).toBe(false);
     });
   });
 

@@ -8,7 +8,6 @@ import { isRequestCancellation } from '@/modules/core/api/request-queue/is-reque
 import { type ActionStatus, actionStatusOf } from '@/modules/core/common/action';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
@@ -71,7 +70,6 @@ function groupMovements(groupIdentifiers: string[], rows: HistoryEventCollection
 
 export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatchedAssetMovementsReturn => {
   const { t } = useI18n({ useScope: 'global' });
-  const { showSuccessMessage } = useNotifications();
   const { getAssetInfo } = useAssetInfoRetrieval();
   const { statusOf, submitTask } = useNativeTask();
   const { useIsActive } = useTaskCenter();
@@ -155,10 +153,8 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     try {
       const success = await matchAssetMovementsApi(assetMovementId, matchedEventIds);
 
-      if (success) {
-        showSuccessMessage(t('actions.asset_movement_matching.success.title'), t('actions.asset_movement_matching.success.description'));
+      if (success)
         signalEventsModified();
-      }
 
       return actionStatusOf(success, t('common.change_not_applied'));
     }

@@ -1,13 +1,10 @@
 import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
-import type { ConfirmationMessage } from '@/modules/history/events/use-deletion-strategies';
 import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/modules/integrations/types';
 import { toCapitalCase } from '@rotki/common';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
-import { DialogType } from '@/modules/core/common/dialogs';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useExternalServicesApi } from '@/modules/settings/api/use-external-services-api';
 import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
@@ -34,7 +31,8 @@ interface UseExternalApiKeysReturn {
   actionStatus: (name: MaybeRefOrGetter<ExternalServiceName>, chain?: MaybeRefOrGetter<string>) => ComputedRef<Status | undefined>;
   load: () => Promise<void>;
   save: (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void) => Promise<void>;
-  confirmDelete: (name: string, postConfirmAction?: () => Promise<void> | void, confirmation?: Partial<ConfirmationMessage>) => void;
+  /** Deletes the service's key; the card asks before calling this. A failure lands in its status. */
+  deleteService: (name: string) => Promise<void>;
   readonly keys: DeepReadonly<Ref<ExternalServiceKeys | undefined>>;
 }
 
@@ -44,7 +42,6 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
   const status = ref<Record<string, Status>>({});
   const keys = ref<ExternalServiceKeys>();
 
-  const { show } = useConfirmStore();
   const { deleteExternalServices, queryExternalServices, setExternalServices } = useExternalServicesApi();
 
   const { logged } = storeToRefs(useSessionAuthStore());
@@ -156,6 +153,7 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
   }
 
   async function deleteService(name: string): Promise<void> {
+    resetStatus(name);
     set(loading, true);
     try {
       set(keys, await deleteExternalServices(name));
@@ -172,22 +170,6 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
     }
   }
 
-  function confirmDelete(name: string, postConfirmAction?: () => Promise<void> | void, confirmation: Partial<ConfirmationMessage> = {}): void {
-    resetStatus(name);
-    show(
-      {
-        message: t('external_services.confirmation.message'),
-        title: t('external_services.confirmation.title'),
-        ...confirmation,
-        type: DialogType.WARNING,
-      },
-      async () => {
-        await deleteService(name);
-        await postConfirmAction?.();
-      },
-    );
-  }
-
   watchImmediate(logged, async (isLogged) => {
     if (isLogged) {
       await load();
@@ -199,7 +181,7 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
 
   return {
     actionStatus,
-    confirmDelete,
+    deleteService,
     getApiKey,
     getName,
     keys: readonly(keys),

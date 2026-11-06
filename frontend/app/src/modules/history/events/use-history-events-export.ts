@@ -5,7 +5,6 @@ import { type Notification, NotificationKind, Severity } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
@@ -26,8 +25,8 @@ type ExportMessage = Notification;
 interface UseHistoryEventsExportReturn {
   /** Whether an export is already running, so the caller can disable its control. */
   taskRunning: Ref<boolean>;
-  /** Asks the user to confirm, then exports. */
-  showConfirmation: () => void;
+  /** Exports straight away; an app session first asks where to write the file. */
+  exportCSV: () => Promise<void>;
 }
 
 /**
@@ -35,7 +34,7 @@ interface UseHistoryEventsExportReturn {
  *
  * @param filters - the table's filters; paging and grouping are dropped, since the export is whole
  * @param matchExactEvents - whether to export the matched events rather than their groups
- * @returns the running flag and the confirm-then-export entry point
+ * @returns the running flag and the export entry point
  */
 export function useHistoryEventsExport(
   filters: MaybeRefOrGetter<HistoryEventRequestPayload>,
@@ -48,7 +47,6 @@ export function useHistoryEventsExport(
   const { submitTask } = useNativeTask();
   const { useIsActive } = useTaskCenter();
   const { notify } = useNotificationDispatcher();
-  const { show } = useConfirmStore();
 
   /**
    * @returns the outcome, or `null` when the task failed or was cancelled, which its dock row reports
@@ -126,19 +124,8 @@ export function useHistoryEventsExport(
       notify(message);
   }
 
-  function showConfirmation(): void {
-    show(
-      {
-        message: t('transactions.events.export.confirmation_message'),
-        title: t('common.actions.export_csv'),
-        type: 'info',
-      },
-      exportCSV,
-    );
-  }
-
   return {
-    showConfirmation,
+    exportCSV,
     taskRunning: useIsActive(historyEventsExportActivity.kind, ...historyEventsExportActivity.partsOf()),
   };
 }

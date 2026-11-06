@@ -26,7 +26,6 @@
   "account_form": {
     "advanced_tooltip": "Zeige erweiterte xpub Optionen | Verstecke erweiterte xpub Optionen",
     "error": {
-      "description": "Fehler beim hinzufügen des Kontos: {error}",
       "title": "Konto hinzufügen"
     },
     "labels": {

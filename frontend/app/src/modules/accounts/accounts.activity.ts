@@ -93,6 +93,7 @@ export function accountTargetLabel(target: AccountTarget): string {
  */
 export const accountActivityLabel = {
   add: (address: string): ActivityText => activityLabelFor(msg.$t('task_center.activity.accounts.add'), { address }),
+  createTag: (tag: string): ActivityText => activityLabelFor(msg.$t('task_center.activity.accounts.create_tag'), { tag }),
   addCount: (count: number): ActivityText =>
     activityLabelFor(msg.$t('task_center.activity.accounts.add_count'), { count }, count),
   remove: (address: string): ActivityText => activityLabelFor(msg.$t('task_center.activity.accounts.remove'), { address }),
@@ -157,6 +158,20 @@ export const accountImportActivity = defineActivity<{ source: string }, readonly
   key: subject => [subject.source],
   kind: ActivityKind.ACCOUNTS,
   part: ActivityPart.IMPORT,
+});
+
+/**
+ * Creating a tag that imported accounts reference, reported as a row of the import that needed it.
+ *
+ * @remarks
+ * Its own part, so a tag row never shares an id with an account row: those are keyed by chain and
+ * address, and a tag named like a chain would otherwise land on one. The name is free text and may
+ * hold the id separator, so the key carries it URI-encoded, which keeps two names from colliding.
+ */
+export const accountImportTagActivity = defineActivity<{ tag: string }, readonly [string]>({
+  key: subject => [encodeURIComponent(subject.tag)],
+  kind: ActivityKind.ACCOUNTS,
+  part: ActivityPart.CREATE,
 });
 
 /**

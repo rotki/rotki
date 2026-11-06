@@ -92,7 +92,7 @@ describe('historyRedecodeSelection', () => {
     expect(wrapper.emitted('redecode')).toStrictEqual([[{ chains: ['btc', 'bch'], type: 'chains' }]]);
   });
 
-  it('should emit the full run, not a chain list, when every chain is picked', async () => {
+  it('should ask in the picker before the full run, which can take a long time', async () => {
     set(allTxChainsInfo, [evmChain('ethereum', 'Ethereum'), nonEvmChain('polkadot', 'Polkadot')]);
 
     const wrapper = createWrapper();
@@ -102,7 +102,38 @@ describe('historyRedecodeSelection', () => {
     await nextTick();
     await wrapper.find('[data-testid=history-redecode-selection-confirm]').trigger('click');
 
+    expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('transactions.events_decoding.confirmation');
+    expect(wrapper.emitted('redecode')).toBeUndefined();
+  });
+
+  it('should emit the full run, not a chain list, once the question is accepted', async () => {
+    set(allTxChainsInfo, [evmChain('ethereum', 'Ethereum'), nonEvmChain('polkadot', 'Polkadot')]);
+
+    const wrapper = createWrapper();
+    await nextTick();
+
+    await wrapper.find('[data-testid=select-all]').trigger('click');
+    await nextTick();
+    await wrapper.find('[data-testid=history-redecode-selection-confirm]').trigger('click');
+    await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
+
     expect(wrapper.emitted('redecode')).toStrictEqual([[{ type: 'all' }]]);
+  });
+
+  it('should go back to the picker without redecoding when the question is cancelled', async () => {
+    set(allTxChainsInfo, [evmChain('ethereum', 'Ethereum'), nonEvmChain('polkadot', 'Polkadot')]);
+
+    const wrapper = createWrapper();
+    await nextTick();
+
+    await wrapper.find('[data-testid=select-all]').trigger('click');
+    await nextTick();
+    await wrapper.find('[data-testid=history-redecode-selection-confirm]').trigger('click');
+    await wrapper.find('[data-testid=inline-confirm-cancel]').trigger('click');
+
+    expect(wrapper.emitted('redecode')).toBeUndefined();
+    expect(wrapper.find('[data-testid=inline-confirm]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=history-redecode-selection-confirm]').exists()).toBe(true);
   });
 
   it('should match a chain on its evm name as well as its display name', async () => {

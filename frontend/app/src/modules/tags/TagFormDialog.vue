@@ -20,17 +20,25 @@ const { addTag, editTag } = useTagOperations();
 
 const submitting = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
+/** Why the last save failed; the form keeps what was typed. */
+const saveFailure = shallowRef<string>();
 const form = useTemplateRef<ComponentExposed<typeof TagForm>>('form');
 
 const { t } = useI18n({ useScope: 'global' });
 
+const failureTitle = computed<string>(() => (editMode
+  ? t('actions.session.tag_edit.error.title')
+  : t('actions.session.tag_add.error.title')));
+
 function closeDialog(): void {
+  set(saveFailure, undefined);
   set(stateUpdated, false);
   set(modelValue, undefined);
 }
 
-async function save() {
+async function save(): Promise<void> {
   set(submitting, true);
+  set(saveFailure, undefined);
   const newTag = get(modelValue);
   if (!get(form)?.validate() || !newTag) {
     set(submitting, false);
@@ -42,6 +50,9 @@ async function save() {
   if (status.success) {
     emit('saved', { tag: newTag, originalName: tagOriginalName });
     closeDialog();
+  }
+  else {
+    set(saveFailure, status.message);
   }
   set(submitting, false);
 }
@@ -56,6 +67,8 @@ async function save() {
     :layout="{ divide: true }"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
+    :failure="saveFailure"
+    :failure-title="failureTitle"
     @confirm="save()"
     @cancel="closeDialog()"
   >

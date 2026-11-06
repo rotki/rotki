@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
-import { additionItem, type CSVRow, CSVSchema, doesAccountExist, getChainType, type ImportItem, trackedItem } from '@/modules/accounts/import-export/account-csv-schema';
+import { additionItem, type CSVRow, CSVSchema, doesAccountExist, failedTagItem, getChainType, type ImportItem, trackedItem } from '@/modules/accounts/import-export/account-csv-schema';
 import { useValidatorImport } from '@/modules/accounts/import-export/use-validator-import';
 import { useAccountAdditionBatch } from '@/modules/accounts/use-account-addition-batch';
 import { useAccountAdditions } from '@/modules/accounts/use-account-additions';
@@ -24,7 +24,7 @@ export function useAccountImport(): UseAccountImportReturn {
   const { getAccounts } = useBlockchainAccountData();
   const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
   const { addAccounts } = useBlockchainAccountManagement();
-  const { reportTracked } = useAccountAdditions();
+  const { reportFailedTag, reportTracked } = useAccountAdditions();
   const { runImportBatch } = useAccountAdditionBatch();
   const { attemptTagCreation } = useTagOperations();
   const { importValidators } = useValidatorImport();
@@ -35,6 +35,17 @@ export function useAccountImport(): UseAccountImportReturn {
 
   const { loadingBlockchainBalances: blockchainLoading } = useBalancesLoading();
   const doneLoading = refDebounced(logicNot(blockchainLoading), 2000);
+
+  /**
+   * Creates the tags the import references, before any account that carries them is added.
+   *
+   * @returns a row for each tag that could not be created, for the import to report among its own
+   * rows. A failed tag does not stop the import: its accounts are still added, without that tag.
+   */
+  async function createTags(tags: string[]): Promise<ImportItem[]> {
+    const statuses = await Promise.all(tags.map(async tag => attemptTagCreation(tag)));
+    return statuses.flatMap((status, index) => (status.success ? [] : [failedTagItem(tags[index], status.message)]));
+  }
 
   /**
    * Imports parsed CSV rows as blockchain accounts, creating any tags they reference.
@@ -79,15 +90,17 @@ export function useAccountImport(): UseAccountImportReturn {
         items.push(additionItem(row));
     }
 
-    await Promise.all(tags.map(async tag => attemptTagCreation(tag)));
+    items.push(...await createTags(tags));
 
     const additions = items.filter(item => item.type === 'add');
 
     await runImportBatch(items, async (item, parent) => {
       if (item.type === 'add')
         await addAccounts(item.chain, item.account, { parent, userStarted: true, wait: true });
-      else
+      else if (item.type === 'tracked')
         await reportTracked(item.chain, item.target, { parent, userStarted: true });
+      else
+        await reportFailedTag(item.tag, item.message, { parent, userStarted: true });
     });
 
     if (validators.length > 0) {

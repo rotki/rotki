@@ -21,10 +21,12 @@ const action = defineModel<string | undefined>('action', { required: true });
 
 const toggles = defineModel<HistoryEventsToggles>('toggles', { required: true });
 
-const { ignoreStatus } = defineProps<{
+const { ignoreStatus, ruleCreationBlocker } = defineProps<{
   fields: FieldDef[];
   exportParams: HistoryEventRequestPayload;
   ignoreStatus?: IgnoreStatus;
+  /** Why the selection cannot seed an accounting rule; disables that action and names the reason. */
+  ruleCreationBlocker?: string;
   selection: SelectionState;
 }>();
 
@@ -233,8 +235,8 @@ function handleToggleSelectAllMatching(): void {
       </TableSelectionAction>
       <TableSelectionAction
         icon="lu-file-spreadsheet"
-        :disabled="selection.selectedCount === 0 || selection.selectAllMatching"
-        :title="t('transactions.events.selection_mode.create_rule')"
+        :disabled="selection.selectedCount === 0 || selection.selectAllMatching || !!ruleCreationBlocker"
+        :title="ruleCreationBlocker ?? t('transactions.events.selection_mode.create_rule')"
         data-testid="selection-create-rule"
         @click="handleCreateRule()"
       >

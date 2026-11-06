@@ -5,6 +5,7 @@ import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-ext
 import { useServiceKeyHandler } from '@/modules/settings/api-keys/external/use-service-key-handler';
 import ServiceKey from '@/modules/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard, { type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
+import ServiceKeyDeleteButton from '@/modules/settings/api-keys/ServiceKeyDeleteButton.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const { service } = defineProps<{
@@ -13,7 +14,7 @@ const { service } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { actionStatus, useApiKey, confirmDelete, loading, save } = useExternalApiKeys();
+const { actionStatus, deleteService, loading, save, useApiKey } = useExternalApiKeys();
 const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
 
 const key = useApiKey(() => service.name);
@@ -35,21 +36,13 @@ const action = computed<ServiceKeyAction>(() => ({ disabled: !get(serviceKeyRef)
     @confirm="saveHandler()"
   >
     <template #left-buttons>
-      <RuiButton
+      <ServiceKeyDeleteButton
         :disabled="loading || !key"
-        color="error"
-        variant="text"
-        data-testid="delete-button"
-        @click="confirmDelete(service.name)"
-      >
-        <template #prepend>
-          <RuiIcon
-            name="lu-trash-2"
-            size="16"
-          />
-        </template>
-        {{ t('external_services.actions.delete_key') }}
-      </RuiButton>
+        :label="t('external_services.actions.delete_key')"
+        :title="t('external_services.confirmation.title')"
+        :message="t('external_services.confirmation.message')"
+        @confirm="deleteService(service.name)"
+      />
     </template>
     <ServiceKey
       ref="serviceKeyRef"

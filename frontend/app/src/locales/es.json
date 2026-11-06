@@ -22,7 +22,6 @@
   "account_form": {
     "advanced_tooltip": "Mostrar las opciones avanzadas de xpub | Ocultar las opciones avanzadas de xpub",
     "error": {
-      "description": "Error anãdiendo cuenta: {error}",
       "title": "Añadir una cuenta"
     },
     "labels": {
@@ -134,11 +133,9 @@
         "task": "Creando entrada de caché dee {fromAsset} a {toAsset} en {source}"
       },
       "exchange_removal": {
-        "description": "No se pudo eliminar {exchange} debido a: {error}",
         "title": "Elimination de plataforma de intercambio"
       },
       "exchange_setup": {
-        "description": "La configuración de {exchange} falló debido a: {error}",
         "title": "Configuración de Exchange"
       },
       "historic_fetch_price": {
@@ -406,8 +403,7 @@
     },
     "refresh_cache": {
       "confirm": {
-        "message": "¿Está seguro de que desea actualizar los datos del protocolo para {source}?",
-        "title": "Confirmar actualización de datos del protocolo"
+
       },
       "error": "Error al borrar los datos del protocolo para {source}: {message}",
       "select_cache": "Seleccionar datos del protocolo para actualizar",
@@ -722,7 +718,6 @@
       "add_tx": "Añadir transacción por hash tx",
       "delete": {
         "error": {
-          "message": "Falló: {message}",
           "title": "Borrar transacción EVM"
         },
         "message": "¿Está seguro de que desea eliminar esta transacción y sus eventos? Tendrá que purgar todas las transacciones o añadir por el hash de la transacción para restaurarlas.",
@@ -731,7 +726,7 @@
     },
     "events": {
       "export": {
-        "confirmation_message": "¿Estás seguro de que deseas exportar la lista de eventos con los filtros seleccionados aplicados?"
+
       },
       "skipped": {
         "csv_export_error": "Hubo un error al exportar a CSV",
@@ -747,9 +742,7 @@
             "title": "Error al reprocesar eventos omitidos"
           },
           "success": {
-            "all": "Todos los eventos externos omitidos se han procesado",
-            "some": "{successful} de {total} eventos externos omitidos se han procesado",
-            "title": "Eventos omitidos procesados"
+            "some": "{successful} de {total} eventos externos omitidos se han procesado"
           }
         }
       }

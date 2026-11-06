@@ -3,6 +3,7 @@ import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiValidationError } from '@/modules/core/api/types/errors';
 import BlockchainRpcNodeFormDialog from '@/modules/settings/general/rpc/BlockchainRpcNodeFormDialog.vue';
 import { RPC_SETUP_STATUS, type RpcSetupRow } from '@/modules/settings/general/rpc/providers/use-rpc-provider-setup';
 
@@ -70,7 +71,8 @@ vi.mock('@/modules/settings/general/rpc/providers/use-rpc-provider-setup', async
 
 const BigDialogStub = {
   emits: ['confirm', 'cancel'],
-  props: ['display', 'action'],
+  name: 'BigDialog',
+  props: ['display', 'action', 'failure', 'failureTitle'],
   template: `<div v-if="display">
     <slot />
     <button data-testid="stub-confirm" @click="$emit('confirm')" />
@@ -231,5 +233,37 @@ describe('modules/settings/general/rpc/BlockchainRpcNodeFormDialog.vue', () => {
 
     expect(retry).toHaveBeenCalledWith([expect.objectContaining({ chain: Blockchain.BASE })]);
     expect(addEvmNode).toHaveBeenCalledOnce();
+  });
+
+  describe('a rejected save', () => {
+    async function rejectWith(error: Error): Promise<VueWrapper> {
+      addEvmNode.mockRejectedValue(error);
+      const wrapper = mountDialog('https://eth.example/rpc');
+      await wrapper.find('[data-testid=stub-confirm]').trigger('click');
+      await flushPromises();
+      return wrapper;
+    }
+
+    it('should name the failure in the dialog and stay open', async () => {
+      const error = new Error('node unreachable');
+      const wrapper = await rejectWith(error);
+
+      const dialog = wrapper.findComponent({ name: 'BigDialog' });
+      expect(dialog.props('failure')).toBe(error);
+      expect(dialog.props('failureTitle')).toContain('evm_rpc_node_manager.add_error.title');
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    });
+
+    it('should name a validation error on a key the form does not show', async () => {
+      const wrapper = await rejectWith(new ApiValidationError(JSON.stringify({ blockchain: ['unsupported'] })));
+
+      expect(wrapper.findComponent({ name: 'BigDialog' }).props('failure')).toBe('blockchain: unsupported');
+    });
+
+    it('should leave a validation error on a form field to the form', async () => {
+      const wrapper = await rejectWith(new ApiValidationError(JSON.stringify({ endpoint: ['bad url'] })));
+
+      expect(wrapper.findComponent({ name: 'BigDialog' }).props('failure')).toBeUndefined();
+    });
   });
 });

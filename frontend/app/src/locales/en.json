@@ -132,7 +132,6 @@
     "advanced_tooltip": "Display the advanced xpub options | Hide the advanced xpub options",
     "error": {
       "addition_failed": "No account was added. | The address could not be added. | None of the {count} addresses could be added.",
-      "description": "Error while adding account: {error}",
       "title": "Adding Account",
       "validator_needs_credentials": "Could not add the validator. Configure a consensus layer RPC or add a Beaconcha.in API key in settings, then try again."
     },
@@ -293,13 +292,12 @@
         "view_affected_events": "View affected events"
       },
       "add": "Add accounting rule",
-      "add_error": "Could not add accounting rule: {message}",
+      "add_error": "Could not add accounting rule",
       "confirm_delete": "Are you sure you want to delete this custom accounting rule?",
       "confirm_reset": "Are you sure you want to reset all accounting rules to rotki's defaults? This removes every custom and edited rule and cannot be undone.",
       "conflicts": {
         "banner": "{count} rule conflicts with the latest rotki update. | {count} rules conflict with the latest rotki update.",
         "error": {
-          "description": "Error while resolving accounting rules conflicts: {error}",
           "title": "Resolving accounting rules conflicts"
         },
         "labels": {
@@ -326,9 +324,9 @@
       },
       "custom_events_info": "Creating a custom accounting rule for {count} selected event(s)",
       "delete": "Delete accounting rule",
-      "delete_error": "Could not delete accounting rule: {message}",
+      "delete_error": "Could not delete accounting rule",
       "edit": "Edit accounting rule",
-      "edit_error": "Could not edit accounting rule: {message}",
+      "edit_error": "Could not edit accounting rule",
       "events_dialog": {
         "title": "Events affected by the accounting rule ({count})"
       },
@@ -599,29 +597,14 @@
     "accounting_rules": {
       "export": {
         "message": {
-          "failure": "Accounting rules export failed: {description}",
-          "success": "Accounting rules exported successfully"
+          "failure": "Accounting rules export failed: {description}"
         },
         "title": "Accounting Rules Export"
       },
       "import": {
         "message": {
-          "failure": "Accounting rules import failed: {description}",
-          "success": "Accounting rules imported successfully"
-        },
-        "title": "Accounting Rules Import"
-      },
-      "reset": {
-        "message": {
-          "success": "Accounting rules reset to defaults successfully"
-        },
-        "title": "Accounting Rules Reset"
-      }
-    },
-    "asset_movement_matching": {
-      "success": {
-        "description": "Asset movement successfully matched to blockchain event.",
-        "title": "Asset Movement Matched"
+          "failure": "Accounting rules import failed: {description}"
+        }
       }
     },
     "assets": {
@@ -671,12 +654,10 @@
         "task": "Building the {source} price cache from {fromAsset} to {toAsset}"
       },
       "exchange_removal": {
-        "description": "The removal of {exchange} failed due to: {error}",
         "title": "Exchange removal"
       },
       "exchange_setup": {
-        "description": "The setup of {exchange} failed due to: {error}",
-        "title": "Exchange setup"
+        "title": "Exchange setup failed"
       },
       "historic_fetch_price": {
         "task": {
@@ -685,43 +666,25 @@
       },
       "manual_delete": {
         "error": {
-          "title": "Deleting Manual Balance"
+          "title": "Could not delete the manual balance"
         }
-      }
-    },
-    "bridge_matching": {
-      "create_counterpart_success": {
-        "description": "A synthetic counterpart event was created on the other chain and linked to the bridge transaction.",
-        "title": "Bridge Counterpart Created"
-      },
-      "success": {
-        "description": "Bridge transaction successfully matched to its counterpart event.",
-        "title": "Bridge Transaction Matched"
       }
     },
     "customized_event_duplicates": {
       "fix_error": {
-        "description": "Failed to fix customized event duplicates: {error}",
-        "title": "Fixing Customized Event Duplicates"
-      },
-      "fix_success": {
-        "description": "Successfully removed {count} duplicate event(s).",
-        "title": "Duplicates Fixed"
+        "title": "Could not fix the duplicates"
       },
       "mark_non_duplicated_error": {
-        "description": "Failed to mark customized event duplicates as non-duplicated: {error}",
-        "title": "Marking Customized Event Duplicates as Non-Duplicated"
+        "title": "Could not mark as not duplicated"
       },
       "unignore_error": {
-        "description": "Failed to restore ignored customized event duplicates: {error}",
-        "title": "Restoring Customized Event Duplicates"
+        "title": "Could not restore the duplicates"
       }
     },
     "date_range": " from {from}| to {to}| from {from} to {to}",
     "delete_eth2_validator": {
       "error": {
-        "description": "Deleting the ETH staking validators failed: {message}",
-        "title": "Deleting ETH staking validators"
+        "title": "Could not delete the validators"
       }
     },
     "evm_tx_lookup": {
@@ -799,19 +762,18 @@
     },
     "ignore": {
       "error": {
-        "description": "Failed to exclude the selected actions: {error}",
         "title": "Excluding actions failed"
       }
     },
     "manual_balances": {
       "add": {
         "error": {
-          "description": "Failed to add manual balance: {message}"
+          "title": "Failed to add manual balance"
         }
       },
       "edit": {
         "error": {
-          "description": "Failed to edit manual balance: {message}"
+          "title": "Failed to edit manual balance"
         }
       }
     },
@@ -911,12 +873,12 @@
     "session": {
       "add_queriable_address": {
         "error": {
-          "message": "Failure to add a queriable address: {message}"
+          "message": "Couldn't add the address"
         }
       },
       "delete_queriable_address": {
         "error": {
-          "message": "Failure to delete a queriable address: {message}"
+          "message": "Couldn't remove the address"
         }
       },
       "fetch_queriable_address": {
@@ -942,7 +904,7 @@
         }
       },
       "password_change": {
-        "error": "Error while changing the user password: {message}",
+        "error": "Could not change the password",
         "success": "Successfully changed user password"
       },
       "periodic_query": {
@@ -958,7 +920,7 @@
       },
       "tag_delete": {
         "error": {
-          "title": "Deleting tag"
+          "title": "Could not delete the tag"
         }
       },
       "tag_edit": {
@@ -980,22 +942,14 @@
     },
     "unignore": {
       "error": {
-        "description": "Failed to include the selected actions: {error}",
         "title": "Including actions failed"
       }
-    }
-  },
-  "active_modules": {
-    "enable": {
-      "description": "Would you like to enable the {name} module?",
-      "title": "Enabled module"
     }
   },
   "address_book": {
     "actions": {
       "add": {
         "error": {
-          "description": "Adding to the address book was not successful: {message}",
           "title": "Address book addition failed"
         }
       },
@@ -1012,7 +966,6 @@
       },
       "edit": {
         "error": {
-          "description": "Editing address book was not successful: {message}",
           "title": "Address book edit failed"
         },
         "tooltip": "Edit or add to address book"
@@ -1225,7 +1178,7 @@
     "replaced": "This icon will be applied after you click \"Save\".",
     "type_non_empty": "The type of the asset cannot be empty",
     "types": {
-      "error": "We could not load the asset types: {message}"
+      "load_failed": "Could not load the asset types"
     },
     "underlying_tokens": "Underlying tokens",
     "validation": {
@@ -1246,10 +1199,10 @@
     "title": "Asset Locations"
   },
   "asset_management": {
-    "add_error": "Could not add asset: {message}",
+    "add_error": "Could not add asset",
     "add_title": "Add a new asset",
     "cex_mapping": {
-      "add_error": "Could not add the mapping: {message}",
+      "add_error": "Could not add the mapping",
       "add_mapping": "Add Mapping",
       "add_title": "Add a new mapping",
       "all_exchanges": "All exchanges",
@@ -1258,8 +1211,8 @@
         "message": "Are you sure you want to delete the asset mapping for the symbol {asset} in {location}?",
         "title": "Delete Exchange Asset Mapping"
       },
-      "delete_error": "Could not delete the mapping: {message}",
-      "edit_error": "Could not edit the mapping: {message}",
+      "delete_error": "Could not delete the mapping",
+      "edit_error": "Could not edit the mapping",
       "edit_title": "Edit the mapping",
       "exchange_name": "The exchange calls it {name}",
       "form": {
@@ -1289,8 +1242,8 @@
       },
       "subtitle": "You can link asset symbols on a counterparty with assets recognized by rotki. This is necessary for rotki to process assets on certain counterparty."
     },
-    "delete_error": "Could not delete {address}: {message}",
-    "edit_error": "Could not edit asset: {message}",
+    "delete_error": "Could not delete {address}",
+    "edit_error": "Could not edit asset",
     "edit_title": "Edit an asset",
     "merge_assets": "Merge Assets",
     "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)",
@@ -1313,15 +1266,13 @@
       "migrate_button": "Migrate",
       "migrating_asset": "Migrating Asset",
       "migration_error": "Migration failed",
-      "migration_success": "Token migrated successfully",
       "solana_address": "Solana Address",
       "validation": {
         "address_invalid": "The address is not a valid Solana address",
         "address_non_empty": "The Solana address cannot be empty",
         "decimals_non_empty": "The number of decimals cannot be empty",
         "token_kind_non_empty": "The token kind cannot be empty"
-      },
-      "validation_error": "Please fill in all required fields"
+      }
     }
   },
   "asset_mappings": {
@@ -1341,8 +1292,7 @@
       "ignore_fiat_tooltip": "Ignore all fiat currency movements (e.g., USD, EUR). These typically don't have corresponding events.",
       "ignore_selected": "Ignore Selected",
       "ignore_selected_confirm": "Are you sure you want to ignore {count} selected asset movement(s)? This action marks them as having no corresponding event.",
-      "restore_selected": "Restore Selected",
-      "restore_selected_confirm": "Are you sure you want to restore {count} selected asset movement(s) to the unmatched list?"
+      "restore_selected": "Restore Selected"
     },
     "actions_pin": {
       "pin_section": "Pin Section"
@@ -2194,15 +2144,12 @@
     "action_failed": "Could not update the bridge transaction",
     "actions": {
       "auto_match_tooltip": "Automatically match bridge transactions with their counterpart events on the other chain based on amount, asset, and timestamp.",
-      "create_counterpart": "Create Counterpart Event",
       "create_counterpart_confirm_in": "Are you sure you want to create the missing source event of this bridge withdrawal? A synthetic event mirroring it (same asset, amount and time) will be created on the source chain and linked, so the transfer is accounted for as a movement of your own funds. Use this when the source chain can no longer be queried. The synthetic event is clearly marked and is deleted again if you unlink the pair.",
       "create_counterpart_confirm_in_chain": "Are you sure you want to create the missing source event of this bridge withdrawal on {chain}? A synthetic event mirroring it (same asset, amount and time) will be created there and linked, so the transfer is accounted for as a movement of your own funds. Use this when {chain} can no longer be queried. The synthetic event is clearly marked and is deleted again if you unlink the pair.",
       "create_counterpart_confirm_out": "Are you sure you want to create the missing destination event of this bridge deposit? A synthetic event mirroring it (same asset, amount and time) will be created on the destination chain and linked, so the transfer is accounted for as a movement of your own funds. Use this when the destination chain can no longer be queried. The synthetic event is clearly marked and is deleted again if you unlink the pair.",
       "create_counterpart_confirm_out_chain": "Are you sure you want to create the missing destination event of this bridge deposit on {chain}? A synthetic event mirroring it (same asset, amount and time) will be created there and linked, so the transfer is accounted for as a movement of your own funds. Use this when {chain} can no longer be queried. The synthetic event is clearly marked and is deleted again if you unlink the pair.",
       "ignore_selected": "Ignore Selected",
-      "ignore_selected_confirm": "Are you sure you want to ignore {count} selected bridge transaction(s)? This action marks them as having no corresponding event.",
-      "restore_selected": "Restore Selected",
-      "restore_selected_confirm": "Are you sure you want to restore {count} selected bridge transaction(s) to the unmatched list?"
+      "ignore_selected_confirm": "Are you sure you want to ignore {count} selected bridge transaction(s)? This action marks them as having no corresponding event."
     },
     "dialog": {
       "confirm_ignore": "Ignore this transaction?",
@@ -2247,11 +2194,11 @@
     }
   },
   "calendar": {
-    "add_error": "Could not add event: {message}",
+    "add_error": "Could not add event",
     "add_event": "Add Event",
     "all_addresses": "All addresses",
     "delete_error": {
-      "message": "Failed to delete event: {message}"
+      "title": "Could not delete the event"
     },
     "delete_event": "Delete event",
     "dialog": {
@@ -2273,7 +2220,7 @@
         "tooltip": "Open Calendar Settings"
       }
     },
-    "edit_error": "Could not edit event: {message}",
+    "edit_error": "Could not edit event",
     "form": {
       "name": {
         "validation": {
@@ -2776,7 +2723,6 @@
         },
         "message": {
           "failure": "Delete snapshot failed",
-          "success": "Snapshot successfully deleted",
           "title": "Delete snapshot"
         }
       },
@@ -2785,9 +2731,7 @@
           "add": "Add balance",
           "asset": "Assets",
           "bulk_delete": {
-            "action": "Remove zero-value | Remove {count} zero-value | Remove {count} zero-value",
-            "message": "This removes {count} balance with no value. | This removes {count} balances with no value. They contribute nothing to net worth and can be safely cleared. | This removes {count} balances with no value. They contribute nothing to net worth and can be safely cleared.",
-            "title": "Remove zero-value balances"
+            "action": "Remove zero-value | Remove {count} zero-value | Remove {count} zero-value"
           },
           "category": "Category",
           "empty": "No balances in this snapshot",
@@ -2964,8 +2908,6 @@
           },
           "location_data": {
             "add_title": "Add location data snapshot data",
-            "delete_confirmation": "Are you sure you want to delete this location data snapshot item?",
-            "delete_title": "Delete location data snapshot item",
             "edit_title": "Update location data snapshot data",
             "rules": {
               "location": "The location field cannot be empty",
@@ -3112,7 +3054,7 @@
     },
     "detect": {
       "action": "Check balances",
-      "error": "Could not check balances against the chain: {error}",
+      "error": "Could not check balances against the chain",
       "tooltip": "Compare the balances rotki calculated with the chain balances from the last refresh and flag any difference."
     },
     "empty": {
@@ -3192,10 +3134,6 @@
       }
     },
     "purge_images_cache": {
-      "confirm": {
-        "message": "Are you sure you want to clear the images cached for {source}?",
-        "title": "Confirm clear images cached"
-      },
       "error": "Clear the cached images for {source} failed: {message}",
       "hint": "Empty this field to remove the cache for all",
       "label": {
@@ -3210,10 +3148,6 @@
       "title": "Purge Images Cache"
     },
     "refresh_cache": {
-      "confirm": {
-        "message": "Are you sure you want to refresh the protocol data for {source}?",
-        "title": "Confirm refresh protocol data"
-      },
       "error": "Clear the protocol data for {source} failed: {message}",
       "select_cache": "Select protocol data to refresh",
       "subtitle": "Allows you to refresh protocol data in rotki",
@@ -3426,7 +3360,7 @@
     "connectivity": "Connectivity",
     "cooldown_until": "Rate limited until:",
     "delete_error": {
-      "title": "Deleting {chain} RPC Node"
+      "title": "Could not delete the {chain} RPC node"
     },
     "delete_tooltip": "Delete the selected RPC Node",
     "edit_dialog": {
@@ -3717,7 +3651,7 @@
       "safe_migration": {
         "account_label": "Gnosis Pay Safe",
         "add_action": "Add to rotki",
-        "add_error": "Failed to add the Safe: {error}",
+        "add_error": "Could not add the Safe",
         "add_success": "Added {address} as a Gnosis Chain account.",
         "missing_new": "Gnosis Pay replaced your Safe. You track only the previous one; add the new active Safe {address} to track future activity.",
         "missing_old": "Gnosis Pay replaced your Safe. You track only the new one; add the previous Safe {address} to keep its historical activity.",
@@ -4271,7 +4205,8 @@
       "delete_confirmation": {
         "subtitle": "Are you sure you want to delete this node?",
         "title": "Delete node"
-      }
+      },
+      "delete_error": "Could not delete the node"
     },
     "thousand_separator": {
       "validation": {
@@ -4647,12 +4582,6 @@
     "search_chain": "Search chain",
     "selection": "Select one or more chains to redecode their events"
   },
-  "history_refresh_button": {
-    "confirm_refresh": {
-      "message": "Are you sure you want to proceed with refreshing all your account transactions and exchange events? This action can take a significant amount of time.",
-      "title": "Confirm history refresh"
-    }
-  },
   "history_refresh_selection": {
     "back_to_chain": "Back to chain selection",
     "no_banks": "No bank connections have been set up yet",
@@ -4683,11 +4612,6 @@
     }
   },
   "ignore": {
-    "confirm": {
-      "message": "Are you sure you want to ignore {asset}?\n\nIgnoring {asset} will prevent rotki from displaying any balances across all locations and will hide all events related to it.",
-      "these_assets": "these assets",
-      "title": "Ignore Asset"
-    },
     "failed": {
       "ignore_message": "{length} asset(s) could not be added to ignored assets: {message}",
       "ignore_title": "Failed to ignore assets",
@@ -5723,7 +5647,6 @@
         "title": "Edit Oracle Price"
       },
       "error": {
-        "description": "Failed to edit oracle price: {message}",
         "title": "Oracle price edit failed"
       }
     },
@@ -6079,8 +6002,7 @@
         "learn_more": "Learn more"
       },
       "removing_failed": "Deleting the keys was not successful",
-      "setting_failed": "Setting the keys was not successful",
-      "setup_failed_description": "Failed to setup your rotki Premium subscription, reason: {error}"
+      "setting_failed": "Setting the keys was not successful"
     },
     "fields": {
       "api_key": "API Key",
@@ -6351,7 +6273,6 @@
     "debug": {
       "export_data": "Export debug data",
       "export_message": {
-        "success": "PnL report debug data exported successfully",
         "title": "Export PnL report debug data"
       },
       "import_data": "Import debug data",
@@ -6359,7 +6280,6 @@
         "title": "Import PnL report debug data"
       },
       "import_message": {
-        "success": "PnL report debug data imported successfully",
         "title": "Import PnL report debug data"
       },
       "title": "Debug"
@@ -6589,7 +6509,6 @@
     "ignore_errors_tooltip": "Save the balance snapshot ignoring any errors on external APIs. This can cause the snapshot to be incomplete.",
     "menu_tooltip": "View the date of the last balances snapshot",
     "messages": {
-      "failed_description": "Importing snapshot failed: {message}",
       "success_description": "Snapshot successfully imported. You will be logged out now.",
       "title": "Snapshot import"
     },
@@ -6659,11 +6578,11 @@
         }
       },
       "messages": {
-        "add_failed": "Failed to add the node operator: {message}",
+        "add_failed": "Couldn't add the node operator",
         "confirm_delete_message": "Are you sure you want to remove {module} node operator #{nodeOperatorId} for {address}?",
         "confirm_delete_title": "Delete node operator",
-        "delete_failed": "Failed to remove the node operator: {message}",
-        "fetch_failed": "Failed to query the Lido CSM node operators: {message}"
+        "delete_failed": "Could not remove the node operator",
+        "fetch_failed": "Couldn't load the Lido CSM node operators"
       },
       "modules": {
         "csm": "CSM",
@@ -6893,6 +6812,7 @@
       "accounts": {
         "add": "Adding {address}",
         "add_count": "Adding {count} address | Adding {count} addresses",
+        "create_tag": "Creating tag {tag}",
         "detect": "Detecting EVM accounts",
         "ens": "Resolving ENS names for {count} address | Resolving ENS names for {count} addresses",
         "import": "Importing {count} account | Importing {count} accounts",
@@ -7345,9 +7265,9 @@
     },
     "dialog": {
       "add_tx": "Add transaction by tx hash",
+      "add_tx_error": "Could not add the transaction",
       "delete": {
         "error": {
-          "message": "Failed: {message}",
           "title": "Delete transaction"
         },
         "message": "Are you sure you want to delete this transaction and its events? You will have to purge all transactions or add by the transaction hash to restore them.",
@@ -7365,8 +7285,6 @@
     "events": {
       "accounting_rule": {
         "different_types_error": "Cannot create an accounting rule for events with different types or subtypes. Please select events with the same event type and subtype combination.",
-        "error": "Accounting Rule Error",
-        "incompatible_selection": "Incompatible Event Selection",
         "no_events_found": "No events found for the selected IDs."
       },
       "actions": {
@@ -7412,10 +7330,7 @@
         "error": {
           "message": "Failed to delete events",
           "title": "Delete Failed"
-        },
-        "success": "{count} event deleted successfully | {count} events deleted successfully",
-        "success_groups": "Events in {count} group deleted successfully | Events in {count} groups deleted successfully",
-        "title": "Delete Events"
+        }
       },
       "dialog": {
         "add": {
@@ -7423,7 +7338,8 @@
         },
         "edit": {
           "title": "Edit Event"
-        }
+        },
+        "save_error": "Could not save the event"
       },
       "event_states": {
         "customized": "Customized",
@@ -7431,9 +7347,6 @@
         "matched": "Matched",
         "profit_adjustment": "Profit adjustment",
         "synthetic": "Synthetic"
-      },
-      "export": {
-        "confirmation_message": "Are you sure you want to export the list of events with the selected filters applied?"
       },
       "form": {
         "account_address": {
@@ -7614,9 +7527,7 @@
         "error": {
           "message": "Failed to exclude events from accounting",
           "title": "Exclusion Failed"
-        },
-        "success": "{count} transaction excluded successfully | {count} transactions excluded successfully",
-        "title": "Exclude Transactions"
+        }
       },
       "note": {
         "merchant_code": "Merchant Code: {code}"
@@ -7653,9 +7564,7 @@
             "title": "Error reprocessing skipped events"
           },
           "success": {
-            "all": "All skipped external events have been processed",
-            "some": "{successful} of {total} skipped external events have been processed",
-            "title": "Skipped events processed"
+            "some": "{successful} of {total} skipped external events have been processed"
           }
         }
       },
@@ -7828,8 +7737,7 @@
       }
     },
     "confirmation": {
-      "message": "Are you sure you want to log out of your current rotki session?",
-      "title": "Confirmation Required"
+      "message": "Are you sure you want to log out of your current rotki session?"
     },
     "logout": "Logout",
     "settings": "Settings",

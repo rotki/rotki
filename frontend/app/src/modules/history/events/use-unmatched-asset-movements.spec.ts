@@ -12,8 +12,6 @@ const { spies } = vi.hoisted(() => ({
     triggerAssetMovementMatching: vi.fn(),
     getAssetMovementMatches: vi.fn(),
     unlinkAssetMovement: vi.fn(),
-    showErrorMessage: vi.fn(),
-    showSuccessMessage: vi.fn(),
     runTask: vi.fn(),
     submitTask: vi.fn(),
     useIsTaskRunning: vi.fn(() => ref(false)),
@@ -35,16 +33,6 @@ vi.mock('@/modules/history/api/events/use-asset-movement-matching-api', () => ({
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: (): ReturnType<typeof useHistoryEventsApi> => createMock<ReturnType<typeof useHistoryEventsApi>>({
     fetchHistoryEvents: spies.fetchHistoryEvents,
-  }),
-}));
-
-vi.mock('@/modules/core/notifications/use-notifications', async () => ({
-  getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
-    '@/modules/core/common/logging/error-handling',
-  )).getErrorMessage,
-  useNotifications: (): object => ({
-    showErrorMessage: spies.showErrorMessage,
-    showSuccessMessage: spies.showSuccessMessage,
   }),
 }));
 
@@ -151,7 +139,6 @@ describe('use-unmatched-asset-movements', () => {
 
       expect(get(unmatchedError)).toBe(failure);
       expect(get(ignoredError)).toBeUndefined();
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(get(loading)).toBe(false);
     });
 
@@ -190,7 +177,6 @@ describe('use-unmatched-asset-movements', () => {
 
       await fetchUnmatchedAssetMovements(false);
 
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(get(loading)).toBe(false);
     });
   });
@@ -226,19 +212,17 @@ describe('use-unmatched-asset-movements', () => {
 
       expect(spies.matchAssetMovements).toHaveBeenCalledWith(1, [2, 3]);
       expect(result).toEqual({ success: true });
-      expect(spies.showSuccessMessage).toHaveBeenCalled();
       expect(spies.signalEventsModified).toHaveBeenCalledTimes(1);
     });
 
-    /** A refused match changed nothing, so nothing is announced or invalidated, but the panel still names it. */
-    it('should hand a refused match back with a reason, announcing nothing', async () => {
+    /** A refused match changed nothing, so nothing is invalidated, but the panel still names it. */
+    it('should hand a refused match back with a reason', async () => {
       spies.matchAssetMovements.mockResolvedValueOnce(false);
       const { useUnmatchedAssetMovements } = await importFresh();
 
       const result = await useUnmatchedAssetMovements().matchAssetMovement(1, [2]);
 
       expect(result).toEqual({ message: new Error('common.change_not_applied'), success: false });
-      expect(spies.showSuccessMessage).not.toHaveBeenCalled();
       expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
 
@@ -249,7 +233,6 @@ describe('use-unmatched-asset-movements', () => {
       const result = await useUnmatchedAssetMovements().matchAssetMovement(1, [2]);
 
       expect(result).toMatchObject({ message: { message: 'the backend said no' }, success: false });
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
   });
@@ -267,16 +250,6 @@ describe('use-unmatched-asset-movements', () => {
       expect(spies.signalEventsModified).toHaveBeenCalledTimes(1);
     });
 
-    /** The caller surfaces this one itself, with an undo, so a toast would be a second report. */
-    it('should say nothing on success, since the caller reports it with an undo', async () => {
-      spies.matchAssetMovements.mockResolvedValueOnce(true);
-      const { useUnmatchedAssetMovements } = await importFresh();
-
-      await useUnmatchedAssetMovements().resolveExternal(1);
-
-      expect(spies.showSuccessMessage).not.toHaveBeenCalled();
-    });
-
     it('should hand the thrown error back for the panel, instead of a dialog', async () => {
       spies.matchAssetMovements.mockRejectedValueOnce(new Error('the backend said no'));
       const { useUnmatchedAssetMovements } = await importFresh();
@@ -284,7 +257,6 @@ describe('use-unmatched-asset-movements', () => {
       const result = await useUnmatchedAssetMovements().resolveExternal(1);
 
       expect(result).toMatchObject({ message: { message: 'the backend said no' }, success: false });
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
   });
@@ -307,7 +279,6 @@ describe('use-unmatched-asset-movements', () => {
       await useUnmatchedAssetMovements().triggerAssetMovementAutoMatching();
 
       expect(spies.submitTask).toHaveBeenCalledOnce();
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
   });

@@ -127,17 +127,17 @@ export async function confirmInlineSuccess(page: Page, target: string, messageCo
 }
 
 /**
- * Confirms a dialog by clicking the confirm button.
- * Optionally verifies the dialog title contains expected text.
+ * Accepts the question a button asks beside itself (a row's delete, for one), and waits for it to go.
+ * Optionally verifies the question's title contains the expected text.
  */
-export async function confirmDialog(page: Page, expectedTitle?: string): Promise<void> {
-  const dialog = page.locator('[data-testid=confirm-dialog]');
+export async function confirmInline(page: Page, expectedTitle?: string): Promise<void> {
+  const question = page.locator('[data-testid=inline-confirm]');
 
-  if (expectedTitle) {
-    await expect(dialog.locator('[data-testid=dialog-title]')).toContainText(expectedTitle);
-  }
+  if (expectedTitle)
+    await expect(question).toHaveAttribute('aria-label', new RegExp(expectedTitle));
 
-  await dialog.locator('[data-testid=button-confirm]').click();
+  await question.locator('[data-testid=inline-confirm-accept]').click();
+  await question.waitFor({ state: 'detached' });
 }
 
 /**

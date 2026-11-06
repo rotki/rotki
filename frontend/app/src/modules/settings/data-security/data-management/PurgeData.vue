@@ -6,6 +6,7 @@ import { Purgeable } from '@/modules/session/purge';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { usePurgeData } from '@/modules/settings/data-security/data-management/use-purge-data';
 import DefiModuleSelector from '@/modules/settings/modules/DefiModuleSelector.vue';
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 import ActionStatusIndicator from '@/modules/shell/components/error/ActionStatusIndicator.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -23,9 +24,10 @@ const {
   modelModule,
   modelSource,
   pending,
+  purge,
   purgeable,
   purgeableModules,
-  showConfirmation,
+  purgeQuestion,
   status,
 } = usePurgeData();
 </script>
@@ -109,23 +111,32 @@ const {
       />
 
       <div class="flex">
-        <RuiButton
-          :disabled="!modelSource || pending"
-          :loading="pending"
-          variant="outlined"
-          color="error"
-          data-testid="purge-submit"
-          @click="showConfirmation(modelSource)"
+        <ConfirmPopover
+          :title="purgeQuestion.title"
+          :message="purgeQuestion.message"
+          :confirm-label="t('purge_selector.tooltip')"
+          @confirm="purge(modelSource)"
         >
-          <template #prepend>
-            <RuiIcon
-              name="lu-trash-2"
-              size="16"
-            />
-          </template>
+          <template #activator="{ attrs }">
+            <RuiButton
+              :disabled="!modelSource || pending"
+              :loading="pending"
+              variant="outlined"
+              color="error"
+              data-testid="purge-submit"
+              v-bind="attrs"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-trash-2"
+                  size="16"
+                />
+              </template>
 
-          {{ t('purge_selector.tooltip') }}
-        </RuiButton>
+              {{ t('purge_selector.tooltip') }}
+            </RuiButton>
+          </template>
+        </ConfirmPopover>
       </div>
     </div>
   </SettingsItem>

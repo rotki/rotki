@@ -9,18 +9,12 @@ import { NoIndexersCause, RaisedConditionKind, SessionCause, useRaisedConditions
 
 const suppressedChains = ref<string[]>([]);
 const updateFrontendSetting = vi.fn<(payload: object) => Promise<{ success: boolean }>>();
-const show = vi.fn<(message: { title: string; message: string }, onConfirm: () => Promise<void>) => void>();
-
 vi.mock('@/modules/settings/use-setting', () => ({
   useSetting: (): Ref<string[]> => suppressedChains,
 }));
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): object => ({ updateFrontendSetting }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({ show }),
 }));
 
 vi.mock('@/modules/core/common/use-supported-chains', () =>
@@ -99,20 +93,16 @@ describe('modules/shell/action-center/use-chain-rows', () => {
     expect(optimism.options.map(({ id }) => id)).toEqual(['do-not-show-again']);
   });
 
-  it('should ask before suppressing a chain, then add it to the suppressed chains', async () => {
+  it('should have the row ask before suppressing a chain, then add it to the suppressed chains', () => {
     set(suppressedChains, ['gnosis']);
     raiseNoIndexers('optimism');
 
     const suppress = option(get(rows())[0], 'do-not-show-again');
     expect(suppress.danger).toBe(true);
+    expect(suppress.confirm?.title).toBe('action_center.rows.chains.suppress_confirm.title::OPTIMISM');
     assert(suppress.target.kind === 'run');
+
     suppress.target.run();
-
-    expect(updateFrontendSetting).not.toHaveBeenCalled();
-    const [message, onConfirm] = show.mock.calls[0];
-    expect(message.title).toBe('action_center.rows.chains.suppress_confirm.title::OPTIMISM');
-
-    await onConfirm();
 
     expect(updateFrontendSetting).toHaveBeenCalledWith({ suppressNoIndexerChains: ['gnosis', 'optimism'] });
   });

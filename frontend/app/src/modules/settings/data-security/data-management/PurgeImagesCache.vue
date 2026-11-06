@@ -50,7 +50,7 @@ async function purgeSource(source: PurgeableImageCache) {
   }
 }
 
-const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>(
+const { pending, request, status } = useCacheClear<PurgeableImageCache>(
   purgeable,
   purgeSource,
   {
@@ -62,12 +62,6 @@ const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>
       source,
     }),
   },
-  (source: string) => ({
-    message: t('data_management.purge_images_cache.confirm.message', {
-      source,
-    }),
-    title: t('data_management.purge_images_cache.confirm.title'),
-  }),
 );
 </script>
 
@@ -117,7 +111,7 @@ const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>
           variant="outlined"
           color="error"
           data-testid="purge-images-cache-button"
-          @click="showConfirmation(source)"
+          @click="request(source)"
         >
           <template #prepend>
             <RuiIcon

@@ -1,5 +1,6 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { get, set } from '@vueuse/core';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
@@ -8,7 +9,6 @@ import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-dat
 const dismiss = vi.fn();
 const retry = vi.fn();
 const resolveManually = vi.fn();
-const show = vi.fn<(message: unknown, onConfirm: () => Promise<void>) => void>();
 
 vi.mock('@/modules/history/data-issues/use-data-issues', () => ({
   useDataIssues: (): Record<string, unknown> => ({
@@ -19,16 +19,8 @@ vi.mock('@/modules/history/data-issues/use-data-issues', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
-}));
-
-/** Runs the onConfirm callback the composable handed to the confirm dialog. */
-async function confirmDismiss(): Promise<void> {
-  const onConfirm = show.mock.calls.at(-1)?.[1];
-  if (!onConfirm)
-    throw new Error('confirm dialog was not shown');
-  await onConfirm();
+function failure(message: string): { cause: Error; message: string; type: 'conflict' } {
+  return { cause: new Error(message), message, type: 'conflict' };
 }
 
 function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
@@ -67,58 +59,67 @@ describe('useDataIssueDetailActions', () => {
     expect(get(modelDrawerOpen)).toBe(true);
   });
 
-  it('should ask for confirmation before dismissing and not dismiss until confirmed', async () => {
+  it('should dismiss at once, close the drawer and reload', async () => {
     const reload = vi.fn().mockResolvedValue(undefined);
-    const { onDismiss } = useDataIssueDetailActions(reload);
-
-    await onDismiss(1);
-
-    expect(show).toHaveBeenCalledOnce();
-    expect(dismiss).not.toHaveBeenCalled();
-    expect(reload).not.toHaveBeenCalled();
-  });
-
-  it('should close the drawer and reload after a confirmed dismiss', async () => {
-    const reload = vi.fn().mockResolvedValue(undefined);
-    dismiss.mockResolvedValue(createIssue({ state: IssueState.DISMISSED }));
-    const { modelDrawerOpen, onDismiss, openDetail } = useDataIssueDetailActions(reload);
+    dismiss.mockResolvedValue(ok(createIssue({ state: IssueState.DISMISSED })));
+    const { actionFailure, modelDrawerOpen, onDismiss, openDetail } = useDataIssueDetailActions(reload);
     openDetail(createIssue());
 
     await onDismiss(1);
-    await confirmDismiss();
 
     expect(dismiss).toHaveBeenCalledWith(1);
     expect(get(modelDrawerOpen)).toBe(false);
     expect(reload).toHaveBeenCalledOnce();
+    expect(get(actionFailure)).toBeUndefined();
   });
 
-  it('should keep the drawer open and skip reload when a confirmed dismiss fails', async () => {
+  it('should keep a failed dismiss under its title, leave the drawer open and skip the reload', async () => {
     const reload = vi.fn().mockResolvedValue(undefined);
-    dismiss.mockResolvedValue(undefined);
-    const { modelDrawerOpen, onDismiss, openDetail } = useDataIssueDetailActions(reload);
+    dismiss.mockResolvedValue(err(failure('nope')));
+    const { actionFailure, modelDrawerOpen, onDismiss, openDetail } = useDataIssueDetailActions(reload);
     openDetail(createIssue());
 
     await onDismiss(1);
-    await confirmDismiss();
 
+    expect(get(actionFailure)).toStrictEqual({ error: failure('nope'), id: 1, title: 'data_issues.action.dismiss.error' });
     expect(get(modelDrawerOpen)).toBe(true);
     expect(reload).not.toHaveBeenCalled();
   });
 
-  it('should reset the busy flag even if a confirmed dismiss rejects', async () => {
+  it('should drop the last failure when the next action starts', async () => {
+    const reload = vi.fn().mockResolvedValue(undefined);
+    dismiss.mockResolvedValue(err(failure('nope')));
+    retry.mockResolvedValue(ok(createIssue({ state: IssueState.AUTO_REMEDIATING })));
+    const { actionFailure, onDismiss, onRetry } = useDataIssueDetailActions(reload);
+
+    await onDismiss(1);
+    await onRetry(1);
+
+    expect(get(actionFailure)).toBeUndefined();
+  });
+
+  it('should keep a failed retry under its own title', async () => {
+    retry.mockResolvedValue(err(failure('conflict')));
+    const { actionFailure, onRetry } = useDataIssueDetailActions(vi.fn());
+
+    await onRetry(4);
+
+    expect(get(actionFailure)).toStrictEqual({ error: failure('conflict'), id: 4, title: 'data_issues.action.retry.error' });
+  });
+
+  it('should reset the busy flag even if a dismiss rejects', async () => {
     const reload = vi.fn().mockResolvedValue(undefined);
     dismiss.mockRejectedValue(new Error('boom'));
     const { modelActionBusy, onDismiss } = useDataIssueDetailActions(reload);
 
-    await onDismiss(1);
-    await expect(confirmDismiss()).rejects.toThrow('boom');
+    await expect(onDismiss(1)).rejects.toThrow('boom');
     expect(get(modelActionBusy)).toBe(false);
   });
 
   it('should refresh the selected issue after a successful retry', async () => {
     const reload = vi.fn().mockResolvedValue(undefined);
     const updated = createIssue({ state: IssueState.AUTO_REMEDIATING });
-    retry.mockResolvedValue(updated);
+    retry.mockResolvedValue(ok(updated));
     const { modelSelectedIssue, onRetry } = useDataIssueDetailActions(reload);
 
     await onRetry(1);
@@ -160,7 +161,7 @@ describe('useDataIssueDetailActions', () => {
 
   it('should resolve manually with the note, close both dialogs and reload', async () => {
     const reload = vi.fn().mockResolvedValue(undefined);
-    resolveManually.mockResolvedValue(createIssue({ state: IssueState.RESOLVED }));
+    resolveManually.mockResolvedValue(ok(createIssue({ state: IssueState.RESOLVED })));
     const { modelDrawerOpen, modelResolveOpen, onResolveConfirm, onResolveRequest, openDetail } = useDataIssueDetailActions(reload);
     openDetail(createIssue({ id: 7 }));
     onResolveRequest();
@@ -171,5 +172,30 @@ describe('useDataIssueDetailActions', () => {
     expect(get(modelResolveOpen)).toBe(false);
     expect(get(modelDrawerOpen)).toBe(false);
     expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('should keep a failed resolve for the dialog, which stays open, and skip the reload', async () => {
+    const reload = vi.fn().mockResolvedValue(undefined);
+    resolveManually.mockResolvedValue(err(failure('bad state')));
+    const { modelResolveOpen, onResolveConfirm, onResolveRequest, openDetail, resolveFailure } = useDataIssueDetailActions(reload);
+    openDetail(createIssue({ id: 7 }));
+    onResolveRequest();
+
+    await onResolveConfirm(undefined);
+
+    expect(get(resolveFailure)).toStrictEqual(failure('bad state'));
+    expect(get(modelResolveOpen)).toBe(true);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('should drop a failed resolve when the dialog opens again', async () => {
+    resolveManually.mockResolvedValue(err(failure('bad state')));
+    const { onResolveConfirm, onResolveRequest, openDetail, resolveFailure } = useDataIssueDetailActions(vi.fn());
+    openDetail(createIssue({ id: 7 }));
+
+    await onResolveConfirm(undefined);
+    onResolveRequest();
+
+    expect(get(resolveFailure)).toBeUndefined();
   });
 });

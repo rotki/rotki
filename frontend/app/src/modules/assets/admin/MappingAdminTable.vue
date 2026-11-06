@@ -22,7 +22,7 @@ const paginationModel = defineModel<TablePaginationData>('pagination', { require
 
 const filtersModel = defineModel<MatchedKeyword<K>>('filters', { required: true });
 
-const { collection, sourceKey, sourceLabel, symbolKey, subtitle } = defineProps<{
+const { collection, deleteConfirm, sourceKey, sourceLabel, symbolKey, subtitle } = defineProps<{
   collection: Collection<T>;
   fields: FieldDef[];
   loading: boolean;
@@ -33,6 +33,8 @@ const { collection, sourceKey, sourceLabel, symbolKey, subtitle } = defineProps<
   sourceLabel: string;
   /** The row attribute holding the symbol the source uses. */
   symbolKey: keyof T & string;
+  /** What a row's delete button asks; `delete` is emitted once the user confirms. */
+  deleteConfirm: (mapping: T) => { title: string; message: string };
 }>();
 
 const emit = defineEmits<{
@@ -135,6 +137,7 @@ const cols = computed<DataTableColumn<KeyedRow>[]>(() => [{
           align="end"
           :edit-tooltip="t('asset_table.edit_tooltip')"
           :delete-tooltip="t('asset_table.delete_tooltip')"
+          :delete-confirm="deleteConfirm(row)"
           @edit-click="emitMapping('edit', row)"
           @delete-click="emitMapping('delete', row)"
         />

@@ -15,6 +15,7 @@ const backendDisplay = ref<boolean>(false);
 const backendUrl = ref<string>('');
 const savedUsernames = ref<string[]>(['saved-user']);
 const storedUsername = ref<string>('');
+const logoutRemoteSession = vi.fn<() => Promise<ActionStatus>>();
 
 type SavedProfilesMock = ReturnType<typeof useSavedProfiles>;
 
@@ -59,7 +60,7 @@ vi.mock('@/modules/auth/login/use-custom-backend', () => ({
 
 vi.mock('@/modules/auth/use-logout', () => ({
   useLogout: (): LogoutMock => ({
-    logoutRemoteSession: vi.fn<() => Promise<ActionStatus>>(async () => Promise.resolve({ success: true })),
+    logoutRemoteSession,
   }),
 }));
 
@@ -80,6 +81,14 @@ const ButtonStub = {
   template: '<button :disabled="disabled"><slot /></button>',
 };
 
+/** Renders its title slot, where the form names a failed logout, and emits `action` when asked. */
+const AlertStub = {
+  emits: ['action'],
+  name: 'RuiAlert',
+  props: ['actionText', 'type'],
+  template: '<div><slot name="title" /><slot /></div>',
+};
+
 const USERNAME = 'LoginUsernameField';
 const PASSWORD = 'password-input';
 const URL_MAX_LENGTH = 300;
@@ -93,6 +102,7 @@ describe('loginForm', () => {
     set(backendUrl, '');
     set(savedUsernames, ['saved-user']);
     set(storedUsername, '');
+    logoutRemoteSession.mockReset().mockResolvedValue({ success: true });
   });
 
   afterEach(() => {
@@ -111,6 +121,7 @@ describe('loginForm', () => {
           LoginUsernameField: { ...inputStub('LoginUsernameField'), methods: { focus: (): void => {} } },
           LoginWelcomeMessageDialog: true,
           PremiumSyncConflictAlert: true,
+          RuiAlert: AlertStub,
           RuiButton: ButtonStub,
           RuiRevealableTextField: inputStub('RuiRevealableTextField'),
         },
@@ -399,5 +410,48 @@ describe('loginForm', () => {
     await flushPromises();
 
     expect(wrapper.emitted('new-account')).toHaveLength(1);
+  });
+
+  describe('logging out the session another client holds', () => {
+    const ALREADY_LOGGED_IN = 'User saved-user is already logged in';
+
+    async function logOutOther(): Promise<void> {
+      await flushPromises();
+      const alert = wrapper.findComponent<StubInstance>('[data-testid=login-already-logged-in]');
+      assert(alert.exists(), 'the logged-in alert is not rendered');
+      expect(alert.props('actionText')).toBe('login.logout');
+      alert.vm.$emit('action');
+      await flushPromises();
+    }
+
+    it('should name a failed logout in the alert that offered it, and not move on', async () => {
+      logoutRemoteSession.mockResolvedValue({ message: 'backend unreachable', success: false });
+      wrapper = createWrapper({ errors: [ALREADY_LOGGED_IN] });
+
+      await logOutOther();
+
+      expect(wrapper.find('[data-testid=login-logout-failure]').text()).toBe('backend unreachable');
+      expect(wrapper.emitted('touched')).toBeUndefined();
+    });
+
+    it('should move on once the other session is logged out, naming nothing', async () => {
+      wrapper = createWrapper({ errors: [ALREADY_LOGGED_IN] });
+
+      await logOutOther();
+
+      expect(wrapper.emitted('touched')).toHaveLength(1);
+      expect(wrapper.find('[data-testid=login-logout-failure]').exists()).toBe(false);
+    });
+
+    it('should drop the failure when the next attempt starts', async () => {
+      logoutRemoteSession.mockResolvedValueOnce({ message: 'backend unreachable', success: false });
+      logoutRemoteSession.mockReturnValueOnce(new Promise<ActionStatus>(() => {}));
+      wrapper = createWrapper({ errors: [ALREADY_LOGGED_IN] });
+
+      await logOutOther();
+      await logOutOther();
+
+      expect(wrapper.find('[data-testid=login-logout-failure]').exists()).toBe(false);
+    });
   });
 });

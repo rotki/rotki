@@ -3,10 +3,10 @@ import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
+import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import { useLidoCsmApi } from '@/modules/staking/api/use-lido-csm-api';
@@ -28,9 +28,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { show } = useConfirmStore();
 const api = useLidoCsmApi();
-const { setMessage } = useMessageStore();
 const { stakingModuleLabel } = useLidoCsmStakingModules();
 
 const removingEntryKey = ref<string>('');
@@ -126,41 +124,40 @@ const tableColumns = computed<DataTableColumn<LidoCsmTableRow>[]>(() => [{
   label: '',
 }]);
 
-function handleRemove({ address, nodeOperatorId, stakingModuleId }: LidoCsmTableRow): void {
-  show(
-    {
-      message: t('staking_page.lido_csm.messages.confirm_delete_message', {
-        address,
-        module: stakingModuleLabel(stakingModuleId),
-        nodeOperatorId,
-      }),
-      title: t('staking_page.lido_csm.messages.confirm_delete_title'),
-    },
-    async () => {
-      set(removingEntryKey, rowKey(address, stakingModuleId, nodeOperatorId));
-      try {
-        await api.deleteNodeOperator({
-          address,
-          nodeOperatorId,
-          stakingModuleId,
-        });
-        emit('refresh');
-      }
-      catch (error: unknown) {
-        setMessage({
-          description: t('staking_page.lido_csm.messages.delete_failed', { message: error instanceof Error ? error.message : String(error) }),
-        });
-      }
-      finally {
-        set(removingEntryKey, '');
-      }
-    },
-  );
-}
+const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion<LidoCsmTableRow>({
+  confirm: ({ address, nodeOperatorId, stakingModuleId }) => ({
+    message: t('staking_page.lido_csm.messages.confirm_delete_message', {
+      address,
+      module: stakingModuleLabel(stakingModuleId),
+      nodeOperatorId,
+    }),
+    title: t('staking_page.lido_csm.messages.confirm_delete_title'),
+  }),
+  deleteItem: async ({ address, key, nodeOperatorId, stakingModuleId }) => {
+    set(removingEntryKey, key);
+    try {
+      await api.deleteNodeOperator({ address, nodeOperatorId, stakingModuleId });
+      return true;
+    }
+    finally {
+      set(removingEntryKey, '');
+    }
+  },
+  failureTitle: () => t('staking_page.lido_csm.messages.delete_failed'),
+  onDeleted: () => emit('refresh'),
+});
 </script>
 
 <template>
   <div class="overflow-x-auto">
+    <FailureStrip
+      v-if="deleteFailure"
+      class="mb-3"
+      :retryable="false"
+      :title="deleteFailure.title"
+      :failure="deleteFailure.error"
+      data-testid="lido-csm-delete-error"
+    />
     <RuiDataTable
       dense
       outlined
@@ -322,7 +319,8 @@ function handleRemove({ address, nodeOperatorId, stakingModuleId }: LidoCsmTable
           align="end"
           :disabled="removingEntryKey === row.key"
           :delete-tooltip="t('staking_page.lido_csm.table.remove')"
-          @delete-click="handleRemove(row)"
+          :delete-confirm="deleteConfirm(row)"
+          @delete-click="deleteRow(row)"
         />
       </template>
     </RuiDataTable>

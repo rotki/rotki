@@ -8,17 +8,19 @@ const {
   downloadSkippedEventsCSV,
   exportSkippedEventsCSV,
   getSkippedEventsSummary,
+  notifyError,
+  notifyInfo,
   openDirectory,
   reProcessSkippedEvents,
-  setMessage,
 } = vi.hoisted(() => ({
   appSession: { value: true },
   downloadSkippedEventsCSV: vi.fn(),
   exportSkippedEventsCSV: vi.fn(),
   getSkippedEventsSummary: vi.fn(),
+  notifyError: vi.fn<(title: string, message: string) => void>(),
+  notifyInfo: vi.fn<(title: string, message: string) => void>(),
   openDirectory: vi.fn(),
   reProcessSkippedEvents: vi.fn(),
-  setMessage: vi.fn(),
 }));
 
 vi.mock('@/modules/history/api/events/use-skipped-history-events-api', () => ({
@@ -39,8 +41,11 @@ vi.mock('@/modules/shell/app/use-electron-interop', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
+vi.mock('@/modules/core/notifications/use-notifications', async () => ({
+  getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
+    '@/modules/core/common/logging/error-handling',
+  )).getErrorMessage,
+  useNotifications: (): Record<string, unknown> => ({ notifyError, notifyInfo }),
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
@@ -119,7 +124,8 @@ describe('modules/history/events/useSkippedEventsActions', () => {
       await exportCSV();
 
       expect(exportSkippedEventsCSV).not.toHaveBeenCalled();
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(notifyInfo).not.toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
     });
 
     it('should report a successful write', async () => {
@@ -127,7 +133,10 @@ describe('modules/history/events/useSkippedEventsActions', () => {
 
       await exportCSV();
 
-      expect(setMessage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ success: true }));
+      expect(notifyInfo).toHaveBeenCalledExactlyOnceWith(
+        'actions.online_events.skipped.csv_export.title',
+        'actions.online_events.skipped.csv_export.message.success',
+      );
     });
 
     it('should report a write the backend refused', async () => {
@@ -136,10 +145,7 @@ describe('modules/history/events/useSkippedEventsActions', () => {
 
       await exportCSV();
 
-      expect(setMessage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-        description: 'actions.online_events.skipped.csv_export.message.failure',
-        success: false,
-      }));
+      expect(notifyError).toHaveBeenCalledExactlyOnceWith(expect.any(String), 'actions.online_events.skipped.csv_export.message.failure');
     });
 
     it('should report a write that threw', async () => {
@@ -148,10 +154,7 @@ describe('modules/history/events/useSkippedEventsActions', () => {
 
       await exportCSV();
 
-      expect(setMessage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-        description: 'disk full',
-        success: false,
-      }));
+      expect(notifyError).toHaveBeenCalledExactlyOnceWith(expect.any(String), 'disk full');
     });
   });
 
@@ -175,7 +178,8 @@ describe('modules/history/events/useSkippedEventsActions', () => {
 
       await exportCSV();
 
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(notifyInfo).not.toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
     });
 
     it('should surface the reason a download failed', async () => {
@@ -184,10 +188,7 @@ describe('modules/history/events/useSkippedEventsActions', () => {
 
       await exportCSV();
 
-      expect(setMessage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-        description: 'no events',
-        success: false,
-      }));
+      expect(notifyError).toHaveBeenCalledExactlyOnceWith(expect.any(String), 'no events');
     });
 
     it('should fall back to a generic reason when the failure names none', async () => {
@@ -196,9 +197,7 @@ describe('modules/history/events/useSkippedEventsActions', () => {
 
       await exportCSV();
 
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({
-        description: 'transactions.events.skipped.download_failed',
-      }));
+      expect(notifyError).toHaveBeenCalledWith(expect.any(String), 'transactions.events.skipped.download_failed');
     });
 
     it('should report a download that threw', async () => {
@@ -207,59 +206,60 @@ describe('modules/history/events/useSkippedEventsActions', () => {
 
       await exportCSV();
 
-      expect(setMessage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-        description: 'offline',
-        success: false,
-      }));
+      expect(notifyError).toHaveBeenCalledExactlyOnceWith(expect.any(String), 'offline');
     });
   });
 
   describe('reprocessing', () => {
-    it('should report success when every skipped event was decoded', async () => {
-      const { reProcessSkippedEvents: reProcess } = await actions();
+    it('should name nothing when every skipped event was decoded, the counts dropping saying so', async () => {
+      const { reProcessSkippedEvents: reProcess, reprocessFailure, reprocessNote } = await actions();
 
       await reProcess();
 
-      expect(setMessage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-        description: 'transactions.events.skipped.reprocess.success.all',
-        success: true,
-      }));
+      expect(get(reprocessFailure)).toBeUndefined();
+      expect(get(reprocessNote)).toBeUndefined();
     });
 
-    it('should still count a partial run as a success', async () => {
+    it('should keep a partial run as a note on the row, not a failure', async () => {
       reProcessSkippedEvents.mockResolvedValue({ successful: 1, total: 3 });
-      const { reProcessSkippedEvents: reProcess } = await actions();
+      const { reProcessSkippedEvents: reProcess, reprocessFailure, reprocessNote } = await actions();
 
       await reProcess();
 
-      expect(setMessage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-        description: 'transactions.events.skipped.reprocess.success.some::1, 3',
-        success: true,
-      }));
+      expect(get(reprocessNote)).toBe('transactions.events.skipped.reprocess.success.some::1, 3');
+      expect(get(reprocessFailure)).toBeUndefined();
     });
 
-    it('should report a failure when nothing could be decoded', async () => {
+    it('should keep a failure when nothing could be decoded', async () => {
       reProcessSkippedEvents.mockResolvedValue({ successful: 0, total: 3 });
-      const { reProcessSkippedEvents: reProcess } = await actions();
+      const { reProcessSkippedEvents: reProcess, reprocessFailure } = await actions();
 
       await reProcess();
 
-      expect(setMessage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-        description: 'transactions.events.skipped.reprocess.failed.no_processed_events',
-        success: false,
-      }));
+      expect(get(reprocessFailure)).toBe('transactions.events.skipped.reprocess.failed.no_processed_events');
     });
 
-    it('should report a run that threw', async () => {
-      reProcessSkippedEvents.mockRejectedValue(new Error('decoder crashed'));
-      const { reProcessSkippedEvents: reProcess } = await actions();
+    it('should keep a run that threw as the failure', async () => {
+      const error = new Error('decoder crashed');
+      reProcessSkippedEvents.mockRejectedValue(error);
+      const { reProcessSkippedEvents: reProcess, reprocessFailure } = await actions();
 
       await reProcess();
 
-      expect(setMessage).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-        description: 'decoder crashed',
-        success: false,
-      }));
+      expect(get(reprocessFailure)).toBe(error);
+    });
+
+    it('should drop the last failure and note when the next run starts', async () => {
+      reProcessSkippedEvents.mockResolvedValueOnce({ successful: 1, total: 3 });
+      reProcessSkippedEvents.mockRejectedValueOnce(new Error('decoder crashed'));
+      const { reProcessSkippedEvents: reProcess, reprocessFailure, reprocessNote } = await actions();
+
+      await reProcess();
+      await reProcess();
+      expect(get(reprocessNote)).toBeUndefined();
+
+      await reProcess();
+      expect(get(reprocessFailure)).toBeUndefined();
     });
 
     it('should re-read the summary, since the counts have changed', async () => {

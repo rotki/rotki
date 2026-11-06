@@ -9,7 +9,7 @@ import {
   apiUpdateAssets,
 } from '../helpers/api';
 import { TIMEOUT_LONG, TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
-import { confirmDialog, disableAnimations, TK } from '../helpers/utils';
+import { confirmInline, disableAnimations, TK } from '../helpers/utils';
 
 export class RotkiApp {
   constructor(
@@ -190,7 +190,7 @@ export class RotkiApp {
     await this.page.locator('[data-testid=user-menu-button]').click();
     await this.page.locator('[data-testid=user-dropdown]').waitFor({ state: 'visible' });
     await this.page.locator('[data-testid=logout-button]').click();
-    await confirmDialog(this.page);
+    await confirmInline(this.page);
     await this.page.locator('[data-testid=username-input] input').waitFor({ state: 'visible' });
   }
 

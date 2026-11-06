@@ -19,10 +19,10 @@ export const assetMovementMatchingKind: MatchingKind<UnmatchedAssetMovement, Unm
   },
   pinnedName: PinnedNames.MATCH_ASSET_MOVEMENTS,
   useActions: (options) => {
-    const { confirmIgnoreAllFiat, fiatMovements, ignoreMovement, restoreMovement, ...actions } = useAssetMovementActions(options);
+    const { fiatMovements, ignoreAllFiat, ignoreFiatQuestion, ignoreMovement, restoreMovement, ...actions } = useAssetMovementActions(options);
     return {
       ...actions,
-      fiat: { confirmIgnoreAll: confirmIgnoreAllFiat, items: fiatMovements },
+      fiat: { ignoreAll: ignoreAllFiat, items: fiatMovements, question: ignoreFiatQuestion },
       ignore: ignoreMovement,
       restore: restoreMovement,
     };

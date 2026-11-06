@@ -48,7 +48,6 @@ vi.mock('@/modules/calendar/use-calendar-operations', async () => {
   return {
     useCalendarOperations: (): Record<string, unknown> => ({
       add: vi.fn(),
-      deleteEvent: vi.fn(),
       edit: vi.fn(),
       editMode: ref<boolean>(false),
       modelValue: ref(undefined),

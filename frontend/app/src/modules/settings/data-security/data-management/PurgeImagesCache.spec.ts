@@ -69,9 +69,8 @@ describe('purgeImagesCache', () => {
     await nextTick();
   }
 
-  async function purgeAndConfirm(): Promise<void> {
+  async function purge(): Promise<void> {
     await wrapper.find(BUTTON).trigger('click');
-    await useConfirmStore().confirm();
     await flushPromises();
   }
 
@@ -87,26 +86,20 @@ describe('purgeImagesCache', () => {
     wrapper?.unmount();
   });
 
-  it('should purge nothing until the purge is confirmed', async () => {
+  it('should purge straight away, without asking first', async () => {
     wrapper = createWrapper();
 
-    await wrapper.find(BUTTON).trigger('click');
-    await flushPromises();
+    await purge();
 
-    expect(useConfirmStore().visible).toBe(true);
-    expect(spies.clearIconCache).not.toHaveBeenCalled();
-
-    await useConfirmStore().dismiss();
-    await flushPromises();
-
-    expect(spies.clearIconCache).not.toHaveBeenCalled();
+    expect(useConfirmStore().visible).toBe(false);
+    expect(spies.clearIconCache).toHaveBeenCalledOnce();
   });
 
   describe('asset icons', () => {
     it('should purge every asset icon when no asset is chosen', async () => {
       wrapper = createWrapper();
 
-      await purgeAndConfirm();
+      await purge();
 
       expect(spies.clearIconCache).toHaveBeenCalledExactlyOnceWith(null);
       expect(spies.setLastRefreshedAssetIcon).toHaveBeenCalledOnce();
@@ -117,7 +110,7 @@ describe('purgeImagesCache', () => {
       wrapper.findComponent(AssetSelect).vm.$emit('update:modelValue', 'ETH');
       await nextTick();
 
-      await purgeAndConfirm();
+      await purge();
 
       expect(spies.clearIconCache).toHaveBeenCalledExactlyOnceWith(['ETH']);
       expect(wrapper.findComponent(AssetSelect).props('modelValue')).toBe('');
@@ -126,7 +119,7 @@ describe('purgeImagesCache', () => {
     it('should report the purge under the name of the source', async () => {
       wrapper = createWrapper();
 
-      await purgeAndConfirm();
+      await purge();
 
       expect(wrapper.findComponent(ActionStatusIndicator).props('status')).toEqual({
         error: '',
@@ -149,7 +142,7 @@ describe('purgeImagesCache', () => {
       wrapper = createWrapper();
       await chooseEnsAvatars();
 
-      await purgeAndConfirm();
+      await purge();
 
       expect(spies.clearEnsAvatarCache).toHaveBeenCalledExactlyOnceWith(null);
       expect(spies.refreshAvatarTimestamp).toHaveBeenCalledOnce();
@@ -162,7 +155,7 @@ describe('purgeImagesCache', () => {
       ensSelect().vm.$emit('update:modelValue', ['rotki.eth']);
       await nextTick();
 
-      await purgeAndConfirm();
+      await purge();
 
       expect(spies.clearEnsAvatarCache).toHaveBeenCalledExactlyOnceWith(['rotki.eth']);
       expect(ensSelect().props()).toMatchObject({ modelValue: [] });

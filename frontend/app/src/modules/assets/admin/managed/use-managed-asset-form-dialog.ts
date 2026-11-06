@@ -3,11 +3,9 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { omit } from 'es-toolkit';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 
 /**
- * The error keys the dialog reports as a message rather than on a field.
+ * The error keys the dialog names above the form rather than on a field.
  *
  * @remarks
  * `underlyingTokens` has no single input to attach to. Marshmallow reports whole-payload failures
@@ -39,6 +37,8 @@ interface UseManagedAssetFormDialogOptions {
 interface UseManagedAssetFormDialogReturn {
   /** The dialog's title, which differs between adding and editing. */
   dialogTitle: ComputedRef<string>;
+  /** Why the last write failed where no field is to blame, named in the dialog; Save is the retry. */
+  failure: Readonly<Ref<{ title: string; error: unknown } | undefined>>;
   /** Field errors returned by the server. */
   modelErrorMessages: Ref<ValidationErrors>;
   /** Whether a write is in flight. */
@@ -53,7 +53,7 @@ interface UseManagedAssetFormDialogReturn {
 
 /**
  * Drives the managed asset dialog: validating, writing through the form, and splitting a failure
- * between the fields it belongs to and a message for the rest.
+ * between the fields it belongs to and a failure named above the form for the rest.
  *
  * @returns the dialog's state and its submit
  */
@@ -67,7 +67,7 @@ export function useManagedAssetFormDialog(
   const loading = shallowRef<boolean>(false);
   const modelErrorMessages = ref<ValidationErrors>({});
 
-  const { setMessage } = useMessageStore();
+  const failure = shallowRef<{ title: string; error: unknown }>();
   const { deleteCacheKey } = useAssetInfoCache();
 
   const dialogTitle = computed<string>(() =>
@@ -78,32 +78,20 @@ export function useManagedAssetFormDialog(
     const underlyingTokens = 'underlyingTokens' in errors ? errors.underlyingTokens : undefined;
     if (underlyingTokens) {
       const messages = Array.isArray(underlyingTokens) ? underlyingTokens : [underlyingTokens];
-      setMessage({
-        description: messages.join(','),
-        title: t('asset_form.underlying_tokens'),
-      });
+      set(failure, { error: messages.join(','), title: t('asset_form.underlying_tokens') });
       return;
     }
 
     const schema = errors.Schema;
-    if (Array.isArray(schema)) {
-      setMessage({
-        description: schema[0],
-        title: t('asset_form.underlying_tokens'),
-      });
-    }
+    if (Array.isArray(schema))
+      set(failure, { error: schema[0], title: t('asset_form.underlying_tokens') });
   }
 
   function handleSaveError(error: unknown): void {
-    let errors: string | ValidationErrors = getErrorMessage(error);
-    if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors({});
+    const errors = error instanceof ApiValidationError ? error.getValidationErrors({}) : undefined;
 
-    if (typeof errors === 'string') {
-      setMessage({
-        description: errors,
-        title: toValue(editMode) ? t('asset_form.edit_error') : t('asset_form.add_error'),
-      });
+    if (errors === undefined || typeof errors === 'string') {
+      set(failure, { error: errors ?? error, title: toValue(editMode) ? t('asset_form.edit_error') : t('asset_form.add_error') });
       return;
     }
 
@@ -123,6 +111,7 @@ export function useManagedAssetFormDialog(
       return false;
 
     set(loading, true);
+    set(failure, undefined);
     try {
       const identifier = await formRef.saveAsset();
       if (!identifier)
@@ -145,6 +134,7 @@ export function useManagedAssetFormDialog(
 
   return {
     dialogTitle,
+    failure: readonly(failure),
     loading: readonly(loading),
     modelErrorMessages,
     save,

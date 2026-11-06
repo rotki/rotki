@@ -9,17 +9,20 @@ import DuplicateRowActions from '@/modules/history/events/DuplicateRowActions.vu
 import { DuplicatesTab } from '@/modules/history/events/use-customized-event-duplicates-dialog';
 
 const dialogApi = {
+  autoFixActionFailure: shallowRef<{ title: string; failure: unknown }>(),
   autoFixError: shallowRef<unknown>(),
   autoFixLoading: ref<boolean>(false),
   autoFixRows: ref<DuplicateRow[]>([]),
   fixSelected: vi.fn(),
   fixSingle: vi.fn(),
+  ignoredActionFailure: shallowRef<{ title: string; failure: unknown }>(),
   ignoredError: shallowRef<unknown>(),
   ignoredLoading: ref<boolean>(false),
   ignoredRows: ref<DuplicateRow[]>([]),
   ignoreSelected: vi.fn(),
   ignoreSingle: vi.fn(),
   initialize: vi.fn(async () => Promise.resolve()),
+  manualReviewActionFailure: shallowRef<{ title: string; failure: unknown }>(),
   manualReviewError: shallowRef<unknown>(),
   manualReviewLoading: ref<boolean>(false),
   manualReviewRows: ref<DuplicateRow[]>([]),
@@ -71,6 +74,7 @@ const RuiDialogStub = defineComponent({
 const listStub = defineComponent({
   name: 'CustomizedEventDuplicatesList',
   props: {
+    actionFailure: { default: undefined, type: Object },
     description: { default: '', type: String },
     error: { default: undefined, type: null },
     loading: { default: false, type: Boolean },
@@ -81,6 +85,17 @@ const listStub = defineComponent({
   setup(props, { slots }): () => VNode {
     return () => h('div', slots.actions?.({ row: props.rows[0] }));
   },
+});
+
+/** Opens through its activator and renders its content only while open, as the real menu does. */
+const RuiMenuStub = defineComponent({
+  name: 'RuiMenu',
+  props: { modelValue: { default: false, type: Boolean } },
+  emits: ['update:modelValue'],
+  template: `<div>
+    <slot name="activator" :attrs="{ onClick: () => $emit('update:modelValue', true) }" />
+    <div v-if="modelValue"><slot /></div>
+  </div>`,
 });
 
 function row(groupIdentifier: string): DuplicateRow {
@@ -100,6 +115,7 @@ async function createWrapper(): Promise<VueWrapper<InstanceType<typeof Customize
       stubs: {
         CustomizedEventDuplicatesList: listStub,
         RuiDialog: RuiDialogStub,
+        RuiMenu: RuiMenuStub,
       },
     },
     props: { modelValue: true },
@@ -123,6 +139,12 @@ describe('customizedEventDuplicatesDialog', () => {
     return found;
   }
 
+  /** Clicks a bulk action and accepts the question it asks beside itself. */
+  async function accept(testId: string): Promise<void> {
+    await wrapper.find(`[data-testid=${testId}]`).trigger('click');
+    await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
+  }
+
   async function showTab(tab: number): Promise<void> {
     set(dialogApi.modelActiveTab, tab);
     await flushPromises();
@@ -142,6 +164,9 @@ describe('customizedEventDuplicatesDialog', () => {
     set(dialogApi.autoFixError, undefined);
     set(dialogApi.manualReviewError, undefined);
     set(dialogApi.ignoredError, undefined);
+    set(dialogApi.autoFixActionFailure, undefined);
+    set(dialogApi.manualReviewActionFailure, undefined);
+    set(dialogApi.ignoredActionFailure, undefined);
     wrapper = await createWrapper();
   });
 
@@ -182,6 +207,17 @@ describe('customizedEventDuplicatesDialog', () => {
     expect(dialogApi.retry).toHaveBeenCalledExactlyOnceWith(DuplicatesTab.MANUAL_REVIEW);
   });
 
+  it('should hand each tab only the failed action started from it', async () => {
+    const failure = { failure: 'boom', title: 'actions.customized_event_duplicates.unignore_error.title' };
+    set(dialogApi.ignoredActionFailure, failure);
+    await nextTick();
+    expect(list('auto_fix').props('actionFailure')).toBeUndefined();
+
+    await showTab(DuplicatesTab.IGNORED);
+
+    expect(list('non_duplicated').props('actionFailure')).toEqual(failure);
+  });
+
   it('should ask to show a tab in history events with that tab groups', async () => {
     list('auto_fix').vm.$emit('show-in-history');
     expect(dialogApi.showInHistoryEvents).toHaveBeenCalledWith(['auto-1'], DuplicateHandlingStatus.AUTO_FIX);
@@ -212,11 +248,32 @@ describe('customizedEventDuplicatesDialog', () => {
     await nextTick();
 
     expect(wrapper.find('[data-testid=fix-selected]').attributes('disabled')).toBeUndefined();
-    await wrapper.find('[data-testid=fix-selected]').trigger('click');
-    await wrapper.find('[data-testid=ignore-selected]').trigger('click');
+    await accept('fix-selected');
+    await accept('ignore-selected');
 
     expect(dialogApi.fixSelected).toHaveBeenCalledOnce();
     expect(dialogApi.ignoreSelected).toHaveBeenCalledOnce();
+  });
+
+  it('should ask beside a bulk action, counting the selection, before acting on it', async () => {
+    set(dialogApi.modelSelectedAutoFix, ['auto-1', 'auto-2']);
+    await nextTick();
+
+    await wrapper.find('[data-testid=fix-selected]').trigger('click');
+
+    expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('customized_event_duplicates.actions.fix_selected_confirm::2');
+    expect(dialogApi.fixSelected).not.toHaveBeenCalled();
+  });
+
+  it('should leave the selection alone when the question is cancelled', async () => {
+    set(dialogApi.modelSelectedAutoFix, ['auto-1']);
+    await nextTick();
+
+    await wrapper.find('[data-testid=ignore-selected]').trigger('click');
+    await wrapper.find('[data-testid=inline-confirm-cancel]').trigger('click');
+
+    expect(dialogApi.ignoreSelected).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid=inline-confirm]').exists()).toBe(false);
   });
 
   it('should show only the actions of the tab being viewed', async () => {
@@ -234,7 +291,7 @@ describe('customizedEventDuplicatesDialog', () => {
     await nextTick();
 
     expect(wrapper.find('[data-testid=ignore-selected]').exists()).toBe(false);
-    await wrapper.find('[data-testid=restore-selected]').trigger('click');
+    await accept('restore-selected');
 
     expect(dialogApi.restoreSelected).toHaveBeenCalledOnce();
   });

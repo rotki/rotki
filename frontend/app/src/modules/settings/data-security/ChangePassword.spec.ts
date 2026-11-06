@@ -105,4 +105,44 @@ describe('settings/data-security/ChangePassword.vue', () => {
     expect(field('current-password').element.value).toBe('old');
     expect(field('new-password').element.value).toBe('new');
   });
+
+  it('should say on the form that the password was changed, naming no failure', async () => {
+    wrapper = createWrapper();
+
+    await fill('old', 'new', 'new');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=change-password-success]').text()).toBe('actions.session.password_change.success');
+    expect(wrapper.find('[data-testid=change-password-failure]').exists()).toBe(false);
+  });
+
+  it('should name a failed change on the form without a retry, its button being the retry', async () => {
+    changePassword.mockResolvedValue({ message: 'wrong password', success: false });
+    wrapper = createWrapper();
+
+    await fill('old', 'new', 'new');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    const strip = wrapper.find('[data-testid=change-password-failure]');
+    expect(strip.text()).toContain('actions.session.password_change.error');
+    expect(strip.text()).toContain('wrong password');
+    expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=change-password-success]').exists()).toBe(false);
+  });
+
+  it('should drop the last outcome when the next change starts', async () => {
+    changePassword.mockResolvedValueOnce({ message: 'wrong password', success: false });
+    changePassword.mockReturnValueOnce(new Promise(() => {}));
+    wrapper = createWrapper();
+
+    await fill('old', 'new', 'new');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=change-password-failure]').exists()).toBe(false);
+  });
 });

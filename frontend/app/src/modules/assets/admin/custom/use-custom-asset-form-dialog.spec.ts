@@ -3,22 +3,18 @@ import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref, shallowRef } from 'vue';
+import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { useCustomAssetFormDialog } from './use-custom-asset-form-dialog';
 
-const { addCustomAsset, editCustomAsset, saveIcon, setMessage, validate } = vi.hoisted(() => ({
+const { addCustomAsset, editCustomAsset, saveIcon, validate } = vi.hoisted(() => ({
   addCustomAsset: vi.fn(),
   editCustomAsset: vi.fn(),
   saveIcon: vi.fn(),
-  setMessage: vi.fn(),
   validate: vi.fn(() => true),
 }));
 
 vi.mock('@/modules/assets/api/use-asset-management-api', () => ({
   useAssetManagementApi: (): Record<string, unknown> => ({ addCustomAsset, editCustomAsset }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
 }));
 
 const BLANK: CustomAsset = { customAssetType: '', identifier: '', name: '', notes: '' };
@@ -206,27 +202,35 @@ describe('modules/assets/admin/custom/useCustomAssetFormDialog', () => {
   });
 
   describe('when the write throws', () => {
-    it('should report an add failure with the adding wording', async () => {
-      addCustomAsset.mockRejectedValue(new Error('the backend is down'));
+    it('should keep an add failure for the dialog, titled with the adding wording', async () => {
+      const error = new Error('the backend is down');
+      addCustomAsset.mockRejectedValue(error);
 
-      const { save } = dialog();
+      const { failure, failureTitle, save } = dialog();
 
       expect(await save()).toBe(false);
-      expect(setMessage).toHaveBeenCalledWith({
-        description: 'asset_management.add_error::the backend is down',
-      });
+      expect(get(failure)).toBe(error);
+      expect(get(failureTitle)).toBe('asset_management.add_error');
     });
 
-    it('should report an edit failure with the editing wording', async () => {
+    it('should title an edit failure with the editing wording', async () => {
       set(editableItem, asset());
       editCustomAsset.mockRejectedValue(new Error('the backend is down'));
 
-      const { save } = dialog();
+      const { failureTitle, save } = dialog();
       await save();
 
-      expect(setMessage).toHaveBeenCalledWith({
-        description: 'asset_management.edit_error::the backend is down',
-      });
+      expect(get(failureTitle)).toBe('asset_management.edit_error');
+    });
+
+    it('should put a validation error on a field of the asset onto that field', async () => {
+      addCustomAsset.mockRejectedValue(new ApiValidationError(JSON.stringify({ name: ['already taken'] })));
+
+      const { failure, modelErrorMessages, save } = dialog();
+      await save();
+
+      expect(get(modelErrorMessages)).toEqual({ name: ['already taken'] });
+      expect(get(failure)).toBeUndefined();
     });
 
     it('should stop loading so the user can try again', async () => {

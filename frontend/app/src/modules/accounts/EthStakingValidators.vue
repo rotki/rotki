@@ -7,6 +7,7 @@ import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -37,8 +38,11 @@ const emptyState = useTableEmptyState({ error, fallback: () => ({ label: t('data
 
 const {
   accountOperation,
-  confirmDelete,
+  deleteConfirm,
+  deleteFailure,
   deleteSelected,
+  deleteSelectedConfirm,
+  deleteValidator,
   edit: editValidator,
   refresh,
 } = useEthValidatorOperations();
@@ -59,8 +63,12 @@ function edit(account: EthereumValidator) {
   emit('edit', editValidator(account));
 }
 
-function deleteSelectedValidators() {
-  deleteSelected(get(rows).data, get(modelSelected));
+const selectedDeleteQuestion = computed<{ title: string; message: string }>(
+  () => deleteSelectedConfirm(get(rows).data, get(modelSelected)),
+);
+
+async function deleteSelectedValidators(): Promise<void> {
+  await deleteSelected(get(rows).data, get(modelSelected));
 }
 
 defineExpose({
@@ -77,9 +85,18 @@ defineExpose({
         v-model:selection-mode="selectionMode"
         :fields="fields"
         :deleting="accountOperation"
+        :delete-question="selectedDeleteQuestion"
         @delete="deleteSelectedValidators()"
       />
     </template>
+    <FailureStrip
+      v-if="deleteFailure !== undefined"
+      class="m-3"
+      :retryable="false"
+      :title="t('actions.delete_eth2_validator.error.title')"
+      :failure="deleteFailure"
+      data-testid="eth-validators-delete-error"
+    />
     <RuiDataTable
       v-model="tableSelection"
       v-model:sort.external="sort"
@@ -133,8 +150,9 @@ defineExpose({
           <RowActions
             :edit-tooltip="t('account_balances.edit_tooltip')"
             :disabled="accountOperation"
+            :delete-confirm="deleteConfirm(row)"
             @edit-click="edit(row)"
-            @delete-click="confirmDelete(row)"
+            @delete-click="deleteValidator(row)"
           />
         </div>
       </template>

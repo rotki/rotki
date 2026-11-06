@@ -5,12 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import BackupManager from '@/modules/settings/data-security/backups/BackupManager.vue';
 
-const { backups, modelSelected, showMassDeleteConfirmation } = await vi.hoisted(async () => {
+const { backups, massRemove, modelSelected } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
     backups: ref<UserDbBackupWithId[]>([]),
     modelSelected: ref<UserDbBackupWithId[]>([]),
-    showMassDeleteConfirmation: vi.fn<() => void>(),
+    massRemove: vi.fn<() => Promise<void>>(async () => {}),
   };
 });
 
@@ -23,13 +23,24 @@ vi.mock('@/modules/settings/data-security/backups/use-database-backups', async (
       directory: ref<string>('/backups'),
       loadInfo: vi.fn(),
       loading: ref<boolean>(false),
+      massRemove,
       modelSelected,
       remove: vi.fn(),
       saving: ref<boolean>(false),
-      showMassDeleteConfirmation,
     }),
   };
 });
+
+/** Opens through its activator and renders its content only while open, as the real menu does. */
+const RuiMenu = {
+  name: 'RuiMenu',
+  props: ['modelValue'],
+  emits: ['update:modelValue'],
+  template: `<div>
+    <slot name="activator" :attrs="{ onClick: () => $emit('update:modelValue', true) }" />
+    <div v-if="modelValue"><slot /></div>
+  </div>`,
+};
 
 const BackupsTableStub = defineComponent({
   props: ['selected', 'selectionMode', 'loading', 'items', 'directory'],
@@ -44,7 +55,7 @@ function createWrapper(): VueWrapper<any> {
   return mount(BackupManager, {
     global: {
       provide: libraryDefaults,
-      stubs: { DatabaseBackups: BackupsTableStub, SettingCategoryHeader: true },
+      stubs: { DatabaseBackups: BackupsTableStub, RuiMenu, SettingCategoryHeader: true },
     },
   });
 }
@@ -83,14 +94,36 @@ describe('modules/settings/data-security/backups/BackupManager', () => {
     expect(wrapper.find('[data-testid=backups-delete-selected]').attributes('disabled')).toBeDefined();
   });
 
-  it('should ask to delete the picked backups', async () => {
+  async function askToDeletePicked(): Promise<VueWrapper<any>> {
     const wrapper = await createSelectingWrapper();
-    set(modelSelected, [backupRow(1)]);
+    set(modelSelected, [backupRow(1), backupRow(2)]);
     await nextTick();
-
     await wrapper.find('[data-testid=backups-delete-selected]').trigger('click');
+    return wrapper;
+  }
 
-    expect(showMassDeleteConfirmation).toHaveBeenCalledOnce();
+  it('should ask beside the delete action, naming how many, before deleting the picked backups', async () => {
+    const wrapper = await askToDeletePicked();
+
+    expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('database_backups.confirm.mass_message');
+    expect(massRemove).not.toHaveBeenCalled();
+  });
+
+  it('should delete the picked backups once accepted', async () => {
+    const wrapper = await askToDeletePicked();
+
+    await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
+
+    expect(massRemove).toHaveBeenCalledOnce();
+  });
+
+  it('should not delete the picked backups when cancelled', async () => {
+    const wrapper = await askToDeletePicked();
+
+    await wrapper.find('[data-testid=inline-confirm-cancel]').trigger('click');
+
+    expect(massRemove).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid=inline-confirm]').exists()).toBe(false);
   });
 
   it('should drop the selection and the checkboxes on done', async () => {

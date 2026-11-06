@@ -2,9 +2,7 @@
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { omit } from 'es-toolkit';
 import { useTemplateRef } from 'vue';
-import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useSaveFailure } from '@/modules/core/form/use-save-failure';
 import AccountingRuleForm from '@/modules/settings/accounting/rule/AccountingRuleForm.vue';
 import { useAccountingApi } from '@/modules/settings/api/use-accounting-api';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
@@ -24,16 +22,19 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const submitting = ref<boolean>(false);
-const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<InstanceType<typeof AccountingRuleForm>>('form');
 const stateUpdated = ref<boolean>(false);
+
+const failureTitle = computed<string>(() => editMode
+  ? t('accounting_settings.rule.edit_error')
+  : t('accounting_settings.rule.add_error'));
 
 const dialogTitle = computed<string>(() => editMode
   ? t('accounting_settings.rule.edit')
   : t('accounting_settings.rule.add'));
 
 const { addAccountingRule, editAccountingRule } = useAccountingApi();
-const { setMessage } = useMessageStore();
+const { capture, clear, failure, modelFieldErrors } = useSaveFailure();
 
 async function persistRule(data: AccountingRuleEntry): Promise<boolean> {
   if (editMode)
@@ -45,29 +46,6 @@ async function persistRule(data: AccountingRuleEntry): Promise<boolean> {
     ruleData.eventIds = eventIds;
 
   return addAccountingRule(ruleData);
-}
-
-/**
- * Field-level errors go back to the form so it can mark the offending inputs; anything else has no
- * field to attach to and is surfaced as a message.
- */
-function reportSaveFailure(error: unknown, data: AccountingRuleEntry): void {
-  const errors: string | ValidationErrors = error instanceof ApiValidationError
-    ? error.getValidationErrors(data)
-    : getErrorMessage(error);
-
-  if (typeof errors !== 'string') {
-    set(errorMessages, errors);
-    return;
-  }
-
-  setMessage({
-    description: errors,
-    success: false,
-    title: editMode
-      ? t('accounting_settings.rule.edit_error')
-      : t('accounting_settings.rule.add_error'),
-  });
 }
 
 async function save(): Promise<boolean> {
@@ -83,12 +61,13 @@ async function save(): Promise<boolean> {
   let success = true;
 
   set(submitting, true);
+  clear();
   try {
     success = await persistRule(data);
   }
   catch (error: unknown) {
     success = false;
-    reportSaveFailure(error, data);
+    capture(error, data);
   }
   set(submitting, false);
 
@@ -109,6 +88,8 @@ async function save(): Promise<boolean> {
     :layout="{ maxWidth: '640px', autoHeight: true }"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
+    :failure="failure"
+    :failure-title="failureTitle"
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
@@ -122,7 +103,7 @@ async function save(): Promise<boolean> {
       v-if="modelValue"
       ref="form"
       v-model="modelValue"
-      v-model:error-messages="errorMessages"
+      v-model:error-messages="modelFieldErrors"
       v-model:state-updated="stateUpdated"
       :event-ids="eventIds"
     />

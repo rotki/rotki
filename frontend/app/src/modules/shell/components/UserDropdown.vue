@@ -2,10 +2,10 @@
 import { externalLinks } from '@shared/external-links';
 import { useLogout } from '@/modules/auth/use-logout';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import { usePrivacyMode } from '@/modules/settings/use-privacy';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 import ThemeControl from '@/modules/shell/theme/ThemeControl.vue';
 
@@ -22,18 +22,19 @@ const tierLabel = computed<string>(() => {
   return tier ? t('premium_placeholder.current_plan', { tier }) : '';
 });
 
-const { show } = useConfirmStore();
+const open = ref<boolean>(false);
+/** The menu asks about logging out in place of its items, until it is answered or closed. */
+const confirmingLogout = ref<boolean>(false);
 
-function showConfirmation() {
-  show(
-    {
-      message: t('user_dropdown.confirmation.message'),
-      title: t('user_dropdown.confirmation.title'),
-      type: 'info',
-    },
-    async () => logout(true, { forgetSavedPassword: true }),
-  );
+async function acceptLogout(): Promise<void> {
+  set(open, false);
+  await logout(true, { forgetSavedPassword: true });
 }
+
+watch(open, (isOpen) => {
+  if (!isOpen)
+    set(confirmingLogout, false);
+});
 
 const { isDark } = useRotkiTheme();
 </script>
@@ -41,8 +42,10 @@ const { isDark } = useRotkiTheme();
 <template>
   <div>
     <RuiMenu
+      v-model="open"
       data-testid="user-menu"
-      :class-names="{ menu: 'min-w-40 max-w-88' }"
+      :role="confirmingLogout ? 'dialog' : undefined"
+      :class-names="{ menu: confirmingLogout ? 'w-72' : 'min-w-40 max-w-88' }"
       close-on-content-click
     >
       <template #activator="{ attrs }">
@@ -54,7 +57,18 @@ const { isDark } = useRotkiTheme();
           <RuiIcon name="lu-circle-user" />
         </MenuTooltipButton>
       </template>
-      <div data-testid="user-dropdown">
+      <InlineConfirm
+        v-if="confirmingLogout"
+        layout="panel"
+        :message="t('user_dropdown.confirmation.message')"
+        :confirm-label="t('user_dropdown.logout')"
+        @cancel="open = false"
+        @confirm="acceptLogout()"
+      />
+      <div
+        v-else
+        data-testid="user-dropdown"
+      >
         <div class="py-3 flex flex-col items-center gap-1">
           <div
             data-testid="username"
@@ -124,7 +138,7 @@ const { isDark } = useRotkiTheme();
         <RuiButton
           variant="list"
           data-testid="logout-button"
-          @click="showConfirmation()"
+          @click.stop="confirmingLogout = true"
         >
           <template #prepend>
             <RuiIcon

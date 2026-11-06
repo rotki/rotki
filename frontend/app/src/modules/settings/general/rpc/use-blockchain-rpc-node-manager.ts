@@ -3,7 +3,6 @@ import { type Blockchain, NotificationKind, Severity } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
@@ -57,13 +56,12 @@ interface UseBlockchainRpcNodeManagerReturn {
   reConnect: (identifier?: number) => Promise<void>;
   /** Whether a reconnect is in flight. */
   reconnecting: Readonly<Ref<boolean>>;
-  /**
-   * Asks for confirmation before removing a node.
-   *
-   * @remarks
-   * Removing a node is not undoable, so nothing is deleted until the dialog is confirmed.
-   */
-  showDeleteConfirmation: (item: BlockchainRpcNode) => void;
+  /** What a row's delete button asks before removing its node, which cannot be undone. */
+  deleteConfirm: (item: BlockchainRpcNode) => { title: string; message: string };
+  /** Removes a node the user already confirmed. */
+  deleteNode: (item: BlockchainRpcNode) => Promise<void>;
+  /** Why the last activate or delete on a row failed, named above the table. */
+  actionFailure: Readonly<Ref<{ title: string; error: unknown } | undefined>>;
 }
 
 /**
@@ -82,7 +80,8 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
 
   const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationDispatcher();
-  const { setMessage } = useMessageStore();
+  /** Why the last activate or deactivate failed; the switch is the retry. */
+  const activeFailure = shallowRef<{ title: string; error: unknown }>();
   const { connectedNodes, coolingDownNodes, failedToConnect } = storeToRefs(useSessionMetadataStore());
   const { useChainName } = useSupportedChains();
   const api = useEvmNodesApi(() => toValue(chain));
@@ -149,7 +148,7 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
     });
   }
 
-  const { showDeleteConfirmation } = useTableRowDeletion<BlockchainRpcNode>({
+  const { deleteConfirm, deleteRow: deleteNode, failure: deleteFailure } = useTableRowDeletion<BlockchainRpcNode>({
     confirm: (item) => {
       const chainProp = get(chainName);
       return {
@@ -162,31 +161,22 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
       };
     },
     deleteItem: async node => api.deleteEvmNode(node.identifier),
-    errorMessage: (_node, error) => ({
-      description: getErrorMessage(error),
-      success: false,
-      title: t('evm_rpc_node_manager.delete_error.title', {
-        chain: toValue(chain),
-      }),
-    }),
+    failureTitle: () => t('evm_rpc_node_manager.delete_error.title', { chain: toValue(chain) }),
     onDeleted: loadNodes,
   });
 
   async function onActiveChange(active: boolean, node: BlockchainRpcNode): Promise<void> {
+    set(activeFailure, undefined);
     try {
       await api.editEvmNode({ ...node, active });
       await loadNodes();
     }
     catch (error: unknown) {
-      setMessage({
-        description: getErrorMessage(error),
-        success: false,
-        title: t('evm_rpc_node_manager.activate_error.title', {
-          node: node.name,
-        }),
-      });
+      set(activeFailure, { error, title: t('evm_rpc_node_manager.activate_error.title', { node: node.name }) });
     }
   }
+
+  const actionFailure = computed<{ title: string; error: unknown } | undefined>(() => get(activeFailure) ?? get(deleteFailure));
 
   function notifyConnectFailures(messages: string[]): void {
     notify({
@@ -215,8 +205,11 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
   }
 
   return {
+    actionFailure,
     addNewRpcNode,
     anyDisconnected,
+    deleteConfirm,
+    deleteNode,
     editRpcNode,
     getNodeStatus,
     isEtherscan,
@@ -228,6 +221,5 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
     onActiveChange,
     reConnect,
     reconnecting: readonly(reconnecting),
-    showDeleteConfirmation,
   };
 }

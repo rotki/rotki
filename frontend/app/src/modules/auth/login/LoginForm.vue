@@ -107,10 +107,16 @@ const submitDisabled = computed<boolean>(() =>
   !get(parses) || loading || get(conflictExist) || get(customBackendDisplay),
 );
 
-async function logout() {
-  const { success } = await logoutRemoteSession();
-  if (success)
+/** Why logging out the other session failed, named in the alert that offered it. */
+const logoutFailure = ref<string>();
+
+async function logout(): Promise<void> {
+  set(logoutFailure, undefined);
+  const status = await logoutRemoteSession();
+  if (status.success)
     touched();
+  else
+    set(logoutFailure, status.message);
 }
 
 function updateFocus() {
@@ -340,6 +346,7 @@ onMounted(() => {
           v-if="hasServerError"
           :action-text="isLoggedInError ? t('login.logout') : ''"
           type="error"
+          data-testid="login-already-logged-in"
           @action="logout()"
         >
           <template #title>
@@ -351,6 +358,13 @@ onMounted(() => {
             </p>
             <p class="text-body-2 mb-0">
               {{ t('login.credential_error.support') }}
+            </p>
+            <p
+              v-if="logoutFailure"
+              class="text-body-2 font-medium mt-2 mb-0"
+              data-testid="login-logout-failure"
+            >
+              {{ logoutFailure }}
             </p>
           </template>
         </RuiAlert>

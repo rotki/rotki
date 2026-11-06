@@ -163,27 +163,10 @@ async function performDelete(): Promise<void> {
   }
 }
 
-function confirmDelete(): void {
-  show(
-    {
-      message: t('dashboard.snapshot.delete.dialog.message'),
-      title: t('dashboard.snapshot.delete.dialog.title'),
-    },
-    () => performDelete(),
-  );
-}
-
-/** Confirm before sweeping the valueless balances the table flagged for removal. */
-function confirmBulkDelete(indices: number[]): void {
-  if (indices.length === 0)
-    return;
-  show(
-    {
-      message: t('dashboard.snapshot.detail.balances.bulk_delete.message', { count: indices.length }, indices.length),
-      title: t('dashboard.snapshot.detail.balances.bulk_delete.title'),
-    },
-    () => deleteBalances(indices),
-  );
+/** Sweeps the valueless balances the table flagged, without asking: the draft's undo restores them. */
+function bulkDelete(indices: number[]): void {
+  if (indices.length > 0)
+    deleteBalances(indices);
 }
 
 /** Whether keyboard focus sits in a field, so shortcuts shouldn't hijack keys. */
@@ -299,7 +282,7 @@ useEventListener(window, 'beforeunload', warnBeforeUnload);
         @discard="discard()"
         @undo="undo()"
         @export="exportDialog = true"
-        @delete="confirmDelete()"
+        @delete="performDelete()"
         @navigate="navigate($event)"
       />
 
@@ -344,7 +327,7 @@ useEventListener(window, 'beforeunload', warnBeforeUnload);
         @add="addBalance($event)"
         @edit="editBalance($event.index, $event.mutation)"
         @delete="deleteBalance($event.index, $event.location)"
-        @bulk-delete="confirmBulkDelete($event)"
+        @bulk-delete="bulkDelete($event)"
       />
     </div>
 

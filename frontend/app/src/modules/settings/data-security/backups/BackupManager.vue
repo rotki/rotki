@@ -19,10 +19,10 @@ const {
   directory,
   loadInfo,
   loading,
+  massRemove,
   modelSelected,
   remove,
   saving,
-  showMassDeleteConfirmation,
 } = useDatabaseBackups();
 
 function exitSelection(): void {
@@ -99,8 +99,13 @@ function exitSelection(): void {
         icon="lu-trash-2"
         color="error"
         :disabled="modelSelected.length === 0"
+        :confirm="{
+          title: t('database_backups.confirm.title'),
+          message: t('database_backups.confirm.mass_message', { length: modelSelected.length }),
+          confirmLabel: t('common.actions.delete'),
+        }"
         data-testid="backups-delete-selected"
-        @click="showMassDeleteConfirmation()"
+        @click="massRemove()"
       >
         {{ t('common.actions.delete') }}
       </TableSelectionAction>

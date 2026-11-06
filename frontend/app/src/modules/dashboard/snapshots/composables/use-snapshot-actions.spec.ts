@@ -5,13 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
-const { fetchBalances, fetchNetValue, getPath, importBalancesSnapshot, logout, setMessage, uploadBalancesSnapshot } = vi.hoisted(() => ({
+const { fetchBalances, fetchNetValue, getPath, importBalancesSnapshot, logout, notifyInfo, uploadBalancesSnapshot } = vi.hoisted(() => ({
   fetchBalances: vi.fn(),
   fetchNetValue: vi.fn(),
   getPath: vi.fn(),
   importBalancesSnapshot: vi.fn(),
   logout: vi.fn(),
-  setMessage: vi.fn(),
+  notifyInfo: vi.fn<(title: string, message: string) => void>(),
   uploadBalancesSnapshot: vi.fn(),
 }));
 
@@ -23,8 +23,8 @@ vi.mock('@/modules/statistics/use-statistics-data-fetching', () => ({
   useStatisticsDataFetching: (): { fetchNetValue: typeof fetchNetValue } => ({ fetchNetValue }),
 }));
 
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): { setMessage: typeof setMessage } => ({ setMessage }),
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: (): { notifyInfo: typeof notifyInfo } => ({ notifyInfo }),
 }));
 
 vi.mock('@/modules/auth/use-logout', () => ({
@@ -109,7 +109,10 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
       await importSnapshot();
 
       expect(uploadBalancesSnapshot).toHaveBeenCalledWith(balance, location);
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+      expect(notifyInfo).toHaveBeenCalledExactlyOnceWith(
+        'snapshot_action_button.messages.title',
+        'snapshot_action_button.messages.success_description',
+      );
       // Files are cleared so a stale selection can't be re-imported.
       expect(get(modelBalanceFile)).toBeUndefined();
       expect(get(modelLocationFile)).toBeUndefined();
@@ -134,16 +137,17 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
       expect(uploadBalancesSnapshot).not.toHaveBeenCalled();
     });
 
-    it('should surface a failure message and not log out when the import throws', async () => {
+    it('should expose the failure for the dialog and not log out when the import throws', async () => {
       vi.useFakeTimers();
       uploadBalancesSnapshot.mockRejectedValue(new Error('boom'));
-      const { modelBalanceFile, importSnapshot, modelLocationFile } = withSetup(() => useSnapshotActions()).result;
+      const { modelBalanceFile, modelImportFailure, importSnapshot, modelLocationFile } = withSetup(() => useSnapshotActions()).result;
       set(modelBalanceFile, new File([], 'balances.csv'));
       set(modelLocationFile, new File([], 'locations.csv'));
 
       await importSnapshot();
 
-      expect(setMessage).toHaveBeenCalledWith(expect.not.objectContaining({ success: true }));
+      expect(get(modelImportFailure)).toBe('boom');
+      expect(notifyInfo).not.toHaveBeenCalled();
       vi.advanceTimersByTime(3000);
       expect(logout).not.toHaveBeenCalled();
     });
@@ -160,6 +164,25 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
 
       expect(get(modelBalanceFile)).toBe(balance);
       expect(get(modelLocationFile)).toBe(location);
+    });
+
+    it('should clear the failure when the next import starts', async () => {
+      vi.useFakeTimers();
+      uploadBalancesSnapshot.mockRejectedValueOnce(new Error('boom'));
+      let finish: () => void = () => {};
+      uploadBalancesSnapshot.mockReturnValueOnce(new Promise<void>((resolve) => {
+        finish = resolve;
+      }));
+      const { modelBalanceFile, modelImportFailure, importSnapshot, modelLocationFile } = withSetup(() => useSnapshotActions()).result;
+      set(modelBalanceFile, new File([], 'balances.csv'));
+      set(modelLocationFile, new File([], 'locations.csv'));
+
+      await importSnapshot();
+      const retry = importSnapshot();
+
+      expect(get(modelImportFailure)).toBeUndefined();
+      finish();
+      await retry;
     });
   });
 });

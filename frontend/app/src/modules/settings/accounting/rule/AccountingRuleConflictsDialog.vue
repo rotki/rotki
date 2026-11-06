@@ -30,6 +30,7 @@ const { t } = useI18n({ useScope: 'global' });
 const {
   collection,
   error,
+  failure,
   isLoading,
   loading,
   modelResolution,
@@ -142,6 +143,8 @@ onMounted(async () => {
     display
     :layout="{ maxWidth: '64rem', fill: true, autoHeight: true }"
     :loading="loading"
+    :failure="failure"
+    :failure-title="t('accounting_settings.rule.conflicts.error.title')"
     :persistent="resolutionLength > 0"
     :title="t('accounting_settings.rule.conflicts.title')"
     :subtitle="t('accounting_settings.rule.conflicts.subtitle')"

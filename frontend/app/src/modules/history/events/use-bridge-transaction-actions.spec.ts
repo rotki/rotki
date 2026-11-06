@@ -11,9 +11,6 @@ const { spies } = vi.hoisted(() => ({
     resolveCreateCounterpart: vi.fn<(id: number) => Promise<{ message: unknown; success: boolean }>>()
       .mockResolvedValue({ message: '', success: true }),
     refreshUnmatchedBridgeTransactions: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
-    showConfirm: vi.fn(),
-    showErrorMessage: vi.fn(),
-    getChainName: vi.fn((chain: string) => chain.toUpperCase()),
     isCounterpartUntracked: vi.fn<() => boolean>(() => false),
   },
 }));
@@ -38,28 +35,9 @@ vi.mock('@/modules/history/events/use-unmatched-bridge-transactions', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({
-    show: spies.showConfirm,
-  }),
-}));
-
-vi.mock('@/modules/core/common/use-supported-chains', () => ({
-  useSupportedChains: (): object => ({
-    getChainName: spies.getChainName,
-  }),
-}));
-
 vi.mock('@/modules/history/events/use-untracked-bridge-counterpart', () => ({
   useUntrackedBridgeCounterpart: (): object => ({
     isCounterpartUntracked: spies.isCounterpartUntracked,
-  }),
-}));
-
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  getErrorMessage: (error: unknown): string => error instanceof Error ? error.message : String(error),
-  useNotifications: (): object => ({
-    showErrorMessage: spies.showErrorMessage,
   }),
 }));
 
@@ -81,13 +59,6 @@ function createMockTransaction(overrides: {
     bridge: overrides.bridge,
     direction: overrides.direction ?? 'deposit',
   };
-}
-
-async function extractAndCallConfirmCallback(): Promise<void> {
-  const callback: unknown = spies.showConfirm.mock.calls[0][1];
-  if (typeof callback !== 'function')
-    throw new TypeError('Expected callback function');
-  await callback();
 }
 
 describe('use-bridge-transaction-actions', () => {
@@ -129,7 +100,6 @@ describe('use-bridge-transaction-actions', () => {
       await expect(composable.ignoreTransaction(createMockTransaction())).resolves.toBeUndefined();
 
       expect(get(composable.actionFailure)).toBe(failure);
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
@@ -189,12 +159,11 @@ describe('use-bridge-transaction-actions', () => {
   });
 
   describe('markExternal', () => {
-    it('should resolve the transaction without asking through a modal', async () => {
+    it('should resolve the transaction straight away', async () => {
       const { markExternal } = useBridgeTransactionActions();
 
       await markExternal(createMockTransaction({ identifier: 21 }));
 
-      expect(spies.showConfirm).not.toHaveBeenCalled();
       expect(spies.resolveExternal).toHaveBeenCalledWith(21);
       expect(spies.refreshUnmatchedBridgeTransactions).toHaveBeenCalledOnce();
     });
@@ -277,54 +246,12 @@ describe('use-bridge-transaction-actions', () => {
     });
   });
 
-  describe('confirmCreateCounterpart', () => {
-    it('should show the counterpart chain of a deposit in the confirmation', () => {
-      const transaction = createMockTransaction({
-        bridge: { toChain: 'optimism' },
-      });
-      const { confirmCreateCounterpart } = useBridgeTransactionActions();
-
-      confirmCreateCounterpart(transaction);
-
-      expect(spies.showConfirm).toHaveBeenCalledOnce();
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        message: 'bridge_matching.actions.create_counterpart_confirm_out_chain::OPTIMISM',
-      });
-    });
-
-    it('should use the source chain copy for a withdrawal confirmation', () => {
-      const transaction = createMockTransaction({
-        bridge: { fromChain: 'zksync lite', toChain: 'ethereum' },
-        direction: 'withdrawal',
-      });
-      const { confirmCreateCounterpart } = useBridgeTransactionActions();
-
-      confirmCreateCounterpart(transaction);
-
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        message: 'bridge_matching.actions.create_counterpart_confirm_in_chain::ZKSYNC LITE',
-      });
-    });
-
-    it('should fall back to the chainless copy when no counterpart chain is recorded', () => {
-      const { confirmCreateCounterpart } = useBridgeTransactionActions();
-
-      confirmCreateCounterpart(createMockTransaction());
-
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        message: 'bridge_matching.actions.create_counterpart_confirm_out',
-      });
-    });
-
-    it('should create the counterpart when the user confirms', async () => {
+  describe('createCounterpart', () => {
+    it('should create the counterpart of the leg its row confirmed', async () => {
       const transaction = createMockTransaction({ identifier: 33 });
-      const { confirmCreateCounterpart } = useBridgeTransactionActions();
+      const { createCounterpart } = useBridgeTransactionActions();
 
-      confirmCreateCounterpart(transaction);
-      await extractAndCallConfirmCallback();
+      await createCounterpart(transaction);
 
       expect(spies.resolveCreateCounterpart).toHaveBeenCalledWith(33);
       expect(spies.refreshUnmatchedBridgeTransactions).toHaveBeenCalledOnce();
@@ -333,10 +260,9 @@ describe('use-bridge-transaction-actions', () => {
     it('should keep a refused counterpart for the panel, without refreshing', async () => {
       const failure = new Error('nope');
       spies.resolveCreateCounterpart.mockResolvedValueOnce({ message: failure, success: false });
-      const { actionFailure, confirmCreateCounterpart } = useBridgeTransactionActions();
+      const { actionFailure, createCounterpart } = useBridgeTransactionActions();
 
-      confirmCreateCounterpart(createMockTransaction());
-      await extractAndCallConfirmCallback();
+      await createCounterpart(createMockTransaction());
 
       expect(get(actionFailure)).toBe(failure);
       expect(spies.refreshUnmatchedBridgeTransactions).not.toHaveBeenCalled();
@@ -345,17 +271,26 @@ describe('use-bridge-transaction-actions', () => {
     it('should name a refresh that fails after the counterpart was created', async () => {
       const failure = new Error('refresh failed');
       spies.refreshUnmatchedBridgeTransactions.mockRejectedValueOnce(failure);
-      const { actionFailure, confirmCreateCounterpart } = useBridgeTransactionActions();
+      const { actionFailure, createCounterpart } = useBridgeTransactionActions();
 
-      confirmCreateCounterpart(createMockTransaction());
-      await extractAndCallConfirmCallback();
+      await createCounterpart(createMockTransaction());
 
       expect(get(actionFailure)).toBe(failure);
     });
   });
 
-  describe('confirmIgnoreSelected', () => {
-    it('should ignore each selected transaction after confirmation', async () => {
+  describe('ignoreSelected', () => {
+    it('should count the selection in the question its button asks', () => {
+      const composable = useBridgeTransactionActions();
+      set(composable.modelSelectedUnmatched, ['10', '30']);
+
+      expect(get(composable.ignoreSelectedQuestion)).toEqual({
+        message: 'bridge_matching.actions.ignore_selected_confirm::2',
+        title: 'bridge_matching.actions.ignore_selected',
+      });
+    });
+
+    it('should ignore each selected transaction', async () => {
       set(unmatchedTransactionsRef, [
         createMockTransaction({ groupIdentifier: 'g1', identifier: 10 }),
         createMockTransaction({ groupIdentifier: 'g2', identifier: 20 }),
@@ -364,8 +299,7 @@ describe('use-bridge-transaction-actions', () => {
 
       const composable = useBridgeTransactionActions();
       set(composable.modelSelectedUnmatched, ['10', '30']);
-      composable.confirmIgnoreSelected();
-      await extractAndCallConfirmCallback();
+      await composable.ignoreSelected();
 
       expect(spies.matchBridgeTransactions).toHaveBeenCalledTimes(2);
       expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(10);
@@ -374,8 +308,8 @@ describe('use-bridge-transaction-actions', () => {
     });
   });
 
-  describe('confirmRestoreSelected', () => {
-    it('should restore each selected ignored transaction after confirmation', async () => {
+  describe('restoreSelected', () => {
+    it('should restore each selected ignored transaction without asking', async () => {
       set(ignoredTransactionsRef, [
         createMockTransaction({ groupIdentifier: 'g1', identifier: 10 }),
         createMockTransaction({ groupIdentifier: 'g2', identifier: 20 }),
@@ -383,8 +317,7 @@ describe('use-bridge-transaction-actions', () => {
 
       const composable = useBridgeTransactionActions();
       set(composable.modelSelectedIgnored, ['20']);
-      composable.confirmRestoreSelected();
-      await extractAndCallConfirmCallback();
+      await composable.restoreSelected();
 
       expect(spies.unlinkBridgeTransaction).toHaveBeenCalledTimes(1);
       expect(spies.unlinkBridgeTransaction).toHaveBeenCalledWith(20);

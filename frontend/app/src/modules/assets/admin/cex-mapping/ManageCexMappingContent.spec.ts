@@ -7,7 +7,6 @@ import { type Ref, ref } from 'vue';
 import ManageCexMappingContent from '@/modules/assets/admin/cex-mapping/ManageCexMappingContent.vue';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
 import ManageCexMappingTable from '@/modules/assets/admin/cex-mapping/ManageCexMappingTable.vue';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 
 interface RouteHolder {
   route?: Ref<{ query: Record<string, string> }>;
@@ -111,26 +110,34 @@ describe('modules/assets/admin/cex-mapping/ManageCexMappingContent.vue', () => {
     expect(dialog.props('editMode')).toBe(true);
   });
 
-  it('should ask before deleting a row the table asked to remove', async () => {
+  it('should hand the table a question naming the row, so the row asks before deleting', async () => {
     const wrapper = createWrapper();
     await flushPromises();
 
-    wrapper.findComponent(ManageCexMappingTable).vm.$emit('delete', MAPPING);
-    await flushPromises();
-
-    expect(get(useConfirmStore().visible)).toBe(true);
+    const deleteConfirm = wrapper.findComponent(ManageCexMappingTable).props('deleteConfirm');
+    expect(deleteConfirm(MAPPING).message).toContain('XBT');
     expect(deleteCexMapping).not.toHaveBeenCalled();
   });
 
-  it('should delete the row once the dialog is confirmed, without its asset', async () => {
+  it('should delete a row the table confirmed, without its asset', async () => {
     const wrapper = createWrapper();
     await flushPromises();
 
     wrapper.findComponent(ManageCexMappingTable).vm.$emit('delete', MAPPING);
-    await useConfirmStore().confirm();
     await flushPromises();
 
     expect(deleteCexMapping).toHaveBeenCalledWith({ location: 'kraken', locationSymbol: 'XBT' });
+  });
+
+  it('should name a failed delete above the table', async () => {
+    deleteCexMapping.mockRejectedValueOnce(new Error('in use'));
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    wrapper.findComponent(ManageCexMappingTable).vm.$emit('delete', MAPPING);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid$=-mapping-delete-error]').text()).toContain('in use');
   });
 
   it('should open the dialog seeded from an ?add= link', async () => {

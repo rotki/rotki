@@ -1,7 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 
 interface MappingFormHandle {
   /** Runs the form's own validation. */
@@ -28,6 +26,10 @@ interface UseMappingFormDialogOptions<T, TPayload> {
 interface UseMappingFormDialogReturn {
   /** The dialog's title, which differs between adding and editing. */
   dialogTitle: ComputedRef<string>;
+  /** Why the last write failed, named in the dialog; Save is the retry. */
+  failure: Readonly<Ref<unknown>>;
+  /** The title the failure is named under, which differs between adding and editing. */
+  failureTitle: ComputedRef<string>;
   /** Whether a write is in flight. */
   loading: Readonly<Ref<boolean>>;
   /** Field errors, which the form binds. */
@@ -56,7 +58,7 @@ export function useMappingFormDialog<T, TPayload = T>(
   const loading = shallowRef<boolean>(false);
   const modelErrorMessages = ref<ValidationErrors>({});
 
-  const { setMessage } = useMessageStore();
+  const failure = shallowRef<unknown>();
 
   const dialogTitle = computed<string>(() =>
     toValue(editMode)
@@ -64,14 +66,11 @@ export function useMappingFormDialog<T, TPayload = T>(
       : t('asset_management.cex_mapping.add_title'),
   );
 
-  function reportFailure(error: unknown): void {
-    const obj = { message: getErrorMessage(error) };
-    setMessage({
-      description: toValue(editMode)
-        ? t('asset_management.cex_mapping.edit_error', obj)
-        : t('asset_management.cex_mapping.add_error', obj),
-    });
-  }
+  const failureTitle = computed<string>(() =>
+    toValue(editMode)
+      ? t('asset_management.cex_mapping.edit_error')
+      : t('asset_management.cex_mapping.add_error'),
+  );
 
   async function save(): Promise<boolean> {
     if (!isDefined(modelValue))
@@ -84,13 +83,14 @@ export function useMappingFormDialog<T, TPayload = T>(
     const payload = toPayload(mapping);
 
     set(loading, true);
+    set(failure, undefined);
     let success: boolean;
     try {
       success = toValue(editMode) ? await edit(payload) : await add(payload);
     }
     catch (error: unknown) {
       success = false;
-      reportFailure(error);
+      set(failure, error);
     }
     set(loading, false);
 
@@ -103,6 +103,8 @@ export function useMappingFormDialog<T, TPayload = T>(
 
   return {
     dialogTitle,
+    failure: readonly(failure),
+    failureTitle,
     loading: readonly(loading),
     modelErrorMessages,
     save,

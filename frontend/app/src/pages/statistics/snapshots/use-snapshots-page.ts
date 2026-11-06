@@ -1,11 +1,7 @@
-import type { Message } from '@rotki/common';
 import type { TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { LocationQuery } from '@/modules/core/table/route';
 import { startPromise } from '@shared/utils';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { applyPaginationDefaults, parseQueryPagination } from '@/modules/core/table/pagination-filter-utils';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
 import { useSnapshotExport } from '@/modules/dashboard/snapshots/composables/use-snapshot-export';
@@ -19,7 +15,13 @@ type SnapshotActions = ReturnType<typeof useSnapshotActions>;
 type SnapshotExport = ReturnType<typeof useSnapshotExport>;
 
 interface UseSnapshotsPageReturn {
-  confirmDelete: (timestamp: number) => void;
+  /**
+   * Deletes a snapshot the user already confirmed in its row, then re-reads the list so the row
+   * goes. A failure is kept in `deleteFailure` rather than thrown.
+   */
+  deleteSnapshotAt: (timestamp: number) => Promise<void>;
+  /** Why the last delete failed, until the next one starts: the error, or a sentence when refused. */
+  deleteFailure: Readonly<Ref<unknown>>;
   emptyDescription: ComputedRef<string>;
   exportSnapshot: SnapshotExport['exportSnapshot'];
   exporting: SnapshotExport['exporting'];
@@ -30,6 +32,7 @@ interface UseSnapshotsPageReturn {
   modelBalanceFile: SnapshotActions['modelBalanceFile'];
   modelFilters: Ref<SnapshotListFilters>;
   modelImportDialog: Ref<boolean>;
+  modelImportFailure: SnapshotActions['modelImportFailure'];
   modelLocationFile: SnapshotActions['modelLocationFile'];
   modelPagination: Ref<TablePaginationData>;
   open: (timestamp: number) => void;
@@ -49,6 +52,7 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
   const itemsPerPage = useItemsPerPage();
 
   const modelImportDialog = shallowRef<boolean>(false);
+  const deleteFailure = shallowRef<unknown>();
 
   // View state lives in the URL query, so a reload or a back navigation restores it.
   const modelFilters = ref<SnapshotListFilters>({});
@@ -56,9 +60,15 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
 
   const { hasSnapshots, loading, refresh, rows } = useSnapshotList(modelFilters);
   const { deleteSnapshot } = useSnapshotApi();
-  const { setMessage } = useMessageStore();
-  const { show } = useConfirmStore();
-  const { forceSave, forceSaving, importing, importSnapshot, modelBalanceFile, modelLocationFile } = useSnapshotActions();
+  const {
+    forceSave,
+    forceSaving,
+    importing,
+    importSnapshot,
+    modelBalanceFile,
+    modelImportFailure,
+    modelLocationFile,
+  } = useSnapshotActions();
   const { exporting, exportSnapshot } = useSnapshotExport();
 
   function readQuery(query: LocationQuery): void {
@@ -89,42 +99,22 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
     startPromise(router.push(`/statistics/snapshots/${timestamp}`));
   }
 
-  async function performDelete(timestamp: number): Promise<void> {
-    let message: Message;
+  async function deleteSnapshotAt(timestamp: number): Promise<void> {
+    set(deleteFailure, undefined);
     try {
-      const success = await deleteSnapshot({ timestamp });
-      message = {
-        description: success
-          ? t('dashboard.snapshot.delete.message.success')
-          : t('dashboard.snapshot.delete.message.failure'),
-        success,
-        title: t('dashboard.snapshot.delete.message.title'),
-      };
-      if (success)
+      if (await deleteSnapshot({ timestamp }))
         await refresh();
+      else
+        set(deleteFailure, t('dashboard.snapshot.delete.message.failure'));
     }
     catch (error: unknown) {
-      message = {
-        description: getErrorMessage(error),
-        success: false,
-        title: t('dashboard.snapshot.delete.message.title'),
-      };
+      set(deleteFailure, error);
     }
-    setMessage(message);
-  }
-
-  function confirmDelete(timestamp: number): void {
-    show(
-      {
-        message: t('dashboard.snapshot.delete.dialog.message'),
-        title: t('dashboard.snapshot.delete.dialog.title'),
-      },
-      async () => performDelete(timestamp),
-    );
   }
 
   return {
-    confirmDelete,
+    deleteFailure: readonly(deleteFailure),
+    deleteSnapshotAt,
     emptyDescription,
     exporting,
     exportSnapshot,
@@ -135,6 +125,7 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
     modelBalanceFile,
     modelFilters,
     modelImportDialog,
+    modelImportFailure,
     modelLocationFile,
     modelPagination,
     open,

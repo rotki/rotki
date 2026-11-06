@@ -2,7 +2,6 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { BackendProblem } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { type NotificationData, NotificationKind } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { groupByDay, type NotificationDay, startOfDay } from '@/modules/core/notifications/notification-days';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { notificationMuteKey, problemMuteKey, useNotificationMute } from '@/modules/core/notifications/use-notification-mute';
@@ -62,12 +61,17 @@ interface UseNotificationSidebarReturn {
   /** Dismisses a single notification. */
   remove: (id: number) => void;
   /**
-   * Asks for confirmation before discarding every notification.
+   * Whether the footer is asking before discarding every notification.
    *
    * @remarks
-   * Clearing is not undoable, so nothing is discarded until the dialog is confirmed.
+   * Clearing is not undoable, so {@link UseNotificationSidebarReturn.askToClear} only raises the
+   * question; {@link UseNotificationSidebarReturn.clearAll} is its accept.
    */
-  showConfirmation: () => void;
+  askingToClear: Readonly<Ref<boolean>>;
+  askToClear: () => void;
+  cancelClear: () => void;
+  /** Discards every notification and backend problem, then closes the drawer. */
+  clearAll: () => void;
   /** Whether popups are suppressed. */
   silent: Readonly<Ref<boolean>>;
   /** Turns popup suppression on or off. */
@@ -76,7 +80,7 @@ interface UseNotificationSidebarReturn {
 
 /**
  * Drives the notification drawer: its history by day and its problems section, the silent-mode
- * toggle, the clear-all confirmation, and the appearance of rows as the list scrolls.
+ * toggle, the clear-all question, and the appearance of rows as the list scrolls.
  *
  * @remarks
  * The history holds what happened (results, announcements, reminders). The problems section holds
@@ -88,11 +92,10 @@ interface UseNotificationSidebarReturn {
 export function useNotificationSidebar(options: UseNotificationSidebarOptions): UseNotificationSidebarReturn {
   const { display, scrollY } = options;
 
-  const { t } = useI18n({ useScope: 'global' });
-
   const initialAppear = shallowRef<boolean>(false);
   const modelProblemsOpen = shallowRef<boolean>(true);
   const modelMutedOpen = shallowRef<boolean>(false);
+  const askingToClear = shallowRef<boolean>(false);
 
   const notificationStore = useNotificationsStore();
   const { messageOverflow, newestFirst: allNotifications } = storeToRefs(notificationStore);
@@ -100,7 +103,6 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   const problemsStore = useBackendProblemsStore();
   const { problems: allProblems } = storeToRefs(problemsStore);
   const { markAllRead: markProblemsRead, remove: removeProblem } = problemsStore;
-  const { show } = useConfirmStore();
   const { silent, toggle: toggleSilent } = useSilentNotifications();
   const { isNotificationMuted, isProblemMuted, mute, unmute } = useNotificationMute();
 
@@ -156,8 +158,10 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
    * badge; only the novelty signal is consumed here.
    */
   watchImmediate([display, allNotifications, allProblems], ([open]) => {
-    if (!open)
+    if (!open) {
+      set(askingToClear, false);
       return;
+    }
 
     markAllRead();
     markProblemsRead();
@@ -167,18 +171,19 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
     startPromise(toggleSilent());
   }
 
-  function clear(): void {
+  function askToClear(): void {
+    set(askingToClear, true);
+  }
+
+  function cancelClear(): void {
+    set(askingToClear, false);
+  }
+
+  function clearAll(): void {
+    set(askingToClear, false);
     notificationStore.$reset();
     problemsStore.$reset();
     close();
-  }
-
-  function showConfirmation(): void {
-    show({
-      message: t('notification_sidebar.confirmation.message'),
-      title: t('notification_sidebar.confirmation.title'),
-      type: 'info',
-    }, clear);
   }
 
   function trackRowAppearance(
@@ -199,6 +204,10 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   watch([(): number => toValue(scrollY), allNotifications], trackRowAppearance);
 
   return {
+    askingToClear: readonly(askingToClear),
+    askToClear,
+    cancelClear,
+    clearAll,
     close,
     failures,
     historyDays,
@@ -213,7 +222,6 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
     problems,
     remove,
     removeProblem,
-    showConfirmation,
     silent,
     toggleSilentMode,
     unmuteNotification,

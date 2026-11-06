@@ -8,16 +8,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRouter } from 'vue-router';
 import { EXTERNAL_API_KEY_SERVICES, type ExternalApiKeyService } from '@/modules/settings/api-keys/external/external-api-key-services';
 
-type ExternalApiKeysMock = Pick<ReturnType<typeof useExternalApiKeys>, 'actionStatus' | 'confirmDelete' | 'loading' | 'save' | 'useApiKey'>;
+type ExternalApiKeysMock = Pick<ReturnType<typeof useExternalApiKeys>, 'actionStatus' | 'deleteService' | 'loading' | 'save' | 'useApiKey'>;
 
 const savedKeys = ref<Partial<Record<ExternalServiceName, string>>>({});
-const confirmDelete = vi.fn<ExternalApiKeysMock['confirmDelete']>();
+const deleteService = vi.fn<ExternalApiKeysMock['deleteService']>();
 const save = vi.fn<ExternalApiKeysMock['save']>();
 
 vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({
   useExternalApiKeys: (): ExternalApiKeysMock => ({
     actionStatus: () => computed(() => undefined),
-    confirmDelete,
+    deleteService,
     loading: readonly(ref<boolean>(false)),
     save,
     useApiKey: name => computed<string>(() => get(savedKeys)[toValue(name)] ?? ''),
@@ -64,7 +64,7 @@ describe('externalApiKeyCard', () => {
     vi.useFakeTimers();
     await useRouter().replace({ query: {} });
     set(savedKeys, {});
-    confirmDelete.mockReset();
+    deleteService.mockReset();
     save.mockReset();
   });
 
@@ -104,14 +104,40 @@ describe('externalApiKeyCard', () => {
     expect(wrapper.find('[data-testid=bottom-dialog] [data-testid=delete-button]').attributes()).toHaveProperty('disabled');
   });
 
-  it('should ask to confirm deleting the saved key of its own service', async () => {
+  it('should ask in the dialog, in place of delete, before deleting anything', async () => {
     set(savedKeys, { alchemy: 'saved-key' });
     const wrapper = createWrapper(EXTERNAL_API_KEY_SERVICES.alchemy);
     await openDialog(wrapper);
 
     await wrapper.find('[data-testid=bottom-dialog] [data-testid=delete-button]').trigger('click');
 
-    expect(confirmDelete).toHaveBeenCalledWith('alchemy');
+    expect(wrapper.find('[data-testid=bottom-dialog] [data-testid=delete-confirm]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=bottom-dialog] [data-testid=delete-button]').exists()).toBe(false);
+    expect(deleteService).not.toHaveBeenCalled();
+  });
+
+  it('should delete the saved key of its own service once the question is accepted', async () => {
+    set(savedKeys, { alchemy: 'saved-key' });
+    const wrapper = createWrapper(EXTERNAL_API_KEY_SERVICES.alchemy);
+    await openDialog(wrapper);
+    await wrapper.find('[data-testid=bottom-dialog] [data-testid=delete-button]').trigger('click');
+
+    await wrapper.find('[data-testid=delete-confirm] [data-testid=inline-confirm-accept]').trigger('click');
+
+    expect(deleteService).toHaveBeenCalledExactlyOnceWith('alchemy');
+    expect(wrapper.find('[data-testid=delete-confirm]').exists()).toBe(false);
+  });
+
+  it('should delete nothing when the question is cancelled', async () => {
+    set(savedKeys, { alchemy: 'saved-key' });
+    const wrapper = createWrapper(EXTERNAL_API_KEY_SERVICES.alchemy);
+    await openDialog(wrapper);
+    await wrapper.find('[data-testid=bottom-dialog] [data-testid=delete-button]').trigger('click');
+
+    await wrapper.find('[data-testid=delete-confirm] [data-testid=inline-confirm-cancel]').trigger('click');
+
+    expect(deleteService).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid=bottom-dialog] [data-testid=delete-button]').exists()).toBe(true);
   });
 
   it('should keep save disabled until a key is typed', async () => {

@@ -26,6 +26,7 @@ const {
   status,
   updateAssets,
   updateComplete,
+  upToDate,
 } = useAssetUpdate({
   headless: () => headless,
   onSkip: () => emit('skip'),
@@ -38,21 +39,20 @@ const {
       v-if="!headless"
       :loading="checking || applying"
       :skipped="skipped"
+      :up-to-date="upToDate"
       @check="check()"
     />
-    <template v-else-if="headless">
-      <AssetUpdateStatus
-        v-if="status"
-        :status="status"
-        :remote-version="modelChanges.upToVersion"
-      />
-      <AssetUpdateInlineConfirm
-        v-if="inlineConfirm"
-        class="max-w-128 mx-auto"
-        :remote-version="modelChanges.upToVersion"
-        @confirm="updateComplete()"
-      />
-    </template>
+    <AssetUpdateStatus
+      v-else-if="status"
+      :status="status"
+      :remote-version="modelChanges.upToVersion"
+    />
+    <AssetUpdateInlineConfirm
+      v-if="inlineConfirm"
+      :class="headless ? 'max-w-128 mx-auto' : 'mt-4'"
+      :remote-version="modelChanges.upToVersion"
+      @confirm="updateComplete()"
+    />
     <template v-if="showUpdateDialog">
       <RuiDialog
         v-if="!headless"

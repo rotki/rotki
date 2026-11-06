@@ -28,14 +28,14 @@ const menu = {
   blockEvent: ref<HistoryEventEntry | undefined>(),
   canAddEvent: ref<boolean>(true),
   canDeleteEvents: ref<boolean>(false),
-  confirmFixDuplicate: vi.fn(),
-  confirmIgnoreDuplicate: vi.fn(),
   decodableEvmEvent: ref<HistoryEventEntry | undefined>(evmEvent),
   deletableEventIds: vi.fn().mockReturnValue([7, 9]),
   ethBlockEventsDecoding: ref<boolean>(false),
   eventWithDecoding: ref<HistoryEventEntry | undefined>(evmEvent),
   eventWithTxRef: ref<{ location: string; txRef: string } | undefined>(),
+  fixDuplicate: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
   fixLoading: ref<boolean>(false),
+  ignoreDuplicate: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
   ignoreLoading: ref<boolean>(false),
   isAutoFixable: ref<boolean>(false),
   isDuplicate: ref<boolean>(false),
@@ -126,22 +126,25 @@ describe('modules/history/events/HistoryEventsAction', () => {
       expect(view.find('[data-testid="event-ignore-duplicate"]').exists()).toBe(false);
     });
 
-    it('should fix the duplicate through the composable', async () => {
+    it('should fix the duplicate through the composable once its question is accepted', async () => {
       set(menu.isAutoFixable, true);
       const view = mountAction();
 
       await view.find('[data-testid="event-fix-duplicate"]').trigger('click');
+      expect(menu.fixDuplicate).not.toHaveBeenCalled();
+      await view.find('[data-testid="inline-confirm-accept"]').trigger('click');
 
-      expect(menu.confirmFixDuplicate).toHaveBeenCalledTimes(1);
+      expect(menu.fixDuplicate).toHaveBeenCalledTimes(1);
     });
 
-    it('should dismiss the duplicate through the composable', async () => {
+    it('should dismiss the duplicate through the composable once its question is accepted', async () => {
       set(menu.isDuplicate, true);
       const view = mountAction();
 
       await view.find('[data-testid="event-ignore-duplicate"]').trigger('click');
+      await view.find('[data-testid="inline-confirm-accept"]').trigger('click');
 
-      expect(menu.confirmIgnoreDuplicate).toHaveBeenCalledTimes(1);
+      expect(menu.ignoreDuplicate).toHaveBeenCalledTimes(1);
     });
 
     it('should report each action back once it is done', () => {
@@ -286,12 +289,24 @@ describe('modules/history/events/HistoryEventsAction', () => {
   });
 
   describe('deleting', () => {
+    it('should ask in the menu before deleting the transaction', async () => {
+      set(menu.eventWithTxRef, { location: 'ethereum', txRef: '0xabc' });
+      const view = mountAction();
+
+      await view.find('[data-testid="event-delete-tx"]').trigger('click');
+
+      expect(view.find('[data-testid="inline-confirm"]').text()).toContain('transactions.dialog.delete.message');
+      expect(view.find('[data-testid="event-report-issue"]').exists()).toBe(false);
+      expect(view.emitted('delete-tx')).toBeUndefined();
+    });
+
     it('should delete the transaction when the row belongs to one', async () => {
       set(menu.eventWithTxRef, { location: 'ethereum', txRef: '0xabc' });
       const view = mountAction();
 
       expect(view.find('[data-testid="event-delete-events"]').exists()).toBe(false);
       await view.find('[data-testid="event-delete-tx"]').trigger('click');
+      await view.find('[data-testid="inline-confirm-accept"]').trigger('click');
 
       expect(view.emitted('delete-tx')).toStrictEqual([[{ location: 'ethereum', txRef: '0xabc' }]]);
     });
@@ -302,8 +317,24 @@ describe('modules/history/events/HistoryEventsAction', () => {
 
       expect(view.find('[data-testid="event-delete-tx"]').exists()).toBe(false);
       await view.find('[data-testid="event-delete-events"]').trigger('click');
+      expect(view.find('[data-testid="inline-confirm"]').text()).toContain('transactions.events.confirmation.delete.message');
+      await view.find('[data-testid="inline-confirm-accept"]').trigger('click');
 
       expect(view.emitted('delete-events')).toStrictEqual([[[7, 9]]]);
+    });
+
+    it('should go back to the menu items without deleting when the question is cancelled', async () => {
+      set(menu.canDeleteEvents, true);
+      const view = mountAction();
+      view.findComponent(MenuStub).vm.$emit('update:modelValue', true);
+      await nextTick();
+
+      await view.find('[data-testid="event-delete-events"]').trigger('click');
+      await view.find('[data-testid="inline-confirm-cancel"]').trigger('click');
+
+      expect(view.emitted('delete-events')).toBeUndefined();
+      expect(view.find('[data-testid="inline-confirm"]').exists()).toBe(false);
+      expect(view.find('[data-testid="event-delete-events"]').exists()).toBe(true);
     });
 
     it('should offer no delete when neither applies', () => {

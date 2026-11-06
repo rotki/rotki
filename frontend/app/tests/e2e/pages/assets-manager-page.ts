@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_LONG, TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
+import { confirmInline } from '../helpers/utils';
 import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
@@ -128,9 +129,8 @@ export class AssetsManagerPage {
 
     await switchInput.click();
     await expect(switchInput).toBeChecked();
-    await this.page.locator('[data-testid=confirm-dialog]').locator('[data-testid=button-confirm]').click();
-    // Wait for dialog to close and table to refresh
-    await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'detached' });
+    // The ignore runs straight away; the switch is disabled until it settles.
+    await expect(switchInput).toBeEnabled();
   }
 
   /**
@@ -164,19 +164,13 @@ export class AssetsManagerPage {
   }
 
   async confirmDelete(): Promise<void> {
-    await expect(
-      this.page.locator('[data-testid=confirm-dialog]').locator('[data-testid=dialog-title]'),
-    ).toContainText('Delete asset');
-
     const responsePromise = this.page.waitForResponse(
       response => response.url().includes('/api/1/assets/all') && response.request().method() === 'DELETE',
     );
 
-    await this.page.locator('[data-testid=confirm-dialog]').locator('[data-testid=button-confirm]').click();
+    await confirmInline(this.page, 'Delete asset');
     const response = await responsePromise;
     expect(response.status()).toBe(200);
-
-    await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'detached' });
   }
 
   async deleteAnEvmAsset(address: string): Promise<void> {

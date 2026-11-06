@@ -11,7 +11,6 @@ const mockCreateOracleCache = vi.fn();
 const mockNotify = vi.fn();
 const mockGetPriceCache = vi.fn();
 const mockDeletePriceCache = vi.fn();
-const mockShowConfirm = vi.fn();
 
 vi.mock('@/modules/assets/prices/use-price-task-manager', () => ({
   usePriceTaskManager: vi.fn().mockReturnValue({
@@ -35,12 +34,6 @@ vi.mock('@/modules/core/tasks/use-task-store', () => ({
 vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   useNotificationDispatcher: vi.fn().mockReturnValue({
     notify: (...args: unknown[]) => mockNotify(...args),
-  }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: vi.fn().mockReturnValue({
-    show: (...args: unknown[]) => mockShowConfirm(...args),
   }),
 }));
 
@@ -73,7 +66,6 @@ describe('oracleCacheContent', () => {
     mockNotify.mockClear();
     mockGetPriceCache.mockClear().mockResolvedValue([]);
     mockDeletePriceCache.mockClear().mockResolvedValue(true);
-    mockShowConfirm.mockClear();
   });
 
   function createWrapper(): ReturnType<typeof mount> {
@@ -194,6 +186,31 @@ describe('oracleCacheContent', () => {
 
     expect(mockDeletePriceCache).toHaveBeenCalledWith('cryptocompare', 'ETH', 'USD');
     expect(mockGetPriceCache).toHaveBeenCalledTimes(2);
+  });
+
+  it('should hand the table a question naming the pair and source, so a row asks before deleting', async () => {
+    const wrapper = createWrapperWithTable();
+    await flushPromises();
+
+    const deleteConfirm: (entry: OracleCacheMeta) => { title: string; message: string } = wrapper
+      .findComponent({ name: 'OracleCacheTable' })
+      .props('deleteConfirm');
+
+    expect(deleteConfirm({ fromAsset: 'ETH', fromTimestamp: '1', toAsset: 'USD', toTimestamp: '2' })).toStrictEqual({
+      message: 'oracle_prices.cache.delete.message::ETH, cryptocompare, USD',
+      title: 'oracle_prices.cache.delete.title',
+    });
+    expect(mockDeletePriceCache).not.toHaveBeenCalled();
+  });
+
+  it('should clear the entry the table confirmed deleting', async () => {
+    const wrapper = createWrapperWithTable();
+    await flushPromises();
+
+    wrapper.findComponent({ name: 'OracleCacheTable' }).vm.$emit('delete', { fromAsset: 'ETH', fromTimestamp: '1', id: 1, toAsset: 'USD', toTimestamp: '2' });
+    await flushPromises();
+
+    expect(mockDeletePriceCache).toHaveBeenCalledExactlyOnceWith('cryptocompare', 'ETH', 'USD');
   });
 
   it('should notify on delete error', async () => {

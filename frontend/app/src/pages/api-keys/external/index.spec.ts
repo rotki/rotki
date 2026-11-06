@@ -7,7 +7,6 @@ import flushPromises from 'flush-promises';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed } from 'vue';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import ServiceKey from '@/modules/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import { useExternalServicesApi } from '@/modules/settings/api/use-external-services-api';
@@ -232,7 +231,7 @@ describe('external-services', () => {
       expect(cryptoCompare.vm.apiKey).toBe('123');
     });
 
-    it('should confirm and delete etherscan key', async () => {
+    it('should ask in place, then delete the etherscan key', async () => {
       const mock = vi.mocked(api.deleteExternalServices);
       mock.mockResolvedValueOnce({});
 
@@ -245,14 +244,14 @@ describe('external-services', () => {
         .find('[data-testid=bottom-dialog] [data-testid=delete-button]')
         .trigger('click');
       await nextTick();
+      expect(mock).not.toHaveBeenCalled();
 
-      const confirmStore = useConfirmStore();
-      await confirmStore.confirm();
-      await nextTick();
+      await wrapper
+        .find('[data-testid=bottom-dialog] [data-testid=delete-confirm] [data-testid=inline-confirm-accept]')
+        .trigger('click');
       await flushPromises();
 
       expect(mock).toHaveBeenCalledWith('etherscan');
-      expect(confirmStore.visible).toBe(false);
     });
 
     it('should fail deleting cryptocompare key', async () => {
@@ -268,14 +267,14 @@ describe('external-services', () => {
         .find('[data-testid=bottom-dialog] [data-testid=delete-button]')
         .trigger('click');
       await nextTick();
+      expect(mock).not.toHaveBeenCalled();
 
-      const confirmStore = useConfirmStore();
-      await confirmStore.confirm();
-      await nextTick();
+      await wrapper
+        .find('[data-testid=bottom-dialog] [data-testid=delete-confirm] [data-testid=inline-confirm-accept]')
+        .trigger('click');
       await flushPromises();
 
       expect(mock).toHaveBeenCalledWith('cryptocompare');
-      expect(confirmStore.visible).toBe(false);
 
       const message = wrapper
         .find('[data-testid=bottom-dialog] [data-testid=cryptocompare] [data-testid=service-key-content] .details')

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import SimpleRpcNodeManagerForm from '@/modules/settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue';
 import { useSettingsWriter } from '@/modules/settings/settings-writer';
 import { useSetting } from '@/modules/settings/use-setting';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const { setting } = defineProps<{
@@ -19,6 +19,8 @@ const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<InstanceType<typeof SimpleRpcNodeManagerForm>>('form');
 const stateUpdated = ref(false);
 const inputUrl = ref<string>('');
+/** Why the last delete failed, until the next one starts; the row stays, so its button is the retry. */
+const deleteFailure = ref<string>();
 
 const value = useSetting(setting);
 const { write } = useSettingsWriter();
@@ -35,8 +37,8 @@ function edit(item: string) {
   set(inputUrl, item);
 }
 
-async function save(force: boolean = false) {
-  if (!get(form)?.validate() && !force)
+async function save(): Promise<void> {
+  if (!get(form)?.validate())
     return;
 
   const value = get(inputUrl);
@@ -55,21 +57,17 @@ async function save(force: boolean = false) {
   }
 }
 
-const { show } = useConfirmStore();
+const deleteConfirm = computed<{ title: string; message: string }>(() => ({
+  message: t('general_settings.simple_node_setting.delete_confirmation.subtitle'),
+  title: t('general_settings.simple_node_setting.delete_confirmation.title'),
+}));
 
-async function deleteNode() {
-  set(inputUrl, '');
-  await save(true);
-}
-
-function showDeleteConfirmation() {
-  show(
-    {
-      message: t('general_settings.simple_node_setting.delete_confirmation.subtitle'),
-      title: t('general_settings.simple_node_setting.delete_confirmation.title'),
-    },
-    () => deleteNode(),
-  );
+/** Clears the endpoint, which the row's delete button already confirmed. */
+async function deleteNode(): Promise<void> {
+  set(deleteFailure, undefined);
+  const result = await write(setting, '');
+  if (!result.success)
+    set(deleteFailure, result.message ?? '');
 }
 
 defineExpose({
@@ -78,6 +76,14 @@ defineExpose({
 </script>
 
 <template>
+  <FailureStrip
+    v-if="deleteFailure !== undefined"
+    class="mb-2"
+    :retryable="false"
+    :title="t('general_settings.simple_node_setting.delete_error')"
+    :failure="deleteFailure"
+    data-testid="simple-node-delete-error"
+  />
   <RuiTable
     class="bg-white dark:bg-transparent"
     :empty="!value"
@@ -127,8 +133,9 @@ defineExpose({
           <RowActions
             :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"
             :edit-tooltip="t('evm_rpc_node_manager.edit_tooltip')"
+            :delete-confirm="deleteConfirm"
             @edit-click="edit(value)"
-            @delete-click="showDeleteConfirmation()"
+            @delete-click="deleteNode()"
           />
         </td>
       </tr>

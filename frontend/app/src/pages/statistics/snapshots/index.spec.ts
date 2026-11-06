@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import SnapshotsPage from '@/pages/statistics/snapshots/index.vue';
 
-const confirmDelete = vi.fn();
+const deleteSnapshotAt = vi.fn(async (): Promise<void> => {});
 const exportSnapshot = vi.fn(async (): Promise<boolean> => true);
 const importSnapshot = vi.fn();
 const open = vi.fn();
@@ -17,10 +17,11 @@ const refresh = vi.fn(async (): Promise<void> => {});
 const takeSnapshot = vi.fn(async (): Promise<void> => {});
 
 interface PageState {
+  deleteFailure: unknown;
   rows: SnapshotListRow[];
 }
 
-const pageState = vi.hoisted((): PageState => ({ rows: [] }));
+const pageState = vi.hoisted((): PageState => ({ deleteFailure: undefined, rows: [] }));
 
 const ListTableStub = defineComponent({
   emits: ['open', 'export', 'delete', 'update:pagination'],
@@ -39,7 +40,8 @@ vi.mock('@/pages/statistics/snapshots/use-snapshots-page', async () => {
   const { computed, ref, shallowRef } = await import('vue');
   return {
     useSnapshotsPage: (): ReturnType<typeof useSnapshotsPage> => ({
-      confirmDelete,
+      deleteFailure: computed(() => pageState.deleteFailure),
+      deleteSnapshotAt,
       emptyDescription: computed(() => 'nothing here'),
       exportSnapshot,
       exporting: shallowRef(undefined),
@@ -50,6 +52,7 @@ vi.mock('@/pages/statistics/snapshots/use-snapshots-page', async () => {
       modelBalanceFile: shallowRef(undefined),
       modelFilters: ref({}),
       modelImportDialog: shallowRef(false),
+      modelImportFailure: shallowRef(undefined),
       modelLocationFile: shallowRef(undefined),
       modelPagination: ref({ limit: 10, page: 1, total: 0 }),
       open,
@@ -87,6 +90,7 @@ describe('pages/statistics/snapshots/index', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     pageState.rows = [];
+    pageState.deleteFailure = undefined;
   });
 
   afterEach(() => {
@@ -144,7 +148,24 @@ describe('pages/statistics/snapshots/index', () => {
 
     expect(open).toHaveBeenCalledWith(100);
     expect(exportSnapshot).toHaveBeenCalledWith(200);
-    expect(confirmDelete).toHaveBeenCalledWith(300);
+    expect(deleteSnapshotAt).toHaveBeenCalledWith(300);
+  });
+
+  it('should name a failed delete above the table', () => {
+    pageState.deleteFailure = new Error('backend said no');
+
+    wrapper = mountPage();
+
+    const strip = wrapper.find('[data-testid=snapshot-delete-error]');
+    expect(strip.text()).toContain('dashboard.snapshot.delete.message.title');
+    expect(strip.text()).toContain('backend said no');
+    expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
+  });
+
+  it('should show no failure while the last delete went through', () => {
+    wrapper = mountPage();
+
+    expect(wrapper.find('[data-testid=snapshot-delete-error]').exists()).toBe(false);
   });
 
   it('should show the filter and the import dialog', () => {

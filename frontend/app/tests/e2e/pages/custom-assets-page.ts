@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM } from '../helpers/constants';
+import { confirmInline } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
 export class CustomAssetsPage {
@@ -49,9 +50,7 @@ export class CustomAssetsPage {
 
   async deleteAsset(name: string): Promise<void> {
     await this.rowFor(name).first().locator('[data-testid=row-delete]').click();
-    const confirmDialog = this.page.locator('[data-testid=confirm-dialog]');
-    await confirmDialog.locator('[data-testid=button-confirm]').click();
-    await confirmDialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+    await confirmInline(this.page);
   }
 
   async expectRow(name: string): Promise<void> {

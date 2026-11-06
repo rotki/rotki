@@ -4,10 +4,11 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick, type Ref, ref } from 'vue';
+import { defineComponent, nextTick, type Ref, ref } from 'vue';
 import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalancesEmpty.vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
+import RowActions from '@/modules/shell/components/RowActions.vue';
 import Exchanges from '@/pages/accounts/exchanges/index.vue';
 import '@test/i18n';
 
@@ -21,8 +22,12 @@ vi.mock('vue-router', () => ({
   useRoute: (): Ref<{ query: Record<string, unknown> }> => route,
 }));
 
+const { removeExchange } = vi.hoisted(() => ({
+  removeExchange: vi.fn<(exchange: { location: string; name: string }) => Promise<boolean>>(),
+}));
+
 vi.mock('@/modules/balances/exchanges/use-exchanges', () => ({
-  useExchanges: (): Record<string, unknown> => ({ removeExchange: vi.fn() }),
+  useExchanges: (): Record<string, unknown> => ({ removeExchange }),
 }));
 
 vi.mock('@/modules/core/common/use-locations', () => ({
@@ -43,6 +48,12 @@ vi.mock('@/modules/settings/use-setting', () => ({
 
 const HINT = '[data-testid=exchange-setup-hint]';
 
+/** Renders each row's actions cell, which is all these tests reach into. */
+const RuiDataTable = defineComponent({
+  props: ['rows', 'cols', 'sort', 'itemClass', 'rowAttr'],
+  template: '<div><div v-for="row in rows" :key="row.name"><slot name="item.actions" :row="row" /></div></div>',
+});
+
 describe('exchanges page', () => {
   let wrapper: VueWrapper<InstanceType<typeof Exchanges>>;
   let pinia: Pinia;
@@ -60,7 +71,7 @@ describe('exchanges page', () => {
           ExternalLink: true,
           LocationDisplay: true,
           RowActions: true,
-          RuiDataTable: true,
+          RuiDataTable,
           ExchangeKeysFormDialog: true,
         },
       },
@@ -146,5 +157,47 @@ describe('exchanges page', () => {
     vi.advanceTimersByTime(9000);
     await nextTick();
     expect(wrapper.find(HINT).exists()).toBe(false);
+  });
+
+  describe('removing an exchange', () => {
+    beforeEach(() => {
+      removeExchange.mockReset();
+    });
+
+    it('should have the row ask before removing, naming the exchange', async () => {
+      wrapper = createWrapper();
+      await flushPromises();
+
+      expect(wrapper.findComponent(RowActions).props('deleteConfirm')).toMatchObject({
+        message: 'exchange_settings.confirmation.message::kraken, main',
+      });
+      expect(removeExchange).not.toHaveBeenCalled();
+    });
+
+    it('should remove the row\'s exchange once its question is confirmed', async () => {
+      removeExchange.mockResolvedValue(true);
+      wrapper = createWrapper();
+      await flushPromises();
+
+      wrapper.findComponent(RowActions).vm.$emit('delete-click');
+      await flushPromises();
+
+      expect(removeExchange).toHaveBeenCalledWith(createTestExchange('kraken', 'main'));
+      expect(wrapper.find('[data-testid=exchange-remove-error]').exists()).toBe(false);
+    });
+
+    it('should name a failed removal above the table, with no retry of its own', async () => {
+      removeExchange.mockRejectedValue(new Error('exchange is busy'));
+      wrapper = createWrapper();
+      await flushPromises();
+
+      wrapper.findComponent(RowActions).vm.$emit('delete-click');
+      await flushPromises();
+
+      const strip = wrapper.find('[data-testid=exchange-remove-error]');
+      expect(strip.text()).toContain('actions.balances.exchange_removal.title');
+      expect(strip.text()).toContain('exchange is busy');
+      expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
+    });
   });
 });

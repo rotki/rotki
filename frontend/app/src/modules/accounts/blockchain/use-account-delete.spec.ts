@@ -6,7 +6,6 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import '@test/i18n';
 
 const mocks = vi.hoisted(() => ({
@@ -66,8 +65,7 @@ describe('useAccountDelete', () => {
       totals: { assets: { ETH: { address: { amount: bigNumberify(1), value: bigNumberify(2501) } } }, liabilities: {} },
     });
 
-    useAccountDelete().showConfirmation({ data: { ...groupAccount(['eth']) }, type: 'account' });
-    await useConfirmStore().confirm();
+    await useAccountDelete().deleteConfirmed({ data: { ...groupAccount(['eth']) }, type: 'account' });
 
     expect(mocks.removeAccount).toHaveBeenCalledExactlyOnceWith({ accounts: ['0x123'], chain: 'eth' });
     expect(accountStore.accounts).toMatchObject({ eth: [] });
@@ -87,9 +85,7 @@ describe('useAccountDelete', () => {
     };
 
     const confirmRemoval = async (account: AddressGroupWithBalance): Promise<void> => {
-      const { showConfirmation } = useAccountDelete();
-      showConfirmation({ data: account, type: 'account' });
-      await useConfirmStore().confirm();
+      await useAccountDelete().deleteConfirmed({ data: account, type: 'account' });
     };
 
     it('should remove a group showing all its chains agnostically', async () => {

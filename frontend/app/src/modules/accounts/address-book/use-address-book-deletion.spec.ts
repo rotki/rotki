@@ -5,15 +5,11 @@ import { useAddressBookDeletion } from './use-address-book-deletion';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
-    show: vi.fn(),
     notifyError: vi.fn(),
     deleteAddressBook: vi.fn(),
   },
 }));
 
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({ show: spies.show }),
-}));
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: (): object => ({ notifyError: spies.notifyError }),
 }));
@@ -47,11 +43,23 @@ describe('useAddressBookDeletion', () => {
     expect(onSuccess).not.toHaveBeenCalled();
   });
 
-  it('should delete through the confirmation dialog', async () => {
-    const { showDeleteConfirmation } = useAddressBookDeletion('private');
-    showDeleteConfirmation(createMock<AddressBookEntry>({ address: '0xdef', blockchain: 'optimism' }));
-    expect(spies.show).toHaveBeenCalledOnce();
-    await spies.show.mock.calls[0][1]();
+  it('should delete the confirmed entry from its chain', async () => {
+    const { deleteEntry } = useAddressBookDeletion('private');
+    await deleteEntry(createMock<AddressBookEntry>({ address: '0xdef', blockchain: 'optimism' }));
     expect(spies.deleteAddressBook).toHaveBeenCalledWith('private', [{ address: '0xdef', blockchain: 'optimism' }]);
+  });
+
+  it('should ask about the entry by its address and chain', () => {
+    const { deleteConfirm } = useAddressBookDeletion('private');
+    expect(deleteConfirm(createMock<AddressBookEntry>({ address: '0xdef', blockchain: 'optimism' }))).toEqual({
+      message: 'address_book.actions.delete.dialog.message::0xdef, optimism',
+      title: 'address_book.actions.delete.dialog.title',
+    });
+  });
+
+  it('should ask about an entry for every chain as multi-chain', () => {
+    const { deleteConfirm } = useAddressBookDeletion('global');
+    expect(deleteConfirm(createMock<AddressBookEntry>({ address: '0xdef', blockchain: null })).message)
+      .toBe('address_book.actions.delete.dialog.message::0xdef, common.multi_chain');
   });
 });

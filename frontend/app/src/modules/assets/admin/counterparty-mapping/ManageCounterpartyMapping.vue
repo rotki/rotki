@@ -10,9 +10,9 @@ import { useCounterpartyMappingFields } from '@/modules/assets/admin/counterpart
 import MappingAdminLayout from '@/modules/assets/admin/MappingAdminLayout.vue';
 import { useMappingAdmin } from '@/modules/assets/admin/use-mapping-admin';
 import { fromRequest } from '@/modules/core/api/request-result';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -51,7 +51,7 @@ onMounted(async () => {
   await refetch();
 });
 
-const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
+const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion<CounterpartyMapping>({
   confirm: item => ({
     message: t('asset_management.cex_mapping.confirm_delete.message', {
       asset: item.counterpartySymbol,
@@ -60,11 +60,7 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
     title: t('asset_management.counterparty_mapping.confirm_delete.title'),
   }),
   deleteItem: mapping => deleteCounterpartyMapping(omit(mapping, ['asset'])),
-  errorMessage: (_item, error) => ({
-    description: t('asset_management.cex_mapping.delete_error', {
-      message: getErrorMessage(error),
-    }),
-  }),
+  failureTitle: () => t('asset_management.cex_mapping.delete_error'),
   onDeleted: refetch,
 });
 </script>
@@ -77,14 +73,23 @@ const { showDeleteConfirmation } = useTableRowDeletion<CounterpartyMapping>({
     @refresh="refetch()"
     @add="add()"
   >
+    <FailureStrip
+      v-if="deleteFailure"
+      class="mb-4"
+      :retryable="false"
+      :title="deleteFailure.title"
+      :failure="deleteFailure.error"
+      data-testid="counterparty-mapping-delete-error"
+    />
     <ManageCounterpartyMappingTable
       v-model:filters="filter"
       v-model:pagination="pagination"
       :collection="collection"
       :fields="fields"
       :loading="loading"
+      :delete-confirm="deleteConfirm"
       @edit="edit($event)"
-      @delete="showDeleteConfirmation($event)"
+      @delete="deleteRow($event)"
     />
     <ManageCounterpartyMappingFormDialog
       v-model="modelValue"

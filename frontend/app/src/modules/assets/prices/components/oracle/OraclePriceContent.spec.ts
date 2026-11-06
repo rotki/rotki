@@ -7,7 +7,6 @@ import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import OraclePriceContent from '@/modules/assets/prices/components/oracle/OraclePriceContent.vue';
 import OraclePriceEditDialog from '@/modules/assets/prices/components/oracle/OraclePriceEditDialog.vue';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
@@ -130,17 +129,21 @@ describe('oraclePriceContent', () => {
   });
 
   describe('delete', () => {
-    it('should delete a price only once confirmed, then reload', async () => {
+    it('should have the row ask before deleting a price', async () => {
+      await mountWith([entry(PriceOracle.COINGECKO)]);
+
+      expect(wrapper.findComponent(RowActions).props('deleteConfirm')).toStrictEqual({
+        message: 'oracle_prices.delete.dialog.message',
+        title: 'oracle_prices.delete.dialog.title',
+      });
+    });
+
+    it('should delete the price the row confirmed, then reload', async () => {
       const price = entry(PriceOracle.COINGECKO);
       await mountWith([price]);
 
       wrapper.findComponent(RowActions).vm.$emit('delete-click');
-      await nextTick();
-
-      expect(useConfirmStore().visible).toBe(true);
-      expect(spies.deletePrice).not.toHaveBeenCalled();
-
-      await useConfirmStore().confirm();
+      await flushPromises();
 
       expect(spies.deletePrice).toHaveBeenCalledExactlyOnceWith(price);
       expect(spies.refetch).toHaveBeenCalledOnce();
@@ -151,21 +154,10 @@ describe('oraclePriceContent', () => {
       await mountWith([entry(PriceOracle.COINGECKO)]);
 
       wrapper.findComponent(RowActions).vm.$emit('delete-click');
-      await nextTick();
-      await useConfirmStore().confirm();
+      await flushPromises();
 
       expect(spies.deletePrice).toHaveBeenCalledOnce();
       expect(spies.refetch).not.toHaveBeenCalled();
-    });
-
-    it('should keep the price when the deletion is dismissed', async () => {
-      await mountWith([entry(PriceOracle.COINGECKO)]);
-
-      wrapper.findComponent(RowActions).vm.$emit('delete-click');
-      await nextTick();
-      await useConfirmStore().dismiss();
-
-      expect(spies.deletePrice).not.toHaveBeenCalled();
     });
   });
 

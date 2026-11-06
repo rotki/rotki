@@ -45,12 +45,13 @@ function csvToAccount(acc: CSVRow): AccountPayload {
 }
 
 /**
- * One row of an import as the batch runs it: an account to add, or one that is already tracked and
- * is only reported.
+ * One row of an import as the batch runs it: an account to add, one that is already tracked and is
+ * only reported, or a tag the import could not create, reported among the rows it was needed for.
  */
 export type ImportItem =
   | { readonly type: 'add'; readonly chain: string; readonly account: AddAccountsPayload | XpubAccountPayload }
-  | { readonly type: 'tracked'; readonly chain: string; readonly target: AccountTarget };
+  | { readonly type: 'tracked'; readonly chain: string; readonly target: AccountTarget }
+  | { readonly type: 'tag-failed'; readonly tag: string; readonly message: string };
 
 /** The CSV's word for "every EVM chain", which an addition is tracked under as the pseudo-chain. */
 function importChain(row: CSVRow): string {
@@ -83,6 +84,11 @@ export function trackedItem(row: CSVRow): ImportItem {
     ? { derivationPath: row.addressExtras.derivationPath, kind: 'xpub', xpub: row.address }
     : { address: row.address, kind: 'address' };
   return { chain: importChain(row), target, type: 'tracked' };
+}
+
+/** A tag the import's rows reference that the backend refused to create. */
+export function failedTagItem(tag: string, message: string): ImportItem {
+  return { message, tag, type: 'tag-failed' };
 }
 
 export function createValidatorAction(mode: 'add' | 'edit', data: Eth2Validator): StakingValidatorManage {

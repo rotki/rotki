@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import type { EditableMissingPrice, Report } from '@/modules/reports/report-types';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import type { Report } from '@/modules/reports/report-types';
 import ReportActionableCardActions from '@/modules/reports/ReportActionableCardActions.vue';
-import {
-  summarizeMissingPrices,
-  useMissingPriceFinishPrompt,
-  useReportActionableStepper,
-} from '@/modules/reports/use-report-actionable-items';
+import { useReportActionableStepper } from '@/modules/reports/use-report-actionable-items';
+import { useReportFinishStep } from '@/modules/reports/use-report-finish-step';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
 import { PinnedNames } from '@/modules/session/types';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
 const {
@@ -49,19 +46,6 @@ function pinSection() {
   setDialog(false);
 }
 
-const { show } = useConfirmStore();
-const { promptFor } = useMissingPriceFinishPrompt();
-
-function submitActionableItems(missingPrices: EditableMissingPrice[]) {
-  const { message, outcome, primaryAction, title, type } = promptFor(summarizeMissingPrices(missingPrices));
-
-  show({ message, primaryAction, title, type }, () => {
-    if (outcome === 'regenerate')
-      regenerateReport();
-    else ignoreIssues();
-  });
-}
-
 function ignoreIssues() {
   if (isPinned)
     unpinPanel();
@@ -78,6 +62,15 @@ function close() {
     unpinPanel();
   else setDialog(false);
 }
+
+const {
+  accept: acceptFinish,
+  ask: askFinish,
+  cancel: cancelFinish,
+  prompt: finishPrompt,
+} = useReportFinishStep({ onIgnore: ignoreIssues, onRegenerate: regenerateReport });
+
+watch(step, () => cancelFinish());
 </script>
 
 <template>
@@ -171,7 +164,21 @@ function close() {
           @pin="pinSection()"
         >
           <template #actions="{ items }">
+            <InlineConfirm
+              v-if="finishPrompt"
+              layout="panel"
+              class="border-t border-rui-divider"
+              :class="{ 'px-0! py-2!': isPinned }"
+              :title="finishPrompt.title"
+              :message="finishPrompt.message"
+              :confirm-label="finishPrompt.primaryAction"
+              :cancel-label="t('common.actions.back')"
+              data-testid="report-actionable-finish"
+              @cancel="cancelFinish()"
+              @confirm="acceptFinish()"
+            />
             <ReportActionableCardActions
+              v-else
               :is-pinned="isPinned"
               :step="step"
               :total-steps="stepperContents.length"
@@ -179,7 +186,7 @@ function close() {
               @back="step = step - 1"
               @next="step = step + 1"
               @close="setDialog(false)"
-              @finish="submitActionableItems(items)"
+              @finish="askFinish(items)"
             />
           </template>
         </component>

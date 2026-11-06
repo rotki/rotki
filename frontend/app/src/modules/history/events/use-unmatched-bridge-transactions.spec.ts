@@ -13,8 +13,6 @@ const { spies } = vi.hoisted(() => ({
     triggerBridgeMatching: vi.fn(),
     getBridgeMatches: vi.fn(),
     unlinkBridgeTransaction: vi.fn(),
-    showErrorMessage: vi.fn(),
-    showSuccessMessage: vi.fn(),
     runTask: vi.fn(),
     submitTask: vi.fn(),
     useIsTaskRunning: vi.fn(() => ref(false)),
@@ -35,16 +33,6 @@ vi.mock('@/modules/history/api/events/use-bridge-matching-api', () => ({
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: (): ReturnType<typeof useHistoryEventsApi> => createMock<ReturnType<typeof useHistoryEventsApi>>({
     fetchHistoryEvents: spies.fetchHistoryEvents,
-  }),
-}));
-
-vi.mock('@/modules/core/notifications/use-notifications', async () => ({
-  getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
-    '@/modules/core/common/logging/error-handling',
-  )).getErrorMessage,
-  useNotifications: (): object => ({
-    showErrorMessage: spies.showErrorMessage,
-    showSuccessMessage: spies.showSuccessMessage,
   }),
 }));
 
@@ -320,7 +308,6 @@ describe('use-unmatched-bridge-transactions', () => {
 
       expect(get(ignoredError)).toBe(failure);
       expect(get(unmatchedError)).toBeUndefined();
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
     });
 
     it('should keep the legs of the last good fetch when a later one fails', async () => {
@@ -347,13 +334,11 @@ describe('use-unmatched-bridge-transactions', () => {
       const { fetchUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
 
       await fetchUnmatchedBridgeTransactions(false);
-
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
     });
   });
 
   describe('matchBridgeTransaction', () => {
-    it('should signal modified events and notify on success', async () => {
+    it('should signal modified events on success', async () => {
       spies.matchBridgeTransactions.mockResolvedValueOnce(true);
       const { useUnmatchedBridgeTransactions } = await importFresh();
       const { matchBridgeTransaction } = useUnmatchedBridgeTransactions();
@@ -362,7 +347,6 @@ describe('use-unmatched-bridge-transactions', () => {
 
       expect(result.success).toBe(true);
       expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(1, [2, 3]);
-      expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
       expect(spies.signalEventsModified).toHaveBeenCalledOnce();
     });
 
@@ -374,7 +358,6 @@ describe('use-unmatched-bridge-transactions', () => {
       const result = await matchBridgeTransaction(1, [2]);
 
       expect(result).toMatchObject({ message: { message: 'boom' }, success: false });
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
   });
@@ -390,8 +373,6 @@ describe('use-unmatched-bridge-transactions', () => {
       expect(result.success).toBe(true);
       expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(9, undefined, 'external');
       expect(spies.signalEventsModified).toHaveBeenCalledOnce();
-      // the caller reports this one with an undo affordance, so no success dialog here
-      expect(spies.showSuccessMessage).not.toHaveBeenCalled();
     });
 
     it('should hand the thrown error back when resolving as external throws', async () => {
@@ -402,7 +383,6 @@ describe('use-unmatched-bridge-transactions', () => {
       const result = await resolveExternal(9);
 
       expect(result).toMatchObject({ message: { message: 'boom' }, success: false });
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
     });
 
     it('should hand a refusal back with a reason, so the panel has something to name', async () => {
@@ -427,7 +407,6 @@ describe('use-unmatched-bridge-transactions', () => {
 
       expect(result.success).toBe(true);
       expect(spies.matchBridgeTransactions).toHaveBeenCalledWith(9, undefined, 'createCounterpart');
-      expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
       expect(spies.signalEventsModified).toHaveBeenCalledOnce();
     });
 
@@ -439,7 +418,6 @@ describe('use-unmatched-bridge-transactions', () => {
       const result = await resolveCreateCounterpart(9);
 
       expect(result).toMatchObject({ message: { message: 'boom' }, success: false });
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
     });
   });
 
@@ -534,7 +512,6 @@ describe('use-unmatched-bridge-transactions', () => {
       await useUnmatchedBridgeTransactions().triggerBridgeAutoMatching();
 
       expect(spies.submitTask).toHaveBeenCalledOnce();
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(spies.signalEventsModified).not.toHaveBeenCalled();
     });
   });

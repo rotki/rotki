@@ -6,6 +6,7 @@ import { useManagedAssetsTable } from '@/modules/assets/admin/managed/use-manage
 import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';
 import RestoreAssetDbButton from '@/modules/assets/admin/RestoreAssetDbButton.vue';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { identifier = null, mainPage = false } = defineProps<{
@@ -20,10 +21,22 @@ const openAction = ref<boolean>(false);
 
 const router = useRouter();
 
-const { add, assetTypes, edit, editAsset, editMode, modelValue } = useManagedAssetForm(() => identifier);
+const {
+  add,
+  assetTypes,
+  assetTypesFailure,
+  edit,
+  editAsset,
+  editMode,
+  loadAssetTypes,
+  modelValue,
+} = useManagedAssetForm(() => identifier);
 
 const {
   assets,
+  deleteAsset,
+  deleteConfirm,
+  deleteFailure,
   fields,
   loading,
   modelExpanded,
@@ -33,7 +46,6 @@ const {
   modelSelectedRows,
   pagination,
   refetch,
-  showDeleteConfirmation,
   sort,
 } = useManagedAssetsTable(() => mainPage, assetTypes);
 
@@ -92,7 +104,10 @@ onMounted(async () => {
             <RuiIcon name="lu-ellipsis-vertical" />
           </RuiButton>
         </template>
-        <RestoreAssetDbButton dropdown />
+        <RestoreAssetDbButton
+          dropdown
+          @close="openAction = false"
+        />
         <RuiTooltip
           :open-delay="400"
           class="w-full"
@@ -115,6 +130,22 @@ onMounted(async () => {
       </RuiMenu>
     </template>
 
+    <FailureStrip
+      v-if="assetTypesFailure"
+      class="mb-4"
+      :title="t('asset_form.types.load_failed')"
+      :failure="assetTypesFailure"
+      data-testid="managed-asset-types-error"
+      @retry="loadAssetTypes()"
+    />
+    <FailureStrip
+      v-if="deleteFailure"
+      class="mb-4"
+      :retryable="false"
+      :title="deleteFailure.title"
+      :failure="deleteFailure.error"
+      data-testid="managed-asset-delete-error"
+    />
     <ManagedAssetTable
       v-model:filters="modelFilter"
       v-model:pill-params="modelPillParams"
@@ -126,9 +157,10 @@ onMounted(async () => {
       :collection="assets"
       :loading="loading"
       :fields="fields"
+      :delete-confirm="deleteConfirm"
       @refresh="refetch()"
       @edit="edit($event)"
-      @delete-asset="showDeleteConfirmation($event)"
+      @delete-asset="deleteAsset($event)"
     />
 
     <MergeDialog v-model="mergeTool" />

@@ -4,6 +4,7 @@ import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { arrayify } from '@/modules/core/common/data/array';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { UNMATCHED_ACTIONS, type UnmatchedFailure, type UnmatchedRowActionLabels, type UnmatchedRowActionSpec, type UnmatchedRowConfirms, type UnmatchedRowOptionalAction } from '@/modules/history/events/unmatched-actions';
 import { canCreateBridgeCounterpart, getBridgeCounterpartAddress, isCounterpartUnqueryable, useUntrackedBridgeCounterpart } from '@/modules/history/events/use-untracked-bridge-counterpart';
@@ -54,6 +55,7 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
   const { t } = useI18n({ useScope: 'global' });
   const failureMessage = useFailureMessage();
   const { isCounterpartUntracked } = useUntrackedBridgeCounterpart();
+  const { getChainName } = useSupportedChains();
 
   const labels = computed<UnmatchedRowActionLabels>(() => ({
     findMatch: t('asset_movement_matching.dialog.find_match'),
@@ -122,6 +124,29 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
       : t('bridge_matching.dialog.no_unmatched'),
   );
 
+  function formatChain(chain: string | number | undefined): string | undefined {
+    if (chain === undefined)
+      return undefined;
+    return typeof chain === 'number' ? chain.toString() : getChainName(chain);
+  }
+
+  /**
+   * What creating the counterpart asks: a deposit gets its destination, a withdrawal its source,
+   * on the chain named by the bridge when it names one.
+   */
+  function createCounterpartMessage(transaction: UnmatchedBridgeTransaction): string {
+    const isDeposit = transaction.direction === 'deposit';
+    const chain = formatChain(isDeposit ? transaction.bridge?.toChain : transaction.bridge?.fromChain);
+    if (isDeposit) {
+      return chain
+        ? t('bridge_matching.actions.create_counterpart_confirm_out_chain', { chain })
+        : t('bridge_matching.actions.create_counterpart_confirm_out');
+    }
+    return chain
+      ? t('bridge_matching.actions.create_counterpart_confirm_in_chain', { chain })
+      : t('bridge_matching.actions.create_counterpart_confirm_in');
+  }
+
   /**
    * A known-untracked counterpart skips the confirm: external is the only correct outcome
    * there, and the undo notification still covers a misclick. Everything else asks in place.
@@ -133,6 +158,13 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
         message: t('bridge_matching.dialog.confirm_ignore'),
       },
     };
+
+    if (row.canCreateCounterpart) {
+      confirms[UNMATCHED_ACTIONS.CREATE_COUNTERPART] = {
+        confirmLabel: t('bridge_matching.dialog.create_counterpart'),
+        message: createCounterpartMessage(row.original),
+      };
+    }
 
     if (!row.untracked) {
       confirms[UNMATCHED_ACTIONS.MARK_EXTERNAL] = {

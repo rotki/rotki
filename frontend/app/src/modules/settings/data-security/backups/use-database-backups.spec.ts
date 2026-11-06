@@ -5,12 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import { useDatabaseBackups } from './use-database-backups';
 
-const { createBackup, deleteBackup, info, notify, show } = await vi.hoisted(async () => ({
+const { createBackup, deleteBackup, info, notify } = await vi.hoisted(async () => ({
   createBackup: vi.fn(),
   deleteBackup: vi.fn(),
   info: vi.fn(),
   notify: vi.fn(),
-  show: vi.fn(),
 }));
 
 vi.mock('@/modules/session/api/use-backup-api', () => ({
@@ -19,10 +18,6 @@ vi.mock('@/modules/session/api/use-backup-api', () => ({
 
 vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   useNotificationDispatcher: (): Record<string, unknown> => ({ notify }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
@@ -215,24 +210,12 @@ describe('modules/settings/data-security/backups/useDatabaseBackups', () => {
   });
 
   describe('deleting the selected backups', () => {
-    it('should delete nothing until the user accepts the confirmation', async () => {
-      info.mockResolvedValue(databaseInfo([entry(1700000000)]));
-      const { modelSelected, showMassDeleteConfirmation } = await mountBackups();
-      set(modelSelected, [{ ...entry(1700000000), id: 1 }]);
-
-      showMassDeleteConfirmation();
-
-      expect(show).toHaveBeenCalledOnce();
-      expect(deleteBackup).not.toHaveBeenCalled();
-    });
-
-    it('should delete every selected file in one call once accepted', async () => {
+    it('should delete every selected file in one call', async () => {
       info.mockResolvedValue(databaseInfo([entry(1700000000), entry(1700000001)]));
-      const { modelSelected, showMassDeleteConfirmation } = await mountBackups();
+      const { massRemove, modelSelected } = await mountBackups();
       set(modelSelected, [{ ...entry(1700000000), id: 1 }, { ...entry(1700000001), id: 2 }]);
 
-      showMassDeleteConfirmation();
-      await show.mock.calls[0][1]();
+      await massRemove();
 
       expect(deleteBackup).toHaveBeenCalledExactlyOnceWith([
         '/home/user/.rotki/data/1700000000_rotkehlchen_db_v40.backup',
@@ -242,11 +225,10 @@ describe('modules/settings/data-security/backups/useDatabaseBackups', () => {
 
     it('should drop the deleted rows and clear the selection', async () => {
       info.mockResolvedValue(databaseInfo([entry(1700000000), entry(1700000001), entry(1700000002)]));
-      const { backups, modelSelected, showMassDeleteConfirmation } = await mountBackups();
+      const { backups, massRemove, modelSelected } = await mountBackups();
       set(modelSelected, [{ ...entry(1700000000), id: 1 }, { ...entry(1700000002), id: 3 }]);
 
-      showMassDeleteConfirmation();
-      await show.mock.calls[0][1]();
+      await massRemove();
 
       expect(get(backups).map(item => item.time)).toEqual([1700000001]);
       expect(get(modelSelected)).toEqual([]);
@@ -255,24 +237,14 @@ describe('modules/settings/data-security/backups/useDatabaseBackups', () => {
     it('should keep the selection when the backend refused, so the user can retry', async () => {
       info.mockResolvedValue(databaseInfo([entry(1700000000)]));
       deleteBackup.mockRejectedValue(new Error('permission denied'));
-      const { backups, modelSelected, showMassDeleteConfirmation } = await mountBackups();
+      const { backups, massRemove, modelSelected } = await mountBackups();
       set(modelSelected, [{ ...entry(1700000000), id: 1 }]);
 
-      showMassDeleteConfirmation();
-      await show.mock.calls[0][1]();
+      await massRemove();
 
       expect(notify).toHaveBeenCalledOnce();
       expect(get(modelSelected)).toHaveLength(1);
       expect(get(backups)).toHaveLength(1);
-    });
-
-    it('should tell the user how many are about to go', async () => {
-      const { modelSelected, showMassDeleteConfirmation } = await mountBackups();
-      set(modelSelected, [{ ...entry(1700000000), id: 1 }, { ...entry(1700000001), id: 2 }]);
-
-      showMassDeleteConfirmation();
-
-      expect(show.mock.calls[0][0].message).toContain('2');
     });
   });
 

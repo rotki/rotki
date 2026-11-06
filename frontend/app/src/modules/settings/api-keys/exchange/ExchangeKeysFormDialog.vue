@@ -5,9 +5,7 @@ import { assert } from '@rotki/common';
 import { useBinancePairsConditions } from '@/modules/balances/exchanges/use-binance-pairs-conditions';
 import { useExchangeKeyConditions } from '@/modules/balances/exchanges/use-exchange-key-conditions';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
-import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useSaveFailure } from '@/modules/core/form/use-save-failure';
 import ExchangeKeysForm from '@/modules/settings/api-keys/exchange/ExchangeKeysForm.vue';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
@@ -19,13 +17,12 @@ const emit = defineEmits<{
 
 const submitting = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
-const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<ComponentExposed<typeof ExchangeKeysForm>>('form');
 
 const { setupExchange } = useExchanges();
 const { settleSaved } = useBinancePairsConditions();
 const { settleSaved: settleSavedKey } = useExchangeKeyConditions();
-const { setMessage } = useMessageStore();
+const { capture, clear, failure, modelFieldErrors } = useSaveFailure();
 const { t } = useI18n({ useScope: 'global' });
 
 const title = computed<string>(() => {
@@ -43,7 +40,7 @@ async function save(): Promise<void> {
   }
 
   set(submitting, true);
-  set(errorMessages, {});
+  clear();
 
   const exchange = get(modelValue);
   const payload = {
@@ -59,24 +56,7 @@ async function save(): Promise<void> {
     settleSavedKey(payload);
   }
   catch (error: unknown) {
-    let errors: string | ValidationErrors = getErrorMessage(error);
-
-    if (error instanceof ApiValidationError) {
-      errors = error.getValidationErrors(payload);
-    }
-
-    if (typeof errors === 'string') {
-      setMessage({
-        description: t('actions.balances.exchange_setup.description', {
-          error: errors,
-          exchange: payload.location,
-        }),
-        title: t('actions.balances.exchange_setup.title'),
-      });
-    }
-    else {
-      set(errorMessages, errors);
-    }
+    capture(error, payload);
   }
 
   set(submitting, false);
@@ -88,9 +68,8 @@ async function save(): Promise<void> {
 }
 
 watch(modelValue, (modelValue) => {
-  if (!modelValue) {
-    set(errorMessages, {});
-  }
+  if (!modelValue)
+    clear();
 });
 </script>
 
@@ -101,6 +80,8 @@ watch(modelValue, (modelValue) => {
     :action="{ primary: t('common.actions.save') }"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
+    :failure="failure"
+    :failure-title="t('actions.balances.exchange_setup.title')"
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
@@ -109,7 +90,7 @@ watch(modelValue, (modelValue) => {
       ref="form"
       v-model="modelValue"
       v-model:state-updated="stateUpdated"
-      v-model:error-messages="errorMessages"
+      v-model:error-messages="modelFieldErrors"
     />
   </BigDialog>
 </template>

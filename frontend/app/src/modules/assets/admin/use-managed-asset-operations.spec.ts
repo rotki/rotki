@@ -7,8 +7,7 @@ import { useManagedAssetOperations } from './use-managed-asset-operations';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
-    showErrorMessage: vi.fn(),
-    ignoreAssetWithConfirmation: vi.fn(),
+    notifyWarning: vi.fn(),
     ignoreAsset: vi.fn(),
     unignoreAsset: vi.fn(),
     isAssetIgnored: vi.fn(),
@@ -23,10 +22,7 @@ const { spies } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): object => ({ showErrorMessage: spies.showErrorMessage }),
-}));
-vi.mock('@/modules/assets/use-ignored-asset-confirmation', () => ({
-  useIgnoredAssetConfirmation: (): object => ({ ignoreAssetWithConfirmation: spies.ignoreAssetWithConfirmation }),
+  useNotifications: (): object => ({ notifyWarning: spies.notifyWarning }),
 }));
 vi.mock('@/modules/assets/use-ignored-asset-operations', () => ({
   useIgnoredAssetOperations: (): object => ({ ignoreAsset: spies.ignoreAsset, unignoreAsset: spies.unignoreAsset }),
@@ -84,10 +80,18 @@ describe('useManagedAssetOperations', () => {
     expect(get(ops.loadingIgnore)).toBeUndefined();
   });
 
-  it('should confirm before ignoring a new asset', async () => {
-    const { ops } = setup('none');
-    await ops.toggleIgnoreAsset(asset({ identifier: 'A', name: 'Asset A', symbol: '' }));
-    expect(spies.ignoreAssetWithConfirmation).toHaveBeenCalledWith('A', 'Asset A', expect.any(Function));
+  it('should ignore a new asset straight away and refresh when handling is active', async () => {
+    const { onRefresh, ops } = setup('show_only');
+    await ops.toggleIgnoreAsset(asset({ identifier: 'A' }));
+    expect(spies.ignoreAsset).toHaveBeenCalledWith('A');
+    expect(onRefresh).toHaveBeenCalledOnce();
+  });
+
+  it('should not refresh when the ignore fails', async () => {
+    spies.ignoreAsset.mockResolvedValue({ message: 'boom', success: false });
+    const { onRefresh, ops } = setup('show_only');
+    await ops.toggleIgnoreAsset(asset({ identifier: 'A' }));
+    expect(onRefresh).not.toHaveBeenCalled();
   });
 
   it('should toggle spam on and off', async () => {
@@ -121,7 +125,7 @@ describe('useManagedAssetOperations', () => {
   it('should warn when there is nothing to mass-ignore', async () => {
     const { ops } = setup('none', []);
     await ops.massIgnore(true);
-    expect(spies.showErrorMessage).toHaveBeenCalledOnce();
+    expect(spies.notifyWarning).toHaveBeenCalledOnce();
     expect(spies.ignoreAsset).not.toHaveBeenCalled();
   });
 
@@ -135,7 +139,7 @@ describe('useManagedAssetOperations', () => {
   it('should warn when there is nothing to mass-spam', async () => {
     const { ops } = setup('none', []);
     await ops.massSpam();
-    expect(spies.showErrorMessage).toHaveBeenCalledOnce();
+    expect(spies.notifyWarning).toHaveBeenCalledOnce();
     expect(spies.markAssetsAsSpam).not.toHaveBeenCalled();
   });
 });

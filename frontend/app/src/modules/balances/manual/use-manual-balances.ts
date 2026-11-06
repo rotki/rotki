@@ -19,9 +19,7 @@ import {
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { isActionable, onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
@@ -30,7 +28,7 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseManualBalancesReturn {
   addManualBalance: (balance: RawManualBalance) => Promise<ActionStatus<ValidationErrors | string>>;
-  deleteManualBalance: (id: number) => Promise<void>;
+  deleteManualBalance: (id: number) => Promise<boolean>;
   editManualBalance: (balance: ManualBalance) => Promise<ActionStatus<ValidationErrors | string>>;
   fetchManualBalances: (userInitiated?: boolean) => Promise<void>;
   save: (balance: ManualBalance | RawManualBalance) => Promise<ActionStatus<ValidationErrors | string>>;
@@ -38,7 +36,6 @@ interface UseManualBalancesReturn {
 
 export function useManualBalances(): UseManualBalancesReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
-  const { showErrorMessage } = useNotifications();
   const { cancelActivity, statusOf, submitTask } = useNativeTask();
   const { addManualBalances, deleteManualBalances, editManualBalances, queryManualBalances } = useManualBalancesApi();
   const valueThreshold = useValueThreshold(BalanceSource.MANUAL);
@@ -149,16 +146,22 @@ export function useManualBalances(): UseManualBalancesReturn {
   const save = async (balance: ManualBalance | RawManualBalance): Promise<ActionStatus<ValidationErrors | string>> =>
     'identifier' in balance ? editManualBalance(balance) : addManualBalance(balance);
 
-  const deleteManualBalance = async (id: number): Promise<void> => {
+  /**
+   * Deletes a balance and takes the balances the backend has left.
+   *
+   * @returns `false` when the request was cancelled, so nothing was deleted.
+   * @throws The request's error, for the caller to name beside the row it came from.
+   */
+  const deleteManualBalance = async (id: number): Promise<boolean> => {
     try {
       const { balances } = await deleteManualBalances([id]);
       updateBalances(balances);
+      return true;
     }
     catch (error: unknown) {
       if (isRequestCancellation(error))
-        return;
-
-      showErrorMessage(t('actions.balances.manual_delete.error.title'), getErrorMessage(error));
+        return false;
+      throw error;
     }
   };
 

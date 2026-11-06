@@ -1,9 +1,7 @@
 import type { BlockchainRpcNode } from '@/modules/settings/types/rpc';
 import { Blockchain } from '@rotki/common';
-import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref } from 'vue';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { NODE_STATUS } from '@/modules/settings/general/rpc/rpc-node-status';
 import { useBlockchainRpcNodeManager } from './use-blockchain-rpc-node-manager';
 
@@ -20,7 +18,6 @@ const {
   fetchEvmNodes,
   notify,
   reConnectNode,
-  setMessage,
 } = vi.hoisted(() => ({
   chainGivenToApi: vi.fn(),
   chainGivenToChainName: vi.fn(),
@@ -29,7 +26,6 @@ const {
   fetchEvmNodes: vi.fn(),
   notify: vi.fn(),
   reConnectNode: vi.fn(async (): Promise<{ errors: { error: string; name: string }[] }> => ({ errors: [] })),
-  setMessage: vi.fn(),
 }));
 
 vi.mock('@/modules/settings/api/use-evm-nodes-api', () => ({
@@ -46,10 +42,6 @@ vi.mock('@/modules/settings/api/use-evm-nodes-api', () => ({
 
 vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   useNotificationDispatcher: (): Record<string, unknown> => ({ notify }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
 }));
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
@@ -127,7 +119,6 @@ describe('modules/settings/general/rpc/useBlockchainRpcNodeManager', () => {
 
       expect(get(loadError)).toBe('backend is down');
       expect(notify).not.toHaveBeenCalled();
-      expect(setMessage).not.toHaveBeenCalled();
       expect(get(nodes)).toHaveLength(0);
     });
 
@@ -291,55 +282,55 @@ describe('modules/settings/general/rpc/useBlockchainRpcNodeManager', () => {
       expect(fetchEvmNodes).toHaveBeenCalledOnce();
     });
 
-    it('should report a failure and not re-read the list', async () => {
-      editEvmNode.mockRejectedValue(new Error('rejected'));
+    it('should keep the failure for the table to name, and not re-read the list', async () => {
+      const error = new Error('rejected');
+      editEvmNode.mockRejectedValueOnce(error);
 
-      const { onActiveChange } = manager();
+      const { actionFailure, onActiveChange } = manager();
       await onActiveChange(false, node({ name: 'my node' }));
 
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+      expect(get(actionFailure)).toEqual({ error, title: 'evm_rpc_node_manager.activate_error.title::my node' });
       expect(fetchEvmNodes).not.toHaveBeenCalled();
+    });
+
+    it('should drop the failure once a later toggle succeeds', async () => {
+      editEvmNode.mockRejectedValueOnce(new Error('rejected'));
+
+      const { actionFailure, onActiveChange } = manager();
+      await onActiveChange(false, node());
+      await onActiveChange(false, node());
+
+      expect(get(actionFailure)).toBeUndefined();
     });
   });
 
   describe('deleting a node', () => {
-    it('should delete nothing until the dialog is confirmed', () => {
-      const { showDeleteConfirmation } = manager();
-      showDeleteConfirmation(node({ identifier: 3 }));
+    it('should ask about the node by name and endpoint', () => {
+      const { deleteConfirm } = manager();
 
-      expect(get(useConfirmStore().visible)).toBe(true);
-      expect(deleteEvmNode).not.toHaveBeenCalled();
+      const { message } = deleteConfirm(node({ endpoint: 'https://node.example', name: 'my node' }));
+
+      expect(message).toContain('my node');
+      expect(message).toContain('https://node.example');
     });
 
-    it('should delete exactly the node the dialog named', async () => {
-      const { showDeleteConfirmation } = manager();
-      showDeleteConfirmation(node({ identifier: 3 }));
-      await useConfirmStore().confirm();
-      await flushPromises();
+    it('should delete exactly the node it is given and re-read the list', async () => {
+      const { deleteNode } = manager();
+      await deleteNode(node({ identifier: 3 }));
 
       expect(deleteEvmNode).toHaveBeenCalledWith(3);
       expect(deleteEvmNode).toHaveBeenCalledOnce();
       expect(fetchEvmNodes).toHaveBeenCalledOnce();
     });
 
-    it('should delete nothing when the dialog is dismissed', async () => {
-      const { showDeleteConfirmation } = manager();
-      showDeleteConfirmation(node({ identifier: 3 }));
-      await useConfirmStore().dismiss();
-      await flushPromises();
+    it('should keep the failure for the table to name, and not re-read the list', async () => {
+      const error = new Error('still in use');
+      deleteEvmNode.mockRejectedValueOnce(error);
 
-      expect(deleteEvmNode).not.toHaveBeenCalled();
-    });
+      const { actionFailure, deleteNode } = manager();
+      await deleteNode(node({ identifier: 3 }));
 
-    it('should report a failure and not re-read the list', async () => {
-      deleteEvmNode.mockRejectedValue(new Error('still in use'));
-
-      const { showDeleteConfirmation } = manager();
-      showDeleteConfirmation(node({ identifier: 3 }));
-      await useConfirmStore().confirm();
-      await flushPromises();
-
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+      expect(get(actionFailure)).toMatchObject({ error, title: expect.stringContaining('evm_rpc_node_manager.delete_error.title') });
       expect(fetchEvmNodes).not.toHaveBeenCalled();
     });
   });

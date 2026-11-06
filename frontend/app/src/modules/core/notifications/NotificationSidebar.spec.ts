@@ -195,6 +195,22 @@ describe('modules/core/notifications/NotificationSidebar.vue', () => {
     expect(wrapper.find('[data-testid=notifications-empty]').text()).toContain('notification_sidebar.empty.title');
   });
 
+  it('should ask in the footer before clearing, and clear once accepted', async () => {
+    const wrapper = createWrapper([notification()]);
+    await nextTick();
+
+    await wrapper.find('[data-testid=clear-notifications]').trigger('click');
+    const question = wrapper.find('[data-testid=clear-notifications-confirm]');
+    expect(question.exists()).toBe(true);
+    expect(wrapper.find('[data-testid=clear-notifications]').exists()).toBe(false);
+    expect(get(storeToRefs(useNotificationsStore()).data)).toHaveLength(1);
+
+    await question.find('[data-testid=inline-confirm-accept]').trigger('click');
+
+    expect(get(storeToRefs(useNotificationsStore()).data)).toHaveLength(0);
+    expect(wrapper.emitted('update:modelValue')).toEqual([[false]]);
+  });
+
   it('should allow clearing once there is something to clear', async () => {
     const wrapper = createWrapper([notification()]);
     await nextTick();

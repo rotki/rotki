@@ -10,8 +10,7 @@ import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-se
 import '@test/i18n';
 
 const mockSetSettings = vi.fn();
-const mockShowErrorMessage = vi.fn();
-const mockShowSuccessMessage = vi.fn();
+const mockNotifyError = vi.fn<(title: string, message: string) => void>();
 const mockAddQueriedAddress = vi.fn();
 
 vi.mock('@/modules/settings/api/use-settings-api', () => ({
@@ -23,8 +22,7 @@ vi.mock('@/modules/settings/api/use-settings-api', () => ({
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e))),
   useNotifications: vi.fn(() => ({
-    showErrorMessage: mockShowErrorMessage,
-    showSuccessMessage: mockShowSuccessMessage,
+    notifyError: mockNotifyError,
   })),
 }));
 
@@ -150,6 +148,22 @@ describe('useSettingsOperations', () => {
         address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5',
         module: Module.MAKERDAO_DSR,
       });
+    });
+
+    it('should toast an address the module could not be enabled for', async () => {
+      mockSetSettings.mockResolvedValue(createSettingsResponse());
+      mockAddQueriedAddress.mockResolvedValue({ error: new Error('not tracked') });
+
+      const { useSettingsOperations } = await importModule();
+      await useSettingsOperations().enableModule({
+        enable: [Module.MAKERDAO_DSR],
+        addresses: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
+      });
+
+      expect(mockNotifyError).toHaveBeenCalledExactlyOnceWith(
+        'actions.session.add_queriable_address.error.message',
+        'not tracked',
+      );
     });
 
     it('should merge with existing active modules without duplicates', async () => {

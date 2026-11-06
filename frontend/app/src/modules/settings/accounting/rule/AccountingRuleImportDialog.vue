@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useAccountingSettings } from '@/modules/settings/accounting/use-accounting-settings';
 
 const model = defineModel<boolean>({ required: true });
@@ -18,7 +17,6 @@ const importFile = ref<File>();
 const importError = ref<string>('');
 
 const { importJSON } = useAccountingSettings();
-const { setMessage } = useMessageStore();
 
 /** A new pick clears the last attempt's error, so it never sits next to a different file. */
 function onFileChange(): void {
@@ -44,11 +42,6 @@ async function importData(): Promise<void> {
     return;
   }
 
-  setMessage({
-    description: t('actions.accounting_rules.import.message.success'),
-    success: true,
-    title: t('actions.accounting_rules.import.title'),
-  });
   set(model, false);
   set(importFile, undefined);
   emit('refresh');

@@ -5,6 +5,7 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmits, HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
 import { useTableEmptyState, useTableFetchError } from '@/modules/core/table/use-table-empty-state';
+import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import { provideHistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
 import { useHistoryEventsTable } from '@/modules/history/events/use-history-events-table';
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
@@ -71,6 +72,8 @@ const {
   showIndexerOptions,
 } = redecode;
 
+const { actionFailure } = useHistoryEventsActionFailure();
+
 const fetchError = useTableFetchError();
 const emptyState = useTableEmptyState();
 const fetchFailed = computed<boolean>(() => !!(fetchError && get(fetchError)));
@@ -121,6 +124,15 @@ provideHistoryEventsRowContext(rowContext);
       :failure="eventsError"
       data-testid="history-events-events-error"
       @retry="retryEvents()"
+    />
+
+    <FailureStrip
+      v-if="actionFailure"
+      class="m-2"
+      :title="actionFailure.title"
+      :failure="actionFailure.failure"
+      :retryable="false"
+      data-testid="history-events-action-failure"
     />
 
     <div

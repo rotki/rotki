@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { confirmInline } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 import { SnapshotEditorPage } from './snapshot-editor-page';
 
@@ -64,8 +65,7 @@ export class SnapshotListPage {
 
   async deleteSnapshot(timestamp: number): Promise<void> {
     await this.pressRowAction(timestamp, 'snapshot-delete');
-    await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'visible' });
-    await this.page.locator('[data-testid=button-confirm]').click();
+    await confirmInline(this.page, 'Delete snapshot');
     await this.row(timestamp).waitFor({ state: 'hidden' });
   }
 }

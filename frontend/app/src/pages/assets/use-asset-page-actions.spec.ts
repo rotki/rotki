@@ -5,7 +5,7 @@ import { useAssetPageActions } from './use-asset-page-actions';
 const IDENTIFIER = 'eip155:1/erc20:0xabc';
 
 const {
-  ignoreAssetWithConfirmation,
+  ignoreAsset,
   ignoredState,
   markAssetsAsSpam,
   removeAssetFromSpamList,
@@ -13,7 +13,7 @@ const {
   unignoreAsset,
   whitelistAsset,
 } = vi.hoisted(() => ({
-  ignoreAssetWithConfirmation: vi.fn(async (): Promise<void> => {}),
+  ignoreAsset: vi.fn(async (): Promise<void> => {}),
   ignoredState: { ignored: false, whitelisted: false },
   markAssetsAsSpam: vi.fn(async (): Promise<void> => {}),
   removeAssetFromSpamList: vi.fn(async (): Promise<void> => {}),
@@ -22,14 +22,11 @@ const {
   whitelistAsset: vi.fn(async (): Promise<void> => {}),
 }));
 
-vi.mock('@/modules/assets/use-ignored-asset-confirmation', () => ({
-  useIgnoredAssetConfirmation: (): { ignoreAssetWithConfirmation: typeof ignoreAssetWithConfirmation } => ({
-    ignoreAssetWithConfirmation,
-  }),
-}));
-
 vi.mock('@/modules/assets/use-ignored-asset-operations', () => ({
-  useIgnoredAssetOperations: (): { unignoreAsset: typeof unignoreAsset } => ({ unignoreAsset }),
+  useIgnoredAssetOperations: (): { ignoreAsset: typeof ignoreAsset; unignoreAsset: typeof unignoreAsset } => ({
+    ignoreAsset,
+    unignoreAsset,
+  }),
 }));
 
 vi.mock('@/modules/assets/use-assets-store', async () => {
@@ -118,30 +115,35 @@ describe('pages/assets/useAssetPageActions', () => {
   });
 
   describe('ignore', () => {
-    it('should ask for confirmation when ignoring, preferring the symbol over the name', async () => {
-      set(asset, { name: 'Some Token', symbol: 'ABC' });
-
+    it('should ignore straight away when the asset is not ignored yet', async () => {
       await setup().toggleIgnoreAsset();
 
-      expect(ignoreAssetWithConfirmation).toHaveBeenCalledWith(IDENTIFIER, 'ABC');
+      expect(ignoreAsset).toHaveBeenCalledWith(IDENTIFIER);
       expect(unignoreAsset).not.toHaveBeenCalled();
     });
 
-    it('should fall back to the name when the asset has no symbol', async () => {
-      set(asset, { name: 'Some Token', symbol: null });
+    it('should hold the loading flag until the ignore settles', async () => {
+      let finish: () => void = () => {};
+      ignoreAsset.mockReturnValueOnce(new Promise<void>((resolve) => {
+        finish = resolve;
+      }));
 
-      await setup().toggleIgnoreAsset();
+      const { loadingIgnore, toggleIgnoreAsset } = setup();
+      const run = toggleIgnoreAsset();
+      expect(get(loadingIgnore)).toBe(true);
 
-      expect(ignoreAssetWithConfirmation).toHaveBeenCalledWith(IDENTIFIER, 'Some Token');
+      finish();
+      await run;
+      expect(get(loadingIgnore)).toBe(false);
     });
 
-    it('should unignore without a confirmation when the asset is already ignored', async () => {
+    it('should unignore when the asset is already ignored', async () => {
       ignoredState.ignored = true;
 
       await setup().toggleIgnoreAsset();
 
       expect(unignoreAsset).toHaveBeenCalledWith(IDENTIFIER);
-      expect(ignoreAssetWithConfirmation).not.toHaveBeenCalled();
+      expect(ignoreAsset).not.toHaveBeenCalled();
     });
 
     it('should not refresh the asset info, which the ignore flow owns', async () => {

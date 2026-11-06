@@ -43,7 +43,7 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
   const { exportReportData, generateReport } = useReportGeneration();
   const { fetchReports } = useReportOperations();
   const { unpin: unpinReportCard } = usePinnedPanel(PinnedNames.REPORT_ACTIONABLE_CARD);
-  const { notify, showErrorMessage, showSuccessMessage } = useNotifications();
+  const { notify, notifyError } = useNotifications();
   const dateDisplayFormat = useSetting('dateDisplayFormat');
   const { appSession, openDirectory } = useInterop();
   const { importReportData, uploadReportData } = useReportsApi();
@@ -102,15 +102,11 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
       if (result === null)
         return;
 
-      if (appSession) {
-        showSuccessMessage(t('profit_loss_reports.debug.export_message.title'), t('profit_loss_reports.debug.export_message.success'));
-      }
-      else {
+      if (!appSession)
         downloadFileByTextContent(JSON.stringify(result, null, 2), 'pnl_debug.json', 'application/json');
-      }
     }
     catch (error: unknown) {
-      showErrorMessage(t('profit_loss_reports.debug.export_message.title'), getErrorMessage(error));
+      notifyError(t('profit_loss_reports.debug.export_message.title'), getErrorMessage(error));
     }
   }
 
@@ -134,13 +130,8 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
       title: t('profit_loss_reports.debug.import_message.title'),
     });
 
-    if (!isErr(outcome)) {
-      showSuccessMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.success'));
+    if (!isErr(outcome) || isCancellation(outcome.error))
       await fetchReports();
-    }
-    else if (isCancellation(outcome.error)) {
-      await fetchReports();
-    }
 
     set(importDataLoading, false);
   }

@@ -86,18 +86,14 @@ describe('accountingRuleImportDialog', () => {
       spies.importJSON.mockResolvedValue({ success: true });
     });
 
-    it('should import the chosen file and report it imported', async () => {
+    it('should import the chosen file and leave announcing it to its task row', async () => {
       wrapper = createWrapper();
       await chooseFile();
 
       await importChosenFile();
 
       expect(spies.importJSON).toHaveBeenCalledExactlyOnceWith(file);
-      expect(useMessageStore().message).toMatchObject({
-        description: 'actions.accounting_rules.import.message.success',
-        success: true,
-        title: 'actions.accounting_rules.import.title',
-      });
+      expect(useMessageStore().message).toBeUndefined();
     });
 
     it('should close, drop the file and ask the rules to reload', async () => {

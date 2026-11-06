@@ -13,6 +13,7 @@ import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 const { spies } = vi.hoisted(() => ({
   spies: {
     addCalendarEvent: vi.fn<(payload: CalendarEventPayload) => Promise<AddCalendarEventResponse>>(),
+    deleteCalendarEvent: vi.fn<(identifier: number) => Promise<boolean>>(),
     editCalendarEvent: vi.fn<(payload: CalendarEvent) => Promise<AddCalendarEventResponse>>(),
     reset: vi.fn<() => void>(),
     saveReminders: vi.fn<(eventId: number) => Promise<void>>(),
@@ -21,7 +22,11 @@ const { spies } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/modules/calendar/use-calendar-api', () => ({
-  useCalendarApi: (): object => ({ addCalendarEvent: spies.addCalendarEvent, editCalendarEvent: spies.editCalendarEvent }),
+  useCalendarApi: (): object => ({
+    addCalendarEvent: spies.addCalendarEvent,
+    deleteCalendarEvent: spies.deleteCalendarEvent,
+    editCalendarEvent: spies.editCalendarEvent,
+  }),
 }));
 
 const CalendarFormStub = defineComponent({
@@ -53,8 +58,8 @@ describe('calendarFormDialog', () => {
         stubs: {
           BigDialog: {
             emits: ['confirm', 'cancel'],
-            props: ['display', 'loading', 'title'],
-            template: '<div v-if="display"><slot /><slot name="left-buttons" /></div>',
+            props: ['display', 'failure', 'failureTitle', 'loading', 'title'],
+            template: '<div v-if="display"><slot /><slot name="footer"><slot name="left-buttons" /></slot></div>',
           },
           CalendarForm: CalendarFormStub,
         },
@@ -76,6 +81,7 @@ describe('calendarFormDialog', () => {
     spies.saveReminders.mockResolvedValue(undefined);
     spies.addCalendarEvent.mockResolvedValue({ entryId: 40 });
     spies.editCalendarEvent.mockResolvedValue({ entryId: 21 });
+    spies.deleteCalendarEvent.mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -132,23 +138,23 @@ describe('calendarFormDialog', () => {
       await save();
 
       expect(wrapper.findComponent(CalendarFormStub).props('errorMessages')).toEqual({ name: ['already taken'] });
-      expect(useMessageStore().message).toBeUndefined();
+      expect(wrapper.findComponent(BigDialog).props('failure')).toBeUndefined();
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
       expect(wrapper.emitted('refresh')).toBeUndefined();
       expect(spies.saveReminders).not.toHaveBeenCalled();
     });
 
-    it('should report any other failure as an add error', async () => {
-      spies.addCalendarEvent.mockRejectedValue(new Error('backend down'));
+    it('should name any other failure in the dialog as an add error, and stay open', async () => {
+      const error = new Error('backend down');
+      spies.addCalendarEvent.mockRejectedValue(error);
       wrapper = createWrapper(false);
 
       await save();
 
-      expect(useMessageStore().message).toMatchObject({
-        description: 'backend down',
-        success: false,
-        title: 'calendar.add_error',
-      });
+      const dialog = wrapper.findComponent(BigDialog);
+      expect(dialog.props('failure')).toBe(error);
+      expect(dialog.props('failureTitle')).toBe('calendar.add_error');
+      expect(useMessageStore().message).toBeUndefined();
       expect(wrapper.emitted('update:modelValue')).toBeUndefined();
       expect(wrapper.findComponent(BigDialog).props('loading')).toBe(false);
     });
@@ -159,7 +165,17 @@ describe('calendarFormDialog', () => {
 
       await save();
 
-      expect(useMessageStore().message).toMatchObject({ title: 'calendar.edit_error' });
+      expect(wrapper.findComponent(BigDialog).props('failureTitle')).toBe('calendar.edit_error');
+    });
+
+    it('should clear the failure when the next save starts', async () => {
+      spies.addCalendarEvent.mockRejectedValueOnce(new Error('backend down'));
+      wrapper = createWrapper(false);
+
+      await save();
+      await save();
+
+      expect(wrapper.findComponent(BigDialog).props('failure')).toBeUndefined();
     });
   });
 
@@ -171,14 +187,11 @@ describe('calendarFormDialog', () => {
       expect(wrapper.find('[data-testid=calendar-form-delete]').exists()).toBe(false);
     });
 
-    it('should be titled for editing, and ask the parent to delete the event', async () => {
+    it('should be titled for editing, with a way to delete', () => {
       wrapper = createWrapper(true);
 
       expect(wrapper.findComponent(BigDialog).props('title')).toBe('calendar.dialog.edit.title');
-
-      await wrapper.find('[data-testid=calendar-form-delete]').trigger('click');
-
-      expect(wrapper.emitted('delete')).toHaveLength(1);
+      expect(wrapper.find('[data-testid=calendar-form-delete]').exists()).toBe(true);
     });
 
     it('should close without saving on cancel', () => {
@@ -188,6 +201,67 @@ describe('calendarFormDialog', () => {
 
       expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
       expect(spies.addCalendarEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('delete', () => {
+    async function askToDelete(): Promise<void> {
+      await wrapper.find('[data-testid=calendar-form-delete]').trigger('click');
+    }
+
+    function question(): ReturnType<VueWrapper['find']> {
+      return wrapper.find('[data-testid=calendar-form-delete-confirm]');
+    }
+
+    it('should ask in the footer, in place of its buttons, deleting nothing yet', async () => {
+      wrapper = createWrapper(true);
+
+      await askToDelete();
+
+      expect(question().exists()).toBe(true);
+      expect(wrapper.find('[data-testid=calendar-form-delete]').exists()).toBe(false);
+      expect(spies.deleteCalendarEvent).not.toHaveBeenCalled();
+    });
+
+    it('should delete the event, close, and ask for a reload once confirmed', async () => {
+      wrapper = createWrapper(true);
+      await askToDelete();
+
+      await question().find('[data-testid=inline-confirm-accept]').trigger('click');
+      await flushPromises();
+
+      expect(spies.deleteCalendarEvent).toHaveBeenCalledExactlyOnceWith(EVENT.identifier);
+      expect(wrapper.emitted('update:modelValue')).toEqual([[undefined]]);
+      expect(wrapper.emitted('refresh')).toHaveLength(1);
+    });
+
+    it('should bring the buttons back, deleting nothing, when the question is cancelled', async () => {
+      wrapper = createWrapper(true);
+      await askToDelete();
+
+      await question().find('[data-testid=inline-confirm-cancel]').trigger('click');
+
+      expect(question().exists()).toBe(false);
+      expect(wrapper.find('[data-testid=calendar-form-delete]').exists()).toBe(true);
+      expect(spies.deleteCalendarEvent).not.toHaveBeenCalled();
+    });
+
+    it('should name a failed delete in the dialog and stay open', async () => {
+      const error = new Error('backend down');
+      spies.deleteCalendarEvent.mockRejectedValue(error);
+      wrapper = createWrapper(true);
+      await askToDelete();
+
+      await question().find('[data-testid=inline-confirm-accept]').trigger('click');
+      await flushPromises();
+
+      const dialog = wrapper.findComponent(BigDialog);
+      expect(dialog.props('failure')).toBe(error);
+      expect(dialog.props('failureTitle')).toBe('calendar.delete_error.title');
+      expect(useMessageStore().message).toBeUndefined();
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+      expect(wrapper.emitted('refresh')).toBeUndefined();
+      expect(question().exists()).toBe(false);
     });
   });
 });

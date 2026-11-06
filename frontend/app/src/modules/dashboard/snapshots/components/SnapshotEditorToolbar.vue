@@ -2,6 +2,7 @@
 import type { SnapshotChange } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import SnapshotChangesList from '@/modules/dashboard/snapshots/components/SnapshotChangesList.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 
 const {
   canUndo = false,
@@ -32,6 +33,8 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const overflowOpen = ref<boolean>(false);
+/** The overflow menu asks about the delete in place of its items, until answered or closed. */
+const confirmingDelete = ref<boolean>(false);
 const reviewOpen = ref<boolean>(false);
 
 const isDirty = computed<boolean>(() => changes.length > 0);
@@ -46,6 +49,11 @@ function deleteSnapshot(): void {
   set(overflowOpen, false);
   emit('delete');
 }
+
+watch(overflowOpen, (isOpen) => {
+  if (!isOpen)
+    set(confirmingDelete, false);
+});
 </script>
 
 <template>
@@ -171,6 +179,8 @@ function deleteSnapshot(): void {
 
       <RuiMenu
         v-model="overflowOpen"
+        :role="confirmingDelete ? 'dialog' : undefined"
+        :class-names="{ menu: confirmingDelete ? 'w-72' : '' }"
         :options="{ placement: 'bottom-end' }"
       >
         <template #activator="{ attrs }">
@@ -184,7 +194,20 @@ function deleteSnapshot(): void {
             <RuiIcon name="lu-ellipsis-vertical" />
           </RuiButton>
         </template>
-        <div class="py-1">
+        <InlineConfirm
+          v-if="confirmingDelete"
+          layout="panel"
+          tone="error"
+          :title="t('dashboard.snapshot.delete.dialog.title')"
+          :message="t('dashboard.snapshot.delete.dialog.message')"
+          :confirm-label="t('common.actions.delete')"
+          @cancel="overflowOpen = false"
+          @confirm="deleteSnapshot()"
+        />
+        <div
+          v-else
+          class="py-1"
+        >
           <RuiButton
             variant="list"
             data-testid="snapshot-export"
@@ -198,7 +221,7 @@ function deleteSnapshot(): void {
           <RuiButton
             variant="list"
             data-testid="snapshot-delete"
-            @click="deleteSnapshot()"
+            @click.stop="confirmingDelete = true"
           >
             <template #prepend>
               <RuiIcon

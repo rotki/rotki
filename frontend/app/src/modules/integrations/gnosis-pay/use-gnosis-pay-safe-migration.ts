@@ -22,8 +22,20 @@ interface UseGnosisPaySafeMigrationReturn {
   hasUntrackedSafe: ComputedRef<boolean>;
   safeMigrationKeypath: ComputedRef<string>;
   adding: Ref<boolean>;
+  /** Why the last add started from the card failed, for its notice to name; cleared when the next add starts. */
+  addFailure: Readonly<Ref<string | undefined>>;
   checkMigration: () => Promise<void>;
-  addMissingSafe: () => Promise<void>;
+  addMissingSafe: (options?: AddMissingSafeOptions) => Promise<void>;
+}
+
+interface AddMissingSafeOptions {
+  /**
+   * Keep a failure in `addFailure` for the card's notice instead of a toast.
+   *
+   * @remarks
+   * Off for the action center row, which has nowhere to name it.
+   */
+  inline?: boolean;
 }
 
 /**
@@ -38,6 +50,7 @@ interface UseGnosisPaySafeMigrationReturn {
 export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPaySafeMigrationReturn => {
   const untrackedSafe = ref<GnosisPayUntrackedSafe>();
   const adding = ref<boolean>(false);
+  const addFailure = shallowRef<string>();
 
   const hasUntrackedSafe = computed<boolean>(() => isDefined(untrackedSafe));
 
@@ -54,7 +67,7 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
   const { t } = useI18n({ useScope: 'global' });
   const { fetchGnosisPaySafeMigration } = useGnosisPaySiweApi();
   const { addAccounts } = useBlockchainAccountManagement();
-  const { showErrorMessage, showSuccessMessage } = useNotifications();
+  const { notifyError, notifyInfo } = useNotifications();
   const { getApiKey, keys, load } = useExternalApiKeys();
   const { logged } = storeToRefs(useSessionAuthStore());
 
@@ -86,12 +99,20 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
     set(untrackedSafe, safe);
   };
 
-  const addMissingSafe = async (): Promise<void> => {
+  /**
+   * Adds the untracked Safe as a Gnosis Chain account.
+   *
+   * @remarks
+   * A success is a toast, the notice leaving with the Safe. A failure is a toast too, unless the
+   * caller asked for it `inline`.
+   */
+  const addMissingSafe = async ({ inline = false }: AddMissingSafeOptions = {}): Promise<void> => {
     const safe = get(untrackedSafe);
     if (!safe)
       return;
 
     set(adding, true);
+    set(addFailure, undefined);
     const title = t('external_services.gnosispay.safe_migration.title');
     await pipe(
       fromAsync(async () => addAccounts(Blockchain.GNOSIS, {
@@ -104,13 +125,16 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
       flatMap(async summary => readSafeAddition(summary)),
       match({
         err: (error: string): void => {
-          showErrorMessage(title, t('external_services.gnosispay.safe_migration.add_error', { error }));
+          if (inline)
+            set(addFailure, error);
+          else
+            notifyError(t('external_services.gnosispay.safe_migration.add_error'), error);
         },
         ok: (added): void => {
           if (!added)
             return;
           set(untrackedSafe, undefined);
-          showSuccessMessage(title, t('external_services.gnosispay.safe_migration.add_success', { address: safe.address }));
+          notifyInfo(title, t('external_services.gnosispay.safe_migration.add_success', { address: safe.address }));
         },
       }),
     );
@@ -118,11 +142,14 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
   };
 
   watch(logged, (isLogged) => {
-    if (!isLogged)
-      set(untrackedSafe, undefined);
+    if (isLogged)
+      return;
+    set(untrackedSafe, undefined);
+    set(addFailure, undefined);
   });
 
   return {
+    addFailure: readonly(addFailure),
     addMissingSafe,
     adding,
     checkMigration,

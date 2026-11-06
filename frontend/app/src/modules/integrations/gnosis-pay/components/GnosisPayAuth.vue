@@ -3,6 +3,7 @@ import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import ServiceKeyCard, { type FeatureGate, type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
+import ServiceKeyDeleteButton from '@/modules/settings/api-keys/ServiceKeyDeleteButton.vue';
 import { useUnifiedProviders } from '@/modules/wallet/providers/use-unified-providers';
 import ProviderSelectionDialog from '@/modules/wallet/ProviderSelectionDialog.vue';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
@@ -23,10 +24,10 @@ const { t } = useI18n({ useScope: 'global' });
 
 const name = 'gnosis_pay';
 const GNOSIS_CHAIN_ID = 100;
-const { useApiKey, confirmDelete, load, loading } = useExternalApiKeys();
+const { deleteService, load, loading, useApiKey } = useExternalApiKeys();
 const key = useApiKey(name);
 
-const { addMissingSafe, adding, checkMigration, hasUntrackedSafe, safeMigrationKeypath, untrackedAccount, untrackedSafe } = useGnosisPaySafeMigration();
+const { addFailure, addMissingSafe, adding, checkMigration, hasUntrackedSafe, safeMigrationKeypath, untrackedAccount, untrackedSafe } = useGnosisPaySafeMigration();
 
 const { allowed, minimumTier, premium } = useFeatureAccess(PremiumFeature.GNOSIS_PAY);
 const featureGate = computed<FeatureGate>(() => {
@@ -130,11 +131,6 @@ const unifiedProviders = useUnifiedProviders();
 const { availableProviders, isDetecting: detectingProviders, showProviderSelection } = unifiedProviders;
 
 const isConnecting = logicOr(preparing, detectingProviders);
-
-const deleteMessageConfirmation = computed<{ message: string; title: string }>(() => ({
-  message: t('external_services.gnosispay.delete_confirmation.message'),
-  title: t('external_services.gnosispay.delete_confirmation.title'),
-}));
 
 // Separate error messages for different steps
 const connectionErrorMessage = computed<string>(() => {
@@ -269,7 +265,8 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
           :account="untrackedAccount"
           :keypath="safeMigrationKeypath"
           :adding="adding"
-          @add="addMissingSafe()"
+          :failure="addFailure"
+          @add="addMissingSafe({ inline: true })"
         />
       </template>
 
@@ -277,20 +274,13 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
         v-if="key"
         #left-buttons
       >
-        <RuiButton
+        <ServiceKeyDeleteButton
           :disabled="loading || !key"
-          color="error"
-          variant="text"
-          @click="confirmDelete(name, undefined, deleteMessageConfirmation)"
-        >
-          <template #prepend>
-            <RuiIcon
-              name="lu-trash-2"
-              size="16"
-            />
-          </template>
-          {{ t('external_services.actions.remove_authentication') }}
-        </RuiButton>
+          :label="t('external_services.actions.remove_authentication')"
+          :title="t('external_services.gnosispay.delete_confirmation.title')"
+          :message="t('external_services.gnosispay.delete_confirmation.message')"
+          @confirm="deleteService(name)"
+        />
       </template>
 
       <GnosisPayConnected

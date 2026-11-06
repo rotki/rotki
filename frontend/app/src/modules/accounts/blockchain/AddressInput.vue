@@ -139,6 +139,11 @@ function mirrorAddressErrorAcrossModes(value: ValidationErrors): void {
 
 watchImmediate(errorMessages, mirrorAddressErrorAcrossModes, { deep: true });
 
+/** Names a failed wallet import under the address field, until the field is next edited. */
+function showWalletImportFailure(message: string): void {
+  setServerErrors({ address: [message], userAddresses: [message] });
+}
+
 watch(entries, addresses => updateAddresses(addresses));
 
 watch(() => state.address, (address) => {
@@ -240,6 +245,7 @@ defineExpose({
         v-if="showWalletImport"
         :disabled="disabled"
         @update:addresses="fillAddresses($event)"
+        @failure="showWalletImportFailure($event)"
       />
     </div>
 

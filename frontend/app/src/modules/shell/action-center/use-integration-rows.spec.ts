@@ -13,7 +13,6 @@ const savedKeys = ref<Record<string, string>>({});
 const moneriumAuthenticated = ref<boolean>(false);
 const suppressedServices = ref<string[]>([]);
 const update = vi.fn<(payload: object) => Promise<{ success: boolean }>>();
-const show = vi.fn<(message: { title: string; message: string }, onConfirm: () => Promise<void>) => void>();
 
 vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({
   useExternalApiKeys: (): object => ({
@@ -31,10 +30,6 @@ vi.mock('@/modules/settings/use-setting', () => ({
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): object => ({ update }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({ show }),
 }));
 
 const bankRows = ref<ActionItem[]>([]);
@@ -207,20 +202,16 @@ describe('modules/shell/action-center/use-integration-rows', () => {
       expect(onlyRow().options).toEqual([]);
     });
 
-    it('should ask before suppressing a service, then add it to the suppressed services', async () => {
+    it('should have the row ask before suppressing a service, then add it to the suppressed services', () => {
       set(suppressedServices, ['beaconchain']);
       raiseMissingKey('helius');
 
       const suppress = option(onlyRow(), 'do-not-show-again');
       expect(suppress.danger).toBe(true);
+      expect(suppress.confirm?.message).toBe('action_center.rows.integrations.missing_api_key.suppress_confirm.message::Helius');
       assert(suppress.target.kind === 'run');
+
       suppress.target.run();
-
-      expect(update).not.toHaveBeenCalled();
-      const [message, onConfirm] = show.mock.calls[0];
-      expect(message.message).toBe('action_center.rows.integrations.missing_api_key.suppress_confirm.message::Helius');
-
-      await onConfirm();
 
       expect(update).toHaveBeenCalledWith({ suppressMissingKeyMsgServices: ['beaconchain', 'helius'] });
     });

@@ -4,7 +4,6 @@ import { NotificationKind, Severity } from '@rotki/common';
 import { getFilepath } from '@/modules/core/common/file/file';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useBackupApi } from '@/modules/session/api/use-backup-api';
 
@@ -28,12 +27,12 @@ interface UseDatabaseBackupsReturn {
   loading: Readonly<Ref<boolean>>;
   /** The rows the user ticked; bound with `v-model:selected`. */
   modelSelected: Ref<UserDbBackupWithId[]>;
+  /** Deletes every selected backup, which its trigger has already confirmed. */
+  massRemove: () => Promise<void>;
   /** Deletes one backup and drops it from the list and the selection. */
   remove: (db: UserDbBackup) => Promise<void>;
   /** True while a new backup is being written. */
   saving: Readonly<Ref<boolean>>;
-  /** Opens the confirmation for deleting every selected backup; deletes only once accepted. */
-  showMassDeleteConfirmation: () => void;
 }
 
 function isSameEntry(firstDb: UserDbBackup, secondDb: UserDbBackup): boolean {
@@ -45,11 +44,11 @@ function isSameEntry(firstDb: UserDbBackup, secondDb: UserDbBackup): boolean {
  * user picked.
  *
  * @remarks
- * Deleting a backup removes a file that nothing else recreates, so a mass delete goes through a
- * confirmation. A delete that the backend rejects leaves the list untouched, so the row the user
+ * Deleting a backup removes a file that nothing else recreates, so every delete is confirmed by
+ * the button that starts it before reaching here. A delete that the backend rejects leaves the list untouched, so the row the user
  * still has on disk is still on screen.
  *
- * @returns the list's bindings; `remove` and the accepted mass delete are the only destructive ones
+ * @returns the list's bindings; `remove` and `massRemove` are the only destructive ones
  */
 export function useDatabaseBackups(): UseDatabaseBackupsReturn {
   const backupInfo = ref<DatabaseInfo>();
@@ -60,7 +59,6 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationDispatcher();
   const { createBackup, deleteBackup, info } = useBackupApi();
-  const { show } = useConfirmStore();
 
   const backups = computed<UserDbBackupWithId[]>(
     () => get(backupInfo)?.userdb?.backups.map((x, index) => ({ ...x, id: index + 1 })) ?? [],
@@ -160,16 +158,6 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     }
   }
 
-  function showMassDeleteConfirmation(): void {
-    show(
-      {
-        message: t('database_backups.confirm.mass_message', { length: get(modelSelected).length }),
-        title: t('database_backups.confirm.title'),
-      },
-      massRemove,
-    );
-  }
-
   onMounted(loadInfo);
 
   return {
@@ -178,9 +166,9 @@ export function useDatabaseBackups(): UseDatabaseBackupsReturn {
     directory,
     loadInfo,
     loading: readonly(loading),
+    massRemove,
     modelSelected,
     remove,
     saving: readonly(saving),
-    showMassDeleteConfirmation,
   };
 }

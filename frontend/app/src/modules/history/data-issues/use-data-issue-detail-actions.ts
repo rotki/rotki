@@ -1,13 +1,26 @@
+import type { ResultAsync } from 'plainfp/result-async';
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import type { DataIssueError } from '@/modules/history/data-issues/types';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
+
+/** A dismiss or retry that failed, kept for the surface that ran it to name. */
+interface DataIssueActionFailure {
+  /** The issue acted on, so the detail view names only its own issue's failure. */
+  id: number;
+  title: string;
+  error: DataIssueError;
+}
 
 interface UseDataIssueDetailActionsReturn {
   modelSelectedIssue: Ref<DataIssue | undefined>;
   modelDrawerOpen: Ref<boolean>;
   modelResolveOpen: Ref<boolean>;
   modelActionBusy: Ref<boolean>;
+  /** Why the last dismiss or retry failed; cleared when the next action starts. */
+  actionFailure: Readonly<Ref<DataIssueActionFailure | undefined>>;
+  /** Why the last manual resolve failed, for the resolve dialog; cleared when it opens or resolves again. */
+  resolveFailure: Readonly<Ref<DataIssueError | undefined>>;
   openDetail: (issue: DataIssue) => void;
   onDismiss: (id: number) => Promise<void>;
   onRetry: (id: number) => Promise<void>;
@@ -18,7 +31,7 @@ interface UseDataIssueDetailActionsReturn {
 /**
  * Detail-drawer and per-issue action orchestration shared by the inbox panel and
  * the full page. Owns the selected issue, the drawer/resolve-dialog visibility,
- * and a busy flag; each successful action triggers the caller-supplied `reload`
+ * a busy flag and the last failure; each successful action triggers the caller-supplied `reload`
  * so both the list and the badge summary refresh from a single place.
  * The selected issue is synchronized from `issues` after polling or an explicit refresh.
  *
@@ -32,12 +45,13 @@ export function useDataIssueDetailActions(
 ): UseDataIssueDetailActionsReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { dismiss, resolveManually, retry } = useDataIssues();
-  const { show } = useConfirmStore();
 
   const modelSelectedIssue = ref<DataIssue>();
   const modelDrawerOpen = shallowRef<boolean>(false);
   const modelResolveOpen = shallowRef<boolean>(false);
   const modelActionBusy = shallowRef<boolean>(false);
+  const actionFailure = shallowRef<DataIssueActionFailure>();
+  const resolveFailure = shallowRef<DataIssueError>();
 
   function openDetail(issue: DataIssue): void {
     set(modelSelectedIssue, issue);
@@ -45,51 +59,53 @@ export function useDataIssueDetailActions(
   }
 
   /**
-   * Prompts for confirmation, then hides the issue and stops its auto-remediation.
+   * Runs one action on an issue, keeping its failure under `title`.
    *
    * @remarks
-   * The prompt lives at this choke point rather than at each call site, so the drawer, the panel
-   * cards and the table's quick action all inherit it. The returned promise settles once the
-   * prompt has been raised, not once the dismissal has gone through.
+   * Stays busy through `onUpdated`, so the buttons stay disabled until the reload has landed.
    */
-  async function onDismiss(id: number): Promise<void> {
-    show(
-      {
-        message: t('data_issues.action.dismiss.confirm.message'),
-        title: t('data_issues.action.dismiss.confirm.title'),
-        type: 'warning',
-      },
-      async () => {
-        set(modelActionBusy, true);
-        try {
-          const updated = await dismiss(id);
-          if (updated) {
-            set(modelDrawerOpen, false);
-            await reload();
-          }
-        }
-        finally {
-          set(modelActionBusy, false);
-        }
-      },
-    );
-  }
-
-  async function onRetry(id: number): Promise<void> {
+  async function runAction(
+    id: number,
+    title: string,
+    action: ResultAsync<DataIssue, DataIssueError>,
+    onUpdated: (updated: DataIssue) => Promise<void>,
+  ): Promise<void> {
     set(modelActionBusy, true);
+    set(actionFailure, undefined);
     try {
-      const updated = await retry(id);
-      if (updated) {
-        set(modelSelectedIssue, updated);
-        await reload();
-      }
+      const result = await action;
+      if (result.ok)
+        await onUpdated(result.value);
+      else
+        set(actionFailure, { error: result.error, id, title });
     }
     finally {
       set(modelActionBusy, false);
     }
   }
 
+  /**
+   * Hides the issue and stops its auto-remediation.
+   *
+   * @remarks
+   * Runs at once: each Dismiss button asks beside itself before emitting.
+   */
+  async function onDismiss(id: number): Promise<void> {
+    await runAction(id, t('data_issues.action.dismiss.error'), dismiss(id), async () => {
+      set(modelDrawerOpen, false);
+      await reload();
+    });
+  }
+
+  async function onRetry(id: number): Promise<void> {
+    await runAction(id, t('data_issues.action.retry.error'), retry(id), async (updated) => {
+      set(modelSelectedIssue, updated);
+      await reload();
+    });
+  }
+
   function onResolveRequest(): void {
+    set(resolveFailure, undefined);
     set(modelResolveOpen, true);
   }
 
@@ -98,13 +114,16 @@ export function useDataIssueDetailActions(
     if (!issue)
       return;
     set(modelActionBusy, true);
+    set(resolveFailure, undefined);
     try {
-      const updated = await resolveManually(issue.id, note);
-      if (updated) {
-        set(modelResolveOpen, false);
-        set(modelDrawerOpen, false);
-        await reload();
+      const result = await resolveManually(issue.id, note);
+      if (!result.ok) {
+        set(resolveFailure, result.error);
+        return;
       }
+      set(modelResolveOpen, false);
+      set(modelDrawerOpen, false);
+      await reload();
     }
     finally {
       set(modelActionBusy, false);
@@ -122,6 +141,7 @@ export function useDataIssueDetailActions(
   });
 
   return {
+    actionFailure: shallowReadonly(actionFailure),
     modelActionBusy,
     modelDrawerOpen,
     modelResolveOpen,
@@ -131,5 +151,6 @@ export function useDataIssueDetailActions(
     onResolveRequest,
     onRetry,
     openDetail,
+    resolveFailure: shallowReadonly(resolveFailure),
   };
 }

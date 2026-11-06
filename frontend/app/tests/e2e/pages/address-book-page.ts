@@ -1,34 +1,15 @@
 import { expect, type Page } from '@playwright/test';
-import { TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
+import { TIMEOUT_MEDIUM } from '../helpers/constants';
+import { confirmInline } from '../helpers/utils';
 import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
 type Scope = 'global' | 'private';
 
-async function dismissErrorIfShown(page: Page): Promise<void> {
-  const okBtn = page.locator('[data-testid=message-dialog-ok]');
-  // Wait briefly for a delayed popup to appear; if none, move on.
-  try {
-    await okBtn.waitFor({ state: 'visible', timeout: 500 });
-  }
-  catch {
-    return;
-  }
-  await okBtn.click();
-  await okBtn.waitFor({ state: 'detached', timeout: TIMEOUT_SHORT }).catch(() => undefined);
-}
-
 async function confirmDialog(page: Page): Promise<void> {
   const dialog = page.locator('[data-testid=bottom-dialog]');
   await dialog.locator('[data-testid=confirm]').click();
   await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
-  await dismissErrorIfShown(page);
-}
-
-async function confirmDelete(page: Page): Promise<void> {
-  const confirmDialogEl = page.locator('[data-testid=confirm-dialog]');
-  await confirmDialogEl.locator('[data-testid=button-confirm]').click();
-  await confirmDialogEl.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
 }
 
 export class AddressBookPage {
@@ -78,7 +59,6 @@ export class AddressBookPage {
   }
 
   async openAddDialog(): Promise<void> {
-    await dismissErrorIfShown(this.page);
     await this.page.getByTestId('address-book-add').click();
     await this.page.locator('[data-testid=bottom-dialog]').waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
   }
@@ -100,7 +80,6 @@ export class AddressBookPage {
   }
 
   async addEntry(opts: { address: string; name: string }): Promise<void> {
-    await dismissErrorIfShown(this.page);
     await this.page.getByTestId('address-book-add').click();
     const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
@@ -110,7 +89,6 @@ export class AddressBookPage {
   }
 
   async editEntry(address: string, newName: string): Promise<void> {
-    await dismissErrorIfShown(this.page);
     await this.rowFor(address).first().locator('[data-testid=row-edit]').click();
     const dialog = this.page.locator('[data-testid=bottom-dialog]');
     await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
@@ -123,7 +101,7 @@ export class AddressBookPage {
 
   async deleteEntry(address: string): Promise<void> {
     await this.rowFor(address).first().locator('[data-testid=row-delete]').click();
-    await confirmDelete(this.page);
+    await confirmInline(this.page, 'Delete the address book entry');
     await expect(this.rowFor(address)).toHaveCount(0);
   }
 

@@ -1,5 +1,5 @@
 import type { Collection } from '@/modules/core/common/collection';
-import type { DuplicateRow, FetchDuplicateEventsPayload } from '@/modules/history/events/use-customized-event-duplicates';
+import type { DuplicateRow, DuplicatesActionHandlers, FetchDuplicateEventsPayload } from '@/modules/history/events/use-customized-event-duplicates';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,11 +16,11 @@ vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   useNotificationDispatcher: (): { notify: typeof notify } => ({ notify }),
 }));
 
-type ConfirmMock = ReturnType<typeof vi.fn<(groupIdentifiers: string[], onSuccess?: () => void) => void>>;
+type SettleMock = ReturnType<typeof vi.fn<(groupIdentifiers: string[], handlers?: DuplicatesActionHandlers) => Promise<void>>>;
 
-const confirmAndFixDuplicate: ConfirmMock = vi.fn();
-const confirmAndMarkNonDuplicated: ConfirmMock = vi.fn();
-const confirmAndRestore: ConfirmMock = vi.fn();
+const fixAndSettle: SettleMock = vi.fn();
+const markNonDuplicatedAndSettle: SettleMock = vi.fn();
+const restoreAndSettle: SettleMock = vi.fn();
 const fetchCustomizedEventDuplicates = vi.fn<() => Promise<void>>();
 const fetchDuplicateEvents = vi.fn<(payload: FetchDuplicateEventsPayload) => Promise<Collection<DuplicateRow>>>();
 
@@ -31,14 +31,14 @@ const ignoredGroupIds = ref<string[]>([]);
 
 const duplicatesApi = {
   autoFixGroupIds,
-  confirmAndFixDuplicate,
-  confirmAndMarkNonDuplicated,
-  confirmAndRestore,
   fetchCustomizedEventDuplicates,
   fetchDuplicateEvents,
   fetchError,
+  fixAndSettle,
   ignoredGroupIds,
   manualReviewGroupIds,
+  markNonDuplicatedAndSettle,
+  restoreAndSettle,
 };
 
 vi.mock('@/modules/history/events/use-customized-event-duplicates', () => ({
@@ -70,14 +70,20 @@ describe('useCustomizedEventDuplicatesDialog', () => {
   let dialog: ReturnType<typeof useCustomizedEventDuplicatesDialog>;
 
   /**
-   * Runs the callback the dialog handed to a confirmation, i.e. the user confirmed. The callback
-   * starts the re-reads rather than awaiting them, so the promises are flushed here.
+   * Runs the success handler the dialog handed to an action, i.e. the action went through. The
+   * handler starts the re-reads rather than awaiting them, so the promises are flushed here.
    */
-  async function confirm(mock: ConfirmMock, call = 0): Promise<void> {
-    const onSuccess = mock.mock.calls[call]?.[1];
-    assert(onSuccess, 'no confirmation was requested');
+  async function succeed(mock: SettleMock, call = 0): Promise<void> {
+    const onSuccess = mock.mock.calls[call]?.[1]?.onSuccess;
+    assert(onSuccess, 'the action was not started');
     onSuccess();
     await flushPromises();
+  }
+
+  function fail(mock: SettleMock, failure: string, call = 0): void {
+    const onFailure = mock.mock.calls[call]?.[1]?.onFailure;
+    assert(onFailure, 'the action was not started');
+    onFailure({ failure, title: 'title' });
   }
 
   beforeEach(() => {
@@ -175,19 +181,19 @@ describe('useCustomizedEventDuplicatesDialog', () => {
   });
 
   describe('fixing', () => {
-    it('should do nothing when nothing is selected', () => {
-      dialog.fixSelected();
+    it('should do nothing when nothing is selected', async () => {
+      await dialog.fixSelected();
 
-      expect(confirmAndFixDuplicate).not.toHaveBeenCalled();
+      expect(fixAndSettle).not.toHaveBeenCalled();
     });
 
     it('should clear the selection and re-read only the auto-fix tab', async () => {
       set(dialog.modelSelectedAutoFix, ['auto-1', 'auto-2']);
 
-      dialog.fixSelected();
-      expect(confirmAndFixDuplicate).toHaveBeenCalledWith(['auto-1', 'auto-2'], expect.any(Function));
+      await dialog.fixSelected();
+      expect(fixAndSettle).toHaveBeenCalledWith(['auto-1', 'auto-2'], expect.any(Object));
 
-      await confirm(confirmAndFixDuplicate);
+      await succeed(fixAndSettle);
 
       expect(get(dialog.modelSelectedAutoFix)).toEqual([]);
       expect(fetchDuplicateEvents).toHaveBeenCalledOnce();
@@ -197,10 +203,10 @@ describe('useCustomizedEventDuplicatesDialog', () => {
     it('should drop only the fixed row from the selection', async () => {
       set(dialog.modelSelectedAutoFix, ['auto-1', 'auto-2']);
 
-      dialog.fixSingle('auto-1');
-      expect(confirmAndFixDuplicate).toHaveBeenCalledWith(['auto-1'], expect.any(Function));
+      await dialog.fixSingle('auto-1');
+      expect(fixAndSettle).toHaveBeenCalledWith(['auto-1'], expect.any(Object));
 
-      await confirm(confirmAndFixDuplicate);
+      await succeed(fixAndSettle);
 
       expect(get(dialog.modelSelectedAutoFix)).toEqual(['auto-2']);
     });
@@ -211,8 +217,8 @@ describe('useCustomizedEventDuplicatesDialog', () => {
       set(dialog.modelSelectedAutoFix, ['auto-1', 'shared']);
       set(dialog.modelSelectedManualReview, ['manual-1', 'shared']);
 
-      dialog.ignoreSingle('shared');
-      await confirm(confirmAndMarkNonDuplicated);
+      await dialog.ignoreSingle('shared');
+      await succeed(markNonDuplicatedAndSettle);
 
       expect(get(dialog.modelSelectedAutoFix)).toEqual(['auto-1']);
       expect(get(dialog.modelSelectedManualReview)).toEqual(['manual-1']);
@@ -223,10 +229,10 @@ describe('useCustomizedEventDuplicatesDialog', () => {
       set(dialog.modelSelectedAutoFix, ['auto-1']);
       set(dialog.modelSelectedManualReview, ['manual-1']);
 
-      dialog.ignoreSelected();
-      expect(confirmAndMarkNonDuplicated).toHaveBeenCalledWith(['auto-1'], expect.any(Function));
+      await dialog.ignoreSelected();
+      expect(markNonDuplicatedAndSettle).toHaveBeenCalledWith(['auto-1'], expect.any(Object));
 
-      await confirm(confirmAndMarkNonDuplicated);
+      await succeed(markNonDuplicatedAndSettle);
 
       expect(get(dialog.modelSelectedAutoFix)).toEqual([]);
       expect(get(dialog.modelSelectedManualReview)).toEqual(['manual-1']);
@@ -237,21 +243,21 @@ describe('useCustomizedEventDuplicatesDialog', () => {
       set(dialog.modelSelectedAutoFix, ['auto-1']);
       set(dialog.modelSelectedManualReview, ['manual-1']);
 
-      dialog.ignoreSelected();
-      expect(confirmAndMarkNonDuplicated).toHaveBeenCalledWith(['manual-1'], expect.any(Function));
+      await dialog.ignoreSelected();
+      expect(markNonDuplicatedAndSettle).toHaveBeenCalledWith(['manual-1'], expect.any(Object));
 
-      await confirm(confirmAndMarkNonDuplicated);
+      await succeed(markNonDuplicatedAndSettle);
 
       expect(get(dialog.modelSelectedManualReview)).toEqual([]);
       expect(get(dialog.modelSelectedAutoFix)).toEqual(['auto-1']);
     });
 
-    it('should do nothing when the showing tab has no selection', () => {
+    it('should do nothing when the showing tab has no selection', async () => {
       set(dialog.modelSelectedManualReview, ['manual-1']);
 
-      dialog.ignoreSelected();
+      await dialog.ignoreSelected();
 
-      expect(confirmAndMarkNonDuplicated).not.toHaveBeenCalled();
+      expect(markNonDuplicatedAndSettle).not.toHaveBeenCalled();
     });
   });
 
@@ -259,10 +265,10 @@ describe('useCustomizedEventDuplicatesDialog', () => {
     it('should clear the ignored selection and re-read all three tabs', async () => {
       set(dialog.modelSelectedIgnored, ['ignored-1']);
 
-      dialog.restoreSelected();
-      expect(confirmAndRestore).toHaveBeenCalledWith(['ignored-1'], expect.any(Function));
+      await dialog.restoreSelected();
+      expect(restoreAndSettle).toHaveBeenCalledWith(['ignored-1'], expect.any(Object));
 
-      await confirm(confirmAndRestore);
+      await succeed(restoreAndSettle);
 
       expect(get(dialog.modelSelectedIgnored)).toEqual([]);
       expect(fetchDuplicateEvents).toHaveBeenCalledTimes(3);
@@ -271,16 +277,55 @@ describe('useCustomizedEventDuplicatesDialog', () => {
     it('should drop only the restored row from the selection', async () => {
       set(dialog.modelSelectedIgnored, ['ignored-1', 'ignored-2']);
 
-      dialog.restoreSingle('ignored-2');
-      await confirm(confirmAndRestore);
+      await dialog.restoreSingle('ignored-2');
+      await succeed(restoreAndSettle);
 
       expect(get(dialog.modelSelectedIgnored)).toEqual(['ignored-1']);
     });
 
-    it('should do nothing when nothing is selected', () => {
-      dialog.restoreSelected();
+    it('should do nothing when nothing is selected', async () => {
+      await dialog.restoreSelected();
 
-      expect(confirmAndRestore).not.toHaveBeenCalled();
+      expect(restoreAndSettle).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('a failed action', () => {
+    it('should stay on the tab it was started from', async () => {
+      await dialog.fixSingle('auto-1');
+      fail(fixAndSettle, 'boom');
+
+      expect(get(dialog.autoFixActionFailure)).toEqual({ failure: 'boom', title: 'title' });
+      expect(get(dialog.manualReviewActionFailure)).toBeUndefined();
+      expect(get(dialog.modelSelectedAutoFix)).toEqual([]);
+    });
+
+    it('should land on the manual review tab when the dismissal was started there', async () => {
+      set(dialog.modelActiveTab, DuplicatesTab.MANUAL_REVIEW);
+
+      await dialog.ignoreSingle('manual-1');
+      fail(markNonDuplicatedAndSettle, 'boom');
+
+      expect(get(dialog.manualReviewActionFailure)).toEqual({ failure: 'boom', title: 'title' });
+      expect(get(dialog.autoFixActionFailure)).toBeUndefined();
+    });
+
+    it('should land on the ignored tab for a failed restore', async () => {
+      set(dialog.modelSelectedIgnored, ['ignored-1']);
+
+      await dialog.restoreSelected();
+      fail(restoreAndSettle, 'boom');
+
+      expect(get(dialog.ignoredActionFailure)).toEqual({ failure: 'boom', title: 'title' });
+    });
+
+    it('should be dropped when the next action on that tab starts', async () => {
+      await dialog.fixSingle('auto-1');
+      fail(fixAndSettle, 'boom');
+
+      await dialog.fixSingle('auto-2');
+
+      expect(get(dialog.autoFixActionFailure)).toBeUndefined();
     });
   });
 

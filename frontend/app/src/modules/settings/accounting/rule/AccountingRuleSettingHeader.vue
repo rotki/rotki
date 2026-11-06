@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 
 defineProps<{
   exportLoading: boolean;
@@ -15,6 +16,20 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const open = ref<boolean>(false);
+/** The menu asks about the reset in place of its items, until it is answered or closed. */
+const confirmingReset = ref<boolean>(false);
+
+function acceptReset(): void {
+  set(open, false);
+  emit('reset');
+}
+
+watch(open, (isOpen) => {
+  if (!isOpen)
+    set(confirmingReset, false);
+});
 </script>
 
 <template>
@@ -40,6 +55,9 @@ const { t } = useI18n({ useScope: 'global' });
         {{ t('accounting_settings.rule.add') }}
       </RuiButton>
       <RuiMenu
+        v-model="open"
+        :role="confirmingReset ? 'dialog' : undefined"
+        :class-names="{ menu: confirmingReset ? 'w-72' : '' }"
         :options="{ placement: 'bottom-end' }"
         close-on-content-click
       >
@@ -49,6 +67,7 @@ const { t } = useI18n({ useScope: 'global' });
             icon
             size="sm"
             :aria-label="t('common.actions_text')"
+            data-testid="accounting-rule-more-actions"
             v-bind="attrs"
           >
             <RuiIcon
@@ -57,36 +76,48 @@ const { t } = useI18n({ useScope: 'global' });
             />
           </RuiButton>
         </template>
-        <RuiButton
-          variant="list"
-          :loading="exportLoading"
-          @click="emit('export')"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-file-down" />
-          </template>
-          {{ t('accounting_settings.rule.export') }}
-        </RuiButton>
-        <RuiButton
-          variant="list"
-          :loading="importLoading"
-          @click="emit('import')"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-file-up" />
-          </template>
-          {{ t('accounting_settings.rule.import') }}
-        </RuiButton>
-        <RuiButton
-          variant="list"
-          :loading="resetLoading"
-          @click="emit('reset')"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-history" />
-          </template>
-          {{ t('accounting_settings.rule.reset') }}
-        </RuiButton>
+        <InlineConfirm
+          v-if="confirmingReset"
+          layout="panel"
+          tone="error"
+          :message="t('accounting_settings.rule.confirm_reset')"
+          :confirm-label="t('accounting_settings.rule.reset')"
+          @cancel="open = false"
+          @confirm="acceptReset()"
+        />
+        <template v-else>
+          <RuiButton
+            variant="list"
+            :loading="exportLoading"
+            @click="emit('export')"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-file-down" />
+            </template>
+            {{ t('accounting_settings.rule.export') }}
+          </RuiButton>
+          <RuiButton
+            variant="list"
+            :loading="importLoading"
+            @click="emit('import')"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-file-up" />
+            </template>
+            {{ t('accounting_settings.rule.import') }}
+          </RuiButton>
+          <RuiButton
+            variant="list"
+            :loading="resetLoading"
+            data-testid="accounting-rule-reset"
+            @click.stop="confirmingReset = true"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-history" />
+            </template>
+            {{ t('accounting_settings.rule.reset') }}
+          </RuiButton>
+        </template>
       </RuiMenu>
     </div>
   </div>

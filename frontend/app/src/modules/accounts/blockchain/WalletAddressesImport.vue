@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import WalletImportSelection from '@/modules/accounts/blockchain/WalletImportSelection.vue';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 defineProps<{
@@ -10,25 +9,22 @@ defineProps<{
 
 const emit = defineEmits<{
   'update:addresses': [addresses: string[]];
+  /** The wallet import failed; the message names it, ready to show under the address field. */
+  'failure': [message: string];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const [DefineButton, ReuseButton] = createReusableTemplate<{ buttonDisabled?: boolean; onClick?: () => void }>();
 const { isPackaged, metamaskImport } = useInterop();
-const { setMessage } = useMessageStore();
 
-async function importAddresses() {
+async function importAddresses(): Promise<void> {
   try {
     const addresses = await metamaskImport();
     emit('update:addresses', addresses);
   }
   catch (error: unknown) {
-    setMessage({
-      description: getErrorMessage(error),
-      success: false,
-      title: t('input_mode_select.import_from_wallet.label'),
-    });
+    emit('failure', `${t('input_mode_select.import_from_wallet.label')}: ${getErrorMessage(error)}`);
   }
 }
 </script>

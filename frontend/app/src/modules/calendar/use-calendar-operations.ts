@@ -2,28 +2,17 @@ import type { Dayjs } from 'dayjs';
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { CalendarEvent } from '@/modules/calendar/types';
 import { omit } from 'es-toolkit';
-import { useCalendarApi } from '@/modules/calendar/use-calendar-api';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseCalendarOperationsReturn {
   add: (selectedDate?: Dayjs) => void;
-  deleteEvent: () => void;
   edit: (event: CalendarEvent & { date?: string }) => void;
   editMode: Readonly<Ref<boolean>>;
   emptyEventForm: (date?: Dayjs) => CalendarEvent;
   modelValue: Ref<CalendarEvent | undefined>;
 }
 
-export function useCalendarOperations(
-  selectedDate: MaybeRefOrGetter<Dayjs>,
-  fetchData: () => void,
-): UseCalendarOperationsReturn {
-  const { t } = useI18n({ useScope: 'global' });
-  const { deleteCalendarEvent } = useCalendarApi();
-  const { show } = useConfirmStore();
-  const { showErrorMessage } = useNotifications();
+export function useCalendarOperations(selectedDate: MaybeRefOrGetter<Dayjs>): UseCalendarOperationsReturn {
   const autoDeleteCalendarEntries = useSetting('autoDeleteCalendarEntries');
 
   const modelValue = ref<CalendarEvent>();
@@ -56,30 +45,8 @@ export function useCalendarOperations(
     set(editMode, true);
   }
 
-  async function deleteClicked(): Promise<void> {
-    const item = get(modelValue);
-    if (item) {
-      try {
-        await deleteCalendarEvent(item.identifier);
-        fetchData();
-        set(modelValue, null);
-      }
-      catch (error: unknown) {
-        showErrorMessage(t('calendar.delete_event'), t('calendar.delete_error.message', { message: getErrorMessage(error) }));
-      }
-    }
-  }
-
-  function deleteEvent(): void {
-    show({
-      message: t('calendar.dialog.delete.message'),
-      title: t('calendar.delete_event'),
-    }, deleteClicked);
-  }
-
   return {
     add,
-    deleteEvent,
     edit,
     editMode: readonly(editMode),
     emptyEventForm,

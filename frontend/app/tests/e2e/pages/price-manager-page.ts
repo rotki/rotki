@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
+import { confirmInline } from '../helpers/utils';
 import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
@@ -50,12 +51,6 @@ async function confirmDialog(page: Page): Promise<void> {
   await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
 }
 
-async function confirmDelete(page: Page): Promise<void> {
-  const confirmDialogEl = page.locator('[data-testid=confirm-dialog]');
-  await confirmDialogEl.locator('[data-testid=button-confirm]').click();
-  await confirmDialogEl.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
-}
-
 async function cancelDialog(page: Page): Promise<void> {
   const dialog = page.locator('[data-testid=bottom-dialog]');
   await dialog.locator('[data-testid=cancel]').click();
@@ -87,7 +82,7 @@ abstract class PriceTablePage {
   async deletePrice(value: string): Promise<void> {
     const row = this.rowMatching(value).first();
     await row.locator('[data-testid=row-delete]').click();
-    await confirmDelete(this.page);
+    await confirmInline(this.page, 'Delete the price');
     await expect(this.rowMatching(value)).toHaveCount(0);
   }
 

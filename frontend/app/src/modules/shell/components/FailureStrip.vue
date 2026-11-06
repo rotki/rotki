@@ -8,7 +8,9 @@ import { useFailureMessage } from '@/modules/core/api/use-failure-message';
  * The content stays usable, so this stays quiet: a tinted, bordered line rather than an alert box.
  * Pass `in-table` for a row above a table's own rows, where the table supplies the frame, and
  * `retryable: false` for a failed save, whose own button is the retry. `failure` is worded by
- * `useFailureMessage`, so a caller passes the error itself, or a string already worded.
+ * `useFailureMessage`, so a caller passes the error itself, or a string already worded. The
+ * optional `action` slot holds one more thing the user can do about the failure, such as a link to
+ * read more, shown beside the message and before retry.
  */
 const { inTable = false, retryable = true } = defineProps<{
   title: string;
@@ -19,6 +21,10 @@ const { inTable = false, retryable = true } = defineProps<{
 
 const emit = defineEmits<{
   retry: [];
+}>();
+
+defineSlots<{
+  action?: () => any;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -42,6 +48,7 @@ const failureMessage = useFailureMessage();
       <span class="font-medium">{{ title }}:</span>
       {{ failureMessage(failure) }}
     </span>
+    <slot name="action" />
     <button
       v-if="retryable"
       type="button"

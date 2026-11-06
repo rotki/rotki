@@ -6,11 +6,10 @@ import { defineComponent, h, type VNode } from 'vue';
 import ManualBalancesDialog from '@/modules/accounts/manual-balances/ManualBalancesDialog.vue';
 import { BalanceType } from '@/modules/balances/types/balances';
 
-const { refreshPrice, refreshPrices, saveBalance, setMessage } = vi.hoisted(() => ({
+const { refreshPrice, refreshPrices, saveBalance } = vi.hoisted(() => ({
   refreshPrice: vi.fn(async () => {}),
   refreshPrices: vi.fn(async () => {}),
   saveBalance: vi.fn(),
-  setMessage: vi.fn(),
 }));
 
 vi.mock('@/modules/balances/manual/use-manual-balances', () => ({
@@ -19,10 +18,6 @@ vi.mock('@/modules/balances/manual/use-manual-balances', () => ({
 
 vi.mock('@/modules/assets/prices/use-price-refresh', () => ({
   usePriceRefresh: (): Record<string, Mock> => ({ refreshPrice, refreshPrices }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, Mock> => ({ setMessage }),
 }));
 
 const validate = vi.fn(() => true);
@@ -45,7 +40,7 @@ const FormStub = defineComponent({
 const BigDialogStub = {
   emits: ['confirm', 'cancel'],
   name: 'BigDialog',
-  props: ['title', 'subtitle', 'display', 'loading', 'action', 'promptOnClose'],
+  props: ['title', 'subtitle', 'display', 'loading', 'action', 'promptOnClose', 'failure', 'failureTitle'],
   template: `<div>
     <slot />
     <button data-testid="stub-confirm" @click="$emit('confirm')" />
@@ -210,29 +205,40 @@ describe('manualBalancesDialog', () => {
 
       expect(wrapper.findComponent(FormStub).props('errorMessages')).toEqual(errors);
       expect(validate).toHaveBeenCalledTimes(2);
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(wrapper.findComponent(BigDialogStub).props('failure')).toBeUndefined();
     });
 
-    it('should surface a message that names no field', async () => {
+    it('should name a failure that blames no field in the dialog, which stays open', async () => {
       saveBalance.mockResolvedValue({ message: 'the backend said no', success: false });
       const wrapper = createWrapper(savedBalance());
 
       await confirm(wrapper);
 
-      expect(setMessage).toHaveBeenCalledWith({
-        description: 'actions.manual_balances.edit.error.description::the backend said no',
-      });
+      const dialog = wrapper.findComponent(BigDialogStub);
+      expect(dialog.props('failure')).toBe('the backend said no');
+      expect(dialog.props('failureTitle')).toBe('actions.manual_balances.edit.error.title');
       expect(wrapper.findComponent(FormStub).props('errorMessages')).toEqual({});
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     });
 
-    it('should word the message as an addition when the balance is new', async () => {
+    it('should title the failure as an addition when the balance is new', async () => {
       saveBalance.mockResolvedValue({ message: 'the backend said no', success: false });
+      const wrapper = createWrapper(rawBalance());
 
-      await confirm(createWrapper(rawBalance()));
+      await confirm(wrapper);
 
-      expect(setMessage).toHaveBeenCalledWith({
-        description: 'actions.manual_balances.add.error.description::the backend said no',
-      });
+      expect(wrapper.findComponent(BigDialogStub).props('failureTitle')).toBe('actions.manual_balances.add.error.title');
+    });
+
+    it('should drop the failure when the next save starts', async () => {
+      saveBalance.mockResolvedValueOnce({ message: 'the backend said no', success: false });
+      saveBalance.mockResolvedValueOnce({ message: { label: ['taken'] }, success: false });
+      const wrapper = createWrapper(savedBalance());
+
+      await confirm(wrapper);
+      await confirm(wrapper);
+
+      expect(wrapper.findComponent(BigDialogStub).props('failure')).toBeUndefined();
     });
   });
 });

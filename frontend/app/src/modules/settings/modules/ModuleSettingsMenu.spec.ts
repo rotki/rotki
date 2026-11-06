@@ -8,7 +8,6 @@ import ModuleSettingsMenu from '@/modules/settings/modules/ModuleSettingsMenu.vu
 const activeModules = ref<Module[]>([]);
 const update = vi.fn(async (): Promise<void> => {});
 const fetchQueriedAddresses = vi.fn(async (): Promise<void> => {});
-const show = vi.fn();
 
 vi.mock('@/modules/settings/use-setting', () => ({
   useSetting: vi.fn(() => activeModules),
@@ -20,10 +19,6 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
 
 vi.mock('@/modules/accounts/use-queried-address-operations', () => ({
   useQueriedAddressOperations: vi.fn(() => ({ fetchQueriedAddresses })),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: vi.fn(() => ({ show })),
 }));
 
 const stubs = {
@@ -127,23 +122,29 @@ describe('modules/settings/modules/ModuleSettingsMenu', () => {
     expect(wrapper.find('[data-testid=queried-address-dialog]').exists()).toBe(false);
   });
 
-  it('should close the menu and confirm before enabling a module, keeping the active ones', async () => {
+  it('should enable a module straight away, keeping the active ones and the menu open', async () => {
     const wrapper = createWrapper();
     await openMenu(wrapper);
     await moduleRow(wrapper, Module.LIQUITY).find('[data-testid=module-settings-enable]').trigger('click');
 
-    expect(wrapper.find('[data-testid=menu]').attributes('data-open')).toBe('false');
-    expect(show).toHaveBeenCalledOnce();
-    expect(show.mock.calls[0][0]).toEqual({
-      message: 'active_modules.enable.description::Liquity',
-      title: 'active_modules.enable.title',
-      type: 'info',
-    });
-    expect(update).not.toHaveBeenCalled();
-
-    await show.mock.calls[0][1]();
-
     expect(update).toHaveBeenCalledWith({ activeModules: [Module.ETH2, Module.LIQUITY] });
+    expect(wrapper.find('[data-testid=menu]').attributes('data-open')).toBe('true');
+  });
+
+  it('should disable the enable buttons until the save settles', async () => {
+    let finish: () => void = () => {};
+    update.mockReturnValueOnce(new Promise<void>((resolve) => {
+      finish = resolve;
+    }));
+    const wrapper = createWrapper({ modules: [Module.ETH2, Module.LIQUITY, Module.MAKERDAO_DSR] });
+    await moduleRow(wrapper, Module.LIQUITY).find('[data-testid=module-settings-enable]').trigger('click');
+
+    expect(moduleRow(wrapper, Module.MAKERDAO_DSR).find('[data-testid=module-settings-enable]').attributes('disabled')).toBeDefined();
+
+    finish();
+    await flushPromises();
+
+    expect(moduleRow(wrapper, Module.MAKERDAO_DSR).find('[data-testid=module-settings-enable]').attributes('disabled')).toBeUndefined();
   });
 
   it('should mark the button and explain why while something wants a look', () => {

@@ -2,7 +2,6 @@
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddTransactionHashPayload, LocationAndTxRef } from '@/modules/history/events/event-payloads';
 import { useTemplateRef } from 'vue';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import TransactionForm from '@/modules/history/events/tx/TransactionForm.vue';
 import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
@@ -23,8 +22,9 @@ const submitting = ref<boolean>(false);
 const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<InstanceType<typeof TransactionForm>>('form');
 const stateUpdated = ref<boolean>(false);
+/** Why the last save failed where no field is to blame; the form keeps what was typed. */
+const saveFailure = shallowRef<string>();
 
-const { setMessage } = useMessageStore();
 const { addTransactionHash } = useHistoryTransactions();
 
 async function save() {
@@ -39,6 +39,7 @@ async function save() {
   const payload = get(modelValue);
 
   set(submitting, true);
+  set(saveFailure, undefined);
   const result = await addTransactionHash(payload);
   set(submitting, false);
 
@@ -51,9 +52,7 @@ async function save() {
   }
   else if (result.message) {
     if (typeof result.message === 'string') {
-      setMessage({
-        description: result.message,
-      });
+      set(saveFailure, result.message);
     }
     else {
       set(errorMessages, result.message);
@@ -71,6 +70,8 @@ async function save() {
     :layout="{ autoHeight: true, maxWidth: '640px' }"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
+    :failure="saveFailure"
+    :failure-title="t('transactions.dialog.add_tx_error')"
     @confirm="save()"
     @cancel="modelValue = undefined"
   >

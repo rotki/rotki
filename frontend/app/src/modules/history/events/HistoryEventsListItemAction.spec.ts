@@ -1,3 +1,4 @@
+import { HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
@@ -18,8 +19,11 @@ describe('modules/history/events/HistoryEventsListItemAction', () => {
     wrapper = undefined;
   });
 
-  function mountAction(options: { canUnlink?: boolean; missingRule?: boolean }): VueWrapper {
-    const item = createMock<HistoryEventEntry>({
+  const unlinkConfirm = { message: 'Unlink these?', title: 'Unlink' };
+
+  function mountAction(options: { canUnlink?: boolean; missingRule?: boolean; item?: HistoryEventEntry; group?: HistoryEventEntry[] }): VueWrapper {
+    const item = options.item ?? createMock<HistoryEventEntry>({
+      entryType: HistoryEventEntryType.HISTORY_EVENT,
       eventAccountingRuleStatus: options.missingRule
         ? HistoryEventAccountingRuleStatus.NOT_PROCESSED
         : HistoryEventAccountingRuleStatus.HAS_RULE,
@@ -28,7 +32,12 @@ describe('modules/history/events/HistoryEventsListItemAction', () => {
 
     wrapper = mount(HistoryEventsListItemAction, {
       global: { provide: libraryDefaults },
-      props: { canUnlink: options.canUnlink, completeGroupEvents: [item], index: 0, item },
+      props: {
+        completeGroupEvents: options.group ?? [item],
+        index: 0,
+        item,
+        unlinkConfirm: options.canUnlink ? unlinkConfirm : undefined,
+      },
     });
     return wrapper;
   }
@@ -36,19 +45,48 @@ describe('modules/history/events/HistoryEventsListItemAction', () => {
   it('should keep the menu, with unlink in it, when a missing rule shows its warning', () => {
     const action = mountAction({ canUnlink: true, missingRule: true });
 
-    expect(action.findComponent(HistoryEventAction).props('canUnlink')).toBe(true);
+    expect(action.findComponent(HistoryEventAction).props('unlinkConfirm')).toStrictEqual(unlinkConfirm);
   });
 
   it('should offer unlink through the menu when the rule is present', () => {
     const action = mountAction({ canUnlink: true });
 
-    expect(action.findComponent(HistoryEventAction).props('canUnlink')).toBe(true);
+    expect(action.findComponent(HistoryEventAction).props('unlinkConfirm')).toStrictEqual(unlinkConfirm);
   });
 
   it('should offer no unlink at all for a row that cannot be unlinked', () => {
     const action = mountAction({ missingRule: true });
 
-    expect(action.findComponent(HistoryEventAction).props('canUnlink')).toBeFalsy();
+    expect(action.findComponent(HistoryEventAction).props('unlinkConfirm')).toBeUndefined();
+  });
+
+  it('should have the menu ask before deleting the event', () => {
+    const action = mountAction({});
+
+    expect(action.findComponent(HistoryEventAction).props('deleteConfirm')).toStrictEqual({
+      confirmLabel: 'common.actions.delete',
+      message: 'transactions.events.confirmation.delete.message',
+      title: 'transactions.events.confirmation.delete.title',
+    });
+  });
+
+  it('should ask about excluding a lone evm event from accounting, which cannot be deleted from its transaction', async () => {
+    const item = createMock<HistoryEventEntry>({
+      entryType: HistoryEventEntryType.EVM_EVENT,
+      eventAccountingRuleStatus: HistoryEventAccountingRuleStatus.HAS_RULE,
+      identifier: 3,
+    });
+    const action = mountAction({ item });
+
+    expect(action.findComponent(HistoryEventAction).props('deleteConfirm')).toMatchObject({
+      message: 'transactions.events.confirmation.ignore.message',
+      title: 'transactions.events.confirmation.ignore.title',
+    });
+
+    action.findComponent(HistoryEventAction).vm.$emit('delete');
+    await nextTick();
+
+    expect(action.emitted('delete-event')).toStrictEqual([[{ event: item, type: 'ignore' }]]);
   });
 
   it('should turn the menu\'s unlink into the row\'s unlink', async () => {
@@ -69,12 +107,12 @@ describe('modules/history/events/HistoryEventsListItemAction', () => {
     expect(action.emitted('edit-event')).toHaveLength(1);
   });
 
-  it('should ask to delete the event from the menu', async () => {
+  it('should delete the event once the menu\'s question is accepted', async () => {
     const action = mountAction({});
 
     action.findComponent(HistoryEventAction).vm.$emit('delete');
     await nextTick();
 
-    expect(action.emitted('delete-event')).toHaveLength(1);
+    expect(action.emitted('delete-event')).toStrictEqual([[{ ids: [1], type: 'delete' }]]);
   });
 });

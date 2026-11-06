@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { BackendOptions } from '@shared/ipc';
 import type { BackendConfiguration } from '@/modules/shell/app/backend';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useForm } from '@/modules/core/form/use-form';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
@@ -24,6 +23,7 @@ import LanguageSetting from '@/modules/settings/general/language/LanguageSetting
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 
 const emit = defineEmits<{
   dismiss: [];
@@ -41,6 +41,8 @@ const { backendSettings } = useSettingsApi();
 const { applyLogLevelChange } = useLogLevelUpdate();
 
 const selecting = ref<boolean>(false);
+/** Asking, in the footer, whether to reset the backend settings to their defaults. */
+const confirmingReset = ref<boolean>(false);
 const configuration = ref<BackendConfiguration>();
 
 async function loadConfiguration(): Promise<void> {
@@ -199,18 +201,6 @@ function dismiss() {
 watch(dataDirectory, (directory) => {
   set(userDataDirectory, get(options).dataDirectory ?? directory);
 });
-
-const { show } = useConfirmStore();
-
-function showResetConfirmation() {
-  show(
-    {
-      message: t('backend_settings.confirm.message'),
-      title: t('backend_settings.confirm.title'),
-    },
-    reset,
-  );
-}
 </script>
 
 <template>
@@ -317,7 +307,20 @@ function showResetConfirmation() {
     </RuiAccordions>
 
     <template #footer>
-      <div class="flex justify-end w-full gap-2">
+      <InlineConfirm
+        v-if="confirmingReset"
+        class="w-full"
+        :title="t('backend_settings.confirm.title')"
+        :message="t('backend_settings.confirm.message')"
+        :confirm-label="t('backend_settings.actions.reset')"
+        data-testid="onboarding-setting-reset-confirm"
+        @cancel="confirmingReset = false"
+        @confirm="reset()"
+      />
+      <div
+        v-else
+        class="flex justify-end w-full gap-2"
+      >
         <RuiButton
           variant="text"
           color="primary"
@@ -329,7 +332,7 @@ function showResetConfirmation() {
           data-testid="onboarding-setting-reset"
           variant="outlined"
           color="primary"
-          @click="showResetConfirmation()"
+          @click="confirmingReset = true"
         >
           {{ t('backend_settings.actions.reset') }}
         </RuiButton>

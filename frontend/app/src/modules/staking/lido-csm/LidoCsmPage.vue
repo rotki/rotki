@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { useLidoCsmApi } from '@/modules/staking/api/use-lido-csm-api';
 import StakingLocationTitle from '@/modules/staking/components/StakingLocationTitle.vue';
@@ -19,31 +19,27 @@ const { t } = useI18n({ useScope: 'global' });
 const nodeOperators = ref<LidoCsmNodeOperator[]>([]);
 const loading = ref<boolean>(false);
 const dialogOpen = ref<boolean>(false);
+/**
+ * Why the operators or their metrics could not be loaded, above the table; the retry refreshes the
+ * metrics, which also reloads the operators.
+ */
+const failure = shallowRef<unknown>();
 
 const api = useLidoCsmApi();
-const { setMessage } = useMessageStore();
 const { fetchPrices } = usePriceTaskManager();
 
-function notifyWarning(message?: string): void {
-  if (!message)
-    return;
-
-  setMessage({
-    description: message,
-  });
-}
-
+/** Loads the operators; the backend answers with a `message` when it listed them but missed some metrics. */
 async function fetchNodeOperators(refreshMetrics = false): Promise<void> {
   set(loading, true);
+  set(failure, undefined);
   try {
     const { entries, message } = refreshMetrics ? await api.refreshMetrics() : await api.listNodeOperators();
     set(nodeOperators, entries);
-    notifyWarning(message);
+    if (message)
+      set(failure, message);
   }
   catch (error: unknown) {
-    setMessage({
-      description: t('staking_page.lido_csm.messages.fetch_failed', { message: error instanceof Error ? error.message : String(error) }),
-    });
+    set(failure, error);
   }
   finally {
     set(loading, false);
@@ -65,6 +61,13 @@ async function refresh(refreshMetrics = false): Promise<void> {
 
 function openAddDialog(): void {
   set(dialogOpen, true);
+}
+
+/** Reloads the list after an add, then keeps what the add could not fetch in view unless the reload failed itself. */
+async function onAdded(warning?: string): Promise<void> {
+  await refresh();
+  if (warning && !isDefined(failure))
+    set(failure, warning);
 }
 
 onMounted(async () => {
@@ -107,6 +110,13 @@ onMounted(async () => {
       </RuiButton>
     </template>
     <div class="flex flex-col gap-4">
+      <FailureStrip
+        v-if="failure"
+        :title="t('staking_page.lido_csm.messages.fetch_failed')"
+        :failure="failure"
+        data-testid="lido-csm-failure"
+        @retry="refresh(true)"
+      />
       <LidoCsmTotals
         :operators="nodeOperators"
         :loading="loading"
@@ -122,7 +132,7 @@ onMounted(async () => {
       <LidoCsmAddDialog
         v-if="dialogOpen"
         v-model="dialogOpen"
-        @refresh="refresh()"
+        @added="onAdded($event)"
       />
     </div>
   </TablePageLayout>

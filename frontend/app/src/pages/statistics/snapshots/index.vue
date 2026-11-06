@@ -5,6 +5,7 @@ import TableFrame from '@/modules/core/table/TableFrame.vue';
 import SnapshotImportDialog from '@/modules/dashboard/SnapshotImportDialog.vue';
 import SnapshotListFilter from '@/modules/dashboard/snapshots/components/SnapshotListFilter.vue';
 import SnapshotListTable from '@/modules/dashboard/snapshots/components/SnapshotListTable.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { useSnapshotsPage } from '@/pages/statistics/snapshots/use-snapshots-page';
 
@@ -20,7 +21,8 @@ const { t } = useI18n({ useScope: 'global' });
 const confirmOpen = ref<boolean>(false);
 
 const {
-  confirmDelete,
+  deleteFailure,
+  deleteSnapshotAt,
   emptyDescription,
   exporting,
   exportSnapshot,
@@ -31,6 +33,7 @@ const {
   modelBalanceFile,
   modelFilters,
   modelImportDialog,
+  modelImportFailure,
   modelLocationFile,
   modelPagination,
   open,
@@ -65,6 +68,7 @@ async function confirmTakeSnapshot(): Promise<void> {
         v-model="modelImportDialog"
         v-model:balance-file="modelBalanceFile"
         v-model:location-file="modelLocationFile"
+        v-model:failure="modelImportFailure"
         :loading="importing"
         @import="importSnapshot()"
       />
@@ -118,6 +122,15 @@ async function confirmTakeSnapshot(): Promise<void> {
       </RuiMenu>
     </template>
 
+    <FailureStrip
+      v-if="deleteFailure"
+      class="mb-4"
+      :retryable="false"
+      :title="t('dashboard.snapshot.delete.message.title')"
+      :failure="deleteFailure"
+      data-testid="snapshot-delete-error"
+    />
+
     <TableFrame>
       <template #toolbar>
         <SnapshotListFilter
@@ -134,7 +147,7 @@ async function confirmTakeSnapshot(): Promise<void> {
         :exporting="exporting"
         @open="open($event)"
         @export="exportSnapshot($event)"
-        @delete="confirmDelete($event)"
+        @delete="deleteSnapshotAt($event)"
       />
     </TableFrame>
   </TablePageLayout>

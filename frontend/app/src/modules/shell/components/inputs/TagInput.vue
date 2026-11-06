@@ -26,6 +26,8 @@ const editMode = ref<boolean>(false);
 const originalName = ref<string>('');
 
 const newTagBackground = ref<string>(randomColor());
+/** Why the last inline tag creation failed, shown under the field until the next attempt. */
+const creationError = ref<string>('');
 
 function remove(tag: string) {
   const tags = get(modelValue);
@@ -34,10 +36,13 @@ function remove(tag: string) {
 }
 
 function attemptTagCreation(element: string): void {
+  set(creationError, '');
   attemptTag(element, get(newTagBackground))
-    .then((success) => {
-      if (!success)
-        remove(element);
+    .then((status) => {
+      if (status.success)
+        return;
+      set(creationError, status.message);
+      remove(element);
     });
 }
 
@@ -105,6 +110,7 @@ watch(tags, () => {
       class="tag-input flex-1"
       :hide-no-data="!search"
       :label="label"
+      :error-messages="creationError"
       text-attr="name"
       key-attr="name"
       return-object

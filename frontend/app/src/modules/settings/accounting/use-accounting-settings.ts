@@ -57,7 +57,7 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { showErrorMessage, showSuccessMessage } = useNotifications();
+  const { notifyError } = useNotifications();
 
   const getAccountingRule = async (
     payload: MaybeRef<AccountingRuleRequestPayload>,
@@ -131,15 +131,11 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
       if (result === null)
         return;
 
-      if (appSession) {
-        showSuccessMessage(title, t('actions.accounting_rules.export.message.success'));
-      }
-      else {
+      if (!appSession)
         downloadFileByTextContent(JSON.stringify(result, null, 2), 'accounting_rules.json', 'application/json');
-      }
     }
     catch (error: unknown) {
-      showErrorMessage(title, t('actions.accounting_rules.export.message.failure', {
+      notifyError(title, t('actions.accounting_rules.export.message.failure', {
         description: getErrorMessage(error),
       }));
     }
@@ -171,7 +167,6 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
   }
 
   async function resetToDefaults(): Promise<ActionStatus | null> {
-    const title = t('actions.accounting_rules.reset.title');
     const outcome = await submitTask<boolean>({
       id: accountingRulesResetActivity.id(),
       kind: accountingRulesResetActivity.kind,
@@ -186,10 +181,8 @@ export function useAccountingSettings(): UseAccountingSettingsReturn {
       title: t('task_center.group.accounting_rules'),
     });
 
-    if (!isErr(outcome)) {
-      showSuccessMessage(title, t('actions.accounting_rules.reset.message.success'));
+    if (!isErr(outcome))
       return { message: '', success: outcome.value };
-    }
 
     if (!isActionable(outcome.error))
       return null;

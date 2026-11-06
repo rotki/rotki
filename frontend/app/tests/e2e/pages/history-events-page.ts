@@ -15,7 +15,7 @@ import {
   TEST_EVENT_DATE_DIGITS,
 } from '../fixtures/history-events';
 import { TIMEOUT_LONG, TIMEOUT_MEDIUM } from '../helpers/constants';
-import { selectAsset } from '../helpers/utils';
+import { confirmInline, selectAsset } from '../helpers/utils';
 import { HistoryEventRows } from './history-event-rows';
 import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
@@ -348,9 +348,7 @@ export class HistoryEventsPage {
     await row.hover();
     await row.locator('[data-testid=row-actions-menu]').click();
     await this.page.getByRole('menu').locator('[data-testid=row-delete]').click();
-    const dialog = this.page.locator('[data-testid=confirm-dialog]');
-    await dialog.locator('[data-testid=button-confirm]').click();
-    await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+    await confirmInline(this.page);
   }
 
   async fillEvmMultiSwapEventForm(data: EvmMultiSwapEventFixture): Promise<void> {

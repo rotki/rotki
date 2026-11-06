@@ -59,6 +59,7 @@ vi.mock('@/modules/history/data-issues/use-data-issues-panel-polling', () => ({
 }));
 
 interface Actions {
+  actionFailure?: Ref<{ id: number; title: string; error: unknown } | undefined>;
   modelDrawerOpen?: Ref<boolean>;
   modelSelectedIssue?: Ref<DataIssue | undefined>;
   onResolveRequest: Mock;
@@ -75,9 +76,11 @@ function mounted<T>(value: T | undefined): T {
 
 vi.mock('@/modules/history/data-issues/use-data-issue-detail-actions', () => ({
   useDataIssueDetailActions: (): Record<string, unknown> => {
+    actions.actionFailure = ref<{ id: number; title: string; error: unknown }>();
     actions.modelDrawerOpen = ref<boolean>(false);
     actions.modelSelectedIssue = ref<DataIssue>();
     return {
+      actionFailure: actions.actionFailure,
       modelActionBusy: ref(false),
       modelDrawerOpen: actions.modelDrawerOpen,
       modelResolveOpen: ref(false),
@@ -173,6 +176,30 @@ describe('dataIssuesPanelContent', () => {
       expect(wrapper.find('[data-testid=data-issues-panel-error]').exists()).toBe(false);
       expect(wrapper.find('[data-testid=data-issues-panel-list]').exists()).toBe(true);
     });
+  });
+
+  it('should name a failed card action above the list without a retry', async () => {
+    state.issues = [createIssue(1)];
+    const wrapper = await createWrapper();
+
+    set(mounted(actions.actionFailure), { error: new Error('nope'), id: 1, title: 'data_issues.action.dismiss.error' });
+    await flushPromises();
+
+    const strip = wrapper.find('[data-testid=data-issues-panel-action-failure]');
+    expect(strip.text()).toContain('data_issues.action.dismiss.error');
+    expect(strip.text()).toContain('nope');
+    expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
+  });
+
+  it('should leave a failed action to the open detail sheet, which names it itself', async () => {
+    state.issues = [createIssue(1)];
+    const wrapper = await createWrapper();
+
+    set(mounted(actions.actionFailure), { error: new Error('nope'), id: 1, title: 'data_issues.action.dismiss.error' });
+    set(mounted(actions.modelDrawerOpen), true);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=data-issues-panel-action-failure]').exists()).toBe(false);
   });
 
   it('should report all clear only when the load succeeded empty', async () => {

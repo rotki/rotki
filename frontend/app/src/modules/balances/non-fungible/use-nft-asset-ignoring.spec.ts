@@ -5,8 +5,7 @@ import { useNftAssetIgnoring } from './use-nft-asset-ignoring';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
-    showErrorMessage: vi.fn(),
-    ignoreAssetWithConfirmation: vi.fn(),
+    notifyWarning: vi.fn(),
     ignoreAsset: vi.fn(),
     unignoreAsset: vi.fn(),
     isAssetIgnored: vi.fn(),
@@ -14,10 +13,7 @@ const { spies } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): object => ({ showErrorMessage: spies.showErrorMessage }),
-}));
-vi.mock('@/modules/assets/use-ignored-asset-confirmation', () => ({
-  useIgnoredAssetConfirmation: (): object => ({ ignoreAssetWithConfirmation: spies.ignoreAssetWithConfirmation }),
+  useNotifications: (): object => ({ notifyWarning: spies.notifyWarning }),
 }));
 vi.mock('@/modules/assets/use-ignored-asset-operations', () => ({
   useIgnoredAssetOperations: (): object => ({ ignoreAsset: spies.ignoreAsset, unignoreAsset: spies.unignoreAsset }),
@@ -55,12 +51,19 @@ describe('useNftAssetIgnoring', () => {
     spies.isAssetIgnored.mockReturnValue(true);
     await useNftAssetIgnoring(fetchData, 'show_only').toggleIgnoreAsset(balance('nft-1'));
     expect(spies.unignoreAsset).toHaveBeenCalledWith('nft-1');
-    expect(spies.ignoreAssetWithConfirmation).not.toHaveBeenCalled();
+    expect(spies.ignoreAsset).not.toHaveBeenCalled();
   });
 
-  it('should confirm before ignoring a new asset on toggle', async () => {
-    await useNftAssetIgnoring(fetchData, 'none').toggleIgnoreAsset(balance('nft-2'));
-    expect(spies.ignoreAssetWithConfirmation).toHaveBeenCalledWith('nft-2', 'nft-2', expect.any(Function));
+  it('should ignore a new asset straight away and refresh when ignored assets are shown', async () => {
+    await useNftAssetIgnoring(fetchData, 'show_only').toggleIgnoreAsset(balance('nft-2'));
+    expect(spies.ignoreAsset).toHaveBeenCalledWith('nft-2');
+    expect(fetchData).toHaveBeenCalledOnce();
+  });
+
+  it('should not refresh when the ignore fails', async () => {
+    spies.ignoreAsset.mockResolvedValue({ message: 'boom', success: false });
+    await useNftAssetIgnoring(fetchData, 'show_only').toggleIgnoreAsset(balance('nft-2'));
+    expect(fetchData).not.toHaveBeenCalled();
   });
 
   it('should mass-ignore the not-yet-ignored selection and clear it', async () => {
@@ -77,7 +80,7 @@ describe('useNftAssetIgnoring', () => {
     const { massIgnore, modelSelected } = useNftAssetIgnoring(fetchData, 'none');
     set(modelSelected, ['a']);
     await massIgnore(true);
-    expect(spies.showErrorMessage).toHaveBeenCalledOnce();
+    expect(spies.notifyWarning).toHaveBeenCalledOnce();
     expect(spies.ignoreAsset).not.toHaveBeenCalled();
   });
 });

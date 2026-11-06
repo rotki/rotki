@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
+
 const open = defineModel<boolean>({ required: true });
 
-const { loading = false } = defineProps<{
+const { loading = false, failure } = defineProps<{
   loading?: boolean;
+  /** Why the last resolve failed; the dialog stays open, its Resolve button being the retry. */
+  failure?: unknown;
 }>();
 
 const emit = defineEmits<{
@@ -40,6 +44,15 @@ function confirm(): void {
       >
         {{ t('data_issues.resolve_dialog.notice') }}
       </RuiAlert>
+
+      <FailureStrip
+        v-if="failure"
+        class="mb-4"
+        :title="t('data_issues.action.resolve.error')"
+        :failure="failure"
+        :retryable="false"
+        data-testid="data-issue-resolve-failure"
+      />
 
       <RuiTextArea
         v-model="note"

@@ -11,7 +11,6 @@ import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/ty
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 
 const mockAddAccounts = vi.fn();
-const mockShowErrorMessage = vi.fn();
 const mockFetchAccounts = vi.fn().mockResolvedValue(undefined);
 const mockRefreshAccounts = vi.fn().mockResolvedValue(undefined);
 const mockUpdateEthStakingOwnership = vi.fn();
@@ -34,7 +33,6 @@ vi.mock('@/modules/core/notifications/use-notifications', async () => ({
   )).getErrorMessage,
   useNotifications: (): object => ({
     removeMatching: vi.fn(),
-    showErrorMessage: mockShowErrorMessage,
     showSuccessMessage: vi.fn(),
   }),
 }));
@@ -288,42 +286,36 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     it('should map JSON-shaped api error message to inline form errors', async () => {
       mockAddAccounts.mockRejectedValueOnce(new Error('{"address": ["Given ENS address rotki.eth could not be resolved"]}'));
 
-      const { modelErrorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save, saveError } = useAccountManage();
       const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({
         address: ['Given ENS address rotki.eth could not be resolved'],
       });
-      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+      expect(get(saveError)).toBe('');
     });
 
-    it('should fall back to a toast for non-JSON api errors', async () => {
+    it('should keep a non-JSON api error for the dialog', async () => {
       mockAddAccounts.mockRejectedValueOnce(new Error('Network unreachable'));
 
-      const { modelErrorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save, saveError } = useAccountManage();
       const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({});
-      expect(mockShowErrorMessage).toHaveBeenCalledWith(
-        'account_form.error.title',
-        expect.stringContaining('Network unreachable'),
-      );
+      expect(get(saveError)).toBe('Network unreachable');
     });
 
-    it('should fall back to a toast for empty-object JSON', async () => {
+    it('should keep an empty-object JSON error for the dialog', async () => {
       mockAddAccounts.mockRejectedValueOnce(new Error('{}'));
 
-      const { modelErrorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save, saveError } = useAccountManage();
       const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({});
-      expect(mockShowErrorMessage).toHaveBeenCalledWith(
-        'account_form.error.title',
-        expect.stringContaining('{}'),
-      );
+      expect(get(saveError)).toBe('{}');
     });
 
     it('should map a resolved failure cause to inline form errors', async () => {
@@ -339,14 +331,14 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
         }],
       });
 
-      const { modelErrorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save, saveError } = useAccountManage();
       const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({
         address: ['Given ENS address rotki.eth could not be resolved'],
       });
-      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+      expect(get(saveError)).toBe('');
     });
 
     it('should report the count when several addresses fail', async () => {
@@ -365,50 +357,47 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
         ],
       });
 
-      const { modelErrorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save, saveError } = useAccountManage();
       const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       // No single field to highlight across two addresses.
       expect(get(modelErrorMessages)).toEqual({});
-      expect(mockShowErrorMessage).toHaveBeenCalledWith(
-        'account_form.error.title',
-        expect.stringContaining('account_form.error.addition_failed'),
-      );
+      expect(get(saveError)).toContain('account_form.error.addition_failed');
     });
 
     it('should not report a fully cancelled addition as saved, which would close the dialog and emit complete for an account never added', async () => {
       mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: true, failed: [], skipped: 0 });
 
-      const { modelErrorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save, saveError } = useAccountManage();
       const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       // The user asked for the cancellation, so nothing is reported.
       expect(get(modelErrorMessages)).toEqual({});
-      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+      expect(get(saveError)).toBe('');
     });
 
     it('should close on a skipped address without an error, leaving the dock to say why', async () => {
       mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: false, failed: [], skipped: 1 });
 
-      const { modelErrorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save, saveError } = useAccountManage();
 
       expect(await save(createEnsAccountState())).toBe(true);
       expect(mockAddAccounts).toHaveBeenCalledWith(expect.any(String), expect.anything(), { userStarted: true, wait: true });
       expect(get(modelErrorMessages)).toEqual({});
-      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+      expect(get(saveError)).toBe('');
     });
 
     it('should not double-parse an existing ApiValidationError', async () => {
       mockAddAccounts.mockRejectedValueOnce(new ApiValidationError('{"address": ["already typed"]}'));
 
-      const { modelErrorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save, saveError } = useAccountManage();
       const result = await save(createEnsAccountState());
 
       expect(result).toBe(false);
       expect(get(modelErrorMessages)).toEqual({ address: ['already typed'] });
-      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+      expect(get(saveError)).toBe('');
     });
   });
 
@@ -427,12 +416,12 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     it('should close without waiting for the addition, leaving the dock to report it', async () => {
       mockAddAccounts.mockResolvedValueOnce({ added: [], cancelled: false, failed: [], skipped: 0 });
 
-      const { modelErrorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save, saveError } = useAccountManage();
 
       expect(await save(createAddressState([address]))).toBe(true);
       expect(mockAddAccounts).toHaveBeenCalledWith(Blockchain.ETH, expect.anything(), { userStarted: true, wait: false });
       expect(get(modelErrorMessages)).toEqual({});
-      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+      expect(get(saveError)).toBe('');
     });
 
     it('should close without waiting when adding to every evm chain', async () => {
@@ -545,21 +534,21 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
     it('should report a rejected edit rather than closing the dialog', async () => {
       mockEditAccount.mockRejectedValue(new Error('the backend said no'));
 
-      const { save } = useAccountManage();
+      const { save, saveError } = useAccountManage();
 
       expect(await save(xpubState('edit'))).toBe(false);
-      expect(mockShowErrorMessage).toHaveBeenCalled();
+      expect(get(saveError)).toBe('the backend said no');
     });
 
     /** Cancelling the addition is not a failure, but nothing was added, so the dialog stays open. */
     it('should not report a fully cancelled addition as saved', async () => {
       mockAddAccounts.mockResolvedValue({ added: [], cancelled: true, failed: [], skipped: 0 });
 
-      const { modelErrorMessages, save } = useAccountManage();
+      const { modelErrorMessages, save, saveError } = useAccountManage();
 
       expect(await save(xpubState('add'))).toBe(false);
       expect(get(modelErrorMessages)).toEqual({});
-      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+      expect(get(saveError)).toBe('');
     });
   });
 

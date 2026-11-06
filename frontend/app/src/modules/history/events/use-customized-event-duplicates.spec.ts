@@ -14,9 +14,6 @@ const { spies } = vi.hoisted(() => ({
     ignoreCustomizedEventDuplicates: vi.fn<(groupIdentifiers: string[]) => Promise<string[]>>(),
     unignoreCustomizedEventDuplicates: vi.fn<(groupIdentifiers: string[]) => Promise<string[]>>(),
     fetchHistoryEvents: vi.fn<() => Promise<CollectionResponse<HistoryEventCollectionRow>>>(),
-    showConfirm: vi.fn(),
-    showSuccessMessage: vi.fn(),
-    showErrorMessage: vi.fn(),
   },
 }));
 
@@ -35,18 +32,8 @@ vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({
-    show: spies.showConfirm,
-  }),
-}));
-
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: (e: unknown): string => e instanceof Error ? e.message : String(e),
-  useNotifications: (): object => ({
-    showSuccessMessage: spies.showSuccessMessage,
-    showErrorMessage: spies.showErrorMessage,
-  }),
 }));
 
 const OMIT = Symbol('omit');
@@ -79,13 +66,6 @@ function createMockDuplicatesResponse(autoFix: string[] = [], manualReview: stri
     manualReviewGroupIds: manualReview,
     ignoredGroupIds: ignored,
   };
-}
-
-async function extractAndCallConfirmCallback(): Promise<void> {
-  const callArgs = spies.showConfirm.mock.calls[0];
-  expect(callArgs[1]).toEqual(expect.any(Function));
-  const callback: () => Promise<void> = callArgs[1];
-  await callback();
 }
 
 describe('use-customized-event-duplicates', () => {
@@ -166,7 +146,6 @@ describe('use-customized-event-duplicates', () => {
       await composable.fetchCustomizedEventDuplicates();
 
       expect(get(composable.fetchError)).toBe(failure);
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
     });
 
     it('should clear the kept failure once a read succeeds', async () => {
@@ -183,7 +162,6 @@ describe('use-customized-event-duplicates', () => {
 
       await composable.fetchCustomizedEventDuplicates();
 
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
       expect(get(composable.loading)).toBe(false);
     });
 
@@ -471,30 +449,6 @@ describe('use-customized-event-duplicates', () => {
       expect(spies.fixCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1', 'g-2']);
     });
 
-    it('should show success message when events are removed', async () => {
-      spies.fixCustomizedEventDuplicates.mockResolvedValue({
-        removedEventIdentifiers: [1, 2, 3],
-        autoFixGroupIds: [],
-      });
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      await composable.fixDuplicates(['g-1']);
-
-      expect(spies.showSuccessMessage).toHaveBeenCalledWith(expect.any(String), expect.any(String));
-    });
-
-    it('should not show success message when no events are removed', async () => {
-      spies.fixCustomizedEventDuplicates.mockResolvedValue({
-        removedEventIdentifiers: [],
-        autoFixGroupIds: [],
-      });
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      await composable.fixDuplicates(['g-1']);
-
-      expect(spies.showSuccessMessage).not.toHaveBeenCalled();
-    });
-
     it('should refresh list after fixing', async () => {
       spies.fixCustomizedEventDuplicates.mockResolvedValue({
         removedEventIdentifiers: [],
@@ -539,7 +493,6 @@ describe('use-customized-event-duplicates', () => {
       const result = await composable.fixDuplicates(['g-1']);
 
       expect(result).toEqual({ message: 'Fix failed', success: false });
-      expect(spies.showErrorMessage).toHaveBeenCalledWith(expect.any(String), expect.any(String));
     });
 
     it('should reset fixLoading on error', async () => {
@@ -612,7 +565,6 @@ describe('use-customized-event-duplicates', () => {
       const result = await composable.ignoreDuplicates(['g-1']);
 
       expect(result).toEqual({ message: 'Ignore failed', success: false });
-      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
     });
 
     it('should reset ignoreLoading on error', async () => {
@@ -672,7 +624,6 @@ describe('use-customized-event-duplicates', () => {
       const result = await composable.unignoreDuplicates(['g-1']);
 
       expect(result).toEqual({ message: 'Unignore failed', success: false });
-      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
     });
 
     it('should reset ignoreLoading on error', async () => {
@@ -684,31 +635,7 @@ describe('use-customized-event-duplicates', () => {
     });
   });
 
-  describe('confirmAndFixDuplicate', () => {
-    it('should show confirm dialog for single item', () => {
-      composable.confirmAndFixDuplicate(['g-1']);
-
-      expect(spies.showConfirm).toHaveBeenCalledOnce();
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        title: expect.any(String),
-        message: expect.any(String),
-        primaryAction: expect.any(String),
-      });
-    });
-
-    it('should show confirm dialog for multiple items', () => {
-      composable.confirmAndFixDuplicate(['g-1', 'g-2', 'g-3']);
-
-      expect(spies.showConfirm).toHaveBeenCalledOnce();
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        title: expect.any(String),
-        message: expect.any(String),
-        primaryAction: expect.any(String),
-      });
-    });
-
+  describe('fixAndSettle', () => {
     it('should call fixDuplicates with group identifiers', async () => {
       spies.fixCustomizedEventDuplicates.mockResolvedValue({
         removedEventIdentifiers: [1],
@@ -716,8 +643,7 @@ describe('use-customized-event-duplicates', () => {
       });
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
-      composable.confirmAndFixDuplicate(['g-1', 'g-2']);
-      await extractAndCallConfirmCallback();
+      await composable.fixAndSettle(['g-1', 'g-2']);
 
       expect(spies.fixCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1', 'g-2']);
     });
@@ -730,8 +656,7 @@ describe('use-customized-event-duplicates', () => {
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
       const onSuccess = vi.fn();
-      composable.confirmAndFixDuplicate(['g-1'], onSuccess);
-      await extractAndCallConfirmCallback();
+      await composable.fixAndSettle(['g-1'], { onSuccess });
 
       expect(onSuccess).toHaveBeenCalledOnce();
     });
@@ -740,23 +665,18 @@ describe('use-customized-event-duplicates', () => {
       spies.fixCustomizedEventDuplicates.mockRejectedValue(new Error('Fix failed'));
 
       const onSuccess = vi.fn();
-      composable.confirmAndFixDuplicate(['g-1'], onSuccess);
-      await extractAndCallConfirmCallback();
+      await composable.fixAndSettle(['g-1'], { onSuccess });
 
       expect(onSuccess).not.toHaveBeenCalled();
     });
 
-    it('should use different messages for single vs bulk', () => {
-      composable.confirmAndFixDuplicate(['g-1']);
-      const [singleMessage] = spies.showConfirm.mock.calls[0];
+    it('should hand the failure to onFailure under its title, reporting nothing itself', async () => {
+      spies.fixCustomizedEventDuplicates.mockRejectedValue(new Error('Fix failed'));
 
-      vi.clearAllMocks();
+      const onFailure = vi.fn();
+      await composable.fixAndSettle(['g-1'], { onFailure });
 
-      composable.confirmAndFixDuplicate(['g-1', 'g-2']);
-      const [bulkMessage] = spies.showConfirm.mock.calls[0];
-
-      expect(singleMessage.title).not.toBe(bulkMessage.title);
-      expect(singleMessage.message).not.toBe(bulkMessage.message);
+      expect(onFailure).toHaveBeenCalledExactlyOnceWith({ failure: 'Fix failed', title: 'actions.customized_event_duplicates.fix_error.title' });
     });
 
     it('should work without onSuccess', async () => {
@@ -766,44 +686,18 @@ describe('use-customized-event-duplicates', () => {
       });
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
-      composable.confirmAndFixDuplicate(['g-1']);
-      await extractAndCallConfirmCallback();
+      await composable.fixAndSettle(['g-1']);
 
       expect(spies.fixCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
     });
   });
 
-  describe('confirmAndMarkNonDuplicated', () => {
-    it('should show confirm dialog for single item', () => {
-      composable.confirmAndMarkNonDuplicated(['g-1']);
-
-      expect(spies.showConfirm).toHaveBeenCalledOnce();
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        title: expect.any(String),
-        message: expect.any(String),
-        primaryAction: expect.any(String),
-      });
-    });
-
-    it('should show confirm dialog for multiple items', () => {
-      composable.confirmAndMarkNonDuplicated(['g-1', 'g-2']);
-
-      expect(spies.showConfirm).toHaveBeenCalledOnce();
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        title: expect.any(String),
-        message: expect.any(String),
-        primaryAction: expect.any(String),
-      });
-    });
-
+  describe('markNonDuplicatedAndSettle', () => {
     it('should call ignoreDuplicates with group identifiers', async () => {
       spies.ignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
-      composable.confirmAndMarkNonDuplicated(['g-1']);
-      await extractAndCallConfirmCallback();
+      await composable.markNonDuplicatedAndSettle(['g-1']);
 
       expect(spies.ignoreCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
     });
@@ -813,8 +707,7 @@ describe('use-customized-event-duplicates', () => {
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
       const onSuccess = vi.fn();
-      composable.confirmAndMarkNonDuplicated(['g-1'], onSuccess);
-      await extractAndCallConfirmCallback();
+      await composable.markNonDuplicatedAndSettle(['g-1'], { onSuccess });
 
       expect(onSuccess).toHaveBeenCalledOnce();
     });
@@ -823,57 +716,27 @@ describe('use-customized-event-duplicates', () => {
       spies.ignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Ignore failed'));
 
       const onSuccess = vi.fn();
-      composable.confirmAndMarkNonDuplicated(['g-1'], onSuccess);
-      await extractAndCallConfirmCallback();
+      await composable.markNonDuplicatedAndSettle(['g-1'], { onSuccess });
 
       expect(onSuccess).not.toHaveBeenCalled();
     });
 
-    it('should use different messages for single vs bulk', () => {
-      composable.confirmAndMarkNonDuplicated(['g-1']);
-      const [singleMessage] = spies.showConfirm.mock.calls[0];
+    it('should hand the failure to onFailure under its title, reporting nothing itself', async () => {
+      spies.ignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Ignore failed'));
 
-      vi.clearAllMocks();
+      const onFailure = vi.fn();
+      await composable.markNonDuplicatedAndSettle(['g-1'], { onFailure });
 
-      composable.confirmAndMarkNonDuplicated(['g-1', 'g-2']);
-      const [bulkMessage] = spies.showConfirm.mock.calls[0];
-
-      expect(singleMessage.title).not.toBe(bulkMessage.title);
-      expect(singleMessage.message).not.toBe(bulkMessage.message);
+      expect(onFailure).toHaveBeenCalledExactlyOnceWith({ failure: 'Ignore failed', title: 'actions.customized_event_duplicates.mark_non_duplicated_error.title' });
     });
   });
 
-  describe('confirmAndRestore', () => {
-    it('should show confirm dialog for single item', () => {
-      composable.confirmAndRestore(['g-1']);
-
-      expect(spies.showConfirm).toHaveBeenCalledOnce();
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        title: expect.any(String),
-        message: expect.any(String),
-        primaryAction: expect.any(String),
-      });
-    });
-
-    it('should show confirm dialog for multiple items', () => {
-      composable.confirmAndRestore(['g-1', 'g-2']);
-
-      expect(spies.showConfirm).toHaveBeenCalledOnce();
-      const [message] = spies.showConfirm.mock.calls[0];
-      expect(message).toMatchObject({
-        title: expect.any(String),
-        message: expect.any(String),
-        primaryAction: expect.any(String),
-      });
-    });
-
+  describe('restoreAndSettle', () => {
     it('should call unignoreDuplicates with group identifiers', async () => {
       spies.unignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
-      composable.confirmAndRestore(['g-1']);
-      await extractAndCallConfirmCallback();
+      await composable.restoreAndSettle(['g-1']);
 
       expect(spies.unignoreCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
     });
@@ -883,8 +746,7 @@ describe('use-customized-event-duplicates', () => {
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
       const onSuccess = vi.fn();
-      composable.confirmAndRestore(['g-1'], onSuccess);
-      await extractAndCallConfirmCallback();
+      await composable.restoreAndSettle(['g-1'], { onSuccess });
 
       expect(onSuccess).toHaveBeenCalledOnce();
     });
@@ -893,23 +755,18 @@ describe('use-customized-event-duplicates', () => {
       spies.unignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Unignore failed'));
 
       const onSuccess = vi.fn();
-      composable.confirmAndRestore(['g-1'], onSuccess);
-      await extractAndCallConfirmCallback();
+      await composable.restoreAndSettle(['g-1'], { onSuccess });
 
       expect(onSuccess).not.toHaveBeenCalled();
     });
 
-    it('should use different messages for single vs bulk', () => {
-      composable.confirmAndRestore(['g-1']);
-      const [singleMessage] = spies.showConfirm.mock.calls[0];
+    it('should hand the failure to onFailure under its title, reporting nothing itself', async () => {
+      spies.unignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Unignore failed'));
 
-      vi.clearAllMocks();
+      const onFailure = vi.fn();
+      await composable.restoreAndSettle(['g-1'], { onFailure });
 
-      composable.confirmAndRestore(['g-1', 'g-2']);
-      const [bulkMessage] = spies.showConfirm.mock.calls[0];
-
-      expect(singleMessage.title).not.toBe(bulkMessage.title);
-      expect(singleMessage.message).not.toBe(bulkMessage.message);
+      expect(onFailure).toHaveBeenCalledExactlyOnceWith({ failure: 'Unignore failed', title: 'actions.customized_event_duplicates.unignore_error.title' });
     });
   });
 });

@@ -1,12 +1,14 @@
 <script setup lang="ts" generic="TItem extends UnmatchedEventGroup, TRow extends UnmatchedRow<TItem>">
 import type { MatchingKind } from '@/modules/history/events/matching/matching-kind';
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import type { HistoryEventQuestion } from '@/modules/history/events/types';
 import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import { startPromise } from '@shared/utils';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
 import { UNMATCHED_ACTIONS, type UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
 import UnmatchedList from '@/modules/history/events/UnmatchedList.vue';
 import UnmatchedResolutionStrip from '@/modules/history/events/UnmatchedResolutionStrip.vue';
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const { highlightedGroupIdentifier, isPinned, kind, onActionComplete } = defineProps<{
@@ -42,18 +44,19 @@ const {
 
 const {
   actionFailure,
-  confirmCreateCounterpart,
-  confirmIgnoreSelected,
-  confirmRestoreSelected,
+  createCounterpart,
   dismissResolution,
   fiat,
   ignore,
   ignoreLoading,
+  ignoreSelected,
+  ignoreSelectedQuestion,
   markExternal,
   modelSelectedIgnored,
   modelSelectedUnmatched,
   resolutionNotice,
   restore,
+  restoreSelected,
   undoResolution,
 } = kind.useActions({ onActionComplete });
 
@@ -67,6 +70,12 @@ const showRestoreSelected = computed<boolean>(() => !kind.bulkSelection.hideWhen
 
 const fiatCount = computed<number>(() => (fiat ? get(fiat.items).length : 0));
 
+const fiatQuestion = computed<HistoryEventQuestion | undefined>(() => (fiat ? get(fiat.question) : undefined));
+
+async function ignoreAllFiat(): Promise<void> {
+  await fiat?.ignoreAll();
+}
+
 const autoMatchGroupClass = computed<string>(() => {
   if (fiat)
     return isPinned ? 'pl-2!' : 'pl-3';
@@ -76,7 +85,8 @@ const autoMatchGroupClass = computed<string>(() => {
 function handleAction({ action, item }: UnmatchedActionPayload<TItem>): void {
   switch (action) {
     case UNMATCHED_ACTIONS.CREATE_COUNTERPART:
-      confirmCreateCounterpart?.(item);
+      if (createCounterpart)
+        startPromise(createCounterpart(item));
       break;
     case UNMATCHED_ACTIONS.FIND_MATCH:
       emit('select', item);
@@ -230,50 +240,70 @@ onBeforeMount(async () => {
       class="flex"
       :class="{ grow: !fiat }"
     >
-      <RuiButton
+      <ConfirmPopover
         v-if="showIgnoreSelected"
-        variant="outlined"
-        color="primary"
-        :size="buttonSize"
-        :class="{ 'h-7.5': isPinned, 'rounded-r-none': fiat }"
-        :disabled="bulkGated || modelSelectedUnmatched.length === 0 || ignoreLoading"
-        :loading="ignoreLoading"
-        data-testid="ignore-selected"
-        @click="confirmIgnoreSelected()"
+        tone="warning"
+        :title="ignoreSelectedQuestion.title"
+        :message="ignoreSelectedQuestion.message"
+        :confirm-label="t('asset_movement_matching.dialog.ignore')"
+        @confirm="startPromise(ignoreSelected())"
       >
-        {{ t('asset_movement_matching.actions.ignore_selected') }}
-        <RuiChip
-          v-if="!isPinned && modelSelectedUnmatched.length > 0"
-          size="sm"
-          color="primary"
-          class="ml-2 py-0!"
-        >
-          {{ modelSelectedUnmatched.length }}
-        </RuiChip>
-      </RuiButton>
-      <RuiTooltip
-        v-if="fiat"
-        :open-delay="400"
-        :options="{ placement: 'top' }"
-        :class-names="{ tooltip: 'max-w-80' }"
-      >
-        <template #activator>
+        <template #activator="{ attrs }">
           <RuiButton
             variant="outlined"
-            color="warning"
+            color="primary"
             :size="buttonSize"
-            class="rounded-l-none -ml-px"
-            :class="{ 'h-7.5': isPinned }"
-            :disabled="bulkGated || fiatCount === 0 || ignoreLoading"
+            :class="{ 'h-7.5': isPinned, 'rounded-r-none': fiat }"
+            :disabled="bulkGated || modelSelectedUnmatched.length === 0 || ignoreLoading"
             :loading="ignoreLoading"
-            data-testid="ignore-fiat"
-            @click="fiat.confirmIgnoreAll()"
+            data-testid="ignore-selected"
+            v-bind="attrs"
           >
-            {{ t('asset_movement_matching.actions.ignore_fiat') }}
+            {{ t('asset_movement_matching.actions.ignore_selected') }}
+            <RuiChip
+              v-if="!isPinned && modelSelectedUnmatched.length > 0"
+              size="sm"
+              color="primary"
+              class="ml-2 py-0!"
+            >
+              {{ modelSelectedUnmatched.length }}
+            </RuiChip>
           </RuiButton>
         </template>
-        {{ t('asset_movement_matching.actions.ignore_fiat_tooltip') }}
-      </RuiTooltip>
+      </ConfirmPopover>
+      <ConfirmPopover
+        v-if="fiatQuestion"
+        tone="warning"
+        :title="fiatQuestion.title"
+        :message="fiatQuestion.message"
+        :confirm-label="t('asset_movement_matching.dialog.ignore')"
+        @confirm="startPromise(ignoreAllFiat())"
+      >
+        <template #activator="{ attrs }">
+          <RuiTooltip
+            :open-delay="400"
+            :options="{ placement: 'top' }"
+            :class-names="{ tooltip: 'max-w-80' }"
+          >
+            <template #activator>
+              <RuiButton
+                variant="outlined"
+                color="warning"
+                :size="buttonSize"
+                class="rounded-l-none -ml-px"
+                :class="{ 'h-7.5': isPinned }"
+                :disabled="bulkGated || fiatCount === 0 || ignoreLoading"
+                :loading="ignoreLoading"
+                data-testid="ignore-fiat"
+                v-bind="attrs"
+              >
+                {{ t('asset_movement_matching.actions.ignore_fiat') }}
+              </RuiButton>
+            </template>
+            {{ t('asset_movement_matching.actions.ignore_fiat_tooltip') }}
+          </RuiTooltip>
+        </template>
+      </ConfirmPopover>
       <RuiButtonGroup
         color="primary"
         :class="autoMatchGroupClass"
@@ -318,7 +348,7 @@ onBeforeMount(async () => {
         :disabled="bulkGated || modelSelectedIgnored.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
         data-testid="restore-selected"
-        @click="confirmRestoreSelected()"
+        @click="restoreSelected()"
       >
         {{ t('asset_movement_matching.actions.restore_selected') }}
         <RuiChip

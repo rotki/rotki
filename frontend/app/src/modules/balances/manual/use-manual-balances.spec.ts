@@ -5,6 +5,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BalanceType } from '@/modules/balances/types/balances';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
@@ -14,7 +15,6 @@ const manualBalances = ref<ManualBalanceWithValue[]>([]);
 const manualLiabilities = ref<ManualBalanceWithValue[]>([]);
 
 const notifyError = vi.fn();
-const showErrorMessage = vi.fn();
 const runTaskResult = vi.fn();
 const cancelActivity = vi.fn();
 const statusOf = vi.fn();
@@ -34,7 +34,7 @@ vi.mock('@/modules/balances/use-balances-store', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn(() => ({ notifyError, showErrorMessage })),
+  useNotifications: vi.fn(() => ({ notifyError })),
 }));
 
 vi.mock('@/modules/task-center/use-native-task', () => ({
@@ -308,22 +308,23 @@ describe('useManualBalances', () => {
       const remaining = makeBalance({ identifier: 2, label: 'kept' });
       deleteManualBalances.mockResolvedValue({ balances: [remaining] });
 
-      await useManualBalances().deleteManualBalance(1);
+      await expect(useManualBalances().deleteManualBalance(1)).resolves.toBe(true);
 
       expect(deleteManualBalances).toHaveBeenCalledWith([1]);
       expect(get(manualBalances)).toHaveLength(1);
       expect(get(manualBalances)[0].identifier).toBe(2);
-      expect(showErrorMessage).not.toHaveBeenCalled();
     });
 
-    it('should surface an error message when the API rejects', async () => {
+    it('should hand the rejection to the caller, which names it beside the row', async () => {
       deleteManualBalances.mockRejectedValue(new Error('nope'));
 
-      await useManualBalances().deleteManualBalance(1);
+      await expect(useManualBalances().deleteManualBalance(1)).rejects.toThrow('nope');
+    });
 
-      expect(showErrorMessage).toHaveBeenCalled();
-      const [, message] = showErrorMessage.mock.calls[0];
-      expect(message).toContain('nope');
+    it('should report a cancelled request as nothing deleted, not as a failure', async () => {
+      deleteManualBalances.mockRejectedValue(new RequestCancelledError());
+
+      await expect(useManualBalances().deleteManualBalance(1)).resolves.toBe(false);
     });
   });
 });

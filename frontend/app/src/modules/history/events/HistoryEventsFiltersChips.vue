@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
+import { startPromise } from '@shared/utils';
+import HistoryEventsDuplicateFixAll from '@/modules/history/events/HistoryEventsDuplicateFixAll.vue';
 import { useHistoryEventsFiltersChips } from '@/modules/history/events/use-history-events-filters-chips';
 
 const { groupIdentifiers, duplicateHandlingStatus } = defineProps<{
@@ -15,10 +17,11 @@ const { t } = useI18n({ useScope: 'global' });
 
 const {
   allDuplicatesResolved,
-  confirmFixDuplicate,
   duplicateChangesMessage,
   duplicateChipText,
   fixLoading,
+  fixQuestion,
+  fixShownDuplicates,
   hasDuplicateChanges,
   isAutoFixable,
   refreshDuplicateView,
@@ -113,23 +116,12 @@ const anyChip = computed<boolean>(() =>
         <div class="flex gap-1">
           {{ duplicateChipText }}
 
-          <RuiButton
+          <HistoryEventsDuplicateFixAll
             v-if="isAutoFixable && !hasDuplicateChanges"
-            variant="link"
-            class="underline"
-            color="primary"
+            :question="fixQuestion"
             :loading="fixLoading"
-            data-testid="duplicate-fix-all"
-            @click="confirmFixDuplicate()"
-          >
-            <template #prepend>
-              <RuiIcon
-                name="lu-wand-sparkles"
-                size="10"
-              />
-            </template>
-            {{ t('customized_event_duplicates.actions.fix_all_shown') }}
-          </RuiButton>
+            @confirm="startPromise(fixShownDuplicates())"
+          />
         </div>
       </RuiChip>
 

@@ -13,10 +13,6 @@ vi.mock('@/modules/settings/use-setting', async () => {
   return { useSetting: (): Ref<string> => ref<string>('%d/%m/%Y') };
 });
 
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show: vi.fn() }),
-}));
-
 vi.mock('@/modules/core/table/use-remember-table-sorting', () => ({
   TableId: { USER_DB_BACKUP: 'user-db-backup' },
   useRememberTableSorting: vi.fn(),
@@ -25,7 +21,17 @@ vi.mock('@/modules/core/table/use-remember-table-sorting', () => ({
 const TableStub = defineComponent({
   emits: ['update:modelValue'],
   props: ['modelValue', 'sort', 'rows', 'cols', 'loading'],
-  template: '<div><slot name="body.append" /></div>',
+  template: '<div><div v-for="row in rows" :key="row.id"><slot name="item.actions" :row="row" /></div><slot name="body.append" /></div>',
+});
+
+/** Opens through its activator and renders its content only while open, as the real menu does. */
+const RuiMenu = defineComponent({
+  emits: ['update:modelValue'],
+  props: ['modelValue'],
+  template: `<div>
+    <slot name="activator" :attrs="{ onClick: () => $emit('update:modelValue', true) }" />
+    <div v-if="modelValue"><slot /></div>
+  </div>`,
 });
 
 const RowAppendStub = defineComponent({
@@ -39,7 +45,7 @@ function backupRow(id: number): UserDbBackupWithId {
 
 function createWrapper(selectionMode: boolean, selected: UserDbBackupWithId[] = []): VueWrapper<any> {
   return mount(DatabaseBackups, {
-    global: { stubs: { RowAppend: RowAppendStub, RuiDataTable: TableStub } },
+    global: { stubs: { RowAppend: RowAppendStub, RuiDataTable: TableStub, RuiMenu } },
     props: { directory: '/backups', items: [backupRow(1), backupRow(2)], selected, selectionMode },
   });
 }
@@ -66,5 +72,23 @@ describe('modules/settings/data-security/backups/DatabaseBackups', () => {
     await nextTick();
 
     expect(wrapper.emitted('update:selected')?.at(-1)).toEqual([[backupRow(1)]]);
+  });
+
+  it('should ask beside the delete button, naming the backup, and emit nothing until confirmed', async () => {
+    const wrapper = createWrapper(false);
+
+    await wrapper.findAll('[data-testid=backup-delete]')[1].trigger('click');
+
+    expect(wrapper.find('[data-testid=inline-confirm]').text()).toMatch(/database_backups\.confirm\.message::.+, 1024\.00/);
+    expect(wrapper.emitted('remove')).toBeUndefined();
+  });
+
+  it('should emit remove with the row once its question is confirmed', async () => {
+    const wrapper = createWrapper(false);
+
+    await wrapper.findAll('[data-testid=backup-delete]')[1].trigger('click');
+    await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
+
+    expect(wrapper.emitted('remove')).toEqual([[backupRow(2)]]);
   });
 });

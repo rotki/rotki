@@ -5,8 +5,6 @@ import { assert, Blockchain } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { isBlockchain } from '@/modules/core/common/chains';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useEvmNodesApi } from '@/modules/settings/api/use-evm-nodes-api';
 import BlockchainRpcNodeForm from '@/modules/settings/general/rpc/BlockchainRpcNodeForm.vue';
@@ -59,7 +57,8 @@ const dialogTitle = computed(() => {
 });
 
 const api = useEvmNodesApi(chain);
-const { setMessage } = useMessageStore();
+/** Why the last save failed where no form field is to blame; Save is the retry. */
+const saveFailure = shallowRef<{ title: string; error: unknown }>();
 
 const {
   candidates,
@@ -104,6 +103,7 @@ function resetForm(): void {
   resetRun();
   resetFanOut();
   set(phase, 'form');
+  set(saveFailure, undefined);
   set(model, undefined);
 }
 
@@ -136,6 +136,7 @@ async function save(): Promise<void> {
   let saved = false;
 
   set(submitting, true);
+  set(saveFailure, undefined);
   try {
     if (editing)
       await api.editEvmNode(node);
@@ -159,20 +160,11 @@ async function save(): Promise<void> {
       const nodeKeys = Object.keys(node);
       const nonFormKeys = keys.filter(key => !formKeys.includes(key) && nodeKeys.includes(key));
 
-      if (nonFormKeys.length > 0) {
-        setMessage({
-          description: nonFormKeys.map(key => `${key}: ${messages[key]}`).join(', '),
-          success: false,
-          title: errorTitle,
-        });
-      }
+      if (nonFormKeys.length > 0)
+        set(saveFailure, { error: nonFormKeys.map(key => `${key}: ${messages[key]}`).join(', '), title: errorTitle });
     }
     else {
-      setMessage({
-        description: getErrorMessage(error),
-        success: false,
-        title: errorTitle,
-      });
+      set(saveFailure, { error, title: errorTitle });
     }
   }
   finally {
@@ -213,6 +205,8 @@ async function confirm(): Promise<void> {
     :prompt-on-close="phase === 'form' && stateUpdated"
     :layout="layout"
     :loading="submitting"
+    :failure="saveFailure?.error"
+    :failure-title="saveFailure?.title"
     @confirm="confirm()"
     @cancel="resetForm()"
   >

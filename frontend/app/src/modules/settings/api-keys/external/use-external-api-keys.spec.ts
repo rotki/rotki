@@ -2,11 +2,10 @@ import type { ExternalServiceKeys } from '@/modules/integrations/types';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockDelete, mockQuery, mockSet, mockShow } = vi.hoisted(() => ({
+const { mockDelete, mockQuery, mockSet } = vi.hoisted(() => ({
   mockDelete: vi.fn(),
   mockQuery: vi.fn(),
   mockSet: vi.fn(),
-  mockShow: vi.fn(),
 }));
 
 vi.mock('@/modules/settings/api/use-external-services-api', () => ({
@@ -15,10 +14,6 @@ vi.mock('@/modules/settings/api/use-external-services-api', () => ({
     queryExternalServices: mockQuery,
     setExternalServices: mockSet,
   })),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: vi.fn(() => ({ show: mockShow })),
 }));
 
 const withBlockscout: ExternalServiceKeys = { blockscout: { apiKey: 'new-key' } };
@@ -31,7 +26,6 @@ describe('useExternalApiKeys', () => {
     mockDelete.mockReset().mockResolvedValue({});
     mockQuery.mockReset().mockResolvedValue({});
     mockSet.mockReset().mockResolvedValue(withBlockscout);
-    mockShow.mockReset();
 
     // The composable is shared, so each case needs a fresh module instance to get its own state.
     vi.resetModules();
@@ -104,16 +98,24 @@ describe('useExternalApiKeys', () => {
     expect(get(actionStatus('blockscout'))?.success).toBeFalsy();
   });
 
-  it('should ask before deleting a key, and delete it only once confirmed', async () => {
-    const { confirmDelete, getApiKey, save } = api.useExternalApiKeys();
+  it('should delete a key, the card having asked already', async () => {
+    const { deleteService, getApiKey, save } = api.useExternalApiKeys();
     await save({ apiKey: 'new-key', name: 'blockscout' });
 
-    confirmDelete('blockscout');
-    expect(mockDelete).not.toHaveBeenCalled();
-
-    await mockShow.mock.calls[0][1]();
+    await deleteService('blockscout');
 
     expect(mockDelete).toHaveBeenCalledWith('blockscout');
     expect(getApiKey('blockscout')).toBe('');
+  });
+
+  it('should keep the key and report the error when deleting fails', async () => {
+    mockDelete.mockRejectedValue(new Error('rejected'));
+    const { actionStatus, deleteService, getApiKey, save } = api.useExternalApiKeys();
+    await save({ apiKey: 'new-key', name: 'blockscout' });
+
+    await deleteService('blockscout');
+
+    expect(getApiKey('blockscout')).toBe('new-key');
+    expect(get(actionStatus('blockscout'))?.message).toContain('external_services.delete_error.description');
   });
 });

@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_DIALOG, TIMEOUT_MEDIUM } from '../helpers/constants';
-import { discardChanges } from '../helpers/utils';
+import { confirmInline, discardChanges } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
 /** The bank surfaces: the connections page under API keys, the bank balances page and the dashboard card. */
@@ -34,9 +34,7 @@ export class BanksPage {
 
   async deleteConnection(name: string): Promise<void> {
     await this.connectionRow(name).locator('[data-testid=row-delete]').click();
-    const confirmation = this.page.locator('[data-testid=confirm-dialog]');
-    await confirmation.locator('[data-testid=button-confirm]').click();
-    await confirmation.waitFor({ state: 'detached', timeout: TIMEOUT_DIALOG });
+    await confirmInline(this.page);
   }
 
   async fillConnection(name: string, login: string, secret: string): Promise<void> {

@@ -11,7 +11,6 @@ const mockQueryEditTag = vi.fn();
 const mockQueryDeleteTag = vi.fn();
 const mockRemoveTag = vi.fn();
 const mockRenameTag = vi.fn();
-const mockShowErrorMessage = vi.fn();
 
 vi.mock('@/modules/tags/use-tags-api', () => ({
   useTagsApi: vi.fn(() => ({
@@ -31,9 +30,6 @@ vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e))),
-  useNotifications: vi.fn(() => ({
-    showErrorMessage: mockShowErrorMessage,
-  })),
 }));
 
 function makeTag(name: string): Tag {
@@ -103,16 +99,14 @@ describe('useTagOperations', () => {
       expect(get(useSessionMetadataStore().allTags)).toEqual(updatedTags);
     });
 
-    it('should show error on failure', async () => {
+    it('should return the failure message for the caller to show', async () => {
       mockQueryAddTag.mockRejectedValue(new Error('Add failed'));
 
       const { useTagOperations } = await importModule();
       const { addTag } = useTagOperations();
       const result: ActionStatus = await addTag(makeTag('fail'));
 
-      expect(result.success).toBe(false);
-      expect(!result.success && result.message).toBe('Add failed');
-      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+      expect(result).toEqual({ message: 'Add failed', success: false });
     });
   });
 
@@ -141,15 +135,15 @@ describe('useTagOperations', () => {
       expect(mockRenameTag).not.toHaveBeenCalled();
     });
 
-    it('should show error on failure', async () => {
+    it('should return the failure message for the caller to show', async () => {
       mockQueryEditTag.mockRejectedValue(new Error('Edit failed'));
 
       const { useTagOperations } = await importModule();
       const { editTag } = useTagOperations();
       const result: ActionStatus = await editTag(makeTag('x'), 'x');
 
-      expect(result.success).toBe(false);
-      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+      expect(result).toEqual({ message: 'Edit failed', success: false });
+      expect(mockRenameTag).not.toHaveBeenCalled();
     });
   });
 
@@ -166,19 +160,19 @@ describe('useTagOperations', () => {
       expect(mockRemoveTag).toHaveBeenCalledWith('tag2');
     });
 
-    it('should show error on failure', async () => {
+    it('should hand a failure to the caller, keeping the tag on the accounts', async () => {
       mockQueryDeleteTag.mockRejectedValue(new Error('Delete failed'));
 
       const { useTagOperations } = await importModule();
       const { deleteTag } = useTagOperations();
-      await deleteTag('x');
 
-      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+      await expect(deleteTag('x')).rejects.toThrow('Delete failed');
+      expect(mockRemoveTag).not.toHaveBeenCalled();
     });
   });
 
   describe('attemptTagCreation', () => {
-    it('should return true if tag already exists', async () => {
+    it('should succeed without a request if the tag already exists', async () => {
       const tags = makeTags('existing');
       mockQueryTags.mockResolvedValue(tags);
 
@@ -187,7 +181,7 @@ describe('useTagOperations', () => {
       await fetchTags();
 
       const result = await attemptTagCreation('existing');
-      expect(result).toBe(true);
+      expect(result).toEqual({ success: true });
       expect(mockQueryAddTag).not.toHaveBeenCalled();
     });
 
@@ -200,11 +194,11 @@ describe('useTagOperations', () => {
       await fetchTags();
 
       const result = await attemptTagCreation('newtag');
-      expect(result).toBe(true);
+      expect(result).toEqual({ success: true });
       expect(mockQueryAddTag).toHaveBeenCalledOnce();
     });
 
-    it('should return false on creation failure', async () => {
+    it('should return the reason on creation failure', async () => {
       mockQueryTags.mockResolvedValue({});
       mockQueryAddTag.mockRejectedValue(new Error('fail'));
 
@@ -213,7 +207,7 @@ describe('useTagOperations', () => {
       await fetchTags();
 
       const result = await attemptTagCreation('fail');
-      expect(result).toBe(false);
+      expect(result).toEqual({ message: 'fail', success: false });
     });
   });
 });

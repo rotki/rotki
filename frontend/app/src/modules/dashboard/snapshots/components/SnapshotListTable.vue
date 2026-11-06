@@ -3,6 +3,7 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import SnapshotDeltaDisplay from '@/modules/dashboard/snapshots/components/SnapshotDeltaDisplay.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const sort = defineModel<DataTableSortData<SnapshotListRow>>('sort', {
@@ -24,6 +25,7 @@ const { emptyDescription, exporting, loading = false, rows } = defineProps<{
 const emit = defineEmits<{
   open: [timestamp: number];
   export: [timestamp: number];
+  /** Emitted only once the user accepted the question the row's delete button asks. */
   delete: [timestamp: number];
 }>();
 
@@ -146,16 +148,19 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
           {{ t('dashboard.snapshot.list.actions.export') }}
         </RuiTooltip>
 
-        <RuiTooltip
-          :open-delay="400"
-          :options="{ placement: 'top' }"
+        <ConfirmPopover
+          :title="t('dashboard.snapshot.delete.dialog.title')"
+          :message="t('dashboard.snapshot.delete.dialog.message')"
+          :confirm-label="t('common.actions.delete')"
+          @confirm="emit('delete', row.timestamp)"
         >
-          <template #activator>
+          <template #activator="{ attrs }">
             <RuiButton
               variant="text"
               icon
+              :title="t('dashboard.snapshot.list.actions.delete')"
               data-testid="snapshot-delete"
-              @click="emit('delete', row.timestamp)"
+              v-bind="attrs"
             >
               <RuiIcon
                 name="lu-trash-2"
@@ -163,8 +168,7 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
               />
             </RuiButton>
           </template>
-          {{ t('dashboard.snapshot.list.actions.delete') }}
-        </RuiTooltip>
+        </ConfirmPopover>
       </div>
     </template>
   </RuiDataTable>

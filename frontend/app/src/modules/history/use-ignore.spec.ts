@@ -13,7 +13,6 @@ const { spies } = vi.hoisted(() => ({
   spies: {
     ignoreActions: vi.fn(),
     unignoreActions: vi.fn(),
-    showErrorMessage: vi.fn(),
   },
 }));
 
@@ -24,15 +23,6 @@ vi.mock('@/modules/history/api/use-history-ignoring-api', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/notifications/use-notifications', async () => ({
-  getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
-    '@/modules/core/common/logging/error-handling',
-  )).getErrorMessage,
-  useNotifications: (): object => ({
-    showErrorMessage: spies.showErrorMessage,
-  }),
-}));
-
 function item(groupIdentifier: string, ignoredInAccounting = false): TestItem {
   return { groupIdentifier, ignoredInAccounting };
 }
@@ -40,7 +30,7 @@ function item(groupIdentifier: string, ignoredInAccounting = false): TestItem {
 function setup(items: TestItem[]): {
   ignore: (ignored: boolean) => Promise<ActionStatus>;
   ignoreSingle: (item: TestItem, ignored: boolean) => Promise<ActionStatus>;
-  toggle: (item: TestItem) => Promise<void>;
+  toggle: (item: TestItem) => Promise<ActionStatus>;
   refresh: ReturnType<typeof vi.fn>;
   selected: Ref<TestItem[]>;
 } {
@@ -90,27 +80,33 @@ describe('useIgnore', () => {
     expect(get(selected)).toEqual([]);
   });
 
-  it('should warn and skip the api when nothing matches', async () => {
+  it('should skip the api and say why when nothing matches', async () => {
     const { ignore, refresh, selected } = setup([item('a', true)]);
 
-    await ignore(true); // all already ignored
+    const status = await ignore(true); // all already ignored
 
-    expect(spies.showErrorMessage).toHaveBeenCalledOnce();
+    expect(status).toEqual({ message: expect.stringContaining('ignore.no_items.description'), success: false });
     expect(spies.ignoreActions).not.toHaveBeenCalled();
     expect(refresh).not.toHaveBeenCalled();
     expect(get(selected)).toHaveLength(1); // selection preserved
   });
 
-  it('should surface an error and keep the selection when the api throws', async () => {
+  it('should hand the backend message back and keep the selection when the api throws', async () => {
     spies.ignoreActions.mockRejectedValue(new Error('boom'));
     const { ignore, refresh, selected } = setup([item('a')]);
 
     const status = await ignore(true);
 
-    expect(spies.showErrorMessage).toHaveBeenCalledOnce();
     expect(refresh).not.toHaveBeenCalled();
     expect(get(selected)).toHaveLength(1);
     expect(status).toEqual({ message: 'boom', success: false });
+  });
+
+  it('should hand a failed toggle back to the caller', async () => {
+    spies.unignoreActions.mockRejectedValue(new Error('boom'));
+    const { toggle } = setup([]);
+
+    expect(await toggle(item('y', true))).toEqual({ message: 'boom', success: false });
   });
 
   it('should toggle a single item based on its current state', async () => {

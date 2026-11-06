@@ -14,12 +14,15 @@ const filters = defineModel<Filters>('filters', { required: true });
 const selected = defineModel<number[]>('selected', { required: true });
 const selectionMode = defineModel<boolean>('selectionMode', { required: true });
 
-const { deleting = false, fields } = defineProps<{
+const { deleting = false, deleteQuestion, fields } = defineProps<{
   fields: FieldDef[];
+  /** What the delete action asks about the selection before `delete` is emitted. */
+  deleteQuestion: { title: string; message: string };
   deleting?: boolean;
 }>();
 
 const emit = defineEmits<{
+  /** Emitted only once the user accepted the question the delete action asks. */
   delete: [];
 }>();
 
@@ -63,6 +66,7 @@ function exitSelection(): void {
       color="error"
       :disabled="selected.length === 0"
       :loading="deleting"
+      :confirm="{ ...deleteQuestion, confirmLabel: t('common.actions.delete') }"
       data-testid="validators-delete-selected"
       @click="emit('delete')"
     >

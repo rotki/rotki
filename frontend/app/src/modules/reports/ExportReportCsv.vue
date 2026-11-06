@@ -2,7 +2,7 @@
 import type { RuiButton } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { useReportsApi } from '@/modules/reports/use-reports-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
@@ -15,19 +15,15 @@ interface Props {
 const { list = false, reportId } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiButton, Props>>();
 
 const { createCsv } = useReportOperations();
-const { setMessage } = useMessageStore();
+const { notifyError } = useNotifications();
 
 const { t } = useI18n({ useScope: 'global' });
 const { appSession, openDirectory } = useInterop();
 
 const { downloadReportCSV } = useReportsApi();
 
-function showMessage(description: string) {
-  setMessage({
-    description,
-    success: false,
-    title: t('profit_loss_report.csv_export_error'),
-  });
+function showMessage(description: string): void {
+  notifyError(t('profit_loss_report.csv_export_error'), description);
 }
 
 async function exportCSV() {

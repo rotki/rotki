@@ -6,8 +6,7 @@ import dayjs from 'dayjs';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { type RepullingTransactionResult, useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import { useRepullingTransactionForm } from '@/modules/history/events/tx/use-repulling-transaction-form';
@@ -34,6 +33,10 @@ interface UseRepullingTransactionSubmissionOptions {
 }
 
 interface UseRepullingTransactionSubmissionReturn {
+  /** Asking, in the dialog, whether to go ahead with a wide repull that may take a while. */
+  askingWideRepull: Readonly<Ref<boolean>>;
+  /** Answers the wide-repull question: `true` submits, `false` goes back to the form. */
+  answerWideRepull: (proceed: boolean) => Promise<void>;
   /** Which of the three repull kinds the form is on. */
   modelAccountType: Ref<AccountType>;
   /** Per-field backend validation errors, fed back into the form. */
@@ -43,11 +46,12 @@ interface UseRepullingTransactionSubmissionReturn {
   /** The blockchain and exchange payload. */
   modelFormData: Ref<RepullingTransactionPayload>;
   /**
-   * Validates, confirms if the repull is a wide one, then submits.
+   * Validates, then submits, or asks first when the repull is a wide one.
    *
    * @remarks
-   * Only a blockchain repull is ever confirmed; an exchange or staking repull is bounded by the
-   * account it names.
+   * Only a blockchain repull is ever asked about; an exchange or staking repull is bounded by the
+   * account it names. The question is {@link UseRepullingTransactionSubmissionReturn.askingWideRepull},
+   * shown in the dialog; the submission waits for its answer.
    */
   submit: () => Promise<void>;
   /** True while a repull is being requested. */
@@ -78,12 +82,12 @@ export function useRepullingTransactionSubmission(
   const { form, onExchangeEvents, onTransactions, open } = options;
 
   const submitting = shallowRef<boolean>(false);
+  const askingWideRepull = shallowRef<boolean>(false);
   const modelAccountType = shallowRef<AccountType>('blockchain');
   const modelErrorMessages = ref<ValidationErrors>({});
 
   const { t } = useI18n({ useScope: 'global' });
-  const { setMessage } = useMessageStore();
-  const { show } = useConfirmStore();
+  const { notifyError } = useNotifications();
   const { repullingEthStakingEvents, repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
   const { createDefaultFormData, shouldShowConfirmation } = useRepullingTransactionForm();
   const { resetUndecodedTransactionsStatus } = useDecodingStatusStore();
@@ -97,6 +101,13 @@ export function useRepullingTransactionSubmission(
     set(modelAccountType, 'blockchain');
   }
 
+  /**
+   * Reports a submission that threw.
+   *
+   * @remarks
+   * The dialog closed when the submission started, so a plain failure goes to a toast. Field errors
+   * go to the form, which shows them when the dialog is opened again with what was typed.
+   */
   async function handleSubmissionError(error: unknown, data: RepullingTransactionPayload): Promise<void> {
     let message: string | ValidationErrors = getErrorMessage(error);
 
@@ -104,9 +115,7 @@ export function useRepullingTransactionSubmission(
       message = error.getValidationErrors(data);
 
     if (typeof message === 'string') {
-      setMessage({
-        description: message,
-      });
+      notifyError(t('actions.repulling_transaction.task.title'), message);
     }
     else {
       set(modelErrorMessages, message);
@@ -177,21 +186,26 @@ export function useRepullingTransactionSubmission(
     if (!valid)
       return;
 
-    const data = get(modelFormData);
-
-    if (get(modelAccountType) === 'blockchain' && shouldShowConfirmation(data)) {
-      show({
-        message: t('transactions.repulling.confirmation.message'),
-        title: t('transactions.repulling.confirmation.title'),
-        type: 'info',
-      }, performSubmission);
-    }
-    else {
+    if (get(modelAccountType) === 'blockchain' && shouldShowConfirmation(get(modelFormData)))
+      set(askingWideRepull, true);
+    else
       await performSubmission();
-    }
   }
 
+  async function answerWideRepull(proceed: boolean): Promise<void> {
+    set(askingWideRepull, false);
+    if (proceed)
+      await performSubmission();
+  }
+
+  watch(open, (shown) => {
+    if (!shown)
+      set(askingWideRepull, false);
+  });
+
   return {
+    answerWideRepull,
+    askingWideRepull: readonly(askingWideRepull),
     modelAccountType,
     modelErrorMessages,
     modelEthStakingData,

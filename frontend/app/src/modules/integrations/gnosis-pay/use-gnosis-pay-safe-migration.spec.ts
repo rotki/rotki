@@ -12,8 +12,8 @@ const OLD_SAFE = '0x1234567890abcdef1234567890abcdef12345678';
 
 const fetchGnosisPaySafeMigration = vi.fn();
 const addAccounts = vi.fn();
-const showErrorMessage = vi.fn();
-const showSuccessMessage = vi.fn();
+const notifyError = vi.fn<(title: string, message: string) => void>();
+const notifyInfo = vi.fn<(title: string, message: string) => void>();
 const getApiKey = vi.fn();
 const loadExternalKeys = vi.fn();
 const externalKeys = ref<Record<string, unknown> | undefined>({ gnosis_pay: { apiKey: 'gpay-token' } });
@@ -27,7 +27,7 @@ vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn().mockImplementation(() => ({ showErrorMessage, showSuccessMessage })),
+  useNotifications: vi.fn().mockImplementation(() => ({ notifyError, notifyInfo })),
 }));
 
 vi.mock('@/modules/settings/api-keys/external/use-external-api-keys', () => ({
@@ -59,8 +59,8 @@ describe('useGnosisPaySafeMigration', () => {
       cancelled: false,
       failed: [],
     });
-    showErrorMessage.mockReset();
-    showSuccessMessage.mockReset();
+    notifyError.mockReset();
+    notifyInfo.mockReset();
     getApiKey.mockReset().mockReturnValue('gpay-token');
     loadExternalKeys.mockReset().mockResolvedValue(undefined);
     set(externalKeys, { gnosis_pay: { apiKey: 'gpay-token' } });
@@ -115,7 +115,7 @@ describe('useGnosisPaySafeMigration', () => {
     expect(get(composable.untrackedSafe)).toBeUndefined();
   });
 
-  it('should add the missing safe to Gnosis Chain and report success', async () => {
+  it('should add the missing safe to Gnosis Chain and report success with a toast', async () => {
     fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: NEW_SAFE, type: 'new' }]));
     const { composable } = await setup();
     await composable.checkMigration();
@@ -128,11 +128,11 @@ describe('useGnosisPaySafeMigration', () => {
       { wait: true },
     );
     expect(get(composable.untrackedSafe)).toBeUndefined();
-    expect(showSuccessMessage).toHaveBeenCalled();
-    expect(showErrorMessage).not.toHaveBeenCalled();
+    expect(notifyInfo).toHaveBeenCalledExactlyOnceWith('external_services.gnosispay.safe_migration.title', expect.stringContaining('add_success'));
+    expect(notifyError).not.toHaveBeenCalled();
   });
 
-  it('should surface an error and keep the safe when adding fails', async () => {
+  it('should toast a failed add from the action center, which has nowhere to name it, and keep the safe', async () => {
     fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: OLD_SAFE, type: 'old' }]));
     addAccounts.mockRejectedValue(new Error('boom'));
     const { composable } = await setup();
@@ -140,8 +140,34 @@ describe('useGnosisPaySafeMigration', () => {
 
     await composable.addMissingSafe();
 
-    expect(showErrorMessage).toHaveBeenCalled();
+    expect(notifyError).toHaveBeenCalledExactlyOnceWith('external_services.gnosispay.safe_migration.add_error', 'boom');
+    expect(get(composable.addFailure)).toBeUndefined();
     expect(get(composable.untrackedSafe)).toEqual({ address: OLD_SAFE, type: 'old' });
+  });
+
+  it('should keep a failed add from the card for its notice, without a toast', async () => {
+    fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: OLD_SAFE, type: 'old' }]));
+    addAccounts.mockRejectedValue(new Error('boom'));
+    const { composable } = await setup();
+    await composable.checkMigration();
+
+    await composable.addMissingSafe({ inline: true });
+
+    expect(get(composable.addFailure)).toBe('boom');
+    expect(notifyError).not.toHaveBeenCalled();
+  });
+
+  it('should drop the kept failure when the next add starts', async () => {
+    fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: OLD_SAFE, type: 'old' }]));
+    addAccounts.mockRejectedValueOnce(new Error('boom'));
+    addAccounts.mockResolvedValueOnce({ added: [], cancelled: true, failed: [] });
+    const { composable } = await setup();
+    await composable.checkMigration();
+
+    await composable.addMissingSafe({ inline: true });
+    await composable.addMissingSafe({ inline: true });
+
+    expect(get(composable.addFailure)).toBeUndefined();
   });
 
   it('should surface an error and keep the safe when the addition reports failure as a value', async () => {
@@ -156,8 +182,8 @@ describe('useGnosisPaySafeMigration', () => {
 
     await composable.addMissingSafe();
 
-    expect(showSuccessMessage).not.toHaveBeenCalled();
-    expect(showErrorMessage).toHaveBeenCalled();
+    expect(notifyInfo).not.toHaveBeenCalled();
+    expect(notifyError).toHaveBeenCalled();
     expect(get(composable.untrackedSafe)).toEqual({ address: OLD_SAFE, type: 'old' });
   });
 
@@ -169,8 +195,8 @@ describe('useGnosisPaySafeMigration', () => {
 
     await composable.addMissingSafe();
 
-    expect(showSuccessMessage).not.toHaveBeenCalled();
-    expect(showErrorMessage).not.toHaveBeenCalled();
+    expect(notifyInfo).not.toHaveBeenCalled();
+    expect(notifyError).not.toHaveBeenCalled();
     expect(get(composable.untrackedSafe)).toEqual({ address: OLD_SAFE, type: 'old' });
   });
 
@@ -195,8 +221,8 @@ describe('useGnosisPaySafeMigration', () => {
 
   it('should not toast in the next session when an addition was in flight across a realistic logout', async () => {
     const toastedWithASession: boolean[] = [];
-    showErrorMessage.mockImplementation(() => toastedWithASession.push(hasLiveSession()));
-    showSuccessMessage.mockImplementation(() => toastedWithASession.push(hasLiveSession()));
+    notifyError.mockImplementation(() => toastedWithASession.push(hasLiveSession()));
+    notifyInfo.mockImplementation(() => toastedWithASession.push(hasLiveSession()));
     fetchGnosisPaySafeMigration.mockResolvedValue(migration([{ address: NEW_SAFE, type: 'new' }]));
     addAccounts.mockReturnValue(sessionRequest<AdditionSummary>().promise);
     const { composable } = await setup();

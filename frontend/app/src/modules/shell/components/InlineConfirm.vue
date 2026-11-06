@@ -6,8 +6,10 @@ import { useTemplateRef } from 'vue';
  *
  * @remarks
  * `strip` is one tinted line for a row or a toolbar; `panel` stacks a title and the message for a
- * menu or a popover. Cancel takes focus when the question appears, so Enter never confirms by
- * accident, and Escape cancels. Dropping the question once it no longer applies (the item went
+ * menu or a popover, where a line break in `message` is kept so a second paragraph reads as one,
+ * and an unbroken run such as a validator public key wraps instead of overflowing.
+ * Cancel takes focus when the question appears, so Enter never confirms by accident, and Escape
+ * cancels. Dropping the question once it no longer applies (the item went
  * away, the job settled) is the caller's job.
  */
 const { cancelLabel, layout = 'strip', loading = false, title, tone = 'warning' } = defineProps<{
@@ -59,7 +61,7 @@ onMounted(() => {
       >
         {{ title }}
       </p>
-      <p class="text-sm text-rui-text-secondary whitespace-normal">
+      <p class="text-sm text-rui-text-secondary whitespace-pre-line wrap-anywhere">
         {{ message }}
       </p>
     </div>

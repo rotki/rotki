@@ -40,10 +40,10 @@ interface HistoryEventsRowActions {
   addEvent: (group: StandaloneEditableEvents, row: HistoryEventEntry) => void;
   editEvent: (data: HistoryEventEditData, groupId: string) => void;
   addMissingRule: (data: HistoryEventEditData, groupId: string) => void;
-  deleteEvents: (payload: HistoryEventDeletePayload) => void;
-  deleteTransaction: (payload: LocationAndTxRef) => void;
-  unlinkEvent: (payload: HistoryEventUnlinkPayload) => void;
-  unlinkGroup: (groupId: string) => void;
+  deleteEvents: (payload: HistoryEventDeletePayload) => Promise<void>;
+  deleteTransaction: (payload: LocationAndTxRef) => Promise<void>;
+  unlinkEvent: (payload: HistoryEventUnlinkPayload) => Promise<void>;
+  unlinkGroup: (groupId: string) => Promise<void>;
   toggleIgnore: (event: HistoryEventEntry) => Promise<void>;
   toggleShowIgnoredAssets: (groupId: string) => void;
   redecode: (payload: PullEventPayload, eventIdentifier: string) => void;

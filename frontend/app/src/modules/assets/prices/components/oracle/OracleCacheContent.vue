@@ -12,7 +12,6 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { fromRequest, isRequestFailure } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
@@ -35,7 +34,6 @@ const { createOracleCache } = usePriceTaskManager();
 const { deletePriceCache, getPriceCache } = usePriceApi();
 const { getAssetField } = useAssetInfoRetrieval();
 const { notify } = useNotificationDispatcher();
-const { show } = useConfirmStore();
 const cachePending = useIsActive(oracleCacheActivity.kind, ...oracleCacheActivity.partsOf());
 
 const currencySymbol = useSetting('currencySymbol');
@@ -143,18 +141,16 @@ async function clearCache(entry: OracleCacheMeta): Promise<void> {
   }
 }
 
-function showDeleteConfirmation(entry: OracleCacheMeta): void {
-  show(
-    {
-      message: t('oracle_prices.cache.delete.message', {
-        fromAsset: getAssetField(entry.fromAsset, 'symbol'),
-        source: get(cacheSource),
-        toAsset: getAssetField(entry.toAsset, 'symbol'),
-      }),
-      title: t('oracle_prices.cache.delete.title'),
-    },
-    async () => clearCache(entry),
-  );
+/** What a cache row's delete button asks before the row is cleared. */
+function deleteConfirm(entry: OracleCacheMeta): { title: string; message: string } {
+  return {
+    message: t('oracle_prices.cache.delete.message', {
+      fromAsset: getAssetField(entry.fromAsset, 'symbol'),
+      source: get(cacheSource),
+      toAsset: getAssetField(entry.toAsset, 'symbol'),
+    }),
+    title: t('oracle_prices.cache.delete.title'),
+  };
 }
 
 function clearFilter(): void {
@@ -200,7 +196,8 @@ defineExpose({
       :error="cacheError"
       :loading="loadingCaches"
       :disabled="cachePending"
-      @delete="showDeleteConfirmation($event)"
+      :delete-confirm="deleteConfirm"
+      @delete="clearCache($event)"
     />
 
     <OracleCacheFormDialog

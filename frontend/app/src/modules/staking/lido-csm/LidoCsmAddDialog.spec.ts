@@ -3,6 +3,7 @@ import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiValidationError } from '@/modules/core/api/types/errors';
 import '@test/i18n';
 
 interface NodeOperatorPayload {
@@ -12,14 +13,9 @@ interface NodeOperatorPayload {
 }
 
 const addNodeOperator = vi.fn<(payload: NodeOperatorPayload) => Promise<{ message?: string }>>();
-const setMessage = vi.fn();
 
 vi.mock('@/modules/staking/api/use-lido-csm-api', () => ({
   useLidoCsmApi: vi.fn().mockImplementation(() => ({ addNodeOperator })),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: vi.fn().mockImplementation(() => ({ setMessage })),
 }));
 
 const LidoCsmAddDialog = (await import('@/modules/staking/lido-csm/LidoCsmAddDialog.vue')).default;
@@ -71,7 +67,7 @@ describe('lidoCsmAddDialog', () => {
           BigDialog: {
             emits: ['confirm', 'cancel'],
             name: 'BigDialog',
-            props: ['display', 'action', 'loading', 'title', 'layout'],
+            props: ['display', 'action', 'loading', 'title', 'layout', 'failure', 'failureTitle'],
             template: '<div v-if="display"><slot /><button data-testid="lido-csm-submit" :disabled="action.disabled" @click="$emit(\'confirm\')" /></div>',
           },
           RuiMenuSelect: { ...inputStub('RuiMenuSelect'), props: ['modelValue', 'options', 'keyAttr', 'textAttr'] },
@@ -225,7 +221,7 @@ describe('lidoCsmAddDialog', () => {
     await submit();
 
     expect(addNodeOperator).toHaveBeenCalledWith({ address: ADDRESS, nodeOperatorId: 7, stakingModuleId: 3 });
-    expect(wrapper.emitted('refresh')).toBeTruthy();
+    expect(wrapper.emitted('added')).toEqual([[undefined]]);
     expect(wrapper.emitted<[boolean]>('update:modelValue')?.at(-1)).toEqual([false]);
   });
 
@@ -259,27 +255,64 @@ describe('lidoCsmAddDialog', () => {
     expect(addNodeOperator).not.toHaveBeenCalled();
   });
 
-  it('should surface a message returned by the api', async () => {
-    addNodeOperator.mockResolvedValue({ message: 'already tracked' });
+  async function fillAndSubmit(): Promise<void> {
     wrapper = createWrapper();
     await selectAccount();
     await typeId('7');
-
     await submit();
+  }
 
-    expect(setMessage).toHaveBeenCalledWith({ description: 'already tracked' });
+  function dialog(): VueWrapper<StubInstance> {
+    return wrapper.findComponent<StubInstance>({ name: 'BigDialog' });
+  }
+
+  it('should hand a warning returned with the add to the page as it closes', async () => {
+    addNodeOperator.mockResolvedValue({ message: 'metrics unavailable' });
+
+    await fillAndSubmit();
+
+    expect(wrapper.emitted('added')).toEqual([['metrics unavailable']]);
+    expect(wrapper.emitted<[boolean]>('update:modelValue')?.at(-1)).toEqual([false]);
   });
 
-  it('should surface a thrown error', async () => {
-    addNodeOperator.mockRejectedValue(new Error('offline'));
-    wrapper = createWrapper();
-    await selectAccount();
-    await typeId('7');
+  describe('an add that fails', () => {
+    it('should name the failure in the dialog and stay open', async () => {
+      const error = new Error('offline');
+      addNodeOperator.mockRejectedValue(error);
 
-    await submit();
+      await fillAndSubmit();
 
-    expect(setMessage).toHaveBeenCalledWith({
-      description: 'staking_page.lido_csm.messages.add_failed::offline',
+      expect(dialog().props('failure')).toBe(error);
+      expect(dialog().props('failureTitle')).toBe('staking_page.lido_csm.messages.add_failed');
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+      expect(wrapper.emitted('added')).toBeUndefined();
+    });
+
+    it('should put a validation error on the field it names', async () => {
+      addNodeOperator.mockRejectedValue(new ApiValidationError(JSON.stringify({ nodeOperatorId: ['unknown operator'] })));
+
+      await fillAndSubmit();
+
+      expect(messages('lido-csm-node-operator')).toEqual(['unknown operator']);
+      expect(dialog().props('failure')).toBeUndefined();
+    });
+
+    it('should put a validation error on the address onto the account picker', async () => {
+      addNodeOperator.mockRejectedValue(new ApiValidationError(JSON.stringify({ address: ['not the operator'] })));
+
+      await fillAndSubmit();
+
+      expect(messages('lido-csm-address')).toEqual(['not the operator']);
+    });
+
+    it('should clear the failure when the add is tried again', async () => {
+      addNodeOperator.mockRejectedValueOnce(new Error('offline'));
+      await fillAndSubmit();
+      addNodeOperator.mockImplementationOnce(async () => new Promise(() => {}));
+
+      await submit();
+
+      expect(dialog().props('failure')).toBeUndefined();
     });
   });
 });

@@ -13,8 +13,6 @@ const CONNECTED_ADDRESS = '0x1234567890123456789012345678901234567890';
 const fetchNonce = vi.fn();
 const verifySiweSignature = vi.fn();
 const runTaskResult = vi.fn();
-const showErrorMessage = vi.fn();
-
 const submitTask = vi.fn(runSpecWith(runTaskResult));
 const signMessage = vi.fn();
 const injectedGetWalletClient = vi.fn();
@@ -35,10 +33,6 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
     statusOf: vi.fn(),
     submitTask,
   })),
-}));
-
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn().mockImplementation(() => ({ showErrorMessage })),
 }));
 
 vi.mock('@/modules/wallet/bridge/use-injected-wallet', () => ({
@@ -105,7 +99,6 @@ describe('useGnosisPaySigning', () => {
     verifySiweSignature.mockReset();
     runTaskResult.mockReset();
     submitTask.mockClear();
-    showErrorMessage.mockReset();
     setActivePinia(createPinia());
     signMessage.mockReset().mockResolvedValue('0xSignature');
     const fakeClient = { signMessage };
@@ -218,7 +211,6 @@ describe('useGnosisPaySigning', () => {
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
 
-    expect(showErrorMessage).not.toHaveBeenCalled();
     expect(signMessage).not.toHaveBeenCalled();
     expect(get(harness.signInSuccess)).toBe(false);
   });
@@ -230,7 +222,6 @@ describe('useGnosisPaySigning', () => {
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
 
-    expect(showErrorMessage).not.toHaveBeenCalled();
     expect(signMessage).not.toHaveBeenCalled();
   });
 
@@ -242,7 +233,6 @@ describe('useGnosisPaySigning', () => {
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
 
-    expect(showErrorMessage).not.toHaveBeenCalled();
     expect(get(harness.signInSuccess)).toBe(false);
   });
 
@@ -256,7 +246,6 @@ describe('useGnosisPaySigning', () => {
 
     const verifyOutcome = await submitTask.mock.results[1]?.value;
     expect(verifyOutcome).toEqual(err(TaskFailed({ message: 'external_services.gnosispay.siwe.failed' })));
-    expect(showErrorMessage).not.toHaveBeenCalled();
     expect(get(harness.signInSuccess)).toBe(false);
   });
 
@@ -269,7 +258,6 @@ describe('useGnosisPaySigning', () => {
     await signInWithEthereum();
 
     expect(harness.setError).toHaveBeenCalledWith(GnosisPayError.SIGNATURE_REJECTED);
-    expect(showErrorMessage).not.toHaveBeenCalled();
   });
 
   it('should name an unknown signing error in the auth card instead of a dialog', async () => {
@@ -281,7 +269,6 @@ describe('useGnosisPaySigning', () => {
     await signInWithEthereum();
 
     expect(harness.setError).toHaveBeenCalledWith(GnosisPayError.OTHER, { message: 'boom' });
-    expect(showErrorMessage).not.toHaveBeenCalled();
   });
 
   it('should name a wallet RPC error by its details, without viem\'s version footer', async () => {

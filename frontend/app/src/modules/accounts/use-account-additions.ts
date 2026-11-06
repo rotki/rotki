@@ -3,7 +3,7 @@ import type { EvmAccountsResult } from '@/modules/core/api/types/accounts';
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { err, flatMap as flatMapResult, map as mapResult, ok, type Result } from 'plainfp/result';
 import { type MessageKey, msg } from '@/message-key';
-import { accountActivityLabel, accountAddActivity, type AccountSubject, type AccountTarget, accountTargetLabel, accountTargetOf, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
+import { accountActivityLabel, accountAddActivity, accountImportTagActivity, type AccountSubject, type AccountTarget, accountTargetLabel, accountTargetOf, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { evmAdditionOutcome, EvmSkipReason } from '@/modules/accounts/evm-addition-outcome';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -41,6 +41,11 @@ interface UseAccountAdditionsReturn {
   addAccount: (chain: string, payload: AccountPayload[] | XpubAccountPayload, options?: AdditionOptions) => Promise<Result<string, TaskError>>;
   addEvmAccount: (payload: AccountPayload, options?: AdditionOptions) => Promise<Result<EvmAccountsResult, TaskError>>;
   reportTracked: (chain: string, target: AccountTarget, options?: AdditionOptions) => Promise<void>;
+  /**
+   * Reports a tag an import could not create as a failed row of that import. Its accounts are still
+   * added, without the tag.
+   */
+  reportFailedTag: (tag: string, message: string, options?: AdditionOptions) => Promise<void>;
 }
 
 export function useAccountAdditions(): UseAccountAdditionsReturn {
@@ -165,5 +170,18 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
     });
   };
 
-  return { addAccount, addEvmAccount, reportTracked };
+  const reportFailedTag = async (tag: string, message: string, options?: AdditionOptions): Promise<void> => {
+    await submitTask<never>({
+      id: accountImportTagActivity.id({ tag }),
+      kind: accountImportTagActivity.kind,
+      parent: options?.parent,
+      rerunnable: false,
+      run: async (): Promise<Result<never, TaskError>> => err(TaskFailed({ message })),
+      subtitle: accountActivityLabel.createTag(tag),
+      title: t('task_center.group.accounts'),
+      userStarted: options?.userStarted,
+    });
+  };
+
+  return { addAccount, addEvmAccount, reportFailedTag, reportTracked };
 }

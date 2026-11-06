@@ -3,10 +3,11 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import { type SkippedEventsLocation, useSkippedEventsActions } from '@/modules/history/events/use-skipped-events-actions';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { exportCSV, loading, locationsData, reProcessSkippedEvents, skippedEvents } = useSkippedEventsActions();
+const { exportCSV, loading, locationsData, reProcessSkippedEvents, reprocessFailure, reprocessNote, skippedEvents } = useSkippedEventsActions();
 
 const headers: DataTableColumn<SkippedEventsLocation>[] = [
   {
@@ -30,6 +31,20 @@ const headers: DataTableColumn<SkippedEventsLocation>[] = [
       {{ t('general_settings.history_event.skipped_events.subtitle') }}
     </template>
     <div class="flex flex-col gap-4">
+      <FailureStrip
+        v-if="reprocessFailure"
+        :title="t('transactions.events.skipped.reprocess.failed.title')"
+        :failure="reprocessFailure"
+        data-testid="skipped-events-reprocess-failure"
+        @retry="reProcessSkippedEvents()"
+      />
+      <p
+        v-if="reprocessNote"
+        class="text-sm text-rui-text-secondary"
+        data-testid="skipped-events-reprocess-note"
+      >
+        {{ reprocessNote }}
+      </p>
       <div
         v-if="skippedEvents.total > 0"
         class="flex flex-wrap gap-2"

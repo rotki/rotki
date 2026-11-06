@@ -1,3 +1,4 @@
+import type { HistoryEventQuestion } from '@/modules/history/events/types';
 import type { UseHistoryEventsFiltersChipsOptions } from '@/modules/history/events/use-history-events-filters-chips';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,10 +7,11 @@ import HistoryEventsFiltersChips from '@/modules/history/events/HistoryEventsFil
 
 const chips = {
   allDuplicatesResolved: ref<boolean>(false),
-  confirmFixDuplicate: vi.fn(),
   duplicateChangesMessage: ref<string>(''),
   duplicateChipText: ref<string>('Viewing auto fixable duplicates'),
   fixLoading: ref<boolean>(false),
+  fixQuestion: ref<HistoryEventQuestion>({ message: 'Fix 2 duplicates?', title: 'Fix duplicates' }),
+  fixShownDuplicates: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
   hasDuplicateChanges: ref<boolean>(false),
   isAutoFixable: ref<boolean>(true),
   refreshDuplicateView: vi.fn(),
@@ -32,11 +34,22 @@ vi.mock('@/modules/history/events/use-history-events-filters-chips', () => ({
   },
 }));
 
+/** Opens through its activator and renders its content only while open, as the real menu does. */
+const RuiMenu = {
+  name: 'RuiMenu',
+  props: ['modelValue'],
+  emits: ['update:modelValue'],
+  template: `<div>
+    <slot name="activator" :attrs="{ onClick: () => $emit('update:modelValue', true) }" />
+    <div v-if="modelValue"><slot /></div>
+  </div>`,
+};
+
 describe('modules/history/events/HistoryEventsFiltersChips', () => {
   let wrapper: VueWrapper | undefined;
 
   function mountChips(props: Record<string, unknown> = {}): VueWrapper {
-    wrapper = mount(HistoryEventsFiltersChips, { props });
+    wrapper = mount(HistoryEventsFiltersChips, { global: { stubs: { RuiMenu } }, props });
     return wrapper;
   }
 
@@ -113,12 +126,22 @@ describe('modules/history/events/HistoryEventsFiltersChips', () => {
       set(chips.showDuplicates, true);
     });
 
-    it('should offer the fix while the bucket is auto fixable and has not drifted', async () => {
+    it('should ask beside the fix before running it', async () => {
       const view = mountChips();
 
       await view.find('[data-testid="duplicate-fix-all"]').trigger('click');
 
-      expect(chips.confirmFixDuplicate).toHaveBeenCalledTimes(1);
+      expect(view.find('[data-testid="inline-confirm"]').text()).toContain('Fix 2 duplicates?');
+      expect(chips.fixShownDuplicates).not.toHaveBeenCalled();
+    });
+
+    it('should fix every shown duplicate once the question is accepted', async () => {
+      const view = mountChips();
+
+      await view.find('[data-testid="duplicate-fix-all"]').trigger('click');
+      await view.find('[data-testid="inline-confirm-accept"]').trigger('click');
+
+      expect(chips.fixShownDuplicates).toHaveBeenCalledTimes(1);
     });
 
     it('should not offer the fix for the manual review bucket', () => {

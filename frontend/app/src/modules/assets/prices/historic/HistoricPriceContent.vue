@@ -9,7 +9,6 @@ import { priceDecimals } from '@/modules/assets/prices/price-decimals';
 import { HistoricPriceFilterKeys, useHistoricPriceFields } from '@/modules/assets/prices/use-historic-price-fields';
 import { useHistoricPrices } from '@/modules/assets/prices/use-historic-price-manager';
 import { type PriceAddLink, usePriceAddLink } from '@/modules/assets/prices/use-price-add-link';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
@@ -119,17 +118,10 @@ function edit(item: HistoricalPrice) {
   set(editMode, true);
 }
 
-const { show } = useConfirmStore();
-
-function showDeleteConfirmation(item: HistoricalPrice) {
-  show(
-    {
-      message: t('price_table.delete.dialog.message'),
-      title: t('price_table.delete.dialog.title'),
-    },
-    () => deletePrice(item),
-  );
-}
+const deleteConfirm = computed<{ title: string; message: string }>(() => ({
+  message: t('price_table.delete.dialog.message'),
+  title: t('price_table.delete.dialog.title'),
+}));
 
 const { consumeAddQuery } = usePriceAddLink(add);
 
@@ -211,7 +203,8 @@ onMounted(async () => {
             :disabled="loading"
             :delete-tooltip="t('price_table.actions.delete.tooltip')"
             :edit-tooltip="t('price_table.actions.edit.tooltip')"
-            @delete-click="showDeleteConfirmation(row)"
+            :delete-confirm="deleteConfirm"
+            @delete-click="deletePrice(row)"
             @edit-click="edit(row)"
           />
         </template>

@@ -5,7 +5,6 @@ import { useDataIssuesDetection } from '@/modules/history/data-issues/use-data-i
 
 const runTaskMock = vi.fn();
 const triggerTaskMock = vi.fn(async (_task: string) => ({ taskId: 1 }));
-const showErrorMessageMock = vi.fn<(title: string, message: string) => void>();
 const reload = vi.fn<() => Promise<void>>();
 
 vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
@@ -25,14 +24,6 @@ vi.mock('@/modules/core/tasks/use-task-api', () => ({
   useTaskApi: vi.fn(() => ({ triggerTask: triggerTaskMock })),
 }));
 
-vi.mock('@/modules/core/notifications/use-notifications', async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useNotifications: vi.fn(() => ({ showErrorMessage: showErrorMessageMock })),
-  };
-});
-
 describe('useDataIssuesDetection', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -51,15 +42,27 @@ describe('useDataIssuesDetection', () => {
     expect(detecting.value).toBe(false);
   });
 
-  it('should show the backend message and skip the reload when the detection could not run', async () => {
+  it('should keep the backend message for the page and skip the reload when the detection could not run', async () => {
     runTaskMock.mockResolvedValue(err(TaskFailed({ cause: new Error('still processing'), message: 'still processing' })));
-    const { detect, detecting } = useDataIssuesDetection(reload);
+    const { detect, detectFailure, detecting } = useDataIssuesDetection(reload);
 
     await detect();
 
-    expect(showErrorMessageMock).toHaveBeenCalledOnce();
-    expect(showErrorMessageMock.mock.calls[0][1]).toContain('still processing');
+    expect(detectFailure.value).toBeInstanceOf(Error);
+    expect(detectFailure.value).toHaveProperty('message', 'still processing');
     expect(reload).not.toHaveBeenCalled();
     expect(detecting.value).toBe(false);
+  });
+
+  it('should drop the failure when the next detection starts', async () => {
+    runTaskMock.mockResolvedValueOnce(err(TaskFailed({ cause: new Error('still processing'), message: 'still processing' })));
+    runTaskMock.mockResolvedValueOnce(ok(true));
+    const { detect, detectFailure } = useDataIssuesDetection(reload);
+
+    await detect();
+    await detect();
+
+    expect(detectFailure.value).toBeUndefined();
+    expect(reload).toHaveBeenCalledOnce();
   });
 });

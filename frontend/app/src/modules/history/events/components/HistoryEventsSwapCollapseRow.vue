@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import type { HistoryEventQuestion } from '@/modules/history/events/types';
 import HistoryEventsGroupToggle from '@/modules/history/events/components/HistoryEventsGroupToggle.vue';
+import HistoryEventsUnlinkButton from '@/modules/history/events/components/HistoryEventsUnlinkButton.vue';
 import { injectHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
 
-const { canUnlink, eventCount, labelType, subgroupId } = defineProps<{
-  /** Whether this matched subgroup can be unlinked from here; the parent decides. */
-  canUnlink?: boolean;
+const { unlinkConfirm, eventCount, labelType, subgroupId } = defineProps<{
+  /**
+   * Offers unlink on this matched subgroup, asking this beside the button before `unlink-event` is
+   * emitted. The parent decides whether the subgroup can be unlinked from here.
+   */
+  unlinkConfirm?: HistoryEventQuestion;
   eventCount: number;
   labelType?: 'swap' | 'movement' | 'bridge';
   /**
@@ -23,8 +28,6 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const selection = injectHistoryEventsSelection();
-
-const { isMdAndUp } = useBreakpoint();
 
 /** Selection mode widens the rows' gutter, so the toggle and label move with the row they head. */
 const selecting = computed<boolean>(() => !!selection && get(selection.isSelectionMode));
@@ -62,32 +65,10 @@ const label = computed<string>(() => {
       {{ label }}
     </span>
 
-    <RuiTooltip
-      :open-delay="200"
-      :disabled="isMdAndUp"
-      class="shrink-0"
-    >
-      <template #activator>
-        <RuiButton
-          v-if="canUnlink"
-          data-testid="collapse-unlink"
-          class="h-6! [&>span]:hidden! md:[&>span]:inline!"
-          :aria-label="t('transactions.events.actions.unlink')"
-          variant="text"
-          size="sm"
-          color="warning"
-          @click.stop="emit('unlink-event')"
-        >
-          <template #prepend>
-            <RuiIcon
-              name="lu-unlink"
-              size="14"
-            />
-          </template>
-          {{ t('transactions.events.actions.unlink') }}
-        </RuiButton>
-      </template>
-      {{ t('transactions.events.actions.unlink') }}
-    </RuiTooltip>
+    <HistoryEventsUnlinkButton
+      v-if="unlinkConfirm"
+      :question="unlinkConfirm"
+      @confirm="emit('unlink-event')"
+    />
   </div>
 </template>

@@ -9,10 +9,11 @@ async function confirmDialog(page: Page): Promise<void> {
   await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
 }
 
+/** Accepts the delete question the event dialog asks in its footer, and waits for the dialog to close. */
 async function confirmDelete(page: Page): Promise<void> {
-  const confirmDialogEl = page.locator('[data-testid=confirm-dialog]');
-  await confirmDialogEl.locator('[data-testid=button-confirm]').click();
-  await confirmDialogEl.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+  const dialog = page.locator('[data-testid=bottom-dialog]');
+  await dialog.locator('[data-testid=calendar-form-delete-confirm] [data-testid=inline-confirm-accept]').click();
+  await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
 }
 
 export class CalendarPage {

@@ -16,8 +16,6 @@ const fetchHistoricalPrices = vi.fn<() => Promise<HistoricalPrice[]>>(async () =
 const resetHistoricalPricesData = vi.fn();
 const notifyError = vi.fn();
 const notifyFailure = vi.fn();
-const showErrorMessage = vi.fn();
-
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   useAssetPricesApi: (): Record<string, unknown> => ({
     addHistoricalPrice,
@@ -32,7 +30,7 @@ vi.mock('@/modules/assets/prices/use-historic-price-cache', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): Record<string, unknown> => ({ notifyError, notifyFailure, showErrorMessage }),
+  useNotifications: (): Record<string, unknown> => ({ notifyError, notifyFailure }),
 }));
 
 const wrappers: VueWrapper[] = [];
@@ -311,7 +309,6 @@ describe('modules/assets/prices/useHistoricPrices', () => {
       await flushPromises();
 
       expect(await save(formPayload(), false)).toEqual(ok(false));
-      expect(showErrorMessage).not.toHaveBeenCalled();
     });
 
     it('should hand a failed save back for the open form to name, instead of a message', async () => {
@@ -323,7 +320,6 @@ describe('modules/assets/prices/useHistoricPrices', () => {
       const saved = await save(formPayload(), false);
 
       expect(saved).toEqual(err(failure));
-      expect(showErrorMessage).not.toHaveBeenCalled();
       expect(notifyError).not.toHaveBeenCalled();
     });
   });

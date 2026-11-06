@@ -7,8 +7,11 @@ import EthStakingValidators from '@/modules/accounts/EthStakingValidators.vue';
 
 const {
   accountOperation,
-  confirmDelete,
+  deleteConfirm,
+  deleteFailure,
   deleteSelected,
+  deleteSelectedConfirm,
+  deleteValidator,
   editValidator,
   filters,
   modelSelected,
@@ -18,8 +21,16 @@ const {
   const { ref } = await import('vue');
   return {
     accountOperation: ref<boolean>(false),
-    confirmDelete: vi.fn(),
+    deleteConfirm: vi.fn<(item: EthereumValidator) => { title: string; message: string }>(item => ({
+      message: `remove ${item.index}?`,
+      title: 'Delete validator',
+    })),
+    deleteFailure: ref<unknown>(),
     deleteSelected: vi.fn(),
+    deleteSelectedConfirm: vi.fn<(rows: EthereumValidator[], selected: number[]) => { title: string; message: string }>(
+      (_rows, selected) => ({ message: `remove ${selected.length} validators?`, title: 'Delete validators' }),
+    ),
+    deleteValidator: vi.fn<(item: EthereumValidator) => Promise<void>>(async () => {}),
     editValidator: vi.fn(),
     filters: ref<Record<string, unknown>>({}),
     modelSelected: ref<string[]>([]),
@@ -52,8 +63,11 @@ vi.mock('@/modules/staking/eth/use-eth-validator-data', async () => {
 vi.mock('@/modules/staking/eth/use-eth-validator-operations', () => ({
   useEthValidatorOperations: (): Record<string, unknown> => ({
     accountOperation,
-    confirmDelete,
+    deleteConfirm,
+    deleteFailure,
     deleteSelected,
+    deleteSelectedConfirm,
+    deleteValidator,
     edit: editValidator,
     refresh,
   }),
@@ -92,9 +106,20 @@ const TableStub = defineComponent({
 
 const RowActionsStub = defineComponent({
   emits: ['edit-click', 'delete-click'],
-  props: ['disabled', 'editTooltip'],
+  props: ['deleteConfirm', 'disabled', 'editTooltip'],
   template: '<div />',
 });
+
+/** Opens through its activator and renders its content only while open, as the real menu does. */
+const RuiMenu = {
+  name: 'RuiMenu',
+  props: ['modelValue'],
+  emits: ['update:modelValue'],
+  template: `<div>
+    <slot name="activator" :attrs="{ onClick: () => $emit('update:modelValue', true) }" />
+    <div v-if="modelValue"><slot /></div>
+  </div>`,
+};
 
 function validator(index: number): EthereumValidator {
   return {
@@ -117,6 +142,7 @@ function createWrapper(): VueWrapper<any> {
         RowActions: RowActionsStub,
         RowAppend: true,
         RuiDataTable: TableStub,
+        RuiMenu,
       },
     },
   });
@@ -137,6 +163,7 @@ describe('ethStakingValidators', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     set(accountOperation, false);
+    set(deleteFailure, undefined);
     set(filters, {});
     set(modelSelected, []);
     set(rows, { data: [validator(1), validator(2)], found: 2, limit: 10, total: 2 });
@@ -157,15 +184,37 @@ describe('ethStakingValidators', () => {
       expect(deleteButton(wrapper).attributes('disabled')).toBeDefined();
     });
 
-    /** The selection is a list of keys, so the rows on screen are what resolves it. */
-    it('should delete the picked validators out of the rows in view', async () => {
+    async function askToDeletePicked(): Promise<VueWrapper<any>> {
       const wrapper = await createSelectingWrapper();
       set(modelSelected, ['1']);
       await nextTick();
-
       await deleteButton(wrapper).trigger('click');
+      return wrapper;
+    }
+
+    it('should ask beside the bulk delete, describing the picked validators, before deleting', async () => {
+      const wrapper = await askToDeletePicked();
+
+      expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('remove 1 validators?');
+      expect(deleteSelectedConfirm).toHaveBeenCalledWith(get(rows).data, ['1']);
+      expect(deleteSelected).not.toHaveBeenCalled();
+    });
+
+    /** The selection is a list of keys, so the rows on screen are what resolves it. */
+    it('should delete the picked validators out of the rows in view once accepted', async () => {
+      const wrapper = await askToDeletePicked();
+
+      await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
 
       expect(deleteSelected).toHaveBeenCalledWith(get(rows).data, ['1']);
+    });
+
+    it('should not delete the picked validators when cancelled', async () => {
+      const wrapper = await askToDeletePicked();
+
+      await wrapper.find('[data-testid=inline-confirm-cancel]').trigger('click');
+
+      expect(deleteSelected).not.toHaveBeenCalled();
     });
 
     it('should clear the selection and stay in selection mode', async () => {
@@ -237,13 +286,33 @@ describe('ethStakingValidators', () => {
       });
     });
 
-    it('should confirm before deleting one', async () => {
+    it('should have its delete button ask about that validator first', () => {
+      expect(createWrapper().findComponent(RowActionsStub).props('deleteConfirm')).toEqual({
+        message: 'remove 1?',
+        title: 'Delete validator',
+      });
+    });
+
+    it('should delete that validator once the delete is confirmed', async () => {
       const wrapper = createWrapper();
 
       wrapper.findComponent(RowActionsStub).vm.$emit('delete-click');
       await nextTick();
 
-      expect(confirmDelete).toHaveBeenCalledWith(validator(1));
+      expect(deleteValidator).toHaveBeenCalledWith(validator(1));
+      expect(deleteSelected).not.toHaveBeenCalled();
+    });
+
+    it('should name a failed delete above the table, with no retry of its own', async () => {
+      const wrapper = createWrapper();
+      expect(wrapper.find('[data-testid=eth-validators-delete-error]').exists()).toBe(false);
+
+      set(deleteFailure, new Error('backend refused'));
+      await nextTick();
+
+      const strip = wrapper.find('[data-testid=eth-validators-delete-error]');
+      expect(strip.text()).toContain('backend refused');
+      expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
     });
 
     /** A row cannot be acted on while another account operation is still running. */

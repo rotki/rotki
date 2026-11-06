@@ -7,7 +7,6 @@ import { type Ref, ref } from 'vue';
 import ManageCounterpartyMapping from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMapping.vue';
 import ManageCounterpartyMappingFormDialog from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingFormDialog.vue';
 import ManageCounterpartyMappingTable from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingTable.vue';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 
 interface RouteHolder {
   route?: Ref<{ query: Record<string, string> }>;
@@ -110,26 +109,34 @@ describe('modules/assets/admin/counterparty-mapping/ManageCounterpartyMapping.vu
     expect(dialog.props('editMode')).toBe(true);
   });
 
-  it('should ask before deleting a row the table asked to remove', async () => {
+  it('should hand the table a question naming the row, so the row asks before deleting', async () => {
     const wrapper = createWrapper();
     await flushPromises();
 
-    wrapper.findComponent(ManageCounterpartyMappingTable).vm.$emit('delete', MAPPING);
-    await flushPromises();
-
-    expect(get(useConfirmStore().visible)).toBe(true);
+    const deleteConfirm = wrapper.findComponent(ManageCounterpartyMappingTable).props('deleteConfirm');
+    expect(deleteConfirm(MAPPING).message).toContain('WETH');
     expect(deleteCounterpartyMapping).not.toHaveBeenCalled();
   });
 
-  it('should delete the row once the dialog is confirmed, without its asset', async () => {
+  it('should delete a row the table confirmed, without its asset', async () => {
     const wrapper = createWrapper();
     await flushPromises();
 
     wrapper.findComponent(ManageCounterpartyMappingTable).vm.$emit('delete', MAPPING);
-    await useConfirmStore().confirm();
     await flushPromises();
 
     expect(deleteCounterpartyMapping).toHaveBeenCalledWith({ counterparty: 'uniswap', counterpartySymbol: 'WETH' });
+  });
+
+  it('should name a failed delete above the table', async () => {
+    deleteCounterpartyMapping.mockRejectedValueOnce(new Error('in use'));
+    const wrapper = createWrapper();
+    await flushPromises();
+
+    wrapper.findComponent(ManageCounterpartyMappingTable).vm.$emit('delete', MAPPING);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid$=-mapping-delete-error]').text()).toContain('in use');
   });
 
   it('should open the dialog seeded from an ?add= link', async () => {

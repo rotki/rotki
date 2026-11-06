@@ -9,18 +9,13 @@ import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/Exchang
 import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 import '@test/i18n';
 
-const { setMessage, setupExchange, validate } = vi.hoisted(() => ({
-  setMessage: vi.fn(),
+const { setupExchange, validate } = vi.hoisted(() => ({
   setupExchange: vi.fn(),
   validate: vi.fn(),
 }));
 
 vi.mock('@/modules/balances/exchanges/use-exchanges', () => ({
   useExchanges: (): Record<string, unknown> => ({ setupExchange }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
 }));
 
 vi.mock('@/modules/settings/api-keys/exchange/ExchangeKeysForm.vue', async () => {
@@ -45,6 +40,7 @@ vi.mock('@/modules/settings/api-keys/exchange/ExchangeKeysForm.vue', async () =>
 const BigDialogStub = defineComponent({
   emits: ['confirm', 'cancel'],
   name: 'BigDialog',
+  props: ['failure', 'failureTitle'],
   setup: (_props, { slots }) => (): VNode => h('div', slots.default?.()),
 });
 
@@ -68,7 +64,6 @@ describe('settings/api-keys/exchange/ExchangeKeysFormDialog.vue', () => {
   beforeEach(() => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
-    setMessage.mockReset();
     setupExchange.mockReset().mockResolvedValue(undefined);
     validate.mockReset().mockReturnValue(true);
   });
@@ -136,15 +131,17 @@ describe('settings/api-keys/exchange/ExchangeKeysFormDialog.vue', () => {
 
       expect(wrapper.findComponent({ name: 'ExchangeKeysForm' }).props('errorMessages'))
         .toMatchObject({ apiKey: ['bad key'] });
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(wrapper.findComponent(BigDialogStub).props('failure')).toBeUndefined();
     });
 
-    it('should surface anything else as a message', async () => {
-      setupExchange.mockRejectedValue(new Error('the exchange is unreachable'));
+    it('should name anything else in the dialog, which stays open', async () => {
+      const error = new Error('the exchange is unreachable');
+      setupExchange.mockRejectedValue(error);
 
       await save(exchange());
 
-      expect(setMessage).toHaveBeenCalledOnce();
+      expect(wrapper.findComponent(BigDialogStub).props('failure')).toBe(error);
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     });
 
     it('should keep the dialog open when the save failed', async () => {

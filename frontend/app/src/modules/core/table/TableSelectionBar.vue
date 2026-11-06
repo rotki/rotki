@@ -1,5 +1,16 @@
 <script setup lang="ts">
-import { provideTableSelectionCollapsed, useSelectionBarCollapse } from '@/modules/core/table/table-selection-collapse';
+import {
+  provideTableSelectionAsk,
+  provideTableSelectionCollapsed,
+  type SelectionQuestion,
+  useSelectionBarCollapse,
+} from '@/modules/core/table/table-selection-collapse';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
+
+interface PendingQuestion {
+  question: SelectionQuestion;
+  onAccept: () => void;
+}
 
 const { count, exitable = false } = defineProps<{
   /** How many rows are selected. */
@@ -26,11 +37,30 @@ const slots = defineSlots<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const menuOpen = ref<boolean>(false);
+const pending = shallowRef<PendingQuestion>();
+
 const bar = useTemplateRef<HTMLDivElement>('bar');
 
 const collapsed = useSelectionBarCollapse(bar, () => !!slots.default);
 
 provideTableSelectionCollapsed(collapsed);
+
+provideTableSelectionAsk((question: SelectionQuestion, onAccept: () => void): void => {
+  set(pending, { onAccept, question });
+});
+
+function acceptPending(): void {
+  const asked = get(pending);
+  set(pending, undefined);
+  set(menuOpen, false);
+  asked?.onAccept();
+}
+
+watch(menuOpen, (open) => {
+  if (!open)
+    set(pending, undefined);
+});
 </script>
 
 <template>
@@ -66,8 +96,10 @@ provideTableSelectionCollapsed(collapsed);
       />
       <RuiMenu
         v-if="collapsed"
+        v-model="menuOpen"
         :options="{ placement: 'bottom-start' }"
-        close-on-content-click
+        :role="pending ? 'dialog' : undefined"
+        :close-on-content-click="!pending"
       >
         <template #activator="{ attrs }">
           <RuiButton
@@ -85,7 +117,23 @@ provideTableSelectionCollapsed(collapsed);
             </template>
           </RuiButton>
         </template>
-        <div class="flex flex-col py-1">
+        <InlineConfirm
+          v-if="pending"
+          class="w-72"
+          layout="panel"
+          tone="error"
+          :title="pending.question.title"
+          :message="pending.question.message"
+          :confirm-label="pending.question.confirmLabel"
+          data-testid="table-selection-confirm"
+          @cancel="pending = undefined"
+          @confirm="acceptPending()"
+        />
+        <div
+          v-show="!pending"
+          class="flex flex-col py-1"
+          data-testid="table-selection-entries"
+        >
           <slot />
         </div>
       </RuiMenu>

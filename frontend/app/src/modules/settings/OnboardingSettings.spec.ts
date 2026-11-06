@@ -539,37 +539,41 @@ describe('onboarding-settings', () => {
   });
 
   describe('reset to defaults', () => {
-    it('should reset the backend options only after the confirmation is accepted', async (): Promise<void> => {
-      const confirmStore = useConfirmStore();
+    function resetQuestion(): ReturnType<typeof wrapper.find> {
+      return wrapper.find('[data-testid=onboarding-setting-reset-confirm]');
+    }
 
+    it('should ask in the footer, in place of its buttons, resetting nothing yet', async (): Promise<void> => {
       await wrapper.find('[data-testid=onboarding-setting-reset]').trigger('click');
       await nextTick();
 
-      expect(get(confirmStore.visible)).toBe(true);
-      expect(get(confirmStore.confirmation)).toMatchObject({
-        message: 'backend_settings.confirm.message',
-        title: 'backend_settings.confirm.title',
-      });
+      expect(resetQuestion().text()).toContain('backend_settings.confirm.message');
+      expect(wrapper.find('[data-testid=onboarding-setting-submit]').exists()).toBe(false);
+      expect(get(useConfirmStore().visible)).toBe(false);
       expect(resetOptions).not.toHaveBeenCalled();
+    });
 
-      await confirmStore.confirm();
+    it('should reset the backend options and close once the question is accepted', async (): Promise<void> => {
+      await wrapper.find('[data-testid=onboarding-setting-reset]').trigger('click');
+      await nextTick();
+
+      await resetQuestion().find('[data-testid=inline-confirm-accept]').trigger('click');
       await flushPromises();
 
       expect(resetOptions).toHaveBeenCalledOnce();
       expect(wrapper.emitted('dismiss')).toHaveLength(1);
     });
 
-    it('should leave the options untouched when the confirmation is dismissed', async (): Promise<void> => {
-      const confirmStore = useConfirmStore();
-
+    it('should leave the options untouched and bring the buttons back when the question is cancelled', async (): Promise<void> => {
       await wrapper.find('[data-testid=onboarding-setting-reset]').trigger('click');
       await nextTick();
 
-      await confirmStore.dismiss();
+      await resetQuestion().find('[data-testid=inline-confirm-cancel]').trigger('click');
       await flushPromises();
 
       expect(resetOptions).not.toHaveBeenCalled();
       expect(wrapper.emitted('dismiss')).toBeUndefined();
+      expect(wrapper.find('[data-testid=onboarding-setting-submit]').exists()).toBe(true);
     });
   });
 

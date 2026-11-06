@@ -1,18 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNftDomainWhitelist } from './use-nft-domain-whitelist';
 
-const { show, updateFrontendSetting, whitelisted } = await vi.hoisted(async () => {
+const { updateFrontendSetting, whitelisted } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
-    show: vi.fn<(content: object, onConfirm: () => void) => void>(),
     updateFrontendSetting: vi.fn<(payload: object) => Promise<{ success: boolean }>>(async () => Promise.resolve({ success: true })),
     whitelisted: ref<string[]>(['existing.io']),
   };
 });
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({ show }),
-}));
 
 vi.mock('@/modules/settings/use-setting', () => ({
   useSetting: vi.fn(() => whitelisted),
@@ -21,11 +16,6 @@ vi.mock('@/modules/settings/use-setting', () => ({
 vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): object => ({ updateFrontendSetting }),
 }));
-
-function confirm(): void {
-  const onConfirm = show.mock.calls[0][1];
-  onConfirm();
-}
 
 describe('useNftDomainWhitelist', () => {
   beforeEach(() => {
@@ -38,28 +28,29 @@ describe('useNftDomainWhitelist', () => {
     expect(get(domain)).toBe('example.com');
   });
 
-  it('should add the domain to the whitelist only once the user confirms', () => {
-    const { confirmAllowDomain } = useNftDomainWhitelist('https://cdn.example.com/1.png');
-    confirmAllowDomain();
-    expect(updateFrontendSetting).not.toHaveBeenCalled();
+  it('should name the domain in the question asked before allowing it', () => {
+    const { question } = useNftDomainWhitelist('https://cdn.example.com/1.png');
+    expect(get(question).message).toBe('general_settings.nft_setting.update_whitelist_confirmation.message::example.com');
+    expect(get(question).confirmLabel).toBe('general_settings.nft_setting.update_whitelist_confirmation.confirm');
+  });
 
-    confirm();
+  it('should add the domain to the whitelist', () => {
+    const { allowDomain } = useNftDomainWhitelist('https://cdn.example.com/1.png');
+    allowDomain();
     expect(updateFrontendSetting).toHaveBeenCalledWith({
       whitelistedDomainsForNftImages: ['existing.io', 'example.com'],
     });
   });
 
   it('should not list an already allowed domain twice', () => {
-    const { confirmAllowDomain } = useNftDomainWhitelist('https://existing.io/1.png');
-    confirmAllowDomain();
-    confirm();
+    const { allowDomain } = useNftDomainWhitelist('https://existing.io/1.png');
+    allowDomain();
     expect(updateFrontendSetting).toHaveBeenCalledWith({ whitelistedDomainsForNftImages: ['existing.io'] });
   });
 
   it('should leave the whitelist alone when there is no media URL', () => {
-    const { confirmAllowDomain } = useNftDomainWhitelist(null);
-    confirmAllowDomain();
-    confirm();
+    const { allowDomain } = useNftDomainWhitelist(null);
+    allowDomain();
     expect(updateFrontendSetting).not.toHaveBeenCalled();
   });
 });

@@ -84,6 +84,7 @@ vi.mock('@/modules/history/events/composables', () => ({
     handleSelectionAction,
     ignoreStatus,
     modelAccountingRuleToEdit: ref(),
+    ruleCreationBlocker: ref(),
     selectedEventIds: ref([1, 2]),
   }),
   useHistoryEventsSelectionMode: (): unknown => ({

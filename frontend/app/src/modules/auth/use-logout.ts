@@ -33,6 +33,7 @@ interface LogoutOptions {
 
 interface UseLogoutReturn {
   logout: (navigate?: boolean, options?: LogoutOptions) => Promise<void>;
+  /** Logs out the session another client holds; a failure is returned for the login form to name. */
   logoutRemoteSession: () => Promise<ActionStatus>;
 }
 
@@ -131,9 +132,7 @@ export function useLogout(): UseLogoutReturn {
       return { success: true };
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
-      showErrorMessage('Remote session logout failure', message, SESSIONLESS);
-      return { message, success: false };
+      return { message: getErrorMessage(error), success: false };
     }
   };
 

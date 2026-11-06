@@ -1,4 +1,5 @@
 import type { EthBlockEvent, EvmHistoryEvent, HistoryEventEntry } from '@/modules/history/events/schemas';
+import type { DuplicatesActionHandlers } from '@/modules/history/events/use-customized-event-duplicates';
 import { HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
@@ -9,6 +10,7 @@ import {
   useHistoryEventActionMenu,
   type UseHistoryEventActionMenuReturn,
 } from '@/modules/history/events/use-history-event-action-menu';
+import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 
 const ethBlockEventsDecoding = ref<boolean>(false);
 const txEventsDecoding = ref<boolean>(false);
@@ -17,17 +19,18 @@ vi.mock('@/modules/history/events/use-history-events-status', () => ({
   useHistoryEventsStatus: (): Record<string, unknown> => ({ ethBlockEventsDecoding, txEventsDecoding }),
 }));
 
-const confirmAndFixDuplicate = vi.fn();
-const confirmAndMarkNonDuplicated = vi.fn();
+const fixAndSettle = vi.fn<(ids: string[], handlers?: DuplicatesActionHandlers) => Promise<void>>();
+const markNonDuplicatedAndSettle = vi.fn<(ids: string[], handlers?: DuplicatesActionHandlers) => Promise<void>>();
+const { actionFailure, clearActionFailure } = useHistoryEventsActionFailure();
 const fixLoading = ref<boolean>(false);
 const ignoreLoading = ref<boolean>(false);
 
 vi.mock('@/modules/history/events/use-customized-event-duplicates', () => ({
   useCustomizedEventDuplicates: (): Record<string, unknown> => ({
-    confirmAndFixDuplicate,
-    confirmAndMarkNonDuplicated,
+    fixAndSettle,
     fixLoading,
     ignoreLoading,
+    markNonDuplicatedAndSettle,
   }),
 }));
 
@@ -146,37 +149,56 @@ describe('useHistoryEventActionMenu', () => {
       expect(get(menu.isDuplicate)).toBe(false);
     });
 
-    it('should fix the row group and report it back', () => {
+    it('should fix the row group and report it back', async () => {
       const { menu } = mountMenu();
 
-      menu.confirmFixDuplicate();
+      await menu.fixDuplicate();
 
-      expect(confirmAndFixDuplicate).toHaveBeenCalledWith(['group-a'], expect.any(Function));
-      const [, onDone] = confirmAndFixDuplicate.mock.calls[0];
-      onDone();
+      expect(fixAndSettle).toHaveBeenCalledWith(['group-a'], expect.any(Object));
+      fixAndSettle.mock.calls[0][1]?.onSuccess?.();
       expect(onFixDuplicate).toHaveBeenCalledTimes(1);
     });
 
-    it('should dismiss the row group and report it back', () => {
+    it('should name a failed fix above the history table', async () => {
+      clearActionFailure();
       const { menu } = mountMenu();
 
-      menu.confirmIgnoreDuplicate();
+      await menu.fixDuplicate();
+      fixAndSettle.mock.calls[0][1]?.onFailure?.({ failure: 'boom', title: 'actions.customized_event_duplicates.fix_error.title' });
 
-      expect(confirmAndMarkNonDuplicated).toHaveBeenCalledWith(['group-a'], expect.any(Function));
-      const [, onDone] = confirmAndMarkNonDuplicated.mock.calls[0];
-      onDone();
+      expect(get(actionFailure)).toEqual({ failure: 'boom', title: 'actions.customized_event_duplicates.fix_error.title' });
+      expect(onFixDuplicate).not.toHaveBeenCalled();
+    });
+
+    it('should dismiss the row group and report it back', async () => {
+      const { menu } = mountMenu();
+
+      await menu.ignoreDuplicate();
+
+      expect(markNonDuplicatedAndSettle).toHaveBeenCalledWith(['group-a'], expect.any(Object));
+      markNonDuplicatedAndSettle.mock.calls[0][1]?.onSuccess?.();
       expect(onIgnoreDuplicate).toHaveBeenCalledTimes(1);
     });
 
-    it('should do nothing when the row belongs to no group', () => {
+    it('should name a failed dismissal above the history table', async () => {
+      clearActionFailure();
+      const { menu } = mountMenu();
+
+      await menu.ignoreDuplicate();
+      markNonDuplicatedAndSettle.mock.calls[0][1]?.onFailure?.({ failure: 'boom', title: 'actions.customized_event_duplicates.mark_non_duplicated_error.title' });
+
+      expect(get(actionFailure)).toEqual({ failure: 'boom', title: 'actions.customized_event_duplicates.mark_non_duplicated_error.title' });
+    });
+
+    it('should do nothing when the row belongs to no group', async () => {
       set(event, createEvent({ entryType: HistoryEventEntryType.EVM_EVENT, groupIdentifier: '' }));
       const { menu } = mountMenu();
 
-      menu.confirmFixDuplicate();
-      menu.confirmIgnoreDuplicate();
+      await menu.fixDuplicate();
+      await menu.ignoreDuplicate();
 
-      expect(confirmAndFixDuplicate).not.toHaveBeenCalled();
-      expect(confirmAndMarkNonDuplicated).not.toHaveBeenCalled();
+      expect(fixAndSettle).not.toHaveBeenCalled();
+      expect(markNonDuplicatedAndSettle).not.toHaveBeenCalled();
     });
   });
 

@@ -1,9 +1,8 @@
-import type { Message } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
 import type { SkippedHistoryEventsSummary } from '@/modules/history/events/event-payloads';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSkippedHistoryEventsApi } from '@/modules/history/api/events/use-skipped-history-events-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
@@ -28,6 +27,10 @@ interface UseSkippedEventsActionsReturn {
   locationsData: ComputedRef<SkippedEventsLocation[]>;
   /** Asks the backend to decode the skipped events again, then refreshes the summary. */
   reProcessSkippedEvents: () => Promise<void>;
+  /** Why the last reprocess failed, or processed nothing; cleared when the next one starts. */
+  reprocessFailure: Readonly<Ref<unknown>>;
+  /** Says how many were processed when a reprocess left some behind; cleared when the next one starts. */
+  reprocessNote: Readonly<Ref<string | undefined>>;
   /** The counts behind the table, refreshed after a reprocess. */
   skippedEvents: Ref<SkippedHistoryEventsSummary>;
 }
@@ -35,13 +38,16 @@ interface UseSkippedEventsActionsReturn {
 /**
  * Drives the skipped-events settings row: the summary it shows and the two actions on it.
  *
- * @returns the summary and the actions; both actions report their outcome as a message
+ * @returns the summary and the actions. An export reports its outcome as a toast; a reprocess keeps a
+ * failure, or a partial count, for the row to show, a full success showing as the counts dropping.
  */
 export function useSkippedEventsActions(): UseSkippedEventsActionsReturn {
   const loading = shallowRef<boolean>(false);
+  const reprocessFailure = shallowRef<unknown>();
+  const reprocessNote = shallowRef<string>();
 
   const { t } = useI18n({ useScope: 'global' });
-  const { setMessage } = useMessageStore();
+  const { notifyError, notifyInfo } = useNotifications();
   const { appSession, openDirectory } = useInterop();
   const {
     downloadSkippedEventsCSV,
@@ -71,33 +77,20 @@ export function useSkippedEventsActions(): UseSkippedEventsActionsReturn {
   );
 
   function showExportCSVError(description: string): void {
-    setMessage({
-      description,
-      success: false,
-      title: t('transactions.events.skipped.csv_export_error'),
-    });
+    notifyError(t('transactions.events.skipped.csv_export_error'), description);
   }
 
   async function createCsv(path: string): Promise<void> {
-    let message: Message;
+    const title = t('actions.online_events.skipped.csv_export.title');
     try {
-      const success = await exportSkippedEventsCSV(path);
-      message = {
-        description: success
-          ? t('actions.online_events.skipped.csv_export.message.success')
-          : t('actions.online_events.skipped.csv_export.message.failure'),
-        success,
-        title: t('actions.online_events.skipped.csv_export.title'),
-      };
+      if (await exportSkippedEventsCSV(path))
+        notifyInfo(title, t('actions.online_events.skipped.csv_export.message.success'));
+      else
+        notifyError(title, t('actions.online_events.skipped.csv_export.message.failure'));
     }
     catch (error: unknown) {
-      message = {
-        description: getErrorMessage(error),
-        success: false,
-        title: t('actions.online_events.skipped.csv_export.title'),
-      };
+      notifyError(title, getErrorMessage(error));
     }
-    setMessage(message);
   }
 
   async function exportCSV(): Promise<void> {
@@ -122,39 +115,23 @@ export function useSkippedEventsActions(): UseSkippedEventsActionsReturn {
 
   async function reProcessSkippedEvents(): Promise<void> {
     set(loading, true);
-    let message: Message;
+    set(reprocessFailure, undefined);
+    set(reprocessNote, undefined);
     try {
       const { successful, total } = await reProcessSkippedEventsCaller();
-      if (successful === 0) {
-        message = {
-          description: t('transactions.events.skipped.reprocess.failed.no_processed_events'),
-          success: false,
-          title: t('transactions.events.skipped.reprocess.failed.title'),
-        };
-      }
-      else {
-        message = {
-          description: successful < total
-            ? t('transactions.events.skipped.reprocess.success.some', { successful, total })
-            : t('transactions.events.skipped.reprocess.success.all'),
-          success: true,
-          title: t('transactions.events.skipped.reprocess.success.title'),
-        };
-      }
+      if (successful === 0)
+        set(reprocessFailure, t('transactions.events.skipped.reprocess.failed.no_processed_events'));
+      else if (successful < total)
+        set(reprocessNote, t('transactions.events.skipped.reprocess.success.some', { successful, total }));
     }
     catch (error: unknown) {
       logger.error(error);
-      message = {
-        description: getErrorMessage(error),
-        success: false,
-        title: t('transactions.events.skipped.reprocess.failed.title'),
-      };
+      set(reprocessFailure, error);
     }
     finally {
       set(loading, false);
     }
 
-    setMessage(message);
     await refreshSkippedEvents();
   }
 
@@ -163,6 +140,8 @@ export function useSkippedEventsActions(): UseSkippedEventsActionsReturn {
     loading: readonly(loading),
     locationsData,
     reProcessSkippedEvents,
+    reprocessFailure: shallowReadonly(reprocessFailure),
+    reprocessNote: readonly(reprocessNote),
     skippedEvents,
   };
 }

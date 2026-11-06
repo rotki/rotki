@@ -2,9 +2,11 @@
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 
-defineProps<{
+const { upToDate = false } = defineProps<{
   skipped: number;
   loading: boolean;
+  /** Whether the last check found nothing newer, said beside the button that ran it. */
+  upToDate?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -37,6 +39,14 @@ const { t } = useI18n({ useScope: 'global' });
         </template>
         {{ t('asset_update.manual.check') }}
       </RuiButton>
+      <span
+        v-if="upToDate"
+        class="text-sm text-rui-success"
+        role="status"
+        data-testid="asset-update-up-to-date"
+      >
+        {{ t('asset_update.up_to_date') }}
+      </span>
       <i18n-t
         v-if="skipped"
         scope="global"

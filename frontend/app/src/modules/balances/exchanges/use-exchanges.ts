@@ -12,8 +12,6 @@ import { AssetBalances } from '@/modules/balances/types/balances';
 import { type EditExchange, Exchange, type ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
@@ -24,6 +22,13 @@ interface UseExchangesReturn {
   fetchExchangeBalances: (payload: ExchangeBalancePayload) => Promise<void>;
   addExchange: (exchange: Exchange) => void;
   editExchange: (payload: EditExchange) => void;
+  /**
+   * Disconnects an exchange and drops it and its balances from the store.
+   *
+   * @remarks
+   * Resolves `false` when the backend refused or the request was cancelled. Any other failure
+   * rejects, for the caller to name beside the row it came from.
+   */
   removeExchange: (exchange: Exchange) => Promise<boolean>;
   setupExchange: (exchange: ExchangeFormData) => Promise<void>;
 }
@@ -32,7 +37,6 @@ export function useExchanges(): UseExchangesReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const { submitTask } = useNativeTask();
-  const { showErrorMessage } = useNotifications();
   const { exchangeBalances } = storeToRefs(useBalancesStore());
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { setConnectedExchanges } = useConnectedExchangesStore();
@@ -148,14 +152,7 @@ export function useExchanges(): UseExchangesReturn {
       if (isRequestCancellation(error))
         return false;
 
-      showErrorMessage(
-        t('actions.balances.exchange_removal.title'),
-        t('actions.balances.exchange_removal.description', {
-          error: getErrorMessage(error),
-          exchange,
-        }),
-      );
-      return false;
+      throw error;
     }
   };
 

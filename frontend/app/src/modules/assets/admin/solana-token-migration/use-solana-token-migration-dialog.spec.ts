@@ -1,14 +1,13 @@
 import type { SolanaTokenMigrationData } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-dialog';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope, type Ref, ref } from 'vue';
+import { effectScope, nextTick, type Ref, ref } from 'vue';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { useSolanaTokenMigrationDialog } from './use-solana-token-migration-dialog';
 
-const { migrateSolanaToken, removeIdentifier, setMessage } = vi.hoisted(() => ({
+const { migrateSolanaToken, removeIdentifier } = vi.hoisted(() => ({
   migrateSolanaToken: vi.fn(),
   removeIdentifier: vi.fn(),
-  setMessage: vi.fn(),
 }));
 
 vi.mock('@/modules/assets/admin/solana-token-migration/solana-token-migration', () => ({
@@ -17,10 +16,6 @@ vi.mock('@/modules/assets/admin/solana-token-migration/solana-token-migration', 
 
 vi.mock('@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store', () => ({
   useSolanaTokenMigrationStore: (): Record<string, unknown> => ({ removeIdentifier }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
 }));
 
 const TARGET = 'solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
@@ -88,16 +83,17 @@ describe('modules/assets/admin/solana-token-migration/useSolanaTokenMigrationDia
       expect(migrateSolanaToken).not.toHaveBeenCalled();
     });
 
-    it('should migrate nothing without decimals, and say why', async () => {
+    it('should migrate nothing without decimals, and say why on the decimals field', async () => {
       set(modelValue, { address: 'So111', decimals: null, tokenKind: 'spl-token' });
 
-      const { save } = dialog();
+      const { failure, modelErrorMessages, save } = dialog();
 
       expect(await save()).toBe(false);
       expect(migrateSolanaToken).not.toHaveBeenCalled();
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({
-        description: 'asset_management.solana_token_migration.validation_error',
-      }));
+      expect(get(modelErrorMessages)).toEqual({
+        decimals: ['asset_management.solana_token_migration.validation.decimals_non_empty'],
+      });
+      expect(get(failure)).toBeUndefined();
     });
   });
 
@@ -120,7 +116,6 @@ describe('modules/assets/admin/solana-token-migration/useSolanaTokenMigrationDia
       expect(await save()).toBe(true);
       expect(removeIdentifier).toHaveBeenCalledWith('SOL-OLD');
       expect(onMigrated).toHaveBeenCalledOnce();
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
     });
 
     it('should clear the dialog', async () => {
@@ -143,12 +138,16 @@ describe('modules/assets/admin/solana-token-migration/useSolanaTokenMigrationDia
   });
 
   describe('a migration the backend refuses', () => {
-    it('should report it and keep the dialog open', async () => {
+    it('should name it in the dialog and keep the dialog open', async () => {
       migrateSolanaToken.mockResolvedValue(false);
 
-      const { save } = dialog();
+      const { failure, save } = dialog();
 
       expect(await save()).toBe(false);
+      expect(get(failure)).toEqual({
+        error: 'asset_management.solana_token_migration.migration_error',
+        title: 'asset_management.solana_token_migration.dialog_title',
+      });
       expect(removeIdentifier).not.toHaveBeenCalled();
       expect(onMigrated).not.toHaveBeenCalled();
       expect(get(modelValue)).toBeDefined();
@@ -163,71 +162,119 @@ describe('modules/assets/admin/solana-token-migration/useSolanaTokenMigrationDia
       expect(get(loading)).toBe(false);
     });
 
-    it('should report a plain failure as a message', async () => {
-      migrateSolanaToken.mockRejectedValue(new Error('the chain is unreachable'));
+    it('should keep a plain failure for the dialog, titled as a failed migration', async () => {
+      const error = new Error('the chain is unreachable');
+      migrateSolanaToken.mockRejectedValue(error);
 
-      const { save } = dialog();
+      const { failure, save } = dialog();
       await save();
 
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({
-        description: 'the chain is unreachable',
-      }));
+      expect(get(failure)).toEqual({ error, title: 'asset_management.solana_token_migration.migration_error' });
+      expect(get(modelValue)).toBeDefined();
     });
 
-    it('should put field errors on the form rather than in a message', async () => {
+    it('should name a validation error that is not keyed on a field', async () => {
+      migrateSolanaToken.mockRejectedValue(new ApiValidationError('the token is not supported'));
+
+      const { failure, save } = dialog();
+      await save();
+
+      expect(get(failure)?.error).toBe('the token is not supported');
+    });
+
+    it('should put field errors on the form rather than in the dialog', async () => {
       migrateSolanaToken.mockRejectedValue(
         new ApiValidationError(JSON.stringify({ address: ['not a valid address'] })),
       );
 
-      const { modelErrorMessages, save } = dialog();
+      const { failure, modelErrorMessages, save } = dialog();
       await save();
 
       expect(get(modelErrorMessages)).toEqual({ address: ['not a valid address'] });
       expect(validateForm).toHaveBeenCalledTimes(2);
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(get(failure)).toBeUndefined();
+    });
+
+    it('should clear the failure when the next migration starts', async () => {
+      migrateSolanaToken.mockRejectedValueOnce(new Error('boom'));
+
+      const { failure, save } = dialog();
+      await save();
+      expect(get(failure)).toBeDefined();
+
+      const pending = save();
+      expect(get(failure)).toBeUndefined();
+      await pending;
+    });
+
+    it('should clear the failure when the dialog closes', async () => {
+      migrateSolanaToken.mockRejectedValue(new Error('boom'));
+
+      const { failure, save } = dialog();
+      await save();
+      set(modelValue, undefined);
+      await nextTick();
+
+      expect(get(failure)).toBeUndefined();
     });
   });
 
   describe('a collision with an asset that already exists', () => {
-    it('should offer a merge instead of reporting an error', async () => {
+    it('should ask about a merge in the dialog instead of reporting an error', async () => {
       migrateSolanaToken.mockRejectedValue(new Error(UNIQUE_CONSTRAINT));
 
-      const { save } = dialog();
+      const { failure, mergeSuggestion, save } = dialog();
 
       expect(await save()).toBe(false);
-      expect(onSuggestMerge).toHaveBeenCalledWith({ sourceAsset: 'SOL-OLD', targetAsset: TARGET });
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(get(mergeSuggestion)).toEqual({ sourceAsset: 'SOL-OLD', targetAsset: TARGET });
+      expect(get(failure)).toBeUndefined();
+      expect(onSuggestMerge).not.toHaveBeenCalled();
+      expect(get(modelValue)).toBeDefined();
     });
 
-    it('should hand the dialog over by clearing its selection', async () => {
+    it('should hand the merge over and clear the selection once accepted', async () => {
       migrateSolanaToken.mockRejectedValue(new Error(UNIQUE_CONSTRAINT));
 
-      const { save } = dialog();
+      const { acceptMerge, save } = dialog();
       await save();
+      acceptMerge();
 
+      expect(onSuggestMerge).toHaveBeenCalledWith({ sourceAsset: 'SOL-OLD', targetAsset: TARGET });
       expect(get(modelValue)).toBeUndefined();
       expect(get(oldAsset)).toBeUndefined();
+    });
+
+    it('should drop the question and keep the dialog when declined', async () => {
+      migrateSolanaToken.mockRejectedValue(new Error(UNIQUE_CONSTRAINT));
+
+      const { dismissMerge, mergeSuggestion, save } = dialog();
+      await save();
+      dismissMerge();
+
+      expect(get(mergeSuggestion)).toBeUndefined();
+      expect(onSuggestMerge).not.toHaveBeenCalled();
+      expect(get(modelValue)).toBeDefined();
     });
 
     it('should report the error when the collision names no asset it recognises', async () => {
       migrateSolanaToken.mockRejectedValue(new Error('UNIQUE constraint failed: assets.identifier'));
 
-      const { save } = dialog();
+      const { failure, mergeSuggestion, save } = dialog();
       await save();
 
-      expect(onSuggestMerge).not.toHaveBeenCalled();
-      expect(setMessage).toHaveBeenCalledOnce();
+      expect(get(mergeSuggestion)).toBeUndefined();
+      expect(get(failure)).toBeDefined();
       expect(get(modelValue)).toBeDefined();
     });
 
     it('should not read a merge out of an unrelated failure', async () => {
       migrateSolanaToken.mockRejectedValue(new Error(`something else went wrong ${TARGET}`));
 
-      const { save } = dialog();
+      const { failure, mergeSuggestion, save } = dialog();
       await save();
 
-      expect(onSuggestMerge).not.toHaveBeenCalled();
-      expect(setMessage).toHaveBeenCalledOnce();
+      expect(get(mergeSuggestion)).toBeUndefined();
+      expect(get(failure)).toBeDefined();
     });
   });
 });

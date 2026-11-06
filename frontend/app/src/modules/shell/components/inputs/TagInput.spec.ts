@@ -16,15 +16,16 @@ function createTag(name: string): { name: string; description: string; backgroun
   };
 }
 
+const { queryAddTag } = vi.hoisted(() => ({
+  queryAddTag: vi.fn<(tag: object) => Promise<Record<string, object>>>(),
+}));
+
 vi.mock('@/modules/tags/use-tags-api', (): Record<string, unknown> => ({
-  useTagsApi: (): Record<string, ReturnType<typeof vi.fn>> => ({
+  useTagsApi: (): Record<string, unknown> => ({
     queryTags: vi.fn().mockResolvedValue({
       tag1: createTag('tag1'),
     }),
-    queryAddTag: vi.fn().mockResolvedValue({
-      tag1: createTag('tag1'),
-      tag2: createTag('tag2'),
-    }),
+    queryAddTag,
     queryEditTag: vi.fn(),
     queryDeleteTag: vi.fn().mockResolvedValue({
       tag1: createTag('tag1'),
@@ -37,6 +38,11 @@ describe('tag-input', () => {
 
   beforeEach((): void => {
     vi.useFakeTimers();
+    queryAddTag.mockReset();
+    queryAddTag.mockResolvedValue({
+      tag1: createTag('tag1'),
+      tag2: createTag('tag2'),
+    });
   });
 
   afterEach((): void => {
@@ -112,5 +118,48 @@ describe('tag-input', () => {
 
     expect(wrapper.find('[data-id=content]').exists()).toBe(true);
     expect(wrapper.find('[data-id=content] button:nth-child(2)').exists()).toBe(false);
+  });
+
+  it('should name a failed tag creation under the field and drop the tag', async () => {
+    queryAddTag.mockRejectedValueOnce(new Error('tag name is taken'));
+    wrapper = createWrapper({
+      props: {
+        modelValue: [],
+      },
+    });
+    const { fetchTags } = useTagOperations();
+    await fetchTags();
+
+    await wrapper.find('input[type=text]').setValue('tag2');
+    await vi.runOnlyPendingTimersAsync();
+    await wrapper.find('[data-id=activator]').trigger('keydown.enter');
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(wrapper.text()).toContain('tag name is taken');
+    expect(wrapper.emitted('update:modelValue')!.at(-1)).toEqual([[]]);
+  });
+
+  it('should clear the creation failure on the next attempt', async () => {
+    queryAddTag.mockRejectedValueOnce(new Error('tag name is taken'));
+    wrapper = createWrapper({
+      props: {
+        modelValue: [],
+      },
+    });
+    const { fetchTags } = useTagOperations();
+    await fetchTags();
+
+    await wrapper.find('input[type=text]').setValue('tag2');
+    await vi.runOnlyPendingTimersAsync();
+    await wrapper.find('[data-id=activator]').trigger('keydown.enter');
+    await vi.advanceTimersToNextTimerAsync();
+    expect(wrapper.text()).toContain('tag name is taken');
+
+    await wrapper.find('input[type=text]').setValue('tag2');
+    await vi.runOnlyPendingTimersAsync();
+    await wrapper.find('[data-id=activator]').trigger('keydown.enter');
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(wrapper.text()).not.toContain('tag name is taken');
   });
 });

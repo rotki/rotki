@@ -21,16 +21,14 @@ vi.mock('@/modules/reports/use-reports-api', () => ({
 
 const mockNotifyError = vi.fn();
 const mockNotifyFailure = vi.fn();
-const mockShowErrorMessage = vi.fn();
-const mockShowSuccessMessage = vi.fn();
+const mockNotifyInfo = vi.fn();
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e))),
   useNotifications: vi.fn(() => ({
     notifyError: mockNotifyError,
     notifyFailure: mockNotifyFailure,
-    showErrorMessage: mockShowErrorMessage,
-    showSuccessMessage: mockShowSuccessMessage,
+    notifyInfo: mockNotifyInfo,
   })),
 }));
 
@@ -91,23 +89,25 @@ describe('useReportOperations', () => {
   });
 
   describe('createCsv', () => {
-    it('should show success on successful export', async () => {
+    it('should toast a successful export', async () => {
       mockExportReportCSV.mockResolvedValue(true);
 
       const { createCsv } = useReportOperations();
       await createCsv(1, '/tmp/output');
 
       expect(mockExportReportCSV).toHaveBeenCalledWith(1, '/tmp/output');
-      expect(mockShowSuccessMessage).toHaveBeenCalledOnce();
+      expect(mockNotifyInfo).toHaveBeenCalledOnce();
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
 
-    it('should show error on failed export', async () => {
+    it('should toast a refused export', async () => {
       mockExportReportCSV.mockResolvedValue(false);
 
       const { createCsv } = useReportOperations();
       await createCsv(1, '/tmp/output');
 
-      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+      expect(mockNotifyError).toHaveBeenCalledWith('actions.reports.csv_export.title', 'actions.reports.csv_export.message.failure');
+      expect(mockNotifyInfo).not.toHaveBeenCalled();
     });
   });
 

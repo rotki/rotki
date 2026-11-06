@@ -3,7 +3,7 @@ import type {
   HistoryEvent,
   HistoryEventEntry,
 } from '@/modules/history/events/schemas';
-import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
+import type { HistoryEventDeletePayload, HistoryEventQuestion } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import {
   isEventMissingAccountingRule,
@@ -17,7 +17,7 @@ import {
 import { editTargetFor } from '@/modules/history/events/history-event-edit-target';
 import HistoryEventAction from '@/modules/history/events/HistoryEventAction.vue';
 
-const { item, index, completeGroupEvents, canUnlink, collapseAction } = defineProps<{
+const { item, index, completeGroupEvents, unlinkConfirm, collapseAction } = defineProps<{
   item: HistoryEventEntry;
   index: number;
   /**
@@ -25,7 +25,8 @@ const { item, index, completeGroupEvents, canUnlink, collapseAction } = definePr
    * This complete set is required for correctly editing grouped events (e.g., swap events).
    */
   completeGroupEvents: HistoryEventEntry[];
-  canUnlink?: boolean;
+  /** Offers unlink in the menu, asking this before `unlink-event` is emitted. */
+  unlinkConfirm?: HistoryEventQuestion;
   collapseAction?: boolean;
 }>();
 
@@ -46,20 +47,38 @@ function editEvent(item: HistoryEvent) {
   emit('edit-event', editTargetFor(item, completeGroupEvents));
 }
 
-function deleteEvent(item: HistoryEventEntry) {
-  const isSingleEvmEvent = isEvmEvent(item) && completeGroupEvents.length === 1;
-  const payload: HistoryEventDeletePayload = isSingleEvmEvent
-    ? {
-        event: item,
-        type: 'ignore',
-      }
-    : {
-        ids: shouldDeleteGroup(item, index) ? completeGroupEvents.map(event => event.identifier) : [item.identifier],
-        type: 'delete',
-      };
+/**
+ * What deleting this row does: a lone EVM event cannot be deleted from its transaction, so the
+ * transaction is excluded from accounting instead; a group header removes the whole group.
+ */
+const deletePayload = computed<HistoryEventDeletePayload>(() => {
+  if (isEvmEvent(item) && completeGroupEvents.length === 1)
+    return { event: item, type: 'ignore' };
 
-  emit('delete-event', payload);
-}
+  return {
+    ids: shouldDeleteGroup(item, index) ? completeGroupEvents.map(event => event.identifier) : [item.identifier],
+    type: 'delete',
+  };
+});
+
+const deleteConfirm = computed<HistoryEventQuestion | undefined>(() => {
+  if (hideDeleteAction(item, index, completeGroupEvents))
+    return undefined;
+
+  if (get(deletePayload).type === 'ignore') {
+    return {
+      confirmLabel: t('transactions.events.confirmation.ignore.action'),
+      message: t('transactions.events.confirmation.ignore.message'),
+      title: t('transactions.events.confirmation.ignore.title'),
+    };
+  }
+
+  return {
+    confirmLabel: t('common.actions.delete'),
+    message: t('transactions.events.confirmation.delete.message'),
+    title: t('transactions.events.confirmation.delete.title'),
+  };
+});
 </script>
 
 <template>
@@ -77,10 +96,10 @@ function deleteEvent(item: HistoryEventEntry) {
       }"
       :event="item"
       :can-edit="!hideEditAction(item, index)"
-      :can-delete="!hideDeleteAction(item, index, completeGroupEvents)"
-      :can-unlink="canUnlink"
+      :delete-confirm="deleteConfirm"
+      :unlink-confirm="unlinkConfirm"
       @edit="editEvent(item)"
-      @delete="deleteEvent(item)"
+      @delete="emit('delete-event', deletePayload)"
       @unlink="emit('unlink-event')"
     />
 

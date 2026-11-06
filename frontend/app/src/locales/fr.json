@@ -36,7 +36,6 @@
   "account_form": {
     "advanced_tooltip": "Afficher les options xpub avancées | Masquer les options xpub avancées",
     "error": {
-      "description": "Erreur lors de l'ajout du compte : {error}",
       "title": "Ajout de compte"
     },
     "labels": {
@@ -124,11 +123,10 @@
   "accounting_settings": {
     "rule": {
       "add": "Ajouter une règle comptable",
-      "add_error": "Impossible d'ajouter une règle comptable : {message}",
+      "add_error": "Impossible d'ajouter une règle comptable",
       "confirm_delete": "Êtes-vous sûr de vouloir supprimer cette règle comptable personnalisée ?",
       "conflicts": {
         "error": {
-          "description": "Erreur lors de la résolution des conflits de règles comptables : {error}",
           "title": "Résolution des conflits de règles comptables"
         },
         "labels": {
@@ -137,9 +135,9 @@
         "title": "Résoudre les conflits de règles comptables"
       },
       "delete": "Supprimer la règle comptable",
-      "delete_error": "Impossible de supprimer la règle comptable : {message}",
+      "delete_error": "Impossible de supprimer la règle comptable",
       "edit": "Modifier la règle comptable",
-      "edit_error": "Impossible de modifier la règle comptable : {message}",
+      "edit_error": "Impossible de modifier la règle comptable",
       "fetch_error": {
         "message": "Échec de la récupération des règles comptables : {message}",
         "title": "Récupération des règles comptables"
@@ -192,11 +190,9 @@
         "task": "Création d'une entrée de cache de {fromAsset} à {toAsset} sur {source}"
       },
       "exchange_removal": {
-        "description": "La suppression de {exchange} a échoué en raison de : {error}",
         "title": "Suppression de l'échange"
       },
       "exchange_setup": {
-        "description": "La configuration de {exchange} a échoué en raison de : {error}",
         "title": "Configuration de l'échange"
       },
       "historic_fetch_price": {
@@ -212,7 +208,6 @@
     },
     "delete_eth2_validator": {
       "error": {
-        "description": "La suppression des validateurs de staking ETH a échoué : {message}",
         "title": "Suppression des validateurs de staking ETH"
       }
     },
@@ -248,19 +243,18 @@
     },
     "ignore": {
       "error": {
-        "description": "Échec d'ignorance des actions sélectionnées : {error}",
         "title": "Échec de l'ignorance des actions"
       }
     },
     "manual_balances": {
       "add": {
         "error": {
-          "description": "Échec de l'ajout du solde manuel : {message}"
+          "title": "Échec de l'ajout du solde manuel"
         }
       },
       "edit": {
         "error": {
-          "description": "Échec de la modification du solde manuel : {message}"
+          "title": "Échec de la modification du solde manuel"
         }
       }
     },
@@ -309,12 +303,12 @@
     "session": {
       "add_queriable_address": {
         "error": {
-          "message": "Échec de l'ajout d'une adresse interrogeable : {message}"
+          "message": "Échec de l'ajout d'une adresse interrogeable"
         }
       },
       "delete_queriable_address": {
         "error": {
-          "message": "Échec de la suppression d'une adresse interrogeable : {message}"
+          "message": "Échec de la suppression d'une adresse interrogeable"
         }
       },
       "fetch_queriable_address": {
@@ -340,7 +334,7 @@
         }
       },
       "password_change": {
-        "error": "Erreur lors du changement de mot de passe de l'utilisateur : {message}",
+        "error": "Erreur lors du changement de mot de passe de l'utilisateur",
         "success": "Mot de passe utilisateur changé avec succès"
       },
       "periodic_query": {
@@ -373,22 +367,14 @@
     },
     "unignore": {
       "error": {
-        "description": "Échec de la désignorisation des actions sélectionnées : {error}",
         "title": "Échec de la désignorisation des actions"
       }
-    }
-  },
-  "active_modules": {
-    "enable": {
-      "description": "Voulez-vous activer le module {name} ?",
-      "title": "Module activé"
     }
   },
   "address_book": {
     "actions": {
       "add": {
         "error": {
-          "description": "L'ajout à l'annuaire d'adresses n'a pas abouti : {message}",
           "title": "Échec de l'ajout à l'annuaire d'adresses"
         }
       },
@@ -405,7 +391,6 @@
       },
       "edit": {
         "error": {
-          "description": "La modification de l'annuaire d'adresses n'a pas abouti : {message}",
           "title": "Échec de la modification de l'annuaire d'adresses"
         },
         "tooltip": "Modifier l'annuaire d'adresses"
@@ -484,9 +469,7 @@
     "optional": "Champs facultatifs",
     "replaced": "Cette icône sera appliquée après avoir cliqué sur \"Enregistrer\".",
     "type_non_empty": "Le type d'actif ne peut pas être vide",
-    "types": {
-      "error": "Impossible de charger les types d'actifs : {message}"
-    },
+    "types": {},
     "underlying_tokens": "Jetons sous-jacents",
     "validation": {
       "valid_address": "Veuillez saisir une adresse valide"
@@ -500,10 +483,10 @@
     "title": "Localisations d'actifs"
   },
   "asset_management": {
-    "add_error": "Impossible d'ajouter l'actif : {message}",
+    "add_error": "Impossible d'ajouter l'actif",
     "add_title": "Ajouter un nouvel actif",
     "cex_mapping": {
-      "add_error": "Impossible d'ajouter le mappage : {message}",
+      "add_error": "Impossible d'ajouter le mappage",
       "add_mapping": "Ajouter une cartographie",
       "add_title": "Ajouter une nouvelle cartographie",
       "all_exchanges": "Tous les échanges",
@@ -512,8 +495,8 @@
         "message": "Êtes-vous sûr de vouloir supprimer la cartographie des actifs pour le symbole {asset} dans {location} ?",
         "title": "Supprimer la cartographie des actifs de la bourse"
       },
-      "delete_error": "Impossible de supprimer la cartographie : {message}",
-      "edit_error": "Impossible de modifier la correspondance : {message}",
+      "delete_error": "Impossible de supprimer la cartographie",
+      "edit_error": "Impossible de modifier la correspondance",
       "edit_title": "Modifier le mappage",
       "form": {
         "asset_non_empty": "Le champ de l'actif reconnu ne peut pas être vide",
@@ -529,8 +512,8 @@
       "message": "Voulez-vous vraiment supprimer {asset} de la base de données d'actifs ?",
       "title": "Supprimer l'actif"
     },
-    "delete_error": "Impossible de supprimer {address} : {message}",
-    "edit_error": "Impossible de modifier l'actif : {message}",
+    "delete_error": "Impossible de supprimer {address}",
+    "edit_error": "Impossible de modifier l'actif",
     "edit_title": "Modifier un actif",
     "merge_assets": "Fusionner des actifs",
     "merge_assets_tooltip": "Fusionner deux actifs en un (peut être utilisé pour migrer des actifs personnalisés vers des actifs officiellement pris en charge)"
@@ -1045,7 +1028,6 @@
         },
         "message": {
           "failure": "Échec de la suppression de l'instantané",
-          "success": "Instantané supprimé avec succès",
           "title": "Supprimer l'instantané"
         }
       },
@@ -1085,8 +1067,6 @@
           },
           "location_data": {
             "add_title": "Ajouter des données de localisation instantané",
-            "delete_confirmation": "Voulez-vous vraiment supprimer cet élément de données de localisation instantané?",
-            "delete_title": "Supprimer l'élément de données de localisation instantané",
             "edit_title": "Mettre à jour les données de localisation instantané",
             "rules": {
               "location": "Le champ de localisation ne peut pas être vide",
@@ -1124,10 +1104,6 @@
       }
     },
     "purge_images_cache": {
-      "confirm": {
-        "message": "Es-tu sûr de vouloir effacer les images en cache pour {source} ?",
-        "title": "Confirmer l'effacement des images en cache"
-      },
       "error": "Échec de l'effacement des images en cache pour {source} : {message}",
       "hint": "Laissez ce champ vide pour effacer la mise en cache pour tous",
       "label": {
@@ -1142,10 +1118,6 @@
       "title": "Effacer la mise en cache d'images"
     },
     "refresh_cache": {
-      "confirm": {
-        "message": "Êtes-vous sûr de vouloir actualiser les données du protocole pour {source}?",
-        "title": "Confirmer l'actualisation des données du protocole"
-      },
       "error": "Échec de l'effacement des données du protocole pour {source}: {message}",
       "select_cache": "Sélectionner les données du protocole à actualiser",
       "subtitle": "Permet d'actualiser les données du protocole dans rotki",
@@ -2389,7 +2361,6 @@
     "debug": {
       "export_data": "Exporter les données de débogage",
       "export_message": {
-        "success": "Données de débogage du rapport de bénéfice/perte exportées avec succès",
         "title": "Exportation des données de débogage du rapport de bénéfice/perte"
       },
       "import_data": "Importer les données de débogage",
@@ -2397,7 +2368,6 @@
         "title": "Importer les données de débogage du rapport de bénéfice/perte"
       },
       "import_message": {
-        "success": "Données de débogage du rapport de bénéfice/perte importées avec succès",
         "title": "Importation des données de débogage du rapport de bénéfice/perte"
       },
       "title": "Débogage"
@@ -2482,7 +2452,6 @@
     "ignore_errors_label": "Ignorer les erreurs",
     "ignore_errors_tooltip": "Enregistrer l'instantané de solde en ignorant les erreurs sur les API externes. Cela peut entraîner un snapshot incomplet.",
     "messages": {
-      "failed_description": "L'importation de l'instantané a échoué : {message}",
       "success_description": "Instantané de solde importé avec succès. Vous serez déconnecté maintenant.",
       "title": "Importation d'instantané"
     },
@@ -2580,7 +2549,6 @@
       "add_tx": "Ajouter une transaction par hash de transaction",
       "delete": {
         "error": {
-          "message": "Échec : {message}",
           "title": "Supprimer la transaction EVM"
         },
         "message": "Êtes-vous sûr de vouloir supprimer cette transaction et ses événements? Vous devrez purger toutes les transactions ou ajouter par le hachage de la transaction pour les restaurer.",
@@ -2610,9 +2578,6 @@
         "edit": {
           "title": "Modifier Événement"
         }
-      },
-      "export": {
-        "confirmation_message": "Êtes-vous sûr de vouloir exporter la liste des événements avec les filtres sélectionnés appliqués?"
       },
       "form": {
         "address": {
@@ -2748,9 +2713,7 @@
             "title": "Erreur lors du reprocessing des événements ignorés"
           },
           "success": {
-            "all": "Tous les événements externes ignorés ont été traités",
-            "some": "{successful} de {total} événements externes ignorés ont été traités",
-            "title": "Événements ignorés traités"
+            "some": "{successful} de {total} événements externes ignorés ont été traités"
           }
         }
       }
@@ -2833,8 +2796,7 @@
       }
     },
     "confirmation": {
-      "message": "Voulez-vous vraiment vous déconnecter de votre session rotki actuelle ?",
-      "title": "Confirmation requise"
+      "message": "Voulez-vous vraiment vous déconnecter de votre session rotki actuelle ?"
     },
     "logout": "Déconnexion",
     "settings": "Paramètres",

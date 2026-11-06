@@ -1,4 +1,4 @@
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, Ref } from 'vue';
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { StakingValidatorManage } from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
@@ -13,15 +13,25 @@ import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseEthValidatorOperationsReturn {
   accountOperation: ComputedRef<boolean>;
-  confirmDelete: (item: EthereumValidator) => void;
-  deleteSelected: (rows: EthereumValidator[], selected: number[]) => void;
+  /** What a row's delete button asks, beside it, before `deleteValidator` runs. */
+  deleteConfirm: (item: EthereumValidator) => { title: string; message: string };
+  /** Deletes a validator the user already confirmed. */
+  deleteValidator: (item: EthereumValidator) => Promise<void>;
+  /** What the toolbar's delete asks, beside it, before `deleteSelected` runs. */
+  deleteSelectedConfirm: (rows: EthereumValidator[], selected: number[]) => { title: string; message: string };
+  /** Deletes the selected validators out of `rows`, which the toolbar already confirmed. */
+  deleteSelected: (rows: EthereumValidator[], selected: number[]) => Promise<void>;
+  /** Why the last single or bulk delete failed, named above the table. */
+  deleteFailure: Readonly<Ref<unknown>>;
   edit: (account: EthereumValidator) => StakingValidatorManage;
   loading: ComputedRef<boolean>;
   refresh: () => Promise<void>;
 }
 
 export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
-  const { showConfirmation } = useAccountDelete();
+  const { deleteConfirmed, describeDeletion } = useAccountDelete();
+  const deleteFailure = shallowRef<unknown>();
+  const { t } = useI18n({ useScope: 'global' });
   const { fetchEthStakingValidators } = useEthStaking();
   const { refreshBlockchainBalances } = useBlockchainBalances();
   const { useIsActivePrefix } = useTaskCenter();
@@ -66,25 +76,50 @@ export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
     }, RefreshMode.USER);
   }
 
-  function confirmDelete(item: EthereumValidator): void {
-    showConfirmation({
-      data: [item],
-      type: 'validator',
-    });
+  function describe(data: EthereumValidator[]): { title: string; message: string } {
+    return {
+      message: describeDeletion({ data, type: 'validator' }),
+      title: t('account_balances.confirm_delete.title'),
+    };
   }
 
-  function deleteSelected(rows: EthereumValidator[], selected: number[]): void {
-    const items = rows.filter(item => selected.includes(item.index));
-    showConfirmation({
-      data: items,
-      type: 'validator',
-    });
+  function deleteConfirm(item: EthereumValidator): { title: string; message: string } {
+    return describe([item]);
+  }
+
+  function pick(rows: EthereumValidator[], selected: number[]): EthereumValidator[] {
+    return rows.filter(item => selected.includes(item.index));
+  }
+
+  function deleteSelectedConfirm(rows: EthereumValidator[], selected: number[]): { title: string; message: string } {
+    return describe(pick(rows, selected));
+  }
+
+  async function deleteValidators(data: EthereumValidator[]): Promise<void> {
+    set(deleteFailure, undefined);
+    try {
+      await deleteConfirmed({ data, type: 'validator' });
+    }
+    catch (error: unknown) {
+      set(deleteFailure, error);
+    }
+  }
+
+  async function deleteValidator(item: EthereumValidator): Promise<void> {
+    await deleteValidators([item]);
+  }
+
+  async function deleteSelected(rows: EthereumValidator[], selected: number[]): Promise<void> {
+    await deleteValidators(pick(rows, selected));
   }
 
   return {
     accountOperation,
-    confirmDelete,
+    deleteConfirm,
+    deleteFailure: readonly(deleteFailure),
     deleteSelected,
+    deleteSelectedConfirm,
+    deleteValidator,
     edit,
     loading,
     refresh,

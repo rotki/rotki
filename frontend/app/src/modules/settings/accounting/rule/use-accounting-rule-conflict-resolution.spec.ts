@@ -1,5 +1,6 @@
 import type { Collection } from '@/modules/core/common/collection';
 import type { AccountingRuleConflict } from '@/modules/settings/types/accounting';
+import { startPromise } from '@shared/utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref } from 'vue';
@@ -13,7 +14,6 @@ const {
   getAccountingRulesConflicts,
   refetch,
   resolveAccountingRuleConflicts,
-  setMessage,
   tableState,
 } = vi.hoisted(() => {
   const tableState: TableState = {};
@@ -21,7 +21,6 @@ const {
     getAccountingRulesConflicts: vi.fn(),
     refetch: vi.fn(async () => Promise.resolve()),
     resolveAccountingRuleConflicts: vi.fn(),
-    setMessage: vi.fn(),
     tableState,
   };
 });
@@ -31,10 +30,6 @@ vi.mock('@/modules/settings/accounting/use-accounting-settings', () => ({
     getAccountingRulesConflicts,
     resolveAccountingRuleConflicts,
   }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
 }));
 
 vi.mock('@/modules/core/table/use-server-table', () => ({
@@ -152,11 +147,11 @@ describe('modules/settings/accounting/rule/useAccountingRuleConflictResolution',
     });
 
     it('should tell the caller once it succeeds', async () => {
-      const { save } = resolution();
+      const { failure, save } = resolution();
       await save();
 
       expect(onResolved).toHaveBeenCalledOnce();
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(get(failure)).toBeUndefined();
     });
   });
 
@@ -165,21 +160,22 @@ describe('modules/settings/accounting/rule/useAccountingRuleConflictResolution',
       resolveAccountingRuleConflicts.mockResolvedValue({ message: 'rule is gone', success: false });
     });
 
-    it('should report the reason and leave the dialog open', async () => {
-      const { save } = resolution();
+    it('should keep the backend message for the dialog and leave it open', async () => {
+      const { failure, save } = resolution();
       await save();
 
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+      expect(get(failure)).toBe('rule is gone');
       expect(onResolved).not.toHaveBeenCalled();
     });
 
-    it('should include the backend message in the report', async () => {
-      const { save } = resolution();
+    it('should clear the failure when the next submit starts', async () => {
+      const { failure, save } = resolution();
       await save();
+      resolveAccountingRuleConflicts.mockImplementationOnce(async () => new Promise(() => {}));
 
-      expect(setMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ description: expect.stringContaining('rule is gone') }),
-      );
+      startPromise(save());
+
+      expect(get(failure)).toBeUndefined();
     });
 
     it('should stop loading so the user can try again', async () => {

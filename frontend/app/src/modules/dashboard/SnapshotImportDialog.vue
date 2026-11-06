@@ -1,9 +1,14 @@
 <script lang="ts" setup>
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
+
 const model = defineModel<boolean>({ required: true });
 
 const balanceFile = defineModel<File>('balanceFile');
 
 const locationFile = defineModel<File>('locationFile');
+
+/** Why the last import failed; the dialog clears it when it closes. */
+const failure = defineModel<string>('failure');
 
 const { loading = false, persistent = false } = defineProps<{
   loading?: boolean;
@@ -17,6 +22,11 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const complete = logicAnd(balanceFile, locationFile);
+
+watch(model, (open) => {
+  if (!open)
+    set(failure, undefined);
+});
 </script>
 
 <template>
@@ -47,6 +57,13 @@ const complete = logicAnd(balanceFile, locationFile);
       </template>
 
       <div class="flex flex-col gap-4">
+        <FailureStrip
+          v-if="failure"
+          :title="t('snapshot_action_button.messages.title')"
+          :failure="failure"
+          :retryable="false"
+          data-testid="snapshot-import-failure"
+        />
         <div class="flex flex-col gap-2">
           <div class="text-sm font-medium text-rui-text">
             {{ t('snapshot_import_dialog.balance_snapshot_file') }}

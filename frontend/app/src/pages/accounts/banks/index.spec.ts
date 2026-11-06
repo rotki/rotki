@@ -13,12 +13,11 @@ import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-st
 import Banks from '@/pages/accounts/banks/index.vue';
 import '@test/i18n';
 
-const { refreshBankConnections, refreshSupportedBanks, removeBank, routeQuery, show, syncBanks } = vi.hoisted(() => ({
+const { refreshBankConnections, refreshSupportedBanks, removeBank, routeQuery, syncBanks } = vi.hoisted(() => ({
   refreshBankConnections: vi.fn(),
   refreshSupportedBanks: vi.fn(),
   removeBank: vi.fn(),
   routeQuery: { value: {} },
-  show: vi.fn(),
   syncBanks: vi.fn(),
 }));
 
@@ -29,10 +28,6 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/modules/banks/use-banks', () => ({
   useBanks: (): Record<string, unknown> => ({ refreshBankConnections, refreshSupportedBanks, removeBank, syncBanks }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
 }));
 
 const manifest: BankManifest = {
@@ -287,11 +282,10 @@ describe('banks page', () => {
     });
   });
 
-  it('should edit a connection with its name and empty credentials, and confirm before removing', async () => {
+  it('should edit a connection with its name and empty credentials', async () => {
     wrapper = createWrapper();
     await flushPromises();
-    const actions = wrapper.findComponent(BankConnectionActions);
-    actions.vm.$emit('edit');
+    wrapper.findComponent(BankConnectionActions).vm.$emit('edit');
     await nextTick();
     expect(wrapper.findComponent(BankConnectionFormDialog).props('modelValue')).toEqual({
       connector: 'qonto',
@@ -301,11 +295,26 @@ describe('banks page', () => {
       name: 'Qonto main',
       newName: 'Qonto main',
     });
-    actions.vm.$emit('delete');
-    expect(show).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'bank_settings.confirmation.message::Qonto, Qonto main' }),
-      expect.any(Function),
-    );
+  });
+
+  it('should have the row ask before removing, naming the bank and the connection', async () => {
+    wrapper = createWrapper();
+    await flushPromises();
+
+    expect(wrapper.findComponent(BankConnectionActions).props('deleteConfirm')).toEqual({
+      message: 'bank_settings.confirmation.message::Qonto, Qonto main',
+      title: 'bank_settings.confirmation.title',
+    });
     expect(removeBank).not.toHaveBeenCalled();
+  });
+
+  it('should remove the row\'s connection once its question is confirmed', async () => {
+    wrapper = createWrapper();
+    await flushPromises();
+
+    wrapper.findComponent(BankConnectionActions).vm.$emit('delete');
+    await flushPromises();
+
+    expect(removeBank).toHaveBeenCalledWith(connection);
   });
 });

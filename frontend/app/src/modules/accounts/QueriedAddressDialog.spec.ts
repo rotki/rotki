@@ -6,10 +6,11 @@ import { defineComponent } from 'vue';
 import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
 import { Module } from '@/modules/core/common/modules';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const { addQueriedAddress, deleteQueriedAddress, getAccounts, getAddresses } = vi.hoisted(() => ({
-  addQueriedAddress: vi.fn(async () => {}),
-  deleteQueriedAddress: vi.fn(async () => {}),
+  addQueriedAddress: vi.fn<(payload: unknown) => Promise<{ error: unknown } | undefined>>(async () => undefined),
+  deleteQueriedAddress: vi.fn<(payload: unknown) => Promise<{ error: unknown } | undefined>>(async () => undefined),
   getAccounts: vi.fn<(chain: string) => BlockchainAccount[]>(() => []),
   getAddresses: vi.fn<(chain: string) => string[]>(() => []),
 }));
@@ -185,6 +186,57 @@ describe('queriedAddressDialog', () => {
 
       expect(selector(wrapper).props('modelValue')).toEqual([]);
     });
+  });
+
+  describe('an add that fails', () => {
+    async function failAdd(error: unknown): Promise<VueWrapper<any>> {
+      addQueriedAddress.mockResolvedValueOnce({ error });
+      const wrapper = createWrapper();
+      await pick(wrapper, ADDRESSES[0]);
+      await addButton(wrapper).trigger('click');
+      await flushPromises();
+      return wrapper;
+    }
+
+    it('should name the failure in the dialog under the add title', async () => {
+      const error = new Error('backend refused');
+      const wrapper = await failAdd(error);
+
+      const strip = wrapper.findComponent(FailureStrip);
+      expect(strip.props('failure')).toBe(error);
+      expect(strip.props('title')).toBe('actions.session.add_queriable_address.error.message');
+      expect(wrapper.emitted('close')).toBeUndefined();
+    });
+
+    it('should keep the picked account so the add can be retried', async () => {
+      const wrapper = await failAdd(new Error('backend refused'));
+
+      expect(selector(wrapper).props('modelValue')).toEqual([account(ADDRESSES[0])]);
+    });
+
+    it('should clear the failure when the add is tried again', async () => {
+      const wrapper = await failAdd(new Error('backend refused'));
+      addQueriedAddress.mockImplementationOnce(async () => new Promise(() => {}));
+
+      await addButton(wrapper).trigger('click');
+      await flushPromises();
+
+      expect(wrapper.findComponent(FailureStrip).exists()).toBe(false);
+    });
+  });
+
+  it('should name a failed removal in the dialog under the delete title', async () => {
+    queried({ eth2: [ADDRESSES[0]] });
+    const error = new Error('backend refused');
+    deleteQueriedAddress.mockResolvedValueOnce({ error });
+    const wrapper = createWrapper();
+
+    await wrapper.find('[data-testid=queried-address-remove]').trigger('click');
+    await flushPromises();
+
+    const strip = wrapper.findComponent(FailureStrip);
+    expect(strip.props('failure')).toBe(error);
+    expect(strip.props('title')).toBe('actions.session.delete_queriable_address.error.message');
   });
 
   it('should remove an address from the module', async () => {

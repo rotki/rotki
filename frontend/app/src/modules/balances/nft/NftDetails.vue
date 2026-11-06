@@ -5,6 +5,7 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { useNftDomainWhitelist } from '@/modules/balances/nft/use-nft-domain-whitelist';
 import { useNftImage } from '@/modules/balances/nft/use-nft-image';
 import AppImage from '@/modules/shell/components/AppImage.vue';
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { identifier, size = '50px', styled } = defineProps<{
@@ -22,7 +23,7 @@ const { t } = useI18n({ useScope: 'global' });
 const imageUrlSource = computed<string | null>(() => get(balanceData)?.imageUrl || null);
 
 const { isVideo, renderedMedia, shouldRender } = useNftImage(imageUrlSource);
-const { confirmAllowDomain, domain } = useNftDomainWhitelist(imageUrlSource);
+const { allowDomain, domain, question } = useNftDomainWhitelist(imageUrlSource);
 
 const collectionName = computed<string | null>(() => {
   const data = get(balanceData);
@@ -53,43 +54,53 @@ const fallbackData = computed(() => {
 <template>
   <div>
     <div class="flex items-center overflow-hidden">
-      <div class="cursor-pointer">
-        <RuiTooltip
-          :options="{ placement: 'top' }"
-          :disabled="shouldRender"
-          :open-delay="400"
-          class="w-full"
-          :class-names="{ tooltip: 'max-w-40' }"
-        >
-          <template #activator>
-            <div
-              class="my-2 bg-rui-grey-200 rounded-sm flex items-center justify-center"
-              :style="[styled, { width: size, height: size, maxWidth: size, minWidth: size }]"
-              @click="!shouldRender ? confirmAllowDomain() : null"
-            >
-              <video
-                v-if="isVideo"
-                width="100%"
-                height="100%"
-                :src="renderedMedia"
-              />
-              <AppImage
-                v-else
-                class="rounded-sm overflow-hidden"
-                :src="renderedMedia"
-                :size="size"
-                fit="contain"
-              />
-            </div>
-          </template>
+      <ConfirmPopover
+        class="cursor-pointer"
+        tone="warning"
+        :title="question.title"
+        :message="question.message"
+        :confirm-label="question.confirmLabel"
+        @confirm="allowDomain()"
+      >
+        <template #activator="{ attrs }">
+          <RuiTooltip
+            :options="{ placement: 'top' }"
+            :disabled="shouldRender"
+            :open-delay="400"
+            class="w-full"
+            :class-names="{ tooltip: 'max-w-40' }"
+          >
+            <template #activator>
+              <div
+                class="my-2 bg-rui-grey-200 rounded-sm flex items-center justify-center"
+                :style="[styled, { width: size, height: size, maxWidth: size, minWidth: size }]"
+                data-testid="nft-details-media"
+                v-bind="shouldRender ? {} : attrs"
+              >
+                <video
+                  v-if="isVideo"
+                  width="100%"
+                  height="100%"
+                  :src="renderedMedia"
+                />
+                <AppImage
+                  v-else
+                  class="rounded-sm overflow-hidden"
+                  :src="renderedMedia"
+                  :size="size"
+                  fit="contain"
+                />
+              </div>
+            </template>
 
-          {{ t('nft_balance_table.hidden_hint') }}
-          {{ t('nft_gallery.allow_domain') }}
-          <strong class="text-rui-warning-lighter">
-            {{ domain }}
-          </strong>
-        </RuiTooltip>
-      </div>
+            {{ t('nft_balance_table.hidden_hint') }}
+            {{ t('nft_gallery.allow_domain') }}
+            <strong class="text-rui-warning-lighter">
+              {{ domain }}
+            </strong>
+          </RuiTooltip>
+        </template>
+      </ConfirmPopover>
 
       <div class="ml-3 overflow-hidden flex-fill">
         <template v-if="isNftDetailLoading">

@@ -2,8 +2,6 @@
 import { externalLinks } from '@shared/external-links';
 import { msg } from '@/message-key';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import PremiumDeviceList from '@/modules/premium/devices/components/PremiumDeviceList.vue';
 import {
@@ -18,6 +16,7 @@ import PremiumUpsellCard from '@/modules/premium/settings/PremiumUpsellCard.vue'
 import { usePremiumOperations } from '@/modules/premium/use-premium-operations';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
@@ -36,11 +35,18 @@ const { t } = useI18n({ useScope: 'global' });
 const replacing = ref<boolean>(false);
 const error = ref<string>();
 
+/** Marks a device-limit refusal, whose strip also offers a link to managing the devices. */
+const DEVICE_LIMIT_PLACEHOLDER = '_DEVICE_LIMIT_LINK_';
+
+/** Whether the last failure was the device limit, which the strip pairs with a learn-more link. */
+const deviceLimitReached = computed<boolean>(() => get(error)?.includes(DEVICE_LIMIT_PLACEHOLDER) ?? false);
+
+/** The last save or remove failure, named above the cards until the next save starts. */
+const inlineFailure = computed<string | undefined>(() => get(error)?.replace(DEVICE_LIMIT_PLACEHOLDER, '').trim() || undefined);
+
 const { username } = storeToRefs(useSessionAuthStore());
 const { premium } = storeToRefs(usePremiumStore());
 const { deletePremium, setup } = usePremiumOperations();
-const { show } = useConfirmStore();
-const { setMessage } = useMessageStore();
 const { openUrl, premiumUserLoggedIn } = useInterop();
 
 const form = useForm<PremiumCredentialsFormState, PremiumCredentialsFormState>({
@@ -86,49 +92,6 @@ async function remove(): Promise<void> {
   premiumUserLoggedIn(false);
   reset();
 }
-
-function showDeleteConfirmation(): void {
-  show(
-    {
-      message: t('premium_settings.delete_confirmation.message'),
-      primaryAction: t('premium_settings.actions.delete'),
-      secondaryAction: t('common.actions.cancel'),
-      title: t('premium_settings.delete_confirmation.title'),
-    },
-    remove,
-  );
-}
-
-watch(error, (errorMessage) => {
-  if (!errorMessage)
-    return;
-
-  const DEVICE_LIMIT_PLACEHOLDER = '_DEVICE_LIMIT_LINK_';
-
-  if (errorMessage.includes(DEVICE_LIMIT_PLACEHOLDER)) {
-    const cleanedMessage = errorMessage.replace(DEVICE_LIMIT_PLACEHOLDER, '').trim();
-
-    show(
-      {
-        message: cleanedMessage,
-        primaryAction: t('premium_settings.error.device_limit.learn_more'),
-        secondaryAction: t('common.actions.dismiss'),
-        title: t('premium_settings.error.setting_failed'),
-        type: 'warning',
-      },
-      async () => {
-        await openUrl(externalLinks.premiumDevices);
-      },
-    );
-  }
-  else {
-    setMessage({
-      description: t('premium_settings.error.setup_failed_description', { error: errorMessage }),
-      success: false,
-      title: t('premium_settings.error.setting_failed'),
-    });
-  }
-});
 </script>
 
 <template>
@@ -139,6 +102,27 @@ watch(error, (errorMessage) => {
     ]"
   >
     <div class="flex flex-col gap-6">
+      <FailureStrip
+        v-if="inlineFailure"
+        :title="t('premium_settings.error.setting_failed')"
+        :failure="inlineFailure"
+        :retryable="false"
+        data-testid="premium-settings-failure"
+      >
+        <template
+          v-if="deviceLimitReached"
+          #action
+        >
+          <button
+            type="button"
+            class="shrink-0 underline underline-offset-2 hover:no-underline"
+            data-testid="premium-settings-device-limit-learn-more"
+            @click="openUrl(externalLinks.premiumDevices)"
+          >
+            {{ t('premium_settings.error.device_limit.learn_more') }}
+          </button>
+        </template>
+      </FailureStrip>
       <PremiumUpsellCard
         v-if="!premium"
         @activate="saveCredentials()"
@@ -162,7 +146,7 @@ watch(error, (errorMessage) => {
             @replace="replacing = true"
             @cancel="reset()"
             @save="saveCredentials()"
-            @remove="showDeleteConfirmation()"
+            @remove="remove()"
           >
             <template #credentials>
               <PremiumCredentialFields

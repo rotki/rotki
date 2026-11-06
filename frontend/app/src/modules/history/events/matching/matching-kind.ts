@@ -1,6 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { MessageKey } from '@/message-key';
 import type { MatchingFlow, PotentialMatchEntryLabels, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
+import type { HistoryEventQuestion } from '@/modules/history/events/types';
 import type { UnmatchedFailure, UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
 import type { UnmatchedRow, UnmatchedVariant } from '@/modules/history/events/unmatched-row';
 import type { PinnedName } from '@/modules/session/types';
@@ -27,17 +28,23 @@ interface MatchingKindActions<TItem> {
   modelSelectedIgnored: Ref<string[]>;
   modelSelectedUnmatched: Ref<string[]>;
   resolutionNotice: Readonly<Ref<{ message: string } | undefined>>;
-  confirmIgnoreSelected: () => void;
-  confirmRestoreSelected: () => void;
   dismissResolution: () => void;
   ignore: (item: TItem) => Promise<void>;
+  /** Ignores the selection, once its button asked. */
+  ignoreSelected: () => Promise<void>;
+  /** What ignoring the selection asks beside its button, counting it. */
+  ignoreSelectedQuestion: Readonly<Ref<HistoryEventQuestion>>;
   restore: (item: TItem) => Promise<void>;
+  restoreSelected: () => Promise<void>;
   markExternal: (item: TItem) => Promise<void>;
   undoResolution: () => Promise<void>;
-  /** Absent for a kind whose rows cannot create their missing counterpart. */
-  confirmCreateCounterpart?: (item: TItem) => void;
-  /** Absent for a kind that has no fiat items to ignore at once. */
-  fiat?: { items: ComputedRef<TItem[]>; confirmIgnoreAll: () => void };
+  /** Absent for a kind whose rows cannot create their missing counterpart; the row asks first. */
+  createCounterpart?: (item: TItem) => Promise<void>;
+  /**
+   * Absent for a kind that has no fiat items to ignore at once. `ignoreAll` runs once its button
+   * asked `question`.
+   */
+  fiat?: { items: ComputedRef<TItem[]>; ignoreAll: () => Promise<void>; question: Readonly<Ref<HistoryEventQuestion>> };
 }
 
 interface MatchingKindRowsOptions<TItem> {

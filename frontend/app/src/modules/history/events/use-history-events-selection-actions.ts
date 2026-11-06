@@ -3,7 +3,7 @@ import type { UseHistoryEventsSelectionModeReturn } from './use-selection-mode';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { get, set } from '@vueuse/shared';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import { useIgnore } from '@/modules/history/use-ignore';
 
 interface UseHistoryEventsSelectionActionsOptions {
@@ -34,6 +34,8 @@ interface HistoryEventsSelectionActions {
   handleAccountingRuleRefresh: () => void;
   handleSelectionAction: (action: string) => Promise<void>;
   ignoreStatus: ComputedRef<IgnoreStatus>;
+  /** Why the selection cannot seed an accounting rule, or `undefined` when it can (or is empty). */
+  ruleCreationBlocker: ComputedRef<string | undefined>;
   selectedEventIds: Readonly<Ref<number[]>>;
 }
 
@@ -41,7 +43,7 @@ export function useHistoryEventsSelectionActions(
   options: UseHistoryEventsSelectionActionsOptions,
 ): HistoryEventsSelectionActions {
   const { t } = useI18n({ useScope: 'global' });
-  const { show: showConfirm } = useConfirmStore();
+  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
 
   const { deletion, originalGroups, refreshCallback, selectionMode } = options;
 
@@ -57,6 +59,19 @@ export function useHistoryEventsSelectionActions(
       await refreshCallback();
     },
   );
+
+  /**
+   * Excludes the selection from accounting, or includes it again, naming a failure above the table.
+   *
+   * @param ignored - true to exclude, false to include
+   */
+  async function ignoreSelection(ignored: boolean): Promise<void> {
+    clearActionFailure();
+    set(selectedEventsForIgnore, getSelectedEvents());
+    const status = await ignore(ignored);
+    if (!status.success)
+      reportActionFailure(ignored ? t('actions.ignore.error.title') : t('actions.unignore.error.title'), status.message);
+  }
 
   function getSelectedEvents(): HistoryEventEntry[] {
     const selectedIds = Array.from(get(selectionMode.state).selectedIds);
@@ -84,46 +99,34 @@ export function useHistoryEventsSelectionActions(
     selectionMode.actions.exit();
   }
 
-  /** An acknowledgement-only dialog: there is nothing to confirm, so the callback does nothing. */
-  function notify(title: string, message: string): void {
-    showConfirm({
-      message,
-      primaryAction: t('common.actions.ok'),
-      singleAction: true,
-      title,
-    }, () => {});
-  }
-
   /**
-   * An accounting rule keys off one event type and subtype pair, so a mixed selection cannot seed one
-   * and is rejected rather than silently using the first event's pair.
+   * An accounting rule keys off one event type and subtype pair, so a mixed selection cannot seed one.
+   *
+   * @remarks
+   * The toolbar disables the action and shows this reason, rather than letting the user press it and
+   * then explaining in a dialog. A selection none of whose events is loaded has nothing to seed from.
    */
-  function startRuleCreation(selectedIds: number[]): void {
-    const selectedEvents = toValue(originalGroups).flat().filter(event =>
-      !Array.isArray(event) && selectedIds.includes(event.identifier),
-    );
+  const ruleCreationBlocker = computed<string | undefined>(() => {
+    if (get(selectionMode.state).selectedIds.size === 0)
+      return undefined;
 
-    if (selectedEvents.length === 0) {
-      notify(
-        t('transactions.events.accounting_rule.error'),
-        t('transactions.events.accounting_rule.no_events_found'),
-      );
-      return;
-    }
+    const selectedEvents = getSelectedEvents();
+    if (selectedEvents.length === 0)
+      return t('transactions.events.accounting_rule.no_events_found');
 
     const { eventSubtype, eventType } = selectedEvents[0];
     const allSameType = selectedEvents.every(event =>
       event.eventType === eventType && event.eventSubtype === eventSubtype,
     );
+    return allSameType ? undefined : t('transactions.events.accounting_rule.different_types_error');
+  });
 
-    if (!allSameType) {
-      notify(
-        t('transactions.events.accounting_rule.incompatible_selection'),
-        t('transactions.events.accounting_rule.different_types_error'),
-      );
+  function startRuleCreation(selectedIds: number[]): void {
+    const [first] = getSelectedEvents();
+    if (!first || get(ruleCreationBlocker) !== undefined)
       return;
-    }
 
+    const { eventSubtype, eventType } = first;
     set(selectedEventIds, selectedIds);
     set(modelAccountingRuleToEdit, {
       accountingTreatment: null,
@@ -147,18 +150,12 @@ export function useHistoryEventsSelectionActions(
       case 'create-rule':
         startRuleCreation(selectedIds);
         break;
-      case 'ignore': {
-        const selectedEvents = getSelectedEvents();
-        set(selectedEventsForIgnore, selectedEvents);
-        await ignore(true);
+      case 'ignore':
+        await ignoreSelection(true);
         break;
-      }
-      case 'unignore': {
-        const selectedEvents = getSelectedEvents();
-        set(selectedEventsForIgnore, selectedEvents);
-        await ignore(false);
+      case 'unignore':
+        await ignoreSelection(false);
         break;
-      }
       case 'toggle-mode':
         selectionMode.actions.toggle();
         break;
@@ -182,6 +179,7 @@ export function useHistoryEventsSelectionActions(
     handleAccountingRuleRefresh,
     handleSelectionAction,
     ignoreStatus,
+    ruleCreationBlocker,
     selectedEventIds: shallowReadonly(selectedEventIds),
   };
 }

@@ -5,6 +5,7 @@ import { type SolanaTokenMigrationData, useSolanaTokenMigrationDialog } from '@/
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 import SolanaTokenMigrationForm from './SolanaTokenMigrationForm.vue';
 
 const modelValue = defineModel<SolanaTokenMigrationData | undefined>({ required: true });
@@ -20,7 +21,7 @@ const { t } = useI18n({ useScope: 'global' });
 const form = useTemplateRef<InstanceType<typeof SolanaTokenMigrationForm>>('form');
 const stateUpdated = ref<boolean>(false);
 
-const { loading, modelErrorMessages, save } = useSolanaTokenMigrationDialog({
+const { acceptMerge, dismissMerge, failure, loading, mergeSuggestion, modelErrorMessages, save } = useSolanaTokenMigrationDialog({
   modelValue,
   oldAsset,
   onMigrated: (): void => emit('refresh'),
@@ -36,6 +37,8 @@ const { loading, modelErrorMessages, save } = useSolanaTokenMigrationDialog({
     :action="{ primary: t('asset_management.solana_token_migration.migrate_button') }"
     :layout="{ autoHeight: true, divide: true, maxWidth: '640px' }"
     :loading="loading"
+    :failure="failure?.error"
+    :failure-title="failure?.title"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="modelValue = undefined; oldAsset = undefined"
@@ -62,6 +65,16 @@ const { loading, modelErrorMessages, save } = useSolanaTokenMigrationDialog({
         </div>
       </div>
     </template>
+    <InlineConfirm
+      v-if="mergeSuggestion"
+      class="mb-4"
+      :title="t('asset_management.solana_token_migration.merge_suggestion.title')"
+      :message="t('asset_management.solana_token_migration.merge_suggestion.message', { sourceAsset: mergeSuggestion.sourceAsset, targetAsset: mergeSuggestion.targetAsset })"
+      :confirm-label="t('asset_management.merge_assets')"
+      data-testid="solana-token-migration-merge-suggestion"
+      @confirm="acceptMerge()"
+      @cancel="dismissMerge()"
+    />
     <SolanaTokenMigrationForm
       v-if="modelValue"
       ref="form"

@@ -9,7 +9,7 @@ const { filters, matchExactEvents } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { showConfirmation, taskRunning } = useHistoryEventsExport(
+const { exportCSV, taskRunning } = useHistoryEventsExport(
   () => filters,
   () => matchExactEvents,
 );
@@ -24,7 +24,7 @@ const { showConfirmation, taskRunning } = useHistoryEventsExport(
         :disabled="taskRunning"
         :aria-label="t('common.actions.export_csv')"
         data-testid="history-events-export"
-        @click="showConfirmation()"
+        @click="exportCSV()"
       >
         <RuiIcon
           name="lu-file-down"

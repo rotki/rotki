@@ -1,113 +1,68 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
-
-/** The confirm callback shape the store's `show` receives. */
-type OnConfirm = () => void | Promise<void>;
-
-const show = vi.fn();
-const setMessage = vi.fn();
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): { show: typeof show } => ({ show }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): { setMessage: typeof setMessage } => ({ setMessage }),
-}));
 
 interface Row {
   id: string;
 }
 
-/** The onConfirm callback the composable handed to `show`. */
-function capturedOnConfirm(): OnConfirm {
-  return show.mock.calls[0][1];
+function setup(deleteItem: (item: Row) => Promise<boolean>, onDeleted = vi.fn<(item: Row) => void>()): ReturnType<typeof useTableRowDeletion<Row>> & { onDeleted: typeof onDeleted } {
+  return {
+    ...useTableRowDeletion<Row>({
+      confirm: item => ({ message: `delete ${item.id}?`, title: 'Delete row' }),
+      deleteItem,
+      failureTitle: item => `Could not delete ${item.id}`,
+      onDeleted,
+    }),
+    onDeleted,
+  };
 }
 
 describe('useTableRowDeletion', () => {
-  beforeEach((): void => {
-    vi.clearAllMocks();
+  it('should word the question for the row it is asked about', () => {
+    const { deleteConfirm } = setup(vi.fn<(item: Row) => Promise<boolean>>());
+
+    expect(deleteConfirm({ id: 'a' })).toEqual({ message: 'delete a?', title: 'Delete row' });
   });
 
-  it('should open the confirm dialog with the row copy', (): void => {
-    const { showDeleteConfirmation } = useTableRowDeletion<Row>({
-      confirm: (item): { message: string; title: string } => ({ message: `delete ${item.id}`, title: 'Confirm' }),
-      deleteItem: vi.fn().mockResolvedValue(true),
-    });
+  it('should delete then run onDeleted, leaving no failure', async () => {
+    const deleteItem = vi.fn<(item: Row) => Promise<boolean>>().mockResolvedValue(true);
+    const { deleteRow, failure, onDeleted } = setup(deleteItem);
 
-    showDeleteConfirmation({ id: 'a' });
-
-    expect(show).toHaveBeenCalledWith({ message: 'delete a', title: 'Confirm' }, expect.any(Function));
-  });
-
-  it('should delete then run onDeleted when confirmed', async (): Promise<void> => {
-    const deleteItem = vi.fn().mockResolvedValue(true);
-    const onDeleted = vi.fn();
-    const { showDeleteConfirmation } = useTableRowDeletion<Row>({
-      confirm: (): { message: string; title: string } => ({ message: 'm', title: 't' }),
-      deleteItem,
-      onDeleted,
-    });
-
-    showDeleteConfirmation({ id: 'a' });
-    await capturedOnConfirm()();
+    await deleteRow({ id: 'a' });
 
     expect(deleteItem).toHaveBeenCalledWith({ id: 'a' });
     expect(onDeleted).toHaveBeenCalledWith({ id: 'a' });
+    expect(get(failure)).toBeUndefined();
   });
 
-  it('should not run onDeleted when the delete reports no removal', async (): Promise<void> => {
-    const onDeleted = vi.fn();
-    const { showDeleteConfirmation } = useTableRowDeletion<Row>({
-      confirm: (): { message: string; title: string } => ({ message: 'm', title: 't' }),
-      deleteItem: vi.fn().mockResolvedValue(false),
-      onDeleted,
-    });
+  it('should not run onDeleted when the delete reports no removal', async () => {
+    const { deleteRow, failure, onDeleted } = setup(vi.fn<(item: Row) => Promise<boolean>>().mockResolvedValue(false));
 
-    showDeleteConfirmation({ id: 'a' });
-    await capturedOnConfirm()();
+    await deleteRow({ id: 'a' });
 
     expect(onDeleted).not.toHaveBeenCalled();
-    expect(setMessage).not.toHaveBeenCalled();
+    expect(get(failure)).toBeUndefined();
   });
 
-  it('should toast the custom error message when the delete throws', async (): Promise<void> => {
-    const { showDeleteConfirmation } = useTableRowDeletion<Row>({
-      confirm: (): { message: string; title: string } => ({ message: 'm', title: 't' }),
-      deleteItem: vi.fn().mockRejectedValue(new Error('boom')),
-      errorMessage: (item, error): { description: string } => ({
-        description: `failed ${item.id}: ${error instanceof Error ? error.message : String(error)}`,
-      }),
-    });
+  it('should keep a thrown delete as the failure, titled for its row', async () => {
+    const error = new Error('boom');
+    const { deleteRow, failure, onDeleted } = setup(vi.fn<(item: Row) => Promise<boolean>>().mockRejectedValue(error));
 
-    showDeleteConfirmation({ id: 'a' });
-    await capturedOnConfirm()();
+    await deleteRow({ id: 'a' });
 
-    expect(setMessage).toHaveBeenCalledWith({ description: 'failed a: boom' });
+    expect(get(failure)).toEqual({ error, title: 'Could not delete a' });
+    expect(onDeleted).not.toHaveBeenCalled();
   });
 
-  it('should pass through a title the table gives the toast', async (): Promise<void> => {
-    const { showDeleteConfirmation } = useTableRowDeletion<Row>({
-      confirm: (): { message: string; title: string } => ({ message: 'm', title: 't' }),
-      deleteItem: vi.fn().mockRejectedValue(new Error('boom')),
-      errorMessage: (): { description: string; title: string } => ({ description: 'd', title: 'Delete failed' }),
-    });
+  it('should drop the previous failure when the next delete starts', async () => {
+    const deleteItem = vi.fn<(item: Row) => Promise<boolean>>()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce(true);
+    const { deleteRow, failure } = setup(deleteItem);
 
-    showDeleteConfirmation({ id: 'a' });
-    await capturedOnConfirm()();
+    await deleteRow({ id: 'a' });
+    await deleteRow({ id: 'a' });
 
-    expect(setMessage).toHaveBeenCalledWith({ description: 'd', title: 'Delete failed' });
-  });
-
-  it('should fall back to the raw error message when none is provided', async (): Promise<void> => {
-    const { showDeleteConfirmation } = useTableRowDeletion<Row>({
-      confirm: (): { message: string; title: string } => ({ message: 'm', title: 't' }),
-      deleteItem: vi.fn().mockRejectedValue(new Error('raw')),
-    });
-
-    showDeleteConfirmation({ id: 'a' });
-    await capturedOnConfirm()();
-
-    expect(setMessage).toHaveBeenCalledWith({ description: 'raw' });
+    expect(get(failure)).toBeUndefined();
   });
 });

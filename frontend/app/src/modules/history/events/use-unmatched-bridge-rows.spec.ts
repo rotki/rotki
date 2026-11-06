@@ -5,12 +5,19 @@ import { type UnmatchedBridgeRow, useUnmatchedBridgeRows } from '@/modules/histo
 
 const { spies } = vi.hoisted(() => ({
   spies: {
+    canCreateBridgeCounterpart: vi.fn<() => boolean>(() => false),
     isCounterpartUntracked: vi.fn<() => boolean>(() => false),
   },
 }));
 
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
+  useSupportedChains: (): object => ({
+    getChainName: (chain: string): string => chain.toUpperCase(),
+  }),
+}));
+
 vi.mock('@/modules/history/events/use-untracked-bridge-counterpart', () => ({
-  canCreateBridgeCounterpart: (): boolean => false,
+  canCreateBridgeCounterpart: spies.canCreateBridgeCounterpart,
   getBridgeCounterpartAddress: (): string | undefined => undefined,
   isCounterpartUnqueryable: (): boolean => false,
   useUntrackedBridgeCounterpart: (): object => ({
@@ -18,9 +25,10 @@ vi.mock('@/modules/history/events/use-untracked-bridge-counterpart', () => ({
   }),
 }));
 
-function createMockTransaction(direction: 'deposit' | 'withdrawal'): UnmatchedBridgeTransaction {
+function createMockTransaction(direction: 'deposit' | 'withdrawal', bridge?: UnmatchedBridgeTransaction['bridge']): UnmatchedBridgeTransaction {
   return {
     asset: 'ETH',
+    bridge,
     direction,
     // @ts-expect-error partial mock: the row only reads the leg's entry
     events: { entry: { identifier: 1, location: 'ethereum', timestamp: 1700000000000 } },
@@ -29,11 +37,11 @@ function createMockTransaction(direction: 'deposit' | 'withdrawal'): UnmatchedBr
   };
 }
 
-function rowFor(direction: 'deposit' | 'withdrawal'): { row: UnmatchedBridgeRow; spec: UnmatchedRowActionSpec } {
+function rowFor(direction: 'deposit' | 'withdrawal', bridge?: UnmatchedBridgeTransaction['bridge']): { row: UnmatchedBridgeRow; spec: UnmatchedRowActionSpec } {
   const { rows, specFor } = useUnmatchedBridgeRows({
     matchDisabled: false,
     showRestore: false,
-    transactions: [createMockTransaction(direction)],
+    transactions: [createMockTransaction(direction, bridge)],
   });
   const row = get(rows)[0];
   return { row, spec: specFor(row) };
@@ -43,6 +51,46 @@ describe('use-unmatched-bridge-rows', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     spies.isCounterpartUntracked.mockReturnValue(false);
+    spies.canCreateBridgeCounterpart.mockReturnValue(false);
+  });
+
+  describe('create counterpart', () => {
+    beforeEach(() => {
+      spies.canCreateBridgeCounterpart.mockReturnValue(true);
+    });
+
+    it('should ask in the row, naming the destination chain of a deposit', () => {
+      const { spec } = rowFor('deposit', { toChain: 'optimism' });
+
+      expect(spec.confirms?.[UNMATCHED_ACTIONS.CREATE_COUNTERPART]).toEqual({
+        confirmLabel: 'bridge_matching.dialog.create_counterpart',
+        message: 'bridge_matching.actions.create_counterpart_confirm_out_chain::OPTIMISM',
+      });
+    });
+
+    it('should name the source chain of a withdrawal', () => {
+      const { spec } = rowFor('withdrawal', { fromChain: 'zksync lite', toChain: 'ethereum' });
+
+      expect(spec.confirms?.[UNMATCHED_ACTIONS.CREATE_COUNTERPART]?.message).toBe(
+        'bridge_matching.actions.create_counterpart_confirm_in_chain::ZKSYNC LITE',
+      );
+    });
+
+    it('should fall back to the chainless wording when no counterpart chain is recorded', () => {
+      const { spec } = rowFor('deposit');
+
+      expect(spec.confirms?.[UNMATCHED_ACTIONS.CREATE_COUNTERPART]?.message).toBe(
+        'bridge_matching.actions.create_counterpart_confirm_out',
+      );
+    });
+
+    it('should ask nothing for a row that cannot create its counterpart', () => {
+      spies.canCreateBridgeCounterpart.mockReturnValue(false);
+
+      const { spec } = rowFor('deposit', { toChain: 'optimism' });
+
+      expect(spec.confirms?.[UNMATCHED_ACTIONS.CREATE_COUNTERPART]).toBeUndefined();
+    });
   });
 
   describe('mark external', () => {

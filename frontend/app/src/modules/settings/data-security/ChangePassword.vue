@@ -9,8 +9,14 @@ import {
   changePasswordSchema,
   emptyChangePasswordState,
 } from '@/modules/settings/data-security/change-password-form';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const { t } = useI18n({ useScope: 'global' });
+
+/** Why the last change failed; the form keeps what was typed and its button is the retry. */
+const failure = ref<string>();
+/** Whether the last change went through, said under the button since the form clears. */
+const changed = ref<boolean>(false);
 
 const { premiumSync } = storeToRefs(usePremiumStore());
 const { changePassword } = useChangePassword();
@@ -35,11 +41,23 @@ const invalid = computed<boolean>(() => !get(form.valid));
 
 const loading = computed<boolean>(() => get(form.submitting));
 
+/**
+ * Submits the change and names its outcome on the form.
+ *
+ * @remarks
+ * Only a completed change wipes what the user typed; a rejected one is worth correcting.
+ */
 async function change(): Promise<void> {
+  set(failure, undefined);
+  set(changed, false);
   const result = await form.submit();
-  // Only a completed change should wipe what the user typed; a rejected one is worth correcting.
-  if (result.outcome === 'success')
+  if (result.outcome === 'success') {
     form.reset();
+    set(changed, true);
+  }
+  else if (result.outcome === 'error') {
+    set(failure, result.message ?? t('common.change_not_applied'));
+  }
 }
 </script>
 
@@ -91,7 +109,23 @@ async function change(): Promise<void> {
         :error-messages="form.errors('newPasswordConfirm')"
         @update:model-value="form.touch('newPasswordConfirm')"
       />
-      <div class="flex justify-end">
+      <FailureStrip
+        v-if="failure"
+        class="mb-4"
+        :title="t('actions.session.password_change.error')"
+        :failure="failure"
+        :retryable="false"
+        data-testid="change-password-failure"
+      />
+      <div class="flex items-center justify-end gap-4">
+        <span
+          v-if="changed"
+          class="text-body-2 text-rui-success"
+          role="status"
+          data-testid="change-password-success"
+        >
+          {{ t('actions.session.password_change.success') }}
+        </span>
         <RuiButton
           data-testid="change-password-button"
           color="primary"
