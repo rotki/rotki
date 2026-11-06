@@ -10,14 +10,12 @@ export interface ChainBalancesSubject {
   readonly detect?: boolean;
   /** Narrows detection to these addresses. Ignored without `detect`. */
   readonly detectAddresses?: readonly string[];
-  readonly revision?: number;
 }
 
 /** A refresh over several chains, as the umbrella their jobs run under. */
 export interface BalancesRunSubject {
   readonly chains: readonly string[];
   readonly mode: RefreshMode;
-  readonly revision?: string;
 }
 
 /** A manual balance being added, identified by where it is and what it holds. */
@@ -27,7 +25,7 @@ export interface ManualBalanceAddSubject {
   readonly label: string;
 }
 
-type ChainBalancesKey = readonly [string] | readonly [string, ActivityPart] | readonly [string, ActivityPart, string] | readonly [string, ActivityPart, string, string];
+type ChainBalancesKey = readonly [string] | readonly [string, ActivityPart] | readonly [string, ActivityPart, string];
 
 /**
  * One chain's balance refresh.
@@ -42,10 +40,6 @@ type ChainBalancesKey = readonly [string] | readonly [string, ActivityPart] | re
  */
 export const chainBalancesActivity = defineActivity<ChainBalancesSubject, ChainBalancesKey>({
   key: (subject): ChainBalancesKey => {
-    if (subject.revision && !subject.detect)
-      return [subject.chain, ActivityPart.REVISION, String(subject.revision)];
-    if (subject.revision)
-      return [subject.chain, ActivityPart.DETECT, setDigest(subject.detectAddresses ?? []), String(subject.revision)];
     if (!subject.detect)
       return [subject.chain];
     return subject.detectAddresses?.length
@@ -61,10 +55,8 @@ export const chainBalancesActivity = defineActivity<ChainBalancesSubject, ChainB
  * refresh never joins a background one over the same chains. Its leading `run` part keeps it out
  * of every chain's prefix.
  */
-export const balancesRunActivity = defineActivity<BalancesRunSubject, readonly [ActivityPart, string, RefreshMode] | readonly [ActivityPart, string, RefreshMode, string]>({
-  key: subject => subject.revision
-    ? [ActivityPart.RUN, setDigest(subject.chains), subject.mode, subject.revision]
-    : [ActivityPart.RUN, setDigest(subject.chains), subject.mode],
+export const balancesRunActivity = defineActivity<BalancesRunSubject, readonly [ActivityPart, string, RefreshMode]>({
+  key: subject => [ActivityPart.RUN, setDigest(subject.chains), subject.mode],
   kind: ActivityKind.BLOCKCHAIN_BALANCES,
 });
 

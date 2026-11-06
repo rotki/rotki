@@ -1,16 +1,15 @@
 import type { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import type { EvmChainInfo, SupportedChains } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { runSpecWith, type SubmittedSpec } from '@test/utils/mocks/native-task';
-import { ok } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { Priority } from '@/modules/task-center/core/orchestrator/spec';
@@ -150,27 +149,22 @@ describe('useBlockchainBalances', () => {
       });
     }
 
-    it('should refresh the requested chain', async () => {
-      await refreshEth();
+    it('should refresh particular blockchain - default', () => {
+      startPromise(refreshEth());
       expectEthQueried(1);
     });
 
-    it('should skip a periodic refresh while the same chain is already refreshing', async () => {
-      let resolve!: () => void;
-      const promise = new Promise<void>((finish) => {
-        resolve = finish;
-      });
-      runTask.mockImplementationOnce(async (taskFn: () => Promise<unknown>) => {
-        await taskFn();
-        await promise;
-        return ok({ perAccount: {}, totals: { assets: {}, liabilities: {} } });
-      });
-      const first = refreshEth();
-      await vi.waitFor(() => expectEthQueried(1));
-      const second = refreshEth();
-      resolve();
-      await Promise.all([first, second]);
+    it('should ignore periodic balance refresh, when there are other task running', async () => {
+      const refreshState = useBalanceRefreshState();
+      const loading = refreshState.useIsRefreshing(Blockchain.ETH);
 
+      startPromise(refreshEth());
+      expectEthQueried(1);
+
+      startPromise(refreshEth());
+      expectEthQueried(1);
+
+      await until(loading).toBe(false);
       expectEthQueried(1);
     });
 
@@ -212,81 +206,6 @@ describe('useBlockchainBalances', () => {
         makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, Blockchain.ETH, ActivityPart.DETECT),
         undefined,
       );
-    });
-
-    it('should requery an earlier added address whose response was invalidated by another addition', async () => {
-      const oldAddress = '0x49ff149D649769033d43783E7456F626862CD160';
-      const addedAddress = '0x0000000000000000000000000000000000000001';
-      let releaseOld!: () => void;
-      const oldQuery = new Promise<void>((finish) => {
-        releaseOld = finish;
-      });
-      runTask.mockImplementationOnce(async (taskFn: () => Promise<unknown>) => {
-        await taskFn();
-        await oldQuery;
-        return ok({ perAccount: { eth: { [oldAddress]: { assets: {}, liabilities: {} } } }, totals: { assets: {}, liabilities: {} } });
-      });
-      runTask.mockImplementationOnce(async (taskFn: () => Promise<unknown>) => {
-        await taskFn();
-        return ok({ perAccount: { eth: { [oldAddress]: { assets: {}, liabilities: {} }, [addedAddress]: { assets: {}, liabilities: {} } } }, totals: { assets: {}, liabilities: {} } });
-      });
-      const accounts = useBlockchainAccountsStore();
-      accounts.markAdded(Blockchain.ETH, oldAddress, false);
-      const first = blockchainBalances.refreshBlockchainBalances(
-        { addresses: [oldAddress], blockchain: Blockchain.ETH },
-        'background',
-        { detect: true, detectAddresses: [oldAddress] },
-      );
-      await vi.waitFor(() => expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(1));
-
-      accounts.markAdded(Blockchain.ETH, addedAddress, false);
-      accounts.updateAccounts(Blockchain.ETH, [
-        createAccount({ address: oldAddress, label: null, tags: null }, Blockchain.ETH),
-        createAccount({ address: addedAddress, label: null, tags: null }, Blockchain.ETH),
-      ]);
-      const second = blockchainBalances.refreshBlockchainBalances(
-        { addresses: [addedAddress], blockchain: Blockchain.ETH },
-        'background',
-        { detect: true, detectAddresses: [addedAddress] },
-      );
-      expect(useBalanceRefreshState().isPending(Blockchain.ETH, addedAddress)).toBe(true);
-      expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(1);
-
-      releaseOld();
-      await Promise.all([first, second]);
-
-      expect(api.refreshBlockchainBalances).toHaveBeenLastCalledWith({
-        addresses: [addedAddress, oldAddress],
-        blockchain: Blockchain.ETH,
-        isXpub: false,
-      });
-      expect(useBalanceRefreshState().isPending(Blockchain.ETH, addedAddress)).toBe(false);
-      expect(useBalanceRefreshState().isPending(Blockchain.ETH, oldAddress)).toBe(false);
-      expect(useBalancesStore().updateBalances).toHaveBeenCalledWith(
-        Blockchain.ETH,
-        expect.objectContaining({ perAccount: { eth: expect.objectContaining({ [addedAddress]: { assets: {}, liabilities: {} } }) } }),
-      );
-    });
-
-    it('should not requery an address that was removed while its balance was pending', async () => {
-      const removed = '0x0000000000000000000000000000000000000001';
-      const added = '0x49ff149D649769033d43783E7456F626862CD160';
-      const accounts = useBlockchainAccountsStore();
-      accounts.markAdded(Blockchain.ETH, removed, false);
-      accounts.markAdded(Blockchain.ETH, added, false);
-
-      await blockchainBalances.refreshBlockchainBalances(
-        { addresses: [added], blockchain: Blockchain.ETH },
-        'background',
-        { detect: true, detectAddresses: [added] },
-      );
-
-      expect(api.refreshBlockchainBalances).toHaveBeenCalledWith({
-        addresses: [added],
-        blockchain: Blockchain.ETH,
-        isXpub: false,
-      });
-      expect(detectForChain).toHaveBeenCalledWith(Blockchain.ETH, expect.any(String), [added]);
     });
 
     /**
@@ -510,23 +429,6 @@ describe('useBlockchainBalances', () => {
         'background',
       );
 
-      expect(api.refreshBlockchainBalances).toHaveBeenCalledWith({
-        addresses: ['0xallowed'],
-        blockchain: Blockchain.ETH,
-        isXpub: false,
-      });
-    });
-
-    it('should not detect excluded addresses when querying newly added accounts', async () => {
-      setDisabled({ [Blockchain.ETH]: ['0xexcluded'] });
-
-      await blockchainBalances.refreshBlockchainBalances(
-        { addresses: ['0xexcluded', '0xallowed'], blockchain: Blockchain.ETH },
-        'background',
-        { detect: true, detectAddresses: ['0xexcluded', '0xallowed'] },
-      );
-
-      expect(detectForChain).toHaveBeenCalledWith(Blockchain.ETH, expect.any(String), ['0xallowed']);
       expect(api.refreshBlockchainBalances).toHaveBeenCalledWith({
         addresses: ['0xallowed'],
         blockchain: Blockchain.ETH,

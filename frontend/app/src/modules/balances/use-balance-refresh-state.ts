@@ -34,85 +34,13 @@ export const useBalanceRefreshState = defineStore('balances/refresh-state', () =
   const refreshingChains = ref<Set<string>>(new Set());
   const hydratingChains = ref<Set<string>>(new Set());
   const firstLoadSettled = ref<boolean>(false);
-  const refreshCounts = new Map<string, number>();
-  const chainQueues = new Map<string, Promise<void>>();
-  const pendingAccounts = ref<Record<string, Record<string, { address: string; revision: number }>>>({});
-  const networkGenerations = new Map<string, number>();
-  const appliedNetworks = new Map<string, number>();
-
-  const appliedNetwork = (chain: string): number => appliedNetworks.get(chain) ?? 0;
-  const markNetworkApplied = (chain: string): void => {
-    appliedNetworks.set(chain, appliedNetwork(chain) + 1);
-  };
-
-  const networkGeneration = (chain: string): number => networkGenerations.get(chain) ?? 0;
-  const beginNetwork = (chain: string): number => {
-    const generation = networkGeneration(chain) + 1;
-    networkGenerations.set(chain, generation);
-    return generation;
-  };
-
-  const markPending = (chain: string, address: string, revision: number): void => {
-    const pending = get(pendingAccounts);
-    set(pendingAccounts, {
-      ...pending,
-      [chain]: { ...pending[chain], [address.toLowerCase()]: { address, revision } },
-    });
-  };
-
-  /** Settle only addresses covered by an applied network response, at or before its revision. */
-  const settlePending = (chain: string, revision: number, addresses: string[]): void => {
-    const pending = get(pendingAccounts);
-    const targeted = new Set(addresses.map(address => address.toLowerCase()));
-    const remaining = Object.fromEntries(
-      Object.entries(pending[chain] ?? {}).filter(([address, entry]) =>
-        entry.revision > revision || !targeted.has(address)),
-    );
-    set(pendingAccounts, { ...pending, [chain]: remaining });
-  };
-
-  const isPending = (chain: string, address: string): boolean =>
-    get(pendingAccounts)[chain]?.[address.toLowerCase()] !== undefined;
-
-  const pendingAddresses = (chain: string): string[] =>
-    Object.values(get(pendingAccounts)[chain] ?? {}).map(entry => entry.address);
-
-  const refreshCount = (chain: string): number => refreshCounts.get(chain) ?? 0;
 
   const start = (chain: string): void => {
-    refreshCounts.set(chain, refreshCount(chain) + 1);
     addChain(refreshingChains, chain);
   };
 
   const stop = (chain: string): void => {
-    const count = refreshCount(chain);
-    if (count <= 1) {
-      refreshCounts.delete(chain);
-      removeChain(refreshingChains, chain);
-    }
-    else {
-      refreshCounts.set(chain, count - 1);
-    }
-  };
-
-  const enqueue = async (chain: string, work: () => Promise<void>): Promise<void> => {
-    const previous = chainQueues.get(chain) ?? Promise.resolve();
-    let release!: () => void;
-    const current = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    chainQueues.set(chain, current);
-    start(chain);
-    try {
-      await previous;
-      await work();
-    }
-    finally {
-      if (chainQueues.get(chain) === current)
-        chainQueues.delete(chain);
-      release();
-      stop(chain);
-    }
+    removeChain(refreshingChains, chain);
   };
 
   const startHydration = (chain: string): void => {
@@ -141,35 +69,20 @@ export const useBalanceRefreshState = defineStore('balances/refresh-state', () =
   };
 
   const reset = (): void => {
-    refreshCounts.clear();
-    networkGenerations.clear();
-    appliedNetworks.clear();
-    chainQueues.clear();
-    set(pendingAccounts, {});
     set(refreshingChains, new Set());
     set(hydratingChains, new Set());
     set(firstLoadSettled, false);
   };
 
   return {
-    appliedNetwork,
-    beginNetwork,
     busyChains,
-    enqueue,
     firstLoadSettled,
     hydratingChains,
     isHydrating,
-    isPending,
     isRefreshing,
-    markNetworkApplied,
-    markPending,
-    networkGeneration,
-    pendingAddresses,
-    pendingAccounts,
     refreshingChains,
     reset,
     settleFirstLoad,
-    settlePending,
     start,
     startHydration,
     stop,

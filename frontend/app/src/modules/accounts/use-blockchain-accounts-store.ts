@@ -1,6 +1,5 @@
 import type { AccountPayload, Accounts, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
-import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { removeTags, renameTags } from '@/modules/tags/tag-utils';
 
 export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () => {
@@ -23,17 +22,13 @@ export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () 
   };
 
   /**
-   * Bumped when a chain's accounts change locally. A read that started before the bump may carry
-   * an older account set, so readers capture the revision and drop their write if it moved.
+   * Bumped whenever a chain's accounts are edited locally rather than read back from the backend,
+   * which today means a delete. A read that started before the bump is carrying a pre-delete
+   * snapshot, so `updateAccounts` would replace the chain wholesale and resurrect the account.
+   * Readers capture the revision before querying and drop their write if it moved.
    */
   const invalidateChain = (chain: string): void => {
     set(revisions, { ...get(revisions), [chain]: revisionOf(chain) + 1 });
-  };
-
-  const markAdded = (chain: string, address: string, isXpub: boolean): void => {
-    invalidateChain(chain);
-    if (!isXpub)
-      useBalanceRefreshState().markPending(chain, address, revisionOf(chain));
   };
 
   const updateAccounts = (chain: string, data: BlockchainAccount[]): void => {
@@ -118,7 +113,6 @@ export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () 
     getAccounts,
     invalidateChain,
     isChainSettled,
-    markAdded,
     markFetchFailed,
     recentlyAddedAddresses,
     removeTag,

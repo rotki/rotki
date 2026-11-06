@@ -89,7 +89,6 @@
       "chain": "Chain"
     },
     "open_details": "Open details of {account}",
-    "pending_value": "This value includes available balances. Some chains' balances are still pending.",
     "per_chain": "Per chain",
     "refresh_menu": {
       "label": "Refresh options",

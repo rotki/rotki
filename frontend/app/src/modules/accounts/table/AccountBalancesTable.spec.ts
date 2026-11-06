@@ -11,10 +11,8 @@ vi.mock('@/modules/accounts/table/use-account-loading-states', async () => {
   return {
     useAccountLoadingStates: (): object => ({
       accountOperation: computed<boolean>(() => false),
-      hasRowBalance: (): boolean => true,
       isInitialLoading: computed<boolean>(() => false),
       isRowLoading: (): boolean => false,
-      isRowPending: (): boolean => false,
       isSectionLoading: computed<boolean>(() => false),
     }),
   };

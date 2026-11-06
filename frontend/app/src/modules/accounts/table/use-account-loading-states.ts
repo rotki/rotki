@@ -1,23 +1,18 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { accountAddActivity, accountRemoveActivity } from '@/modules/accounts/accounts.activity';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import { chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 interface UseAccountLoadingStates<T extends BlockchainAccountBalance> {
   accountOperation: ComputedRef<boolean>;
-  hasRowBalance: (row: AccountDataRow<T>) => boolean;
   isInitialLoading: ComputedRef<boolean>;
   isRowLoading: (row: AccountDataRow<T>) => boolean;
-  isRowPending: (row: AccountDataRow<T>) => boolean;
   isSectionLoading: ComputedRef<boolean>;
 }
 
@@ -27,10 +22,8 @@ export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
   const { useIsActivePrefix } = useTaskCenter();
   const { statusOf, statusOfPrefix, version } = useTaskOrchestrator();
   const refreshState = useBalanceRefreshState();
-  const { balances } = storeToRefs(useBalancesStore());
   const { hydratingChains, refreshingChains } = storeToRefs(refreshState);
   const { isSectionLoading } = useBlockchainAccountLoading(category);
-  const { isAddressExcluded } = useDisabledChains();
   const { chainIds } = useAccountCategoryHelper(category);
 
   const accountOperation = logicOr(
@@ -69,26 +62,10 @@ export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
       return row.chains.some(chain => refreshing.has(chain));
   }
 
-  function hasRowBalance(row: AccountDataRow<T>): boolean {
-    const address = getAccountAddress(row);
-    const chains = row.type === 'account' ? [row.chain] : row.chains;
-    return chains.some(chain => get(balances)[chain]?.[address] !== undefined);
-  }
-
-  function isRowPending(row: AccountDataRow<T>): boolean {
-    const address = getAccountAddress(row);
-    const chains = row.type === 'account' ? [row.chain] : row.chains;
-    const hasBalance = hasRowBalance(row);
-    return chains.some(chain =>
-      refreshState.isPending(chain, address) && (!hasBalance || !isAddressExcluded(chain, address)));
-  }
-
   return {
     accountOperation,
-    hasRowBalance,
     isInitialLoading,
     isRowLoading,
-    isRowPending,
     isSectionLoading,
   };
 }

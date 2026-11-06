@@ -8,7 +8,6 @@ import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-s
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { Cancelled, type TaskError } from '@/modules/core/tasks/task-result';
-import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -125,57 +124,6 @@ describe('useBalanceProcessingService', () => {
       );
     }
 
-    it.each([undefined, 1000])('discards a pre-add cached response with timestamp %s', async (timestamp) => {
-      const accounts = useBlockchainAccountsStore();
-      accounts.updateAccounts(CHAIN, [createAccount({ address: '0x9', label: null, tags: null }, CHAIN)]);
-      const response = deferred<BlockchainBalances>();
-      mockQueryBlockchainBalances.mockReturnValue(response.promise);
-      const { updateBalances } = useBalancesStore();
-      vi.mocked(updateBalances).mockClear();
-      const fetching = useBalanceProcessingService().handleCachedFetch(
-        { addresses: undefined, blockchain: CHAIN, isXpub: false },
-        undefined,
-      );
-      accounts.invalidateChain(CHAIN);
-      response.resolve(timestamp === undefined ? emptyBalances(CHAIN) : balancesAt(CHAIN, timestamp));
-      await fetching;
-      expect(updateBalances).not.toHaveBeenCalled();
-    });
-
-    it('does not let a delayed cache read overwrite a network query even with no timestamp', async () => {
-      const accounts = useBlockchainAccountsStore();
-      accounts.updateAccounts(CHAIN, [createAccount({ address: '0x9', label: null, tags: null }, CHAIN)]);
-      const response = deferred<BlockchainBalances>();
-      mockQueryBlockchainBalances.mockReturnValue(response.promise);
-      const { updateBalances } = useBalancesStore();
-      vi.mocked(updateBalances).mockClear();
-      const fetching = useBalanceProcessingService().handleCachedFetch(
-        { addresses: undefined, blockchain: CHAIN, isXpub: false },
-        undefined,
-      );
-      useBalanceRefreshState().markNetworkApplied(CHAIN);
-      response.resolve(emptyBalances(CHAIN));
-      await fetching;
-      expect(updateBalances).not.toHaveBeenCalled();
-    });
-
-    it.each([undefined, 1000])('rejects a pre-add network response with timestamp %s', async (timestamp) => {
-      const accounts = useBlockchainAccountsStore();
-      accounts.updateAccounts(CHAIN, [createAccount({ address: '0x9', label: null, tags: null }, CHAIN)]);
-      mockRefreshBlockchainBalances.mockResolvedValue({ taskId: 1 });
-      const { updateBalances } = useBalancesStore();
-      vi.mocked(updateBalances).mockClear();
-      const refreshing = useBalanceProcessingService().handleRefresh(
-        runTask,
-        { addresses: undefined, blockchain: CHAIN, isXpub: false },
-      );
-      await vi.waitFor(() => expect(pendingTasks.has(1)).toBe(true));
-      accounts.invalidateChain(CHAIN);
-      pendingTasks.get(1)!.resolve(ok(timestamp === undefined ? emptyBalances(CHAIN) : balancesAt(CHAIN, timestamp)));
-      await refreshing;
-      expect(updateBalances).not.toHaveBeenCalled();
-    });
-
     it('should ignore a payload older than the chain already holds', async () => {
       useBlockchainAccountsStore().updateAccounts(CHAIN, [
         createAccount({ address: '0x9', label: null, tags: null }, CHAIN),
@@ -222,115 +170,6 @@ describe('useBalanceProcessingService', () => {
       await resolveCachedFetch(balancesAt(CHAIN, 3000));
 
       expect(updateBalances).toHaveBeenCalled();
-    });
-  });
-
-  describe('pending balances', () => {
-    async function refresh(blockchain: string, response: unknown, addresses?: string[]): Promise<void> {
-      const taskId = nextTaskId++;
-      mockRefreshBlockchainBalances.mockResolvedValue({ taskId });
-      const refreshing = useBalanceProcessingService().handleRefresh(runTask, { addresses, blockchain, isXpub: false });
-      await vi.waitFor(() => expect(pendingTasks.has(taskId)).toBe(true));
-      pendingTasks.get(taskId)!.resolve(ok(response));
-      await refreshing;
-    }
-
-    it.each([false, true])('should keep an excluded new address pending even if frozen balances are returned: %s', async (frozenBalance) => {
-      const accounts = useBlockchainAccountsStore();
-      const state = useBalanceRefreshState();
-      const settings = useSettingsRepo();
-      accounts.updateAccounts(Blockchain.ETH, ['0x1', '0xABC', '0x3'].map(address =>
-        createAccount({ address, label: null, tags: null }, Blockchain.ETH)));
-      for (const address of ['0x1', '0xABC', '0x3'])
-        accounts.markAdded(Blockchain.ETH, address, false);
-      settings.updateGeneral({ ...settings.general, disabledChainQueries: { eth: ['0xabc'] } });
-      const response = {
-        ...emptyBalances(Blockchain.ETH),
-        perAccount: {
-          eth: Object.fromEntries((frozenBalance ? ['0x1', '0xABC'] : ['0x1']).map(address =>
-            [address, { assets: {}, liabilities: {} }])),
-        },
-      };
-
-      await refresh(Blockchain.ETH, response);
-
-      expect(state.isPending(Blockchain.ETH, '0x1')).toBe(false);
-      expect(state.isPending(Blockchain.ETH, '0xABC')).toBe(true);
-      expect(state.isPending(Blockchain.ETH, '0x3')).toBe(true); // enabled but absent from the response
-
-      settings.updateGeneral({ ...settings.general, disabledChainQueries: {} });
-      await refresh(Blockchain.ETH, {
-        ...response,
-        perAccount: { eth: { '0xabc': { assets: {}, liabilities: {} } } },
-      });
-      expect(state.isPending(Blockchain.ETH, '0xABC')).toBe(false);
-      expect(state.isPending(Blockchain.ETH, '0x3')).toBe(true);
-    });
-
-    it('should not settle any pending address on a fully excluded chain', async () => {
-      const accounts = useBlockchainAccountsStore();
-      const state = useBalanceRefreshState();
-      const settings = useSettingsRepo();
-      accounts.markAdded(Blockchain.ETH, '0x1', false);
-      settings.updateGeneral({ ...settings.general, disabledChainQueries: { eth: [] } });
-
-      await refresh(Blockchain.ETH, {
-        ...emptyBalances(Blockchain.ETH),
-        perAccount: { eth: { '0x1': { assets: {}, liabilities: {} } } },
-      }, []);
-
-      expect(state.isPending(Blockchain.ETH, '0x1')).toBe(true);
-    });
-
-    it('should settle only covered targets from standalone and xpub Bitcoin balances', async () => {
-      const accounts = useBlockchainAccountsStore();
-      const state = useBalanceRefreshState();
-      accounts.updateAccounts(Blockchain.BTC, ['standalone', 'derived', 'untargeted', 'missing'].map(address =>
-        createAccount({ address, label: null, tags: null }, Blockchain.BTC)));
-      for (const address of ['standalone', 'derived', 'untargeted', 'missing'])
-        accounts.markAdded(Blockchain.BTC, address, false);
-
-      await refresh(Blockchain.BTC, {
-        ...emptyBalances(Blockchain.BTC),
-        perAccount: {
-          btc: {
-            standalone: {
-              standalone: { amount: '0', value: '0' },
-              untargeted: { amount: '0', value: '0' },
-            },
-            xpubs: [{
-              addresses: { derived: { amount: '0', value: '0' } },
-              derivationPath: null,
-              xpub: 'xpub',
-            }],
-          },
-        },
-      }, ['STANDALONE', 'derived', 'missing']);
-
-      expect(state.isPending(Blockchain.BTC, 'standalone')).toBe(false);
-      expect(state.isPending(Blockchain.BTC, 'derived')).toBe(false);
-      expect(state.isPending(Blockchain.BTC, 'untargeted')).toBe(true);
-      expect(state.isPending(Blockchain.BTC, 'missing')).toBe(true);
-    });
-
-    it('should keep a pending entry newer than the query revision even when covered', async () => {
-      const accounts = useBlockchainAccountsStore();
-      const state = useBalanceRefreshState();
-      accounts.markAdded(Blockchain.ETH, '0x1', false);
-      mockRefreshBlockchainBalances.mockResolvedValue({ taskId: 1 });
-      const refreshing = useBalanceProcessingService().handleRefresh(
-        runTask,
-        { blockchain: Blockchain.ETH, isXpub: false },
-      );
-      await vi.waitFor(() => expect(pendingTasks.has(1)).toBe(true));
-      state.markPending(Blockchain.ETH, '0x1', accounts.revisionOf(Blockchain.ETH) + 1);
-      pendingTasks.get(1)!.resolve(ok({
-        ...emptyBalances(Blockchain.ETH),
-        perAccount: { eth: { '0x1': { assets: {}, liabilities: {} } } },
-      }));
-      await refreshing;
-
-      expect(state.isPending(Blockchain.ETH, '0x1')).toBe(true);
     });
   });
 
@@ -494,8 +333,6 @@ describe('useBalanceProcessingService', () => {
     await succeeding;
 
     expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, CHAIN).everCompleted).toBe(true);
-    useBlockchainAccountsStore().invalidateChain(CHAIN);
-    useBalanceRefreshState().markPending(CHAIN, '0x2', 1);
 
     pendingTasks.clear();
     const failing = service.handleRefresh(runTask, payload);
@@ -506,7 +343,6 @@ describe('useBalanceProcessingService', () => {
     await failing;
 
     expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, CHAIN).everCompleted).toBe(false);
-    expect(useBalanceRefreshState().isPending(CHAIN, '0x2')).toBe(true);
   });
 
   it('should clear isRefreshing even when the refresh POST fails', async () => {

@@ -66,7 +66,6 @@ export const ActivityPart = {
   DIVERGENCE: 'divergence',
   REMOVE: 'remove',
   DETECT: 'detect',
-  REVISION: 'revision',
   ENS: 'ens',
   NONCE: 'nonce',
   VERIFY: 'verify',

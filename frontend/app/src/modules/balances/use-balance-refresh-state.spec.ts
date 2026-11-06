@@ -50,60 +50,14 @@ describe('useBalanceRefreshState', () => {
     expect(get(isRefreshing)).toBe(false);
   });
 
-  it('keeps a chain refreshing until every overlapping operation finishes', () => {
+  it('should dedupe repeated starts for the same chain', () => {
     const store = useBalanceRefreshState();
+    const { refreshingChains } = storeToRefs(store);
     store.start('eth');
     store.start('eth');
+    expect(get(refreshingChains).size).toBe(1);
     store.stop('eth');
-    expect(store.refreshingChains.has('eth')).toBe(true);
-    store.stop('eth');
-    expect(store.refreshingChains.has('eth')).toBe(false);
-  });
-
-  it('serializes same-chain work while allowing another chain to proceed', async () => {
-    const store = useBalanceRefreshState();
-    let release!: () => void;
-    let reportStarted!: () => void;
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    const started = new Promise<void>((resolve) => {
-      reportStarted = resolve;
-    });
-    const order: string[] = [];
-    const first = store.enqueue('eth', async () => {
-      order.push('first');
-      reportStarted();
-      await gate;
-    });
-    await started;
-    const second = store.enqueue('eth', async () => {
-      order.push('second');
-    });
-    await store.enqueue('btc', async () => {
-      order.push('btc');
-    });
-    expect(order).toEqual(['first', 'btc']);
-    expect(store.refreshingChains.has('eth')).toBe(true);
-    release();
-    await Promise.all([first, second]);
-    expect(order).toEqual(['first', 'btc', 'second']);
-    expect(store.refreshingChains.has('eth')).toBe(false);
-  });
-
-  it('retains pending addresses until their own revision and target are queried', () => {
-    const store = useBalanceRefreshState();
-    store.markPending('btc', 'A', 1);
-    store.markPending('btc', 'B', 2);
-    store.settlePending('btc', 2, ['a']);
-    expect(store.isPending('btc', 'a')).toBe(false);
-    expect(store.isPending('btc', 'b')).toBe(true);
-    store.settlePending('btc', 1, ['b']);
-    expect(store.isPending('btc', 'b')).toBe(true);
-    store.settlePending('btc', 2, []);
-    expect(store.isPending('btc', 'b')).toBe(true);
-    store.settlePending('btc', 2, ['b']);
-    expect(store.isPending('btc', 'b')).toBe(false);
+    expect(get(refreshingChains).size).toBe(0);
   });
 
   it('should reset all refreshing chains', () => {

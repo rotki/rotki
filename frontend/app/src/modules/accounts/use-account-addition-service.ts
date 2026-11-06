@@ -94,7 +94,7 @@ interface UseAccountAdditionServiceReturn {
 export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const { addAccount, addEvmAccount } = useAccountAdditions();
   const { refreshBlockchainBalances } = useBlockchainBalances();
-  const { markAdded, trackAddedAddresses } = useBlockchainAccountsStore();
+  const { trackAddedAddresses } = useBlockchainAccountsStore();
   const { fetchTags } = useTagOperations();
   const { enableModule } = useSettingsOperations();
   const { evmChains, supportsTransactions } = useSupportedChains();
@@ -121,8 +121,9 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
    * write deletes the address's default-label asset rows, the native coin among them, and only a
    * query afterwards puts it back.
    *
-   * The chain jobs run concurrently rather than one at a time. Each detects and queries the new
-   * addresses on its chain; `BALANCES_LANE` is where that concurrency is capped.
+   * The chain jobs run concurrently rather than one at a time. Each is a detection plus a full
+   * network query, so awaiting them in a loop would serialise around twenty of them on an
+   * every-EVM-chain addition; `BALANCES_LANE` is where that concurrency is capped.
    *
    * Tags are re-read before anything else, because the add itself can have created system tags
    * (`Contract` among them) that nothing else would fetch.
@@ -172,7 +173,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
 
     await Promise.allSettled(Array.from(accountsByChain, async ([accountChain, chainAddresses]) =>
       refreshBlockchainBalances(
-        { addresses: chainAddresses, blockchain: accountChain },
+        { blockchain: accountChain },
         'background',
         { detect: true, detectAddresses: chainAddresses },
       )));
@@ -311,8 +312,6 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       );
       results.forEach(result => collect(mapResult(result, address => [{ address, chain }])));
     }
-    for (const { address, chain: accountChain } of addedAccounts)
-      markAdded(accountChain, address, isXpub);
 
     startPromise(onComplete({
       addedAccounts,
