@@ -1,3 +1,4 @@
+import threading
 import time
 from contextlib import ExitStack
 from itertools import count
@@ -1841,3 +1842,38 @@ def test_address_fails_when_every_indexer_fails_its_query(
         str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
         str(TransactionStatusStep.QUERYING_TRANSACTIONS_FAILED),
     ]
+
+
+def test_overlapping_syncs_on_other_threads_each_tell_their_own_uncovered_period(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+) -> None:
+    """Two syncs running at once on different threads: the one ending first does not take the
+    other's uncovered period with it, nor tell it."""
+    transactions = ethereum_manager.transactions
+    first, second = make_evm_address(), make_evm_address()
+    told: list[str] = []
+    first_noted, second_done = threading.Event(), threading.Event()
+
+    def first_sync() -> None:
+        with transactions._one_sync():
+            transactions._note_uncovered(first, Timestamp(1600000000), Timestamp(1700000000))
+            first_noted.set()
+            second_done.wait(timeout=10)
+
+    def second_sync() -> None:
+        first_noted.wait(timeout=10)
+        with transactions._one_sync():
+            transactions._note_uncovered(second, Timestamp(1600000000), Timestamp(1700000000))
+        second_done.set()
+
+    with patch.object(transactions.msg_aggregator, 'add_warning', side_effect=lambda msg, **kwargs: told.append(msg)):  # noqa: E501
+        threads = [threading.Thread(target=first_sync), threading.Thread(target=second_sync)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=10)
+
+    assert len(told) == 2
+    assert str(second) in told[0] and str(first) not in told[0]
+    assert str(first) in told[1] and str(second) not in told[1]
