@@ -8,9 +8,10 @@ import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { exchangeBalancesActivity } from '@/modules/balances/balances.activity';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { ExchangeBalancesResponse } from '@/modules/balances/types/balances';
-import { type EditExchange, Exchange, type ExchangeFormData } from '@/modules/balances/types/exchanges';
+import { type EditExchange, Exchange, type ExchangeData, type ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
+import { balanceSum } from '@/modules/core/common/data/calculation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
@@ -49,7 +50,7 @@ export function useExchanges(): UseExchangesReturn {
    * are read off the orchestrator: by its kind for all of them, or by its parts for one.
    *
    * A connection that failed is missing from the location's totals, which would then understate
-   * the holdings. The task fails with the connection errors and the last balances stay in place.
+   * the holdings. Successful accounts update, but failed accounts and location totals stay in place.
    */
   const fetchExchangeBalances = async (payload: ExchangeBalancePayload): Promise<void> => {
     const { ignoreCache, location } = payload;
@@ -66,17 +67,22 @@ export function useExchanges(): UseExchangesReturn {
         ),
         (result): Result<void, TaskError> => {
           const { failedAccounts, perAccount, totals } = ExchangeBalancesResponse.parse(result);
-          const failures = Object.values(failedAccounts?.[location] ?? {});
+          const failures = Object.entries(failedAccounts?.[location] ?? {}).map(([identifier, message]) => {
+            const connection = get(connectedExchanges).find(exchange => exchange.identifier === identifier);
+            return `${connection?.name ?? identifier}: ${message}`;
+          });
+          set(exchangeAccountBalances, {
+            ...get(exchangeAccountBalances),
+            [location]: failures.length > 0
+              ? { ...get(exchangeAccountBalances)[location], ...perAccount[location] }
+              : perAccount[location] ?? {},
+          });
           if (failures.length > 0)
             return err(TaskFailed({ message: failures.join(' ') }));
 
           set(exchangeBalances, {
             ...get(exchangeBalances),
             [location]: totals[location] ?? {},
-          });
-          set(exchangeAccountBalances, {
-            ...get(exchangeAccountBalances),
-            [location]: perAccount[location] ?? {},
           });
           return ok(undefined);
         },
@@ -121,13 +127,25 @@ export function useExchanges(): UseExchangesReturn {
     setConnectedExchanges(exchanges);
   };
 
+  function totalsForAccounts(accounts: ExchangeData): ExchangeData[string] {
+    const totals: ExchangeData[string] = {};
+    for (const assets of Object.values(accounts)) {
+      for (const [asset, balance] of Object.entries(assets))
+        totals[asset] = totals[asset] ? balanceSum(totals[asset], balance) : balance;
+    }
+    const threshold = get(valueThreshold);
+    return Object.fromEntries(
+      Object.entries(totals).filter(([, balance]) => threshold === undefined || balance.value.gt(threshold)),
+    );
+  }
+
   const removeExchange = async (exchange: Exchange): Promise<boolean> => {
     try {
       const success = await queryRemoveExchange(exchange);
       const connected = get(connectedExchanges);
       if (success) {
         const exchangeIndex = connected.findIndex(
-          ({ location, name }) => name === exchange.name && location === exchange.location,
+          ({ identifier }) => identifier === exchange.identifier,
         );
         assert(
           exchangeIndex >= 0,
@@ -145,17 +163,17 @@ export function useExchanges(): UseExchangesReturn {
           accountBalances[exchange.location] = locationAccounts;
         else
           delete accountBalances[exchange.location];
-        const index = exchanges.findIndex(
-          ({ location, name }) => name === exchange.name && location === exchange.location,
-        );
-        // can't modify in place or else the vue reactivity does not work
-        exchanges.splice(index, 1);
-        delete balances[exchange.location];
+        exchanges.splice(exchangeIndex, 1);
+        if (Object.keys(locationAccounts).length > 0) {
+          balances[exchange.location] = totalsForAccounts(locationAccounts);
+        }
+        else {
+          delete balances[exchange.location];
+        }
         setConnectedExchanges(exchanges);
         set(exchangeBalances, balances);
         set(exchangeAccountBalances, accountBalances);
 
-        // if multiple keys exist for the deleted exchange, re-fetch and update the balances for the location
         if (exchanges.some(exch => exch.location === exchange.location)) {
           await fetchExchangeBalances({
             location: exchange.location,

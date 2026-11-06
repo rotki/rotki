@@ -28,7 +28,7 @@ def _filter_by_value(
         balances: dict[AssetWithOracles, Balance],
         value_threshold: FVal | None,
 ) -> dict[AssetWithOracles, Balance]:
-    """Keep what is above the threshold, in a new dict since balances may be a cached response"""
+    """Keep the balances above the threshold in a new dict"""
     if value_threshold is None:
         return balances
 
@@ -197,8 +197,9 @@ class ExchangesService:
         A connection whose query fails is left out of per_account and totals and listed in
         failed_accounts instead. The query only fails if no connection could be queried.
 
-        The value threshold applies to what each entry shows, so an asset that only passes it
-        once the connections of a location are added up is in totals but not in per_account.
+        The value threshold only applies to the totals. Each connection reports all its
+        holdings, so the value of an account is complete even when it holds assets that are
+        worth less than the threshold on their own.
         """
         manager = self.rotkehlchen.exchange_manager
         exchanges: Iterable[ExchangeInterface]
@@ -225,9 +226,7 @@ class ExchangesService:
                 errors.append(msg)
                 continue
 
-            per_account.setdefault(location_str, {})[exchange.connection_identifier] = (
-                _filter_by_value(balances, value_threshold)
-            )
+            per_account.setdefault(location_str, {})[exchange.connection_identifier] = balances
             totals[location_str] = combine_dicts(totals.get(location_str, {}), balances)
 
         if len(per_account) == 0:
