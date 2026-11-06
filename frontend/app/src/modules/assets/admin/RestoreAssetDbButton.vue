@@ -1,55 +1,41 @@
 <script setup lang="ts">
-import { useRestoreAssetDb } from '@/modules/assets/admin/use-restore-asset-db';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { startPromise } from '@shared/utils';
+import { type ResetType, useRestoreAssetDb } from '@/modules/assets/admin/use-restore-asset-db';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
-import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 import ListItem from '@/modules/shell/components/ListItem.vue';
-
-type ResetType = 'soft' | 'hard';
+import { useConfirmMenuAsk } from '@/modules/shell/components/use-confirm-menu';
 
 /**
  * Offers the soft and hard resets of the assets database, each asking before it runs.
  *
  * @remarks
- * `dropdown` renders the resets as entries of the menu this sits in. They expand in place rather
- * than in a nested menu: a nested menu is teleported out of its parent, so a click on it closes the
- * parent and would drop the question with it.
+ * `dropdown` renders the resets as entries of the `ConfirmMenu` this sits in, which asks the question
+ * and closes once it is accepted. They expand in place rather than in a nested menu: a nested menu is
+ * teleported out of its parent, so a click on it closes the parent and would drop the question with
+ * it.
  */
 const { dropdown = false } = defineProps<{
   dropdown?: boolean;
-}>();
-
-const emit = defineEmits<{
-  /** The dropdown form started a reset, so the menu holding it can close. */
-  close: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 /** Whether the dropdown form shows its two resets. */
 const expanded = ref<boolean>(false);
-/** The reset the dropdown form is asking about in place of its entries. */
-const pendingType = ref<ResetType>();
 
 const { loading, restoreAssets, restoreQuestion } = useRestoreAssetDb();
+const askInMenu = useConfirmMenuAsk();
 
-const softQuestion = computed<{ title: string; message: string }>(() => restoreQuestion('soft'));
-const hardQuestion = computed<{ title: string; message: string }>(() => restoreQuestion('hard'));
-const pendingQuestion = computed<{ title: string; message: string } | undefined>(() => {
-  const type = get(pendingType);
-  return type ? restoreQuestion(type) : undefined;
-});
+const softQuestion = computed<ConfirmQuestion>(() => restoreQuestion('soft'));
+const hardQuestion = computed<ConfirmQuestion>(() => restoreQuestion('hard'));
 
-function resetDropdown(): void {
-  set(pendingType, undefined);
-  set(expanded, false);
-}
-
-async function acceptPending(): Promise<void> {
-  const type = get(pendingType);
-  resetDropdown();
-  emit('close');
-  if (type)
-    await restoreAssets(type);
+/** Asks about a reset picked from the dropdown inside the menu holding it, then runs it. */
+function pick(type: ResetType): void {
+  askInMenu?.(restoreQuestion(type), () => {
+    set(expanded, false);
+    startPromise(restoreAssets(type));
+  });
 }
 </script>
 
@@ -58,49 +44,36 @@ async function acceptPending(): Promise<void> {
     v-if="dropdown"
     class="flex flex-col"
   >
-    <InlineConfirm
-      v-if="pendingQuestion"
-      class="w-72"
-      layout="panel"
-      tone="error"
-      :title="pendingQuestion.title"
-      :message="pendingQuestion.message"
-      :confirm-label="pendingType === 'soft' ? t('asset_update.restore.soft_reset') : t('asset_update.restore.hard_reset')"
-      @cancel="resetDropdown()"
-      @confirm="acceptPending()"
-    />
-    <template v-else>
-      <RuiButton
-        variant="list"
-        :disabled="loading"
-        :aria-expanded="expanded"
-        data-testid="asset-db-reset-menu"
-        @click="expanded = !expanded"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-rotate-ccw" />
-        </template>
-        {{ t('asset_update.restore.title') }}
-        <template #append>
-          <RuiIcon :name="expanded ? 'lu-chevron-up' : 'lu-chevron-down'" />
-        </template>
-      </RuiButton>
-      <template v-if="expanded">
-        <ListItem
-          class="pl-8!"
-          :title="t('asset_update.restore.soft_reset')"
-          :subtitle="t('asset_update.restore.soft_reset_hint')"
-          data-testid="asset-db-soft-reset-item"
-          @click="pendingType = 'soft'"
-        />
-        <ListItem
-          class="pl-8!"
-          :title="t('asset_update.restore.hard_reset')"
-          :subtitle="t('asset_update.restore.hard_reset_hint')"
-          data-testid="asset-db-hard-reset-item"
-          @click="pendingType = 'hard'"
-        />
+    <RuiButton
+      variant="list"
+      :disabled="loading"
+      :aria-expanded="expanded"
+      data-testid="asset-db-reset-menu"
+      @click="expanded = !expanded"
+    >
+      <template #prepend>
+        <RuiIcon name="lu-rotate-ccw" />
       </template>
+      {{ t('asset_update.restore.title') }}
+      <template #append>
+        <RuiIcon :name="expanded ? 'lu-chevron-up' : 'lu-chevron-down'" />
+      </template>
+    </RuiButton>
+    <template v-if="expanded">
+      <ListItem
+        class="pl-8!"
+        :title="t('asset_update.restore.soft_reset')"
+        :subtitle="t('asset_update.restore.soft_reset_hint')"
+        data-testid="asset-db-soft-reset-item"
+        @click="pick('soft')"
+      />
+      <ListItem
+        class="pl-8!"
+        :title="t('asset_update.restore.hard_reset')"
+        :subtitle="t('asset_update.restore.hard_reset_hint')"
+        data-testid="asset-db-hard-reset-item"
+        @click="pick('hard')"
+      />
     </template>
   </div>
   <div
@@ -113,9 +86,7 @@ async function acceptPending(): Promise<void> {
         <span class="text-sm text-rui-text-secondary">{{ t('asset_update.restore.soft_reset_hint') }}</span>
       </div>
       <ConfirmPopover
-        :title="softQuestion.title"
-        :message="softQuestion.message"
-        :confirm-label="t('asset_update.restore.soft_reset')"
+        :question="softQuestion"
         @confirm="restoreAssets('soft')"
       >
         <template #activator="{ attrs }">
@@ -137,9 +108,7 @@ async function acceptPending(): Promise<void> {
         <span class="text-sm text-rui-text-secondary">{{ t('asset_update.restore.hard_reset_hint') }}</span>
       </div>
       <ConfirmPopover
-        :title="hardQuestion.title"
-        :message="hardQuestion.message"
-        :confirm-label="t('asset_update.restore.hard_reset')"
+        :question="hardQuestion"
         @confirm="restoreAssets('hard')"
       >
         <template #activator="{ attrs }">

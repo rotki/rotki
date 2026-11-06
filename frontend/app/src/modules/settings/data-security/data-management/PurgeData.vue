@@ -112,9 +112,7 @@ const {
 
       <div class="flex">
         <ConfirmPopover
-          :title="purgeQuestion.title"
-          :message="purgeQuestion.message"
-          :confirm-label="t('purge_selector.tooltip')"
+          :question="purgeQuestion"
           @confirm="purge(modelSource)"
         >
           <template #activator="{ attrs }">

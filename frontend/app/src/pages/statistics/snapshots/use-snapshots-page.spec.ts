@@ -205,7 +205,7 @@ describe('pages/statistics/snapshots/useSnapshotsPage', () => {
       await deleteSnapshotAt(100);
 
       expect(refresh).not.toHaveBeenCalled();
-      expect(get(deleteFailure)).toBe('dashboard.snapshot.delete.message.failure');
+      expect(get(deleteFailure)).toEqual({ failure: 'dashboard.snapshot.delete.message.failure', title: 'dashboard.snapshot.delete.message.title' });
     });
 
     it('should keep a thrown error as the failure rather than rejecting', async () => {
@@ -216,7 +216,7 @@ describe('pages/statistics/snapshots/useSnapshotsPage', () => {
 
       await expect(deleteSnapshotAt(100)).resolves.toBeUndefined();
 
-      expect(get(deleteFailure)).toMatchObject({ message: 'backend said no' });
+      expect(get(deleteFailure)).toEqual({ failure: error, title: 'dashboard.snapshot.delete.message.title' });
       expect(refresh).not.toHaveBeenCalled();
     });
 

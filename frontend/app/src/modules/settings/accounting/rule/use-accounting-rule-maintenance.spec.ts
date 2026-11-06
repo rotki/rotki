@@ -68,7 +68,7 @@ describe('useAccountingRuleMaintenance', () => {
     const { deleteFailure, deleteRule, refetch } = createMaintenance();
     await deleteRule(rule);
 
-    expect(get(deleteFailure)).toEqual({ error, title: 'accounting_settings.rule.delete_error' });
+    expect(get(deleteFailure)).toEqual({ failure: error, title: 'accounting_settings.rule.delete_error' });
     expect(refetch).not.toHaveBeenCalled();
   });
 

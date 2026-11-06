@@ -2,6 +2,7 @@ import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
 import type { Pinned } from '@/modules/session/types';
 import type { SettingsCategoryId, SettingsHighlightId } from '@/modules/settings/setting-highlight-ids';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { flatMap } from 'plainfp/arrays';
 import { match, type Option } from 'plainfp/option';
 
@@ -87,10 +88,13 @@ export interface ActionItemOption<TTarget extends { kind: string } = ActionTarge
   /** silences the row for good, rather than leading somewhere */
   danger?: boolean;
   /**
-   * Asked in the row before the target is followed, with the option's label as the accepting button.
-   * Absent means the option acts at once.
+   * Asked in the row before the target is followed. Absent means the option acts at once.
+   *
+   * @remarks
+   * The option's `label` is the accepting button and `danger` sets the tone, so neither is restated
+   * here, where the two could disagree with the button the user pressed.
    */
-  confirm?: { title: string; message: string };
+  confirm?: Omit<ConfirmQuestion, 'confirmLabel' | 'tone'>;
 }
 
 /**

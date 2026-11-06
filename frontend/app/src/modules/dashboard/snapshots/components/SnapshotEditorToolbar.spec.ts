@@ -93,13 +93,14 @@ describe('snapshotEditorToolbar', () => {
       expect(wrapper.emitted('delete')).toHaveLength(1);
     });
 
-    it('should not emit delete when cancelled, and close the menu', async () => {
+    it('should not emit delete when cancelled, and offer the entries again', async () => {
       const wrapper = await askDelete();
 
       await wrapper.find('[data-testid=inline-confirm-cancel]').trigger('click');
 
       expect(wrapper.emitted('delete')).toBeUndefined();
       expect(wrapper.find('[data-testid=inline-confirm]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=confirm-menu-entries]').attributes('style') ?? '').not.toContain('display: none');
     });
   });
 });

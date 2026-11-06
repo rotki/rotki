@@ -1,10 +1,11 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { SkippedHistoryEventsSummary } from '@/modules/history/events/event-payloads';
+import { err, ok } from 'plainfp/result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSkippedHistoryEventsApi } from '@/modules/history/api/events/use-skipped-history-events-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { type NamedFailure, useFailureSlot } from '@/modules/shell/components/named-failure';
 
 /** One row of the summary: how many events were skipped at a given location. */
 export interface SkippedEventsLocation {
@@ -28,7 +29,7 @@ interface UseSkippedEventsActionsReturn {
   /** Asks the backend to decode the skipped events again, then refreshes the summary. */
   reProcessSkippedEvents: () => Promise<void>;
   /** Why the last reprocess failed, or processed nothing; cleared when the next one starts. */
-  reprocessFailure: Readonly<Ref<unknown>>;
+  reprocessFailure: Readonly<Ref<NamedFailure | undefined>>;
   /** Says how many were processed when a reprocess left some behind; cleared when the next one starts. */
   reprocessNote: Readonly<Ref<string | undefined>>;
   /** The counts behind the table, refreshed after a reprocess. */
@@ -43,7 +44,7 @@ interface UseSkippedEventsActionsReturn {
  */
 export function useSkippedEventsActions(): UseSkippedEventsActionsReturn {
   const loading = shallowRef<boolean>(false);
-  const reprocessFailure = shallowRef<unknown>();
+  const { failure: reprocessFailure, run } = useFailureSlot();
   const reprocessNote = shallowRef<string>();
 
   const { t } = useI18n({ useScope: 'global' });
@@ -115,22 +116,16 @@ export function useSkippedEventsActions(): UseSkippedEventsActionsReturn {
 
   async function reProcessSkippedEvents(): Promise<void> {
     set(loading, true);
-    set(reprocessFailure, undefined);
     set(reprocessNote, undefined);
-    try {
+    await run(t('transactions.events.skipped.reprocess.failed.title'), async () => {
       const { successful, total } = await reProcessSkippedEventsCaller();
       if (successful === 0)
-        set(reprocessFailure, t('transactions.events.skipped.reprocess.failed.no_processed_events'));
-      else if (successful < total)
+        return err(t('transactions.events.skipped.reprocess.failed.no_processed_events'));
+      if (successful < total)
         set(reprocessNote, t('transactions.events.skipped.reprocess.success.some', { successful, total }));
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      set(reprocessFailure, error);
-    }
-    finally {
-      set(loading, false);
-    }
+      return ok(undefined);
+    });
+    set(loading, false);
 
     await refreshSkippedEvents();
   }
@@ -140,7 +135,7 @@ export function useSkippedEventsActions(): UseSkippedEventsActionsReturn {
     loading: readonly(loading),
     locationsData,
     reProcessSkippedEvents,
-    reprocessFailure: shallowReadonly(reprocessFailure),
+    reprocessFailure,
     reprocessNote: readonly(reprocessNote),
     skippedEvents,
   };

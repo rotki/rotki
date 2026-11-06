@@ -1,7 +1,8 @@
 import type { useRestoreAssetDb } from '@/modules/assets/admin/use-restore-asset-db';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref } from 'vue';
+import { type Ref, ref } from 'vue';
+import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';
 import RestoreAssetDbButton from './RestoreAssetDbButton.vue';
 
 const { restoreAssets } = vi.hoisted(() => ({
@@ -12,7 +13,7 @@ vi.mock('@/modules/assets/admin/use-restore-asset-db', () => ({
   useRestoreAssetDb: (): ReturnType<typeof useRestoreAssetDb> => ({
     loading: ref<boolean>(false),
     restoreAssets,
-    restoreQuestion: type => ({ message: `${type} reset?\n\nshared database`, title: 'Reset assets database' }),
+    restoreQuestion: type => ({ confirmLabel: `${type} reset`, message: `${type} reset?\n\nshared database`, title: 'Reset assets database', tone: 'error' }),
   }),
 }));
 
@@ -27,11 +28,19 @@ const RuiMenu = {
   </div>`,
 };
 
-function createWrapper(dropdown = false): VueWrapper<InstanceType<typeof RestoreAssetDbButton>> {
-  return mount(RestoreAssetDbButton, {
-    global: { stubs: { RuiMenu } },
-    props: { dropdown },
-  });
+function createWrapper(): VueWrapper<InstanceType<typeof RestoreAssetDbButton>> {
+  return mount(RestoreAssetDbButton, { global: { stubs: { RuiMenu } } });
+}
+
+/** The dropdown form inside the open `ConfirmMenu` that asks its questions. */
+function createDropdown(): { wrapper: VueWrapper; open: Ref<boolean> } {
+  const open = ref<boolean>(true);
+  const wrapper = mount({
+    components: { ConfirmMenu, RestoreAssetDbButton },
+    setup: () => ({ open }),
+    template: '<ConfirmMenu v-model="open"><RestoreAssetDbButton dropdown /></ConfirmMenu>',
+  }, { global: { stubs: { RuiMenu } } });
+  return { open, wrapper };
 }
 
 describe('restoreAssetDbButton', () => {
@@ -77,35 +86,35 @@ describe('restoreAssetDbButton', () => {
       await wrapper.find(`[data-testid=asset-db-${type}-reset-item]`).trigger('click');
     }
 
-    it('should ask in place of the entries before resetting', async () => {
-      const wrapper = createWrapper(true);
+    it('should ask in the menu, in place of the entries, before resetting', async () => {
+      const { wrapper } = createDropdown();
 
       await pick(wrapper, 'soft');
 
       expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('soft reset?');
-      expect(wrapper.find('[data-testid=asset-db-reset-menu]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=confirm-menu-entries]').attributes('style')).toContain('display: none');
       expect(restoreAssets).not.toHaveBeenCalled();
     });
 
-    it('should run the picked reset and let the menu close once accepted', async () => {
-      const wrapper = createWrapper(true);
+    it('should close the menu and run the picked reset once accepted', async () => {
+      const { open, wrapper } = createDropdown();
 
       await pick(wrapper, 'hard');
       await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
 
       expect(restoreAssets).toHaveBeenCalledExactlyOnceWith('hard');
-      expect(wrapper.emitted('close')).toHaveLength(1);
+      expect(get(open)).toBe(false);
     });
 
     it('should not reset when cancelled, and offer the entry again', async () => {
-      const wrapper = createWrapper(true);
+      const { open, wrapper } = createDropdown();
 
       await pick(wrapper, 'hard');
       await wrapper.find('[data-testid=inline-confirm-cancel]').trigger('click');
 
       expect(restoreAssets).not.toHaveBeenCalled();
-      expect(wrapper.emitted('close')).toBeUndefined();
-      expect(wrapper.find('[data-testid=asset-db-reset-menu]').exists()).toBe(true);
+      expect(get(open)).toBe(true);
+      expect(wrapper.find('[data-testid=confirm-menu-entries]').attributes('style') ?? '').not.toContain('display: none');
     });
   });
 });

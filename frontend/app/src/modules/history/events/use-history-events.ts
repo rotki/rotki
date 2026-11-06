@@ -5,7 +5,7 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { AddHistoryEventPayload, HistoryEventRequestPayload, ModifyHistoryEventPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventCollectionRow, HistoryEventRow, HistoryEventsCollectionResponse } from '@/modules/history/events/schemas';
 import { startPromise } from '@shared/utils';
-import { map, type ResultAsync } from 'plainfp/result-async';
+import { err, fromPromise, map, ok, type ResultAsync } from 'plainfp/result-async';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
 import { fromRequest, isRequestFailure, type RequestError } from '@/modules/core/api/request-result';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
@@ -23,11 +23,13 @@ interface UseHistoryEventsReturn {
   fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>, options?: { tags?: string[] }) => ResultAsync<Collection<HistoryEventRow>, RequestError>;
   addHistoryEvent: (event: AddHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
   editHistoryEvent: (event: ModifyHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
-  deleteHistoryEvent: (eventIds: number[], forceDelete?: boolean) => Promise<ActionStatus>;
+  /** @returns `err` with the request's own error, or a worded refusal when the backend answers `false` */
+  deleteHistoryEvent: (eventIds: number[], forceDelete?: boolean) => ResultAsync<void, unknown>;
   getEarliestEventTimestamp: () => Promise<number | undefined>;
 }
 
 export function useHistoryEvents(): UseHistoryEventsReturn {
+  const { t } = useI18n({ useScope: 'global' });
   const {
     addHistoryEvent: addHistoryEventCaller,
     deleteHistoryEvent: deleteHistoryEventCaller,
@@ -151,19 +153,18 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     return { message, success };
   };
 
-  const deleteHistoryEvent = async (eventIds: number[], forceDelete = false): Promise<ActionStatus> => {
-    let success = false;
-    let message = '';
-    try {
-      success = await deleteHistoryEventCaller({ identifiers: eventIds.map(id => id.toString()) }, forceDelete);
-      if (success)
-        signalEventsModified();
-    }
-    catch (error: unknown) {
-      message = getErrorMessage(error);
-    }
+  const deleteHistoryEvent = async (eventIds: number[], forceDelete = false): ResultAsync<void, unknown> => {
+    const answer = await fromPromise(
+      deleteHistoryEventCaller({ identifiers: eventIds.map(id => id.toString()) }, forceDelete),
+      (error: unknown) => error,
+    );
+    if (!answer.ok)
+      return answer;
+    if (!answer.value)
+      return err(t('transactions.events.delete.error.message'));
 
-    return { message, success };
+    signalEventsModified();
+    return ok(undefined);
   };
 
   const getEarliestEventTimestamp = async (): Promise<number | undefined> => {

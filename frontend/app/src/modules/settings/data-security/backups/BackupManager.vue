@@ -5,11 +5,13 @@ import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 import DatabaseBackups from '@/modules/settings/data-security/backups/DatabaseBackups.vue';
 import { useDatabaseBackups } from '@/modules/settings/data-security/backups/use-database-backups';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
+import { useDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 defineProps<
   /* @vue-ignore */ HTMLAttributes
 >();
 
 const { t } = useI18n({ useScope: 'global' });
+const toDeleteQuestion = useDeleteQuestion();
 
 const selectionMode = shallowRef<boolean>(false);
 
@@ -99,11 +101,10 @@ function exitSelection(): void {
         icon="lu-trash-2"
         color="error"
         :disabled="modelSelected.length === 0"
-        :confirm="{
+        :confirm="toDeleteQuestion({
           title: t('database_backups.confirm.title'),
           message: t('database_backups.confirm.mass_message', { length: modelSelected.length }),
-          confirmLabel: t('common.actions.delete'),
-        }"
+        })"
         data-testid="backups-delete-selected"
         @click="massRemove()"
       >

@@ -26,9 +26,8 @@ export function useAccountOperations<T extends BlockchainAccountBalance>(
   const { getAddressesNames } = useAddressesNamesApi();
 
   async function deleteAccount(item: AccountDataRow<T>): Promise<void> {
-    await deleteConfirmed({ data: item, type: 'account' }, () => {
-      callbacks.onRefresh();
-    });
+    await deleteConfirmed({ data: item, type: 'account' });
+    callbacks.onRefresh();
   }
 
   async function handleXpubChildEdit(row: AccountDataRow<T>): Promise<void> {

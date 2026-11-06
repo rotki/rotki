@@ -19,7 +19,7 @@ describe('modules/history/events/HistoryEventsListItemAction', () => {
     wrapper = undefined;
   });
 
-  const unlinkConfirm = { message: 'Unlink these?', title: 'Unlink' };
+  const unlinkConfirm = { confirmLabel: 'Unlink', message: 'Unlink these?', title: 'Unlink' };
 
   function mountAction(options: { canUnlink?: boolean; missingRule?: boolean; item?: HistoryEventEntry; group?: HistoryEventEntry[] }): VueWrapper {
     const item = options.item ?? createMock<HistoryEventEntry>({
@@ -67,6 +67,7 @@ describe('modules/history/events/HistoryEventsListItemAction', () => {
       confirmLabel: 'common.actions.delete',
       message: 'transactions.events.confirmation.delete.message',
       title: 'transactions.events.confirmation.delete.title',
+      tone: 'error',
     });
   });
 

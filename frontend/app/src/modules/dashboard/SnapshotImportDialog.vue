@@ -61,7 +61,6 @@ watch(model, (open) => {
           v-if="failure"
           :title="t('snapshot_action_button.messages.title')"
           :failure="failure"
-          :retryable="false"
           data-testid="snapshot-import-failure"
         />
         <div class="flex flex-col gap-2">

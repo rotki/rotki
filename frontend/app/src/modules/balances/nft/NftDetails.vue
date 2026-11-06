@@ -25,6 +25,9 @@ const imageUrlSource = computed<string | null>(() => get(balanceData)?.imageUrl 
 const { isVideo, renderedMedia, shouldRender } = useNftImage(imageUrlSource);
 const { allowDomain, domain, question } = useNftDomainWhitelist(imageUrlSource);
 
+/** The media, which opens the question to allow its domain only while that domain hides it. */
+const [DefineMedia, ReuseMedia] = createReusableTemplate<{ attrs: Record<string, unknown> }>();
+
 const collectionName = computed<string | null>(() => {
   const data = get(balanceData);
   if (!data || !data.collectionName)
@@ -53,52 +56,57 @@ const fallbackData = computed(() => {
 
 <template>
   <div>
+    <DefineMedia #default="{ attrs }">
+      <RuiTooltip
+        :options="{ placement: 'top' }"
+        :disabled="shouldRender"
+        :open-delay="400"
+        class="w-full"
+        :class-names="{ tooltip: 'max-w-40' }"
+      >
+        <template #activator>
+          <div
+            class="my-2 bg-rui-grey-200 rounded-sm flex items-center justify-center"
+            :style="[styled, { width: size, height: size, maxWidth: size, minWidth: size }]"
+            data-testid="nft-details-media"
+            v-bind="attrs"
+          >
+            <video
+              v-if="isVideo"
+              width="100%"
+              height="100%"
+              :src="renderedMedia"
+            />
+            <AppImage
+              v-else
+              class="rounded-sm overflow-hidden"
+              :src="renderedMedia"
+              :size="size"
+              fit="contain"
+            />
+          </div>
+        </template>
+
+        {{ t('nft_balance_table.hidden_hint') }}
+        {{ t('nft_gallery.allow_domain') }}
+        <strong class="text-rui-warning-lighter">
+          {{ domain }}
+        </strong>
+      </RuiTooltip>
+    </DefineMedia>
     <div class="flex items-center overflow-hidden">
+      <ReuseMedia
+        v-if="shouldRender"
+        :attrs="{}"
+      />
       <ConfirmPopover
+        v-else
         class="cursor-pointer"
-        tone="warning"
-        :title="question.title"
-        :message="question.message"
-        :confirm-label="question.confirmLabel"
+        :question="question"
         @confirm="allowDomain()"
       >
         <template #activator="{ attrs }">
-          <RuiTooltip
-            :options="{ placement: 'top' }"
-            :disabled="shouldRender"
-            :open-delay="400"
-            class="w-full"
-            :class-names="{ tooltip: 'max-w-40' }"
-          >
-            <template #activator>
-              <div
-                class="my-2 bg-rui-grey-200 rounded-sm flex items-center justify-center"
-                :style="[styled, { width: size, height: size, maxWidth: size, minWidth: size }]"
-                data-testid="nft-details-media"
-                v-bind="shouldRender ? {} : attrs"
-              >
-                <video
-                  v-if="isVideo"
-                  width="100%"
-                  height="100%"
-                  :src="renderedMedia"
-                />
-                <AppImage
-                  v-else
-                  class="rounded-sm overflow-hidden"
-                  :src="renderedMedia"
-                  :size="size"
-                  fit="contain"
-                />
-              </div>
-            </template>
-
-            {{ t('nft_balance_table.hidden_hint') }}
-            {{ t('nft_gallery.allow_domain') }}
-            <strong class="text-rui-warning-lighter">
-              {{ domain }}
-            </strong>
-          </RuiTooltip>
+          <ReuseMedia :attrs="attrs" />
         </template>
       </ConfirmPopover>
 

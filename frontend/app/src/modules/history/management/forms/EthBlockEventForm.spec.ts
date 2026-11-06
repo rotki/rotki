@@ -207,7 +207,7 @@ describe('forms/EthBlockEventForm.vue', () => {
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
 
     expect(addHistoryEventMock).toHaveBeenCalledTimes(1);
@@ -266,7 +266,7 @@ describe('forms/EthBlockEventForm.vue', () => {
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
 
     expect(editHistoryEventMock).toHaveBeenCalledTimes(1);
@@ -306,7 +306,7 @@ describe('forms/EthBlockEventForm.vue', () => {
 
     const saveMethod = wrapper.vm.save;
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     await nextTick();
 
     expect(editHistoryEventMock).toHaveBeenCalled();

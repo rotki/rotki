@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { useTemplateRef } from 'vue';
 
 /**
@@ -12,12 +13,9 @@ import { useTemplateRef } from 'vue';
  * cancels. Dropping the question once it no longer applies (the item went
  * away, the job settled) is the caller's job.
  */
-const { cancelLabel, layout = 'strip', loading = false, title, tone = 'warning' } = defineProps<{
-  message: string;
-  confirmLabel: string;
+const { cancelLabel, layout = 'strip', loading = false, question } = defineProps<{
+  question: ConfirmQuestion;
   cancelLabel?: string;
-  title?: string;
-  tone?: 'warning' | 'error';
   layout?: 'strip' | 'panel';
   loading?: boolean;
 }>();
@@ -31,7 +29,9 @@ const { t } = useI18n({ useScope: 'global' });
 
 const root = useTemplateRef<HTMLElement>('root');
 
-const toneClass = computed<string>(() => tone === 'error'
+const tone = computed<'warning' | 'error'>(() => question.tone ?? 'warning');
+
+const toneClass = computed<string>(() => get(tone) === 'error'
   ? 'bg-rui-error/10 border-rui-error/40'
   : 'bg-rui-warning/10 border-rui-warning/40');
 
@@ -44,7 +44,7 @@ onMounted(() => {
   <div
     ref="root"
     role="alertdialog"
-    :aria-label="title ?? message"
+    :aria-label="question.title ?? question.message"
     data-testid="inline-confirm"
     :class="layout === 'strip'
       ? ['flex items-center gap-2 rounded-sm px-2 py-1 border', toneClass]
@@ -56,20 +56,20 @@ onMounted(() => {
       class="flex flex-col gap-1"
     >
       <p
-        v-if="title"
+        v-if="question.title"
         class="text-sm font-medium text-rui-text"
       >
-        {{ title }}
+        {{ question.title }}
       </p>
       <p class="text-sm text-rui-text-secondary whitespace-pre-line wrap-anywhere">
-        {{ message }}
+        {{ question.message }}
       </p>
     </div>
     <span
       v-else
       class="flex-1 min-w-0 text-caption text-rui-text"
     >
-      {{ message }}
+      {{ question.message }}
     </span>
     <div
       class="flex shrink-0 gap-2"
@@ -92,7 +92,7 @@ onMounted(() => {
         data-testid="inline-confirm-accept"
         @click="emit('confirm')"
       >
-        {{ confirmLabel }}
+        {{ question.confirmLabel }}
       </RuiButton>
     </div>
   </div>

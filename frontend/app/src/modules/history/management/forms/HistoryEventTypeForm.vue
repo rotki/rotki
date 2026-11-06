@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { HistoryEventEntryType } from '@rotki/common';
 import type { LocationQueryRaw } from 'vue-router';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { startPromise } from '@shared/utils';
 import HistoryEventActionPicker from '@/modules/history/events/action-picker/HistoryEventActionPicker.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
-import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
+import ConfirmInPlace from '@/modules/shell/components/ConfirmInPlace.vue';
 
 interface HistoryEventTypeFormProps {
   counterparty?: string | null;
@@ -103,11 +104,14 @@ function navigateToAccountingRule(): void {
 }
 
 /** Navigating away discards unsaved edits, so a dirty form asks first, in place of the link. */
-const confirmingLeave = ref<boolean>(false);
+const leaveQuestion = computed<ConfirmQuestion>(() => ({
+  confirmLabel: t('big_dialog.prompt_close.actions.discard'),
+  message: t('big_dialog.prompt_close.message'),
+}));
 
-function viewAccountingRule(): void {
+function viewAccountingRule(ask: () => void): void {
   if (dirty)
-    set(confirmingLeave, true);
+    ask();
   else
     navigateToAccountingRule();
 }
@@ -130,31 +134,31 @@ function viewAccountingRule(): void {
       variant="filled"
       :description="t('transactions.events.form.resulting_combination.unknown')"
     />
-    <InlineConfirm
-      v-if="canLinkToAccountingRule && confirmingLeave"
+    <ConfirmInPlace
+      v-if="canLinkToAccountingRule"
       class="-mt-2 mb-4"
-      :message="t('big_dialog.prompt_close.message')"
-      :confirm-label="t('big_dialog.prompt_close.actions.discard')"
+      :question="leaveQuestion"
       :cancel-label="t('big_dialog.prompt_close.actions.keep_editing')"
-      @cancel="confirmingLeave = false"
       @confirm="navigateToAccountingRule()"
-    />
-    <RuiButton
-      v-else-if="canLinkToAccountingRule"
-      variant="text"
-      color="primary"
-      size="sm"
-      class="-mt-2 mb-4"
-      data-testid="view-accounting-rule"
-      @click="viewAccountingRule()"
     >
-      <template #prepend>
-        <RuiIcon
-          name="lu-scale"
-          size="16"
-        />
+      <template #activator="{ ask }">
+        <RuiButton
+          variant="text"
+          color="primary"
+          size="sm"
+          class="-mt-2 mb-4"
+          data-testid="view-accounting-rule"
+          @click="viewAccountingRule(ask)"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-scale"
+              size="16"
+            />
+          </template>
+          {{ t('transactions.events.form.view_accounting_rule') }}
+        </RuiButton>
       </template>
-      {{ t('transactions.events.form.view_accounting_rule') }}
-    </RuiButton>
+    </ConfirmInPlace>
   </div>
 </template>

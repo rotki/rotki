@@ -172,21 +172,20 @@ describe('modules/assets/admin/useMappingFormDialog', () => {
       const error = new Error('the backend is down');
       add.mockRejectedValue(error);
 
-      const { failure, failureTitle, save } = dialog();
+      const { failure, save } = dialog();
 
       expect(await save()).toBe(false);
-      expect(get(failure)).toBe(error);
-      expect(get(failureTitle)).toBe('asset_management.cex_mapping.add_error');
+      expect(get(failure)).toEqual({ failure: error, title: 'asset_management.cex_mapping.add_error' });
     });
 
     it('should title a failure while editing as an edit failure', async () => {
       set(editMode, true);
       edit.mockRejectedValue(new Error('the backend is down'));
 
-      const { failureTitle, save } = dialog();
+      const { failure, save } = dialog();
       await save();
 
-      expect(get(failureTitle)).toBe('asset_management.cex_mapping.edit_error');
+      expect(get(failure)?.title).toBe('asset_management.cex_mapping.edit_error');
     });
 
     it('should drop the failure when the next write starts', async () => {

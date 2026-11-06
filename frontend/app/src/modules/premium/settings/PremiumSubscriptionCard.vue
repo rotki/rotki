@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { externalLinks } from '@shared/external-links';
 import PremiumPanel from '@/modules/premium/settings/PremiumPanel.vue';
 import PremiumPlanLimits from '@/modules/premium/settings/PremiumPlanLimits.vue';
@@ -25,6 +26,13 @@ defineSlots<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const removeQuestion = computed<ConfirmQuestion>(() => ({
+  confirmLabel: t('premium_settings.actions.delete'),
+  message: t('premium_settings.delete_confirmation.message'),
+  title: t('premium_settings.delete_confirmation.title'),
+  tone: 'error',
+}));
 
 const { currentTier } = usePremiumHelper();
 </script>
@@ -112,9 +120,7 @@ const { currentTier } = usePremiumHelper();
       </template>
       <template v-else>
         <ConfirmPopover
-          :title="t('premium_settings.delete_confirmation.title')"
-          :message="t('premium_settings.delete_confirmation.message')"
-          :confirm-label="t('premium_settings.actions.delete')"
+          :question="removeQuestion"
           @confirm="emit('remove')"
         >
           <template #activator="{ attrs }">

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import type { HistoryEventDeletePayload, HistoryEventQuestion, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
+import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { getMatchedMovementIgnoreIds } from '@/modules/history/event-utils';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
@@ -72,7 +73,7 @@ const isCard = computed<boolean>(() => variant === 'card');
 
 const { unlinkQuestion } = useUnlinkQuestion();
 
-const unlinkConfirm = computed<HistoryEventQuestion | undefined>(() =>
+const unlinkConfirm = computed<ConfirmQuestion | undefined>(() =>
   get(canUnlink) ? unlinkQuestion({ type: 'asset-movement' }) : undefined,
 );
 

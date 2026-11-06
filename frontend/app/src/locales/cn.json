@@ -977,10 +977,6 @@
     },
     "help_coingecko": "点击查看如何找到 CoinGecko 标识符",
     "help_cryptocompare": "点击查看如何找到 CryptoCompare 标识符",
-    "icon_upload": {
-      "description": "图标上传失败：{message}",
-      "title": "图标上传"
-    },
     "identifier": "标识符",
     "identifier_copy": "复制标识符",
     "labels": {
@@ -6574,7 +6570,6 @@
       "hidden_ignored_assets_warning": "此分组中部分事件包含已忽略的资产，因此被隐藏。点击显示。",
       "ignore": {
         "error": {
-          "message": "将事件从会计中排除失败",
           "title": "排除失败"
         }
       },

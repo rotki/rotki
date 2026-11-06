@@ -1,4 +1,5 @@
 import type { ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,7 +20,7 @@ const {
   const { ref } = await import('vue');
   return {
     dataSource: ref<unknown[]>([]),
-    deleteFailure: ref<{ title: string; error: unknown }>(),
+    deleteFailure: ref<NamedFailure>(),
     deleteRow: vi.fn<(id: number) => Promise<void>>(async () => {}),
     fetch: vi.fn(async () => ({ data: [], found: 0, limit: 0, total: 0 })),
     prepareForEdit: vi.fn((balance: unknown) => balance),
@@ -176,7 +177,7 @@ describe('manualBalanceTable', () => {
     it('should be named above the rows, without a retry', async () => {
       const wrapper = createWrapper();
 
-      set(deleteFailure, { error: 'backend said no', title: 'Could not delete' });
+      set(deleteFailure, { failure: 'backend said no', title: 'Could not delete' });
       await nextTick();
 
       const strip = wrapper.find('[data-testid=manual-balances-delete-error]');

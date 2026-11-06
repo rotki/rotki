@@ -114,7 +114,6 @@ async function change(): Promise<void> {
         class="mb-4"
         :title="t('actions.session.password_change.error')"
         :failure="failure"
-        :retryable="false"
         data-testid="change-password-failure"
       />
       <div class="flex items-center justify-end gap-4">

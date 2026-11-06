@@ -1,18 +1,17 @@
-import type { ActionStatus } from '@/modules/core/common/action';
 import type { Tag } from '@/modules/tags/tags';
 import { invertColor, randomColor } from '@rotki/common';
+import { err, ok, type Result } from 'plainfp/result';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useTagsApi } from '@/modules/tags/use-tags-api';
 
 interface UseTagOperationsReturn {
-  addTag: (tag: Tag) => Promise<ActionStatus>;
-  attemptTagCreation: (tag: string, backgroundColor?: string) => Promise<ActionStatus>;
+  addTag: (tag: Tag) => Promise<Result<void, unknown>>;
+  attemptTagCreation: (tag: string, backgroundColor?: string) => Promise<Result<void, unknown>>;
   deleteTag: (name: string) => Promise<void>;
-  editTag: (tag: Tag, originalName: string) => Promise<ActionStatus>;
+  editTag: (tag: Tag, originalName: string) => Promise<Result<void, unknown>>;
   fetchTags: () => Promise<void>;
 }
 
@@ -24,33 +23,33 @@ export function useTagOperations(): UseTagOperationsReturn {
   /**
    * Adds a tag.
    *
-   * @returns The outcome, carrying the error message on failure for the caller to show.
+   * @returns Ok once saved, or the request's error, unworded, for the caller to name.
    */
-  async function addTag(tag: Tag): Promise<ActionStatus> {
+  async function addTag(tag: Tag): Promise<Result<void, unknown>> {
     try {
       set(allTags, await queryAddTag(tag));
-      return { success: true };
+      return ok(undefined);
     }
     catch (error: unknown) {
-      return { message: getErrorMessage(error), success: false };
+      return err(error);
     }
   }
 
   /**
    * Edits a tag, renaming it on the accounts that carry it when its name changed.
    *
-   * @returns The outcome, carrying the error message on failure for the caller to show.
+   * @returns Ok once saved, or the request's error, unworded, for the caller to name.
    */
-  async function editTag(tag: Tag, originalName: string): Promise<ActionStatus> {
+  async function editTag(tag: Tag, originalName: string): Promise<Result<void, unknown>> {
     try {
       set(allTags, await queryEditTag(tag, originalName));
       if (originalName !== tag.name)
         renameTag(originalName, tag.name);
 
-      return { success: true };
+      return ok(undefined);
     }
     catch (error: unknown) {
-      return { message: getErrorMessage(error), success: false };
+      return err(error);
     }
   }
 
@@ -81,11 +80,11 @@ export function useTagOperations(): UseTagOperationsReturn {
   /**
    * Creates a tag unless one with that name already exists.
    *
-   * @returns Success when the tag exists afterwards, or the reason it could not be created.
+   * @returns Ok when the tag exists afterwards, or the request's error when it could not be created.
    */
-  async function attemptTagCreation(tag: string, backgroundColor?: string): Promise<ActionStatus> {
+  async function attemptTagCreation(tag: string, backgroundColor?: string): Promise<Result<void, unknown>> {
     if (tagExists(tag))
-      return { success: true };
+      return ok(undefined);
 
     const bgColor = backgroundColor ?? randomColor();
     const fgColor = invertColor(bgColor);

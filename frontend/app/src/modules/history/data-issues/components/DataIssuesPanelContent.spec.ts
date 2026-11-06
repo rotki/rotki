@@ -59,7 +59,7 @@ vi.mock('@/modules/history/data-issues/use-data-issues-panel-polling', () => ({
 }));
 
 interface Actions {
-  actionFailure?: Ref<{ id: number; title: string; error: unknown } | undefined>;
+  actionFailure?: Ref<{ id: number; title: string; failure: unknown } | undefined>;
   modelDrawerOpen?: Ref<boolean>;
   modelSelectedIssue?: Ref<DataIssue | undefined>;
   onResolveRequest: Mock;
@@ -76,7 +76,7 @@ function mounted<T>(value: T | undefined): T {
 
 vi.mock('@/modules/history/data-issues/use-data-issue-detail-actions', () => ({
   useDataIssueDetailActions: (): Record<string, unknown> => {
-    actions.actionFailure = ref<{ id: number; title: string; error: unknown }>();
+    actions.actionFailure = ref<{ id: number; title: string; failure: unknown }>();
     actions.modelDrawerOpen = ref<boolean>(false);
     actions.modelSelectedIssue = ref<DataIssue>();
     return {
@@ -182,7 +182,7 @@ describe('dataIssuesPanelContent', () => {
     state.issues = [createIssue(1)];
     const wrapper = await createWrapper();
 
-    set(mounted(actions.actionFailure), { error: new Error('nope'), id: 1, title: 'data_issues.action.dismiss.error' });
+    set(mounted(actions.actionFailure), { failure: new Error('nope'), id: 1, title: 'data_issues.action.dismiss.error' });
     await flushPromises();
 
     const strip = wrapper.find('[data-testid=data-issues-panel-action-failure]');
@@ -195,7 +195,7 @@ describe('dataIssuesPanelContent', () => {
     state.issues = [createIssue(1)];
     const wrapper = await createWrapper();
 
-    set(mounted(actions.actionFailure), { error: new Error('nope'), id: 1, title: 'data_issues.action.dismiss.error' });
+    set(mounted(actions.actionFailure), { failure: new Error('nope'), id: 1, title: 'data_issues.action.dismiss.error' });
     set(mounted(actions.modelDrawerOpen), true);
     await flushPromises();
 

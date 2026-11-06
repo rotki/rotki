@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { AssetAmountDisplay, AssetValueDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
 import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';
@@ -35,7 +36,7 @@ const pricesLoading = computed<boolean>(() => {
   return get(refreshing) || get(refreshingPrices) || !infoVal.price || infoVal.price.lt(0);
 });
 
-const deleteConfirm = computed<{ title: string; message: string }>(() => ({
+const deleteConfirm = computed<RowDeleteQuestion>(() => ({
   message: t('assets.custom_price.delete.message', {
     asset: getAssetField(identifier, 'name') || identifier,
   }),

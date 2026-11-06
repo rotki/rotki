@@ -1,5 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { type NamedFailure, useFailureSlot } from '@/modules/shell/components/named-failure';
 
 interface MappingFormHandle {
   /** Runs the form's own validation. */
@@ -26,10 +27,8 @@ interface UseMappingFormDialogOptions<T, TPayload> {
 interface UseMappingFormDialogReturn {
   /** The dialog's title, which differs between adding and editing. */
   dialogTitle: ComputedRef<string>;
-  /** Why the last write failed, named in the dialog; Save is the retry. */
-  failure: Readonly<Ref<unknown>>;
-  /** The title the failure is named under, which differs between adding and editing. */
-  failureTitle: ComputedRef<string>;
+  /** Why the last write failed, named as an add or an edit failure in the dialog; Save is the retry. */
+  failure: Readonly<Ref<NamedFailure | undefined>>;
   /** Whether a write is in flight. */
   loading: Readonly<Ref<boolean>>;
   /** Field errors, which the form binds. */
@@ -58,18 +57,12 @@ export function useMappingFormDialog<T, TPayload = T>(
   const loading = shallowRef<boolean>(false);
   const modelErrorMessages = ref<ValidationErrors>({});
 
-  const failure = shallowRef<unknown>();
+  const { clear: clearFailure, failure, report } = useFailureSlot();
 
   const dialogTitle = computed<string>(() =>
     toValue(editMode)
       ? t('asset_management.cex_mapping.edit_title')
       : t('asset_management.cex_mapping.add_title'),
-  );
-
-  const failureTitle = computed<string>(() =>
-    toValue(editMode)
-      ? t('asset_management.cex_mapping.edit_error')
-      : t('asset_management.cex_mapping.add_error'),
   );
 
   async function save(): Promise<boolean> {
@@ -83,14 +76,19 @@ export function useMappingFormDialog<T, TPayload = T>(
     const payload = toPayload(mapping);
 
     set(loading, true);
-    set(failure, undefined);
+    clearFailure();
     let success: boolean;
     try {
       success = toValue(editMode) ? await edit(payload) : await add(payload);
     }
     catch (error: unknown) {
       success = false;
-      set(failure, error);
+      report(
+        toValue(editMode)
+          ? t('asset_management.cex_mapping.edit_error')
+          : t('asset_management.cex_mapping.add_error'),
+        error,
+      );
     }
     set(loading, false);
 
@@ -103,8 +101,7 @@ export function useMappingFormDialog<T, TPayload = T>(
 
   return {
     dialogTitle,
-    failure: readonly(failure),
-    failureTitle,
+    failure,
     loading: readonly(loading),
     modelErrorMessages,
     save,

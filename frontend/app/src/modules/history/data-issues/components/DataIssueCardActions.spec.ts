@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import DataIssueCardActions from '@/modules/history/data-issues/components/DataIssueCardActions.vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 
 function createIssue(state: IssueState): DataIssue {
   return {
@@ -49,6 +50,14 @@ describe('dataIssueCardActions', () => {
 
     expect(wrapper.find('[data-testid=inline-confirm]').exists()).toBe(true);
     expect(parentClick).not.toHaveBeenCalled();
+  });
+
+  it('should ask about dismissing in the warning tone, since nothing is deleted', () => {
+    const wrapper = mount(DataIssueCardActions, { global: { stubs: { RuiMenu } }, props: { issue: createIssue(IssueState.OPEN) } });
+
+    const question = wrapper.findComponent(ConfirmPopover).props('question');
+    expect(question.confirmLabel).toBe('data_issues.action.dismiss.label');
+    expect(question.tone).not.toBe('error');
   });
 
   it('should emit dismiss only once the question is confirmed', async () => {

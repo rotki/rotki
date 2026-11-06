@@ -77,7 +77,6 @@ watch(modelValue, (value, previous) => {
   >
     <FailureStrip
       v-if="saveError"
-      :retryable="false"
       class="mb-4"
       :title="editMode ? t('price_management.edit.error.title') : t('price_management.add.error.title')"
       :failure="saveError"

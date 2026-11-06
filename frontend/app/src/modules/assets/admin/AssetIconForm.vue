@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { map as mapResult, ok, type Result } from 'plainfp/result';
+import { fromPromise } from 'plainfp/result-async';
 import { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
@@ -20,7 +20,6 @@ const refreshIconLoading = ref<boolean>(false);
 const refreshKey = ref<number>(0);
 /** Why the last icon refresh failed, named under the icon with a retry. */
 const refreshError = shallowRef<unknown>();
-const { notifyError } = useNotifications();
 const { getPath } = useInterop();
 const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
 
@@ -48,30 +47,20 @@ async function refreshIcon() {
 /**
  * Uploads the chosen icon for an asset that was just saved.
  *
- * @remarks
- * The caller closes its dialog without waiting for this, so a failure is toasted: nothing inline
- * is left on screen to carry it.
+ * @returns `ok` once the icon is stored, or straight away when none was chosen; `err` with the
+ * upload's error, for the dialog to name while it stays open
  */
-async function saveIcon(identifier: string): Promise<void> {
+async function saveIcon(identifier: string): Promise<Result<void, unknown>> {
   const iconVal = get(icon);
   if (!iconVal)
-    return;
+    return ok(undefined);
 
-  try {
-    const path = getPath(iconVal);
-    if (path)
-      await setIcon(identifier, path);
-    else
-      await uploadIcon(identifier, iconVal);
-
+  const path = getPath(iconVal);
+  const request = path ? setIcon(identifier, path) : uploadIcon(identifier, iconVal);
+  const uploaded = await fromPromise(request, (error: unknown) => error);
+  if (uploaded.ok)
     setLastRefreshedAssetIcon();
-  }
-  catch (error: unknown) {
-    notifyError(
-      t('asset_form.icon_upload.title'),
-      t('asset_form.icon_upload.description', { message: getErrorMessage(error) }),
-    );
-  }
+  return mapResult(uploaded, () => undefined);
 }
 
 const previewImageSource = ref<string>('');

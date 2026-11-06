@@ -191,11 +191,11 @@ describe('modules/core/action-center/ActionCenterRow', () => {
   describe('an option that asks first', () => {
     const silence: ActionTarget = { kind: 'run', run: vi.fn() };
 
-    function askingRow(): VueWrapper {
+    function askingRow(danger = true): VueWrapper {
       return mountRow(createItem({
         options: [{
           confirm: { message: 'Stop showing this?', title: 'Silence the row' },
-          danger: true,
+          danger,
           icon: 'lu-bell-off',
           id: 'do-not-show-again',
           label: 'Silence',
@@ -214,6 +214,16 @@ describe('modules/core/action-center/ActionCenterRow', () => {
       expect(question.find('[data-testid=inline-confirm-accept]').text()).toBe('Silence');
       expect(wrapper.find('[data-testid=actions-center-row-option]').exists()).toBe(false);
       expect(wrapper.emitted('option')).toBeUndefined();
+    });
+
+    it('should ask in red for a danger option and in the warning tone otherwise', async () => {
+      const acceptColor = async (wrapper: VueWrapper): Promise<unknown> => {
+        await wrapper.find('[data-testid=actions-center-row-option]').trigger('click');
+        return wrapper.findAllComponents({ name: 'RuiButton' }).find(button => button.attributes('data-testid') === 'inline-confirm-accept')?.props('color');
+      };
+
+      expect(await acceptColor(askingRow())).toBe('error');
+      expect(await acceptColor(askingRow(false))).toBe('warning');
     });
 
     it('should hand the option\'s target up once accepted', async () => {

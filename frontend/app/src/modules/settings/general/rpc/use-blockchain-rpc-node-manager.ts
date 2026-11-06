@@ -1,4 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { type Blockchain, NotificationKind, Severity } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -15,6 +16,7 @@ import {
   type BlockchainRpcNodeManageState,
   getPlaceholderNode,
 } from '@/modules/settings/types/rpc';
+import { type NamedFailure, useFailureSlot } from '@/modules/shell/components/named-failure';
 
 interface UseBlockchainRpcNodeManagerReturn {
   /** Opens the form on a blank node for this chain. */
@@ -57,11 +59,11 @@ interface UseBlockchainRpcNodeManagerReturn {
   /** Whether a reconnect is in flight. */
   reconnecting: Readonly<Ref<boolean>>;
   /** What a row's delete button asks before removing its node, which cannot be undone. */
-  deleteConfirm: (item: BlockchainRpcNode) => { title: string; message: string };
+  deleteConfirm: (item: BlockchainRpcNode) => RowDeleteQuestion;
   /** Removes a node the user already confirmed. */
   deleteNode: (item: BlockchainRpcNode) => Promise<void>;
   /** Why the last activate or delete on a row failed, named above the table. */
-  actionFailure: Readonly<Ref<{ title: string; error: unknown } | undefined>>;
+  actionFailure: ComputedRef<NamedFailure | undefined>;
 }
 
 /**
@@ -81,7 +83,7 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
   const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationDispatcher();
   /** Why the last activate or deactivate failed; the switch is the retry. */
-  const activeFailure = shallowRef<{ title: string; error: unknown }>();
+  const { failure: activeFailure, run: runActiveChange } = useFailureSlot();
   const { connectedNodes, coolingDownNodes, failedToConnect } = storeToRefs(useSessionMetadataStore());
   const { useChainName } = useSupportedChains();
   const api = useEvmNodesApi(() => toValue(chain));
@@ -148,35 +150,32 @@ export function useBlockchainRpcNodeManager(chain: MaybeRefOrGetter<Blockchain>)
     });
   }
 
-  const { deleteConfirm, deleteRow: deleteNode, failure: deleteFailure } = useTableRowDeletion<BlockchainRpcNode>({
-    confirm: (item) => {
-      const chainProp = get(chainName);
-      return {
-        message: t('evm_rpc_node_manager.confirm.message', {
-          chain: chainProp,
-          endpoint: item.endpoint,
-          node: item.name,
-        }),
-        title: t('evm_rpc_node_manager.confirm.title', { chain: chainProp }),
-      };
-    },
+  const deleteConfirm = (item: BlockchainRpcNode): RowDeleteQuestion => {
+    const chainProp = get(chainName);
+    return {
+      message: t('evm_rpc_node_manager.confirm.message', {
+        chain: chainProp,
+        endpoint: item.endpoint,
+        node: item.name,
+      }),
+      title: t('evm_rpc_node_manager.confirm.title', { chain: chainProp }),
+    };
+  };
+
+  const { deleteRow: deleteNode, failure: deleteFailure } = useTableRowDeletion<BlockchainRpcNode>({
     deleteItem: async node => api.deleteEvmNode(node.identifier),
     failureTitle: () => t('evm_rpc_node_manager.delete_error.title', { chain: toValue(chain) }),
     onDeleted: loadNodes,
   });
 
   async function onActiveChange(active: boolean, node: BlockchainRpcNode): Promise<void> {
-    set(activeFailure, undefined);
-    try {
+    await runActiveChange(t('evm_rpc_node_manager.activate_error.title', { node: node.name }), async () => {
       await api.editEvmNode({ ...node, active });
       await loadNodes();
-    }
-    catch (error: unknown) {
-      set(activeFailure, { error, title: t('evm_rpc_node_manager.activate_error.title', { node: node.name }) });
-    }
+    });
   }
 
-  const actionFailure = computed<{ title: string; error: unknown } | undefined>(() => get(activeFailure) ?? get(deleteFailure));
+  const actionFailure = computed<NamedFailure | undefined>(() => get(activeFailure) ?? get(deleteFailure));
 
   function notifyConnectFailures(messages: string[]): void {
     notify({

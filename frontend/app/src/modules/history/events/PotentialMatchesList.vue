@@ -165,12 +165,11 @@ watchDebounced(onlyExpectedAssets, () => {
     <div class="flex-1 min-h-0 flex flex-col">
       <FailureStrip
         v-if="failure"
-        :retryable="failure.kind === MatchingFailureKind.SEARCH"
         class="mb-4 shrink-0"
         :title="failure.kind === MatchingFailureKind.SEARCH ? t('asset_movement_matching.dialog.search_failed') : t('asset_movement_matching.dialog.match_failed')"
         :failure="failure.error"
         data-testid="potential-matches-failure"
-        @retry="emit('search')"
+        :on-retry="failure.kind === MatchingFailureKind.SEARCH ? () => emit('search') : undefined"
       />
 
       <p

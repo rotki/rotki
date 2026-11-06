@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CounterpartyMapping, CounterpartyMappingRequestPayload } from '@/modules/assets/admin/counterparty-mapping/schema';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { omit } from 'es-toolkit';
 import { CounterpartyMappingFilterKeys, type Filters } from '@/modules/assets/admin/counterparty-mapping/counterparty-mapping-filter-keys';
 import ManageCounterpartyMappingFormDialog
@@ -51,14 +52,17 @@ onMounted(async () => {
   await refetch();
 });
 
-const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion<CounterpartyMapping>({
-  confirm: item => ({
+function deleteConfirm(item: CounterpartyMapping): RowDeleteQuestion {
+  return {
     message: t('asset_management.cex_mapping.confirm_delete.message', {
       asset: item.counterpartySymbol,
       location: item.counterparty.toUpperCase(),
     }),
     title: t('asset_management.counterparty_mapping.confirm_delete.title'),
-  }),
+  };
+}
+
+const { deleteRow, failure: deleteFailure } = useTableRowDeletion<CounterpartyMapping>({
   deleteItem: mapping => deleteCounterpartyMapping(omit(mapping, ['asset'])),
   failureTitle: () => t('asset_management.cex_mapping.delete_error'),
   onDeleted: refetch,
@@ -76,9 +80,8 @@ const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion
     <FailureStrip
       v-if="deleteFailure"
       class="mb-4"
-      :retryable="false"
       :title="deleteFailure.title"
-      :failure="deleteFailure.error"
+      :failure="deleteFailure.failure"
       data-testid="counterparty-mapping-delete-error"
     />
     <ManageCounterpartyMappingTable

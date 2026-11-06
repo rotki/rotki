@@ -72,7 +72,7 @@ const {
   showIndexerOptions,
 } = redecode;
 
-const { actionFailure } = useHistoryEventsActionFailure();
+const { failure: actionFailure } = useHistoryEventsActionFailure();
 
 const fetchError = useTableFetchError();
 const emptyState = useTableEmptyState();
@@ -131,7 +131,6 @@ provideHistoryEventsRowContext(rowContext);
       class="m-2"
       :title="actionFailure.title"
       :failure="actionFailure.failure"
-      :retryable="false"
       data-testid="history-events-action-failure"
     />
 

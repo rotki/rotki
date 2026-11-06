@@ -1,6 +1,7 @@
 import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { err, type Result } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
@@ -8,12 +9,15 @@ import { Module } from '@/modules/core/common/modules';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
-const { addQueriedAddress, deleteQueriedAddress, getAccounts, getAddresses } = vi.hoisted(() => ({
-  addQueriedAddress: vi.fn<(payload: unknown) => Promise<{ error: unknown } | undefined>>(async () => undefined),
-  deleteQueriedAddress: vi.fn<(payload: unknown) => Promise<{ error: unknown } | undefined>>(async () => undefined),
-  getAccounts: vi.fn<(chain: string) => BlockchainAccount[]>(() => []),
-  getAddresses: vi.fn<(chain: string) => string[]>(() => []),
-}));
+const { addQueriedAddress, deleteQueriedAddress, getAccounts, getAddresses } = await vi.hoisted(async () => {
+  const { ok } = await import('plainfp/result');
+  return {
+    addQueriedAddress: vi.fn<(payload: unknown) => Promise<Result<void, unknown>>>(async () => ok(undefined)),
+    deleteQueriedAddress: vi.fn<(payload: unknown) => Promise<Result<void, unknown>>>(async () => ok(undefined)),
+    getAccounts: vi.fn<(chain: string) => BlockchainAccount[]>(() => []),
+    getAddresses: vi.fn<(chain: string) => string[]>(() => []),
+  };
+});
 
 vi.mock('@/modules/accounts/use-queried-address-operations', () => ({
   useQueriedAddressOperations: (): Record<string, unknown> => ({ addQueriedAddress, deleteQueriedAddress }),
@@ -190,7 +194,7 @@ describe('queriedAddressDialog', () => {
 
   describe('an add that fails', () => {
     async function failAdd(error: unknown): Promise<VueWrapper<any>> {
-      addQueriedAddress.mockResolvedValueOnce({ error });
+      addQueriedAddress.mockResolvedValueOnce(err(error));
       const wrapper = createWrapper();
       await pick(wrapper, ADDRESSES[0]);
       await addButton(wrapper).trigger('click');
@@ -228,7 +232,7 @@ describe('queriedAddressDialog', () => {
   it('should name a failed removal in the dialog under the delete title', async () => {
     queried({ eth2: [ADDRESSES[0]] });
     const error = new Error('backend refused');
-    deleteQueriedAddress.mockResolvedValueOnce({ error });
+    deleteQueriedAddress.mockResolvedValueOnce(err(error));
     const wrapper = createWrapper();
 
     await wrapper.find('[data-testid=queried-address-remove]').trigger('click');

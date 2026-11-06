@@ -28,7 +28,7 @@ export function useMatchedEventsUnlink(
 ): UseMatchedEventsUnlinkReturn {
   const { t } = useI18n({ useScope: 'global' });
 
-  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+  const { run: runAction } = useHistoryEventsActionFailure();
   const { getGroupEvents } = useCompleteEvents(completeEventsMapped);
   const { matchAssetMovements, unlinkAssetMovement } = useAssetMovementMatchingApi();
   const { matchBridgeTransactions, unlinkBridgeTransaction } = useBridgeMatchingApi();
@@ -63,18 +63,12 @@ export function useMatchedEventsUnlink(
   }
 
   async function unlink(payload: HistoryEventUnlinkPayload): Promise<void> {
-    clearActionFailure();
-    try {
+    const title = payload.type === 'bridge' ? t('transactions.events.unlink_bridge_error') : t('transactions.events.unlink_error');
+    await runAction(title, async () => {
       await unlinkMatch(payload);
       emit('refresh');
       taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_UNLINKED });
-    }
-    catch (error: unknown) {
-      reportActionFailure(
-        payload.type === 'bridge' ? t('transactions.events.unlink_bridge_error') : t('transactions.events.unlink_error'),
-        error,
-      );
-    }
+    });
   }
 
   async function unlinkGroup(groupId: string): Promise<void> {

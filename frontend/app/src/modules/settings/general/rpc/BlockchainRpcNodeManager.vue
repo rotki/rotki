@@ -58,9 +58,8 @@ defineExpose({
   <FailureStrip
     v-if="actionFailure"
     class="mb-2"
-    :retryable="false"
     :title="actionFailure.title"
-    :failure="actionFailure.error"
+    :failure="actionFailure.failure"
     data-testid="rpc-node-action-error"
   />
   <RuiTable

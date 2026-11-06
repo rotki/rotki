@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { Tag } from '@/modules/tags/tags';
+import { tap } from 'plainfp/result';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+import { useFailureSlot } from '@/modules/shell/components/named-failure';
 import TagForm from '@/modules/tags/TagForm.vue';
 import { useTagOperations } from '@/modules/tags/use-tag-operations';
 
@@ -17,43 +19,37 @@ const emit = defineEmits<{
 }>();
 
 const { addTag, editTag } = useTagOperations();
+/** Why the last save failed; the form keeps what was typed. */
+const { clear: clearSaveFailure, failure: saveFailure, run: runSave } = useFailureSlot();
 
 const submitting = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
-/** Why the last save failed; the form keeps what was typed. */
-const saveFailure = shallowRef<string>();
 const form = useTemplateRef<ComponentExposed<typeof TagForm>>('form');
 
 const { t } = useI18n({ useScope: 'global' });
 
-const failureTitle = computed<string>(() => (editMode
-  ? t('actions.session.tag_edit.error.title')
-  : t('actions.session.tag_add.error.title')));
-
 function closeDialog(): void {
-  set(saveFailure, undefined);
+  clearSaveFailure();
   set(stateUpdated, false);
   set(modelValue, undefined);
 }
 
 async function save(): Promise<void> {
   set(submitting, true);
-  set(saveFailure, undefined);
+  clearSaveFailure();
   const newTag = get(modelValue);
   if (!get(form)?.validate() || !newTag) {
     set(submitting, false);
     return;
   }
   const tagOriginalName = originalName || newTag.name;
-  const status = await (editMode ? editTag(newTag, tagOriginalName) : addTag(newTag));
-
-  if (status.success) {
-    emit('saved', { tag: newTag, originalName: tagOriginalName });
-    closeDialog();
-  }
-  else {
-    set(saveFailure, status.message);
-  }
+  await runSave(
+    editMode ? t('actions.session.tag_edit.error.title') : t('actions.session.tag_add.error.title'),
+    async () => tap(await (editMode ? editTag(newTag, tagOriginalName) : addTag(newTag)), () => {
+      emit('saved', { tag: newTag, originalName: tagOriginalName });
+      closeDialog();
+    }),
+  );
   set(submitting, false);
 }
 </script>
@@ -67,8 +63,8 @@ async function save(): Promise<void> {
     :layout="{ divide: true }"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
-    :failure="saveFailure"
-    :failure-title="failureTitle"
+    :failure="saveFailure?.failure"
+    :failure-title="saveFailure?.title"
     @confirm="save()"
     @cancel="closeDialog()"
   >

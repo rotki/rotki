@@ -4,6 +4,7 @@ import type { Filters } from '@/modules/assets/admin/cex-mapping/cex-mapping-fil
 import type { CexMapping } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import MappingAdminTable from '@/modules/assets/admin/MappingAdminTable.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 
@@ -16,7 +17,7 @@ defineProps<{
   fields: FieldDef[];
   loading: boolean;
   /** What a row's delete button asks; `delete` is emitted once the user confirms. */
-  deleteConfirm: (mapping: CexMapping) => { title: string; message: string };
+  deleteConfirm: (mapping: CexMapping) => RowDeleteQuestion;
 }>();
 
 const emit = defineEmits<{

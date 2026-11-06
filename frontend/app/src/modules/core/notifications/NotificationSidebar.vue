@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { NotificationDayLabel } from '@/modules/core/notifications/notification-days';
 import Notification from '@/modules/core/notifications/Notification.vue';
 import BackendProblemCard from '@/modules/core/notifications/problems/BackendProblemCard.vue';
@@ -18,9 +19,6 @@ const { y } = useScroll(contentWrapper);
 const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
 
 const {
-  askingToClear,
-  askToClear,
-  cancelClear,
   clearAll,
   close,
   failures,
@@ -28,6 +26,7 @@ const {
   initialAppear,
   isEmpty,
   messageOverflow,
+  modelAskingToClear,
   modelMutedOpen,
   modelProblemsOpen,
   muted,
@@ -45,6 +44,12 @@ const {
 const problemCount = computed<number>(() => get(problems).length + get(failures).length);
 
 const mutedCount = computed<number>(() => get(muted).problems.length + get(muted).notifications.length);
+
+const clearQuestion = computed<ConfirmQuestion>(() => ({
+  confirmLabel: t('common.actions.clear'),
+  message: t('notification_sidebar.confirmation.message'),
+  title: t('notification_sidebar.confirmation.title'),
+}));
 </script>
 
 <template>
@@ -258,17 +263,15 @@ const mutedCount = computed<number>(() => get(muted).problems.length + get(muted
         </div>
       </div>
       <div
-        v-if="askingToClear"
+        v-if="modelAskingToClear"
         class="p-3 border-t border-rui-divider mt-2"
       >
         <InlineConfirm
           layout="panel"
           class="p-0!"
-          :title="t('notification_sidebar.confirmation.title')"
-          :message="t('notification_sidebar.confirmation.message')"
-          :confirm-label="t('common.actions.clear')"
+          :question="clearQuestion"
           data-testid="clear-notifications-confirm"
-          @cancel="cancelClear()"
+          @cancel="modelAskingToClear = false"
           @confirm="clearAll()"
         />
       </div>
@@ -282,7 +285,7 @@ const mutedCount = computed<number>(() => get(muted).problems.length + get(muted
           color="primary"
           class="me-auto"
           data-testid="clear-notifications"
-          @click="askToClear()"
+          @click="modelAskingToClear = true"
         >
           {{ t('notification_sidebar.clear_tooltip') }}
         </RuiButton>

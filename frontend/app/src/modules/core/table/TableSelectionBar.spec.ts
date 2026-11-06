@@ -1,3 +1,4 @@
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -28,7 +29,7 @@ function createWrapper(): VueWrapper {
   }, { global: { provide: libraryDefaults, stubs } });
 }
 
-const QUESTION = { confirmLabel: 'Delete', message: 'Delete 2 backups?', title: 'Delete backups' };
+const QUESTION: ConfirmQuestion = { confirmLabel: 'Delete', message: 'Delete 2 backups?', title: 'Delete backups', tone: 'error' };
 
 function createAskingWrapper(onClick: () => void): VueWrapper {
   return mount({
@@ -86,14 +87,13 @@ describe('modules/core/table/TableSelectionBar', () => {
       return wrapper;
     }
 
-    it('should ask in the menu in place of the entries, keeping the menu open, without acting', async () => {
+    it('should ask in the menu in place of the entries, without acting', async () => {
       const onClick = vi.fn<() => void>();
       const wrapper = await openQuestion(onClick);
 
       const menu = wrapper.findComponent(stubs.RuiMenu);
-      expect(menu.find('[data-testid="table-selection-confirm"]').text()).toContain('Delete 2 backups?');
-      expect(menu.find('[data-testid="table-selection-entries"]').attributes('style')).toContain('display: none');
-      expect(menu.attributes('close-on-content-click')).toBe('false');
+      expect(menu.find('[data-testid="inline-confirm"]').text()).toContain('Delete 2 backups?');
+      expect(menu.find('[data-testid=confirm-menu-entries]').attributes('style')).toContain('display: none');
       expect(onClick).not.toHaveBeenCalled();
     });
 
@@ -104,7 +104,7 @@ describe('modules/core/table/TableSelectionBar', () => {
       await wrapper.find('[data-testid="inline-confirm-accept"]').trigger('click');
 
       expect(onClick).toHaveBeenCalledOnce();
-      expect(wrapper.find('[data-testid="table-selection-confirm"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="inline-confirm"]').exists()).toBe(false);
     });
 
     it('should bring the entries back on cancel, without acting', async () => {
@@ -114,8 +114,8 @@ describe('modules/core/table/TableSelectionBar', () => {
       await wrapper.find('[data-testid="inline-confirm-cancel"]').trigger('click');
 
       expect(onClick).not.toHaveBeenCalled();
-      expect(wrapper.find('[data-testid="table-selection-entries"]').attributes('style') ?? '').not.toContain('display: none');
-      expect(wrapper.find('[data-testid="table-selection-confirm"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=confirm-menu-entries]').attributes('style') ?? '').not.toContain('display: none');
+      expect(wrapper.find('[data-testid="inline-confirm"]').exists()).toBe(false);
     });
   });
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { externalLinks } from '@shared/external-links';
 import { useTemplateRef } from 'vue';
 import { type SolanaTokenMigrationData, useSolanaTokenMigrationDialog } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-dialog';
@@ -28,6 +29,20 @@ const { acceptMerge, dismissMerge, failure, loading, mergeSuggestion, modelError
   onSuggestMerge: (suggestion): void => emit('suggest-merge', suggestion),
   validateForm: (): boolean => get(form)?.validate() ?? false,
 });
+
+const mergeQuestion = computed<ConfirmQuestion | undefined>(() => {
+  const suggestion = get(mergeSuggestion);
+  if (!suggestion)
+    return undefined;
+  return {
+    confirmLabel: t('asset_management.merge_assets'),
+    message: t('asset_management.solana_token_migration.merge_suggestion.message', {
+      sourceAsset: suggestion.sourceAsset,
+      targetAsset: suggestion.targetAsset,
+    }),
+    title: t('asset_management.solana_token_migration.merge_suggestion.title'),
+  };
+});
 </script>
 
 <template>
@@ -37,7 +52,7 @@ const { acceptMerge, dismissMerge, failure, loading, mergeSuggestion, modelError
     :action="{ primary: t('asset_management.solana_token_migration.migrate_button') }"
     :layout="{ autoHeight: true, divide: true, maxWidth: '640px' }"
     :loading="loading"
-    :failure="failure?.error"
+    :failure="failure?.failure"
     :failure-title="failure?.title"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
@@ -66,11 +81,9 @@ const { acceptMerge, dismissMerge, failure, loading, mergeSuggestion, modelError
       </div>
     </template>
     <InlineConfirm
-      v-if="mergeSuggestion"
+      v-if="mergeQuestion"
       class="mb-4"
-      :title="t('asset_management.solana_token_migration.merge_suggestion.title')"
-      :message="t('asset_management.solana_token_migration.merge_suggestion.message', { sourceAsset: mergeSuggestion.sourceAsset, targetAsset: mergeSuggestion.targetAsset })"
-      :confirm-label="t('asset_management.merge_assets')"
+      :question="mergeQuestion"
       data-testid="solana-token-migration-merge-suggestion"
       @confirm="acceptMerge()"
       @cancel="dismissMerge()"

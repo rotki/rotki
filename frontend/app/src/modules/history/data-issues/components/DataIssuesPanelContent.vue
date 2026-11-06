@@ -62,6 +62,7 @@ const {
   onRetry,
   openDetail,
   resolveFailure,
+  selectedIssueFailure,
 } = useDataIssueDetailActions(
   reloadAll,
   () => get(rows).map(({ issue }) => issue),
@@ -183,8 +184,7 @@ onMounted(() => {
       v-if="actionFailure && !modelDrawerOpen"
       class="mx-3 mt-2 shrink-0"
       :title="actionFailure.title"
-      :failure="actionFailure.error"
-      :retryable="false"
+      :failure="actionFailure.failure"
       data-testid="data-issues-panel-action-failure"
     />
 
@@ -322,7 +322,7 @@ onMounted(() => {
       <DataIssueDetailContent
         :issue="modelSelectedIssue"
         :busy="modelActionBusy"
-        :failure="actionFailure"
+        :failure="selectedIssueFailure"
         @close="modelDrawerOpen = false"
         @dismiss="onDismiss($event)"
         @retry="onRetry($event)"

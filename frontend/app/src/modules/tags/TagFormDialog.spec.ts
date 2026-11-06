@@ -1,6 +1,6 @@
-import type { ActionStatus } from '@/modules/core/common/action';
 import type { Tag } from '@/modules/tags/tags';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
@@ -8,8 +8,8 @@ import TagFormDialog from '@/modules/tags/TagFormDialog.vue';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
-    addTag: vi.fn<(tag: Tag) => Promise<ActionStatus>>(),
-    editTag: vi.fn<(tag: Tag, originalName: string) => Promise<ActionStatus>>(),
+    addTag: vi.fn<(tag: Tag) => Promise<Result<void, unknown>>>(),
+    editTag: vi.fn<(tag: Tag, originalName: string) => Promise<Result<void, unknown>>>(),
     validate: vi.fn<() => boolean>(),
   },
 }));
@@ -56,11 +56,14 @@ async function save(wrapper: VueWrapper): Promise<void> {
 }
 
 describe('tagFormDialog', () => {
+  const tagExists = new Error('tag exists');
+  const notFound = new Error('not found');
+
   beforeEach(() => {
     vi.clearAllMocks();
     spies.validate.mockReturnValue(true);
-    spies.addTag.mockResolvedValue({ success: true });
-    spies.editTag.mockResolvedValue({ success: true });
+    spies.addTag.mockResolvedValue(ok(undefined));
+    spies.editTag.mockResolvedValue(ok(undefined));
   });
 
   it('should close and emit saved once the tag is added', async () => {
@@ -74,34 +77,34 @@ describe('tagFormDialog', () => {
   });
 
   it('should name an add failure in the dialog, which stays open', async () => {
-    spies.addTag.mockResolvedValue({ message: 'tag exists', success: false });
+    spies.addTag.mockResolvedValue(err(tagExists));
     const wrapper = createWrapper();
 
     await save(wrapper);
 
     const dialog = wrapper.findComponent(BigDialog);
-    expect(dialog.props('failure')).toBe('tag exists');
+    expect(dialog.props('failure')).toBe(tagExists);
     expect(dialog.props('failureTitle')).toBe('actions.session.tag_add.error.title');
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
     expect(wrapper.emitted('saved')).toBeUndefined();
   });
 
   it('should title an edit failure as an edit', async () => {
-    spies.editTag.mockResolvedValue({ message: 'not found', success: false });
+    spies.editTag.mockResolvedValue(err(notFound));
     const wrapper = createWrapper(true);
 
     await save(wrapper);
 
     expect(spies.editTag).toHaveBeenCalledWith(TAG, 'old');
     const dialog = wrapper.findComponent(BigDialog);
-    expect(dialog.props('failure')).toBe('not found');
+    expect(dialog.props('failure')).toBe(notFound);
     expect(dialog.props('failureTitle')).toBe('actions.session.tag_edit.error.title');
   });
 
   it('should drop the failure when the next save starts', async () => {
-    spies.addTag.mockResolvedValueOnce({ message: 'tag exists', success: false });
-    let resolveSecond: (status: ActionStatus) => void = () => {};
-    spies.addTag.mockReturnValueOnce(new Promise<ActionStatus>((resolve) => {
+    spies.addTag.mockResolvedValueOnce(err(tagExists));
+    let resolveSecond: (result: Result<void, unknown>) => void = () => {};
+    spies.addTag.mockReturnValueOnce(new Promise<Result<void, unknown>>((resolve) => {
       resolveSecond = resolve;
     }));
     const wrapper = createWrapper();
@@ -110,12 +113,12 @@ describe('tagFormDialog', () => {
     await save(wrapper);
 
     expect(wrapper.findComponent(BigDialog).props('failure')).toBeUndefined();
-    resolveSecond({ success: true });
+    resolveSecond(ok(undefined));
     await flushPromises();
   });
 
   it('should drop the failure when the dialog is cancelled', async () => {
-    spies.addTag.mockResolvedValue({ message: 'tag exists', success: false });
+    spies.addTag.mockResolvedValue(err(tagExists));
     const wrapper = createWrapper();
 
     await save(wrapper);

@@ -106,7 +106,6 @@ async function remove(): Promise<void> {
         v-if="inlineFailure"
         :title="t('premium_settings.error.setting_failed')"
         :failure="inlineFailure"
-        :retryable="false"
         data-testid="premium-settings-failure"
       >
         <template

@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { type UnmatchedBridgeTransaction, useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
@@ -38,7 +38,7 @@ interface UseBridgeTransactionActionsReturn {
   /** Ignores the selected legs, once their button asked. */
   ignoreSelected: () => Promise<void>;
   /** What ignoring the selection asks beside its button, counting the selected legs. */
-  ignoreSelectedQuestion: ComputedRef<HistoryEventQuestion>;
+  ignoreSelectedQuestion: ComputedRef<ConfirmQuestion>;
   restoreSelected: () => Promise<void>;
   dismissResolution: () => void;
   markExternal: (transaction: UnmatchedBridgeTransaction) => Promise<void>;
@@ -201,7 +201,8 @@ export function useBridgeTransactionActions(
     }, 'Failed to restore the selected bridge transactions:');
   }
 
-  const ignoreSelectedQuestion = computed<HistoryEventQuestion>(() => ({
+  const ignoreSelectedQuestion = computed<ConfirmQuestion>(() => ({
+    confirmLabel: t('asset_movement_matching.dialog.ignore'),
     message: t('bridge_matching.actions.ignore_selected_confirm', { count: get(modelSelectedUnmatched).length }),
     title: t('bridge_matching.actions.ignore_selected'),
   }));

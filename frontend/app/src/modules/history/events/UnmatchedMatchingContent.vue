@@ -1,8 +1,8 @@
 <script setup lang="ts" generic="TItem extends UnmatchedEventGroup, TRow extends UnmatchedRow<TItem>">
 import type { MatchingKind } from '@/modules/history/events/matching/matching-kind';
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
 import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { startPromise } from '@shared/utils';
 import AssetMovementMatchingSettingsMenu from '@/modules/history/events/AssetMovementMatchingSettingsMenu.vue';
 import { UNMATCHED_ACTIONS, type UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
@@ -70,7 +70,7 @@ const showRestoreSelected = computed<boolean>(() => !kind.bulkSelection.hideWhen
 
 const fiatCount = computed<number>(() => (fiat ? get(fiat.items).length : 0));
 
-const fiatQuestion = computed<HistoryEventQuestion | undefined>(() => (fiat ? get(fiat.question) : undefined));
+const fiatQuestion = computed<ConfirmQuestion | undefined>(() => (fiat ? get(fiat.question) : undefined));
 
 async function ignoreAllFiat(): Promise<void> {
   await fiat?.ignoreAll();
@@ -184,7 +184,6 @@ onBeforeMount(async () => {
 
   <FailureStrip
     v-if="actionFailure"
-    :retryable="false"
     :title="t(kind.messages.actionFailed)"
     :failure="actionFailure"
     class="shrink-0"
@@ -242,10 +241,7 @@ onBeforeMount(async () => {
     >
       <ConfirmPopover
         v-if="showIgnoreSelected"
-        tone="warning"
-        :title="ignoreSelectedQuestion.title"
-        :message="ignoreSelectedQuestion.message"
-        :confirm-label="t('asset_movement_matching.dialog.ignore')"
+        :question="ignoreSelectedQuestion"
         @confirm="startPromise(ignoreSelected())"
       >
         <template #activator="{ attrs }">
@@ -273,10 +269,7 @@ onBeforeMount(async () => {
       </ConfirmPopover>
       <ConfirmPopover
         v-if="fiatQuestion"
-        tone="warning"
-        :title="fiatQuestion.title"
-        :message="fiatQuestion.message"
-        :confirm-label="t('asset_movement_matching.dialog.ignore')"
+        :question="fiatQuestion"
         @confirm="startPromise(ignoreAllFiat())"
       >
         <template #activator="{ attrs }">

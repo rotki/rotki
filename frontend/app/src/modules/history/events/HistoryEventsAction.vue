@@ -8,13 +8,14 @@ import type {
   HistoryEventEntry,
   StandaloneEditableEvents,
 } from '@/modules/history/events/schemas';
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { startPromise } from '@shared/utils';
 import HistoryEventDuplicateActions from '@/modules/history/events/HistoryEventDuplicateActions.vue';
 import RedecodeEventsButton from '@/modules/history/events/RedecodeEventsButton.vue';
 import { useHistoryEventActionMenu } from '@/modules/history/events/use-history-event-action-menu';
 import { type DecodableEventType, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
-import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
+import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';
+import { useDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 
 const { event, loading, redecoding, duplicateHandlingStatus, groupEvents } = defineProps<{
   event: HistoryEventEntry;
@@ -40,10 +41,9 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const toDeleteQuestion = useDeleteQuestion();
 
 const showMenu = ref<boolean>(false);
-/** The delete the menu is asking about in place of its list, until it is answered or closed. */
-const pendingDelete = ref<'transaction' | 'events'>();
 
 const {
   blockEvent,
@@ -87,37 +87,21 @@ function redecodeWithOptions(target: DecodableEventType): void {
   emit('redecode-with-options', toRedecodePayload(target));
 }
 
-const deleteQuestion = computed<HistoryEventQuestion | undefined>(() => {
-  const pending = get(pendingDelete);
-  if (pending === 'transaction') {
-    return {
-      message: t('transactions.dialog.delete.message'),
-      title: t('transactions.dialog.delete.title'),
-    };
-  }
-  if (pending === 'events') {
-    return {
-      message: t('transactions.events.confirmation.delete.message'),
-      title: t('transactions.events.confirmation.delete.title'),
-    };
-  }
-  return undefined;
-});
+const deleteTxQuestion = computed<ConfirmQuestion>(() => toDeleteQuestion({
+  message: t('transactions.dialog.delete.message'),
+  title: t('transactions.dialog.delete.title'),
+}));
 
-function acceptDelete(): void {
-  const pending = get(pendingDelete);
+const deleteEventsQuestion = computed<ConfirmQuestion>(() => toDeleteQuestion({
+  message: t('transactions.events.confirmation.delete.message'),
+  title: t('transactions.events.confirmation.delete.title'),
+}));
+
+function deleteTx(): void {
   const txRef = get(eventWithTxRef);
-  set(showMenu, false);
-  if (pending === 'transaction' && txRef)
+  if (txRef)
     emit('delete-tx', txRef);
-  else if (pending === 'events')
-    emit('delete-events', deletableEventIds());
 }
-
-watch(showMenu, (open) => {
-  if (!open)
-    set(pendingDelete, undefined);
-});
 </script>
 
 <template>
@@ -130,11 +114,10 @@ watch(showMenu, (open) => {
       @fix="startPromise(fixDuplicate())"
       @ignore="startPromise(ignoreDuplicate())"
     />
-    <RuiMenu
+    <ConfirmMenu
       v-model="showMenu"
       lazy
-      :role="deleteQuestion ? 'dialog' : undefined"
-      :class-names="{ menu: deleteQuestion ? 'w-72' : 'max-w-60' }"
+      menu-class="max-w-60"
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'bottom-end' }"
       close-on-content-click
     >
@@ -153,17 +136,7 @@ watch(showMenu, (open) => {
           />
         </RuiButton>
       </template>
-      <InlineConfirm
-        v-if="deleteQuestion"
-        layout="panel"
-        tone="error"
-        :title="deleteQuestion.title"
-        :message="deleteQuestion.message"
-        :confirm-label="t('common.actions.delete')"
-        @cancel="showMenu = false"
-        @confirm="acceptDelete()"
-      />
-      <template v-else>
+      <template #default="{ ask }">
         <RuiButton
           v-if="canAddEvent"
           variant="list"
@@ -212,7 +185,7 @@ watch(showMenu, (open) => {
           color="error"
           :disabled="loading"
           data-testid="event-delete-tx"
-          @click.stop="pendingDelete = 'transaction'"
+          @click="ask(deleteTxQuestion, deleteTx)"
         >
           <template #prepend>
             <RuiIcon name="lu-trash-2" />
@@ -225,7 +198,7 @@ watch(showMenu, (open) => {
           color="error"
           :disabled="loading"
           data-testid="event-delete-events"
-          @click.stop="pendingDelete = 'events'"
+          @click="ask(deleteEventsQuestion, () => emit('delete-events', deletableEventIds()))"
         >
           <template #prepend>
             <RuiIcon name="lu-trash-2" />
@@ -244,6 +217,6 @@ watch(showMenu, (open) => {
           {{ t('actions.history_events.report_issue.action') }}
         </RuiButton>
       </template>
-    </RuiMenu>
+    </ConfirmMenu>
   </div>
 </template>

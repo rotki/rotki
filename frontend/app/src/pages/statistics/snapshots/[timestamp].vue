@@ -5,7 +5,7 @@ import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { NoteLocation } from '@/modules/core/common/notes';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { useConfirm } from '@/modules/core/common/use-confirm';
 import ExportSnapshotDialog from '@/modules/dashboard/ExportSnapshotDialog.vue';
 import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/SnapshotBalancesTable.vue';
 import SnapshotEditorToolbar from '@/modules/dashboard/snapshots/components/SnapshotEditorToolbar.vue';
@@ -53,7 +53,7 @@ const { fetchSnapshot, persist, remove } = useSnapshotStore();
  * and the list page alike, both reading the same store.
  */
 const { refresh: refreshNetValue, rows } = useSnapshotList();
-const { show } = useConfirmStore();
+const { ask } = useConfirm();
 
 const {
   addBalance,
@@ -212,22 +212,18 @@ watch(isDirty, (dirty) => {
     set(saveSuccess, false);
 });
 
-// Guard against leaving with unsaved changes (covers prev/next + outbound nav).
-onBeforeRouteLeave(() => {
+/** Lets the user leave an edited snapshot, by prev/next or any other navigation, only once they agree. */
+async function confirmLeave(): Promise<boolean> {
   if (!get(isDirty))
     return true;
 
-  return new Promise<boolean>((resolve) => {
-    show(
-      {
-        message: t('dashboard.snapshot.detail.leave.message'),
-        title: t('dashboard.snapshot.detail.leave.title'),
-      },
-      () => resolve(true),
-      () => resolve(false),
-    );
-  });
-});
+  return await ask({
+    message: t('dashboard.snapshot.detail.leave.message'),
+    title: t('dashboard.snapshot.detail.leave.title'),
+  }) === 'confirm';
+}
+
+onBeforeRouteLeave(confirmLeave);
 
 /**
  * Raises the browser's own leave prompt for an unsaved snapshot.

@@ -1,10 +1,10 @@
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 
 /** What is being unlinked, as far as the question asked before it cares. */
 export type UnlinkKind = { type: 'asset-movement' } | { type: 'bridge'; hasSynthetic: boolean };
 
 interface UseUnlinkQuestionReturn {
-  unlinkQuestion: (kind: UnlinkKind) => HistoryEventQuestion;
+  unlinkQuestion: (kind: UnlinkKind) => ConfirmQuestion;
 }
 
 /**
@@ -25,7 +25,7 @@ export function useUnlinkQuestion(): UseUnlinkQuestionReturn {
       : t('transactions.events.confirmation.unlink.bridge_message');
   }
 
-  function unlinkQuestion(kind: UnlinkKind): HistoryEventQuestion {
+  function unlinkQuestion(kind: UnlinkKind): ConfirmQuestion {
     return {
       confirmLabel: t('transactions.events.actions.unlink'),
       message: unlinkMessage(kind),

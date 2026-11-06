@@ -91,6 +91,7 @@ describe('oraclePriceEditDialog', () => {
 
     expect(mockResetHistoricalPricesData).not.toHaveBeenCalled();
     expect(wrapper.findComponent(BigDialog).props('failure')).toBe(error);
+    expect(wrapper.findComponent(BigDialog).props('failureTitle')).toBe('oracle_prices.edit.error.title');
     expect(wrapper.emitted('refresh')).toBeUndefined();
     expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });

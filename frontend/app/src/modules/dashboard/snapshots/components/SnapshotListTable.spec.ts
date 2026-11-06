@@ -5,6 +5,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import SnapshotListTable from '@/modules/dashboard/snapshots/components/SnapshotListTable.vue';
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 
 /** Opens through its activator and renders its content only while open, as the real menu does. */
 const RuiMenu = {
@@ -72,6 +73,16 @@ describe('modules/dashboard/snapshots/components/SnapshotListTable', () => {
 
     expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('dashboard.snapshot.delete.dialog.message');
     expect(wrapper.emitted('delete')).toBeUndefined();
+  });
+
+  it('should ask about the delete in the error tone, with a Delete button', () => {
+    wrapper = createWrapper([createRow({ timestamp: 1_600_000_000 })]);
+
+    expect(wrapper.findComponent(ConfirmPopover).props('question')).toMatchObject({
+      confirmLabel: 'common.actions.delete',
+      title: 'dashboard.snapshot.delete.dialog.title',
+      tone: 'error',
+    });
   });
 
   it('should emit delete with the row timestamp once confirmed', async () => {

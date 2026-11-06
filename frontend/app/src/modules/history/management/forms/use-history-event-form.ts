@@ -2,10 +2,11 @@ import type { MaybeRefOrGetter, ModelRef, Ref, UnwrapNestedRefs } from 'vue';
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddHistoryEventPayload, ModifyHistoryEventPayload } from '@/modules/history/events/request-types';
+import type { HistoryEventSaveResult } from '@/modules/history/management/forms/history-event-save-result';
+import { err, ok } from 'plainfp/result';
 import { toServerErrors } from '@/modules/core/form/server-errors';
 import { type FormApi, useForm } from '@/modules/core/form/use-form';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
-import { HistoryEventSaveFailureKey } from '@/modules/history/management/forms/history-event-save-failure';
 import { type PriceIntent, usePriceIntents } from '@/modules/history/management/forms/price-intent';
 
 type FormMessage = ValidationErrors | string;
@@ -49,7 +50,7 @@ interface UseHistoryEventFormReturn<TState extends object, TAdd> {
   readonly form: FormApi<TState, TAdd, FormMessage>;
   /** Loads an existing group into the form. Without identifiers the form stays in add mode. */
   readonly seed: (state: TState, identifiers?: number[]) => void;
-  readonly save: () => Promise<boolean>;
+  readonly save: () => Promise<HistoryEventSaveResult>;
 }
 
 /**
@@ -70,7 +71,6 @@ export function useHistoryEventForm<
   const errorMessages = options.errorMessages ?? ref<Record<string, string[]>>({});
 
   const { t } = useI18n({ useScope: 'global' });
-  const saveFailure = inject(HistoryEventSaveFailureKey, shallowRef<string>());
   const { addHistoryEvent, editHistoryEvent } = useHistoryEvents();
   const { runPriceIntents } = usePriceIntents();
 
@@ -94,16 +94,15 @@ export function useHistoryEventForm<
     set(identifiers, ids);
   }
 
-  async function persistPrices(): Promise<boolean> {
+  async function persistPrices(): Promise<HistoryEventSaveResult> {
     if (!priceIntents)
-      return true;
+      return ok(undefined);
 
     const status = await runPriceIntents(priceIntents(form.state));
     if (status.success)
-      return true;
+      return ok(undefined);
 
-    set(saveFailure, status.message || t('transactions.events.form.asset_price.failed'));
-    return false;
+    return err(status.message || t('transactions.events.form.asset_price.failed'));
   }
 
   /** The field errors of a rejected save: none for a plain message, else moved onto the form's paths. */
@@ -113,36 +112,34 @@ export function useHistoryEventForm<
     return toServerErrors(serverErrorPaths ? serverErrorPaths(message, form.state) : message);
   }
 
-  async function save(): Promise<boolean> {
-    set(saveFailure, undefined);
+  async function save(): Promise<HistoryEventSaveResult> {
     if (!form.validate())
-      return false;
+      return err(undefined);
 
-    if (!await persistPrices())
-      return false;
+    const prices = await persistPrices();
+    if (!prices.ok)
+      return prices;
 
     const isEditMode = get(identifiers).length > 0;
     // Nothing about the event changed, so there is nothing to send; any price edit already ran.
     if (isEditMode && !get(form.dirty))
-      return true;
+      return ok(undefined);
 
     const outcome = await form.submit();
 
     if (outcome.outcome === 'success') {
       form.reset();
       set(identifiers, []);
-      return true;
+      return ok(undefined);
     }
 
-    if (outcome.outcome === 'error') {
-      const hasMessage = outcome.message !== undefined && outcome.message !== '';
-      const message = hasMessage ? outcome.message : t('transactions.events.form.save_failed');
-      if (typeof message === 'string')
-        set(saveFailure, message);
-      set(errorMessages, fieldErrorsOf(message));
-    }
+    if (outcome.outcome !== 'error')
+      return err(undefined);
 
-    return false;
+    const hasMessage = outcome.message !== undefined && outcome.message !== '';
+    const message = hasMessage ? outcome.message : t('transactions.events.form.save_failed');
+    set(errorMessages, fieldErrorsOf(message));
+    return err(typeof message === 'string' ? message : undefined);
   }
 
   watchImmediate(errorMessages, (errors) => {

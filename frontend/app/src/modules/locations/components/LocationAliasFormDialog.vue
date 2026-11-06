@@ -106,7 +106,6 @@ async function confirm(): Promise<void> {
         v-if="saveFailure"
         :title="t('location_manager.aliases.error')"
         :failure="saveFailure"
-        :retryable="false"
         data-testid="location-alias-form-error"
       />
       <RuiTextField

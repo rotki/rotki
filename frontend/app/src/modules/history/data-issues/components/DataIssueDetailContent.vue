@@ -27,8 +27,8 @@ import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vu
 const { issue, busy = false, failure } = defineProps<{
   issue?: DataIssue;
   busy?: boolean;
-  /** The last failed dismiss or retry; named only while it concerns the issue shown. */
-  failure?: { id: number; title: string; error: unknown };
+  /** The last failed dismiss or retry on the issue shown, passed on to the footer that names it. */
+  failure?: InstanceType<typeof DataIssueDetailFooter>['$props']['failure'];
 }>();
 
 const emit = defineEmits<{
@@ -257,7 +257,7 @@ const resolutionNote = computed<string | undefined>(() => {
     <DataIssueDetailFooter
       :issue="issue"
       :busy="busy"
-      :failure="failure?.id === issue.id ? failure : undefined"
+      :failure="failure"
       @dismiss="emit('dismiss', $event)"
       @retry="emit('retry', $event)"
       @resolve="emit('resolve', $event)"

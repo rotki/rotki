@@ -71,7 +71,6 @@ const {
         />
         <FailureStrip
           v-else-if="saveError"
-          :retryable="false"
           :title="t('event_asset_price_update.save_error')"
           :failure="saveError"
           data-testid="event-price-save-error"

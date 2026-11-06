@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { ContextColorsType, RuiButton, RuiIcons } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
-
-import { type SelectionQuestion, useTableSelectionAsk, useTableSelectionCollapsed } from '@/modules/core/table/table-selection-collapse';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { useTableSelectionCollapsed } from '@/modules/core/table/table-selection-collapse';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
+import { useConfirmMenuAsk } from '@/modules/shell/components/use-confirm-menu';
 
 interface Props {
   icon: RuiIcons;
@@ -11,7 +12,7 @@ interface Props {
   disabled?: boolean;
   loading?: boolean;
   /** Asked before `click` is emitted: beside the button, or inside the bar's menu once collapsed. */
-  confirm?: SelectionQuestion;
+  confirm?: ConfirmQuestion;
 }
 
 defineOptions({ inheritAttrs: false });
@@ -26,33 +27,47 @@ defineSlots<{
   default: () => any;
 }>();
 
-const collapsed = useTableSelectionCollapsed();
-const askInMenu = useTableSelectionAsk();
+/** The outlined button, bound to the popover's activator `attrs` or, without a question, to a plain click. */
+const [DefineButton, ReuseButton] = createReusableTemplate<{ attrs: Record<string, unknown> }>();
 
-/**
- * Runs a menu entry, or hands its question to the bar first.
- *
- * @remarks
- * Stopping the click keeps the bar's menu open, so the question can replace its entries.
- */
-function clickMenuEntry(event: MouseEvent): void {
-  if (confirm && askInMenu) {
-    event.stopPropagation();
+const collapsed = useTableSelectionCollapsed();
+const askInMenu = useConfirmMenuAsk();
+
+/** Runs a menu entry, or hands its question to the bar's menu first. */
+function clickMenuEntry(): void {
+  if (confirm && askInMenu)
     askInMenu(confirm, () => emit('click'));
-    return;
-  }
-  emit('click');
+  else
+    emit('click');
 }
 </script>
 
 <template>
+  <DefineButton #default="{ attrs }">
+    <RuiButton
+      size="sm"
+      variant="outlined"
+      :color="color"
+      :disabled="disabled"
+      :loading="loading"
+      v-bind="{ ...$attrs, ...attrs }"
+    >
+      <template #prepend>
+        <RuiIcon
+          :name="icon"
+          size="16"
+        />
+      </template>
+      <slot />
+    </RuiButton>
+  </DefineButton>
   <RuiButton
     v-if="collapsed"
     variant="list"
     :color="color"
     :disabled="disabled || loading"
     v-bind="$attrs"
-    @click="clickMenuEntry($event)"
+    @click="clickMenuEntry()"
   >
     <template #prepend>
       <RuiIcon :name="icon" />
@@ -61,46 +76,15 @@ function clickMenuEntry(event: MouseEvent): void {
   </RuiButton>
   <ConfirmPopover
     v-else-if="confirm"
-    :title="confirm.title"
-    :message="confirm.message"
-    :confirm-label="confirm.confirmLabel"
+    :question="confirm"
     @confirm="emit('click')"
   >
     <template #activator="{ attrs }">
-      <RuiButton
-        size="sm"
-        variant="outlined"
-        :color="color"
-        :disabled="disabled"
-        :loading="loading"
-        v-bind="{ ...$attrs, ...attrs }"
-      >
-        <template #prepend>
-          <RuiIcon
-            :name="icon"
-            size="16"
-          />
-        </template>
-        <slot />
-      </RuiButton>
+      <ReuseButton :attrs="attrs" />
     </template>
   </ConfirmPopover>
-  <RuiButton
+  <ReuseButton
     v-else
-    size="sm"
-    variant="outlined"
-    :color="color"
-    :disabled="disabled"
-    :loading="loading"
-    v-bind="$attrs"
-    @click="emit('click')"
-  >
-    <template #prepend>
-      <RuiIcon
-        :name="icon"
-        size="16"
-      />
-    </template>
-    <slot />
-  </RuiButton>
+    :attrs="{ onClick: () => emit('click') }"
+  />
 </template>

@@ -4,6 +4,7 @@ import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/event
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryEventsActionFailure } from './use-history-events-action-failure';
 import { useHistoryEventsOperations } from './use-history-events-operations';
@@ -53,14 +54,14 @@ function setup(flattened: HistoryEventEntry[] = []): ReturnType<typeof useHistor
 const evmPayload: PullEventPayload = { data: { location: 'ethereum', txRef: '0x1' }, type: HistoryEventEntryType.EVM_EVENT };
 const blockPayload: PullEventPayload = { data: [123], type: HistoryEventEntryType.ETH_BLOCK_EVENT };
 
-const { actionFailure, clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+const { failure: actionFailure, clear: clearActionFailure, report: reportActionFailure } = useHistoryEventsActionFailure();
 
 describe('useHistoryEventsOperations', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     clearActionFailure();
-    spies.ignoreSingle.mockResolvedValue({ success: true });
-    spies.toggle.mockResolvedValue({ success: true });
+    spies.ignoreSingle.mockResolvedValue(ok(undefined));
+    spies.toggle.mockResolvedValue(ok(undefined));
   });
 
   afterEach(() => {
@@ -139,30 +140,23 @@ describe('useHistoryEventsOperations', () => {
   });
 
   it('should delete the events the row menu already asked about', async () => {
-    spies.deleteHistoryEvent.mockResolvedValue({ success: true });
+    spies.deleteHistoryEvent.mockResolvedValue(ok(undefined));
     await setup().deleteEvents({ ids: [1, 2], type: 'delete' });
     expect(spies.deleteHistoryEvent).toHaveBeenCalledWith([1, 2]);
     expect(emit).toHaveBeenCalledWith('refresh');
   });
 
   it('should name a failed delete above the table', async () => {
-    spies.deleteHistoryEvent.mockResolvedValue({ message: 'event is locked', success: false });
+    spies.deleteHistoryEvent.mockResolvedValue(err('event is locked'));
     await setup().deleteEvents({ ids: [1, 2], type: 'delete' });
 
     expect(get(actionFailure)).toEqual({ failure: 'event is locked', title: 'transactions.events.delete.error.title' });
     expect(emit).not.toHaveBeenCalledWith('refresh');
   });
 
-  it('should word a failed delete the backend gave no reason for', async () => {
-    spies.deleteHistoryEvent.mockResolvedValue({ message: '', success: false });
-    await setup().deleteEvents({ ids: [1], type: 'delete' });
-
-    expect(get(actionFailure)).toEqual({ failure: 'transactions.events.delete.error.message', title: 'transactions.events.delete.error.title' });
-  });
-
   it('should drop the last failure when the next delete starts', async () => {
     reportActionFailure('transactions.events.delete.error.title', 'boom');
-    spies.deleteHistoryEvent.mockResolvedValue({ success: true });
+    spies.deleteHistoryEvent.mockResolvedValue(ok(undefined));
 
     await setup().deleteEvents({ ids: [1], type: 'delete' });
 
@@ -178,14 +172,14 @@ describe('useHistoryEventsOperations', () => {
   });
 
   it('should name a failed exclusion from the row menu above the table', async () => {
-    spies.ignoreSingle.mockResolvedValue({ message: 'boom', success: false });
+    spies.ignoreSingle.mockResolvedValue(err('boom'));
     await setup().deleteEvents({ event: createMock<HistoryEventEntry>({ identifier: 1 }), type: 'ignore' });
 
     expect(get(actionFailure)).toEqual({ failure: 'boom', title: 'actions.ignore.error.title' });
   });
 
   it('should name a failed toggle above the table under the direction it took', async () => {
-    spies.toggle.mockResolvedValue({ message: 'boom', success: false });
+    spies.toggle.mockResolvedValue(err('boom'));
     const ops = setup();
 
     await ops.toggle(createMock<HistoryEventEntry>({ ignoredInAccounting: true }));

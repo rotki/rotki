@@ -263,5 +263,21 @@ describe('calendarFormDialog', () => {
       expect(wrapper.emitted('refresh')).toBeUndefined();
       expect(question().exists()).toBe(false);
     });
+
+    it('should name a later failed save in place of an earlier failed delete', async () => {
+      const saveError = new Error('save refused');
+      spies.deleteCalendarEvent.mockRejectedValue(new Error('backend down'));
+      spies.editCalendarEvent.mockRejectedValue(saveError);
+      wrapper = createWrapper(true);
+      await askToDelete();
+      await question().find('[data-testid=inline-confirm-accept]').trigger('click');
+      await flushPromises();
+
+      await save();
+
+      const dialog = wrapper.findComponent(BigDialog);
+      expect(dialog.props('failure')).toBe(saveError);
+      expect(dialog.props('failureTitle')).toBe('calendar.edit_error');
+    });
   });
 });

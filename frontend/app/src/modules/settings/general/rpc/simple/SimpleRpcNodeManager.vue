@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import SimpleRpcNodeManagerForm from '@/modules/settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue';
 import { useSettingsWriter } from '@/modules/settings/settings-writer';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -57,7 +58,7 @@ async function save(): Promise<void> {
   }
 }
 
-const deleteConfirm = computed<{ title: string; message: string }>(() => ({
+const deleteConfirm = computed<RowDeleteQuestion>(() => ({
   message: t('general_settings.simple_node_setting.delete_confirmation.subtitle'),
   title: t('general_settings.simple_node_setting.delete_confirmation.title'),
 }));
@@ -79,7 +80,6 @@ defineExpose({
   <FailureStrip
     v-if="deleteFailure !== undefined"
     class="mb-2"
-    :retryable="false"
     :title="t('general_settings.simple_node_setting.delete_error')"
     :failure="deleteFailure"
     data-testid="simple-node-delete-error"

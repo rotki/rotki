@@ -1,8 +1,8 @@
 import type { EthBlockEvent, EvmHistoryEvent, HistoryEventEntry } from '@/modules/history/events/schemas';
-import type { DuplicatesActionHandlers } from '@/modules/history/events/use-customized-event-duplicates';
 import { HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
@@ -19,18 +19,18 @@ vi.mock('@/modules/history/events/use-history-events-status', () => ({
   useHistoryEventsStatus: (): Record<string, unknown> => ({ ethBlockEventsDecoding, txEventsDecoding }),
 }));
 
-const fixAndSettle = vi.fn<(ids: string[], handlers?: DuplicatesActionHandlers) => Promise<void>>();
-const markNonDuplicatedAndSettle = vi.fn<(ids: string[], handlers?: DuplicatesActionHandlers) => Promise<void>>();
-const { actionFailure, clearActionFailure } = useHistoryEventsActionFailure();
+const fixDuplicates = vi.fn<(ids?: string[]) => Promise<Result<void, unknown>>>();
+const ignoreDuplicates = vi.fn<(ids: string[]) => Promise<Result<void, unknown>>>();
+const { failure: actionFailure, clear: clearActionFailure } = useHistoryEventsActionFailure();
 const fixLoading = ref<boolean>(false);
 const ignoreLoading = ref<boolean>(false);
 
 vi.mock('@/modules/history/events/use-customized-event-duplicates', () => ({
   useCustomizedEventDuplicates: (): Record<string, unknown> => ({
-    fixAndSettle,
+    fixDuplicates,
     fixLoading,
+    ignoreDuplicates,
     ignoreLoading,
-    markNonDuplicatedAndSettle,
   }),
 }));
 
@@ -110,6 +110,8 @@ function mountMenu(): Harness {
 describe('useHistoryEventActionMenu', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    fixDuplicates.mockResolvedValue(ok(undefined));
+    ignoreDuplicates.mockResolvedValue(ok(undefined));
     set(event, evmEvent);
     set(groupEvents, undefined);
     set(duplicateHandlingStatus, undefined);
@@ -154,8 +156,7 @@ describe('useHistoryEventActionMenu', () => {
 
       await menu.fixDuplicate();
 
-      expect(fixAndSettle).toHaveBeenCalledWith(['group-a'], expect.any(Object));
-      fixAndSettle.mock.calls[0][1]?.onSuccess?.();
+      expect(fixDuplicates).toHaveBeenCalledWith(['group-a']);
       expect(onFixDuplicate).toHaveBeenCalledTimes(1);
     });
 
@@ -163,8 +164,9 @@ describe('useHistoryEventActionMenu', () => {
       clearActionFailure();
       const { menu } = mountMenu();
 
+      fixDuplicates.mockResolvedValueOnce(err('boom'));
+
       await menu.fixDuplicate();
-      fixAndSettle.mock.calls[0][1]?.onFailure?.({ failure: 'boom', title: 'actions.customized_event_duplicates.fix_error.title' });
 
       expect(get(actionFailure)).toEqual({ failure: 'boom', title: 'actions.customized_event_duplicates.fix_error.title' });
       expect(onFixDuplicate).not.toHaveBeenCalled();
@@ -175,8 +177,7 @@ describe('useHistoryEventActionMenu', () => {
 
       await menu.ignoreDuplicate();
 
-      expect(markNonDuplicatedAndSettle).toHaveBeenCalledWith(['group-a'], expect.any(Object));
-      markNonDuplicatedAndSettle.mock.calls[0][1]?.onSuccess?.();
+      expect(ignoreDuplicates).toHaveBeenCalledWith(['group-a']);
       expect(onIgnoreDuplicate).toHaveBeenCalledTimes(1);
     });
 
@@ -184,10 +185,12 @@ describe('useHistoryEventActionMenu', () => {
       clearActionFailure();
       const { menu } = mountMenu();
 
+      ignoreDuplicates.mockResolvedValueOnce(err('boom'));
+
       await menu.ignoreDuplicate();
-      markNonDuplicatedAndSettle.mock.calls[0][1]?.onFailure?.({ failure: 'boom', title: 'actions.customized_event_duplicates.mark_non_duplicated_error.title' });
 
       expect(get(actionFailure)).toEqual({ failure: 'boom', title: 'actions.customized_event_duplicates.mark_non_duplicated_error.title' });
+      expect(onIgnoreDuplicate).not.toHaveBeenCalled();
     });
 
     it('should do nothing when the row belongs to no group', async () => {
@@ -197,8 +200,8 @@ describe('useHistoryEventActionMenu', () => {
       await menu.fixDuplicate();
       await menu.ignoreDuplicate();
 
-      expect(fixAndSettle).not.toHaveBeenCalled();
-      expect(markNonDuplicatedAndSettle).not.toHaveBeenCalled();
+      expect(fixDuplicates).not.toHaveBeenCalled();
+      expect(ignoreDuplicates).not.toHaveBeenCalled();
     });
   });
 

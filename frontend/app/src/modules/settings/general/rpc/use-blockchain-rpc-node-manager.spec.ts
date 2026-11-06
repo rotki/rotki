@@ -289,7 +289,7 @@ describe('modules/settings/general/rpc/useBlockchainRpcNodeManager', () => {
       const { actionFailure, onActiveChange } = manager();
       await onActiveChange(false, node({ name: 'my node' }));
 
-      expect(get(actionFailure)).toEqual({ error, title: 'evm_rpc_node_manager.activate_error.title::my node' });
+      expect(get(actionFailure)).toEqual({ failure: error, title: 'evm_rpc_node_manager.activate_error.title::my node' });
       expect(fetchEvmNodes).not.toHaveBeenCalled();
     });
 
@@ -330,7 +330,7 @@ describe('modules/settings/general/rpc/useBlockchainRpcNodeManager', () => {
       const { actionFailure, deleteNode } = manager();
       await deleteNode(node({ identifier: 3 }));
 
-      expect(get(actionFailure)).toMatchObject({ error, title: expect.stringContaining('evm_rpc_node_manager.delete_error.title') });
+      expect(get(actionFailure)).toMatchObject({ failure: error, title: expect.stringContaining('evm_rpc_node_manager.delete_error.title') });
       expect(fetchEvmNodes).not.toHaveBeenCalled();
     });
   });

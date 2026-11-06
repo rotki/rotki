@@ -130,7 +130,6 @@ async function updatePrice(): Promise<void> {
           <div class="flex flex-col gap-4">
             <FailureStrip
               v-if="saveError !== undefined"
-              :retryable="false"
               :title="t('price_management.add.error.title')"
               :failure="saveError"
               data-testid="edit-historic-price-save-error"

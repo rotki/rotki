@@ -8,7 +8,6 @@ interface Row {
 function setup(deleteItem: (item: Row) => Promise<boolean>, onDeleted = vi.fn<(item: Row) => void>()): ReturnType<typeof useTableRowDeletion<Row>> & { onDeleted: typeof onDeleted } {
   return {
     ...useTableRowDeletion<Row>({
-      confirm: item => ({ message: `delete ${item.id}?`, title: 'Delete row' }),
       deleteItem,
       failureTitle: item => `Could not delete ${item.id}`,
       onDeleted,
@@ -18,12 +17,6 @@ function setup(deleteItem: (item: Row) => Promise<boolean>, onDeleted = vi.fn<(i
 }
 
 describe('useTableRowDeletion', () => {
-  it('should word the question for the row it is asked about', () => {
-    const { deleteConfirm } = setup(vi.fn<(item: Row) => Promise<boolean>>());
-
-    expect(deleteConfirm({ id: 'a' })).toEqual({ message: 'delete a?', title: 'Delete row' });
-  });
-
   it('should delete then run onDeleted, leaving no failure', async () => {
     const deleteItem = vi.fn<(item: Row) => Promise<boolean>>().mockResolvedValue(true);
     const { deleteRow, failure, onDeleted } = setup(deleteItem);
@@ -50,7 +43,7 @@ describe('useTableRowDeletion', () => {
 
     await deleteRow({ id: 'a' });
 
-    expect(get(failure)).toEqual({ error, title: 'Could not delete a' });
+    expect(get(failure)).toEqual({ failure: error, title: 'Could not delete a' });
     expect(onDeleted).not.toHaveBeenCalled();
   });
 

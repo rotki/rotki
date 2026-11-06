@@ -3,7 +3,8 @@ import type { CustomizedEventDuplicates, CustomizedEventDuplicatesFixResult } fr
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ok } from 'plainfp/result';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 
@@ -461,7 +462,7 @@ describe('use-customized-event-duplicates', () => {
       expect(spies.getCustomizedEventDuplicates).toHaveBeenCalledOnce();
     });
 
-    it('should return success status', async () => {
+    it('should resolve to ok', async () => {
       spies.fixCustomizedEventDuplicates.mockResolvedValue({
         removedEventIdentifiers: [],
         autoFixGroupIds: [],
@@ -470,7 +471,7 @@ describe('use-customized-event-duplicates', () => {
 
       const result = await composable.fixDuplicates(['g-1']);
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual(ok(undefined));
     });
 
     it('should set fixLoading during operation and reset after', async () => {
@@ -487,12 +488,14 @@ describe('use-customized-event-duplicates', () => {
       expect(get(composable.fixLoading)).toBe(false);
     });
 
-    it('should handle errors and return failure status', async () => {
-      spies.fixCustomizedEventDuplicates.mockRejectedValue(new Error('Fix failed'));
+    it('should resolve to the raw error, reporting nothing itself', async () => {
+      const error = new Error('Fix failed');
+      spies.fixCustomizedEventDuplicates.mockRejectedValue(error);
 
       const result = await composable.fixDuplicates(['g-1']);
 
-      expect(result).toEqual({ message: 'Fix failed', success: false });
+      assert(!result.ok);
+      expect(result.error).toBe(error);
     });
 
     it('should reset fixLoading on error', async () => {
@@ -513,7 +516,7 @@ describe('use-customized-event-duplicates', () => {
       const result = await composable.fixDuplicates();
 
       expect(spies.fixCustomizedEventDuplicates).toHaveBeenCalledWith(undefined);
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual(ok(undefined));
     });
   });
 
@@ -536,13 +539,13 @@ describe('use-customized-event-duplicates', () => {
       expect(spies.getCustomizedEventDuplicates).toHaveBeenCalledOnce();
     });
 
-    it('should return success status', async () => {
+    it('should resolve to ok', async () => {
       spies.ignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
       const result = await composable.ignoreDuplicates(['g-1']);
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual(ok(undefined));
     });
 
     it('should set ignoreLoading during operation and reset after', async () => {
@@ -559,12 +562,14 @@ describe('use-customized-event-duplicates', () => {
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
-    it('should handle errors and return failure status', async () => {
-      spies.ignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Ignore failed'));
+    it('should resolve to the raw error, reporting nothing itself', async () => {
+      const error = new Error('Ignore failed');
+      spies.ignoreCustomizedEventDuplicates.mockRejectedValue(error);
 
       const result = await composable.ignoreDuplicates(['g-1']);
 
-      expect(result).toEqual({ message: 'Ignore failed', success: false });
+      assert(!result.ok);
+      expect(result.error).toBe(error);
     });
 
     it('should reset ignoreLoading on error', async () => {
@@ -595,13 +600,13 @@ describe('use-customized-event-duplicates', () => {
       expect(spies.getCustomizedEventDuplicates).toHaveBeenCalledOnce();
     });
 
-    it('should return success status', async () => {
+    it('should resolve to ok', async () => {
       spies.unignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
       const result = await composable.unignoreDuplicates(['g-1']);
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual(ok(undefined));
     });
 
     it('should set ignoreLoading during operation and reset after', async () => {
@@ -618,12 +623,14 @@ describe('use-customized-event-duplicates', () => {
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
-    it('should handle errors and return failure status', async () => {
-      spies.unignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Unignore failed'));
+    it('should resolve to the raw error, reporting nothing itself', async () => {
+      const error = new Error('Unignore failed');
+      spies.unignoreCustomizedEventDuplicates.mockRejectedValue(error);
 
       const result = await composable.unignoreDuplicates(['g-1']);
 
-      expect(result).toEqual({ message: 'Unignore failed', success: false });
+      assert(!result.ok);
+      expect(result.error).toBe(error);
     });
 
     it('should reset ignoreLoading on error', async () => {
@@ -632,141 +639,6 @@ describe('use-customized-event-duplicates', () => {
       await composable.unignoreDuplicates(['g-1']);
 
       expect(get(composable.ignoreLoading)).toBe(false);
-    });
-  });
-
-  describe('fixAndSettle', () => {
-    it('should call fixDuplicates with group identifiers', async () => {
-      spies.fixCustomizedEventDuplicates.mockResolvedValue({
-        removedEventIdentifiers: [1],
-        autoFixGroupIds: [],
-      });
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      await composable.fixAndSettle(['g-1', 'g-2']);
-
-      expect(spies.fixCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1', 'g-2']);
-    });
-
-    it('should call onSuccess when fix succeeds', async () => {
-      spies.fixCustomizedEventDuplicates.mockResolvedValue({
-        removedEventIdentifiers: [1],
-        autoFixGroupIds: [],
-      });
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      const onSuccess = vi.fn();
-      await composable.fixAndSettle(['g-1'], { onSuccess });
-
-      expect(onSuccess).toHaveBeenCalledOnce();
-    });
-
-    it('should not call onSuccess when fix fails', async () => {
-      spies.fixCustomizedEventDuplicates.mockRejectedValue(new Error('Fix failed'));
-
-      const onSuccess = vi.fn();
-      await composable.fixAndSettle(['g-1'], { onSuccess });
-
-      expect(onSuccess).not.toHaveBeenCalled();
-    });
-
-    it('should hand the failure to onFailure under its title, reporting nothing itself', async () => {
-      spies.fixCustomizedEventDuplicates.mockRejectedValue(new Error('Fix failed'));
-
-      const onFailure = vi.fn();
-      await composable.fixAndSettle(['g-1'], { onFailure });
-
-      expect(onFailure).toHaveBeenCalledExactlyOnceWith({ failure: 'Fix failed', title: 'actions.customized_event_duplicates.fix_error.title' });
-    });
-
-    it('should work without onSuccess', async () => {
-      spies.fixCustomizedEventDuplicates.mockResolvedValue({
-        removedEventIdentifiers: [1],
-        autoFixGroupIds: [],
-      });
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      await composable.fixAndSettle(['g-1']);
-
-      expect(spies.fixCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
-    });
-  });
-
-  describe('markNonDuplicatedAndSettle', () => {
-    it('should call ignoreDuplicates with group identifiers', async () => {
-      spies.ignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      await composable.markNonDuplicatedAndSettle(['g-1']);
-
-      expect(spies.ignoreCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
-    });
-
-    it('should call onSuccess when ignore succeeds', async () => {
-      spies.ignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      const onSuccess = vi.fn();
-      await composable.markNonDuplicatedAndSettle(['g-1'], { onSuccess });
-
-      expect(onSuccess).toHaveBeenCalledOnce();
-    });
-
-    it('should not call onSuccess when ignore fails', async () => {
-      spies.ignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Ignore failed'));
-
-      const onSuccess = vi.fn();
-      await composable.markNonDuplicatedAndSettle(['g-1'], { onSuccess });
-
-      expect(onSuccess).not.toHaveBeenCalled();
-    });
-
-    it('should hand the failure to onFailure under its title, reporting nothing itself', async () => {
-      spies.ignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Ignore failed'));
-
-      const onFailure = vi.fn();
-      await composable.markNonDuplicatedAndSettle(['g-1'], { onFailure });
-
-      expect(onFailure).toHaveBeenCalledExactlyOnceWith({ failure: 'Ignore failed', title: 'actions.customized_event_duplicates.mark_non_duplicated_error.title' });
-    });
-  });
-
-  describe('restoreAndSettle', () => {
-    it('should call unignoreDuplicates with group identifiers', async () => {
-      spies.unignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      await composable.restoreAndSettle(['g-1']);
-
-      expect(spies.unignoreCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
-    });
-
-    it('should call onSuccess when unignore succeeds', async () => {
-      spies.unignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
-      spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
-
-      const onSuccess = vi.fn();
-      await composable.restoreAndSettle(['g-1'], { onSuccess });
-
-      expect(onSuccess).toHaveBeenCalledOnce();
-    });
-
-    it('should not call onSuccess when unignore fails', async () => {
-      spies.unignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Unignore failed'));
-
-      const onSuccess = vi.fn();
-      await composable.restoreAndSettle(['g-1'], { onSuccess });
-
-      expect(onSuccess).not.toHaveBeenCalled();
-    });
-
-    it('should hand the failure to onFailure under its title, reporting nothing itself', async () => {
-      spies.unignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Unignore failed'));
-
-      const onFailure = vi.fn();
-      await composable.restoreAndSettle(['g-1'], { onFailure });
-
-      expect(onFailure).toHaveBeenCalledExactlyOnceWith({ failure: 'Unignore failed', title: 'actions.customized_event_duplicates.unignore_error.title' });
     });
   });
 });

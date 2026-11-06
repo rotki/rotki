@@ -136,7 +136,7 @@ describe('historyEventsVirtualTable', () => {
   });
 
   describe('when an action on the events failed', () => {
-    const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+    const { clear: clearActionFailure, report: reportActionFailure } = useHistoryEventsActionFailure();
 
     afterEach(() => {
       clearActionFailure();

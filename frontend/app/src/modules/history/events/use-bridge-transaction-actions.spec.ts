@@ -285,6 +285,7 @@ describe('use-bridge-transaction-actions', () => {
       set(composable.modelSelectedUnmatched, ['10', '30']);
 
       expect(get(composable.ignoreSelectedQuestion)).toEqual({
+        confirmLabel: 'asset_movement_matching.dialog.ignore',
         message: 'bridge_matching.actions.ignore_selected_confirm::2',
         title: 'bridge_matching.actions.ignore_selected',
       });

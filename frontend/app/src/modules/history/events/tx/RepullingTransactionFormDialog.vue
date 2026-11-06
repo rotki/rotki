@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { useTemplateRef } from 'vue';
 import RepullingTransactionForm from '@/modules/history/events/tx/RepullingTransactionForm.vue';
 import { useRepullingTransactionSubmission } from '@/modules/history/events/tx/use-repulling-transaction-submission';
@@ -24,6 +25,12 @@ const stateUpdated = ref<boolean>(false);
 const { useIsActive } = useTaskCenter();
 
 const taskRunning = useIsActive(ActivityKind.REPULLING);
+
+const wideRepullQuestion = computed<ConfirmQuestion>(() => ({
+  confirmLabel: t('transactions.repulling.action'),
+  message: t('transactions.repulling.confirmation.message'),
+  title: t('transactions.repulling.confirmation.title'),
+}));
 
 const {
   answerWideRepull,
@@ -72,9 +79,7 @@ const {
     >
       <InlineConfirm
         class="w-full"
-        :title="t('transactions.repulling.confirmation.title')"
-        :message="t('transactions.repulling.confirmation.message')"
-        :confirm-label="t('transactions.repulling.action')"
+        :question="wideRepullQuestion"
         data-testid="repulling-wide-confirm"
         @cancel="answerWideRepull(false)"
         @confirm="answerWideRepull(true)"

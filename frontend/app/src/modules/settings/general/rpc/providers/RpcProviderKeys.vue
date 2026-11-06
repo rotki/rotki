@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import type { RpcProviderUsage } from '@/modules/settings/general/rpc/providers/rpc-provider-usage';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useRpcProviderRemoval } from '@/modules/settings/general/rpc/providers/use-rpc-provider-removal';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
-
-/** A removal that left some of a provider's nodes behind, named under the chips. */
-interface PartialRemoval {
-  usage: RpcProviderUsage;
-  title: string;
-  failure: string;
-}
+import { useFailureSlot } from '@/modules/shell/components/named-failure';
 
 /** The chains that hold a node list, which is where a provider's nodes can be. */
 const { chains } = defineProps<{
@@ -23,7 +18,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const partialRemoval = shallowRef<PartialRemoval>();
+/** A removal that left some of a provider's nodes behind, named under the chips. */
+const { clear: clearPartialRemoval, failure: partialRemoval, report: reportPartialRemoval } = useFailureSlot();
+/** The provider that removal was for, which the retry looks up again. */
+const partialRemovalUsage = shallowRef<RpcProviderUsage>();
 
 const { getChainName } = useSupportedChains();
 const { refresh, removeAll, removing, usages } = useRpcProviderRemoval();
@@ -51,18 +49,15 @@ function labelFor(usage: RpcProviderUsage): string {
  * Clears the last partial removal first, so the strip only ever describes the latest attempt.
  */
 async function remove(usage: RpcProviderUsage): Promise<void> {
-  set(partialRemoval, undefined);
+  clearPartialRemoval();
   const title = t('rpc_provider_setup.remove.title', { provider: labelFor(usage) });
   const { failed, removed } = await removeAll(usage);
   await reload();
   emit('removed');
 
   if (failed > 0) {
-    set(partialRemoval, {
-      failure: t('rpc_provider_setup.remove.partial', { failed, provider: usage.name, removed }),
-      title,
-      usage,
-    });
+    set(partialRemovalUsage, usage);
+    reportPartialRemoval(title, t('rpc_provider_setup.remove.partial', { failed, provider: usage.name, removed }));
   }
 }
 
@@ -74,31 +69,37 @@ async function remove(usage: RpcProviderUsage): Promise<void> {
  * looks the provider up again instead. When nothing of it is left, there is nothing to retry.
  */
 async function retryRemoval(): Promise<void> {
-  const last = get(partialRemoval);
-  if (!last)
+  const last = get(partialRemovalUsage);
+  if (!get(partialRemoval) || !last)
     return;
 
-  const current = get(usages).find(usage => usage.id === last.usage.id && usage.key === last.usage.key);
+  const current = get(usages).find(usage => usage.id === last.id && usage.key === last.key);
   if (current)
     await remove(current);
   else
-    set(partialRemoval, undefined);
+    clearPartialRemoval();
 }
 
 /**
- * Names every chain that loses a node.
+ * What a chip's remove button asks, naming every chain that loses a node.
  *
  * @remarks
  * Nothing records whether a node was added by the user or shipped by rotki (the Solana defaults
  * include a provider endpoint), so the question lists what will go rather than implying these are
  * all the user's own.
  */
-function removalMessage(usage: RpcProviderUsage): string {
-  return t('rpc_provider_setup.remove.message', {
-    chains: usage.nodes.map(node => getChainName(node.chain)).join(', '),
-    count: usage.nodes.length,
-    provider: labelFor(usage),
-  }, usage.nodes.length);
+function removalQuestion(usage: RpcProviderUsage): ConfirmQuestion {
+  const provider = labelFor(usage);
+  return {
+    confirmLabel: t('rpc_provider_setup.remove.confirm'),
+    message: t('rpc_provider_setup.remove.message', {
+      chains: usage.nodes.map(node => getChainName(node.chain)).join(', '),
+      count: usage.nodes.length,
+      provider,
+    }, usage.nodes.length),
+    title: t('rpc_provider_setup.remove.title', { provider }),
+    tone: 'error',
+  };
 }
 
 /**
@@ -134,9 +135,7 @@ defineExpose({ reload });
       <ConfirmPopover
         v-for="usage in usages"
         :key="`${usage.id}-${usage.key}`"
-        :title="t('rpc_provider_setup.remove.title', { provider: labelFor(usage) })"
-        :message="removalMessage(usage)"
-        :confirm-label="t('rpc_provider_setup.remove.confirm')"
+        :question="removalQuestion(usage)"
         @confirm="remove(usage)"
       >
         <template #activator="{ attrs }">

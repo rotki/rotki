@@ -81,32 +81,47 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
   describe('a reset that lands', () => {
     it.each(['soft', 'hard'] as const)('should run the %s reset the button named', async (type) => {
       const { restoreAssets } = restore();
-      await restoreAssets(type);
+      const done = restoreAssets(type);
       await flushPromises();
 
       expect(restoreAssetsDatabase).toHaveBeenCalledWith(type);
+      useConfirmStore().confirm();
+      await done;
     });
 
-    it('should ask to restart, and reload only once that is confirmed', async () => {
+    it('should ask to restart, and reload only once that is acknowledged', async () => {
       const { restoreAssets } = restore();
-      await restoreAssets('soft');
+      const done = restoreAssets('soft');
       await flushPromises();
 
       expect(get(useConfirmStore().confirmation).message).toBe('asset_update.restore.success.description');
       expect(reload).not.toHaveBeenCalled();
 
-      await useConfirmStore().confirm();
+      useConfirmStore().confirm();
+      await done;
+
+      expect(reload).toHaveBeenCalledOnce();
+    });
+
+    it('should reload too when the restart notice is closed with escape', async () => {
+      const { restoreAssets } = restore();
+      const done = restoreAssets('soft');
       await flushPromises();
+
+      useConfirmStore().dismiss();
+      await done;
 
       expect(reload).toHaveBeenCalledOnce();
     });
 
     it('should report nothing when it succeeds', async () => {
       const { restoreAssets } = restore();
-      await restoreAssets('soft');
+      const done = restoreAssets('soft');
       await flushPromises();
 
       expect(notify).not.toHaveBeenCalled();
+      useConfirmStore().confirm();
+      await done;
     });
   });
 
@@ -128,12 +143,30 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
       })));
 
       const { restoreAssets } = restore();
-      await restoreAssets('hard');
+      const done = restoreAssets('hard');
       await flushPromises();
 
       expect(get(useConfirmStore().confirmation).message)
         .toBe('asset_update.restore.hard_restore_confirmation.message');
       expect(notify).toHaveBeenCalledOnce();
+      useConfirmStore().dismiss();
+      await done;
+    });
+
+    it('should not reset again when the escalation is declined', async () => {
+      restoreAssetsDatabase.mockResolvedValue(err(TaskFailed({
+        message: 'There are assets that can not be deleted. Check logs for more details.',
+      })));
+
+      const { restoreAssets } = restore();
+      const done = restoreAssets('hard');
+      await flushPromises();
+
+      restoreAssetsDatabase.mockClear();
+      useConfirmStore().dismiss();
+      await done;
+
+      expect(restoreAssetsDatabase).not.toHaveBeenCalled();
     });
 
     it('should retry with the same reset type once the escalation is confirmed', async () => {
@@ -142,14 +175,17 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
       })));
 
       const { restoreAssets } = restore();
-      await restoreAssets('hard');
+      const done = restoreAssets('hard');
       await flushPromises();
 
       restoreAssetsDatabase.mockClear();
-      await useConfirmStore().confirm();
+      restoreAssetsDatabase.mockResolvedValue(ok(undefined));
+      useConfirmStore().confirm();
       await flushPromises();
 
       expect(restoreAssetsDatabase).toHaveBeenCalledWith('hard');
+      useConfirmStore().confirm();
+      await done;
     });
 
     it('should stay quiet when the reset was cancelled', async () => {

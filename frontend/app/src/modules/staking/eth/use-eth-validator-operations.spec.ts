@@ -6,7 +6,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEthValidatorOperations } from '@/modules/staking/eth/use-eth-validator-operations';
 
 const mockDeleteConfirmed = vi.fn<(params: unknown) => Promise<void>>(async () => {});
-const mockDescribeDeletion = vi.fn<(params: unknown) => string>(() => 'remove validator 1?');
+/** Reads the first validator as the real one does, so describing none throws here too. */
+const mockDescribeDeletion = vi.fn<(params: { data: EthereumValidator[] }) => string>(({ data }) => {
+  const [{ index }] = data;
+  return `remove validator ${index}?`;
+});
 const mockFetchEthStakingValidators = vi.fn();
 const mockRefreshBlockchainBalances = vi.fn();
 const mockLoading = ref<boolean>(false);
@@ -103,7 +107,7 @@ describe('useEthValidatorOperations', () => {
     it('should ask about that validator alone before deleting it', () => {
       const item = validator();
       const { deleteConfirm } = useEthValidatorOperations();
-      expect(deleteConfirm(item)).toEqual({ message: 'remove validator 1?', title: 'account_balances.confirm_delete.title' });
+      expect(deleteConfirm(item)).toEqual({ confirmLabel: 'common.actions.delete', message: 'remove validator 1?', title: 'account_balances.confirm_delete.title', tone: 'error' });
       expect(mockDescribeDeletion).toHaveBeenCalledWith({ data: [item], type: 'validator' });
     });
 
@@ -119,7 +123,7 @@ describe('useEthValidatorOperations', () => {
     it('should ask about only the selected validators', () => {
       const rows = [validator({ index: 1 }), validator({ index: 2 }), validator({ index: 3 })];
       const { deleteSelectedConfirm } = useEthValidatorOperations();
-      expect(deleteSelectedConfirm(rows, [1, 3])).toEqual({ message: 'remove validator 1?', title: 'account_balances.confirm_delete.title' });
+      expect(deleteSelectedConfirm(rows, [1, 3])).toEqual({ confirmLabel: 'common.actions.delete', message: 'remove validator 1?', title: 'account_balances.confirm_delete.title', tone: 'error' });
       expect(mockDescribeDeletion).toHaveBeenCalledWith({ data: [rows[0], rows[2]], type: 'validator' });
       expect(mockDeleteConfirmed).not.toHaveBeenCalled();
     });
@@ -136,7 +140,31 @@ describe('useEthValidatorOperations', () => {
       mockDeleteConfirmed.mockRejectedValueOnce(error);
       const { deleteFailure, deleteValidator } = useEthValidatorOperations();
       await deleteValidator(validator({ index: 1 }));
-      expect(get(deleteFailure)).toBe(error);
+      expect(get(deleteFailure)).toEqual({ failure: error, title: 'actions.delete_eth2_validator.error.title' });
+      expect(get(deleteFailure)?.failure).toBe(error);
+    });
+
+    it('should clear the last failure once a later delete succeeds', async () => {
+      mockDeleteConfirmed.mockRejectedValueOnce(new Error('backend refused'));
+      const { deleteFailure, deleteValidator } = useEthValidatorOperations();
+      await deleteValidator(validator({ index: 1 }));
+      await deleteValidator(validator({ index: 1 }));
+      expect(get(deleteFailure)).toBeUndefined();
+    });
+
+    /** The toolbar binds the question while nothing is picked, and describing no validators throws. */
+    it('should ask nothing, and describe nothing, while no validator in view is selected', () => {
+      const rows = [validator({ index: 1 }), validator({ index: 2 })];
+      const { deleteSelectedConfirm } = useEthValidatorOperations();
+      expect(deleteSelectedConfirm(rows, [])).toBeUndefined();
+      expect(deleteSelectedConfirm(rows, [7])).toBeUndefined();
+      expect(mockDescribeDeletion).not.toHaveBeenCalled();
+    });
+
+    it('should not delete when no validator in view is selected', async () => {
+      const { deleteSelected } = useEthValidatorOperations();
+      await deleteSelected([validator({ index: 1 })], [7]);
+      expect(mockDeleteConfirmed).not.toHaveBeenCalled();
     });
   });
 

@@ -2,6 +2,7 @@
 import type { SupportedAsset, UnderlyingToken } from '@rotki/common';
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { ok, type Result } from 'plainfp/result';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import { decimalsTextModel, startedEpochModel } from '@/modules/assets/admin/asset-field-models';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
@@ -87,8 +88,10 @@ const { fetching, refreshTokenData, suppressNextLookup } = useManagedTokenLookup
   onFilled: clearFields,
 });
 
-function saveIcon(identifier: string) {
-  get(assetIconFormRef)?.saveIcon(identifier);
+/** Uploads the chosen icon for the saved asset; `ok` straight away when the icon form is not there. */
+async function saveIcon(identifier: string): Promise<Result<void, unknown>> {
+  const iconForm = get(assetIconFormRef);
+  return iconForm ? iconForm.saveIcon(identifier) : ok(undefined);
 }
 
 const types = computed<ReturnType<typeof toAssetTypeOptions>>(() => toAssetTypeOptions(assetTypes));

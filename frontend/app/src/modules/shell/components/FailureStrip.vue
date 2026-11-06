@@ -6,21 +6,19 @@ import { useFailureMessage } from '@/modules/core/api/use-failure-message';
  *
  * @remarks
  * The content stays usable, so this stays quiet: a tinted, bordered line rather than an alert box.
- * Pass `in-table` for a row above a table's own rows, where the table supplies the frame, and
- * `retryable: false` for a failed save, whose own button is the retry. `failure` is worded by
+ * Pass `in-table` for a row above a table's own rows, where the table supplies the frame. Retry
+ * shows only when the caller binds `@retry`: a failed save leaves it off, since its own button is
+ * the retry. `failure` is worded by
  * `useFailureMessage`, so a caller passes the error itself, or a string already worded. The
  * optional `action` slot holds one more thing the user can do about the failure, such as a link to
  * read more, shown beside the message and before retry.
  */
-const { inTable = false, retryable = true } = defineProps<{
+const { inTable = false, onRetry } = defineProps<{
   title: string;
   failure: unknown;
   inTable?: boolean;
-  retryable?: boolean;
-}>();
-
-const emit = defineEmits<{
-  retry: [];
+  /** Bound through `@retry`; declared as a prop so the strip can tell whether anyone listens. */
+  onRetry?: () => void;
 }>();
 
 defineSlots<{
@@ -50,11 +48,11 @@ const failureMessage = useFailureMessage();
     </span>
     <slot name="action" />
     <button
-      v-if="retryable"
+      v-if="onRetry"
       type="button"
       class="shrink-0 underline underline-offset-2 hover:no-underline"
       data-testid="failure-strip-retry"
-      @click="emit('retry')"
+      @click="onRetry()"
     >
       {{ t('common.actions.retry') }}
     </button>

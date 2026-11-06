@@ -110,7 +110,7 @@ vi.mock('@/modules/history/api/events/use-history-events-api', async () => {
       repullingExchangeEvents,
       repullingTransactions,
       fetchTransactionsTask: vi.fn().mockResolvedValue({}),
-      deleteHistoryEvent: vi.fn(),
+      deleteHistoryEvent: vi.fn().mockResolvedValue(true),
       decodeTransactions: vi.fn().mockResolvedValue({}),
       getUndecodedTransactionsBreakdown: vi.fn().mockResolvedValue({}),
       redecodeMissingEvents: vi.fn(),
@@ -234,6 +234,33 @@ describe('useHistoryTransactions', () => {
     await redecodeTransactions();
 
     expect(decodeTxSpy).toHaveBeenCalledTimes(2);
+  });
+
+  describe('deleteHistoryEvent', () => {
+    it('should word a refused delete the backend gave no reason for', async () => {
+      vi.mocked(useHistoryEventsApi().deleteHistoryEvent).mockResolvedValueOnce(false);
+
+      const outcome = await useHistoryEvents().deleteHistoryEvent([1]);
+
+      assert(!outcome.ok);
+      expect(outcome.error).toBe('transactions.events.delete.error.message');
+    });
+
+    it('should hand back the raw error of a failed request', async () => {
+      const failure = new Error('offline');
+      vi.mocked(useHistoryEventsApi().deleteHistoryEvent).mockRejectedValueOnce(failure);
+
+      const outcome = await useHistoryEvents().deleteHistoryEvent([1]);
+
+      assert(!outcome.ok);
+      expect(outcome.error).toBe(failure);
+    });
+
+    it('should resolve ok once the backend deletes', async () => {
+      vi.mocked(useHistoryEventsApi().deleteHistoryEvent).mockResolvedValueOnce(true);
+
+      expect(await useHistoryEvents().deleteHistoryEvent([1])).toEqual(ok(undefined));
+    });
   });
 
   describe('addTransactionHash', () => {

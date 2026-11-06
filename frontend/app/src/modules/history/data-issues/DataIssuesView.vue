@@ -81,6 +81,7 @@ const {
   onRetry,
   openDetail,
   resolveFailure,
+  selectedIssueFailure,
 } = useDataIssueDetailActions(reloadAll, () => get(state).data);
 
 const { detect, detectFailure, detecting } = useDataIssuesDetection(reloadAll);
@@ -243,8 +244,8 @@ onMounted(async () => {
     <FailureStrip
       v-if="detectFailure"
       class="mb-4"
-      :title="t('data_issues.detect.error')"
-      :failure="detectFailure"
+      :title="detectFailure.title"
+      :failure="detectFailure.failure"
       data-testid="data-issues-detect-failure"
       @retry="detect()"
     />
@@ -276,8 +277,7 @@ onMounted(async () => {
       <FailureStrip
         v-if="actionFailure && !modelDrawerOpen"
         :title="actionFailure.title"
-        :failure="actionFailure.error"
-        :retryable="false"
+        :failure="actionFailure.failure"
         data-testid="data-issues-action-failure"
       />
 
@@ -309,7 +309,7 @@ onMounted(async () => {
       v-model="modelDrawerOpen"
       :issue="modelSelectedIssue"
       :busy="modelActionBusy"
-      :failure="actionFailure"
+      :failure="selectedIssueFailure"
       @dismiss="onDismiss($event)"
       @retry="onRetry($event)"
       @resolve="onResolveRequest()"

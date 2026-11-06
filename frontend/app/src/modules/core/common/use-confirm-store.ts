@@ -1,6 +1,6 @@
 import type { DialogType } from '@/modules/core/common/dialogs';
 
-interface ConfirmationMessage {
+export interface ConfirmationMessage {
   title: string;
   message: string;
   type?: DialogType;
@@ -13,16 +13,8 @@ interface ConfirmationMessage {
   alternativeAction?: string;
 }
 
-type AwaitableFunc = () => Promise<void>;
-
-type VoidFunc = () => void;
-
-type Func = VoidFunc | AwaitableFunc;
-
 /** Which way a confirmation was answered. */
 export type ConfirmChoice = 'confirm' | 'dismiss' | 'alternative';
-
-const defaultFunc: Func = () => {};
 
 function defaultMessage(): ConfirmationMessage {
   return {
@@ -33,12 +25,22 @@ function defaultMessage(): ConfirmationMessage {
   };
 }
 
+/**
+ * The app-wide confirmation dialog, for the few questions with nowhere better to be asked: bulk
+ * deletes with more than two outcomes, a route guard, and prompts raised after the action that
+ * caused them has finished.
+ *
+ * @remarks
+ * State only: callers ask through `useConfirm`, whose `ask` wraps `open` in a promise. `open` hands
+ * every way out to its callback, so a caller awaiting the answer cannot hang on a cancel. The dialog
+ * calls `confirm`, `dismiss` and `alternative` to answer it.
+ */
 export const useConfirmStore = defineStore('confirm', () => {
-  const visible = ref(false);
+  const visible = ref<boolean>(false);
   const confirmation = ref<ConfirmationMessage>(defaultMessage());
-  const onConfirm = ref<Func>(defaultFunc);
-  const onDismiss = ref<Func>(defaultFunc);
-  const onAlternative = ref<Func>(defaultFunc);
+
+  /** Answers the latest question; replaced by a no-op once it is answered, so it answers once. */
+  let settle: (choice: ConfirmChoice) => void = () => {};
 
   const { start, stop } = useTimeoutFn(
     () => {
@@ -48,79 +50,42 @@ export const useConfirmStore = defineStore('confirm', () => {
     { immediate: false },
   );
 
+  function answer(choice: ConfirmChoice): void {
+    set(visible, false);
+    start();
+    const pending = settle;
+    settle = (): void => {};
+    pending(choice);
+  }
+
+  const confirm = (): void => answer('confirm');
+
+  /** Backing out, by the button or by Escape. An acknowledgement with one button counts as confirmed. */
+  const dismiss = (): void => answer(get(confirmation).singleAction ? 'confirm' : 'dismiss');
+
+  const alternative = (): void => answer('alternative');
+
   /**
-   * Opens the confirmation.
+   * Shows the confirmation, and calls `onAnswer` once with how it was answered.
    *
    * @remarks
-   * `onDismissFunc` runs whenever the user backs out, by the button or by Escape, so it must never
-   * do anything the user did not ask for. A different outcome goes in `onAlternativeFunc`, with its
-   * label in `alternativeAction`.
+   * The alternative is only offered when `message.alternativeAction` is set. A question still on
+   * screen when another is opened is answered as dismissed, so it never leaves its caller waiting.
    */
-  const show = (message: ConfirmationMessage, onConfirmFunc: Func, onDismissFunc?: Func, onAlternativeFunc?: Func): void => {
+  function open(message: ConfirmationMessage, onAnswer: (choice: ConfirmChoice) => void): void {
+    answer('dismiss');
     set(confirmation, message);
-    set(onConfirm, onConfirmFunc);
-    if (onDismissFunc)
-      set(onDismiss, onDismissFunc);
-    if (onAlternativeFunc)
-      set(onAlternative, onAlternativeFunc);
-
     set(visible, true);
     stop();
-  };
-
-  const reset = (): void => {
-    set(visible, false);
-    set(onConfirm, defaultFunc);
-    set(onDismiss, defaultFunc);
-    set(onAlternative, defaultFunc);
-    start();
-  };
-
-  const alternative = async (): Promise<void> => {
-    const method = get(onAlternative);
-    reset();
-    await method();
-  };
-
-  const confirm = async (): Promise<void> => {
-    const method = get(onConfirm);
-    reset();
-    await method();
-  };
-
-  const dismiss = async (): Promise<void> => {
-    if (get(confirmation).singleAction) {
-      await confirm();
-      return;
-    }
-    const method = get(onDismiss);
-    reset();
-    await method();
-  };
-
-  /**
-   * Opens the confirmation and settles with how it was answered.
-   *
-   * @remarks
-   * Every way out settles the promise, so a caller awaiting it cannot hang on a cancel. The
-   * alternative is only offered when `message.alternativeAction` is set.
-   */
-  const ask = async (message: ConfirmationMessage): Promise<ConfirmChoice> => new Promise<ConfirmChoice>((resolve) => {
-    show(
-      message,
-      () => resolve('confirm'),
-      () => resolve('dismiss'),
-      message.alternativeAction ? (): void => resolve('alternative') : undefined,
-    );
-  });
+    settle = onAnswer;
+  }
 
   return {
     alternative,
-    ask,
     confirm,
     confirmation,
     dismiss,
-    show,
+    open,
     visible,
   };
 });

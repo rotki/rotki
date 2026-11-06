@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import UserDropdown from '@/modules/shell/components/UserDropdown.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
@@ -9,7 +9,7 @@ const { currentTier, logout, premium, privacyModeIcon, username } = await vi.hoi
 
   return {
     currentTier: ref<string>(''),
-    logout: vi.fn(),
+    logout: vi.fn<() => Promise<void>>(async () => {}),
     premium: ref<boolean>(false),
     privacyModeIcon: ref<string>('lu-eye'),
     username: ref<string>('alice'),
@@ -17,7 +17,7 @@ const { currentTier, logout, premium, privacyModeIcon, username } = await vi.hoi
 });
 
 vi.mock('@/modules/auth/use-logout', () => ({
-  useLogout: (): { logout: Mock } => ({ logout }),
+  useLogout: (): { logout: typeof logout } => ({ logout }),
 }));
 
 vi.mock('@/modules/auth/use-session-auth-store', () => ({
@@ -100,7 +100,7 @@ describe('userDropdown', () => {
       await pressLogout(wrapper);
 
       expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('user_dropdown.confirmation.message');
-      expect(wrapper.find('[data-testid=user-dropdown]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=confirm-menu-entries]').attributes('style')).toContain('display: none');
       expect(logout).not.toHaveBeenCalled();
     });
 

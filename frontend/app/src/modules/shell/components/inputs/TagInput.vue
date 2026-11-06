@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { invertColor, randomColor } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import ListItem from '@/modules/shell/components/ListItem.vue';
 import { renameTagInList } from '@/modules/tags/tag-utils';
@@ -18,6 +20,7 @@ const { disabled, label = 'Tags' } = defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 const { tags } = storeToRefs(useSessionMetadataStore());
 const { attemptTagCreation: attemptTag } = useTagOperations();
+const failureMessage = useFailureMessage();
 
 const search = ref<string>('');
 
@@ -29,40 +32,34 @@ const newTagBackground = ref<string>(randomColor());
 /** Why the last inline tag creation failed, shown under the field until the next attempt. */
 const creationError = ref<string>('');
 
-function remove(tag: string) {
-  const tags = get(modelValue);
-  const index = tags.indexOf(tag);
-  onUpdateModelValue([...tags.slice(0, index), ...tags.slice(index + 1)]);
+function remove(tag: string): void {
+  set(modelValue, get(modelValue).filter(name => name !== tag));
 }
 
-function attemptTagCreation(element: string): void {
+/** Creates a tag typed into the field; one that cannot be created is named under it and dropped. */
+async function attemptTagCreation(element: string): Promise<void> {
   set(creationError, '');
-  attemptTag(element, get(newTagBackground))
-    .then((status) => {
-      if (status.success)
-        return;
-      set(creationError, status.message);
-      remove(element);
-    });
+  const result = await attemptTag(element, get(newTagBackground));
+  if (result.ok)
+    return;
+  set(creationError, failureMessage(result.error));
+  remove(element);
 }
 
-function onUpdateModelValue(_value: ({ name: string } | string | Tag)[]) {
+/** Sets the field's tags, then creates the ones typed into it that are not tags yet. */
+async function onUpdateModelValue(value: ({ name: string } | string | Tag)[]): Promise<void> {
   const tags: string[] = [];
-  for (const element of _value) {
-    if (typeof element === 'string') {
-      attemptTagCreation(element);
-      tags.push(element);
-    }
-    else if (!('description' in element)) {
-      attemptTagCreation(element.name);
-      tags.push(element.name);
-    }
-    else {
-      tags.push(element.name);
-    }
+  const typed: string[] = [];
+  for (const element of value) {
+    if (typeof element === 'string')
+      typed.push(element);
+    else if (!('description' in element))
+      typed.push(element.name);
+    tags.push(typeof element === 'string' ? element : element.name);
   }
 
   set(modelValue, tags);
+  await Promise.all(typed.map(async name => attemptTagCreation(name)));
 }
 
 function handleEditTag(tag: Tag): void {
@@ -96,7 +93,7 @@ const filteredValue = computed<Tag[]>(() => get(tags).filter(({ name }) => get(m
 watch(tags, () => {
   const filtered = get(filteredValue);
   if (get(modelValue).length > filtered.length)
-    onUpdateModelValue(filtered);
+    startPromise(onUpdateModelValue(filtered));
 });
 </script>
 

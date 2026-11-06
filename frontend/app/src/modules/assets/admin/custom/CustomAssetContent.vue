@@ -78,9 +78,8 @@ onMounted(async () => {
     <FailureStrip
       v-if="deleteFailure"
       class="mb-4"
-      :retryable="false"
       :title="deleteFailure.title"
-      :failure="deleteFailure.error"
+      :failure="deleteFailure.failure"
       data-testid="custom-asset-delete-error"
     />
     <CustomAssetTable

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
@@ -124,15 +125,18 @@ const tableColumns = computed<DataTableColumn<LidoCsmTableRow>[]>(() => [{
   label: '',
 }]);
 
-const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion<LidoCsmTableRow>({
-  confirm: ({ address, nodeOperatorId, stakingModuleId }) => ({
+function deleteConfirm({ address, nodeOperatorId, stakingModuleId }: LidoCsmTableRow): RowDeleteQuestion {
+  return {
     message: t('staking_page.lido_csm.messages.confirm_delete_message', {
       address,
       module: stakingModuleLabel(stakingModuleId),
       nodeOperatorId,
     }),
     title: t('staking_page.lido_csm.messages.confirm_delete_title'),
-  }),
+  };
+}
+
+const { deleteRow, failure: deleteFailure } = useTableRowDeletion<LidoCsmTableRow>({
   deleteItem: async ({ address, key, nodeOperatorId, stakingModuleId }) => {
     set(removingEntryKey, key);
     try {
@@ -153,9 +157,8 @@ const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion
     <FailureStrip
       v-if="deleteFailure"
       class="mb-3"
-      :retryable="false"
       :title="deleteFailure.title"
-      :failure="deleteFailure.error"
+      :failure="deleteFailure.failure"
       data-testid="lido-csm-delete-error"
     />
     <RuiDataTable

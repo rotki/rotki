@@ -7,7 +7,6 @@ import { HistoryEventEntryType } from '@rotki/common';
 import HistoryEventEntryTypeSelect from '@/modules/history/events/HistoryEventEntryTypeSelect.vue';
 import HistoryEventForm from '@/modules/history/events/HistoryEventForm.vue';
 import { initialEntryType } from '@/modules/history/management/forms/entry-type-options';
-import { HistoryEventSaveFailureKey } from '@/modules/history/management/forms/history-event-save-failure';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<GroupEventData | StandaloneEventData | undefined>({ required: true });
@@ -29,10 +28,8 @@ const loading = ref<boolean>(false);
 const entryType = ref<HistoryEventEntryType>(HistoryEventEntryType.HISTORY_EVENT);
 const form = useTemplateRef<InstanceType<typeof HistoryEventForm>>('form');
 const showErrors = ref<boolean>(false);
-/** Why the last save failed where no field is to blame; the forms below write it. */
+/** Why the last save failed where no field is to blame, as the form's save returned it. */
 const saveFailure = shallowRef<string>();
-
-provide(HistoryEventSaveFailureKey, saveFailure);
 
 const errorCount = computed<number>(() => {
   if (!get(showErrors))
@@ -53,15 +50,17 @@ async function save(): Promise<void> {
     return;
 
   set(loading, true);
-  const success = await get(form)?.save();
+  set(saveFailure, undefined);
+  const result = await get(form)?.save();
   set(loading, false);
 
-  if (success) {
+  if (result?.ok) {
     set(modelValue, undefined);
     set(showErrors, false);
     emit('refresh');
   }
   else {
+    set(saveFailure, result?.error);
     set(showErrors, true);
   }
 }

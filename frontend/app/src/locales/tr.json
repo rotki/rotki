@@ -976,10 +976,6 @@
     },
     "help_coingecko": "CoinGecko tanımlayıcısını nasıl bulacağınızla ilgili yardım için tıklayın",
     "help_cryptocompare": "CryptoCompare tanımlayıcısını nasıl bulacağınızla ilgili yardım için tıklayın",
-    "icon_upload": {
-      "description": "Simge yüklenemedi: {message}",
-      "title": "Simge yükleme"
-    },
     "identifier": "Tanımlayıcı",
     "identifier_copy": "Tanımlayıcıyı kopyala",
     "labels": {
@@ -6696,7 +6692,6 @@
       "hidden_ignored_assets_warning": "Bu gruptaki bazı olaylar yok sayılan varlıklar içerdiği için gizlendi. Göstermek için tıklayın.",
       "ignore": {
         "error": {
-          "message": "Olaylar muhasebeden hariç tutulamadı",
           "title": "Hariç tutma başarısız"
         }
       },

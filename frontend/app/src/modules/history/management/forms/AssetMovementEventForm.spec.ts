@@ -195,7 +195,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
     expect(addHistoryEventMock).toHaveBeenCalledWith({
       amount: bigNumberify('2.5'),
@@ -240,7 +240,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
     expect(addHistoryEventMock).toHaveBeenCalledWith({
       amount: bigNumberify('2.5'),
@@ -328,7 +328,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
     addHistoricalPriceMock.mockRejectedValueOnce(new Error('price rejected'));
 
-    const saved = await wrapper.vm.save();
+    const saved = (await wrapper.vm.save()).ok;
     await nextTick();
 
     expect(addHistoricalPriceMock).toHaveBeenCalled();
@@ -349,7 +349,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     const saveMethod = wrapper.vm.save;
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
     expect(editHistoryEventMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -385,7 +385,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     const saveMethod = wrapper.vm.save;
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
     expect(editHistoryEventMock).toHaveBeenCalledWith({
       amount: bigNumberify('10'),
@@ -418,7 +418,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     const saveMethod = wrapper.vm.save;
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
     expect(editHistoryEventMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -458,7 +458,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await wrapper.vm.save();
+    const saveResult = (await wrapper.vm.save()).ok;
     expect(saveResult).toBe(true);
     expect(addHistoryEventMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -477,7 +477,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     await wrapper.find('[data-testid=amount] input').setValue('250');
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    expect(await wrapper.vm.save()).toBe(true);
+    expect((await wrapper.vm.save()).ok).toBe(true);
     expect(editHistoryEventMock).toHaveBeenCalledWith(expect.objectContaining({ uniqueId: '' }));
   });
 

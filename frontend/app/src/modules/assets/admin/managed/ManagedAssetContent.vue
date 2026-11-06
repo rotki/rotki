@@ -6,6 +6,7 @@ import { useManagedAssetsTable } from '@/modules/assets/admin/managed/use-manage
 import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';
 import RestoreAssetDbButton from '@/modules/assets/admin/RestoreAssetDbButton.vue';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
+import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -89,7 +90,7 @@ onMounted(async () => {
         </template>
         {{ t('managed_asset_content.add_asset') }}
       </RuiButton>
-      <RuiMenu
+      <ConfirmMenu
         v-model="openAction"
         :options="{ placement: 'bottom-end' }"
       >
@@ -104,10 +105,7 @@ onMounted(async () => {
             <RuiIcon name="lu-ellipsis-vertical" />
           </RuiButton>
         </template>
-        <RestoreAssetDbButton
-          dropdown
-          @close="openAction = false"
-        />
+        <RestoreAssetDbButton dropdown />
         <RuiTooltip
           :open-delay="400"
           class="w-full"
@@ -127,7 +125,7 @@ onMounted(async () => {
           </template>
           {{ t('asset_management.merge_assets_tooltip') }}
         </RuiTooltip>
-      </RuiMenu>
+      </ConfirmMenu>
     </template>
 
     <FailureStrip
@@ -141,9 +139,8 @@ onMounted(async () => {
     <FailureStrip
       v-if="deleteFailure"
       class="mb-4"
-      :retryable="false"
       :title="deleteFailure.title"
-      :failure="deleteFailure.error"
+      :failure="deleteFailure.failure"
       data-testid="managed-asset-delete-error"
     />
     <ManagedAssetTable

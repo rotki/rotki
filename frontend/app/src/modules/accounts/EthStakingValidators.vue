@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { StakingValidatorManage } from '@/modules/accounts/blockchain/use-account-manage';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import Eth2ValidatorLimitRow from '@/modules/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import EthStakingValidatorsToolbar from '@/modules/accounts/EthStakingValidatorsToolbar.vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
@@ -63,7 +64,7 @@ function edit(account: EthereumValidator) {
   emit('edit', editValidator(account));
 }
 
-const selectedDeleteQuestion = computed<{ title: string; message: string }>(
+const selectedDeleteQuestion = computed<ConfirmQuestion | undefined>(
   () => deleteSelectedConfirm(get(rows).data, get(modelSelected)),
 );
 
@@ -90,11 +91,10 @@ defineExpose({
       />
     </template>
     <FailureStrip
-      v-if="deleteFailure !== undefined"
+      v-if="deleteFailure"
       class="m-3"
-      :retryable="false"
-      :title="t('actions.delete_eth2_validator.error.title')"
-      :failure="deleteFailure"
+      :title="deleteFailure.title"
+      :failure="deleteFailure.failure"
       data-testid="eth-validators-delete-error"
     />
     <RuiDataTable

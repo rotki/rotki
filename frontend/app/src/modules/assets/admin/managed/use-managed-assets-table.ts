@@ -3,6 +3,8 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PillParams } from '@/modules/core/table/param-refs';
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { keyBy } from 'es-toolkit';
 import { type Filters, managedAssetStatusParams } from '@/modules/assets/admin/managed/asset-filter-keys';
 import { useManagedAssetFields } from '@/modules/assets/admin/managed/use-managed-asset-fields';
@@ -53,9 +55,9 @@ interface UseManagedAssetsTableReturn {
    */
   deleteAsset: (item: SupportedAsset) => Promise<void>;
   /** What a row's delete button asks before deleting its asset. */
-  deleteConfirm: (item: SupportedAsset) => { title: string; message: string };
+  deleteConfirm: (item: SupportedAsset) => RowDeleteQuestion;
   /** Why the last delete failed, named above the table. */
-  deleteFailure: Readonly<Ref<{ title: string; error: unknown } | undefined>>;
+  deleteFailure: Readonly<Ref<NamedFailure | undefined>>;
   /** The active sort. */
   sort: Ref<DataTableSortData<SupportedAsset>>;
 }
@@ -116,11 +118,12 @@ export function useManagedAssetsTable(
     urlState: routeWhen(mainPage),
   });
 
-  const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion<SupportedAsset>({
-    confirm: item => ({
-      message: t('asset_management.confirm_delete.message', { asset: item?.symbol ?? '' }),
-      title: t('asset_management.confirm_delete.title'),
-    }),
+  const deleteConfirm = (item: SupportedAsset): RowDeleteQuestion => ({
+    message: t('asset_management.confirm_delete.message', { asset: item?.symbol ?? '' }),
+    title: t('asset_management.confirm_delete.title'),
+  });
+
+  const { deleteRow, failure: deleteFailure } = useTableRowDeletion<SupportedAsset>({
     deleteItem: async item => deleteAsset(item.identifier),
     failureTitle: item => t('asset_management.delete_error', { address: item.identifier }),
     onDeleted: async (item) => {

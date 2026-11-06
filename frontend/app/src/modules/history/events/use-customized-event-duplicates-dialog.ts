@@ -1,9 +1,10 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
-import type { HistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import { startPromise } from '@shared/utils';
+import { tap } from 'plainfp/result';
 import { logger } from '@/modules/core/common/logging/logging';
-import { type DuplicateRow, type DuplicatesActionHandlers, useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
+import { type DuplicateRow, useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
+import { type FailureSlot, type NamedFailure, useFailureSlot } from '@/modules/shell/components/named-failure';
 
 /** The tabs, in the order the dialog renders them. */
 export const DuplicatesTab = {
@@ -19,10 +20,22 @@ interface DuplicateGroup {
   /** Why the last read of this tab's rows failed; the rows of an earlier read stay. */
   error: Ref<unknown>;
   /** Why the last action started from this tab failed; cleared when the next action starts. */
-  actionFailure: Ref<HistoryEventsActionFailure | undefined>;
+  actionFailure: FailureSlot;
   rows: Ref<DuplicateRow[]>;
   /** Bound with `v-model:selected` by the list, so it stays writable. */
   selected: Ref<string[]>;
+}
+
+/** A tab over `groupIds`, with nothing read, selected or failed yet. */
+function createGroup(groupIds: ComputedRef<string[]>): DuplicateGroup {
+  return {
+    actionFailure: useFailureSlot(),
+    error: shallowRef<unknown>(),
+    groupIds,
+    loading: shallowRef<boolean>(false),
+    rows: ref<DuplicateRow[]>([]),
+    selected: ref<string[]>([]),
+  };
 }
 
 interface UseCustomizedEventDuplicatesDialogOptions {
@@ -57,9 +70,9 @@ interface UseCustomizedEventDuplicatesDialogReturn {
   manualReviewError: ComputedRef<unknown>;
   ignoredError: ComputedRef<unknown>;
   /** Why the last fix, dismissal or restore started from the tab failed, for the tab to name. */
-  autoFixActionFailure: Readonly<Ref<HistoryEventsActionFailure | undefined>>;
-  manualReviewActionFailure: Readonly<Ref<HistoryEventsActionFailure | undefined>>;
-  ignoredActionFailure: Readonly<Ref<HistoryEventsActionFailure | undefined>>;
+  autoFixActionFailure: Readonly<Ref<NamedFailure | undefined>>;
+  manualReviewActionFailure: Readonly<Ref<NamedFailure | undefined>>;
+  ignoredActionFailure: Readonly<Ref<NamedFailure | undefined>>;
   /** Reads the duplicate group ids, then the events behind them. */
   initialize: () => Promise<void>;
   /** Reads one tab again; a failed read of the group ids reads everything again, since every tab needs them. */
@@ -78,9 +91,9 @@ interface UseCustomizedEventDuplicatesDialogReturn {
  * The duplicates dialog: three tabs over the same set of duplicate groups, each with its own rows,
  * its own selection and its own loading state.
  *
- * Every action is asked about beside the button that starts it. Its success callback touches
- * the dialog (the acted-on ids leave the selection and the affected tabs are re-read), and a failure
- * stays on the tab the action was started from. Fixing
+ * Every action is asked about beside the button that starts it. Its success touches the dialog
+ * (the acted-on ids leave the selection and the affected tabs are re-read), and a failure stays on
+ * the tab the action was started from. Fixing
  * only moves rows within the auto-fix tab, while ignoring and restoring move rows *between* tabs, so
  * those re-read all three.
  */
@@ -89,6 +102,7 @@ export function useCustomizedEventDuplicatesDialog(
 ): UseCustomizedEventDuplicatesDialogReturn {
   const { close } = options;
 
+  const { t } = useI18n({ useScope: 'global' });
   const router = useRouter();
 
   const {
@@ -96,41 +110,18 @@ export function useCustomizedEventDuplicatesDialog(
     fetchCustomizedEventDuplicates,
     fetchDuplicateEvents,
     fetchError,
-    fixAndSettle,
+    fixDuplicates,
+    ignoreDuplicates,
     ignoredGroupIds,
     manualReviewGroupIds,
-    markNonDuplicatedAndSettle,
-    restoreAndSettle,
+    unignoreDuplicates,
   } = useCustomizedEventDuplicates();
 
   const modelActiveTab = shallowRef<number>(DuplicatesTab.AUTO_FIX);
 
-  const autoFix: DuplicateGroup = {
-    actionFailure: shallowRef<HistoryEventsActionFailure>(),
-    groupIds: autoFixGroupIds,
-    error: shallowRef<unknown>(),
-    loading: shallowRef<boolean>(false),
-    rows: ref<DuplicateRow[]>([]),
-    selected: ref<string[]>([]),
-  };
-
-  const manualReview: DuplicateGroup = {
-    actionFailure: shallowRef<HistoryEventsActionFailure>(),
-    groupIds: manualReviewGroupIds,
-    error: shallowRef<unknown>(),
-    loading: shallowRef<boolean>(false),
-    rows: ref<DuplicateRow[]>([]),
-    selected: ref<string[]>([]),
-  };
-
-  const ignored: DuplicateGroup = {
-    actionFailure: shallowRef<HistoryEventsActionFailure>(),
-    groupIds: ignoredGroupIds,
-    error: shallowRef<unknown>(),
-    loading: shallowRef<boolean>(false),
-    rows: ref<DuplicateRow[]>([]),
-    selected: ref<string[]>([]),
-  };
+  const autoFix = createGroup(autoFixGroupIds);
+  const manualReview = createGroup(manualReviewGroupIds);
+  const ignored = createGroup(ignoredGroupIds);
 
   async function loadGroup(group: DuplicateGroup): Promise<void> {
     set(group.loading, true);
@@ -161,21 +152,6 @@ export function useCustomizedEventDuplicatesDialog(
     await Promise.all([loadGroup(autoFix), loadGroup(manualReview), loadGroup(ignored)]);
   }
 
-  /**
-   * The handlers for an action started from `group`'s tab: its failure stays on that tab.
-   *
-   * @remarks
-   * Starting an action clears the tab's last failure, so it never outlives the next attempt. `onSuccess` is what
-   * the tab does once the action went through.
-   */
-  function handlersFor(group: DuplicateGroup, onSuccess: () => void): DuplicatesActionHandlers {
-    set(group.actionFailure, undefined);
-    return {
-      onFailure: failure => set(group.actionFailure, failure),
-      onSuccess,
-    };
-  }
-
   function deselect(group: DuplicateGroup, groupId: string): void {
     set(group.selected, get(group.selected).filter(id => id !== groupId));
   }
@@ -200,7 +176,7 @@ export function useCustomizedEventDuplicatesDialog(
   }
 
   async function fixSingle(groupId: string): Promise<void> {
-    await fixAndSettle([groupId], handlersFor(autoFix, () => {
+    await autoFix.actionFailure.run(t('actions.customized_event_duplicates.fix_error.title'), async () => tap(await fixDuplicates([groupId]), () => {
       deselect(autoFix, groupId);
       startPromise(loadGroup(autoFix));
     }));
@@ -211,7 +187,7 @@ export function useCustomizedEventDuplicatesDialog(
     if (selected.length === 0)
       return;
 
-    await fixAndSettle(selected, handlersFor(autoFix, () => {
+    await autoFix.actionFailure.run(t('actions.customized_event_duplicates.fix_error.title'), async () => tap(await fixDuplicates(selected), () => {
       set(autoFix.selected, []);
       startPromise(loadGroup(autoFix));
     }));
@@ -219,7 +195,7 @@ export function useCustomizedEventDuplicatesDialog(
 
   async function ignoreSingle(groupId: string): Promise<void> {
     const group = get(modelActiveTab) === DuplicatesTab.MANUAL_REVIEW ? manualReview : autoFix;
-    await markNonDuplicatedAndSettle([groupId], handlersFor(group, () => {
+    await group.actionFailure.run(t('actions.customized_event_duplicates.mark_non_duplicated_error.title'), async () => tap(await ignoreDuplicates([groupId]), () => {
       deselect(autoFix, groupId);
       deselect(manualReview, groupId);
       startPromise(loadAllGroups());
@@ -232,14 +208,14 @@ export function useCustomizedEventDuplicatesDialog(
     if (selected.length === 0)
       return;
 
-    await markNonDuplicatedAndSettle(selected, handlersFor(group, () => {
+    await group.actionFailure.run(t('actions.customized_event_duplicates.mark_non_duplicated_error.title'), async () => tap(await ignoreDuplicates(selected), () => {
       set(group.selected, []);
       startPromise(loadAllGroups());
     }));
   }
 
   async function restoreSingle(groupId: string): Promise<void> {
-    await restoreAndSettle([groupId], handlersFor(ignored, () => {
+    await ignored.actionFailure.run(t('actions.customized_event_duplicates.unignore_error.title'), async () => tap(await unignoreDuplicates([groupId]), () => {
       deselect(ignored, groupId);
       startPromise(loadAllGroups());
     }));
@@ -250,7 +226,7 @@ export function useCustomizedEventDuplicatesDialog(
     if (selected.length === 0)
       return;
 
-    await restoreAndSettle(selected, handlersFor(ignored, () => {
+    await ignored.actionFailure.run(t('actions.customized_event_duplicates.unignore_error.title'), async () => tap(await unignoreDuplicates(selected), () => {
       set(ignored.selected, []);
       startPromise(loadAllGroups());
     }));
@@ -271,7 +247,7 @@ export function useCustomizedEventDuplicatesDialog(
   }
 
   return {
-    autoFixActionFailure: shallowReadonly(autoFix.actionFailure),
+    autoFixActionFailure: autoFix.actionFailure.failure,
     autoFixError: failureOf(autoFix),
     autoFixLoading: readonly(autoFix.loading),
     autoFixRows: shallowReadonly(autoFix.rows),
@@ -279,12 +255,12 @@ export function useCustomizedEventDuplicatesDialog(
     fixSingle,
     ignoreSelected,
     ignoreSingle,
-    ignoredActionFailure: shallowReadonly(ignored.actionFailure),
+    ignoredActionFailure: ignored.actionFailure.failure,
     ignoredError: failureOf(ignored),
     ignoredLoading: readonly(ignored.loading),
     ignoredRows: shallowReadonly(ignored.rows),
     initialize,
-    manualReviewActionFailure: shallowReadonly(manualReview.actionFailure),
+    manualReviewActionFailure: manualReview.actionFailure.failure,
     manualReviewError: failureOf(manualReview),
     manualReviewLoading: readonly(manualReview.loading),
     manualReviewRows: shallowReadonly(manualReview.rows),

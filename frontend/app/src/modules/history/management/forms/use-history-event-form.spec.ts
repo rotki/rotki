@@ -4,10 +4,10 @@ import type { useHistoryEvents } from '@/modules/history/events/use-history-even
 import type { PriceIntent, usePriceIntents } from '@/modules/history/management/forms/price-intent';
 import { HistoryEventEntryType } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, nextTick, ref, type Ref, shallowRef, useModel } from 'vue';
+import { defineComponent, nextTick, ref, type Ref, useModel } from 'vue';
 import { z } from 'zod';
-import { HistoryEventSaveFailureKey } from '@/modules/history/management/forms/history-event-save-failure';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 
 type HistoryEvents = ReturnType<typeof useHistoryEvents>;
@@ -30,9 +30,6 @@ vi.mock('@/modules/history/events/use-history-events', () => ({
 vi.mock('@/modules/history/management/forms/price-intent', () => ({
   usePriceIntents: (): PriceIntents => ({ runPriceIntents }),
 }));
-
-/** The dialog's failure slot, which the forms write a save that blames no field into. */
-const saveFailure = shallowRef<string>();
 
 interface FormState {
   amount: string;
@@ -122,7 +119,7 @@ function mountForm({ errorMessages, serverErrorPaths }: MountOptions = {}): Host
       });
       return (): null => null;
     },
-  }), { global: { provide: { [HistoryEventSaveFailureKey]: saveFailure } } });
+  }));
   return { handle, wrapper };
 }
 
@@ -131,7 +128,6 @@ describe('useHistoryEventForm', () => {
     addHistoryEvent.mockReset().mockResolvedValue({ success: true });
     editHistoryEvent.mockReset().mockResolvedValue({ success: true });
     runPriceIntents.mockReset().mockResolvedValue({ success: true });
-    set(saveFailure, undefined);
     toEditPayload.mockClear();
   });
 
@@ -140,7 +136,7 @@ describe('useHistoryEventForm', () => {
       const { handle } = mountForm();
       handle.seed(filledState());
 
-      await expect(handle.save()).resolves.toBe(true);
+      await expect(handle.save()).resolves.toStrictEqual(ok(undefined));
 
       expect(addHistoryEvent).toHaveBeenCalledExactlyOnceWith(toPayload(filledState()));
       expect(editHistoryEvent).not.toHaveBeenCalled();
@@ -159,7 +155,7 @@ describe('useHistoryEventForm', () => {
       const { handle } = mountForm();
       handle.form.state.price = ethPrice;
 
-      await expect(handle.save()).resolves.toBe(false);
+      await expect(handle.save()).resolves.toStrictEqual(err(undefined));
 
       expect(runPriceIntents).not.toHaveBeenCalled();
       expect(addHistoryEvent).not.toHaveBeenCalled();
@@ -186,9 +182,7 @@ describe('useHistoryEventForm', () => {
       const { handle } = mountForm();
       handle.seed(pricedState());
 
-      await expect(handle.save()).resolves.toBe(false);
-
-      expect(get(saveFailure)).toBe(shown);
+      await expect(handle.save()).resolves.toStrictEqual(err(shown));
       expect(addHistoryEvent).not.toHaveBeenCalled();
     });
 
@@ -199,7 +193,7 @@ describe('useHistoryEventForm', () => {
       handle.form.state.amount = '3';
       handle.form.state.price = ethPrice;
 
-      await expect(handle.save()).resolves.toBe(false);
+      await expect(handle.save()).resolves.toStrictEqual(err('price rejected'));
 
       expect(editHistoryEvent).not.toHaveBeenCalled();
     });
@@ -211,7 +205,7 @@ describe('useHistoryEventForm', () => {
       handle.seed(filledState(), [7, 8]);
       handle.form.state.amount = '3';
 
-      await expect(handle.save()).resolves.toBe(true);
+      await expect(handle.save()).resolves.toStrictEqual(ok(undefined));
 
       expect(toEditPayload).toHaveBeenCalledExactlyOnceWith(toPayload({ ...filledState(), amount: '3' }), [7, 8]);
       expect(editHistoryEvent).toHaveBeenCalledExactlyOnceWith(toEditPayload.mock.results[0]?.value);
@@ -225,7 +219,7 @@ describe('useHistoryEventForm', () => {
       await handle.save();
 
       handle.form.state.amount = '5';
-      await expect(handle.save()).resolves.toBe(true);
+      await expect(handle.save()).resolves.toStrictEqual(ok(undefined));
 
       expect(addHistoryEvent).toHaveBeenCalledExactlyOnceWith(toPayload({ ...filledState(), amount: '5' }));
       expect(editHistoryEvent).toHaveBeenCalledOnce();
@@ -236,7 +230,7 @@ describe('useHistoryEventForm', () => {
       handle.seed(filledState(), [7]);
       handle.form.state.price = ethPrice;
 
-      await expect(handle.save()).resolves.toBe(true);
+      await expect(handle.save()).resolves.toStrictEqual(ok(undefined));
 
       expect(runPriceIntents).toHaveBeenCalledExactlyOnceWith([ethPrice]);
       expect(editHistoryEvent).not.toHaveBeenCalled();
@@ -259,21 +253,18 @@ describe('useHistoryEventForm', () => {
       const { handle } = mountForm();
       seedEdited(handle, identifiers);
 
-      await expect(handle.save()).resolves.toBe(false);
-
-      expect(get(saveFailure)).toBe('backend said no');
+      await expect(handle.save()).resolves.toStrictEqual(err('backend said no'));
       expect(handle.form.errors('amount')).toEqual([]);
     });
 
-    it.each(modes)('should show a field map on the fields, naming nothing in the dialog ($mode)', async ({ identifiers, respond }) => {
+    it.each(modes)('should show a field map on the fields, naming nothing for the dialog ($mode)', async ({ identifiers, respond }) => {
       respond({ message: { amount: ['too small'] }, success: false });
       const { handle } = mountForm();
       seedEdited(handle, identifiers);
 
-      await expect(handle.save()).resolves.toBe(false);
+      await expect(handle.save()).resolves.toStrictEqual(err(undefined));
 
       expect(handle.form.errors('amount')).toEqual(['too small']);
-      expect(get(saveFailure)).toBeUndefined();
     });
 
     it('should show a field error the endpoint sends as one message, not split into characters', async () => {
@@ -281,20 +272,9 @@ describe('useHistoryEventForm', () => {
       const { handle } = mountForm();
       handle.seed(filledState());
 
-      await expect(handle.save()).resolves.toBe(false);
+      await expect(handle.save()).resolves.toStrictEqual(err(undefined));
 
       expect(handle.form.errors('amount')).toEqual(['too small']);
-    });
-
-    it('should drop the named failure when the next save starts', async () => {
-      addHistoryEvent.mockResolvedValueOnce({ message: 'backend said no', success: false });
-      const { handle } = mountForm();
-      handle.seed(filledState());
-      await handle.save();
-
-      await expect(handle.save()).resolves.toBe(true);
-
-      expect(get(saveFailure)).toBeUndefined();
     });
 
     it('should report a save rejected with an empty message as unsaved, with the generic save error', async () => {
@@ -302,9 +282,7 @@ describe('useHistoryEventForm', () => {
       const { handle } = mountForm();
       handle.seed(filledState());
 
-      await expect(handle.save()).resolves.toBe(false);
-
-      expect(get(saveFailure)).toBe(SAVE_FAILED_KEY);
+      await expect(handle.save()).resolves.toStrictEqual(err(SAVE_FAILED_KEY));
       expect(handle.form.errors('amount')).toEqual([]);
       expect(handle.form.state.amount).toBe('1');
     });
@@ -337,7 +315,7 @@ describe('useHistoryEventForm', () => {
       const { handle } = mountForm({ serverErrorPaths: errors => ({ amount: errors.spendAmount }) });
       handle.seed(filledState());
 
-      await expect(handle.save()).resolves.toBe(false);
+      await expect(handle.save()).resolves.toStrictEqual(err(undefined));
 
       expect(handle.form.errors('amount')).toEqual(['too small']);
     });

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import HistoryEventsGroupToggle from '@/modules/history/events/components/HistoryEventsGroupToggle.vue';
 import HistoryEventsUnlinkButton from '@/modules/history/events/components/HistoryEventsUnlinkButton.vue';
 import { injectHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
@@ -9,7 +9,7 @@ const { unlinkConfirm, eventCount, labelType, subgroupId } = defineProps<{
    * Offers unlink on this matched subgroup, asking this beside the button before `unlink-event` is
    * emitted. The parent decides whether the subgroup can be unlinked from here.
    */
-  unlinkConfirm?: HistoryEventQuestion;
+  unlinkConfirm?: ConfirmQuestion;
   eventCount: number;
   labelType?: 'swap' | 'movement' | 'bridge';
   /**

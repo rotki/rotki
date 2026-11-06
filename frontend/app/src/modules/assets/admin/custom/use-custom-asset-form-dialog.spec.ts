@@ -1,15 +1,16 @@
 import type { CustomAsset } from '@/modules/assets/types';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope, type Ref, ref, shallowRef } from 'vue';
+import { effectScope, nextTick, type Ref, ref, shallowRef } from 'vue';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { useCustomAssetFormDialog } from './use-custom-asset-form-dialog';
 
 const { addCustomAsset, editCustomAsset, saveIcon, validate } = vi.hoisted(() => ({
   addCustomAsset: vi.fn(),
   editCustomAsset: vi.fn(),
-  saveIcon: vi.fn(),
+  saveIcon: vi.fn<(identifier: string) => Promise<Result<void, unknown>>>(),
   validate: vi.fn(() => true),
 }));
 
@@ -45,6 +46,7 @@ describe('modules/assets/admin/custom/useCustomAssetFormDialog', () => {
     validate.mockReturnValue(true);
     addCustomAsset.mockResolvedValue('custom-new');
     editCustomAsset.mockResolvedValue(true);
+    saveIcon.mockResolvedValue(ok(undefined));
   });
 
   afterEach(() => {
@@ -158,6 +160,19 @@ describe('modules/assets/admin/custom/useCustomAssetFormDialog', () => {
       expect(saveIcon).toHaveBeenCalledWith('custom-new');
     });
 
+    it('should close the dialog once saved, so the next add opens it again', async () => {
+      const { modelValue, save } = dialog();
+
+      await save();
+      await nextTick();
+      expect(get(open)).toBe(false);
+      expect(get(modelValue)).toBeUndefined();
+
+      set(open, true);
+      await nextTick();
+      expect(get(modelValue)).toMatchObject({ identifier: '', name: '' });
+    });
+
     it('should fail when the backend assigns no identifier', async () => {
       addCustomAsset.mockResolvedValue('');
 
@@ -201,26 +216,80 @@ describe('modules/assets/admin/custom/useCustomAssetFormDialog', () => {
     });
   });
 
+  describe('an icon that fails after the asset lands', () => {
+    const uploadError = new Error('icon too large');
+
+    beforeEach(() => {
+      saveIcon.mockResolvedValueOnce(err(uploadError));
+    });
+
+    it('should keep the dialog open naming the upload failure, with the list already refreshed', async () => {
+      const { failure, modelValue, save } = dialog();
+
+      expect(await save()).toBe(false);
+      expect(get(modelValue)).toEqual(BLANK);
+      expect(get(failure)).toEqual({ failure: uploadError, title: 'asset_form.icon_upload.failed' });
+      expect(onSaved).toHaveBeenCalledExactlyOnceWith('custom-new');
+    });
+
+    it('should retry only the icon on the next save, and close once it lands', async () => {
+      const { failure, modelValue, save } = dialog();
+      await save();
+
+      expect(await save()).toBe(true);
+      expect(addCustomAsset).toHaveBeenCalledOnce();
+      expect(onSaved).toHaveBeenCalledOnce();
+      expect(saveIcon).toHaveBeenCalledTimes(2);
+      expect(saveIcon).toHaveBeenLastCalledWith('custom-new');
+      expect(get(failure)).toBeUndefined();
+      expect(get(modelValue)).toBeUndefined();
+    });
+
+    it('should retry only the icon of an edited asset, without editing it again', async () => {
+      set(editableItem, asset());
+      const { save } = dialog();
+      await save();
+
+      expect(await save()).toBe(true);
+      expect(editCustomAsset).toHaveBeenCalledOnce();
+      expect(onSaved).toHaveBeenCalledExactlyOnceWith('custom-1');
+      expect(saveIcon).toHaveBeenLastCalledWith('custom-1');
+    });
+
+    it('should write the asset again once the dialog was closed in between', async () => {
+      const { save } = dialog();
+      await save();
+
+      set(open, false);
+      await flushPromises();
+      set(open, true);
+      await flushPromises();
+
+      expect(await save()).toBe(true);
+      expect(addCustomAsset).toHaveBeenCalledTimes(2);
+      expect(onSaved).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('when the write throws', () => {
     it('should keep an add failure for the dialog, titled with the adding wording', async () => {
       const error = new Error('the backend is down');
       addCustomAsset.mockRejectedValue(error);
 
-      const { failure, failureTitle, save } = dialog();
+      const { failure, save } = dialog();
 
       expect(await save()).toBe(false);
-      expect(get(failure)).toBe(error);
-      expect(get(failureTitle)).toBe('asset_management.add_error');
+      expect(get(failure)).toEqual({ failure: error, title: 'asset_management.add_error' });
     });
 
     it('should title an edit failure with the editing wording', async () => {
       set(editableItem, asset());
       editCustomAsset.mockRejectedValue(new Error('the backend is down'));
 
-      const { failureTitle, save } = dialog();
+      const { failure, save } = dialog();
       await save();
 
-      expect(get(failureTitle)).toBe('asset_management.edit_error');
+      expect(get(failure)?.title).toBe('asset_management.edit_error');
     });
 
     it('should put a validation error on a field of the asset onto that field', async () => {

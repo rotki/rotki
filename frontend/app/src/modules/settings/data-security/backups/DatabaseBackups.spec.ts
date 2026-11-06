@@ -3,6 +3,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import { defineComponent, type Ref } from 'vue';
 import DatabaseBackups from '@/modules/settings/data-security/backups/DatabaseBackups.vue';
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 
 vi.mock('@/modules/session/api/use-backup-api', () => ({
   useBackupApi: (): Record<string, unknown> => ({ fileUrl: (path: string): string => path }),
@@ -81,6 +82,16 @@ describe('modules/settings/data-security/backups/DatabaseBackups', () => {
 
     expect(wrapper.find('[data-testid=inline-confirm]').text()).toMatch(/database_backups\.confirm\.message::.+, 1024\.00/);
     expect(wrapper.emitted('remove')).toBeUndefined();
+  });
+
+  it('should ask about a backup delete in the error tone, with a Delete button', () => {
+    const wrapper = createWrapper(false);
+
+    expect(wrapper.findComponent(ConfirmPopover).props('question')).toMatchObject({
+      confirmLabel: 'common.actions.delete',
+      title: 'database_backups.confirm.title',
+      tone: 'error',
+    });
   });
 
   it('should emit remove with the row once its question is confirmed', async () => {

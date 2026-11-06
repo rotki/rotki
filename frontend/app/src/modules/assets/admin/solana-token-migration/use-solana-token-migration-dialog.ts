@@ -7,6 +7,7 @@ import { useSolanaTokenMigrationApi } from '@/modules/assets/admin/solana-token-
 import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { type NamedFailure, useFailureSlot } from '@/modules/shell/components/named-failure';
 
 export interface SolanaTokenMigrationData {
   address: string;
@@ -17,11 +18,6 @@ export interface SolanaTokenMigrationData {
 export interface MergeSuggestion {
   sourceAsset: string;
   targetAsset: string;
-}
-
-interface MigrationFailure {
-  title: string;
-  error: unknown;
 }
 
 interface UseSolanaTokenMigrationDialogOptions {
@@ -45,7 +41,7 @@ interface UseSolanaTokenMigrationDialogOptions {
 
 interface UseSolanaTokenMigrationDialogReturn {
   /** Why the last migration failed where no field is to blame, named in the dialog; Migrate is the retry. */
-  failure: Readonly<Ref<MigrationFailure | undefined>>;
+  failure: Readonly<Ref<NamedFailure | undefined>>;
   /** The merge the dialog is asking about, after the migration collided with an existing asset. */
   mergeSuggestion: Readonly<Ref<MergeSuggestion | undefined>>;
   /** Hands the suggested merge to the caller and closes the dialog. */
@@ -79,14 +75,14 @@ export function useSolanaTokenMigrationDialog(
 
   const modelErrorMessages = ref<ValidationErrors>({});
   const loading = shallowRef<boolean>(false);
-  const failure = shallowRef<MigrationFailure>();
+  const { clear: clearFailure, failure, report } = useFailureSlot();
   const mergeSuggestion = shallowRef<MergeSuggestion>();
 
   const { removeIdentifier } = useSolanaTokenMigrationStore();
   const { migrateSolanaToken } = useSolanaTokenMigrationApi();
 
   function clearFeedback(): void {
-    set(failure, undefined);
+    clearFailure();
     set(mergeSuggestion, undefined);
   }
 
@@ -121,7 +117,7 @@ export function useSolanaTokenMigrationDialog(
     if (suggestion)
       set(mergeSuggestion, suggestion);
     else
-      set(failure, { error: cause, title: t('asset_management.solana_token_migration.migration_error') });
+      report(t('asset_management.solana_token_migration.migration_error'), cause);
     return false;
   }
 
@@ -165,10 +161,7 @@ export function useSolanaTokenMigrationDialog(
       });
 
       if (!result) {
-        set(failure, {
-          error: t('asset_management.solana_token_migration.migration_error'),
-          title: t('asset_management.solana_token_migration.dialog_title'),
-        });
+        report(t('asset_management.solana_token_migration.dialog_title'), t('asset_management.solana_token_migration.migration_error'));
         return false;
       }
 
@@ -190,7 +183,7 @@ export function useSolanaTokenMigrationDialog(
   return {
     acceptMerge,
     dismissMerge,
-    failure: readonly(failure),
+    failure,
     loading: readonly(loading),
     mergeSuggestion: readonly(mergeSuggestion),
     modelErrorMessages,

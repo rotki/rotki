@@ -1,5 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { ManualBalance, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { omit } from 'es-toolkit';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
@@ -7,11 +9,11 @@ import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion
 
 interface UseManualBalanceTableActionsReturn {
   /** For `RowActions`' `delete-confirm`, so the row's delete button asks before it emits. */
-  deleteConfirm: { title: string; message: string };
+  deleteConfirm: RowDeleteQuestion;
   /** Deletes a balance the user already confirmed. */
   deleteRow: (id: number) => Promise<void>;
   /** Why the last delete failed, until the next one starts. */
-  deleteFailure: Readonly<Ref<{ title: string; error: unknown } | undefined>>;
+  deleteFailure: Readonly<Ref<NamedFailure | undefined>>;
   prepareForEdit: (balance: ManualBalanceWithPrice) => ManualBalance;
   pricesLoading: ComputedRef<boolean>;
 }
@@ -28,7 +30,6 @@ export function useManualBalanceTableActions(): UseManualBalanceTableActionsRetu
   };
 
   const { deleteRow, failure: deleteFailure } = useTableRowDeletion<number>({
-    confirm: () => deleteConfirm,
     deleteItem: async id => deleteManualBalance(id),
     failureTitle: () => t('actions.balances.manual_delete.error.title'),
   });

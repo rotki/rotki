@@ -2,6 +2,7 @@
 import type { ZodType } from 'zod';
 import type { CustomAsset } from '@/modules/assets/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { ok, type Result } from 'plainfp/result';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
 import { customAssetSchema } from '@/modules/assets/admin/custom/custom-asset-form';
 import { useModelForm } from '@/modules/core/form/use-model-form';
@@ -39,8 +40,10 @@ const notes = computed<string>({
   },
 });
 
-function saveIcon(identifier: string): void {
-  get(assetIconFormRef)?.saveIcon(identifier);
+/** Uploads the chosen icon for the saved asset; `ok` straight away when the icon form is not there. */
+async function saveIcon(identifier: string): Promise<Result<void, unknown>> {
+  const iconForm = get(assetIconFormRef);
+  return iconForm ? iconForm.saveIcon(identifier) : ok(undefined);
 }
 
 defineExpose({

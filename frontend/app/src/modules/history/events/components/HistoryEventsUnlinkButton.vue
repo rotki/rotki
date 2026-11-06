@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 
 /**
@@ -7,7 +7,7 @@ import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
  * means the user accepted; its clicks stay out of the header, which collapses on click.
  */
 defineProps<{
-  question: HistoryEventQuestion;
+  question: ConfirmQuestion;
 }>();
 
 const emit = defineEmits<{
@@ -26,10 +26,7 @@ const { isMdAndUp } = useBreakpoint();
   >
     <ConfirmPopover
       class="shrink-0"
-      tone="warning"
-      :title="question.title"
-      :message="question.message"
-      :confirm-label="question.confirmLabel ?? t('transactions.events.actions.unlink')"
+      :question="question"
       @confirm="emit('confirm')"
     >
       <template #activator="{ attrs }">

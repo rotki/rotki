@@ -1,6 +1,8 @@
 import type { SupportedAsset } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref, shallowRef } from 'vue';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
@@ -8,8 +10,8 @@ import { useManagedAssetFormDialog } from './use-managed-asset-form-dialog';
 
 const { deleteCacheKey, saveAsset, saveIcon, validate } = vi.hoisted(() => ({
   deleteCacheKey: vi.fn(),
-  saveAsset: vi.fn(),
-  saveIcon: vi.fn(),
+  saveAsset: vi.fn<() => Promise<string | undefined>>(),
+  saveIcon: vi.fn<(identifier: string) => Promise<Result<void, unknown>>>(),
   validate: vi.fn(() => true),
 }));
 
@@ -44,6 +46,7 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
     onSaved = vi.fn<() => void>();
     validate.mockReturnValue(true);
     saveAsset.mockResolvedValue('eip155:1/erc20:0xABC');
+    saveIcon.mockResolvedValue(ok(undefined));
     form = shallowRef({ saveAsset, saveIcon, validate });
   });
 
@@ -124,6 +127,49 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
     });
   });
 
+  describe('an icon that fails after the asset lands', () => {
+    const uploadError = new Error('icon too large');
+
+    beforeEach(() => {
+      saveIcon.mockResolvedValueOnce(err(uploadError));
+    });
+
+    it('should keep the dialog open naming the upload failure, with the list already refreshed', async () => {
+      const { failure, save } = dialog();
+
+      expect(await save()).toBe(false);
+      expect(get(modelValue)).toEqual(ASSET);
+      expect(get(failure)).toEqual({ failure: uploadError, title: 'asset_form.icon_upload.failed' });
+      expect(onSaved).toHaveBeenCalledOnce();
+    });
+
+    it('should retry only the icon on the next save, and close once it lands', async () => {
+      const { failure, save } = dialog();
+      await save();
+
+      expect(await save()).toBe(true);
+      expect(saveAsset).toHaveBeenCalledOnce();
+      expect(onSaved).toHaveBeenCalledOnce();
+      expect(saveIcon).toHaveBeenCalledTimes(2);
+      expect(saveIcon).toHaveBeenLastCalledWith('eip155:1/erc20:0xABC');
+      expect(get(failure)).toBeUndefined();
+      expect(get(modelValue)).toBeUndefined();
+    });
+
+    it('should write the asset again once the dialog was closed in between', async () => {
+      const { save } = dialog();
+      await save();
+
+      set(modelValue, undefined);
+      await flushPromises();
+      set(modelValue, ASSET);
+
+      expect(await save()).toBe(true);
+      expect(saveAsset).toHaveBeenCalledTimes(2);
+      expect(onSaved).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('a write the form refuses', () => {
     it('should keep the dialog open when no identifier comes back', async () => {
       saveAsset.mockResolvedValue(undefined);
@@ -155,7 +201,7 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
       const { failure, save } = dialog();
       await save();
 
-      expect(get(failure)).toEqual({ error, title: 'asset_form.add_error' });
+      expect(get(failure)).toEqual({ failure: error, title: 'asset_form.add_error' });
     });
 
     it('should report a plain failure with the editing wording', async () => {
@@ -190,7 +236,7 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
       const { failure, modelErrorMessages, save } = dialog();
       await save();
 
-      expect(get(failure)).toEqual({ error: 'weights must add up to 100', title: 'asset_form.underlying_tokens' });
+      expect(get(failure)).toEqual({ failure: 'weights must add up to 100', title: 'asset_form.underlying_tokens' });
       expect(get(modelErrorMessages)).toEqual({});
     });
 
@@ -202,7 +248,7 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
       const { failure, save } = dialog();
       await save();
 
-      expect(get(failure)?.error).toBe('too many,bad weight');
+      expect(get(failure)?.failure).toBe('too many,bad weight');
     });
 
     it('should report a whole-payload failure, which arrives camelCased as Schema', async () => {
@@ -211,7 +257,7 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
       const { failure, modelErrorMessages, save } = dialog();
       await save();
 
-      expect(get(failure)).toEqual({ error: 'the payload is wrong', title: 'asset_form.underlying_tokens' });
+      expect(get(failure)).toEqual({ failure: 'the payload is wrong', title: 'asset_form.underlying_tokens' });
       expect(get(modelErrorMessages)).toEqual({});
     });
 
@@ -223,7 +269,7 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
       const { failure, save } = dialog();
       await save();
 
-      expect(get(failure)?.error).toBe('weights must add up to 100');
+      expect(get(failure)?.failure).toBe('weights must add up to 100');
     });
 
     it('should report nothing when the payload failure is not a list', async () => {
@@ -243,7 +289,7 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
       const { failure, modelErrorMessages, save } = dialog();
       await save();
 
-      expect(get(failure)?.error).toBe('the payload is wrong');
+      expect(get(failure)?.failure).toBe('the payload is wrong');
       expect(get(modelErrorMessages)).toEqual({ name: ['is required'] });
     });
   });

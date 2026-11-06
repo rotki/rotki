@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import ExportReportCsv from '@/modules/reports/ExportReportCsv.vue';
-import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
+import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';
+import { useDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 
 defineProps<{
   reportId: number;
@@ -11,29 +13,20 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const toDeleteQuestion = useDeleteQuestion();
 
-const open = ref<boolean>(false);
-/** The menu asks in place, by the row, rather than in a dialog over the page. */
-const confirming = ref<boolean>(false);
-
-function confirmDelete(): void {
-  set(open, false);
-  emit('delete');
-}
-
-watch(open, (isOpen) => {
-  if (!isOpen)
-    set(confirming, false);
-});
+const deleteQuestion = computed<ConfirmQuestion>(() => toDeleteQuestion({
+  message: t('reports_table.delete_confirm.message'),
+  title: t('reports_table.delete_confirm.title'),
+}));
 </script>
 
 <template>
-  <RuiMenu
-    v-model="open"
+  <ConfirmMenu
     lazy
-    :role="confirming ? 'dialog' : undefined"
-    :class-names="{ menu: confirming ? 'w-72' : 'max-w-60' }"
+    menu-class="max-w-60"
     :options="{ placement: 'bottom-end' }"
+    close-on-content-click
   >
     <template #activator="{ attrs }">
       <RuiButton
@@ -50,40 +43,28 @@ watch(open, (isOpen) => {
         />
       </RuiButton>
     </template>
-    <div
-      v-if="!confirming"
-      class="flex flex-col"
-    >
-      <ExportReportCsv
-        :report-id="reportId"
-        list
-        @click="open = false"
-      />
-      <RuiButton
-        variant="list"
-        color="error"
-        data-testid="report-delete"
-        @click="confirming = true"
-      >
-        <template #prepend>
-          <RuiIcon
-            size="20"
-            name="lu-trash-2"
-          />
-        </template>
+    <template #default="{ ask }">
+      <div class="flex flex-col">
+        <ExportReportCsv
+          :report-id="reportId"
+          list
+        />
+        <RuiButton
+          variant="list"
+          color="error"
+          data-testid="report-delete"
+          @click="ask(deleteQuestion, () => emit('delete'))"
+        >
+          <template #prepend>
+            <RuiIcon
+              size="20"
+              name="lu-trash-2"
+            />
+          </template>
 
-        {{ t('reports_table.delete') }}
-      </RuiButton>
-    </div>
-    <InlineConfirm
-      v-else
-      layout="panel"
-      tone="error"
-      :title="t('reports_table.delete_confirm.title')"
-      :message="t('reports_table.delete_confirm.message')"
-      :confirm-label="t('common.actions.delete')"
-      @cancel="open = false"
-      @confirm="confirmDelete()"
-    />
-  </RuiMenu>
+          {{ t('reports_table.delete') }}
+        </RuiButton>
+      </div>
+    </template>
+  </ConfirmMenu>
 </template>

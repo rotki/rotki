@@ -1,4 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
@@ -25,7 +26,7 @@ vi.mock('vue-router', () => ({
 const autoFixGroupIds = ref<string[]>([]);
 const manualReviewGroupIds = ref<string[]>([]);
 const fixLoading = ref<boolean>(false);
-const fixDuplicates = vi.fn().mockResolvedValue({ success: true });
+const fixDuplicates = vi.fn<(ids?: string[]) => Promise<Result<void, unknown>>>();
 
 vi.mock('@/modules/history/events/use-customized-event-duplicates', () => ({
   useCustomizedEventDuplicates: (): Record<string, unknown> => ({
@@ -70,7 +71,7 @@ describe('useHistoryEventsFiltersChips', () => {
     set(fixLoading, false);
     set(groupIdentifiers, undefined);
     set(duplicateHandlingStatus, undefined);
-    fixDuplicates.mockResolvedValue({ success: true });
+    fixDuplicates.mockResolvedValue(ok(undefined));
     routerPush.mockResolvedValue(undefined);
     routerReplace.mockResolvedValue(undefined);
     useRouteMock.mockReturnValue(computed(() => ({ query: get(routeQuery) })));
@@ -324,8 +325,8 @@ describe('useHistoryEventsFiltersChips', () => {
     });
 
     it('should leave the filter alone and name the failure above the table when the fix fails', async () => {
-      fixDuplicates.mockResolvedValue({ message: 'nope', success: false });
-      const { actionFailure, clearActionFailure } = useHistoryEventsActionFailure();
+      fixDuplicates.mockResolvedValue(err('nope'));
+      const { failure: actionFailure, clear: clearActionFailure } = useHistoryEventsActionFailure();
       clearActionFailure();
       const { chips } = mountChips();
 

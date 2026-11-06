@@ -270,6 +270,13 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
   });
 
   describe('what the purge button asks', () => {
+    it('should ask in the error tone, with an accept button that names the purge', () => {
+      const { modelSource, purgeQuestion } = createPurgeData();
+      set(modelSource, Purgeable.TRANSACTIONS);
+
+      expect(get(purgeQuestion)).toMatchObject({ confirmLabel: 'purge_selector.tooltip', tone: 'error' });
+    });
+
     it('should warn about transactions in their own words, not the generic message', () => {
       const { modelSource, purgeQuestion } = createPurgeData();
       set(modelSource, Purgeable.TRANSACTIONS);

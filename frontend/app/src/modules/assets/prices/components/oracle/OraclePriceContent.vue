@@ -2,6 +2,7 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { Filters } from '@/modules/assets/prices/oracle-price-filter-keys';
 import type { OraclePriceEntry, OraclePricesQuery } from '@/modules/assets/prices/price-types';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import OraclePriceEditDialog from '@/modules/assets/prices/components/oracle/OraclePriceEditDialog.vue';
@@ -117,7 +118,7 @@ function startEdit(item: OraclePriceEntry): void {
   set(editingItem, { ...item });
 }
 
-const deleteConfirm = computed<{ title: string; message: string }>(() => ({
+const deleteConfirm = computed<RowDeleteQuestion>(() => ({
   message: t('oracle_prices.delete.dialog.message'),
   title: t('oracle_prices.delete.dialog.title'),
 }));

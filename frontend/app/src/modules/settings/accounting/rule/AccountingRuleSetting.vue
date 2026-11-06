@@ -101,9 +101,8 @@ onMounted(async () => {
       <FailureStrip
         v-if="deleteFailure"
         class="m-3"
-        :retryable="false"
         :title="deleteFailure.title"
-        :failure="deleteFailure.error"
+        :failure="deleteFailure.failure"
         data-testid="accounting-rule-delete-error"
       />
       <AccountingRuleTable

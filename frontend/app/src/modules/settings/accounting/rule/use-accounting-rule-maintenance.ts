@@ -1,5 +1,7 @@
 import type { Ref } from 'vue';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import {
   accountingRulesExportActivity,
@@ -24,11 +26,11 @@ interface UseAccountingRuleMaintenanceReturn {
   modelImportDialogOpen: Ref<boolean>;
   exportJSON: () => Promise<void>;
   /** What a row's delete button asks before deleting its rule. */
-  deleteConfirm: (item: AccountingRuleEntry) => { title: string; message: string };
+  deleteConfirm: (item: AccountingRuleEntry) => RowDeleteQuestion;
   /** Deletes a rule the user already confirmed. */
   deleteRule: (item: AccountingRuleEntry) => Promise<void>;
   /** Why the last delete failed, named above the table. */
-  deleteFailure: Readonly<Ref<{ title: string; error: unknown } | undefined>>;
+  deleteFailure: Readonly<Ref<NamedFailure | undefined>>;
   /** Resets every rule to the defaults, which the header menu has already confirmed. */
   resetRules: () => Promise<void>;
 }
@@ -52,11 +54,12 @@ export function useAccountingRuleMaintenance(
 
   const modelImportDialogOpen = shallowRef<boolean>(false);
 
-  const { deleteConfirm, deleteRow: deleteRule, failure: deleteFailure } = useTableRowDeletion<AccountingRuleEntry>({
-    confirm: () => ({
-      message: t('accounting_settings.rule.confirm_delete'),
-      title: t('accounting_settings.rule.delete'),
-    }),
+  const deleteConfirm = (): RowDeleteQuestion => ({
+    message: t('accounting_settings.rule.confirm_delete'),
+    title: t('accounting_settings.rule.delete'),
+  });
+
+  const { deleteRow: deleteRule, failure: deleteFailure } = useTableRowDeletion<AccountingRuleEntry>({
     deleteItem: async item => deleteAccountingRule(item.identifier),
     failureTitle: () => t('accounting_settings.rule.delete_error'),
     onDeleted: refetch,

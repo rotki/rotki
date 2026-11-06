@@ -3,6 +3,8 @@ import type { MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { Filters } from '@/modules/assets/admin/custom/custom-asset-filter-keys';
 import type { CustomAsset, CustomAssetRequestPayload } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { useCustomAssetFields } from '@/modules/assets/admin/custom/use-custom-asset-fields';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { fromRequest } from '@/modules/core/api/request-result';
@@ -35,9 +37,9 @@ interface UseCustomAssetsTableReturn {
   /** Deletes an asset the user already confirmed, then refreshes. */
   deleteAsset: (item: CustomAsset) => Promise<void>;
   /** What a row's delete button asks before deleting its asset. */
-  deleteConfirm: (item: CustomAsset) => { title: string; message: string };
+  deleteConfirm: (item: CustomAsset) => RowDeleteQuestion;
   /** Why the last delete failed, named above the table. */
-  deleteFailure: Readonly<Ref<{ title: string; error: unknown } | undefined>>;
+  deleteFailure: Readonly<Ref<NamedFailure | undefined>>;
   /** The table's sort state. */
   sort: WritableComputedRef<DataTableSortData<CustomAsset>>;
   /** The custom asset types, which the form offers as choices. */
@@ -93,11 +95,12 @@ export function useCustomAssetsTable(options: UseCustomAssetsTableOptions): UseC
     await Promise.all([refetch(), refreshTypes()]);
   }
 
-  const { deleteConfirm, deleteRow: deleteAsset, failure: deleteFailure } = useTableRowDeletion<CustomAsset>({
-    confirm: item => ({
-      message: t('asset_management.confirm_delete.message', { asset: item.name }),
-      title: t('asset_management.confirm_delete.title'),
-    }),
+  const deleteConfirm = (item: CustomAsset): RowDeleteQuestion => ({
+    message: t('asset_management.confirm_delete.message', { asset: item.name }),
+    title: t('asset_management.confirm_delete.title'),
+  });
+
+  const { deleteRow: deleteAsset, failure: deleteFailure } = useTableRowDeletion<CustomAsset>({
     deleteItem: async item => deleteCustomAsset(item.identifier),
     failureTitle: item => t('asset_management.delete_error', { address: item.identifier }),
     onDeleted: refresh,

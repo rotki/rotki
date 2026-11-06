@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RuiCardClassNames } from '@rotki/ui-library';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { useFormErrorFocus } from '@/modules/core/common/use-form-error-focus';
 import BigDialogConfirmButton from '@/modules/shell/components/dialogs/BigDialogConfirmButton.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
@@ -121,6 +122,11 @@ const { t } = useI18n({ useScope: 'global' });
 const { focusFirstError } = useFormErrorFocus(wrapper);
 
 const errorCount = computed<number>(() => errors?.count ?? 0);
+
+const discardQuestion = computed<ConfirmQuestion>(() => ({
+  confirmLabel: t('big_dialog.prompt_close.actions.discard'),
+  message: t('big_dialog.prompt_close.message'),
+}));
 
 const actionDisabled = computed<boolean>(() => action?.disabled ?? false);
 
@@ -286,7 +292,6 @@ function discard(): void {
             <FailureStrip
               v-if="failure !== undefined"
               class="mt-4"
-              :retryable="false"
               :title="failureTitle"
               :failure="failure"
               data-testid="big-dialog-failure"
@@ -313,8 +318,7 @@ function discard(): void {
         <InlineConfirm
           v-if="discarding"
           class="w-full"
-          :message="t('big_dialog.prompt_close.message')"
-          :confirm-label="t('big_dialog.prompt_close.actions.discard')"
+          :question="discardQuestion"
           :cancel-label="t('big_dialog.prompt_close.actions.keep_editing')"
           @cancel="discarding = false"
           @confirm="discard()"

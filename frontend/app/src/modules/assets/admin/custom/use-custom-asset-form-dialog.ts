@@ -1,14 +1,16 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { CustomAsset } from '@/modules/assets/types';
 import { omit } from 'es-toolkit';
+import { isErr, type Result } from 'plainfp/result';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+import { type NamedFailure, useFailureSlot } from '@/modules/shell/components/named-failure';
 
 interface CustomAssetFormHandle {
   /** Runs the form's own validation. */
   validate: () => boolean;
   /** Uploads the pending icon for the saved asset. */
-  saveIcon: (identifier: string) => void;
+  saveIcon: (identifier: string) => Promise<Result<void, unknown>>;
 }
 
 interface UseCustomAssetFormDialogOptions {
@@ -25,11 +27,9 @@ interface UseCustomAssetFormDialogOptions {
 interface UseCustomAssetFormDialogReturn {
   /** The dialog's title, which differs between adding and editing. */
   dialogTitle: ComputedRef<string>;
+  /** Why the last save failed where no field is to blame, named in the dialog; Save is the retry. */
+  failure: Readonly<Ref<NamedFailure | undefined>>;
   /** Whether a write is in flight. */
-  /** Why the last write failed where no field is to blame, named in the dialog; Save is the retry. */
-  failure: Readonly<Ref<unknown>>;
-  /** The title the failure is named under, which differs between adding and editing. */
-  failureTitle: ComputedRef<string>;
   loading: Readonly<Ref<boolean>>;
   /** Field errors, which the form binds. */
   modelErrorMessages: Ref<ValidationErrors>;
@@ -42,9 +42,14 @@ interface UseCustomAssetFormDialogReturn {
    */
   modelValue: Ref<CustomAsset | undefined>;
   /**
-   * Validates and writes the asset.
+   * Validates and writes the asset, then uploads its icon.
    *
-   * @returns whether it landed; `false` leaves the dialog open with the reason shown
+   * @remarks
+   * When the asset lands but its icon does not, the list is refreshed and the dialog stays open
+   * naming the upload's failure; the next save retries only the icon, since writing the asset again
+   * would add it a second time.
+   *
+   * @returns whether both landed; `false` leaves the dialog open with the reason shown
    */
   save: () => Promise<boolean>;
 }
@@ -74,8 +79,11 @@ export function useCustomAssetFormDialog(
   const modelErrorMessages = ref<ValidationErrors>({});
   const loading = shallowRef<boolean>(false);
 
-  const failure = shallowRef<unknown>();
+  const { clear: clearFailure, failure, report } = useFailureSlot();
   const { addCustomAsset, editCustomAsset } = useAssetManagementApi();
+
+  /** The asset a save already wrote while its icon upload failed, so a retry skips the write. */
+  const writtenIdentifier = shallowRef<string>();
 
   const dialogTitle = computed<string>(() =>
     toValue(editableItem)
@@ -83,19 +91,21 @@ export function useCustomAssetFormDialog(
       : t('asset_management.add_title'),
   );
 
-  const failureTitle = computed<string>(() =>
-    toValue(editableItem)
-      ? t('asset_management.edit_error')
-      : t('asset_management.add_error'),
-  );
-
   /** Errors on fields of the asset go to those fields; anything else is named above the form. */
   function reportFailure(error: unknown, data: CustomAsset): void {
     const errors = error instanceof ApiValidationError ? error.getValidationErrors(data) : undefined;
     if (errors === undefined || typeof errors === 'string')
-      set(failure, errors ?? error);
+      report(toValue(editableItem) ? t('asset_management.edit_error') : t('asset_management.add_error'), errors ?? error);
     else
       set(modelErrorMessages, errors);
+  }
+
+  /** Writes the asset and resolves its identifier, or nothing when the backend did not take it. */
+  async function writeAsset(data: CustomAsset): Promise<string | undefined> {
+    if (toValue(editableItem))
+      return (await editCustomAsset(data)) ? data.identifier : undefined;
+
+    return (await addCustomAsset(omit(data, ['identifier']))) || undefined;
   }
 
   async function save(): Promise<boolean> {
@@ -107,40 +117,41 @@ export function useCustomAssetFormDialog(
       return false;
 
     const data = get(modelValue);
-    const editMode = !!toValue(editableItem);
-    let identifier = data.identifier;
-    let success: boolean;
-
     set(loading, true);
-    set(failure, undefined);
+    clearFailure();
     set(modelErrorMessages, {});
     try {
-      if (editMode) {
-        success = await editCustomAsset(data);
-      }
-      else {
-        identifier = await addCustomAsset(omit(data, ['identifier']));
-        success = !!identifier;
+      let identifier = get(writtenIdentifier);
+      if (!identifier) {
+        identifier = await writeAsset(data);
+        if (!identifier)
+          return false;
+
+        onSaved(identifier);
       }
 
-      if (identifier)
-        formRef.saveIcon(identifier);
+      const uploaded = await formRef.saveIcon(identifier);
+      if (isErr(uploaded)) {
+        set(writtenIdentifier, identifier);
+        report(t('asset_form.icon_upload.failed'), uploaded.error);
+        return false;
+      }
+
+      set(open, false);
+      return true;
     }
     catch (error: unknown) {
-      success = false;
       reportFailure(error, data);
+      return false;
     }
-    set(loading, false);
-
-    if (success) {
-      set(modelValue, undefined);
-      onSaved(identifier);
+    finally {
+      set(loading, false);
     }
-    return success;
   }
 
   function mirrorEditableItem([isOpen, item]: [boolean, CustomAsset | null | undefined]): void {
-    set(failure, undefined);
+    clearFailure();
+    set(writtenIdentifier, undefined);
     if (!isOpen) {
       set(modelValue, undefined);
       return;
@@ -153,8 +164,7 @@ export function useCustomAssetFormDialog(
 
   return {
     dialogTitle,
-    failure: readonly(failure),
-    failureTitle,
+    failure,
     loading: readonly(loading),
     modelErrorMessages,
     modelValue,

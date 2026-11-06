@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
 import type { ContextColorsType } from '@rotki/ui-library';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import ActionCenterRowAction from '@/modules/core/action-center/ActionCenterRowAction.vue';
 import { type ActionItem, type ActionItemOption, ActionUrgency, URGENCY_COLORS } from '@/modules/core/action-center/types';
 import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
@@ -58,6 +59,18 @@ const wentDown = computed<boolean>(() => previousCount !== undefined && previous
  * than one, or until it went down, where "down from 5" needs the 1 beside it.
  */
 const showCount = computed<boolean>(() => item.count > 1 || get(wentDown));
+
+/** The open option's question, accepted under the option's own label and red for a danger option. */
+const question = computed<ConfirmQuestion | undefined>(() => {
+  const option = get(asking);
+  if (!option?.confirm)
+    return undefined;
+  return {
+    ...option.confirm,
+    confirmLabel: option.label,
+    tone: option.danger ? 'error' : undefined,
+  };
+});
 
 /** Hands the option's target up, or first asks in the row when the option says it must. */
 function choose(option: ActionItemOption<TTarget>): void {
@@ -136,12 +149,9 @@ function accept(): void {
         {{ item.locked ? lockedHint : item.description }}
       </p>
       <InlineConfirm
-        v-if="!item.locked && asking?.confirm"
+        v-if="!item.locked && question"
         class="mt-1"
-        :tone="asking.danger ? 'error' : 'warning'"
-        :title="asking.confirm.title"
-        :message="asking.confirm.message"
-        :confirm-label="asking.label"
+        :question="question"
         data-testid="actions-center-row-confirm"
         @cancel="asking = undefined"
         @confirm="accept()"

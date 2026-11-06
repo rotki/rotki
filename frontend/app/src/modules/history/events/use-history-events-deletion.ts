@@ -3,9 +3,10 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
 import { get, objectOmit, set } from '@vueuse/shared';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { all, err, flatMap, ok, type Result } from 'plainfp/result';
+import { fromAsync, fromPromise, tap } from 'plainfp/result-async';
+import { useConfirm } from '@/modules/core/common/use-confirm';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
@@ -28,8 +29,8 @@ export function useHistoryEventsDeletion(
   requestPayload?: ComputedRef<HistoryEventRequestPayload>,
 ): UseHistoryEventsDeletionReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { ask } = useConfirmStore();
-  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+  const { ask } = useConfirm();
+  const { clear: clearActionFailure, run: runAction } = useHistoryEventsActionFailure();
   const { deleteHistoryEvent: deleteHistoryEventApi, deleteTransactions } = useHistoryEventsApi();
   const { deleteHistoryEvent } = useHistoryEvents();
   const { getChain } = useSupportedChains();
@@ -44,76 +45,74 @@ export function useHistoryEventsDeletion(
 
   async function deleteCompleteTransactions(
     transactions: Map<string, TransactionGroup>,
-  ): Promise<{ message?: string; success: boolean }> {
-    try {
+  ): Promise<Result<void, unknown>> {
+    return fromAsync(async () => {
       for (const [txRef, { chain }] of transactions)
         await deleteTransactions(getChain(chain), txRef);
-
-      return { success: true };
-    }
-    catch (error: unknown) {
-      return {
-        message: getErrorMessage(error),
-        success: false,
-      };
-    }
+    }, (error: unknown) => error);
   }
 
-  async function deletePartialEvents(
-    eventIds: number[],
-  ): Promise<{ message?: string; success: boolean }> {
+  async function deletePartialEvents(eventIds: number[]): Promise<Result<void, unknown>> {
     if (eventIds.length === 0)
-      return { success: true };
+      return ok(undefined);
 
     return deleteHistoryEvent(eventIds, false);
   }
 
+  /** Excludes each selected event of the transactions from accounting, stopping at the first failure. */
   async function ignoreTransactionEvents(
     transactions: Map<string, TransactionGroup>,
-  ): Promise<{ message?: string; success: boolean }> {
-    try {
-      for (const [, { events: eventIds, groupIdentifier }] of transactions) {
-        const txEvents = groupIdentifier ? toValue(groupedEventsByTxRef)[groupIdentifier] || [] : [];
+  ): Promise<Result<void, unknown>> {
+    for (const [, { events: eventIds, groupIdentifier }] of transactions) {
+      const txEvents = groupIdentifier ? toValue(groupedEventsByTxRef)[groupIdentifier] || [] : [];
 
-        const allEvents = txEvents.flat().filter((e: any) => !Array.isArray(e));
+      const allEvents: HistoryEventEntry[] = txEvents.flat();
 
-        for (const eventId of eventIds) {
-          const event = allEvents.find((e: HistoryEventEntry) => e.identifier === eventId);
-          if (!event)
-            continue;
-          const status = await ignoreSingle(event, true);
-          if (!status.success)
-            return status;
-        }
+      for (const eventId of eventIds) {
+        const event = allEvents.find(e => e.identifier === eventId);
+        if (!event)
+          continue;
+        const outcome = await ignoreSingle(event, true);
+        if (!outcome.ok)
+          return outcome;
       }
-      return { success: true };
     }
-    catch (error: unknown) {
-      return {
-        message: getErrorMessage(error),
-        success: false,
-      };
-    }
+    return ok(undefined);
   }
 
   /**
-   * Settles a delete or an exclusion: the rows changing says it worked, so only a failure is named,
-   * above the table.
+   * Runs both steps in turn, the second even when the first failed, so one failing half does not
+   * leave the other undone.
+   *
+   * @returns the first step's failure, else the second's
    */
-  function showDeletionResult(
-    success: boolean,
-    type: 'delete' | 'ignore',
-    message?: string,
-  ): void {
-    if (success) {
-      taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
-      return;
-    }
+  async function attemptBoth(
+    first: () => Promise<Result<void, unknown>>,
+    second: () => Promise<Result<void, unknown>>,
+  ): Promise<Result<void[], unknown>> {
+    const firstOutcome = await first();
+    return all([firstOutcome, await second()]);
+  }
 
-    if (type === 'delete')
-      reportActionFailure(t('transactions.events.delete.error.title'), message ?? t('transactions.events.delete.error.message'));
-    else
-      reportActionFailure(t('transactions.events.ignore.error.title'), message ?? t('transactions.events.ignore.error.message'));
+  /**
+   * Settles a delete or an exclusion that worked: the rows changing says so, so selection mode ends
+   * and the table is read again.
+   */
+  async function afterDeletion(): Promise<void> {
+    taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
+    selectionMode.actions.exit();
+    await refreshCallback();
+  }
+
+  /**
+   * Deletes every event the filter matches.
+   *
+   * @remarks
+   * A backend answering `false` refused without saying why, so the refusal is worded here.
+   */
+  async function deleteMatching(filter: Parameters<typeof deleteHistoryEventApi>[0]): Promise<Result<void, unknown>> {
+    const answer = await fromPromise(deleteHistoryEventApi(filter, true), (error: unknown) => error);
+    return flatMap(answer, deleted => (deleted ? ok(undefined) : err(t('transactions.events.delete.error.message'))));
   }
 
   async function deleteByFilter(totalCount: number): Promise<void> {
@@ -133,28 +132,17 @@ export function useHistoryEventsDeletion(
     if (await ask(confirmation) !== 'confirm')
       return;
 
-    try {
-      // Remove pagination and sorting params for filter-based deletion
-      const filterParams = objectOmit(filterPayload, [
-        'aggregateByGroupIds',
-        'ascending',
-        'ignoreCache',
-        'limit',
-        'offset',
-        'onlyCache',
-        'orderByAttributes',
-      ]);
-      const result = await deleteHistoryEventApi(filterParams, true);
-      showDeletionResult(result, 'delete');
-
-      if (result) {
-        selectionMode.actions.exit();
-        await refreshCallback();
-      }
-    }
-    catch (error: unknown) {
-      showDeletionResult(false, 'delete', getErrorMessage(error));
-    }
+    // Remove pagination and sorting params for filter-based deletion
+    const filterParams = objectOmit(filterPayload, [
+      'aggregateByGroupIds',
+      'ascending',
+      'ignoreCache',
+      'limit',
+      'offset',
+      'onlyCache',
+      'orderByAttributes',
+    ]);
+    await runAction(t('transactions.events.delete.error.title'), async () => tap(deleteMatching(filterParams), afterDeletion));
   }
 
   async function deleteSelected(): Promise<void> {
@@ -220,17 +208,10 @@ export function useHistoryEventsDeletion(
     if (choice !== 'confirm')
       return;
 
-    const txResult = await deleteCompleteTransactions(transactions);
-    const eventsResult = await deletePartialEvents(remainingEventIds);
-
-    const success = txResult.success && eventsResult.success;
-    const message = txResult.message ?? eventsResult.message;
-    showDeletionResult(success, 'delete', message);
-
-    if (success) {
-      selectionMode.actions.exit();
-      await refreshCallback();
-    }
+    await runAction(t('transactions.events.delete.error.title'), async () => tap(attemptBoth(
+      async () => deleteCompleteTransactions(transactions),
+      async () => deletePartialEvents(remainingEventIds),
+    ), afterDeletion));
   }
 
   async function handlePartialEventDeletion(
@@ -252,13 +233,7 @@ export function useHistoryEventsDeletion(
     if (await ask(confirmation) !== 'confirm')
       return;
 
-    const result = await deletePartialEvents(eventIds);
-    showDeletionResult(result.success, 'delete', result.message);
-
-    if (result.success) {
-      selectionMode.actions.exit();
-      await refreshCallback();
-    }
+    await runAction(t('transactions.events.delete.error.title'), async () => tap(deletePartialEvents(eventIds), afterDeletion));
   }
 
   async function handleIgnoreOption(
@@ -275,17 +250,10 @@ export function useHistoryEventsDeletion(
     if (await ask(ignoreConfirmation) !== 'confirm')
       return;
 
-    const ignoreResult = await ignoreTransactionEvents(transactions);
-    const deleteResult = await deletePartialEvents(remainingEventIds);
-
-    const success = ignoreResult.success && deleteResult.success;
-    const message = ignoreResult.message ?? deleteResult.message;
-    showDeletionResult(success, 'ignore', message);
-
-    if (success) {
-      selectionMode.actions.exit();
-      await refreshCallback();
-    }
+    await runAction(t('transactions.events.ignore.error.title'), async () => tap(attemptBoth(
+      async () => ignoreTransactionEvents(transactions),
+      async () => deletePartialEvents(remainingEventIds),
+    ), afterDeletion));
   }
 
   /**
@@ -316,21 +284,10 @@ export function useHistoryEventsDeletion(
     if (await ask(confirmation) !== 'confirm')
       return;
 
-    let txResult: { message?: string; success: boolean } = { success: true };
-    if (transactions.size > 0) {
-      txResult = await deleteCompleteTransactions(transactions);
-    }
-
-    const eventsResult = await deletePartialEvents(allEventIds);
-
-    const success = txResult.success && eventsResult.success;
-    const message = txResult.message ?? eventsResult.message;
-    showDeletionResult(success, 'delete', message);
-
-    if (success) {
-      selectionMode.actions.exit();
-      await refreshCallback();
-    }
+    await runAction(t('transactions.events.delete.error.title'), async () => tap(attemptBoth(
+      async () => deleteCompleteTransactions(transactions),
+      async () => deletePartialEvents(allEventIds),
+    ), afterDeletion));
   }
 
   return {

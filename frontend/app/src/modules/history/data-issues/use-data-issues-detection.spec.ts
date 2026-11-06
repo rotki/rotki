@@ -1,6 +1,6 @@
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TaskFailed } from '@/modules/core/tasks/task-result';
+import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useDataIssuesDetection } from '@/modules/history/data-issues/use-data-issues-detection';
 
 const runTaskMock = vi.fn();
@@ -48,10 +48,31 @@ describe('useDataIssuesDetection', () => {
 
     await detect();
 
-    expect(detectFailure.value).toBeInstanceOf(Error);
-    expect(detectFailure.value).toHaveProperty('message', 'still processing');
+    expect(get(detectFailure)).toEqual({ failure: 'still processing', title: 'data_issues.detect.error' });
     expect(reload).not.toHaveBeenCalled();
-    expect(detecting.value).toBe(false);
+    expect(get(detecting)).toBe(false);
+  });
+
+  it('should name nothing and still reload when the detection was cancelled', async () => {
+    runTaskMock.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
+    const { detect, detectFailure } = useDataIssuesDetection(reload);
+
+    await detect();
+
+    expect(get(detectFailure)).toBeUndefined();
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('should name a reload that throws under the same title', async () => {
+    runTaskMock.mockResolvedValue(ok(true));
+    const error = new Error('reload failed');
+    reload.mockRejectedValue(error);
+    const { detect, detectFailure, detecting } = useDataIssuesDetection(reload);
+
+    await detect();
+
+    expect(get(detectFailure)).toEqual({ failure: error, title: 'data_issues.detect.error' });
+    expect(get(detecting)).toBe(false);
   });
 
   it('should drop the failure when the next detection starts', async () => {

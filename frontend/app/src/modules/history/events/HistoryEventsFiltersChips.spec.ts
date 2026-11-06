@@ -1,5 +1,5 @@
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
 import type { UseHistoryEventsFiltersChipsOptions } from '@/modules/history/events/use-history-events-filters-chips';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
@@ -10,7 +10,7 @@ const chips = {
   duplicateChangesMessage: ref<string>(''),
   duplicateChipText: ref<string>('Viewing auto fixable duplicates'),
   fixLoading: ref<boolean>(false),
-  fixQuestion: ref<HistoryEventQuestion>({ message: 'Fix 2 duplicates?', title: 'Fix duplicates' }),
+  fixQuestion: ref<ConfirmQuestion>({ confirmLabel: 'Fix', message: 'Fix 2 duplicates?', title: 'Fix duplicates' }),
   fixShownDuplicates: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
   hasDuplicateChanges: ref<boolean>(false),
   isAutoFixable: ref<boolean>(true),
