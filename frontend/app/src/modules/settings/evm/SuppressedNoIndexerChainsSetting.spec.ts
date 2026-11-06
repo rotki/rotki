@@ -44,7 +44,6 @@ vi.mock('@/modules/settings/use-settings-operations', async () => {
     useSettingsOperations: vi.fn().mockReturnValue({
       applyFrontendSettingLocal: vi.fn(),
       enableModule: vi.fn(),
-      setKrakenAccountType: vi.fn(),
       update: vi.fn(),
       updateFrontendSetting: vi.fn().mockResolvedValue({ success: true }),
     }),

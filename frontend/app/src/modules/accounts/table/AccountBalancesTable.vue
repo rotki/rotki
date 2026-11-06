@@ -82,7 +82,7 @@ const {
 
 const { accountOperation, isInitialLoading, isRowLoading, isSectionLoading } = useAccountLoadingStates<T>(() => category);
 
-const { confirmDelete, deleteAccount, edit } = useAccountOperations<T>({
+const { deleteAccount, edit } = useAccountOperations<T>({
   onEdit: account => emit('edit', account),
   onRefresh: () => emit('refresh'),
 });
@@ -97,10 +97,6 @@ initializeTableSorting(sort, cols);
 function headerCategory(group: Partial<AccountDataRow<T>>): string {
   return 'category' in group && typeof group.category === 'string' ? group.category : '';
 }
-
-defineExpose({
-  confirmDelete,
-});
 </script>
 
 <template>

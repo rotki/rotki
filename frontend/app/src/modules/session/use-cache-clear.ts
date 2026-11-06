@@ -31,7 +31,6 @@ export function useCacheClear<T>(
   },
 ): UseCacheClearReturn<T> {
   const status = shallowRef<BaseMessage | null>(null);
-  const confirm = shallowRef<boolean>(false);
   const pending = shallowRef<boolean>(false);
 
   const text = (source: T): string => get(clearable).find(({ id }) => id === source)?.text ?? '';
@@ -49,7 +48,6 @@ export function useCacheClear<T>(
   }, 5000, { immediate: false });
 
   const clear = async (source: T): Promise<void> => {
-    set(confirm, false);
     try {
       set(pending, true);
       if (await clearHandle(source) === false)
@@ -74,7 +72,6 @@ export function useCacheClear<T>(
   const { show } = useConfirmStore();
   const showConfirmation = (source: T): void => {
     show(confirmText(text(source), source), async () => clear(source));
-    set(confirm, true);
   };
 
   return {

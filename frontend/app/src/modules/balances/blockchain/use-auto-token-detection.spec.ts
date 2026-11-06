@@ -8,7 +8,6 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): Record<string, ReturnType<typeof vi.fn>> => ({
     applyFrontendSettingLocal: vi.fn(),
     enableModule: vi.fn(),
-    setKrakenAccountType: vi.fn(),
     update: vi.fn(),
     updateFrontendSetting,
   }),

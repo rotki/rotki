@@ -1,4 +1,3 @@
-import type { KrakenAccountType } from '@/modules/balances/types/exchanges';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { Module } from '@/modules/core/common/modules';
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
@@ -7,7 +6,7 @@ import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-addr
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
@@ -34,17 +33,14 @@ function extractSettingsFieldError(errors: Record<string, string | string[]>, ke
 interface UseSettingsOperationsReturn {
   applyFrontendSettingLocal: (payload: FrontendSettingsPayload) => void;
   enableModule: (payload: { readonly enable: Module[]; readonly addresses: string[] }) => Promise<void>;
-  setKrakenAccountType: (krakenAccountType: KrakenAccountType) => Promise<void>;
   update: (update: SettingsUpdate) => Promise<ActionStatus>;
   updateFrontendSetting: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
 }
 
 export function useSettingsOperations(): UseSettingsOperationsReturn {
-  const { showErrorMessage, showSuccessMessage } = useNotifications();
   const { addQueriedAddress } = useQueriedAddressOperations();
   const repo = useSettingsRepo();
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
-  const { t } = useI18n({ useScope: 'global' });
 
   const api = useSettingsApi();
   const { updateFrontendSetting } = useFrontendSettingsWriter();
@@ -62,19 +58,6 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
 
     return getErrorMessage(error);
   }
-
-  const setKrakenAccountType = async (krakenAccountType: KrakenAccountType): Promise<void> => {
-    try {
-      const { general } = await api.setSettings({
-        krakenAccountType,
-      });
-      repo.updateGeneral(general);
-      showSuccessMessage(t('actions.session.kraken_account.success.title'), t('actions.session.kraken_account.success.message'));
-    }
-    catch (error: unknown) {
-      showErrorMessage(t('actions.session.kraken_account.error.title'), getErrorMessage(error));
-    }
-  };
 
   const update = async (payload: SettingsUpdate): Promise<ActionStatus> => {
     let success = false;
@@ -121,7 +104,6 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
   return {
     applyFrontendSettingLocal,
     enableModule,
-    setKrakenAccountType,
     update,
     updateFrontendSetting,
   };

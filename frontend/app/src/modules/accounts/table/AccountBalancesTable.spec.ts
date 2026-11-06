@@ -20,7 +20,6 @@ vi.mock('@/modules/accounts/table/use-account-loading-states', async () => {
 
 vi.mock('@/modules/accounts/table/use-account-operations', () => ({
   useAccountOperations: (): object => ({
-    confirmDelete: vi.fn<() => void>(),
     deleteAccount: vi.fn<() => Promise<void>>(),
     edit: vi.fn<() => Promise<void>>(),
   }),

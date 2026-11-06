@@ -853,15 +853,6 @@
           "title": "Yok sayılan varlıklar yüklenemedi"
         }
       },
-      "kraken_account": {
-        "error": {
-          "title": "Kraken hesap türü ayarlanırken hata oluştu"
-        },
-        "success": {
-          "message": "Kraken hesap türü başarıyla ayarlandı",
-          "title": "Başarılı"
-        }
-      },
       "password_change": {
         "error": "Kullanıcı parolası değiştirilirken hata oluştu: {message}",
         "success": "Kullanıcı parolası başarıyla değiştirildi"

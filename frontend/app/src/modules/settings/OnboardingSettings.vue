@@ -41,7 +41,6 @@ const { backendSettings } = useSettingsApi();
 const { applyLogLevelChange } = useLogLevelUpdate();
 
 const selecting = ref<boolean>(false);
-const confirmReset = ref<boolean>(false);
 const configuration = ref<BackendConfiguration>();
 
 async function loadConfiguration(): Promise<void> {
@@ -142,7 +141,6 @@ const anyValueChanged = computed<boolean>(() => hasBackendOptionChanges(get(form
 const { openDirectory } = useInterop();
 
 async function reset() {
-  set(confirmReset, false);
   dismiss();
   await resetOptions();
 }

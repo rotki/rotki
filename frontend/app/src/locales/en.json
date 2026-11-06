@@ -941,15 +941,6 @@
           "title": "Couldn't load ignored assets"
         }
       },
-      "kraken_account": {
-        "error": {
-          "title": "Error setting kraken account type"
-        },
-        "success": {
-          "message": "Successfully set kraken account type",
-          "title": "Success"
-        }
-      },
       "password_change": {
         "error": "Error while changing the user password: {message}",
         "success": "Successfully changed user password"
