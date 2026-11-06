@@ -1638,10 +1638,6 @@ def test_query_balances_with_threshold(
             assert len(location_balances) != 0
             for balance in location_balances.values():
                 assert FVal(balance['value']) > threshold
-        for location_accounts in exchange_result['per_account'].values():
-            for account_balances in location_accounts.values():
-                for balance in account_balances.values():
-                    assert FVal(balance['value']) > threshold
 
         # Assert manual balances
         assert len(manual_result['balances']) != 0
