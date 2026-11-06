@@ -1,7 +1,7 @@
 import logging
 from abc import ABC
 from collections import defaultdict
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from enum import IntEnum
 from functools import wraps
@@ -290,7 +290,7 @@ class EvmTransactions(ABC):  # noqa: B024
         return timestamps, newly_inserted
 
     @contextmanager
-    def wait_until_no_query_for(self, addresses: list[ChecksumEvmAddress]) -> Iterator[None]:
+    def wait_until_no_query_for(self, addresses: list[ChecksumEvmAddress]) -> Generator[None]:
         """Will acquire all locks relevant to an address and yield to the caller
 
         The locks are released even if the caller's body raises, since leaking an

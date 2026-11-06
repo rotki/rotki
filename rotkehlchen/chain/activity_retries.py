@@ -18,7 +18,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterator
+    from collections.abc import Collection, Generator
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
@@ -88,7 +88,7 @@ class ActivityRetryTracker:
             self._pending, self._submissions, self._due_ts = {}, {}, Timestamp(0)
 
     @contextmanager
-    def _locked(self, write_cursor: DBCursor | None = None) -> Iterator[DBCursor]:
+    def _locked(self, write_cursor: DBCursor | None = None) -> Generator[DBCursor]:
         """Hold the write transaction and then the lock, always in this order, so that callers
         already inside a write transaction can't deadlock with the ones that open their own."""
         if write_cursor is not None:
@@ -235,7 +235,7 @@ class ActivityRetryTracker:
     def rechecking(
             self,
             checks: Collection[ActivityCheck] | None = None,
-    ) -> Iterator[dict[ActivityCheck, bool]]:
+    ) -> Generator[dict[ActivityCheck, bool]]:
         """Keep checks durable until the operation finishes. On interruption they remain
         pending; on completion only newly recorded failures remain. Removal invalidates
         in-flight checks so neither a late success nor a late failure can add them back."""

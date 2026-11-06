@@ -15,7 +15,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+
+    from collections.abc import Generator
 
     from rotkehlchen.types import ChecksumEvmAddress
 
@@ -32,7 +33,7 @@ _token_query_failures: ContextVar[TokenQueryFailures | None] = ContextVar(
 
 
 @contextmanager
-def track_token_query_failures() -> Iterator[TokenQueryFailures]:
+def track_token_query_failures() -> Generator[TokenQueryFailures]:
     """Record the token queries that fail to reach the nodes while in the context"""
     reset_token = _token_query_failures.set(failures := TokenQueryFailures())
     try:

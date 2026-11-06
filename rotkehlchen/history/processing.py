@@ -3,7 +3,7 @@ from threading import Semaphore
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Generator
 
 
 class HistoryProcessingCoordinator:
@@ -12,7 +12,7 @@ class HistoryProcessingCoordinator:
         self._active_history_fetches = 0
 
     @contextmanager
-    def history_fetch(self) -> Iterator[None]:
+    def history_fetch(self) -> Generator[None]:
         with self._lock:
             self._active_history_fetches += 1
         try:

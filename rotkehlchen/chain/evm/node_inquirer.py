@@ -2,7 +2,7 @@ import itertools
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Generator, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from itertools import zip_longest
@@ -1835,7 +1835,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             self,
             period: TimestampOrBlockRange,
             query_end: QueryEnd | None = None,
-    ) -> Iterator[TimestampOrBlockRange]:
+    ) -> Generator[TimestampOrBlockRange]:
         """Convert period to blocks, and inside the body skip indexers that could not.
 
         An indexer that cannot resolve a block for a timestamp in the range has told us its

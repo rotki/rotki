@@ -49,7 +49,7 @@ from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Generator, Iterator
 
     from vcr import VCR
 
@@ -99,7 +99,7 @@ def _make_vcr_thread_safe() -> None:
     original_force_reset = vcr.patch.force_reset
 
     @contextmanager
-    def locked_force_reset() -> Iterator[None]:
+    def locked_force_reset() -> Generator[None]:
         with vcr_reset_lock, original_force_reset():
             yield
 

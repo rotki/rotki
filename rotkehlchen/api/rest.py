@@ -267,7 +267,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Mapping, Sequence
+    from collections.abc import Callable, Generator, Mapping, Sequence
     from types import EllipsisType
 
     from rotkehlchen.assets.asset import CryptoAsset
@@ -562,7 +562,7 @@ class RestAPI:
         self.rotkehlchen.rotki_notifier.disconnect_deauthorized(is_authorized)
 
     @contextmanager
-    def session_usage(self) -> Iterator[bool]:
+    def session_usage(self) -> Generator[bool]:
         """Register the calling request as using the logged-in session for its
         duration, so that a concurrent logout waits for it before tearing the DB
         down. Yields False when there is no usable session -- either no user is

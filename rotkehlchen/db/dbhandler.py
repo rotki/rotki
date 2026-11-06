@@ -215,7 +215,7 @@ from rotkehlchen.utils.misc import get_chunks, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Collection, Generator, Iterable, Mapping, Sequence
 
     from rotkehlchen.chain.substrate.types import SubstrateAddress
     from rotkehlchen.db.filtering import UserNotesFilterQuery
@@ -789,7 +789,7 @@ class DBHandler:
         (self.user_data_dir / 'rotkehlchen_temp_backup.db').unlink()
 
     @contextmanager
-    def user_write(self) -> Iterator[DBCursor]:
+    def user_write(self) -> Generator[DBCursor]:
         """Get a write context for the user db and after write is finished
         also update the last write timestamp
         """
@@ -798,7 +798,7 @@ class DBHandler:
             yield cursor
 
     @contextmanager
-    def transient_write(self) -> Iterator[DBCursor]:
+    def transient_write(self) -> Generator[DBCursor]:
         """Get a write context for the transient user db and after write is finished
         also commit
         """
