@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { UNMATCHED_ACTIONS, UNMATCHED_LAYOUTS, type UnmatchedAction, type UnmatchedLayout, type UnmatchedRowActionSpec, type UnmatchedRowConfirm } from '@/modules/history/events/unmatched-actions';
-import UnmatchedConfirmStrip from '@/modules/history/events/UnmatchedConfirmStrip.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 
 const { spec, layout, ignoreLoading = false } = defineProps<{
   spec: UnmatchedRowActionSpec;
@@ -80,9 +80,10 @@ function accept(): void {
 </script>
 
 <template>
-  <UnmatchedConfirmStrip
+  <InlineConfirm
     v-if="pendingConfirm"
-    :confirm="pendingConfirm"
+    :message="pendingConfirm.message"
+    :confirm-label="pendingConfirm.confirmLabel"
     :loading="ignoreLoading"
     @cancel="pending = undefined"
     @confirm="accept()"

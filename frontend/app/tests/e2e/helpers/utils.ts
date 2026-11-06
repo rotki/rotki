@@ -141,12 +141,12 @@ export async function confirmDialog(page: Page, expectedTitle?: string): Promise
 }
 
 /**
- * Cancels a form dialog holding edits, accepting the prompt to discard them, and waits for it to
+ * Cancels a form dialog holding edits, accepting the question its footer asks, and waits for it to
  * close. A form without edits closes on Cancel straight away and never shows the prompt.
  */
 export async function discardChanges(page: Page, dialog: Locator, timeout: number = TIMEOUT_MEDIUM): Promise<void> {
   await dialog.locator('[data-testid=cancel]').click();
-  await confirmDialog(page, 'You have unsaved changes');
+  await dialog.locator('[data-testid=inline-confirm-accept]').click();
   await dialog.waitFor({ state: 'detached', timeout });
 }
 

@@ -2113,10 +2113,10 @@
   "big_dialog": {
     "prompt_close": {
       "actions": {
-        "discard": "Discard"
+        "discard": "Discard",
+        "keep_editing": "Keep editing"
       },
-      "message": "Are you sure you want to discard the changes?",
-      "title": "You have unsaved changes"
+      "message": "You have unsaved changes. Discard them?"
     }
   },
   "binance_market_selector": {

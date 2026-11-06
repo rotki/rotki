@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const { disabled = false, editDisabled = false, editTooltip = '', noEdit = false, deleteDisabled = false, deleteTooltip = '', noDelete = false, align = 'start' } = defineProps<{
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
+
+const { disabled = false, editDisabled = false, editTooltip = '', noEdit = false, deleteDisabled = false, deleteTooltip = '', noDelete = false, align = 'start', deleteConfirm } = defineProps<{
   disabled?: boolean;
   editDisabled?: boolean;
   editTooltip?: string;
@@ -8,6 +10,11 @@ const { disabled = false, editDisabled = false, editTooltip = '', noEdit = false
   deleteTooltip?: string;
   noDelete?: boolean;
   align?: 'start' | 'center' | 'end';
+  /**
+   * When set, the delete button asks in a popover beside it, and `delete-click` means confirmed.
+   * `confirmLabel` defaults to "Delete".
+   */
+  deleteConfirm?: { message: string; title?: string; confirmLabel?: string };
 }>();
 
 const emit = defineEmits<{
@@ -18,6 +25,8 @@ const emit = defineEmits<{
 defineSlots<{
   default: () => any;
 }>();
+
+const { t } = useI18n({ useScope: 'global' });
 
 const editClick = (): void => emit('edit-click');
 const deleteClick = (): void => emit('delete-click');
@@ -51,20 +60,45 @@ const justify = computed<string>(() => {
         name="lu-pencil"
       />
     </RuiButton>
-    <RuiButton
-      v-if="!noDelete"
-      :disabled="disabled || deleteDisabled"
-      :title="deleteTooltip || undefined"
-      variant="text"
-      data-testid="row-delete"
-      icon
-      @click="deleteClick()"
-    >
-      <RuiIcon
-        size="16"
-        name="lu-trash-2"
-      />
-    </RuiButton>
+    <template v-if="!noDelete">
+      <ConfirmPopover
+        v-if="deleteConfirm"
+        :title="deleteConfirm.title"
+        :message="deleteConfirm.message"
+        :confirm-label="deleteConfirm.confirmLabel ?? t('common.actions.delete')"
+        @confirm="deleteClick()"
+      >
+        <template #activator="{ attrs }">
+          <RuiButton
+            :disabled="disabled || deleteDisabled"
+            :title="deleteTooltip || undefined"
+            variant="text"
+            data-testid="row-delete"
+            icon
+            v-bind="attrs"
+          >
+            <RuiIcon
+              size="16"
+              name="lu-trash-2"
+            />
+          </RuiButton>
+        </template>
+      </ConfirmPopover>
+      <RuiButton
+        v-else
+        :disabled="disabled || deleteDisabled"
+        :title="deleteTooltip || undefined"
+        variant="text"
+        data-testid="row-delete"
+        icon
+        @click="deleteClick()"
+      >
+        <RuiIcon
+          size="16"
+          name="lu-trash-2"
+        />
+      </RuiButton>
+    </template>
     <slot />
   </div>
 </template>

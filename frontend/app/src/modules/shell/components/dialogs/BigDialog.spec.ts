@@ -2,6 +2,7 @@ import { resetOverlayStack, useOverlayStack } from '@rotki/ui-library';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import BigDialog from './BigDialog.vue';
 
@@ -294,34 +295,64 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
       await wrapper.find('[data-testid="cancel"]').trigger('click');
 
       expect(wrapper.emitted('cancel')).toHaveLength(1);
-      expect(get(useConfirmStore().visible)).toBe(false);
+      expect(wrapper.find('[data-testid="inline-confirm"]').exists()).toBe(false);
     });
 
-    it('should raise the discard prompt rather than cancel when the caller asked to be prompted', async () => {
+    it('should ask in its own footer rather than cancel when the caller asked to be prompted', async () => {
       wrapper = createWrapper({ promptOnClose: true });
 
       await wrapper.find('[data-testid="cancel"]').trigger('click');
 
       expect(wrapper.emitted('cancel')).toBeUndefined();
-      expect(get(useConfirmStore().visible)).toBe(true);
+      expect(wrapper.find('[data-testid="inline-confirm"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="cancel"]').exists()).toBe(false);
+      expect(get(useConfirmStore().visible)).toBe(false);
     });
 
-    it('should cancel once the discard prompt is accepted', async () => {
+    it('should cancel once discarding is confirmed', async () => {
       wrapper = createWrapper({ promptOnClose: true });
 
       await wrapper.find('[data-testid="cancel"]').trigger('click');
-      await useConfirmStore().confirm();
+      await wrapper.find('[data-testid="inline-confirm-accept"]').trigger('click');
 
       expect(wrapper.emitted('cancel')).toHaveLength(1);
     });
 
-    it('should stay open when the discard prompt is dismissed', async () => {
+    it('should stay open with its buttons back when the user keeps editing', async () => {
       wrapper = createWrapper({ promptOnClose: true });
 
       await wrapper.find('[data-testid="cancel"]').trigger('click');
-      await useConfirmStore().dismiss();
+      await wrapper.find('[data-testid="inline-confirm-cancel"]').trigger('click');
 
       expect(wrapper.emitted('cancel')).toBeUndefined();
+      expect(wrapper.find('[data-testid="cancel"]').exists()).toBe(true);
+    });
+
+    it('should not still be asking when reopened', async () => {
+      wrapper = createWrapper({ promptOnClose: true });
+
+      await wrapper.find('[data-testid="cancel"]').trigger('click');
+      await wrapper.setProps({ display: false });
+      await wrapper.setProps({ display: true });
+
+      expect(wrapper.find('[data-testid="inline-confirm"]').exists()).toBe(false);
+    });
+  });
+
+  describe('save failure', () => {
+    it('should name the failure in the header without a retry, since confirm is the retry', () => {
+      wrapper = createWrapper({ failure: new Error('database locked'), failureTitle: 'Could not save' });
+
+      const strip = wrapper.find('[data-testid="big-dialog-failure"]');
+      expect(strip.text()).toContain('Could not save');
+      expect(strip.text()).toContain('database locked');
+      expect(strip.find('[data-testid="failure-strip-retry"]').exists()).toBe(false);
+    });
+
+    it('should show nothing while there is no failure', () => {
+      wrapper = createWrapper({ failureTitle: 'Could not save' });
+
+      expect(wrapper.find('[data-testid="big-dialog-failure"]').exists()).toBe(false);
     });
   });
 
@@ -359,12 +390,14 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
       expect(wrapper.emitted('cancel')).toBeUndefined();
     });
 
-    it('should raise the discard prompt rather than cancel when the caller asked to be prompted', () => {
+    it('should ask in its footer rather than cancel when the caller asked to be prompted', async () => {
       wrapper = createSheet({ promptOnClose: true });
 
       expect(useOverlayStack().dismissTop()).toBe(true);
+      await nextTick();
       expect(wrapper.emitted('cancel')).toBeUndefined();
-      expect(get(useConfirmStore().visible)).toBe(true);
+      // the real sheet teleports its content out of the wrapper
+      expect(document.body.querySelector('[data-testid="inline-confirm"]')).not.toBeNull();
     });
 
     it('should stay the top layer while the discard prompt is unanswered', () => {
@@ -374,6 +407,20 @@ describe('modules/shell/components/dialogs/BigDialog', () => {
       dismissTop();
 
       expect(dismissTop()).toBe(true);
+      expect(wrapper.emitted('cancel')).toBeUndefined();
+    });
+
+    it('should answer an open discard question with keep editing when dismissed again', async () => {
+      wrapper = createSheet({ promptOnClose: true });
+      const { dismissTop } = useOverlayStack();
+
+      dismissTop();
+      await nextTick();
+      dismissTop();
+      await nextTick();
+
+      expect(document.body.querySelector('[data-testid="inline-confirm"]')).toBeNull();
+      expect(document.body.querySelector('[data-testid="confirm"]')).not.toBeNull();
       expect(wrapper.emitted('cancel')).toBeUndefined();
     });
   });

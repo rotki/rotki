@@ -32,7 +32,7 @@ describe('reportsTableMoreAction', () => {
 
     await wrapper.find('[data-testid=report-delete]').trigger('click');
 
-    expect(wrapper.find('[data-testid=report-delete-confirm]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=inline-confirm]').exists()).toBe(true);
     expect(wrapper.emitted('delete')).toBeUndefined();
   });
 
@@ -40,7 +40,7 @@ describe('reportsTableMoreAction', () => {
     wrapper = createWrapper();
 
     await wrapper.find('[data-testid=report-delete]').trigger('click');
-    await wrapper.find('[data-testid=report-delete-confirm-button]').trigger('click');
+    await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
 
     expect(wrapper.emitted('delete')).toHaveLength(1);
   });
@@ -52,10 +52,10 @@ describe('reportsTableMoreAction', () => {
     await nextTick();
 
     await wrapper.find('[data-testid=report-delete]').trigger('click');
-    await wrapper.find('[data-testid=report-delete-cancel]').trigger('click');
+    await wrapper.find('[data-testid=inline-confirm-cancel]').trigger('click');
 
     expect(wrapper.emitted('delete')).toBeUndefined();
-    expect(wrapper.find('[data-testid=report-delete-confirm]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=inline-confirm]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=report-delete]').exists()).toBe(true);
   });
 });
