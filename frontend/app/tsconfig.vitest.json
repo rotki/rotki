@@ -8,20 +8,26 @@
       "@shared/*": ["./shared/*"],
       "@electron/*": ["./electron/*"],
       "@test/*": ["./tests/unit/*"]
-    }
+    },
+    "declaration": true,
+    "declarationDir": "./node_modules/.tmp/vitest-types",
+    "emitDeclarationOnly": true,
+    "noEmit": false
   },
+  "references": [
+    { "path": "./tsconfig.app.json" }
+  ],
   "include": [
     "env.d.ts",
     "components.d.ts",
     "auto-imports.d.ts",
     "typed-router.d.ts",
-    "src/**/*",
-    "src/**/*.vue",
+    "src/**/*.d.ts",
     "src/**/*.spec.ts",
-    "electron/**/*",
+    "electron/**/*.spec.ts",
+    "shared/**/*.spec.ts",
     "tests/unit/**/*",
-    "tests/contract/**/*",
-    "shared/**/*"
+    "tests/contract/**/*"
   ],
   "exclude": []
 }

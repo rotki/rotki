@@ -146,23 +146,3 @@ export const EthStaking = createFactory('EthStaking');
 export const AssetAmountAndValueOverTime = createFactory('AssetAmountAndValueOverTime');
 
 export const ThemeManager = createFactory('ThemeManager');
-
-interface PremiumComponentsInfo {
-  build: number;
-  version: string;
-}
-
-declare global {
-  interface Window {
-    /**
-     * Set by the premium bundle once it loads; absent in a non-premium session.
-     */
-    PremiumComponents?: PremiumComponentsInfo;
-    Vue: any;
-    VueEcharts: any;
-    VueUse: any;
-    zod: any;
-    bn: any;
-    VueRouter: any;
-  }
-}
