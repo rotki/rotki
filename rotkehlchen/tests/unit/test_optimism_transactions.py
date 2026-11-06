@@ -1280,6 +1280,7 @@ def test_not_covered_older_range_does_not_skip_newer_range(
         )
 
 
+@pytest.mark.vcr(match_on=['uri', 'method', 'rpc_body_matcher'])
 @pytest.mark.parametrize('optimism_manager_connect_at_start', [(OPTIMISM_MAINNET_NODE,)])
 def test_batched_transactions_skip_pre_bedrock_receipts(
         optimism_inquirer: OptimismInquirer,
