@@ -128,14 +128,14 @@ jobs:
       # None of the three needs a build: javascript and python are read from source, and rust
       # is extracted through rust-analyzer.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.38.3
         with:
           languages: ${{ matrix.language }}
           build-mode: none
 
       # The category keeps the existing javascript and python alert history attached.
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d  # v4.38.3
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370  # v4.38.3
         with:
           category: "/language:${{ matrix.language }}"
 
@@ -314,14 +314,14 @@ jobs:
           env_file: .github/.env.ci
 
       - name: Setup python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.0.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           freethreaded: true
           cache: 'pip'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.2.0
         with:
           enable-cache: true
           prune-cache: true
@@ -352,7 +352,7 @@ jobs:
           rustup default 1.91
 
       # Restore only: warm-rust-caches fills this key from the base branch.
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
         with:
           shared-key: rust-linux
           save-if: false
@@ -388,7 +388,7 @@ jobs:
           rustup default 1.91
 
       # Restore only: warm-rust-caches fills this key from the base branch.
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
         with:
           shared-key: rust-linux
           save-if: false
@@ -436,7 +436,7 @@ jobs:
           rustup default 1.91
 
       # Restore only: warm-rust-caches-windows fills this key from the base branch.
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
         with:
           shared-key: starling-windows
           save-if: false
@@ -444,13 +444,13 @@ jobs:
             . -> target
 
       - name: Setup python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.0.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           freethreaded: true
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.2.0
         with:
           enable-cache: true
           prune-cache: true
@@ -509,7 +509,7 @@ jobs:
 
       - name: Look up the Rust cache
         id: rust-cache
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
         with:
           shared-key: rust-linux
           lookup-only: true
@@ -550,7 +550,7 @@ jobs:
 
       - name: Look up the Rust cache
         id: rust-cache
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
         with:
           shared-key: starling-windows
           lookup-only: true
@@ -587,14 +587,14 @@ jobs:
           env_file: .github/.env.ci
 
       - name: Setup python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.0.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           freethreaded: true
           cache: 'pip'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.2.0
         with:
           enable-cache: true
           prune-cache: true
@@ -616,7 +616,7 @@ jobs:
 
       - name: Cache Rust dependencies
         if: steps.fdc-cache.outputs.cache-hit != 'true'
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2.9.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
         with:
           cache-on-failure: true
           workspaces: tools/find-duplicate-constants
