@@ -1543,7 +1543,9 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
         )
 
     eth_address = make_evm_address()
-    rotki.chains_aggregator.balances.eth[eth_address].assets[A_DAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(30))  # noqa: E501
+    with rotki.chains_aggregator.balances_lock:
+        rotki.chains_aggregator.balances.eth[eth_address].assets[A_DAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(30))  # noqa: E501
+        rotki.chains_aggregator.totals = rotki.chains_aggregator.balances.recalculate_totals()
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -1558,6 +1560,8 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
 
     # check that we removed the asset from the balances
     assert len(rotki.chains_aggregator.balances.eth[eth_address].assets) == 0
+    update = rotki.chains_aggregator.get_balances_update(None)
+    assert update.totals == update.per_account.recalculate_totals()
 
     with globaldb.conn.read_ctx() as cursor:
         assert A_DAI.identifier not in globaldb_get_general_cache_values(

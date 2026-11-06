@@ -76,11 +76,20 @@ describe('useAccountLoading', () => {
     expect(get(loading)).toBe(true);
   });
 
-  it('should be loading while balances are refreshing', async () => {
+  it('allows address additions during balance refresh without weakening other loading guards', async () => {
     const { useAccountLoading } = await importModule();
-    const { loading } = useAccountLoading();
+    const { loading, mutationLoading, pending } = useAccountLoading();
     useBalanceRefreshState().start('eth');
     expect(get(loading)).toBe(true);
+    expect(get(mutationLoading)).toBe(false);
+    set(mockAddRunning, true);
+    expect(get(mutationLoading)).toBe(true);
+    set(mockAddRunning, false);
+    set(mockRemoveRunning, true);
+    expect(get(mutationLoading)).toBe(true);
+    set(mockRemoveRunning, false);
+    set(pending, true);
+    expect(get(mutationLoading)).toBe(true);
   });
 
   it('should pass the blockchain filter to the task lookup by prefix, since an exact id lookup would match nothing and silently never report activity', async () => {

@@ -1,5 +1,5 @@
 import datetime
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, contextmanager, nullcontext
 from functools import partial
 from http import HTTPStatus
 from threading import Event
@@ -24,7 +24,7 @@ from rotkehlchen.chain.evm.types import (
 )
 from rotkehlchen.concurrency import TaskCancelledError, result_of, spawn
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH, A_XDAI
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_XDAI
 from rotkehlchen.constants.timing import EVMLIKE_ACCOUNTS_DETECTION_RETRY
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
@@ -34,13 +34,19 @@ from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
-from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.factories import (
+    UNIT_BTC_ADDRESS1,
+    UNIT_BTC_ADDRESS2,
+    UNIT_BTC_ADDRESS3,
+    make_evm_address,
+)
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     SPAM_PROTOCOL,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     AddressbookType,
+    BTCAddress,
     ChainID,
     ChecksumEvmAddress,
     HexColorCode,
@@ -460,6 +466,364 @@ def test_modify_blockchain_accounts_flushes_balance_cache(
 
 
 @pytest.mark.parametrize('ethereum_modules', [[]])
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address() for _ in range(3)]])
+@pytest.mark.parametrize('btc_accounts', [[
+    UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2, UNIT_BTC_ADDRESS3,
+]])
+@pytest.mark.parametrize('gnosis_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('chain', [SupportedBlockchain.BITCOIN, SupportedBlockchain.ETHEREUM])
+@pytest.mark.parametrize('callback_raises', [False, True])
+def test_batch_account_removal_recalculates_totals_once(
+        blockchain: ChainsAggregator,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
+        gnosis_accounts: list[ChecksumEvmAddress],
+        chain: SupportedBlockchain,
+        callback_raises: bool,
+) -> None:
+    """A batch publishes coherent balances/totals before unlocked per-address removal hooks."""
+    accounts: list[BTCAddress] | list[ChecksumEvmAddress]
+    if chain == SupportedBlockchain.BITCOIN:
+        accounts = btc_accounts
+        for btc_address in accounts:
+            blockchain.balances.btc[btc_address] = Balance(amount=ONE)
+        asset = A_BTC
+    else:
+        accounts = ethereum_accounts
+        for eth_address in accounts:
+            blockchain.balances.eth[eth_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE)  # noqa: E501
+        asset = A_ETH
+    blockchain.balances.gnosis[gnosis_accounts[0]].assets[A_XDAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(5))  # noqa: E501
+    blockchain.totals = blockchain.balances.recalculate_totals()
+    blockchain._update_blockchain_balances_cache(blockchain=chain)
+    removed, survivor = accounts[:2], accounts[2]
+    recalculate_totals = blockchain.balances.recalculate_totals
+    hook_calls: list[str] = []
+
+    def other_thread_can_acquire_balances_lock() -> bool:
+        def acquire() -> bool:
+            if not blockchain.balances_lock.acquire(blocking=False):
+                return False
+            blockchain.balances_lock.release()
+            return True
+
+        task = spawn(acquire)
+        task.join(10)
+        assert task.dead
+        return result_of(task)
+
+    def recalculate() -> BalanceSheet:
+        assert not other_thread_can_acquire_balances_lock()
+        assert blockchain.accounts.get(chain) == (survivor,)
+        assert set(blockchain.balances.get(chain)) == {survivor}
+        return recalculate_totals()
+
+    def on_removal(blockchain_type: SupportedBlockchain, address: str) -> None:
+        assert blockchain_type == chain
+        assert other_thread_can_acquire_balances_lock(), (
+            'removal hooks must not hold balances_lock'
+        )
+        snapshot = blockchain.get_balances_update(None)
+        assert snapshot.totals == snapshot.per_account.recalculate_totals()
+        assert snapshot.totals.assets[asset][DEFAULT_BALANCE_LABEL].amount == ONE
+        assert snapshot.totals.assets[A_XDAI][DEFAULT_BALANCE_LABEL].amount == FVal(5)
+        hook_calls.append(address)
+        if callback_raises:
+            raise RemoteError('removal hook failed')
+
+    with (
+        patch.object(
+            blockchain.balances, 'recalculate_totals', side_effect=recalculate,
+        ) as totals_mock,
+        patch.dict(blockchain.chain_modify_remove, {chain: on_removal}),
+        (
+            pytest.raises(RemoteError, match='removal hook failed')
+            if callback_raises else nullcontext()
+        ),
+        blockchain.database.user_write() as write_cursor,
+    ):
+        blockchain.modify_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=chain,
+            accounts=removed,
+            append_or_remove='remove',
+        )
+
+    totals_mock.assert_called_once_with()
+    assert hook_calls == (removed[:1] if callback_raises else removed)
+    assert blockchain.accounts.get(chain) == (survivor,)
+    assert blockchain.totals == recalculate_totals()
+    if callback_raises:
+        return  # cache cleanup is skipped when a hook fails, as for single-account removals
+
+    with blockchain.database.conn.read_ctx() as cursor:
+        assert set(blockchain.database.get_blockchain_balances_cache(cursor, chain).get(chain)) == {survivor}  # noqa: E501
+        for address in accounts:
+            assert (blockchain.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS,
+                blockchain=chain.serialize(),
+                address=address,
+            ) is None) == (address in removed)
+        assert blockchain.database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+            blockchain=chain.serialize(),
+        ) is None
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize(('partial_query', 'without_operation_lock'), [
+    (False, False),
+    (True, False),
+    (True, True),  # negative control: restore the original full/partial race
+])
+def test_add_account_during_balance_query(
+        blockchain: ChainsAggregator,
+        optimism_accounts: list[ChecksumEvmAddress],
+        partial_query: bool,
+        without_operation_lock: bool,
+) -> None:
+    """Registration does not wait for a query; the next query sees its result and cache."""
+    chain = SupportedBlockchain.OPTIMISM
+    first, added = optimism_accounts[0], make_evm_address()
+    remote_started, release_remote, second_attempt = Event(), Event(), Event()
+    calls: list[tuple[ChecksumEvmAddress, ...]] = []
+    chain_lock = blockchain.balance_operation_locks[chain]
+
+    class ObservedLock:
+        def __enter__(self) -> None:
+            if remote_started.is_set():
+                second_attempt.set()
+            if not without_operation_lock:
+                chain_lock.acquire()
+
+        def __exit__(self, *args: object) -> None:
+            if not without_operation_lock:
+                chain_lock.release()
+
+    def query(accounts: tuple[ChecksumEvmAddress, ...]) -> dict[ChecksumEvmAddress, BalanceSheet]:
+        calls.append(tuple(accounts))
+        if len(calls) == 1:
+            remote_started.set()
+            assert release_remote.wait(10)
+        result = {}
+        for address in accounts:
+            sheet = BalanceSheet()
+            sheet.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE)
+            result[address] = sheet
+        return result
+
+    second_task = None
+    with (
+        patch.dict(blockchain.balance_operation_locks, {chain: ObservedLock()}),
+        patch.object(blockchain.optimism, 'query_balances', side_effect=query),
+    ):
+        first_task = spawn(blockchain.query_balances, blockchain=chain, ignore_cache=True)
+        try:
+            assert remote_started.wait(10)
+            with blockchain.database.user_write() as write_cursor:
+                blockchain.modify_blockchain_accounts(
+                    write_cursor=write_cursor,
+                    blockchain=chain,
+                    accounts=[added],
+                    append_or_remove='append',
+                )
+            assert added in blockchain.accounts.optimism
+            second_task = spawn(
+                blockchain.query_balances,
+                blockchain=chain,
+                ignore_cache=False,
+                addresses=[added] if partial_query else None,
+            )
+            assert second_attempt.wait(10)
+            if without_operation_lock:
+                second_task.join(10)
+                assert second_task.dead  # force the faulty newer-then-older publication
+        finally:
+            release_remote.set()
+            first_task.join(10)
+            if second_task is not None:
+                second_task.join(10)
+
+        assert first_task.dead and second_task is not None and second_task.dead
+        result_of(first_task)
+        update = result_of(second_task)
+
+    if without_operation_lock:
+        final_update = blockchain.get_balances_update(chain)
+        with pytest.raises(AssertionError):
+            assert added in final_update.per_account.optimism
+        return
+
+    assert calls == [(first,), (added,) if partial_query else (first, added)]
+    assert set(update.per_account.optimism) == {first, added}
+    assert update.totals == update.per_account.recalculate_totals()
+    assert update.totals.assets[A_ETH][DEFAULT_BALANCE_LABEL].amount == FVal(2)
+    with blockchain.database.conn.read_ctx() as cursor:
+        cached = blockchain.database.get_blockchain_balances_cache(cursor=cursor, blockchain=chain)
+        assert set(cached.optimism) == {first, added}
+        for address in (first, added):
+            assert cached.optimism[address].assets[A_ETH][DEFAULT_BALANCE_LABEL].amount == ONE
+            assert blockchain.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS,
+                blockchain=chain.serialize(),
+                address=address,
+            ) is not None
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('pause_before_persistence', [False, True])
+def test_removal_during_balance_query(
+        blockchain: ChainsAggregator,
+        optimism_accounts: list[ChecksumEvmAddress],
+        pause_before_persistence: bool,
+) -> None:
+    """Neither a late publication nor a delayed cache write may restore a removed account."""
+    chain = SupportedBlockchain.OPTIMISM
+    address = optimism_accounts[0]
+    paused, release = Event(), Event()
+    update_cache = blockchain._update_blockchain_balances_cache
+
+    def query(accounts: tuple[ChecksumEvmAddress, ...]) -> dict[ChecksumEvmAddress, BalanceSheet]:
+        if not pause_before_persistence:
+            paused.set()
+            assert release.wait(10)
+        sheet = BalanceSheet()
+        sheet.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE)
+        return {address: sheet}
+
+    def persist(*args: Any, **kwargs: Any) -> None:
+        if pause_before_persistence:
+            paused.set()
+            assert release.wait(10)
+        update_cache(*args, **kwargs)
+
+    with (
+        patch.object(blockchain.optimism, 'query_balances', side_effect=query),
+        patch.object(blockchain, '_update_blockchain_balances_cache', side_effect=persist),
+    ):
+        query_task = spawn(blockchain.query_balances, blockchain=chain, ignore_cache=True)
+        try:
+            assert paused.wait(10)
+            with blockchain.database.user_write() as write_cursor:
+                blockchain.modify_blockchain_accounts(
+                    write_cursor=write_cursor,
+                    blockchain=chain,
+                    accounts=[address],
+                    append_or_remove='remove',
+                )
+        finally:
+            release.set()
+            query_task.join(10)
+
+        assert query_task.dead
+        update = result_of(query_task)
+
+    assert address not in update.per_account.optimism
+    assert update.totals == update.per_account.recalculate_totals()
+    with blockchain.database.conn.read_ctx() as cursor:
+        cached = blockchain.database.get_blockchain_balances_cache(cursor=cursor, blockchain=chain)
+        assert address not in cached.optimism
+        assert blockchain.database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS,
+            blockchain=chain.serialize(),
+            address=address,
+        ) is None
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('gnosis_accounts', [[make_evm_address()]])
+def test_balance_operation_lock_covers_persistence_but_not_other_chains(
+        blockchain: ChainsAggregator,
+        optimism_accounts: list[ChecksumEvmAddress],
+        gnosis_accounts: list[ChecksumEvmAddress],
+) -> None:
+    chain = SupportedBlockchain.OPTIMISM
+    persistence_started, release_persistence, second_attempt = Event(), Event(), Event()
+    first_lock = blockchain.balance_operation_locks[chain]
+    persist_cache = blockchain._update_blockchain_balances_cache
+    optimism_calls: list[tuple[ChecksumEvmAddress, ...]] = []
+
+    class ObservedLock:
+        def __enter__(self) -> None:
+            if persistence_started.is_set():
+                second_attempt.set()
+            first_lock.acquire()
+
+        def __exit__(self, *args: object) -> None:
+            first_lock.release()
+
+    def sheet_for(
+            accounts: tuple[ChecksumEvmAddress, ...],
+    ) -> dict[ChecksumEvmAddress, BalanceSheet]:
+        result = {}
+        for address in accounts:
+            sheet = BalanceSheet()
+            sheet.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE)
+            result[address] = sheet
+        return result
+
+    def query_optimism(accounts: tuple[ChecksumEvmAddress, ...]) -> dict[ChecksumEvmAddress, BalanceSheet]:  # noqa: E501
+        optimism_calls.append(tuple(accounts))
+        return sheet_for(accounts)
+
+    def persist(*args: Any, **kwargs: Any) -> None:
+        if kwargs['blockchain'] == chain and not persistence_started.is_set():
+            persistence_started.set()
+            assert release_persistence.wait(10)
+        persist_cache(*args, **kwargs)
+
+    second_task = other_task = None
+    with (
+        patch.dict(blockchain.balance_operation_locks, {chain: ObservedLock()}),
+        patch.object(blockchain.optimism, 'query_balances', side_effect=query_optimism),
+        patch.object(blockchain.gnosis, 'query_balances', side_effect=sheet_for),
+        patch.object(blockchain, '_update_blockchain_balances_cache', side_effect=persist),
+    ):
+        first_task = spawn(blockchain.query_balances, blockchain=chain, ignore_cache=True)
+        try:
+            assert persistence_started.wait(10)
+            snapshot = blockchain.get_balances_update(None)
+            assert snapshot.totals == snapshot.per_account.recalculate_totals()
+            second_task = spawn(
+                blockchain.query_balances,
+                blockchain=chain,
+                addresses=optimism_accounts,
+            )
+            assert second_attempt.wait(10)
+            other_task = spawn(
+                blockchain.query_balances,
+                blockchain=SupportedBlockchain.GNOSIS,
+                ignore_cache=True,
+            )
+            other_task.join(10)
+            assert other_task.dead
+            other_update = result_of(other_task)
+            assert other_update.totals == other_update.per_account.recalculate_totals()
+            assert gnosis_accounts[0] in other_update.per_account.gnosis
+            assert len(optimism_calls) == 1
+        finally:
+            release_persistence.set()
+            first_task.join(10)
+            if second_task is not None:
+                second_task.join(10)
+            if other_task is not None:
+                other_task.join(10)
+
+        assert first_task.dead and second_task is not None and second_task.dead
+        result_of(first_task)
+        update = result_of(second_task)
+        assert update.totals == update.per_account.recalculate_totals()
+        assert len(optimism_calls) == 2
+
+
+@pytest.mark.parametrize('ethereum_modules', [[]])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 def test_query_balances_skips_chains_without_accounts(
         blockchain: ChainsAggregator,
@@ -496,14 +860,18 @@ def test_query_balances_partial_chain_failure(blockchain: ChainsAggregator) -> N
     or having every chain fail, still raises."""
     chains_aggregator = blockchain  # the mock below shadows the fixture name with the chain
     eth_address, optimism_address = chains_aggregator.accounts.eth[0], chains_aggregator.accounts.optimism[0]  # noqa: E501
-    chains_aggregator.balances.optimism[optimism_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(5), value=FVal(10))  # from a previous successful query  # noqa: E501
+    with chains_aggregator.balances_lock:
+        chains_aggregator.balances.optimism[optimism_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(5), value=FVal(10))  # from a previous successful query  # noqa: E501
+        chains_aggregator.totals = chains_aggregator.balances.recalculate_totals()
     failing_chains = {SupportedBlockchain.OPTIMISM}
 
     def mock_query_chain(blockchain: SupportedBlockchain, **kwargs: Any) -> None:
         if blockchain in failing_chains:
             raise RemoteError(f'Error querying information from {blockchain!s}')
         if blockchain == SupportedBlockchain.ETHEREUM:
-            chains_aggregator.balances.eth[eth_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(2))  # noqa: E501
+            with chains_aggregator.balances_lock:
+                chains_aggregator.balances.eth[eth_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(2))  # noqa: E501
+                chains_aggregator.totals = chains_aggregator.balances.recalculate_totals()
 
     with (
         patch.object(chains_aggregator, '_query_chain_balances', side_effect=mock_query_chain),

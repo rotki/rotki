@@ -6,6 +6,7 @@ import { useTaskCenter } from '@/modules/task-center/use-task-center';
 interface UseAccountLoadingReturn {
   pending: Ref<boolean>;
   loading: ComputedRef<boolean>;
+  mutationLoading: ComputedRef<boolean>;
   isAccountOperationRunning: (blockchain?: string) => ComputedRef<boolean>;
 }
 
@@ -33,11 +34,13 @@ export const useAccountLoading = createSharedComposable((): UseAccountLoadingRet
     );
   };
 
-  const loading: ComputedRef<boolean> = logicOr(isAccountOperationRunning(), pending, isRefreshing);
+  const mutationLoading: ComputedRef<boolean> = logicOr(isAccountOperationRunning(), pending);
+  const loading: ComputedRef<boolean> = logicOr(mutationLoading, isRefreshing);
 
   return {
     isAccountOperationRunning,
     loading,
+    mutationLoading,
     pending,
   };
 });

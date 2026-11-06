@@ -1026,6 +1026,9 @@ class AssetsService:
                             self.rotkehlchen.chains_aggregator.flush_chain_balance_query_cache(
                                 blockchain=blockchain,
                             )
+                    self.rotkehlchen.chains_aggregator.totals = (
+                        self.rotkehlchen.chains_aggregator.balances.recalculate_totals()
+                    )
 
         self.rotkehlchen.data.add_ignored_assets(assets=tokens)
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}

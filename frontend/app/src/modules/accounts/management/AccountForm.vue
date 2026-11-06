@@ -127,6 +127,7 @@ defineExpose({
       :chain="chain"
       :chain-ids="chainIds"
       :edit-mode="modelValue.mode === 'edit'"
+      :loading="loading"
       @update:chain="selectChain($event)"
     />
 

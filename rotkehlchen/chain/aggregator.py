@@ -387,6 +387,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.ink_lock = Semaphore()
         self.zksync_lite_lock = Semaphore()
 
+        # Serialize a chain's complete query and cache write, independently of account
+        # registration and of other chains. Never acquire these locks in a DB write.
+        self.balance_operation_locks = {chain: Semaphore() for chain in SupportedBlockchain}
+
         # Guards every iteration/mutation of self.balances and self.totals: per-chain
         # query tasks, xpub derivation, account removal and API serialization touch
         # them from different threads, and dict iteration concurrent with a mutation
@@ -820,14 +824,23 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             ]
 
         def _query_one(chain: SupportedBlockchain) -> None:
-            if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
-                self.query_eth2_balances(ignore_cache=ignore_cache)
-                return
-
+            # Xpub derivation has its own lock and DB transactions. Do not hold the
+            # chain operation lock while entering that separate lock hierarchy.
             if ignore_cache is True and chain.is_bitcoin():
                 xpub_manager.check_for_new_xpub_addresses(blockchain=chain)  # type: ignore[arg-type] # mypy doesn't understand is_bitcoin()
 
-            self._query_chain_balances(blockchain=chain, ignore_cache=ignore_cache, addresses=addresses)  # noqa: E501
+            with self.balance_operation_locks[chain]:
+                if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
+                    self.query_eth2_balances(ignore_cache=ignore_cache)
+                else:
+                    # Targeted requests may refer to an address removed and added again;
+                    # the full-query cache flush does not invalidate targeted keys.
+                    self._query_chain_balances(
+                        blockchain=chain,
+                        ignore_cache=ignore_cache or bool(addresses),
+                        addresses=addresses,
+                    )
+                self._update_blockchain_balances_cache(blockchain=chain, addresses=addresses)
 
         # Query all chains concurrently. Cross-chain calls into independent backends
         # (per-chain RPC nodes, blockstream, beaconchain) parallelize freely; calls
@@ -846,12 +859,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 if first_exception is None:
                     first_exception = chain_exception
                 continue
-            self._update_blockchain_balances_cache(blockchain=chain, addresses=addresses)
-
-        # Recompute totals regardless of failures: succeeded chains have already
-        # mutated self.balances, leaving the cached self.totals out of sync.
-        with self.balances_lock:
-            self.totals = self.balances.recalculate_totals()
 
         # A single chain query keeps raising on failure. When querying all chains the
         # balances of the chains that succeeded are returned, with the failing ones
@@ -905,6 +912,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
     ) -> None:
+        # Track removals during remote work without excluding explicit, untracked
+        # addresses supplied by callers of this lower-level method.
+        tracked_before_query = self.accounts.get(blockchain)
         if addresses is None or len(addresses) == 0:
             full_query = True
             if len(accounts := self.get_active_addresses(blockchain)) == 0:
@@ -927,6 +937,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # balances iterate these dicts concurrently. This also means a failed chain
         # query leaves the previous balances in place instead of clearing them upfront.
         with self.balances_lock:
+            removed = set(tracked_before_query).difference(self.accounts.get(blockchain))
+            if removed:
+                new_balances = {address: balance for address, balance in new_balances.items() if address not in removed}  # type: ignore[assignment]  # noqa: E501
             existing_balances = self.balances.get(chain=blockchain)
             if full_query is True:
                 disabled = CachedSettings().get_settings().disabled_chain_queries.get(blockchain)
@@ -940,6 +953,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 for account in accounts:
                     existing_balances.pop(account, None)  # type: ignore[arg-type]
             existing_balances.update(new_balances)  # type: ignore[arg-type]  # chain/balance types match per chain
+            self.totals = self.balances.recalculate_totals()
 
     def flush_chain_balance_query_cache(self, blockchain: SupportedBlockchain) -> None:
         """Invalidate the cached full-chain balance query result for the given chain.
@@ -967,10 +981,15 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             addresses: ListOfBlockchainAddresses | None = None,
     ) -> None:
         refresh_ts = ts_now()  # before the snapshot, so it never postdates the rows
-        with self.balances_lock:  # snapshot before the DB write so query tasks can't mutate mid-iteration  # noqa: E501
-            chain_balances: dict[str, BalanceSheet | Balance] = dict(self.balances.get(blockchain).items())  # noqa: E501
-
         with self.database.user_write() as write_cursor:
+            # A removal holds the DB write transaction while removing balances. Take
+            # the snapshot only after obtaining it, so a delayed write cannot restore
+            # rows deleted by that removal. The balance lock only protects the copy.
+            with self.balances_lock:
+                chain_balances: dict[str, BalanceSheet | Balance] = {
+                    address: balance.copy() if isinstance(balance, BalanceSheet) else balance
+                    for address, balance in self.balances.get(blockchain).items()
+                }
             balances_to_store: dict[str, BalanceSheet | Balance]
             if addresses is None or len(addresses) == 0:
                 self.database.delete_blockchain_balances_cache(
@@ -1175,16 +1194,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             chain_modify_init = self.chain_modify_init.get(blockchain)
             if chain_modify_init is not None:
                 chain_modify_init(blockchain, append_or_remove)
-            for account in accounts:
-                if append_or_remove == 'append':
+            if append_or_remove == 'append':
+                for account in accounts:
                     self.accounts.add(blockchain=blockchain, address=account)
                     chain_modify_append = self.chain_modify_append.get(blockchain)
                     if chain_modify_append is not None:
                         chain_modify_append(blockchain, account)
-                else:  # remove
-                    with self.balances_lock:
+            elif len(accounts) != 0:  # publish the batch and its totals before any removal hooks
+                with self.balances_lock:
+                    for account in accounts:
+                        self.accounts.remove(blockchain=blockchain, address=account)
                         balances.pop(account, None)  # type: ignore  # mypy can't understand each account has same type
-                    self.accounts.remove(blockchain=blockchain, address=account)
+                    self.totals = self.balances.recalculate_totals()
+                for account in accounts:
                     chain_modify_remove = self.chain_modify_remove.get(blockchain)
                     if chain_modify_remove is not None:
                         chain_modify_remove(blockchain, account)
@@ -1197,11 +1219,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         # we are adding/removing accounts, so invalidate the cached chain balance query
         self.flush_chain_balance_query_cache(blockchain)
-
-        # recalculate totals
-        if append_or_remove == 'remove':  # at addition no balances are queried so no need
-            with self.balances_lock:
-                self.totals = self.balances.recalculate_totals()
 
         # delete cache from the db for the accounts removed
         for account in accounts:
@@ -1248,6 +1265,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             for pubkey, balance in balance_mapping.items():
                 self.balances.eth2[pubkey] = BalanceSheet()
                 self.balances.eth2[pubkey].assets[A_ETH2][DEFAULT_BALANCE_LABEL] = balance
+            self.totals = self.balances.recalculate_totals()
 
     def query_eth_balances(
             self,
