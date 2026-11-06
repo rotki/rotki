@@ -19,6 +19,17 @@ def sochain_balance_response(confirmed: str) -> MockResponse:
     )
 
 
+def sochain_key_refused_response() -> MockResponse:
+    """What SoChain answers a key that does not work and an account past its allowance"""
+    return MockResponse(
+        status_code=HTTPStatus.UNAUTHORIZED,
+        text=(
+            '{"status":"fail","data":{"error_message":"API Key invalid, account access '
+            "expired, or this account's daily request limit has been exhausted.\"}}"
+        ),
+    )
+
+
 def dogechain_address_response(address: str, confirmed: str) -> MockResponse:
     """What Dogechain answers for the first page of an address"""
     return MockResponse(

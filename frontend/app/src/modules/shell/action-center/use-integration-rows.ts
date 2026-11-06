@@ -48,6 +48,12 @@ const MISSING_KEY_DESCRIPTIONS: Readonly<Record<string, MessageKey>> = {
 
 const DEFAULT_MISSING_KEY_DESCRIPTION = msg.$t('action_center.rows.integrations.missing_api_key.description');
 
+/** What a refused key costs, per service that reports one. */
+const REJECTED_KEY_DESCRIPTIONS: Readonly<Record<string, MessageKey>> = {
+  [SuppressibleMissingKeyService.BLOCKSCOUT]: msg.$t('action_center.rows.integrations.missing_api_key.description_blockscout_rejected'),
+  sochain: msg.$t('action_center.rows.integrations.missing_api_key.description_sochain_rejected'),
+};
+
 function isExternalServiceName(service: string): service is ExternalServiceName {
   return service in ExternalServiceKeys.shape;
 }
@@ -146,7 +152,7 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
       ? { location: toHumanReadable(location, 'capitalize'), service: serviceName }
       : { service: serviceName };
     const description = keyRejected
-      ? msg.$t('action_center.rows.integrations.missing_api_key.description_blockscout_rejected')
+      ? getOr(REJECTED_KEY_DESCRIPTIONS, service, DEFAULT_MISSING_KEY_DESCRIPTION)
       : getOr(MISSING_KEY_DESCRIPTIONS, service, DEFAULT_MISSING_KEY_DESCRIPTION);
 
     return createActionItem<ActionTarget, string>({

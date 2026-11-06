@@ -73,6 +73,12 @@ describe('useExternalApiKeys', () => {
       expect(raised()).toEqual(['base', 'optimism']);
     });
 
+    it('should take down a refused key when the key is deleted, leaving the chains that ask for one', async () => {
+      await api.useExternalApiKeys().deleteService('blockscout');
+
+      expect(raised()).toEqual(['base', 'gnosis', 'optimism']);
+    });
+
     it('should stay when another service\'s key is saved', async () => {
       await api.useExternalApiKeys().save({ apiKey: 'new-key', name: 'helius' });
 

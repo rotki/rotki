@@ -104,6 +104,14 @@ export const EXTERNAL_API_KEY_SERVICES = {
     name: 'opensea',
     title: msg.$t('external_services.opensea.title'),
   },
+  sochain: {
+    description: msg.$t('external_services.sochain.description'),
+    hint: msg.$t('external_services.sochain.hint'),
+    image: 'sochain.svg',
+    link: externalLinks.sochainApiKey,
+    name: 'sochain',
+    title: msg.$t('external_services.sochain.title'),
+  },
   thegraph: {
     description: msg.$t('external_services.thegraph.description'),
     hint: msg.$t('external_services.thegraph.hint'),

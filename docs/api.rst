@@ -885,7 +885,7 @@ Getting or modifying external services API credentials
       }
 
    :reqjson list services: The services parameter is a list of services along with their api keys.
-   :reqjsonarr string name: Each entry in the list should have a name for the service. Valid ones are ``"etherscan"``, ``"cryptocompare"``, ``"beaconchain"``, ``"opensea"``, ``blockscout``, ``monerium``.
+   :reqjsonarr string name: Each entry in the list should have a name for the service. Valid ones are ``"etherscan"``, ``"cryptocompare"``, ``"beaconchain"``, ``"opensea"``, ``"sochain"``, ``blockscout``, ``monerium``.
    :reqjsonarr string[optional] api_key: Each entry in the list should have an api_key entry except for monerium.
    :reqjsonarr string[optional] username: The monerium entry should have a username key. For monerium the user should have premium.
    :reqjsonarr string[optional] password: The monerium entry should have a password key. For monerium the user should have premium.

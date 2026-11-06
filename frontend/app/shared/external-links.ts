@@ -75,5 +75,6 @@ export const externalLinks = {
   alchemyApiKey: 'https://docs.alchemy.com/reference/api-overview',
   moralisApiKey: 'https://docs.moralis.com/web3-data-api/evm/get-your-api-key',
   birdeyeApiKey: 'https://data.birdeye.so/docs/authentication',
+  sochainApiKey: 'https://sochain.com/docs/authentication',
   beaconChainApiKey: 'https://beaconcha.in/user/settings',
 };

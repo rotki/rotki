@@ -1,3 +1,4 @@
+import time
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import patch
@@ -439,3 +440,25 @@ def test_disconnect_monerium_forgets_previous_connection(
     with db.conn.read_ctx() as cursor:
         for name in (DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS, DBCacheStatic.LAST_MONERIUM_QUERY_TS):  # noqa: E501
             assert db.get_static_cache(cursor=cursor, name=name) is None
+
+
+def test_sochain_key_takes_effect_right_away(rotkehlchen_api_server: APIServer) -> None:
+    """Test that the API stores a SoChain key, and that adding, changing or removing it makes
+    SoChain use the new state at once, even if it was waiting for an allowance to reset"""
+    sochain = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.dogecoin.sochain
+    for api_key in ('key1', 'key2'):
+        sochain.unavailable_until = time.monotonic() + 3600
+        assert assert_proper_sync_response_with_result(requests.put(
+            api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
+            json={'services': [{'name': 'sochain', 'api_key': api_key}]},
+        ))['sochain'] == {'api_key': api_key}
+        assert sochain.unavailable_until == 0
+        assert sochain._get_api_key() == api_key
+
+    sochain.unavailable_until = time.monotonic() + 3600
+    assert 'sochain' not in assert_proper_sync_response_with_result(requests.delete(
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
+        json={'services': ['sochain']},
+    ))
+    assert sochain.unavailable_until == 0
+    assert sochain._get_api_key() is None

@@ -533,6 +533,7 @@
           "description_blockscout_rejected": "The saved {service} key was refused for {location}: it may be invalid, expired, out of quota, or on a plan that does not cover it. Update the key, or put another indexer first.",
           "description_etherscan": "{service} runs without a key of your own, which may slow down queries. Add a key, or put another indexer first.",
           "description_helius": "Solana transaction queries are slow without a {service} key.",
+          "description_sochain_rejected": "The saved SoChain key was refused, so {location} balances are queried from Dogechain. It may be invalid or expired. Update the key, or delete it to use SoChain without one.",
           "description_thegraph": "{location} data cannot be queried without a {service} key authorized for it.",
           "do_not_show_again": "Do not show again",
           "get_key": "Get API key",
@@ -3915,6 +3916,11 @@
     },
     "set_up_count": "{count} of {total} set up",
     "set_up_only": "Set up only",
+    "sochain": {
+      "description": "rotki queries Dogecoin balances from SoChain, which works without an API key. A key is optional and only raises the limits of these queries.",
+      "hint": "Enter your SoChain API key",
+      "title": "SoChain"
+    },
     "status": {
       "connected": "Connected",
       "key_set": "Key set",
