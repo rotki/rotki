@@ -2807,7 +2807,7 @@ Querying the balances of exchanges
 
 .. http:get:: /api/(version)/exchanges/balances/(location)
 
-   Doing a GET on the appropriate exchanges balances endpoint will return the balances of each exchange connection of that location, along with the location's total. The response has the same format as querying all exchanges, limited to that location. If a value threshold is provided, only balances with value greater than the threshold are returned.
+   Doing a GET on the appropriate exchanges balances endpoint will return the balances of each exchange connection of that location, along with the location's total. The response has the same format as querying all exchanges, limited to that location. If a value threshold is provided, only the location's total is filtered; the balances of each connection are still returned in full.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
@@ -2826,7 +2826,7 @@ Querying the balances of exchanges
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
-   :query decimal value_threshold: Optional. If provided, only returns balances with value greater than this threshold. This is in the user's preferred currency.
+   :query decimal value_threshold: Optional. If provided, only the location totals include balances with value greater than this threshold. This is in the user's preferred currency. The balances of each connection are not filtered.
 
    **Example Response**:
 
@@ -2864,7 +2864,7 @@ Querying the balances of exchanges
 
 .. http:get:: /api/(version)/exchanges/balances/
 
-   Doing a GET on the exchanges balances endpoint will return the balances of each exchange connection, along with the total of each location. If a value threshold is provided, only balances with value greater than the threshold are returned.
+   Doing a GET on the exchanges balances endpoint will return the balances of each exchange connection, along with the total of each location. If a value threshold is provided, only the totals are filtered; the balances of each connection are still returned in full.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -2878,7 +2878,7 @@ Querying the balances of exchanges
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :query decimal value_threshold: Optional. If provided, only returns balances with value greater than this threshold. This is in the user's preferred currency.
+   :query decimal value_threshold: Optional. If provided, only the location totals include balances with value greater than this threshold. This is in the user's preferred currency. The balances of each connection are not filtered.
 
    .. _balances_result:
 
@@ -2915,7 +2915,7 @@ Querying the balances of exchanges
           "message": "Binance API request failed"
       }
 
-   :resjson object per_account: The balances of each connection, keyed by location and then by the connection's ``identifier`` from ``GET /exchanges``. Each balance is keyed by asset identifier and has the ``amount`` held and its ``value``. A connection that holds nothing above the threshold has an empty object.
+   :resjson object per_account: The balances of each connection, keyed by location and then by the connection's ``identifier`` from ``GET /exchanges``. Each balance is keyed by asset identifier and has the ``amount`` held and its ``value``. All holdings of a connection are always returned, even when ``value_threshold`` is set, so the value of the account is not understated.
    :resjson object totals: The balances of each location, adding up its connections. The threshold is applied to the added up value, so an asset below the threshold in every connection can still be above it here.
    :resjson object failed_accounts: Only present when some connections could not be queried. Maps each location to its failed connections and their error. They are not part of ``per_account`` and ``totals``. The response ``message`` also describes the failures.
    :statuscode 200: Balances successfully queried, for at least one connection.
