@@ -697,7 +697,6 @@ CREATE TABLE IF NOT EXISTS bucket_balance_checks (
         keyed together with the StakingRouter id of their module. Every operator tracked
         so far belongs to the original CSM, whose module id is 3.
         """
-        write_cursor.switch_foreign_keys('OFF')
         write_cursor.execute(
             'ALTER TABLE lido_csm_node_operator_metrics '
             'RENAME TO lido_csm_node_operator_metrics_old',
@@ -748,6 +747,5 @@ CREATE TABLE IF NOT EXISTS lido_csm_node_operator_metrics (
         )
         write_cursor.execute('DROP TABLE lido_csm_node_operator_metrics_old')
         write_cursor.execute('DROP TABLE lido_csm_node_operators_old')
-        write_cursor.switch_foreign_keys('ON')
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

@@ -165,7 +165,7 @@ class LidoCsmMetricsFetcher:
             for item in values:
                 val = item.get('value') if isinstance(item, dict) else item
                 if not (isinstance(val, (list, tuple)) and len(val) >= 2):
-                    log.error(f'Skipping malformed Lido CSM rewards tree entry: {val}')
+                    log.error('Skipping malformed Lido CSM rewards tree entry: %s', val)
                     continue
 
                 try:
@@ -177,7 +177,9 @@ class LidoCsmMetricsFetcher:
                     break
                 except (TypeError, ValueError) as e:
                     log.error(
-                        f'Skipping Lido CSM rewards entry {val} due to parsing error: {e}',
+                        'Skipping Lido CSM rewards entry %s due to parsing error: %s',
+                        val,
+                        e,
                     )
                     continue
 
@@ -190,8 +192,10 @@ class LidoCsmMetricsFetcher:
             rewards_steth = self._convert_shares_to_steth(pending_shares)
         except RemoteError as e:
             log.error(
-                f'Failed to compute Lido CSM rewards for {node_operator_id} '
-                f'({self.staking_module.name}): {e}',
+                'Failed to compute Lido CSM rewards for %s (%s): %s',
+                node_operator_id,
+                self.staking_module.name,
+                e,
             )
             rewards_steth = ZERO
 
