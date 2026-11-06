@@ -85,7 +85,7 @@ def test_lifi_swap_and_bridge_to_bsc(arbitrum_one_inquirer, arbitrum_one_account
         asset=USDC_ARBITRUM,
         amount=FVal('57.000421'),
         location_label=arbitrum_one_accounts[0],
-        notes='Bridge 57.000421 USDC from Arbitrum One to Binance Smart Chain via LI.FI',
+        notes='Bridge 57.000421 USDC from Arbitrum One to BNB Smart Chain via LI.FI',
         counterparty=CPT_LIFI,
         address=router,
         extra_data={'bridge': {

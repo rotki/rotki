@@ -1141,7 +1141,7 @@
   },
   "blockchain_balances": {
     "add_account": "Добавить аккаунт",
-    "binance_warning": "Аккаунты Binance Smart Chain могут быть обнаружены только с платным ключом Etherscan.",
+    "binance_warning": "Аккаунты BNB Smart Chain могут быть обнаружены только с платным ключом Etherscan.",
     "evm_detection": {
       "title": "Обнаружить EVM-аккаунты"
     },
