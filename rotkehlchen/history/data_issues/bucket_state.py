@@ -1,3 +1,4 @@
+from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -10,6 +11,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 type BucketKey = tuple[str, str, str, str]
 """Location, location label, protocol and asset of a bucket, with '' for a missing label or
@@ -39,6 +41,78 @@ class BucketStop:
     event_timestamp: TimestampMS
     derived_balance_before_event: FVal
     negative_amount: FVal
+
+
+class BucketRunState[BucketT: Hashable]:
+    """Where each bucket stands during one historical balance processing pass.
+
+    A bucket is accumulating until an event drives it negative. It is then either stopped for
+    good, or, for a rebasing token, waiting for an on-chain balance to reconcile it against. The
+    on-chain query failing keeps it waiting and is reported once. Reconciling returns it to
+    accumulating and clears the stop, the wait and the report together.
+
+    Recording a stop is independent of waiting for reconciliation on purpose: a bucket that is
+    waiting and then goes negative through an event of a non-rebasing asset has its stop
+    overwritten but keeps waiting, so later events still reach it.
+    """
+
+    def __init__(self, make_key: Callable[[BucketT], BucketKey]) -> None:
+        self._make_key = make_key
+        self._awaiting_reconciliation: dict[BucketT, HistoryBaseEntry] = {}
+        self._failure_reported: set[BucketT] = set()
+        self._stops: dict[BucketKey, BucketStop] = {}
+
+    @property
+    def stops(self) -> Mapping[BucketKey, BucketStop]:
+        return self._stops
+
+    def is_awaiting_reconciliation(self, bucket: BucketT) -> bool:
+        return bucket in self._awaiting_reconciliation
+
+    def negative_event(self, bucket: BucketT) -> HistoryBaseEntry | None:
+        """The event that drove the bucket negative, if it is awaiting reconciliation."""
+        return self._awaiting_reconciliation.get(bucket)
+
+    def record_stop(
+            self,
+            bucket: BucketT,
+            event: HistoryBaseEntry,
+            balance_before_event: FVal,
+            negative_amount: FVal,
+    ) -> None:
+        """Remember the event at which the bucket stopped being processed, see BucketStop."""
+        assert event.identifier is not None, 'Processed history events should have identifiers'
+        self._stops[self._make_key(bucket)] = BucketStop(
+            event_identifier=event.identifier,
+            event_timestamp=event.timestamp,
+            derived_balance_before_event=balance_before_event,
+            negative_amount=negative_amount,
+        )
+
+    def await_reconciliation(
+            self,
+            bucket: BucketT,
+            event: HistoryBaseEntry,
+            balance_before_event: FVal,
+            negative_amount: FVal,
+    ) -> None:
+        """Stop the bucket at the event, until an on-chain balance reconciles it."""
+        self._awaiting_reconciliation[bucket] = event
+        self.record_stop(bucket, event, balance_before_event, negative_amount)
+
+    def report_failure_once(self, bucket: BucketT) -> bool:
+        """Whether this is the first failed reconciliation attempt of the bucket."""
+        if bucket in self._failure_reported:
+            return False
+
+        self._failure_reported.add(bucket)
+        return True
+
+    def reconcile(self, bucket: BucketT) -> None:
+        """Return the bucket to accumulating."""
+        del self._awaiting_reconciliation[bucket]
+        self._stops.pop(self._make_key(bucket), None)
+        self._failure_reported.discard(bucket)
 
 
 def get_bucket_stops(cursor: DBCursor) -> dict[BucketKey, BucketStop]:
